@@ -255,7 +255,7 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                             };
 
                             let _ = crate::navigator_credential::credential_store(&username, &key).await;
-                            let _ = crate::indexed_db::store_events(&[event_binary.clone()]).await;
+                            let _ = crate::indexed_db::store_events(std::slice::from_ref(&event_binary)).await;
 
                             let fetched_events = if status == crate::local_event::LocalEventStatus::Sent {
                                 fetch::get_events(None, Some(20), Some(0)).await.ok()
@@ -344,14 +344,13 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                         onclick: {
                             let key_to_copy = dialog_state.generated_key.clone();
                             move |_| {
-                                if let Some(window) = web_sys::window() {
-                                    if let Some(key) = &key_to_copy {
+                                if let Some(window) = web_sys::window()
+                                    && let Some(key) = &key_to_copy {
                                         let _ = window.navigator().clipboard().write_text(&base64::Engine::encode(
                                             &base64::engine::general_purpose::URL_SAFE_NO_PAD,
                                             key.to_scalar_bytes(),
                                         ));
                                     }
-                                }
                             }
                         },
                         "{context.language.label(\"Copy\", \"コピー\", \"Kopii\")}"

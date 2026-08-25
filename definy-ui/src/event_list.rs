@@ -89,16 +89,16 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
             .iter()
             .filter_map(|(hash, event_res)| {
                 event_res.as_ref().ok().and_then(|(_, event)| {
-                    if let Some(filter) = &context.filter_event_type {
-                        if EventType::from(&event.content) != *filter {
-                            return None;
-                        }
+                    if let Some(filter) = &context.filter_event_type
+                        && EventType::from(&event.content) != *filter
+                    {
+                        return None;
                     }
                     Some((hash.clone(), event.time))
                 })
             })
             .collect();
-        entries.sort_by(|a, b| b.1.cmp(&a.1));
+        entries.sort_by_key(|b| std::cmp::Reverse(b.1));
         entries.into_iter().map(|(h, _)| h).collect()
     };
 

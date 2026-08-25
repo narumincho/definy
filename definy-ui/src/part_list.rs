@@ -263,7 +263,6 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         let force_offline = state_val.force_offline;
 
                         spawn(async move {
-                            let set_state_sig = state_sig;
                             crate::event_submit::submit_event(
                                 definy_event::event::EventContent::PartDefinition(
                                     definy_event::event::PartDefinitionEvent {
@@ -277,11 +276,7 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                 key,
                                 force_offline,
                                 None,
-                                std::rc::Rc::new(move |updater| {
-                                    let mut sig = set_state_sig;
-                                    let prev = sig.read().clone();
-                                    sig.set(updater(prev));
-                                }),
+                                state_sig,
                                 move |next, record| {
                                     if record.status == crate::local_event::LocalEventStatus::Sent {
                                         next.part_definition_form.eval_result = None;

@@ -193,7 +193,6 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                     let force_offline = state_val.force_offline;
 
                     spawn(async move {
-                        let set_state_sig = state_sig;
                         crate::event_submit::submit_event(
                             definy_event::event::EventContent::ModuleDefinition(
                                 definy_event::event::ModuleDefinitionEvent {
@@ -204,11 +203,7 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                             key,
                             force_offline,
                             None,
-                            std::rc::Rc::new(move |updater| {
-                                let mut sig = set_state_sig;
-                                let prev = sig.read().clone();
-                                sig.set(updater(prev));
-                            }),
+                            state_sig,
                             move |next, record| {
                                 if record.status == crate::local_event::LocalEventStatus::Sent {
                                     next.module_definition_form.result_message = None;

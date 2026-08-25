@@ -249,7 +249,6 @@ fn ModuleUpdateForm(
                     let def_hash_for_cb = def_hash_clone.clone();
 
                     spawn(async move {
-                        let set_state_sig = state_sig;
                         crate::event_submit::submit_event(
                             definy_event::event::EventContent::ModuleUpdate(
                                 definy_event::event::ModuleUpdateEvent {
@@ -261,11 +260,7 @@ fn ModuleUpdateForm(
                             key,
                             force_offline,
                             None,
-                            std::rc::Rc::new(move |updater| {
-                                let mut sig = set_state_sig;
-                                let prev = sig.read().clone();
-                                sig.set(updater(prev));
-                            }),
+                            state_sig,
                             move |next, record| {
                                 if record.status == crate::local_event::LocalEventStatus::Sent {
                                     if let Some(snapshot) = find_module_snapshot(next, &def_hash_for_cb) {

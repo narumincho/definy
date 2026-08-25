@@ -144,7 +144,6 @@ fn ProfileForm(state: AppState, context: PageContext) -> Element {
                     let force_offline = state_val.force_offline;
 
                     spawn(async move {
-                        let set_state_sig = state_sig;
                         crate::event_submit::submit_event(
                             definy_event::event::EventContent::ChangeProfile(
                                 definy_event::event::ChangeProfileEvent {
@@ -154,11 +153,7 @@ fn ProfileForm(state: AppState, context: PageContext) -> Element {
                             key,
                             force_offline,
                             filter,
-                            std::rc::Rc::new(move |updater| {
-                                let mut sig = set_state_sig;
-                                let prev = sig.read().clone();
-                                sig.set(updater(prev));
-                            }),
+                            state_sig,
                             |next, _| {
                                 next.profile_name_input = String::new();
                             },

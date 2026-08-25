@@ -97,18 +97,23 @@ fn NavLink(
     label_ja: &'static str,
     label_eo: &'static str,
 ) -> Element {
-    let is_active = match (&context.location, &target) {
-        (Some(Location::Home), Location::Home) => true,
-        (Some(Location::Event(_)), Location::Home) => true,
-        (Some(Location::PartList), Location::PartList) => true,
-        (Some(Location::Part(_)), Location::PartList) => true,
-        (Some(Location::ModuleList), Location::ModuleList) => true,
-        (Some(Location::Module(_)), Location::ModuleList) => true,
-        (Some(Location::LocalEventQueue), Location::LocalEventQueue) => true,
-        (Some(Location::AccountList), Location::AccountList) => true,
-        (Some(Location::Account(_)), Location::AccountList) => true,
-        _ => false,
-    };
+    let is_active = matches!(
+        (&context.location, &target),
+        (Some(Location::Home | Location::Event(_)), Location::Home)
+            | (
+                Some(Location::PartList | Location::Part(_)),
+                Location::PartList
+            )
+            | (
+                Some(Location::ModuleList | Location::Module(_)),
+                Location::ModuleList
+            )
+            | (Some(Location::LocalEventQueue), Location::LocalEventQueue)
+            | (
+                Some(Location::AccountList | Location::Account(_)),
+                Location::AccountList
+            )
+    );
 
     let style = if is_active {
         "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.08); font-weight: 500;"

@@ -241,19 +241,18 @@ async fn handle_html(
         None => (Vec::new(), false),
     };
 
-    if let (Some(db), Some(location)) = (db, &location) {
-        match location {
+    if let (
+        Some(db),
+        Some(
             definy_ui::Location::Part(hash)
             | definy_ui::Location::Event(hash)
-            | definy_ui::Location::Module(hash) => {
-                if let Ok(Some(single_event)) = db::get_event(db, hash.as_ref()).await {
-                    if !event_binary_vec.contains(&single_event) {
-                        event_binary_vec.push(single_event);
-                    }
-                }
-            }
-            _ => {}
-        }
+            | definy_ui::Location::Module(hash),
+        ),
+    ) = (db, &location)
+        && let Ok(Some(single_event)) = db::get_event(db, hash.as_ref()).await
+        && !event_binary_vec.contains(&single_event)
+    {
+        event_binary_vec.push(single_event);
     }
 
     let events = event_binary_vec

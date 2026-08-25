@@ -93,15 +93,13 @@ fn collect_account_rows(state: &AppState) -> Vec<AccountRow> {
         (usize, chrono::DateTime<chrono::Utc>),
     > = std::collections::HashMap::new();
 
-    for (_, event_res) in &state.event_cache {
-        if let Ok((_, event)) = event_res {
-            let entry = map
-                .entry(event.account_id.clone())
-                .or_insert((0, event.time));
-            entry.0 += 1;
-            if event.time > entry.1 {
-                entry.1 = event.time;
-            }
+    for (_, event) in state.event_cache.values().flatten() {
+        let entry = map
+            .entry(event.account_id.clone())
+            .or_insert((0, event.time));
+        entry.0 += 1;
+        if event.time > entry.1 {
+            entry.1 = event.time;
         }
     }
 

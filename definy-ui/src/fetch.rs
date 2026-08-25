@@ -121,7 +121,7 @@ pub async fn get_event(
     .map_err(js_error_to_anyhow)?;
     let bytes = js_sys::Uint8Array::new(&response_body).to_vec();
 
-    if let Err(error) = crate::indexed_db::store_events(&[bytes.clone()]).await {
+    if let Err(error) = crate::indexed_db::store_events(std::slice::from_ref(&bytes)).await {
         web_sys::console::warn_1(&error);
     }
 

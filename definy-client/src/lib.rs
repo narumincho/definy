@@ -190,11 +190,10 @@ fn AppRoot() -> Element {
             while let Some(msg) = rx.next().await {
                 match msg {
                     ClientMsg::Navigate(href) => {
-                        if let Some(window) = web_sys::window() {
-                            if let Ok(history) = window.history() {
-                                let _ =
-                                    history.push_state_with_url(&JsValue::NULL, "", Some(&href));
-                            }
+                        if let Some(window) = web_sys::window()
+                            && let Ok(history) = window.history()
+                        {
+                            let _ = history.push_state_with_url(&JsValue::NULL, "", Some(&href));
                         }
                         let ctx = get_current_page_context();
                         current_context.set(ctx.clone());
