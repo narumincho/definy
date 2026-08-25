@@ -1,21 +1,21 @@
-use crate::AppState;
-use narumincho_vdom::*;
+use dioxus::prelude::*;
 use std::rc::Rc;
 
-pub type DropdownOnChange = Rc<dyn Fn(String) -> Box<dyn FnOnce(AppState) -> AppState>>;
-pub type DropdownOptionRenderer = Rc<dyn Fn(&str, &str, bool) -> Node>;
+pub type DropdownOnChange = Rc<dyn Fn(String)>;
 
-pub fn searchable_dropdown(
-    state: &AppState,
-    name: &str,
-    current_value: &str,
-    options: &[(String, String)],
-    render_option: DropdownOptionRenderer,
-) -> Node {
+#[component]
+pub fn SearchableDropdown(
+    name: String,
+    current_value: String,
+    options: Vec<(String, String)>,
+    on_change: EventHandler<String>,
+) -> Element {
+    let mut search_query = use_signal(String::new);
+
     let current_label = options
         .iter()
         .find_map(|(val, label)| {
-            if val == current_value {
+            if *val == current_value {
                 let first = label.split('\t').next().unwrap_or(label.as_str());
                 Some(first.to_string())
             } else {
@@ -24,257 +24,94 @@ pub fn searchable_dropdown(
         })
         .unwrap_or_else(|| "Select...".to_string());
 
-    Div::new()
-        .children([
-            dropdown_button(name, current_label),
-            dropdown_panel(
-                name,
-                &state.dropdown_search_query,
-                options,
-                current_value,
-                render_option,
-            ),
-        ])
-        .into_node()
-}
+    let panel_id = dropdown_panel_id(&name);
+    let anchor_name = anchor_name_id(&name);
 
-fn dropdown_button(name: &str, current_label: String) -> Node {
-    Button::new()
-        .type_("button")
-        .style(
-            Style::new()
-                .set("width", "100%")
-                .set("text-align", "left")
-                .set("padding", "0.4rem 0.6rem")
-                .set("background", "var(--surface)")
-                .set("border", "1px solid var(--border)")
-                .set("border-radius", "var(--radius-sm)")
-                .set("color", "var(--text)")
-                .set("cursor", "pointer")
-                .set("display", "flex")
-                .set("justify-content", "space-between")
-                .set("align-items", "center")
-                .set("white-space", "nowrap")
-                .set("overflow", "hidden")
-                .set("text-overflow", "ellipsis")
-                .set("anchor-name", anchor_name_id(name)),
-        )
-        .command_for(dropdown_panel_id(name))
-        .command("show-popover")
-        .children([
-            text(current_label.as_str()),
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("opacity", "0.5")
-                        .set("font-size", "0.8rem")
-                        .set("margin-left", "0.5rem"),
-                )
-                .children([text("▼")])
-                .into_node(),
-        ])
-        .into_node()
-}
-
-fn dropdown_panel(
-    name: &str,
-    dropdown_search_query: &str,
-    options: &[(String, String)],
-    current_value: &str,
-    render_option: DropdownOptionRenderer,
-) -> Node {
-    Div::new()
-        .id(dropdown_panel_id(name))
-        .popover()
-        .style(
-            Style::new()
-                .set("position-anchor", anchor_name_id(name))
-                .set("top", "anchor(bottom)")
-                .set("left", "anchor(left)")
-                .set("min-width", "max(100%, 22rem)")
-                .set("margin", "2px")
-                .set("background", "var(--surface)")
-                .set("color", "var(--text)")
-                .set("border", "1px solid var(--border)")
-                .set("border-radius", "var(--radius-sm)")
-                .set("box-shadow", "var(--shadow-lg)"),
-        )
-        .children([
-            search_input(name, dropdown_search_query),
-            option_list(dropdown_search_query, options, current_value, render_option),
-        ])
-        .into_node()
-}
-
-fn search_input(name: &str, value: &str) -> Node {
-    let search_name = format!("search-{}", name);
-    Input::new()
-        .type_("text")
-        .autofocus(true)
-        .name(&search_name)
-        .value(value)
-        .style(
-            Style::new()
-                .set("width", "100%")
-                .set("padding", "0.4rem 0.6rem")
-                .set("border", "none")
-                .set("border-bottom", "1px solid var(--border)")
-                .set("background", "transparent")
-                .set("color", "var(--text)")
-                .set("outline", "none"),
-        )
-        .on_input(EventHandler::new(move |set_state| {
-            let s_name = search_name.clone();
-            async move {
-                let value = crate::dom::get_input_value(&format!("input[name='{}']", s_name));
-                set_state(Box::new(move |state: AppState| AppState {
-                    dropdown_search_query: value,
-                    ..state
-                }));
+    let query = search_query.read().to_lowercase();
+    let filtered_options: Vec<(String, String)> = options
+        .iter()
+        .filter(|(_, label)| {
+            if query.is_empty() {
+                true
+            } else {
+                label.to_lowercase().contains(&query)
             }
-        }))
-        .into_node()
-}
-
-fn option_list(
-    dropdown_search_query: &str,
-    options: &[(String, String)],
-    current_value: &str,
-    render_option: DropdownOptionRenderer,
-) -> Node {
-    let query = dropdown_search_query.to_lowercase();
-    let filtered_options = options.iter().filter(|(_, label)| {
-        if query.is_empty() {
-            true
-        } else {
-            label.to_lowercase().contains(&query)
-        }
-    });
-
-    let options_list_nodes = filtered_options
-        .into_iter()
-        .map(|(opt_val, opt_label)| {
-            render_option(opt_val, opt_label, opt_val == current_value).with_key(opt_val)
         })
-        .collect::<Vec<_>>();
+        .cloned()
+        .collect();
 
-    Div::new()
-        .style(
-            Style::new()
-                .set("display", "flex")
-                .set("flex-direction", "column")
-                .set("max-height", "15rem")
-                .set("overflow-y", "auto"),
-        )
-        .children(options_list_nodes)
-        .into_node()
-}
+    rsx! {
+        div {
+            button {
+                r#type: "button",
+                style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name};",
+                "popovertarget": "{panel_id}",
+                "popovertargetaction": "show",
+                "{current_label}"
+                div {
+                    style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
+                    "▼"
+                }
+            }
+            div {
+                id: "{panel_id}",
+                "popover": "auto",
+                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); min-width: max(100%, 22rem); margin: 2px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);",
+                input {
+                    r#type: "text",
+                    autofocus: true,
+                    name: "search-{name}",
+                    value: "{search_query}",
+                    style: "width: 100%; padding: 0.4rem 0.6rem; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); outline: none; box-sizing: border-box;",
+                    oninput: move |evt: FormEvent| {
+                        search_query.set(evt.value());
+                    },
+                }
+                div {
+                    style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
+                    for (opt_val, opt_label) in filtered_options {
+                        {
+                            let is_selected = opt_val == current_value;
+                            let parts: Vec<&str> = opt_label.split('\t').collect();
+                            let opt_val_clone = opt_val.clone();
+                            let bg = if is_selected { "rgb(255 255 255 / 0.1)" } else { "transparent" };
+                            let color = if is_selected { "var(--primary)" } else { "var(--text)" };
 
-pub fn button_option_renderer(
-    name: impl Into<String>,
-    on_change: DropdownOnChange,
-) -> DropdownOptionRenderer {
-    let panel_id = dropdown_panel_id(name.into().as_str());
-    Rc::new(move |value, label, is_selected| {
-        let on_change = on_change.clone();
-        let value = value.to_string();
-        let parts: Vec<&str> = label.split('\t').collect();
-        let children_nodes = if parts.len() > 1 {
-            let left_text = parts[0];
-            let right_text = parts[1..].join(" · ");
-            vec![
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-weight", "500")
-                            .set("white-space", "nowrap")
-                            .set("overflow", "hidden")
-                            .set("text-overflow", "ellipsis"),
-                    )
-                    .children([text(left_text)])
-                    .into_node(),
-                Div::new()
-                    .class("mono")
-                    .style(
-                        Style::new()
-                            .set("font-size", "0.72rem")
-                            .set("opacity", "0.65")
-                            .set("margin-left", "0.8rem")
-                            .set("max-width", "14rem")
-                            .set("white-space", "nowrap")
-                            .set("overflow", "hidden")
-                            .set("text-overflow", "ellipsis")
-                            .set("text-align", "right"),
-                    )
-                    .children([text(right_text.as_str())])
-                    .into_node(),
-            ]
-        } else {
-            vec![
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-weight", "500")
-                            .set("white-space", "nowrap")
-                            .set("overflow", "hidden")
-                            .set("text-overflow", "ellipsis"),
-                    )
-                    .children([text(label)])
-                    .into_node(),
-            ]
-        };
-
-        Button::new()
-            .style(option_style(is_selected))
-            .command("hide-popover")
-            .command_for(&panel_id)
-            .on_click(EventHandler::with_parameter(
-                move |set_state, value: &String| {
-                    let on_change = on_change.clone();
-                    let value = value.clone();
-                    async move {
-                        set_state(Box::new(|state: AppState| AppState {
-                            dropdown_search_query: String::new(),
-                            ..state
-                        }));
-                        set_state(on_change(value));
+                            rsx! {
+                                button {
+                                    key: "{opt_val}",
+                                    r#type: "button",
+                                    style: "width: 100%; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; border-bottom: 1px solid rgb(255 255 255 / 0.04); cursor: pointer; background: {bg}; color: {color};",
+                                    "popovertarget": "{panel_id}",
+                                    "popovertargetaction": "hide",
+                                    onclick: move |_| {
+                                        search_query.set(String::new());
+                                        on_change.call(opt_val_clone.clone());
+                                    },
+                                    if parts.len() > 1 {
+                                        div {
+                                            style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                                            "{parts[0]}"
+                                        }
+                                        div {
+                                            class: "mono",
+                                            style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;",
+                                            "{parts[1..].join(\" · \")}"
+                                        }
+                                    } else {
+                                        div {
+                                            style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                                            "{opt_label}"
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                },
-                value,
-            ))
-            .children(children_nodes)
-            .into_node()
-    })
-}
-
-pub fn option_style(is_selected: bool) -> Style {
-    Style::new()
-        .set("width", "100%")
-        .set("display", "flex")
-        .set("justify-content", "space-between")
-        .set("align-items", "center")
-        .set("text-align", "left")
-        .set("box-sizing", "border-box")
-        .set("padding", "0.45rem 0.65rem")
-        .set("border", "none")
-        .set("border-bottom", "1px solid rgb(255 255 255 / 0.04)")
-        .set("cursor", "pointer")
-        .set(
-            "background",
-            if is_selected {
-                "rgb(255 255 255 / 0.1)"
-            } else {
-                "transparent"
-            },
-        )
-        .set(
-            "color",
-            if is_selected {
-                "var(--primary)"
-            } else {
-                "var(--text)"
-            },
-        )
+                }
+            }
+        }
+    }
 }
 
 fn dropdown_panel_id(name: &str) -> String {

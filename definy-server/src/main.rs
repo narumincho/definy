@@ -11,7 +11,7 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper::{Request, Response};
 use hyper_util::rt::TokioIo;
-use narumincho_vdom::Route;
+
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use tokio::net::TcpListener;
@@ -73,6 +73,9 @@ const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
 
 const ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 
+static SNIPPETS_DIR: include_dir::Dir =
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../web-distribution/snippets");
+
 async fn handler(
     request: Request<impl hyper::body::Body>,
     address: SocketAddr,
@@ -131,7 +134,19 @@ async fn handler(
             }
         }
         path => {
-            if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
+            if let Some(snippet_path) = path.strip_prefix("snippets/") {
+                if let Some(file) = SNIPPETS_DIR.get_file(snippet_path) {
+                    Response::builder()
+                        .header("Content-Type", "application/javascript; charset=utf-8")
+                        .header("Cache-Control", "public, max-age=31536000, immutable")
+                        .body(Full::new(Bytes::from_static(file.contents())))
+                } else {
+                    Response::builder()
+                        .status(404)
+                        .header("Content-Type", "text/plain; charset=utf-8")
+                        .body(Full::new(Bytes::from("Snippet Not Found")))
+                }
+            } else if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
                 let event_binary_hash_hex = event_binary_hash_hex.to_string();
                 let db = ensure_db(&state).await;
                 match db {
@@ -226,19 +241,18 @@ async fn handle_html(
         None => (Vec::new(), false),
     };
 
-    if let (Some(db), Some(location)) = (db, &location) {
-        match location {
+    if let (
+        Some(db),
+        Some(
             definy_ui::Location::Part(hash)
             | definy_ui::Location::Event(hash)
-            | definy_ui::Location::Module(hash) => {
-                if let Ok(Some(single_event)) = db::get_event(db, hash.as_ref()).await {
-                    if !event_binary_vec.contains(&single_event) {
-                        event_binary_vec.push(single_event);
-                    }
-                }
-            }
-            _ => {}
-        }
+            | definy_ui::Location::Module(hash),
+        ),
+    ) = (db, &location)
+        && let Ok(Some(single_event)) = db::get_event(db, hash.as_ref()).await
+        && !event_binary_vec.contains(&single_event)
+    {
+        event_binary_vec.push(single_event);
     }
 
     let events = event_binary_vec

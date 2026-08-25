@@ -9,8 +9,13 @@ jobs:
       - uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --check
-      - uses: browser-actions/setup-chrome@v2
-      - uses: nanasess/setup-chromedriver@v2
+      - name: Setup ChromeDriver
+        run: |
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
+          npx -y @puppeteer/browsers install chromedriver@${CHROME_VERSION} --path /tmp/browsers
+          CHROMEDRIVER_BIN=$(find /tmp/browsers -name chromedriver -type f)
+          sudo ln -sf "$CHROMEDRIVER_BIN" /usr/local/bin/chromedriver
+          chromedriver --version
       - run: rustup target add wasm32-unknown-unknown
       - run: cargo run -p definy-build
       - run: cargo test

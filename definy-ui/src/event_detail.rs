@@ -1,6 +1,6 @@
 use definy_event::EventHashId;
 use definy_event::event::{Event, EventContent};
-use narumincho_vdom::*;
+use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
@@ -27,559 +27,387 @@ fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) ->
         .unwrap_or_else(|| "None".to_string())
 }
 
-pub fn event_detail_view(
-    state: &AppState,
-    context: &PageContext,
-    target_hash: &definy_event::EventHashId,
-) -> Node {
+#[component]
+pub fn EventDetailView(state: AppState, context: PageContext, target_hash: EventHashId) -> Element {
     let account_name_map = state.account_name_map();
     let mut target_event_opt = None;
 
     for (hash, event_result) in &state.event_cache {
         if let Ok((_, event)) = event_result
-            && hash == target_hash
+            && hash == &target_hash
         {
-            target_event_opt = Some(event);
+            target_event_opt = Some(event.clone());
         }
     }
 
-    let inner_content = match target_event_opt {
-        Some(event) => render_event_detail(state, context, target_hash, event, &account_name_map),
-        None => Div::new()
-            .style(
-                Style::new()
-                    .set("color", "var(--text-secondary)")
-                    .set("text-align", "center")
-                    .set("padding", "1.8rem"),
-            )
-            .children([text(context.language.label(
-                "Event not found",
-                "イベントが見つかりません",
-                "Evento ne trovita",
-            ))])
-            .into_node(),
-    };
+    let page_shell_style = crate::layout::page_shell_style("1.2rem");
 
-    Div::new()
-        .class("page-shell")
-        .style(crate::layout::page_shell_style("1.2rem"))
-        .children([
-            A::<Location>::new()
-                .class("back-link")
-                .href(context.href_with_lang(Location::Home))
-                .style(
-                    Style::new()
-                        .set("display", "inline-flex")
-                        .set("align-items", "center")
-                        .set("gap", "0.5rem")
-                        .set("color", "var(--primary)")
-                        .set("text-decoration", "none")
-                        .set("font-weight", "500"),
-                )
-                .children([text(context.language.label(
-                    "← Back to Home",
-                    "← ホームへ戻る",
-                    "← Reen al hejmo",
-                ))])
-                .into_node(),
-            inner_content,
-        ])
-        .into_node()
-}
-
-fn render_event_detail(
-    state: &AppState,
-    context: &PageContext,
-    hash: &definy_event::EventHashId,
-    event: &Event,
-    account_name_map: &std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
-) -> Node {
-    let account_name = crate::app_state::account_display_name(account_name_map, &event.account_id);
-    let root_part_definition_hash = root_part_definition_hash(hash, &event.content);
-
-    Div::new()
-        .class("event-detail-card")
-        .style(
-            Style::new()
-                .set("background", "rgb(255 255 255 / 0.02)")
-                .set("backdrop-filter", "var(--glass-blur)")
-                .set("border", "1px solid var(--border)")
-                .set("border-radius", "var(--radius-lg)")
-                .set("padding", "1.25rem")
-                .set("box-shadow", "var(--shadow-lg)")
-                .set("display", "grid")
-                .set("gap", "0.85rem"),
-        )
-        .children([
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("font-size", "0.875rem")
-                        .set("color", "var(--text-secondary)")
-                        .set("display", "flex")
-                        .set("justify-content", "space-between")
-                        .set("border-bottom", "1px solid var(--border)")
-                        .set("padding-bottom", "0.65rem")
-                        .set("align-items", "center"),
-                )
-                .children([
-                    Div::new()
-                        .children([text(event.time.format("%Y-%m-%d %H:%M:%S").to_string())])
-                        .into_node(),
-                    Div::new()
-                        .class("mono")
-                        .style(Style::new().set("opacity", "0.6"))
-                        .children([text(event.account_id.to_string())])
-                        .into_node(),
-                ])
-                .into_node(),
-            A::<Location>::new()
-                .href(context.href_with_lang(Location::Account(event.account_id.clone())))
-                .style(
-                    Style::new()
-                        .set("width", "fit-content")
-                        .set("font-size", "0.9rem")
-                        .set("color", "var(--primary)")
-                        .set("font-weight", "600"),
-                )
-                .children([text(account_name)])
-                .into_node(),
-            match &event.content {
-                EventContent::CreateAccount(create_account_event) => Div::new()
-                    .style(
-                        Style::new()
-                            .set("color", "var(--primary)")
-                            .set("font-size", "1.06rem")
-                            .set("font-weight", "600"),
-                    )
-                    .children([
-                        text(context.language.label(
-                            "Account created:",
-                            "アカウント作成:",
-                            "Konto kreita:",
-                        )),
-                        text(create_account_event.account_name.as_ref()),
-                    ])
-                    .into_node(),
-                EventContent::ChangeProfile(change_profile_event) => Div::new()
-                    .style(
-                        Style::new()
-                            .set("color", "var(--primary)")
-                            .set("font-size", "1.06rem")
-                            .set("font-weight", "600"),
-                    )
-                    .children([
-                        text(context.language.label(
-                            "Profile changed:",
-                            "プロフィール変更:",
-                            "Profilo ŝanĝita:",
-                        )),
-                        text(change_profile_event.account_name.as_ref()),
-                    ])
-                    .into_node(),
-                EventContent::PartDefinition(part_definition_event) => Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "1.15rem")
-                            .set("line-height", "1.6"),
-                    )
-                    .children([
-                        text(if let Some(expr) = &part_definition_event.expression {
-                            format!(
-                                "{}: {} = {}",
-                                part_definition_event.part_name,
-                                optional_part_type_text(&part_definition_event.part_type),
-                                expression_to_source(expr)
-                            )
-                        } else {
-                            format!(
-                                "{}: {}",
-                                part_definition_event.part_name,
-                                optional_part_type_text(&part_definition_event.part_type),
-                            )
-                        }),
-                        if part_definition_event.description.is_empty() {
-                            Div::new().children([]).into_node()
-                        } else {
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "0.86rem")
-                                        .set("color", "var(--text-secondary)")
-                                        .set("white-space", "pre-wrap"),
-                                )
-                                .children([text(part_definition_event.description.as_ref())])
-                                .into_node()
-                        },
-                        if let Some(expression) = &part_definition_event.expression {
-                            let expression = expression.clone();
-                            let language = context.language;
-                            Button::new()
-                                .type_("button")
-                                .on_click(EventHandler::new(move |set_state| {
-                                    let expression = expression.clone();
-                                    async move {
-                                        set_state(Box::new(move |state: AppState| {
-                                            let events_vec: Vec<_> = state
-                                                .event_cache
-                                                .iter()
-                                                .map(|(h, e)| (h.clone(), e.clone()))
-                                                .collect();
-                                            let eval_result = evaluate_message_result(
-                                                &language,
-                                                &expression,
-                                                &events_vec,
-                                            );
-                                            AppState {
-                                                event_detail_eval_result: Some(eval_result),
-                                                ..state.clone()
-                                            }
-                                        }));
-                                    }
-                                }))
-                                .style(Style::new().set("margin-top", "0.65rem"))
-                                .children([text(
-                                    context.language.label("Evaluate", "評価", "Taksi"),
-                                )])
-                                .into_node()
-                        } else {
-                            Div::new().children([]).into_node()
-                        },
-                        A::<Location>::new()
-                            .href(context.href_with_lang(Location::Part(hash.clone())))
-                            .style(
-                                Style::new()
-                                    .set("margin-top", "0.45rem")
-                                    .set("display", "inline-flex")
-                                    .set("color", "var(--primary)")
-                                    .set("text-decoration", "none"),
-                            )
-                            .children([text(context.language.label(
-                                "Open part detail",
-                                "パーツ詳細を開く",
-                                "Malfermi partajn detalojn",
-                            ))])
-                            .into_node(),
-                        match &state.event_detail_eval_result {
-                            Some(result) => Div::new()
-                                .class("mono")
-                                .style(
-                                    Style::new()
-                                        .set("margin-top", "0.35rem")
-                                        .set("font-size", "0.85rem")
-                                        .set("word-break", "break-word"),
-                                )
-                                .children([text(result)])
-                                .into_node(),
-                            None => Div::new().children([]).into_node(),
-                        },
-                    ])
-                    .into_node(),
-                EventContent::PartUpdate(part_update_event) => Div::new()
-                    .style(
-                        Style::new()
-                            .set("display", "grid")
-                            .set("gap", "0.55rem")
-                            .set("line-height", "1.6"),
-                    )
-                    .children([
-                        Div::new()
-                            .style(Style::new().set("font-size", "1.08rem"))
-                            .children([text(format!(
-                                "{} {}",
-                                context.language.label(
-                                    "Part updated:",
-                                    "パーツ更新:",
-                                    "Parto ĝisdatigita:"
-                                ),
-                                part_update_event.part_name
-                            ))])
-                            .into_node(),
-                        if part_update_event.part_description.is_empty() {
-                            Div::new().children([]).into_node()
-                        } else {
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "0.86rem")
-                                        .set("color", "var(--text-secondary)")
-                                        .set("white-space", "pre-wrap"),
-                                )
-                                .children([text(part_update_event.part_description.as_ref())])
-                                .into_node()
-                        },
-                        Div::new()
-                            .class("mono")
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.8rem")
-                                    .set("opacity", "0.85"),
-                            )
-                            .children([text(
-                                part_update_event
-                                    .expression
-                                    .as_ref()
-                                    .map(expression_to_source)
-                                    .unwrap_or_else(|| {
-                                        context
-                                            .language
-                                            .label("(none)", "(なし)", "(neniu)")
-                                            .to_string()
-                                    }),
-                            )])
-                            .into_node(),
-                        Div::new()
-                            .class("mono")
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.8rem")
-                                    .set("opacity", "0.85"),
-                            )
-                            .children([text(format!(
-                                "{} {}",
-                                context.language.label(
-                                    "partDefinitionEventHash:",
-                                    "partDefinitionEventHash:",
-                                    "partDefinitionEventHash:"
-                                ),
-                                part_update_event.part_definition_event_hash,
-                            ))])
-                            .into_node(),
-                        A::<Location>::new()
-                            .href(context.href_with_lang(Location::Event(
-                                part_update_event.part_definition_event_hash.clone(),
-                            )))
-                            .children([text(context.language.label(
-                                "Open definition event",
-                                "定義イベントを開く",
-                                "Malfermi difinan eventon",
-                            ))])
-                            .into_node(),
-                        A::<Location>::new()
-                            .href(context.href_with_lang(Location::Part(
-                                part_update_event.part_definition_event_hash.clone(),
-                            )))
-                            .children([text(context.language.label(
-                                "Open part detail",
-                                "パーツ詳細を開く",
-                                "Malfermi partajn detalojn",
-                            ))])
-                            .into_node(),
-                    ])
-                    .into_node(),
-                EventContent::ModuleDefinition(module_definition_event) => Div::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "1.1rem")
-                            .set("line-height", "1.6"),
-                    )
-                    .children([
-                        text(format!(
-                            "{} {}",
-                            context.language.label(
-                                "Module created:",
-                                "モジュール作成:",
-                                "Modulo kreita:"
-                            ),
-                            module_definition_event.module_name
-                        )),
-                        if module_definition_event.description.is_empty() {
-                            Div::new().children([]).into_node()
-                        } else {
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "0.86rem")
-                                        .set("color", "var(--text-secondary)")
-                                        .set("white-space", "pre-wrap"),
-                                )
-                                .children([text(module_definition_event.description.as_ref())])
-                                .into_node()
-                        },
-                        A::<Location>::new()
-                            .href(context.href_with_lang(Location::Module(hash.clone())))
-                            .children([text(context.language.label(
-                                "Open module detail",
-                                "モジュール詳細を開く",
-                                "Malfermi modulajn detalojn",
-                            ))])
-                            .into_node(),
-                    ])
-                    .into_node(),
-                EventContent::ModuleUpdate(module_update_event) => Div::new()
-                    .style(
-                        Style::new()
-                            .set("display", "grid")
-                            .set("gap", "0.55rem")
-                            .set("line-height", "1.6"),
-                    )
-                    .children([
-                        Div::new()
-                            .style(Style::new().set("font-size", "1.08rem"))
-                            .children([text(format!(
-                                "{} {}",
-                                context.language.label(
-                                    "Module updated:",
-                                    "モジュール更新:",
-                                    "Modulo ĝisdatigita:"
-                                ),
-                                module_update_event.module_name
-                            ))])
-                            .into_node(),
-                        if module_update_event.module_description.is_empty() {
-                            Div::new().children([]).into_node()
-                        } else {
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "0.86rem")
-                                        .set("color", "var(--text-secondary)")
-                                        .set("white-space", "pre-wrap"),
-                                )
-                                .children([text(module_update_event.module_description.as_ref())])
-                                .into_node()
-                        },
-                        Div::new()
-                            .class("mono")
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.8rem")
-                                    .set("opacity", "0.85"),
-                            )
-                            .children([text(format!(
-                                "{} {}",
-                                context.language.label(
-                                    "moduleDefinitionEventHash:",
-                                    "moduleDefinitionEventHash:",
-                                    "moduleDefinitionEventHash:"
-                                ),
-                                module_update_event.module_definition_event_hash,
-                            ))])
-                            .into_node(),
-                        A::<Location>::new()
-                            .href(context.href_with_lang(Location::Event(
-                                module_update_event.module_definition_event_hash.clone(),
-                            )))
-                            .children([text(context.language.label(
-                                "Open definition event",
-                                "定義イベントを開く",
-                                "Malfermi difinan eventon",
-                            ))])
-                            .into_node(),
-                        A::<Location>::new()
-                            .href(context.href_with_lang(Location::Module(
-                                module_update_event.module_definition_event_hash.clone(),
-                            )))
-                            .children([text(context.language.label(
-                                "Open module detail",
-                                "モジュール詳細を開く",
-                                "Malfermi modulajn detalojn",
-                            ))])
-                            .into_node(),
-                    ])
-                    .into_node(),
-            },
-            if let Some(root_hash) = root_part_definition_hash {
-                related_part_events_section(state, context, &root_hash)
+    rsx! {
+        div {
+            class: "page-shell",
+            style: "{page_shell_style}",
+            a {
+                class: "back-link",
+                href: context.href_with_lang(Location::Home),
+                style: "display: inline-flex; align-items: center; gap: 0.5rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                "{context.language.label(\"← Back to Home\", \"← ホームへ戻る\", \"← Reen al hejmo\")}"
+            }
+            if let Some(event) = target_event_opt {
+                RenderEventDetail {
+                    state: state.clone(),
+                    context: context.clone(),
+                    hash: target_hash.clone(),
+                    event: event.clone(),
+                    account_name_map: account_name_map.clone(),
+                }
             } else {
-                Div::new().children([]).into_node()
-            },
-            Div::new()
-                .class("mono")
-                .style(
-                    Style::new()
-                        .set("font-size", "0.75rem")
-                        .set("color", "var(--text-secondary)")
-                        .set("margin-top", "1.4rem")
-                        .set("word-break", "break-all")
-                        .set("opacity", "0.6"),
-                )
-                .children([
-                    text(context.language.label(
-                        "Event Hash: ",
-                        "イベントハッシュ: ",
-                        "Evento-hako: ",
-                    )),
-                    text(hash.to_string()),
-                ])
-                .into_node(),
-        ])
-        .into_node()
+                div {
+                    style: "color: var(--text-secondary); text-align: center; padding: 1.8rem;",
+                    "{context.language.label(\"Event not found\", \"イベントが見つかりません\", \"Evento ne trovita\")}"
+                }
+            }
+        }
+    }
 }
 
-fn related_part_events_section(
-    state: &AppState,
-    context: &PageContext,
-    root_part_definition_hash: &EventHashId,
-) -> Node {
-    let related_events = collect_related_part_events(state, root_part_definition_hash);
-    let hash_as_base64 = root_part_definition_hash.to_string();
+#[component]
+fn RenderEventDetail(
+    state: AppState,
+    context: PageContext,
+    hash: EventHashId,
+    event: Event,
+    account_name_map: std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
+) -> Element {
+    let account_name = crate::app_state::account_display_name(&account_name_map, &event.account_id);
+    let root_part_definition_hash = root_part_definition_hash(&hash, &event.content);
+    let hash_str = hash.to_string();
+    let time_str = event.time.format("%Y-%m-%d %H:%M:%S").to_string();
 
-    Div::new()
-        .class("event-detail-card")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "0.7rem")
-                .set("padding", "1rem"),
-        )
-        .children([
-            Div::new()
-                .style(Style::new().set("font-weight", "600"))
-                .children([text(context.language.label(
-                    "Events linked by partDefinitionEventHash",
-                    "partDefinitionEventHash に紐づくイベント",
-                    "Eventoj ligitaj per partDefinitionEventHash",
-                ))])
-                .into_node(),
-            Div::new()
-                .class("mono")
-                .style(
-                    Style::new()
-                        .set("font-size", "0.78rem")
-                        .set("opacity", "0.8")
-                        .set("word-break", "break-all"),
-                )
-                .children([text(hash_as_base64)])
-                .into_node(),
-            Div::new()
-                .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
-                .children(
-                    related_events
-                        .into_iter()
-                        .map(|(event_hash, event)| {
-                            let label =
-                                crate::event_presenter::event_kind_label(context.language, &event);
-                            A::<Location>::new()
-                                .href(context.href_with_lang(Location::Event(event_hash)))
-                                .style(
-                                    Style::new()
-                                        .set("display", "grid")
-                                        .set("gap", "0.2rem")
-                                        .set("padding", "0.55rem 0.7rem")
-                                        .set("border", "1px solid var(--border)")
-                                        .set("border-radius", "var(--radius-md)"),
-                                )
-                                .children([
-                                    Div::new().children([text(label)]).into_node(),
-                                    Div::new()
-                                        .style(
-                                            Style::new()
-                                                .set("font-size", "0.82rem")
-                                                .set("color", "var(--text-secondary)"),
-                                        )
-                                        .children([text(
-                                            event.time.format("%Y-%m-%d %H:%M:%S").to_string(),
-                                        )])
-                                        .into_node(),
-                                ])
-                                .into_node()
-                        })
-                        .collect::<Vec<Node>>(),
-                )
-                .into_node(),
-        ])
-        .into_node()
+    rsx! {
+        div {
+            style: "display: grid; gap: 1rem;",
+            div {
+                class: "event-detail-card",
+                style: "display: grid; gap: 1rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+                div {
+                    style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;",
+                    div {
+                        style: "display: flex; align-items: center; gap: 0.75rem;",
+                        div {
+                            style: "font-size: 1.25rem; font-weight: 600;",
+                            "{crate::event_presenter::event_kind_label(context.language, &event)}"
+                        }
+                    }
+                    div {
+                        class: "badge",
+                        style: "font-size: 0.8rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);",
+                        "{crate::event_presenter::event_kind_label(context.language, &event)}"
+                    }
+                }
+                div {
+                    style: "display: grid; gap: 0.75rem;",
+                    div {
+                        style: "display: grid; gap: 0.25rem;",
+                        div {
+                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                            "Event ID (Hash)"
+                        }
+                        div {
+                            class: "mono",
+                            style: "font-size: 0.84rem; color: var(--primary); background: rgb(0 0 0 / 0.2); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); overflow-x: auto;",
+                            "{hash_str}"
+                        }
+                    }
+                    div {
+                        style: "display: grid; gap: 0.25rem;",
+                        div {
+                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                            "{context.language.label(\"Created At\", \"作成日時\", \"Kreita je\")}"
+                        }
+                        div {
+                            style: "font-size: 0.88rem;",
+                            "{time_str}"
+                        }
+                    }
+                    div {
+                        style: "display: grid; gap: 0.25rem;",
+                        div {
+                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                            "{context.language.label(\"Author\", \"作成者\", \"Aŭtoro\")}"
+                        }
+                        a {
+                            href: context.href_with_lang(Location::Account(event.account_id.clone())),
+                            style: "color: var(--primary); text-decoration: none; font-weight: 600;",
+                            "{account_name}"
+                        }
+                    }
+                }
+                div {
+                    style: "border-top: 1px solid var(--border); padding-top: 0.8rem;",
+                    RenderDetailContent {
+                        state: state.clone(),
+                        context: context.clone(),
+                        event: event.clone(),
+                        hash: hash.clone(),
+                    }
+                }
+            }
+            if let Some(root_part_hash) = root_part_definition_hash {
+                RelatedPartEvents {
+                    state: state.clone(),
+                    context: context.clone(),
+                    root_part_definition_hash: root_part_hash,
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn RenderDetailContent(
+    state: AppState,
+    context: PageContext,
+    event: Event,
+    hash: EventHashId,
+) -> Element {
+    let events_list: Vec<crate::app_state::EventWithHash> = state.events_with_hash();
+
+    match event.content {
+        EventContent::CreateAccount(create_account_event) => rsx! {
+            div {
+                style: "display: grid; gap: 0.4rem;",
+                div {
+                    style: "font-size: 0.8rem; color: var(--text-secondary);",
+                    "{context.language.label(\"Account Name\", \"アカウント名\", \"Kontonomo\")}"
+                }
+                div {
+                    style: "font-size: 1.1rem; font-weight: 600;",
+                    "{create_account_event.account_name}"
+                }
+            }
+        },
+        EventContent::ChangeProfile(change_profile_event) => rsx! {
+            div {
+                style: "display: grid; gap: 0.4rem;",
+                div {
+                    style: "font-size: 0.8rem; color: var(--text-secondary);",
+                    "{context.language.label(\"New Account Name\", \"新しいアカウント名\", \"Nova kontonomo\")}"
+                }
+                div {
+                    style: "font-size: 1.1rem; font-weight: 600;",
+                    "{change_profile_event.account_name}"
+                }
+            }
+        },
+        EventContent::PartDefinition(part_definition_event) => {
+            let eval_result = part_definition_event
+                .expression
+                .as_ref()
+                .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
+
+            rsx! {
+                div {
+                    style: "display: grid; gap: 0.75rem;",
+                    div {
+                        style: "display: flex; align-items: center; justify-content: space-between;",
+                        div {
+                            style: "display: flex; align-items: center; gap: 0.6rem;",
+                            div {
+                                style: "font-size: 1.15rem; font-weight: 600;",
+                                "{part_definition_event.part_name}"
+                            }
+                            div {
+                                class: "badge",
+                                style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.5rem; border-radius: var(--radius-full);",
+                                "{optional_part_type_text(&part_definition_event.part_type)}"
+                            }
+                        }
+                        a {
+                            href: context.href_with_lang(Location::Part(hash.clone())),
+                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                            "{context.language.label(\"Open part detail →\", \"パーツ詳細を開く →\", \"Malfermi partajn detalojn →\")}"
+                        }
+                    }
+                    if !part_definition_event.description.is_empty() {
+                        div {
+                            style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                            "{part_definition_event.description}"
+                        }
+                    }
+                    if let Some(expr) = &part_definition_event.expression {
+                        div {
+                            style: "display: grid; gap: 0.35rem;",
+                            div {
+                                style: "font-size: 0.76rem; color: var(--text-secondary);",
+                                "{context.language.label(\"Expression Body\", \"本体の式\", \"Esprimo korpo\")}"
+                            }
+                            div {
+                                class: "mono",
+                                style: "font-size: 0.85rem; background: rgb(0 0 0 / 0.25); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; overflow-x: auto; white-space: nowrap;",
+                                "{expression_to_source(expr)}"
+                            }
+                        }
+                    }
+                    if let Some(eval_text) = eval_result {
+                        div {
+                            style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
+                            "{eval_text}"
+                        }
+                    }
+                }
+            }
+        }
+        EventContent::PartUpdate(part_update_event) => {
+            let base_hash = part_update_event.part_definition_event_hash.clone();
+            let eval_result = part_update_event
+                .expression
+                .as_ref()
+                .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
+
+            rsx! {
+                div {
+                    style: "display: grid; gap: 0.75rem;",
+                    div {
+                        style: "display: flex; align-items: center; justify-content: space-between;",
+                        div {
+                            style: "font-size: 1.15rem; font-weight: 600;",
+                            "{part_update_event.part_name}"
+                        }
+                        a {
+                            href: context.href_with_lang(Location::Part(base_hash.clone())),
+                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                            "{context.language.label(\"Open part detail →\", \"パーツ詳細を開く →\", \"Malfermi partajn detalojn →\")}"
+                        }
+                    }
+                    div {
+                        style: "display: grid; gap: 0.25rem;",
+                        div {
+                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                            "Base Part Definition ID"
+                        }
+                        div {
+                            class: "mono",
+                            style: "font-size: 0.8rem; color: var(--text-secondary);",
+                            "{base_hash}"
+                        }
+                    }
+                    if let Some(expr) = &part_update_event.expression {
+                        div {
+                            style: "display: grid; gap: 0.35rem;",
+                            div {
+                                style: "font-size: 0.76rem; color: var(--text-secondary);",
+                                "{context.language.label(\"Expression Body\", \"本体の式\", \"Esprimo korpo\")}"
+                            }
+                            div {
+                                class: "mono",
+                                style: "font-size: 0.85rem; background: rgb(0 0 0 / 0.25); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; overflow-x: auto; white-space: nowrap;",
+                                "{expression_to_source(expr)}"
+                            }
+                        }
+                    }
+                    if let Some(eval_text) = eval_result {
+                        div {
+                            style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
+                            "{eval_text}"
+                        }
+                    }
+                }
+            }
+        }
+        EventContent::ModuleDefinition(module_definition_event) => rsx! {
+            div {
+                style: "display: grid; gap: 0.6rem;",
+                div {
+                    style: "display: flex; align-items: center; justify-content: space-between;",
+                    div {
+                        style: "font-size: 1.15rem; font-weight: 600;",
+                        "{module_definition_event.module_name}"
+                    }
+                    a {
+                        href: context.href_with_lang(Location::Module(hash.clone())),
+                        style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                        "{context.language.label(\"Open module detail →\", \"モジュール詳細を開く →\", \"Malfermi modulajn detalojn →\")}"
+                    }
+                }
+                if !module_definition_event.description.is_empty() {
+                    div {
+                        style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                        "{module_definition_event.description}"
+                    }
+                }
+            }
+        },
+        EventContent::ModuleUpdate(module_update_event) => {
+            let base_hash = module_update_event.module_definition_event_hash.clone();
+            rsx! {
+                div {
+                    style: "display: grid; gap: 0.6rem;",
+                    div {
+                        style: "display: flex; align-items: center; justify-content: space-between;",
+                        div {
+                            style: "font-size: 1.15rem; font-weight: 600;",
+                            "{module_update_event.module_name}"
+                        }
+                        a {
+                            href: context.href_with_lang(Location::Module(base_hash.clone())),
+                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                            "{context.language.label(\"Open module detail →\", \"モジュール詳細を開く →\", \"Malfermi modulajn detalojn →\")}"
+                        }
+                    }
+                    if !module_update_event.module_description.is_empty() {
+                        div {
+                            style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                            "{module_update_event.module_description}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn RelatedPartEvents(
+    state: AppState,
+    context: PageContext,
+    root_part_definition_hash: EventHashId,
+) -> Element {
+    let related_events = collect_related_part_events(&state, &root_part_definition_hash);
+
+    rsx! {
+        div {
+            class: "event-detail-card",
+            style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+            div {
+                style: "font-size: 0.95rem; font-weight: 600;",
+                "{context.language.label(\"History & Related Events\", \"変更履歴・関連イベント\", \"Historio kaj rilataj eventoj\")}"
+            }
+            div {
+                style: "display: grid; gap: 0.4rem;",
+                for (event_hash, ev) in related_events {
+                    {
+                        let label = crate::event_presenter::event_kind_label(context.language, &ev);
+                        let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
+                        rsx! {
+                            a {
+                                key: "{event_hash}",
+                                href: context.href_with_lang(Location::Event(event_hash.clone())),
+                                style: "display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.02);",
+                                div {
+                                    style: "font-weight: 500;",
+                                    "{label}"
+                                }
+                                div {
+                                    style: "font-size: 0.8rem; color: var(--text-secondary);",
+                                    "{time_str}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn collect_related_part_events(

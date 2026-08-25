@@ -3,7 +3,7 @@ pub mod mutation;
 pub mod types;
 pub mod view;
 
-use narumincho_vdom::*;
+use dioxus::prelude::*;
 
 use crate::app_state::AppState;
 use crate::page_context::PageContext;
@@ -26,7 +26,7 @@ pub fn render_root_expression_editor(
     page_context: &PageContext,
     expression: &Option<definy_event::event::Expression>,
     target: EditorTarget,
-) -> Node {
+) -> Element {
     match expression {
         Some(expr) => {
             let expected_type = expected_type_for_target(state, target);

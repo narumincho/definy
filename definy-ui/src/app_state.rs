@@ -117,6 +117,12 @@ pub struct AppState {
     pub dropdown_search_query: String,
 }
 
+impl PartialEq for AppState {
+    fn eq(&self, _other: &Self) -> bool {
+        false
+    }
+}
+
 #[derive(Clone)]
 pub struct EventListState {
     pub event_hashes: Vec<EventHashId>,
@@ -194,6 +200,13 @@ impl AppState {
             }
         }
         account_name_map
+    }
+
+    pub fn events_with_hash(&self) -> Vec<EventWithHash> {
+        self.event_cache
+            .iter()
+            .map(|(hash, event)| (hash.clone(), event.clone()))
+            .collect()
     }
 }
 
@@ -436,8 +449,8 @@ pub enum Location {
     Account(AccountId),
 }
 
-impl narumincho_vdom::Route for Location {
-    fn to_url(&self) -> String {
+impl Location {
+    pub fn to_url(&self) -> String {
         match self {
             Location::Home => "/".to_string(),
             Location::AccountList => "/accounts".to_string(),
@@ -451,7 +464,7 @@ impl narumincho_vdom::Route for Location {
         }
     }
 
-    fn from_url(url: &str) -> Option<Self> {
+    pub fn from_url(url: &str) -> Option<Self> {
         let parts: Vec<&str> = url.trim_matches('/').split('/').collect();
         match parts.as_slice() {
             [""] => Some(Location::Home),
@@ -475,7 +488,6 @@ mod tests {
     use std::str::FromStr;
 
     use definy_event::{EventHashId, event::AccountId};
-    use narumincho_vdom::Route;
 
     use super::Location;
 

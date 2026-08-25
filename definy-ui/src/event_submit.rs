@@ -1,7 +1,6 @@
-use std::rc::Rc;
-
 use definy_event::EventHashId;
 use definy_event::event::{AccountId, Event, EventContent, EventType};
+use dioxus::prelude::*;
 use ed25519_dalek::SigningKey;
 
 use crate::app_state::{AppState, upsert_local_event_record};
@@ -13,7 +12,7 @@ pub async fn submit_event<F>(
     key: SigningKey,
     force_offline: bool,
     filter_for_refresh: Option<EventType>,
-    set_state: Rc<dyn Fn(Box<dyn FnOnce(AppState) -> AppState>)>,
+    mut state_sig: Signal<AppState>,
     on_complete: F,
 ) where
     F: FnOnce(&mut AppState, &LocalEventRecord) + 'static,
@@ -40,27 +39,17 @@ pub async fn submit_event<F>(
             let event_hash = EventHashId::from_bytes(&event_binary);
             let decoded_event = definy_event::verify_and_deserialize(event_binary.as_slice());
 
+            let mut next = state_sig.read().clone();
             if status == LocalEventStatus::Sent {
                 let fetched_events = get_events(filter_for_refresh, Some(20), Some(0)).await;
-                set_state(Box::new(move |state| {
-                    let mut next = state.clone();
-                    if let Ok(events) = fetched_events {
-                        next.apply_latest_events(events, filter_for_refresh);
-                    }
-                    next.event_cache.insert(event_hash, decoded_event);
-                    upsert_local_event_record(&mut next, record.clone());
-                    on_complete(&mut next, &record);
-                    next
-                }));
-            } else {
-                set_state(Box::new(move |state| {
-                    let mut next = state.clone();
-                    next.event_cache.insert(event_hash, decoded_event);
-                    upsert_local_event_record(&mut next, record.clone());
-                    on_complete(&mut next, &record);
-                    next
-                }));
+                if let Ok(events) = fetched_events {
+                    next.apply_latest_events(events, filter_for_refresh);
+                }
             }
+            next.event_cache.insert(event_hash, decoded_event);
+            upsert_local_event_record(&mut next, record.clone());
+            on_complete(&mut next, &record);
+            state_sig.set(next);
         }
         Err(error) => {
             web_sys::console::error_1(&format!("Failed to post event: {:?}", error).into());

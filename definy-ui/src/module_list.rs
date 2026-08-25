@@ -1,504 +1,233 @@
-use narumincho_vdom::*;
+use dioxus::prelude::*;
 
 use crate::app_state::AppState;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 
-pub fn module_list_view(state: &AppState, context: &PageContext) -> Node {
-    let snapshots = collect_module_snapshots(state);
+#[component]
+pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
+    let snapshots = collect_module_snapshots(&state);
     let account_name_map = state.account_name_map();
+    let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
-    let create_form = if state.current_key.is_some() && state.module_definition_form.is_form_open {
-        Some(module_create_form(state, context))
-    } else {
-        None
-    };
-
-    Div::new()
-        .class("page-shell")
-        .style(crate::layout::page_shell_style("0.8rem"))
-        .children({
-            let mut children = Vec::new();
-            let mut action_children = vec![
-                H2::new()
-                    .style(
-                        Style::new()
-                            .set("font-size", "1.25rem")
-                            .set("font-weight", "600")
-                            .set("margin", "0"),
-                    )
-                    .children([text(context.language.label(
-                        "Modules",
-                        "モジュール",
-                        "Moduloj",
-                    ))])
-                    .into_node(),
-            ];
-            if state.current_key.is_some() && !state.module_definition_form.is_form_open {
-                action_children.push(
-                    Button::new()
-                        .type_("button")
-                        .style(
-                            Style::new()
-                                .set("padding", "0.35rem 0.75rem")
-                                .set("font-size", "0.85rem"),
-                        )
-                        .on_click(EventHandler::new(move |set_state| async move {
-                            set_state(Box::new(move |state: AppState| {
-                                let mut next = state.clone();
-                                next.module_definition_form.is_form_open = true;
-                                next
-                            }));
-                        }))
-                        .children([text(context.language.label(
-                            "+ Create Module",
-                            "+ モジュールを作成",
-                            "+ Krei modulon",
-                        ))])
-                        .into_node(),
-                );
+    rsx! {
+        div {
+            class: "page-shell",
+            style: "{page_shell_style}",
+            div {
+                style: "display: flex; justify-content: space-between; align-items: center;",
+                h2 {
+                    style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
+                    "{context.language.label(\"Modules\", \"モジュール\", \"Moduloj\")}"
+                }
+                if state.current_key.is_some() && !state.module_definition_form.is_form_open {
+                    button {
+                        r#type: "button",
+                        style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
+                        onclick: move |_| {
+                            let mut state_sig = use_context::<Signal<AppState>>();
+                            state_sig.write().module_definition_form.is_form_open = true;
+                        },
+                        "{context.language.label(\"+ Create Module\", \"+ モジュールを作成\", \"+ Krei modulon\")}"
+                    }
+                }
             }
-
-            children.push(
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("display", "flex")
-                            .set("justify-content", "space-between")
-                            .set("align-items", "center"),
-                    )
-                    .children(action_children)
-                    .into_node(),
-            );
-            if let Some(form) = create_form {
-                children.push(form);
+            if state.current_key.is_some() && state.module_definition_form.is_form_open {
+                ModuleCreateForm { state: state.clone(), context: context.clone() }
             }
             if let Some(message) = &state.module_definition_form.result_message {
-                children.push(
-                    Div::new()
-                        .class("event-detail-card")
-                        .style(
-                            Style::new()
-                                .set("padding", "0.6rem 0.8rem")
-                                .set("font-size", "0.82rem")
-                                .set("color", "var(--text)")
-                                .set("background", "rgb(124 192 216 / 0.1)")
-                                .set("border-color", "var(--primary)")
-                                .set("word-break", "break-word"),
-                        )
-                        .children([text(message)])
-                        .into_node(),
-                );
+                div {
+                    class: "event-detail-card",
+                    style: "padding: 0.6rem 0.8rem; font-size: 0.82rem; color: var(--text); background: rgb(124 192 216 / 0.1); border-color: var(--primary); word-break: break-word;",
+                    "{message}"
+                }
             }
             if snapshots.is_empty() {
-                children.push(
-                    Div::new()
-                        .class("event-detail-card")
-                        .style(
-                            Style::new()
-                                .set("padding", "2rem 1.5rem")
-                                .set("text-align", "center")
-                                .set("display", "grid")
-                                .set("gap", "0.5rem")
-                                .set("justify-items", "center")
-                                .set("color", "var(--text-secondary)"),
-                        )
-                        .children([
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "1.5rem")
-                                        .set("opacity", "0.5"),
-                                )
-                                .children([text("📦")])
-                                .into_node(),
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "0.95rem")
-                                        .set("color", "var(--text)"),
-                                )
-                                .children([text(context.language.label(
-                                    "No modules yet",
-                                    "まだモジュールがありません",
-                                    "Ankoraŭ neniuj moduloj",
-                                ))])
-                                .into_node(),
-                        ])
-                        .into_node(),
-                );
+                div {
+                    class: "event-detail-card",
+                    style: "padding: 2rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary);",
+                    div {
+                        style: "font-size: 1.5rem; opacity: 0.5;",
+                        "📦"
+                    }
+                    div {
+                        style: "font-size: 0.95rem; color: var(--text);",
+                        "{context.language.label(\"No modules yet\", \"まだモジュールがありません\", \"Ankoraŭ neniuj moduloj\")}"
+                    }
+                }
             } else {
-                children.push(
-                    Div::new()
-                        .class("event-list")
-                        .style(Style::new().set("display", "grid").set("gap", "0.45rem"))
-                        .children(
-                            snapshots
-                                .into_iter()
-                                .map(|module| {
-                                    let account_name = crate::app_state::account_display_name(
-                                        &account_name_map,
-                                        &module.account_id,
-                                    );
-                                    let mut card_children = Vec::new();
-                                    card_children.push(
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("display", "flex")
-                                                    .set("justify-content", "space-between")
-                                                    .set("align-items", "center"),
-                                            )
-                                            .children([
-                                                Div::new()
-                                                    .style(
-                                                        Style::new()
-                                                            .set("font-size", "1rem")
-                                                            .set("font-weight", "600")
-                                                            .set("color", "var(--text)"),
-                                                    )
-                                                    .children([text(module.module_name)])
-                                                    .into_node(),
-                                                Div::new()
-                                                    .style(
-                                                        Style::new()
-                                                            .set("font-size", "0.76rem")
-                                                            .set("color", "var(--text-secondary)"),
-                                                    )
-                                                    .children([text(
-                                                        module
-                                                            .updated_at
-                                                            .format("%Y-%m-%d %H:%M:%S")
-                                                            .to_string(),
-                                                    )])
-                                                    .into_node(),
-                                            ])
-                                            .into_node(),
-                                    );
+                div {
+                    class: "event-list",
+                    style: "display: grid; gap: 0.45rem;",
+                    for module in snapshots {
+                        {
+                            let account_name = crate::app_state::account_display_name(&account_name_map, &module.account_id);
+                            let def_hash = module.definition_event_hash.clone();
+                            let latest_hash = module.latest_event_hash.clone();
+                            let time_str = module.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
+
+                            rsx! {
+                                div {
+                                    key: "{def_hash}",
+                                    class: "event-card",
+                                    style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+                                    div {
+                                        style: "display: flex; justify-content: space-between; align-items: center;",
+                                        div {
+                                            style: "font-size: 1rem; font-weight: 600; color: var(--text);",
+                                            "{module.module_name}"
+                                        }
+                                        div {
+                                            style: "font-size: 0.76rem; color: var(--text-secondary);",
+                                            "{time_str}"
+                                        }
+                                    }
                                     if !module.has_definition {
-                                        card_children.push(
-                                            Div::new()
-                                                .style(
-                                                    Style::new()
-                                                        .set("font-size", "0.82rem")
-                                                        .set("color", "var(--error)"),
-                                                )
-                                                .children([text(context.language.label(
-                                                    "definition event missing",
-                                                    "定義イベントが見つかりません",
-                                                    "difina evento mankas",
-                                                ))])
-                                                .into_node(),
-                                        );
+                                        div {
+                                            style: "font-size: 0.82rem; color: var(--error);",
+                                            "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
+                                        }
                                     }
                                     if !module.module_description.is_empty() {
-                                        card_children.push(
-                                            Div::new()
-                                                .style(
-                                                    Style::new()
-                                                        .set("white-space", "pre-wrap")
-                                                        .set("font-size", "0.9rem")
-                                                        .set("color", "var(--text-secondary)"),
-                                                )
-                                                .children([text(module.module_description)])
-                                                .into_node(),
-                                        );
+                                        div {
+                                            style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
+                                            "{module.module_description}"
+                                        }
                                     }
-                                    card_children.push(
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("font-size", "0.84rem")
-                                                    .set("color", "var(--text-secondary)"),
-                                            )
-                                            .children([text(format!(
-                                                "{}: {}",
-                                                context.language.label(
-                                                    "Author",
-                                                    "作成者",
-                                                    "Aŭtoro",
-                                                ),
-                                                account_name
-                                            ))])
-                                            .into_node(),
-                                    );
-                                    card_children.push(
-                                        Div::new()
-                                            .style(
-                                                Style::new()
-                                                    .set("display", "flex")
-                                                    .set("gap", "0.5rem")
-                                                    .set("flex-wrap", "wrap")
-                                                    .set("margin-top", "0.2rem"),
-                                            )
-                                            .children([
-                                                A::<crate::Location>::new()
-                                                    .href(context.href_with_lang(
-                                                        crate::Location::Module(
-                                                            module.definition_event_hash.clone(),
-                                                        ),
-                                                    ))
-                                                    .style(
-                                                        Style::new()
-                                                            .set("font-size", "0.78rem")
-                                                            .set("font-weight", "500")
-                                                            .set("color", "var(--primary)")
-                                                            .set(
-                                                                "background",
-                                                                "rgb(124 192 216 / 0.1)",
-                                                            )
-                                                            .set("padding", "0.2rem 0.5rem")
-                                                            .set(
-                                                                "border-radius",
-                                                                "var(--radius-sm)",
-                                                            )
-                                                            .set("text-decoration", "none"),
-                                                    )
-                                                    .children([text(context.language.label(
-                                                        "Open module detail",
-                                                        "モジュール詳細を開く",
-                                                        "Malfermi modulajn detalojn",
-                                                    ))])
-                                                    .into_node(),
-                                                A::<crate::Location>::new()
-                                                    .href(context.href_with_lang(
-                                                        crate::Location::Event(
-                                                            module.latest_event_hash,
-                                                        ),
-                                                    ))
-                                                    .children([text(context.language.label(
-                                                        "Latest event",
-                                                        "最新イベント",
-                                                        "Lasta evento",
-                                                    ))])
-                                                    .into_node(),
-                                                A::<crate::Location>::new()
-                                                    .href(context.href_with_lang(
-                                                        crate::Location::Event(
-                                                            module.definition_event_hash,
-                                                        ),
-                                                    ))
-                                                    .children([text(context.language.label(
-                                                        "Definition event",
-                                                        "定義イベント",
-                                                        "Difina evento",
-                                                    ))])
-                                                    .into_node(),
-                                            ])
-                                            .into_node(),
-                                    );
-
-                                    Div::new()
-                                        .class("event-card")
-                                        .style(
-                                            Style::new()
-                                                .set("display", "grid")
-                                                .set("gap", "0.35rem")
-                                                .set("padding", "0.65rem 0.85rem"),
-                                        )
-                                        .children(card_children)
-                                        .into_node()
-                                })
-                                .collect::<Vec<Node>>(),
-                        )
-                        .into_node(),
-                );
-            }
-            children
-        })
-        .into_node()
-}
-
-fn module_create_form(state: &AppState, context: &PageContext) -> Node {
-    let language = context.language;
-    Div::new()
-        .class("event-detail-card")
-        .style(
-            Style::new()
-                .set("display", "grid")
-                .set("gap", "0.5rem")
-                .set("padding", "0.8rem 1rem"),
-        )
-        .children([
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "flex")
-                        .set("justify-content", "space-between")
-                        .set("align-items", "center"),
-                )
-                .children([
-                    Div::new()
-                        .style(
-                            Style::new()
-                                .set("font-size", "0.95rem")
-                                .set("font-weight", "600"),
-                        )
-                        .children([text(context.language.label(
-                            "Create module",
-                            "新規モジュール作成",
-                            "Krei modulon",
-                        ))])
-                        .into_node(),
-                    Button::new()
-                        .type_("button")
-                        .style(
-                            Style::new()
-                                .set("padding", "0.2rem 0.5rem")
-                                .set("font-size", "0.75rem"),
-                        )
-                        .on_click(EventHandler::new(move |set_state| async move {
-                            set_state(Box::new(move |state: AppState| {
-                                let mut next = state.clone();
-                                next.module_definition_form.is_form_open = false;
-                                next
-                            }));
-                        }))
-                        .children([text(context.language.label("Cancel", "閉じる", "Fermi"))])
-                        .into_node(),
-                ])
-                .into_node(),
-            module_name_input(state, context),
-            module_description_input(state, context),
-            Button::new()
-                .type_("button")
-                .style(
-                    Style::new()
-                        .set("font-size", "0.84rem")
-                        .set("font-weight", "600")
-                        .set("background", "var(--primary)")
-                        .set("color", "#0e1720")
-                        .set("border", "none")
-                        .set("padding", "0.4rem 0.9rem")
-                        .set("border-radius", "var(--radius-sm)")
-                        .set("cursor", "pointer")
-                        .set("justify-self", "start"),
-                )
-                .on_click(EventHandler::new(move |set_state| {
-                    let set_state = std::rc::Rc::new(set_state);
-                    let set_state_for_async = set_state.clone();
-                    async move {
-                        set_state(Box::new(move |state: AppState| {
-                            let key: &ed25519_dalek::SigningKey =
-                                if let Some(key) = &state.current_key {
-                                    key
-                                } else {
-                                    web_sys::console::log_1(&"login required".into());
-                                    return state;
-                                };
-
-                            let module_name =
-                                state.module_definition_form.module_name_input.trim().to_string();
-                            let module_description =
-                                state.module_definition_form.module_description_input.clone();
-                            if module_name.is_empty() {
-                                let mut next = state.clone();
-                                next.module_definition_form.result_message = Some(
-                                    language
-                                        .label(
-                                            "Error: module name is required",
-                                            "エラー: モジュール名は必須です",
-                                            "Eraro: modulo-nomo estas bezonata",
-                                        )
-                                        .to_string(),
-                                );
-                                return next;
+                                    div {
+                                        style: "font-size: 0.84rem; color: var(--text-secondary);",
+                                        "{context.language.label(\"Author\", \"作成者\", \"Aŭtoro\")}: {account_name}"
+                                    }
+                                    div {
+                                        style: "display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; font-size: 0.78rem;",
+                                        a {
+                                            href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
+                                            style: "font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); text-decoration: none;",
+                                            "{context.language.label(\"Open module detail\", \"モジュール詳細を開く\", \"Malfermi modulajn detalojn\")}"
+                                        }
+                                        a {
+                                            href: context.href_with_lang(crate::Location::Event(latest_hash)),
+                                            style: "color: var(--text-secondary); text-decoration: none;",
+                                            "{context.language.label(\"Latest event\", \"最新イベント\", \"Lasta evento\")}"
+                                        }
+                                        a {
+                                            href: context.href_with_lang(crate::Location::Event(def_hash)),
+                                            style: "color: var(--text-secondary); text-decoration: none;",
+                                            "{context.language.label(\"Definition event\", \"定義イベント\", \"Difina evento\")}"
+                                        }
+                                    }
+                                }
                             }
-                            let key_for_async = key.clone();
-                            let force_offline = state.force_offline;
-                            wasm_bindgen_futures::spawn_local(
-                                crate::event_submit::submit_event(
-                                    definy_event::event::EventContent::ModuleDefinition(
-                                        definy_event::event::ModuleDefinitionEvent {
-                                            module_name: module_name.into(),
-                                            description: module_description.into(),
-                                        },
-                                    ),
-                                    key_for_async,
-                                    force_offline,
-                                    None,
-                                    set_state_for_async,
-                                move |next, record| {
-                                    if record.status == crate::local_event::LocalEventStatus::Sent {
-                                        next.module_definition_form.result_message = None;
-                                    } else {
-                                        next.module_definition_form.result_message = Some(
-                                            match record.status {
-                                                crate::local_event::LocalEventStatus::Queued => {
-                                                    language.label(
-                                                        "ModuleDefinition queued (offline)",
-                                                        "ModuleDefinition をキューに追加しました (オフライン)",
-                                                        "ModuleDefinition envicigita (senkonekte)",
-                                                    )
-                                                    .to_string()
-                                                }
-                                                crate::local_event::LocalEventStatus::Failed => {
-                                                    language.label(
-                                                        "ModuleDefinition failed to send",
-                                                        "ModuleDefinition の送信に失敗しました",
-                                                        "ModuleDefinition sendado malsukcesis",
-                                                    )
-                                                    .to_string()
-                                                }
-                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
-                                            },
-                                        );
-                                    }
-                                },
-                            ));
-                            let mut next = state.clone();
-                            next.module_definition_form.is_form_open = false;
-                            next.module_definition_form.module_name_input = String::new();
-                            next.module_definition_form.module_description_input = String::new();
-                            next.module_definition_form.result_message = None;
-                            next
-                        }));
+                        }
                     }
-                }))
-                .children([text(context.language.label("Create", "作成", "Krei"))])
-                .into_node(),
-        ])
-        .into_node()
+                }
+            }
+        }
+    }
 }
 
-fn module_name_input(state: &AppState, context: &PageContext) -> Node {
-    Input::new()
-        .name("module-name")
-        .type_("text")
-        .value(&state.module_definition_form.module_name_input)
-        .placeholder(
-            context
-                .language
-                .label("module name", "モジュール名", "modula nomo"),
-        )
-        .on_input(EventHandler::new(move |set_state| async move {
-            let value = crate::dom::get_input_value("input[name='module-name']");
-            set_state(Box::new(move |state: AppState| {
-                let mut next = state.clone();
-                next.module_definition_form.module_name_input = value;
-                next
-            }));
-        }))
-        .into_node()
-}
+#[component]
+fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
+    let language = context.language;
 
-fn module_description_input(state: &AppState, context: &PageContext) -> Node {
-    Textarea::new()
-        .name("module-description")
-        .value(&state.module_definition_form.module_description_input)
-        .style(Style::new().set("min-height", "5rem"))
-        .placeholder(context.language.label(
-            "description (optional)",
-            "説明 (任意)",
-            "priskribo (nedeviga)",
-        ))
-        .on_input(EventHandler::new(move |set_state| async move {
-            let value = crate::dom::get_textarea_value("textarea[name='module-description']");
-            set_state(Box::new(move |state: AppState| {
-                let mut next = state.clone();
-                next.module_definition_form.module_description_input = value;
-                next
-            }));
-        }))
-        .into_node()
+    rsx! {
+        div {
+            class: "event-detail-card",
+            style: "display: grid; gap: 0.5rem; padding: 0.8rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+            div {
+                style: "display: flex; justify-content: space-between; align-items: center;",
+                div {
+                    style: "font-size: 0.95rem; font-weight: 600;",
+                    "{context.language.label(\"Create module\", \"新規モジュール作成\", \"Krei modulon\")}"
+                }
+                button {
+                    r#type: "button",
+                    style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer;",
+                    onclick: move |_| {
+                        let mut state_sig = use_context::<Signal<AppState>>();
+                        state_sig.write().module_definition_form.is_form_open = false;
+                    },
+                    "{context.language.label(\"Cancel\", \"閉じる\", \"Fermi\")}"
+                }
+            }
+            input {
+                name: "module-name",
+                r#type: "text",
+                value: "{state.module_definition_form.module_name_input}",
+                placeholder: "{context.language.label(\"module name\", \"モジュール名\", \"modula nomo\")}",
+                style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
+                oninput: move |evt: FormEvent| {
+                    let mut state_sig = use_context::<Signal<AppState>>();
+                    state_sig.write().module_definition_form.module_name_input = evt.value();
+                }
+            }
+            textarea {
+                name: "module-description",
+                value: "{state.module_definition_form.module_description_input}",
+                placeholder: "{context.language.label(\"description (optional)\", \"説明 (任意)\", \"priskribo (nedeviga)\")}",
+                style: "min-height: 5rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
+                oninput: move |evt: FormEvent| {
+                    let mut state_sig = use_context::<Signal<AppState>>();
+                    state_sig.write().module_definition_form.module_description_input = evt.value();
+                }
+            }
+            button {
+                r#type: "button",
+                style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.9rem; border-radius: var(--radius-sm); cursor: pointer; justify-self: start;",
+                onclick: move |_| {
+                    let mut state_sig = use_context::<Signal<AppState>>();
+                    let state_val = state_sig.read().clone();
+                    let key = if let Some(key) = &state_val.current_key {
+                        key.clone()
+                    } else {
+                        return;
+                    };
+                    let module_name = state_val.module_definition_form.module_name_input.trim().to_string();
+                    let module_description = state_val.module_definition_form.module_description_input.clone();
+                    if module_name.is_empty() {
+                        state_sig.write().module_definition_form.result_message = Some(
+                            language.label("Error: module name is required", "エラー: モジュール名は必須です", "Eraro: modulo-nomo estas bezonata").to_string(),
+                        );
+                        return;
+                    }
+                    let force_offline = state_val.force_offline;
+
+                    spawn(async move {
+                        crate::event_submit::submit_event(
+                            definy_event::event::EventContent::ModuleDefinition(
+                                definy_event::event::ModuleDefinitionEvent {
+                                    module_name: module_name.into(),
+                                    description: module_description.into(),
+                                },
+                            ),
+                            key,
+                            force_offline,
+                            None,
+                            state_sig,
+                            move |next, record| {
+                                if record.status == crate::local_event::LocalEventStatus::Sent {
+                                    next.module_definition_form.result_message = None;
+                                } else {
+                                    next.module_definition_form.result_message = Some(
+                                        match record.status {
+                                            crate::local_event::LocalEventStatus::Queued => language.label("ModuleDefinition queued (offline)", "ModuleDefinition をキューに追加しました (オフライン)", "ModuleDefinition envicigita (senkonekte)").to_string(),
+                                            crate::local_event::LocalEventStatus::Failed => language.label("ModuleDefinition failed to send", "ModuleDefinition の送信に失敗しました", "ModuleDefinition sendado malsukcesis").to_string(),
+                                            crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                        }
+                                    );
+                                }
+                            },
+                        ).await;
+                    });
+
+                    let mut write_state = state_sig.write();
+                    write_state.module_definition_form.is_form_open = false;
+                    write_state.module_definition_form.module_name_input = String::new();
+                    write_state.module_definition_form.module_description_input = String::new();
+                    write_state.module_definition_form.result_message = None;
+                },
+                "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
+            }
+        }
+    }
 }

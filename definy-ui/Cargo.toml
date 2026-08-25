@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-narumincho-vdom = { path = "../narumincho-vdom" }
+dioxus = { version = "0.7.10", default-features = false, features = ["macro", "hooks", "signals", "html"] }
 base64 = "0.22"
 ed25519-dalek = { version = "2.2", features = ["rand_core"] }
 definy-event = { path = "../definy-event" }
@@ -39,6 +39,7 @@ web-sys = { version = "0.3.103", features = [
   "CredentialsContainer",
   "CredentialRequestOptions",
   "Storage",
+  "Location",
 ] }
 wasm-bindgen = "0.2.127"
 rand_core = { version = "0.6.4", features = ["getrandom"] }
@@ -52,6 +53,8 @@ serde_urlencoded = "0.7"
 sha2 = "0.10.9"
 
 [dev-dependencies]
+dioxus-ssr = { version = "0.7.10" }
+include_dir = "0.7.4"
 hyper = { version = "1.11", features = ["http1", "server"] }
 hyper-util = { version = "0.1.20", features = ["client-legacy", "http1"] }
 http-body-util = "0.1.4"

@@ -1,4 +1,4 @@
-use narumincho_vdom::*;
+use dioxus::prelude::*;
 
 use crate::app_state::{AppState, replace_local_event_records};
 use crate::language::Language;
@@ -27,351 +27,194 @@ fn format_time_ms(language: Language, time_ms: i64) -> String {
         .unwrap_or_else(|| language.label("unknown", "不明", "nekonata").to_string())
 }
 
-pub fn local_event_queue_view(state: &AppState, context: &PageContext) -> Node {
+#[component]
+pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
     let language = context.language;
-    let refresh_button = Button::new()
-        .on_click(EventHandler::new(move |set_state| {
-            let set_state = std::rc::Rc::new(set_state);
-            let set_state_for_async = set_state.clone();
-            async move {
-                set_state(Box::new(|state: AppState| {
-                    let mut next = state.clone();
-                    next.local_event_queue.is_loading = true;
-                    next
-                }));
-                let result = crate::indexed_db::load_event_records().await;
-                set_state_for_async(Box::new(move |state: AppState| {
-                    let mut next = state.clone();
-                    match result {
-                        Ok(records) => {
-                            replace_local_event_records(&mut next, records);
-                            next.local_event_queue.is_loading = false;
-                            next.local_event_queue.last_error = None;
-                        }
-                        Err(error) => {
-                            next.local_event_queue.is_loading = false;
-                            next.local_event_queue.last_error = Some(format!(
-                                "{}: {error:?}",
-                                language.label(
-                                    "Failed to load local events",
-                                    "ローカルイベントの読み込みに失敗しました",
-                                    "Malsukcesis ŝargi lokajn eventojn"
-                                )
-                            ));
+    let page_shell_style = crate::layout::page_shell_style("1.2rem");
+
+    rsx! {
+        div {
+            class: "page-shell",
+            style: "{page_shell_style}",
+            div {
+                style: "display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; flex-wrap: wrap;",
+                div {
+                    style: "display: grid; gap: 0.2rem;",
+                    h2 {
+                        style: "font-size: 1.4rem; font-weight: 600; margin: 0;",
+                        "{context.language.label(\"Local Events\", \"ローカルイベント\", \"Lokaj eventoj\")}"
+                    }
+                    div {
+                        style: "color: var(--text-secondary); font-size: 0.84rem; display: inline-flex;",
+                        "{context.language.label(\"Queue and history stored in IndexedDB\", \"IndexedDB に保存された送信履歴・送信待ちイベント\", \"Vico kaj historio konservitaj en IndexedDB\")}"
+                    }
+                }
+                div {
+                    style: "display: flex; gap: 0.5rem;",
+                    button {
+                        r#type: "button",
+                        style: "background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
+                        onclick: move |_| {
+                            let mut state_sig = use_context::<Signal<AppState>>();
+                            state_sig.write().local_event_queue.is_loading = true;
+                            spawn(async move {
+                                let result = crate::indexed_db::load_event_records().await;
+                                let mut next = state_sig.read().clone();
+                                match result {
+                                    Ok(records) => {
+                                        replace_local_event_records(&mut next, records);
+                                        next.local_event_queue.is_loading = false;
+                                        next.local_event_queue.last_error = None;
+                                    }
+                                    Err(error) => {
+                                        next.local_event_queue.is_loading = false;
+                                        next.local_event_queue.last_error = Some(format!(
+                                            "{}: {error:?}",
+                                            language.label(
+                                                "Failed to load local events",
+                                                "ローカルイベントの読み込みに失敗しました",
+                                                "Malsukcesis ŝargi lokajn eventojn"
+                                            )
+                                        ));
+                                    }
+                                }
+                                state_sig.set(next);
+                            });
+                        },
+                        "{context.language.label(\"Refresh\", \"更新\", \"Refreŝigi\")}"
+                    }
+                    button {
+                        r#type: "button",
+                        style: "background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
+                        onclick: move |_| {
+                            let mut state_sig = use_context::<Signal<AppState>>();
+                            let current = state_sig.read().force_offline;
+                            state_sig.write().force_offline = !current;
+                        },
+                        if state.force_offline {
+                            {context.language.label("Offline: On", "オフライン: オン", "Senkonekte: En")}
+                        } else {
+                            {context.language.label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")}
                         }
                     }
-                    next
-                }));
-            }
-        }))
-        .style(
-            Style::new()
-                .set("background", "rgb(255 255 255 / 0.08)")
-                .set("border", "1px solid var(--border)")
-                .set("color", "var(--text)")
-                .set("padding", "0.4rem 0.8rem")
-                .set("border-radius", "0.5rem"),
-        )
-        .children([text(context.language.label("Refresh", "更新", "Refreŝigi"))])
-        .into_node();
-
-    let offline_toggle = Button::new()
-        .on_click(EventHandler::new(async |set_state| {
-            set_state(Box::new(|state: AppState| {
-                let mut next = state.clone();
-                next.force_offline = !next.force_offline;
-                next
-            }));
-        }))
-        .style(
-            Style::new()
-                .set("background", "rgb(255 255 255 / 0.08)")
-                .set("border", "1px solid var(--border)")
-                .set("color", "var(--text)")
-                .set("padding", "0.4rem 0.8rem")
-                .set("border-radius", "0.5rem"),
-        )
-        .children([text(if state.force_offline {
-            context
-                .language
-                .label("Offline: On", "オフライン: オン", "Senkonekte: En")
-        } else {
-            context
-                .language
-                .label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
-        })])
-        .into_node();
-
-    let mut list_items = Vec::new();
-    if !state.local_event_queue.items.is_empty() {
-        for record in &state.local_event_queue.items {
-            let status = record.status.clone();
-            let status_badge = Div::new()
-                .style(
-                    Style::new()
-                        .set("background", status_color(&status))
-                        .set("color", "#0b0f19")
-                        .set("padding", "0.12rem 0.5rem")
-                        .set("border-radius", "999px")
-                        .set("font-size", "0.75rem")
-                        .set("font-weight", "600")
-                        .set("display", "inline-flex"),
-                )
-                .children([text(status_label(context.language, &status))])
-                .into_node();
-
-            let summary = match definy_event::verify_and_deserialize(&record.event_binary) {
-                Ok((_, event)) => {
-                    crate::event_presenter::event_summary_text(context.language, &event)
                 }
-                Err(_) => context
-                    .language
-                    .label("Invalid event", "無効なイベント", "Nevalida evento")
-                    .to_string(),
-            };
+            }
+            if state.local_event_queue.is_loading {
+                div {
+                    style: "color: var(--text-secondary); font-size: 0.88rem; text-align: center; padding: 1.5rem;",
+                    "{context.language.label(\"Loading...\", \"読み込み中...\", \"Ŝargado...\")}"
+                }
+            } else if let Some(error) = &state.local_event_queue.last_error {
+                div {
+                    class: "error-card",
+                    style: "font-size: 0.86rem; color: var(--error); padding: 0.8rem; background: rgb(248 113 113 / 0.1); border-radius: var(--radius-sm);",
+                    "{error}"
+                }
+            }
+            if state.local_event_queue.items.is_empty() && !state.local_event_queue.is_loading {
+                div {
+                    class: "event-detail-card",
+                    style: "padding: 3rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+                    div {
+                        style: "font-size: 1.5rem; opacity: 0.5;",
+                        "⚡"
+                    }
+                    div {
+                        style: "font-size: 0.95rem; color: var(--text);",
+                        "{context.language.label(\"No local events in queue\", \"キューにローカルイベントはありません\", \"Neniuj lokaj eventoj en vico\")}"
+                    }
+                }
+            } else {
+                div {
+                    class: "event-list",
+                    style: "display: grid; gap: 0.75rem;",
+                    for record in &state.local_event_queue.items {
+                        {
+                            let status = record.status.clone();
+                            let hash = record.hash.clone();
+                            let summary = match definy_event::verify_and_deserialize(&record.event_binary) {
+                                Ok((_, event)) => crate::event_presenter::event_summary_text(context.language, &event),
+                                Err(_) => context.language.label("Invalid event", "無効なイベント", "Nevalida evento").to_string(),
+                            };
+                            let time_formatted = format_time_ms(context.language, record.updated_at_ms);
+                            let bg_color = status_color(&status);
+                            let lbl = status_label(context.language, &status);
+                            let err_msg = record.last_error.clone();
 
-            let mut actions = Vec::new();
-            if status != LocalEventStatus::Sent {
-                let hash = record.hash.clone();
-                actions.push(
-                    Button::new()
-                        .on_click(EventHandler::new(move |set_state| {
-                            let hash = hash.clone();
-                            async move {
-                                let result = crate::indexed_db::remove_event_record(&hash).await;
-                                set_state(Box::new(move |state: AppState| {
-                                    let mut next = state.clone();
-                                    match result {
-                                        Ok(()) => {
-                                            next.local_event_queue
-                                                .items
-                                                .retain(|item| item.hash != hash);
+                            rsx! {
+                                div {
+                                    key: "{hash}",
+                                    class: "event-card",
+                                    style: "display: grid; gap: 0.4rem; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+                                    div {
+                                        style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;",
+                                        div {
+                                            style: "background: {bg_color}; color: #0b0f19; padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; display: inline-flex;",
+                                            "{lbl}"
                                         }
-                                        Err(error) => {
-                                            next.local_event_queue.last_error = Some(format!(
-                                                "{}: {error:?}",
-                                                language.label(
-                                                    "Failed to cancel queued event",
-                                                    "キュー済みイベントのキャンセルに失敗しました",
-                                                    "Malsukcesis nuligi envicigitan eventon",
-                                                )
-                                            ));
+                                        div {
+                                            class: "mono",
+                                            style: "color: var(--text-secondary); font-size: 0.78rem;",
+                                            "{hash}"
                                         }
                                     }
-                                    next
-                                }));
+                                    div {
+                                        style: "font-weight: 600; font-size: 0.92rem;",
+                                        "{summary}"
+                                    }
+                                    div {
+                                        style: "color: var(--text-secondary); font-size: 0.78rem;",
+                                        "{time_formatted}"
+                                    }
+                                    if let Some(err) = err_msg {
+                                        div {
+                                            style: "color: #fca5a5; font-size: 0.78rem; word-break: break-word;",
+                                            "{err}"
+                                        }
+                                    }
+                                    if status != LocalEventStatus::Sent {
+                                        div {
+                                            style: "display: flex; gap: 0.4rem;",
+                                            button {
+                                                r#type: "button",
+                                                style: "background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.3rem 0.6rem; border-radius: 0.45rem; cursor: pointer;",
+                                                onclick: {
+                                                    let hash_c = hash.clone();
+                                                    move |_| {
+                                                        let hash_c = hash_c.clone();
+                                                        let mut state_sig = use_context::<Signal<AppState>>();
+                                                        spawn(async move {
+                                                            let result = crate::indexed_db::remove_event_record(&hash_c).await;
+                                                            let mut next = state_sig.read().clone();
+                                                            match result {
+                                                                Ok(()) => {
+                                                                    next.local_event_queue.items.retain(|item| item.hash != hash_c);
+                                                                }
+                                                                Err(error) => {
+                                                                    next.local_event_queue.last_error = Some(format!(
+                                                                        "{}: {error:?}",
+                                                                        language.label(
+                                                                            "Failed to cancel queued event",
+                                                                            "キュー済みイベントのキャンセルに失敗しました",
+                                                                            "Malsukcesis nuligi envicigitan eventon",
+                                                                        )
+                                                                    ));
+                                                                }
+                                                            }
+                                                            state_sig.set(next);
+                                                        });
+                                                    }
+                                                },
+                                                "{context.language.label(\"Cancel\", \"キャンセル\", \"Nuligi\")}"
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }))
-                        .style(
-                            Style::new()
-                                .set("background", "transparent")
-                                .set("border", "1px solid var(--border)")
-                                .set("color", "var(--text)")
-                                .set("padding", "0.3rem 0.6rem")
-                                .set("border-radius", "0.45rem"),
-                        )
-                        .children([text(context.language.label(
-                            "Cancel",
-                            "キャンセル",
-                            "Nuligi",
-                        ))])
-                        .into_node(),
-                );
+                        }
+                    }
+                }
             }
-
-            let error_note = record
-                .last_error
-                .as_ref()
-                .map(|error| {
-                    Div::new()
-                        .style(
-                            Style::new()
-                                .set("color", "#fca5a5")
-                                .set("font-size", "0.78rem")
-                                .set("word-break", "break-word"),
-                        )
-                        .children([text(error)])
-                        .into_node()
-                })
-                .unwrap_or_else(|| Div::new().children([]).into_node());
-
-            list_items.push(
-                Div::new()
-                    .class("event-card")
-                    .style(Style::new().set("display", "grid").set("gap", "0.4rem"))
-                    .children([
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("display", "flex")
-                                    .set("justify-content", "space-between")
-                                    .set("align-items", "center")
-                                    .set("gap", "0.5rem"),
-                            )
-                            .children([
-                                status_badge,
-                                Div::new()
-                                    .style(
-                                        Style::new()
-                                            .set("color", "var(--text-secondary)")
-                                            .set("font-size", "0.78rem")
-                                            .set("font-family", "'JetBrains Mono', monospace")
-                                            .set("display", "inline-flex"),
-                                    )
-                                    .children([text(record.hash.to_string())])
-                                    .into_node(),
-                            ])
-                            .into_node(),
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-weight", "600")
-                                    .set("font-size", "0.92rem"),
-                            )
-                            .children([text(summary)])
-                            .into_node(),
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("color", "var(--text-secondary)")
-                                    .set("font-size", "0.78rem"),
-                            )
-                            .children([text(format_time_ms(
-                                context.language,
-                                record.updated_at_ms,
-                            ))])
-                            .into_node(),
-                        error_note,
-                        if actions.is_empty() {
-                            Div::new().children([]).into_node()
-                        } else {
-                            Div::new()
-                                .style(Style::new().set("display", "flex").set("gap", "0.4rem"))
-                                .children(actions)
-                                .into_node()
-                        },
-                    ])
-                    .into_node(),
-            );
         }
     }
-
-    Div::new()
-        .class("page-shell")
-        .style(crate::layout::page_shell_style("1.2rem"))
-        .children([
-            Div::new()
-                .style(
-                    Style::new()
-                        .set("display", "flex")
-                        .set("justify-content", "space-between")
-                        .set("align-items", "center")
-                        .set("gap", "0.8rem")
-                        .set("flex-wrap", "wrap"),
-                )
-                .children([
-                    Div::new()
-                        .style(Style::new().set("display", "grid").set("gap", "0.2rem"))
-                        .children([
-                            H2::new()
-                                .style(
-                                    Style::new()
-                                        .set("font-size", "1.4rem")
-                                        .set("font-weight", "600"),
-                                )
-                                .children([text(context.language.label(
-                                    "Local Events",
-                                    "ローカルイベント",
-                                    "Lokaj eventoj",
-                                ))])
-                                .into_node(),
-                            Div::new()
-                                .style(
-                                    Style::new()
-                                        .set("color", "var(--text-secondary)")
-                                        .set("font-size", "0.84rem")
-                                        .set("display", "inline-flex"),
-                                )
-                                .children([text(context.language.label(
-                                    "Queue and history stored in IndexedDB",
-                                    "IndexedDB に保存された送信履歴・送信待ちイベント",
-                                    "Vico kaj historio konservitaj en IndexedDB",
-                                ))])
-                                .into_node(),
-                        ])
-                        .into_node(),
-                    Div::new()
-                        .style(Style::new().set("display", "flex").set("gap", "0.5rem"))
-                        .children([refresh_button, offline_toggle])
-                        .into_node(),
-                ])
-                .into_node(),
-            if state.local_event_queue.is_loading {
-                Div::new()
-                    .style(
-                        Style::new()
-                            .set("color", "var(--text-secondary)")
-                            .set("font-size", "0.88rem")
-                            .set("text-align", "center")
-                            .set("padding", "1.5rem"),
-                    )
-                    .children([text(context.language.label(
-                        "Loading...",
-                        "読み込み中...",
-                        "Ŝargado...",
-                    ))])
-                    .into_node()
-            } else if let Some(error) = &state.local_event_queue.last_error {
-                Div::new()
-                    .class("error-card")
-                    .style(Style::new().set("font-size", "0.86rem"))
-                    .children([text(error)])
-                    .into_node()
-            } else {
-                Div::new().children([]).into_node()
-            },
-            if list_items.is_empty() && !state.local_event_queue.is_loading {
-                Div::new()
-                    .class("event-detail-card")
-                    .style(
-                        Style::new()
-                            .set("padding", "3rem 1.5rem")
-                            .set("text-align", "center")
-                            .set("display", "grid")
-                            .set("gap", "0.5rem")
-                            .set("justify-items", "center")
-                            .set("color", "var(--text-secondary)"),
-                    )
-                    .children([
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "1.5rem")
-                                    .set("opacity", "0.5"),
-                            )
-                            .children([text("⚡")])
-                            .into_node(),
-                        Div::new()
-                            .style(
-                                Style::new()
-                                    .set("font-size", "0.95rem")
-                                    .set("color", "var(--text)"),
-                            )
-                            .children([text(context.language.label(
-                                "No local events in queue",
-                                "キューにローカルイベントはありません",
-                                "Neniuj lokaj eventoj en vico",
-                            ))])
-                            .into_node(),
-                    ])
-                    .into_node()
-            } else {
-                Div::new()
-                    .class("event-list")
-                    .style(Style::new().set("display", "grid").set("gap", "0.75rem"))
-                    .children(list_items)
-                    .into_node()
-            },
-        ])
-        .into_node()
 }

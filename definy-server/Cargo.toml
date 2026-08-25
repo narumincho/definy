@@ -10,7 +10,8 @@ http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 definy-ui = { path = "../definy-ui" }
 definy-event = { path = "../definy-event" }
-narumincho-vdom = { path = "../narumincho-vdom" }
+dioxus = { version = "0.7.10", default-features = false, features = ["ssr", "macro", "hooks"] }
+dioxus-ssr = { version = "0.7.10" }
 sha2 = "0.10.9"
 serde = { version = "1", features = ["derive"] }
 serde_cbor = "0.10"
@@ -30,3 +31,4 @@ strum_macros = "0.27.2"
 url = "2.5.8"
 chrono = { version = "0.4.44", features = ["serde"] }
 rand = "0.8.5"
+include_dir = "0.7.4"
