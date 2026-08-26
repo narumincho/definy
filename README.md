@@ -58,7 +58,7 @@ Dioxus CLI (`dx`) を使用してホットリロード付きで Web クライア
 
 事前準備 (初回のみ):
 ```sh
-cargo install dioxus-cli --locked
+curl -sSL https://dioxus.dev/install.sh | bash
 ```
 
 ホットリロード起動コマンド:
