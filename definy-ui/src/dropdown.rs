@@ -42,9 +42,10 @@ pub fn SearchableDropdown(
 
     rsx! {
         div {
+            style: "width: 100%; max-width: 22rem; position: relative;",
             button {
                 r#type: "button",
-                style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name};",
+                style: "width: 100%; text-align: left; padding: 0.42rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name}; box-sizing: border-box;",
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "show",
                 "{current_label}"
@@ -56,7 +57,7 @@ pub fn SearchableDropdown(
             div {
                 id: "{panel_id}",
                 "popover": "auto",
-                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); min-width: max(100%, 22rem); margin: 2px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);",
+                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); width: anchor-size(width); min-width: 14rem; max-width: min(90vw, 22rem); margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
                 input {
                     r#type: "text",
                     autofocus: true,
