@@ -45,10 +45,30 @@ pub fn PartDetailView(
                         "{} {updated_at_str}",
                         context.language.label("Updated at:", "更新日時:", "Ĝisdatigita je:"),
                     );
+                    let module_snapshot = crate::module_projection::find_module_snapshot(
+                        &state,
+                        &snapshot.module_definition_event_hash,
+                    );
+                    let module_name = module_snapshot
+                        .as_ref()
+                        .map(|m| m.module_name.as_str())
+                        .unwrap_or("module");
+                    let module_label = context
+                        .language
+                        .label("Module:", "モジュール:", "Modulo:");
                     rsx! {
                         div {
                             class: "event-detail-card",
                             style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+                            div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem;",
+                                span { style: "color: var(--text-secondary);", "{module_label}" }
+                                a {
+                                    href: context
+                                        .href_with_lang(Location::Module(snapshot.module_definition_event_hash.clone())),
+                                    style: "color: var(--primary); font-weight: 500; text-decoration: none;",
+                                    "{module_name}"
+                                }
+                            }
                             div { style: "font-size: 0.86rem; color: var(--text-secondary);", "{updated_at_label}" }
                             if snapshot.part_description.is_empty() {
                                 div { style: "color: var(--text-secondary);",
@@ -143,22 +163,24 @@ fn PartUpdateForm(
     let (initial_name, initial_description, initial_expression, initial_module_hash) =
         effective_part_update_form(&state, &definition_event_hash);
     let dropdown_name = format!("part-update-module-{}", hash_as_base64);
-    let mut module_options = vec![(
-        "".to_string(),
-        context
-            .language
-            .label("No module", "モジュールなし", "Neniu modulo")
-            .to_string(),
-    )];
-
-    module_options.extend(
-        collect_module_snapshots(&state)
-            .into_iter()
-            .map(|module| (module.definition_event_hash.to_string(), module.module_name)),
-    );
+    let modules = collect_module_snapshots(&state);
+    let module_options: Vec<(String, String)> = modules
+        .iter()
+        .map(|module| {
+            (
+                module.definition_event_hash.to_string(),
+                module.module_name.clone(),
+            )
+        })
+        .collect();
     let current_module_value = initial_module_hash
         .map(|hash| hash.to_string())
-        .unwrap_or_else(|| "".to_string());
+        .unwrap_or_else(|| {
+            modules
+                .first()
+                .map(|m| m.definition_event_hash.to_string())
+                .unwrap_or_default()
+        });
 
     let language = context.language;
     let def_hash_clone = definition_event_hash.clone();
@@ -307,7 +329,18 @@ fn PartUpdateForm(
                     }
                     let part_description = current_part_description;
                     let expression = current_expression;
-                    let module_definition_event_hash = current_module_hash;
+                    let Some(module_definition_event_hash) = current_module_hash else {
+                        state_sig.write().event_detail_eval_result = Some(
+                            language
+                                .label(
+                                    "Error: module is required",
+                                    "エラー: モジュールを選択してください",
+                                    "Eraro: modulo estas bezonata",
+                                )
+                                .to_string(),
+                        );
+                        return;
+                    };
                     let force_offline = state_val.force_offline;
                     let def_hash_for_cb = def_hash_clone.clone();
                     spawn(async move {
@@ -337,8 +370,9 @@ fn PartUpdateForm(
                                                 .part_description;
                                             next.part_update_form.expression_input = snapshot
                                                 .expression;
-                                            next.part_update_form.module_definition_event_hash = snapshot
-                                                .module_definition_event_hash;
+                                            next.part_update_form.module_definition_event_hash = Some(
+                                                snapshot.module_definition_event_hash,
+                                            );
                                         }
                                         next.event_detail_eval_result = Some(
                                             language
@@ -414,7 +448,7 @@ fn effective_part_update_form(
             snapshot.part_name,
             snapshot.part_description,
             snapshot.expression,
-            snapshot.module_definition_event_hash,
+            Some(snapshot.module_definition_event_hash),
         );
     }
     (

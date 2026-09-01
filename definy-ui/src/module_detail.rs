@@ -19,9 +19,7 @@ pub fn ModuleDetailView(
     if let Some(module_snapshot) = module_snapshot {
         let parts_in_module = collect_part_snapshots(&state)
             .into_iter()
-            .filter(|snapshot| {
-                snapshot.module_definition_event_hash == Some(definition_event_hash.clone())
-            })
+            .filter(|snapshot| snapshot.module_definition_event_hash == definition_event_hash)
             .collect::<Vec<_>>();
 
         let account_name_map = state.account_name_map();

@@ -174,6 +174,23 @@ fn RenderDetailContent(
                 .expression
                 .as_ref()
                 .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
+            let module_hash = part_definition_event.module_definition_event_hash.clone();
+            let module_snapshot =
+                crate::module_projection::find_module_snapshot(&state, &module_hash);
+            let module_name = module_snapshot
+                .as_ref()
+                .map(|m| m.module_name.as_str())
+                .unwrap_or("module");
+            let open_part_label = context.language.label(
+                "Open part detail →",
+                "パーツ詳細を開く →",
+                "Malfermi partajn detalojn →",
+            );
+            let module_label = context.language.label("Module:", "モジュール:", "Modulo:");
+            let expr_body_label =
+                context
+                    .language
+                    .label("Expression Body", "本体の式", "Esprimo korpo");
 
             rsx! {
                 div { style: "display: grid; gap: 0.75rem;",
@@ -191,7 +208,15 @@ fn RenderDetailContent(
                         a {
                             href: context.href_with_lang(Location::Part(hash.clone())),
                             style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                            "{context.language.label(\"Open part detail →\", \"パーツ詳細を開く →\", \"Malfermi partajn detalojn →\")}"
+                            "{open_part_label}"
+                        }
+                    }
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem;",
+                        span { style: "color: var(--text-secondary);", "{module_label}" }
+                        a {
+                            href: context.href_with_lang(Location::Module(module_hash)),
+                            style: "color: var(--primary); font-weight: 500; text-decoration: none;",
+                            "{module_name}"
                         }
                     }
                     if !part_definition_event.description.is_empty() {
@@ -202,7 +227,7 @@ fn RenderDetailContent(
                     if let Some(expr) = &part_definition_event.expression {
                         div { style: "display: grid; gap: 0.35rem;",
                             div { style: "font-size: 0.76rem; color: var(--text-secondary);",
-                                "{context.language.label(\"Expression Body\", \"本体の式\", \"Esprimo korpo\")}"
+                                "{expr_body_label}"
                             }
                             div {
                                 class: "mono",
@@ -225,6 +250,23 @@ fn RenderDetailContent(
                 .expression
                 .as_ref()
                 .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
+            let module_hash = part_update_event.module_definition_event_hash.clone();
+            let module_snapshot =
+                crate::module_projection::find_module_snapshot(&state, &module_hash);
+            let module_name = module_snapshot
+                .as_ref()
+                .map(|m| m.module_name.as_str())
+                .unwrap_or("module");
+            let open_part_label = context.language.label(
+                "Open part detail →",
+                "パーツ詳細を開く →",
+                "Malfermi partajn detalojn →",
+            );
+            let module_label = context.language.label("Module:", "モジュール:", "Modulo:");
+            let expr_body_label =
+                context
+                    .language
+                    .label("Expression Body", "本体の式", "Esprimo korpo");
 
             rsx! {
                 div { style: "display: grid; gap: 0.75rem;",
@@ -235,7 +277,15 @@ fn RenderDetailContent(
                         a {
                             href: context.href_with_lang(Location::Part(base_hash.clone())),
                             style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                            "{context.language.label(\"Open part detail →\", \"パーツ詳細を開く →\", \"Malfermi partajn detalojn →\")}"
+                            "{open_part_label}"
+                        }
+                    }
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem;",
+                        span { style: "color: var(--text-secondary);", "{module_label}" }
+                        a {
+                            href: context.href_with_lang(Location::Module(module_hash)),
+                            style: "color: var(--primary); font-weight: 500; text-decoration: none;",
+                            "{module_name}"
                         }
                     }
                     div { style: "display: grid; gap: 0.25rem;",
@@ -251,7 +301,7 @@ fn RenderDetailContent(
                     if let Some(expr) = &part_update_event.expression {
                         div { style: "display: grid; gap: 0.35rem;",
                             div { style: "font-size: 0.76rem; color: var(--text-secondary);",
-                                "{context.language.label(\"Expression Body\", \"本体の式\", \"Esprimo korpo\")}"
+                                "{expr_body_label}"
                             }
                             div {
                                 class: "mono",

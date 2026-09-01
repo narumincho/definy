@@ -787,7 +787,7 @@ mod tests {
                             part_type: Some(definy_event::event::PartType::Number),
                             description: "".into(),
                             expression: Some(part_expression),
-                            module_definition_event_hash: None,
+                            module_definition_event_hash: definition_hash.clone(),
                         },
                     ),
                 },

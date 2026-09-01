@@ -176,6 +176,21 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     // Repository first commit timestamp: 2019-01-31T13:36:01+09:00 (2019-01-31T04:36:01Z)
     let first_commit_time = chrono::DateTime::from_timestamp(1548909361, 0).unwrap();
 
+    let core_module_event = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(1),
+        content: definy_event::event::EventContent::ModuleDefinition(
+            definy_event::event::ModuleDefinitionEvent {
+                module_name: "core".into(),
+                description: "Core built-in module for definy".into(),
+            },
+        ),
+    };
+    let core_module_binary =
+        definy_event::sign_and_serialize(core_module_event.clone(), &signing_key)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize core module event: {:?}", e))?;
+    let core_module_hash = definy_event::EventHashId::from_bytes(&core_module_binary);
+
     let events = vec![
         definy_event::event::Event {
             account_id: account_id.clone(),
@@ -186,9 +201,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 },
             ),
         },
+        core_module_event,
         definy_event::event::Event {
             account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(1),
+            time: first_commit_time + chrono::Duration::milliseconds(2),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
                     part_name: "let".into(),
@@ -197,22 +213,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Let,
                     )),
-                    module_definition_event_hash: None,
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(2),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "plus".into(),
-                    part_type: None,
-                    description: "Compiler built-in addition".into(),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Plus,
-                    )),
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -221,13 +222,13 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(3),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "number literal".into(),
-                    part_type: Some(definy_event::event::PartType::Number),
-                    description: "Compiler built-in number literal".into(),
+                    part_name: "plus".into(),
+                    part_type: None,
+                    description: "Compiler built-in addition".into(),
                     expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::NumberLiteral,
+                        definy_event::event::CompilerBuiltin::Plus,
                     )),
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -236,13 +237,13 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(4),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "if".into(),
-                    part_type: None,
-                    description: "Compiler built-in conditional expression".into(),
+                    part_name: "number literal".into(),
+                    part_type: Some(definy_event::event::PartType::Number),
+                    description: "Compiler built-in number literal".into(),
                     expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::If,
+                        definy_event::event::CompilerBuiltin::NumberLiteral,
                     )),
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -251,11 +252,13 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(5),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "Number".into(),
-                    part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in 64-bit integer type".into(),
-                    expression: None,
-                    module_definition_event_hash: None,
+                    part_name: "if".into(),
+                    part_type: None,
+                    description: "Compiler built-in conditional expression".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::If,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -264,11 +267,11 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(6),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "String".into(),
+                    part_name: "Number".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in UTF-8 string type".into(),
+                    description: "Built-in 64-bit integer type".into(),
                     expression: None,
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -277,11 +280,11 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(7),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "Boolean".into(),
+                    part_name: "String".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in boolean type".into(),
+                    description: "Built-in UTF-8 string type".into(),
                     expression: None,
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -290,11 +293,11 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(8),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "List".into(),
+                    part_name: "Boolean".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in list type constructor".into(),
+                    description: "Built-in boolean type".into(),
                     expression: None,
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -303,13 +306,26 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(9),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
+                    part_name: "List".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "Built-in list type constructor".into(),
+                    expression: None,
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(10),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
                     part_name: "Equal".into(),
                     part_type: None,
                     description: "Compiler built-in equality comparison".into(),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Equal,
                     )),
-                    module_definition_event_hash: None,
+                    module_definition_event_hash: core_module_hash.clone(),
                 },
             ),
         },
@@ -465,13 +481,18 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(20), Some(0)).await.unwrap();
-        // 1 CreateAccount + 9 PartDefinition = 10 events
-        assert_eq!(events.len(), 10);
+        // 1 CreateAccount + 1 ModuleDefinition + 9 PartDefinition = 11 events
+        assert_eq!(events.len(), 11);
 
         let mut part_names = Vec::new();
+        let mut has_core_module = false;
         for event_binary in events.iter() {
             let (_, event) = definy_event::verify_and_deserialize(event_binary).unwrap();
             match event.content {
+                definy_event::event::EventContent::ModuleDefinition(module) => {
+                    assert_eq!(module.module_name.as_ref(), "core");
+                    has_core_module = true;
+                }
                 definy_event::event::EventContent::PartDefinition(part) => {
                     part_names.push(part.part_name.to_string());
                 }
@@ -482,6 +503,7 @@ mod tests {
             }
         }
 
+        assert!(has_core_module);
         assert!(part_names.contains(&"let".to_string()));
         assert!(part_names.contains(&"plus".to_string()));
         assert!(part_names.contains(&"number literal".to_string()));
@@ -495,6 +517,6 @@ mod tests {
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(20), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 10);
+        assert_eq!(events_after.len(), 11);
     }
 }

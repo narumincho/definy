@@ -95,6 +95,17 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                 .unwrap_or_else(|| {
                                     context.language.label("(none)", "(なし)", "(neniu)").to_string()
                                 });
+                            let module_snapshot = crate::module_projection::find_module_snapshot(
+                                &state,
+                                &part.module_definition_event_hash,
+                            );
+                            let module_name = module_snapshot
+                                .as_ref()
+                                .map(|m| m.module_name.as_str())
+                                .unwrap_or("module");
+                            let module_label = context
+                                .language
+                                .label("Module:", "モジュール:", "Modulo:");
                             rsx! {
                                 div {
                                     key: "{def_hash}",
@@ -108,6 +119,14 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                         }
                                         div { style: "font-size: 0.75rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.45rem; border-radius: var(--radius-full);",
                                             "{optional_part_type_text(&part.part_type)}"
+                                        }
+                                    }
+                                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;",
+                                        span { style: "color: var(--text-secondary);", "{module_label}" }
+                                        a {
+                                            href: context.href_with_lang(Location::Module(part.module_definition_event_hash.clone())),
+                                            style: "color: var(--primary); text-decoration: none; font-weight: 500;",
+                                            "{module_name}"
                                         }
                                     }
                                     div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
@@ -265,10 +284,24 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                             .to_string();
                         let description = state_val.part_definition_form.part_description_input.clone();
                         let part_type = state_val.part_definition_form.part_type_input.clone();
+                        let modules = collect_module_snapshots(&state_val);
                         let module_definition_event_hash = state_val
                             .part_definition_form
                             .module_definition_event_hash
-                            .clone();
+                            .clone()
+                            .or_else(|| modules.first().map(|m| m.definition_event_hash.clone()));
+                        let Some(module_definition_event_hash) = module_definition_event_hash else {
+                            state_sig.write().part_definition_form.eval_result = Some(
+                                language
+                                    .label(
+                                        "Error: module is required (create a module first)",
+                                        "エラー: モジュールを選択してください (先にモジュールを作成してください)",
+                                        "Eraro: modulo estas bezonata (kreu modulon unue)",
+                                    )
+                                    .to_string(),
+                            );
+                            return;
+                        };
                         if part_name.is_empty() {
                             state_sig.write().part_definition_form.eval_result = Some(
                                 language
@@ -394,25 +427,28 @@ fn PartTypeInput(state: AppState, context: PageContext) -> Element {
 
 #[component]
 fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
-    let mut options = vec![(
-        "".to_string(),
-        context
-            .language
-            .label("No module", "モジュールなし", "Neniu modulo")
-            .to_string(),
-    )];
-    options.extend(
-        collect_module_snapshots(&state)
-            .into_iter()
-            .map(|module| (module.definition_event_hash.to_string(), module.module_name)),
-    );
+    let modules = collect_module_snapshots(&state);
+    let options: Vec<(String, String)> = modules
+        .iter()
+        .map(|module| {
+            (
+                module.definition_event_hash.to_string(),
+                module.module_name.clone(),
+            )
+        })
+        .collect();
 
-    let current_value: String = state
+    let current_value = state
         .part_definition_form
         .module_definition_event_hash
-        .clone()
+        .as_ref()
         .map(|hash| hash.to_string())
-        .unwrap_or_default();
+        .unwrap_or_else(|| {
+            modules
+                .first()
+                .map(|m| m.definition_event_hash.to_string())
+                .unwrap_or_default()
+        });
 
     rsx! {
         div { style: "display: grid; gap: 0.35rem;",
