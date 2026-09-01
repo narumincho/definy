@@ -55,15 +55,23 @@ cargo run -p definy-build && cargo run -p definy-server
 ### 2. Dioxus のホットリロードで開発する場合
 
 Dioxus CLI (`dx`) を使用してホットリロード付きで Web クライアントを開発・即座に画面確認できます。
+バックエンド API (`definy-server`) と通信する場合は、`definy-server` を別ターミナルで起動します（ポート 8080 からアクセス時はデフォルトで `http://localhost:8000` に接続します。接続先を変更したい場合は環境変数 `DEFINY_API_URL` を指定可能です）。
 
 事前準備 (初回のみ):
 ```sh
 curl -sSL https://dioxus.dev/install.sh | bash
 ```
 
-ホットリロード起動コマンド:
+ターミナル 1 (APIサーバー起動):
+```sh
+cargo run -p definy-server
+```
+
+ターミナル 2 (ホットリロードクライアント起動):
 ```sh
 dx serve --package definy-client
+# 別のAPIサーバーURLを指定する場合:
+# DEFINY_API_URL=http://localhost:8000 dx serve --package definy-client
 ```
 
 ※ UIコード (`definy-ui`) やクライアントコードを編集・保存すると、ブラウザ上で即座に変更が反映されます。

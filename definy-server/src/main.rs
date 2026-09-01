@@ -29,12 +29,17 @@ async fn main() -> Result<(), anyhow::Error> {
         db: Arc::new(RwLock::new(None)),
     };
 
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8000);
+
     let addr = SocketAddr::from((
         std::net::IpAddr::V6(match std::env::var("FLY_APP_NAME") {
             Ok(_) => std::net::Ipv6Addr::UNSPECIFIED,
             Err(_) => std::net::Ipv6Addr::LOCALHOST,
         }),
-        8000,
+        port,
     ));
 
     let listener = TcpListener::bind(addr).await?;
@@ -89,6 +94,19 @@ async fn handler(
         path,
         address
     );
+
+    if request.method() == hyper::Method::OPTIONS {
+        return Response::builder()
+            .status(204)
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            .header(
+                "Access-Control-Allow-Headers",
+                "Content-Type, Authorization, Accept",
+            )
+            .header("Access-Control-Max-Age", "86400")
+            .body(Full::new(Bytes::new()));
+    }
 
     let accepts_html = request
         .headers()
@@ -194,6 +212,7 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
         return Response::builder()
             .status(503)
             .header("Content-Type", "text/html; charset=utf-8")
+            .header("Access-Control-Allow-Origin", "*")
             .body(Full::new(Bytes::from(
                 "<!doctype html><html><head><meta charset=\"utf-8\"><title>503 Service Unavailable</title></head><body><h1>データベースに接続できません</h1></body></html>",
             )));
@@ -202,6 +221,7 @@ fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hy
     Response::builder()
         .status(503)
         .header("Content-Type", "text/plain; charset=utf-8")
+        .header("Access-Control-Allow-Origin", "*")
         .body(Full::new(Bytes::from("Database is unavailable")))
 }
 
