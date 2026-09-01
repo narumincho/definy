@@ -5,7 +5,7 @@ use definy_event::{
 
 use crate::AppState;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct PartSnapshot {
     pub definition_event_hash: EventHashId,
     pub latest_event_hash: EventHashId,
@@ -14,7 +14,7 @@ pub struct PartSnapshot {
     pub part_type: Option<definy_event::event::PartType>,
     pub part_description: String,
     pub expression: Option<Expression>,
-    pub module_definition_event_hash: Option<EventHashId>,
+    pub module_definition_event_hash: EventHashId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub has_definition: bool,
 }
@@ -74,10 +74,8 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                 entry.part_name = part_update.part_name.to_string();
                 entry.part_description = part_update.part_description.to_string();
                 entry.expression = part_update.expression.clone();
-                if part_update.module_definition_event_hash.is_some() {
-                    entry.module_definition_event_hash =
-                        part_update.module_definition_event_hash.clone();
-                }
+                entry.module_definition_event_hash =
+                    part_update.module_definition_event_hash.clone();
                 entry.updated_at = event.time;
             }
             _ => {}

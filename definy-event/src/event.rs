@@ -33,8 +33,7 @@ pub struct PartDefinitionEvent {
     pub description: Box<str>,
     #[serde(default)]
     pub expression: Option<Expression>,
-    #[serde(default)]
-    pub module_definition_event_hash: Option<EventHashId>,
+    pub module_definition_event_hash: EventHashId,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -44,8 +43,7 @@ pub struct PartUpdateEvent {
     pub part_definition_event_hash: EventHashId,
     #[serde(default)]
     pub expression: Option<Expression>,
-    #[serde(default)]
-    pub module_definition_event_hash: Option<EventHashId>,
+    pub module_definition_event_hash: EventHashId,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -102,6 +100,7 @@ pub enum CompilerBuiltin {
     Plus,
     NumberLiteral,
     If,
+    Equal,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

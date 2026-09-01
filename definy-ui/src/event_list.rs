@@ -105,9 +105,7 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
     rsx! {
-        div {
-            class: "page-shell",
-            style: "{page_shell_style}",
+        div { class: "page-shell", style: "{page_shell_style}",
             crate::dropdown::SearchableDropdown {
                 name: "event_filter".to_string(),
                 current_value: current_filter.clone(),
@@ -133,11 +131,9 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                             let _ = window.location().set_href(&url);
                         }
                     }
-                }
+                },
             }
-            div {
-                class: "event-list",
-                style: "display: grid; gap: 1rem;",
+            div { class: "event-list", style: "display: grid; gap: 1rem;",
                 for hash in hashes {
                     if let Some(event_result) = state.event_cache.get(&hash) {
                         EventCard {
@@ -151,13 +147,11 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                 }
             }
             if state.event_list_state.is_loading {
-                div {
-                    style: "text-align: center; padding: 1.5rem 1rem; color: var(--text-secondary); font-size: 0.85rem;",
+                div { style: "text-align: center; padding: 1.5rem 1rem; color: var(--text-secondary); font-size: 0.85rem;",
                     "{context.language.label(\"Loading events...\", \"イベントを読み込み中...\", \"Ŝargado de eventoj...\")}"
                 }
             } else if state.event_list_state.has_more {
-                div {
-                    style: "display: flex; justify-content: center; padding: 0.4rem 0 0.8rem;",
+                div { style: "display: flex; justify-content: center; padding: 0.4rem 0 0.8rem;",
                     button {
                         r#type: "button",
                         style: "display: inline-flex; align-items: center; justify-content: center; padding: 0.45rem 1.2rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-full); color: var(--text); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sm);",
@@ -166,17 +160,31 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                             let state_val = state_sig.read().clone();
                             spawn(async move {
                                 let set_state = state_sig;
-                                crate::app_state::load_more_events(state_val, std::rc::Rc::new(move |updater: Box<dyn FnOnce(AppState) -> AppState>| {
-                                    let mut sig = set_state;
-                                    let prev = sig.read().clone();
-                                    sig.set(updater(prev));
-                                })).await;
+                                crate::app_state::load_more_events(
+                                        state_val,
+                                        std::rc::Rc::new(move |
+                                            updater: Box<dyn FnOnce(AppState) -> AppState>|
+                                        {
+                                            let mut sig = set_state;
+                                            let prev = sig.read().clone();
+                                            sig.set(updater(prev));
+                                        }),
+                                    )
+                                    .await;
                             });
                         },
                         if state.event_list_state.event_hashes.is_empty() {
-                            {context.language.label("Load Events", "イベントを読み込む", "Ŝargi eventojn")}
+                            {
+                                context
+                                    .language
+                                    .label("Load Events", "イベントを読み込む", "Ŝargi eventojn")
+                            }
                         } else {
-                            {context.language.label("Load More Events", "さらに読み込む", "Ŝargi pliajn eventojn")}
+                            {
+                                context
+                                    .language
+                                    .label("Load More Events", "さらに読み込む", "Ŝargi pliajn eventojn")
+                            }
                         }
                     }
                 }
@@ -184,12 +192,8 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                 div {
                     class: "event-detail-card",
                     style: "padding: 2rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary);",
-                    div {
-                        style: "font-size: 1.5rem; opacity: 0.5;",
-                        "📋"
-                    }
-                    div {
-                        style: "font-size: 0.95rem; color: var(--text);",
+                    div { style: "font-size: 1.5rem; opacity: 0.5;", "📋" }
+                    div { style: "font-size: 0.95rem; color: var(--text);",
                         "{context.language.label(\"No events found\", \"イベントが見つかりません\", \"Neniuj eventoj trovitaj\")}"
                     }
                 }
@@ -221,17 +225,14 @@ fn EventCard(
                     class: "event-card",
                     style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.65rem;",
                     // Header row
-                    div {
-                        style: "display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid rgb(255 255 255 / 0.05); gap: 0.8rem;",
-                        div {
-                            style: "display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem;",
+                    div { style: "display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid rgb(255 255 255 / 0.05); gap: 0.8rem;",
+                        div { style: "display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem;",
                             a {
                                 href: context.href_with_lang(crate::Location::Account(event.account_id.clone())),
                                 style: "font-weight: 600; color: var(--primary); text-decoration: none;",
                                 "{author_name}"
                             }
-                            div {
-                                style: "color: var(--text-secondary); font-size: 0.76rem;",
+                            div { style: "color: var(--text-secondary); font-size: 0.76rem;",
                                 "{time_str}"
                             }
                         }
@@ -248,8 +249,7 @@ fn EventCard(
                         hash: hash.clone(),
                     }
                     // Footer
-                    div {
-                        style: "display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; padding-top: 0.45rem; border-top: 1px solid rgb(255 255 255 / 0.04); font-size: 0.76rem;",
+                    div { style: "display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; padding-top: 0.45rem; border-top: 1px solid rgb(255 255 255 / 0.04); font-size: 0.76rem;",
                         div {
                             class: "mono",
                             style: "color: var(--text-secondary); opacity: 0.7; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
@@ -277,12 +277,10 @@ fn EventCard(
                 div {
                     class: "event-card",
                     style: "padding: 0.85rem 1.1rem; border-left: 3px solid var(--error); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: 0.3rem;",
-                    div {
-                        style: "font-size: 0.85rem; font-weight: 600; color: var(--error);",
+                    div { style: "font-size: 0.85rem; font-weight: 600; color: var(--error);",
                         "{invalid_label}"
                     }
-                    div {
-                        style: "font-size: 0.8rem; color: var(--text-secondary);",
+                    div { style: "font-size: 0.8rem; color: var(--text-secondary);",
                         "{err_str}"
                     }
                 }
@@ -295,29 +293,35 @@ fn EventCard(
 fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> Element {
     match event.content {
         EventContent::CreateAccount(create_account_event) => rsx! {
-            div {
-                style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                div {
-                    style: "color: var(--text-secondary);",
-                    {context.language.label("Created account:", "アカウントを作成しました:", "Kreis konton:")}
+            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
+                div { style: "color: var(--text-secondary);",
+                    {
+                        context
+                            .language
+                            .label(
+                                "Created account:",
+                                "アカウントを作成しました:",
+                                "Kreis konton:",
+                            )
+                    }
                 }
-                div {
-                    style: "font-weight: 600;",
-                    "{create_account_event.account_name}"
-                }
+                div { style: "font-weight: 600;", "{create_account_event.account_name}" }
             }
         },
         EventContent::ChangeProfile(change_profile_event) => rsx! {
-            div {
-                style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                div {
-                    style: "color: var(--text-secondary);",
-                    {context.language.label("Changed account name to:", "アカウント名を変更しました:", "Ŝanĝis kontonomon al:")}
+            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
+                div { style: "color: var(--text-secondary);",
+                    {
+                        context
+                            .language
+                            .label(
+                                "Changed account name to:",
+                                "アカウント名を変更しました:",
+                                "Ŝanĝis kontonomon al:",
+                            )
+                    }
                 }
-                div {
-                    style: "font-weight: 600;",
-                    "{change_profile_event.account_name}"
-                }
+                div { style: "font-weight: 600;", "{change_profile_event.account_name}" }
             }
         },
         EventContent::PartDefinition(part_definition_event) => {
@@ -326,10 +330,8 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
             let desc = part_definition_event.description.to_string();
 
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.35rem;",
-                    div {
-                        style: "display: flex; align-items: center; gap: 0.5rem;",
+                div { style: "display: grid; gap: 0.35rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem;",
                         a {
                             href: context.href_with_lang(crate::Location::Part(hash.clone())),
                             style: "font-size: 1.05rem; font-weight: 600; color: var(--text); text-decoration: none;",
@@ -344,8 +346,7 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                         }
                     }
                     if !desc.is_empty() {
-                        div {
-                            style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
+                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
                             "{desc}"
                         }
                     }
@@ -357,13 +358,18 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
             let base_hash = part_update_event.part_definition_event_hash.clone();
 
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.35rem;",
-                    div {
-                        style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                        div {
-                            style: "color: var(--text-secondary);",
-                            {context.language.label("Updated part:", "パーツを更新しました:", "Ĝisdatigis parton:")}
+                div { style: "display: grid; gap: 0.35rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
+                        div { style: "color: var(--text-secondary);",
+                            {
+                                context
+                                    .language
+                                    .label(
+                                        "Updated part:",
+                                        "パーツを更新しました:",
+                                        "Ĝisdatigis parton:",
+                                    )
+                            }
                         }
                         a {
                             href: context.href_with_lang(crate::Location::Part(base_hash)),
@@ -379,16 +385,14 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
             let desc = module_definition_event.description.to_string();
 
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.35rem;",
+                div { style: "display: grid; gap: 0.35rem;",
                     a {
                         href: context.href_with_lang(crate::Location::Module(hash.clone())),
                         style: "font-size: 1.05rem; font-weight: 600; color: var(--text); text-decoration: none;",
                         "{mod_name}"
                     }
                     if !desc.is_empty() {
-                        div {
-                            style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
+                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
                             "{desc}"
                         }
                     }
@@ -401,13 +405,18 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
             let desc = module_update_event.module_description.to_string();
 
             rsx! {
-                div {
-                    style: "display: grid; gap: 0.35rem;",
-                    div {
-                        style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                        div {
-                            style: "color: var(--text-secondary);",
-                            {context.language.label("Updated module:", "モジュールを更新しました:", "Ĝisdatigis modulon:")}
+                div { style: "display: grid; gap: 0.35rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
+                        div { style: "color: var(--text-secondary);",
+                            {
+                                context
+                                    .language
+                                    .label(
+                                        "Updated module:",
+                                        "モジュールを更新しました:",
+                                        "Ĝisdatigis modulon:",
+                                    )
+                            }
                         }
                         a {
                             href: context.href_with_lang(crate::Location::Module(base_hash)),
@@ -416,8 +425,7 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                         }
                     }
                     if !desc.is_empty() {
-                        div {
-                            style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
+                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
                             "{desc}"
                         }
                     }

@@ -41,22 +41,21 @@ pub fn SearchableDropdown(
         .collect();
 
     rsx! {
-        div {
+        div { style: "width: 100%; max-width: 22rem; position: relative;",
             button {
                 r#type: "button",
-                style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name};",
+                style: "width: 100%; text-align: left; padding: 0.42rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name}; box-sizing: border-box;",
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "show",
                 "{current_label}"
-                div {
-                    style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
+                div { style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
                     "▼"
                 }
             }
             div {
                 id: "{panel_id}",
                 "popover": "auto",
-                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); min-width: max(100%, 22rem); margin: 2px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);",
+                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); width: anchor-size(width); min-width: 14rem; max-width: min(90vw, 22rem); margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
                 input {
                     r#type: "text",
                     autofocus: true,
@@ -67,8 +66,7 @@ pub fn SearchableDropdown(
                         search_query.set(evt.value());
                     },
                 }
-                div {
-                    style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
+                div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
                     for (opt_val, opt_label) in filtered_options {
                         {
                             let is_selected = opt_val == current_value;
@@ -89,8 +87,7 @@ pub fn SearchableDropdown(
                                         on_change.call(opt_val_clone.clone());
                                     },
                                     if parts.len() > 1 {
-                                        div {
-                                            style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                                        div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
                                             "{parts[0]}"
                                         }
                                         div {
@@ -99,8 +96,7 @@ pub fn SearchableDropdown(
                                             "{parts[1..].join(\" · \")}"
                                         }
                                     } else {
-                                        div {
-                                            style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                                        div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
                                             "{opt_label}"
                                         }
                                     }

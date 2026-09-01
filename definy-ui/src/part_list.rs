@@ -38,13 +38,9 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
     rsx! {
-        div {
-            class: "page-shell",
-            style: "{page_shell_style}",
-            div {
-                style: "display: flex; justify-content: space-between; align-items: center;",
-                h2 {
-                    style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
+        div { class: "page-shell", style: "{page_shell_style}",
+            div { style: "display: flex; justify-content: space-between; align-items: center;",
+                h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Parts\", \"パーツ\", \"Partoj\")}"
                 }
                 if state.current_key.is_some() && !state.part_definition_form.is_form_open {
@@ -73,12 +69,8 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                 div {
                     class: "event-detail-card",
                     style: "padding: 3rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary);",
-                    div {
-                        style: "font-size: 1.5rem; opacity: 0.5;",
-                        "🧩"
-                    }
-                    div {
-                        style: "font-size: 0.95rem; color: var(--text);",
+                    div { style: "font-size: 1.5rem; opacity: 0.5;", "🧩" }
+                    div { style: "font-size: 0.95rem; color: var(--text);",
                         "{context.language.label(\"No parts yet\", \"まだパーツがありません\", \"Ankoraŭ neniuj partoj\")}"
                     }
                 }
@@ -88,64 +80,69 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                     style: "display: grid; gap: 0.45rem;",
                     for part in snapshots {
                         {
-                            let account_name = crate::app_state::account_display_name(&account_name_map, &part.account_id);
+                            let account_name = crate::app_state::account_display_name(
+
+                                &account_name_map,
+                                &part.account_id,
+                            );
                             let def_hash = part.definition_event_hash.clone();
                             let latest_hash = part.latest_event_hash.clone();
                             let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
-                            let expr_str = part.expression.as_ref().map(expression_to_source).unwrap_or_else(|| context.language.label("(none)", "(なし)", "(neniu)").to_string());
-
+                            let expr_str = part
+                                .expression
+                                .as_ref()
+                                .map(expression_to_source)
+                                .unwrap_or_else(|| {
+                                    context.language.label("(none)", "(なし)", "(neniu)").to_string()
+                                });
+                            let module_snapshot = crate::module_projection::find_module_snapshot(
+                                &state,
+                                &part.module_definition_event_hash,
+                            );
+                            let module_name = module_snapshot
+                                .as_ref()
+                                .map(|m| m.module_name.as_str())
+                                .unwrap_or("module");
+                            let module_label = context
+                                .language
+                                .label("Module:", "モジュール:", "Modulo:");
                             rsx! {
                                 div {
                                     key: "{def_hash}",
                                     class: "event-card",
                                     style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                    div {
-                                        style: "display: flex; justify-content: space-between; align-items: center;",
+                                    div { style: "display: flex; justify-content: space-between; align-items: center;",
                                         a {
                                             href: context.href_with_lang(Location::Part(def_hash.clone())),
                                             style: "font-size: 1rem; font-weight: 600; color: var(--text); text-decoration: none;",
                                             "{part.part_name}"
                                         }
-                                        div {
-                                            style: "font-size: 0.75rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.45rem; border-radius: var(--radius-full);",
+                                        div { style: "font-size: 0.75rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.45rem; border-radius: var(--radius-full);",
                                             "{optional_part_type_text(&part.part_type)}"
                                         }
                                     }
-                                    div {
-                                        style: "font-size: 0.76rem; color: var(--text-secondary);",
-                                        "{time_str}"
+                                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;",
+                                        span { style: "color: var(--text-secondary);", "{module_label}" }
+                                        a {
+                                            href: context.href_with_lang(Location::Module(part.module_definition_event_hash.clone())),
+                                            style: "color: var(--primary); text-decoration: none; font-weight: 500;",
+                                            "{module_name}"
+                                        }
                                     }
+                                    div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
                                     if !part.has_definition {
-                                        div {
-                                            style: "font-size: 0.78rem; color: var(--error);",
+                                        div { style: "font-size: 0.78rem; color: var(--error);",
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }
                                     if !part.part_description.is_empty() {
-                                        div {
-                                            style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
+                                        div { style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
                                             "{part.part_description}"
                                         }
                                     }
-                                    div {
-                                        style: "display: flex; gap: 0.5rem; align-items: center; margin-top: 0.1rem;",
-                                        a {
-                                            href: context.href_with_lang(Location::Part(def_hash.clone())),
-                                            style: "font-size: 0.78rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); text-decoration: none;",
-                                            "{context.language.label(\"Open part detail\", \"パーツ詳細を開く\", \"Malfermi partajn detalojn\")}"
-                                        }
-                                    }
-                                    div {
-                                        class: "mono",
-                                        style: "font-size: 0.78rem; opacity: 0.8;",
-                                        "{expr_str}"
-                                    }
-                                    div {
-                                        style: "font-size: 0.8rem; color: var(--primary);",
-                                        "{account_name}"
-                                    }
-                                    div {
-                                        style: "display: flex; gap: 0.45rem; font-size: 0.78rem;",
+                                    div { class: "mono", style: "font-size: 0.78rem; opacity: 0.8;", "{expr_str}" }
+                                    div { style: "font-size: 0.8rem; color: var(--primary);", "{account_name}" }
+                                    div { style: "display: flex; gap: 0.45rem; font-size: 0.78rem;",
                                         a {
                                             href: context.href_with_lang(Location::Event(latest_hash)),
                                             style: "color: var(--text-secondary); text-decoration: none;",
@@ -175,10 +172,8 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
         div {
             class: "composer",
             style: "display: grid; gap: 0.5rem; background: var(--surface); backdrop-filter: var(--glass-blur); padding: 0.8rem 1rem; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); border: 1px solid var(--border);",
-            div {
-                style: "display: flex; justify-content: space-between; align-items: center;",
-                div {
-                    style: "font-size: 0.95rem; font-weight: 600;",
+            div { style: "display: flex; justify-content: space-between; align-items: center;",
+                div { style: "font-size: 0.95rem; font-weight: 600;",
                     "{context.language.label(\"New Part\", \"新規パーツ作成\", \"Nova Parto\")}"
                 }
                 button {
@@ -195,19 +190,30 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
             ModuleSelectionInput { state: state.clone(), context: context.clone() }
             PartTypeInput { state: state.clone(), context: context.clone() }
             PartDescriptionInput { state: state.clone() }
-            div {
-                style: "color: var(--text-secondary); font-size: 0.82rem;",
+            div { style: "color: var(--text-secondary); font-size: 0.82rem;",
                 {context.language.label("Expression", "式", "Esprimo")}
             }
-            {render_root_expression_editor(
-                &state,
-                &context,
-                &state.part_definition_form.composing_expression,
-                EditorTarget::PartDefinition,
-            )}
             {
-                let expr_str = state.part_definition_form.composing_expression.as_ref().map(expression_to_source).unwrap_or_else(|| context.language.label("(none)", "(なし)", "(neniu)").to_string());
-                let current_label = format!("{} {expr_str}", context.language.label("Current:", "現在:", "Nuna:"));
+                render_root_expression_editor(
+                    &state,
+                    &context,
+                    &state.part_definition_form.composing_expression,
+                    EditorTarget::PartDefinition,
+                )
+            }
+            {
+                let expr_str = state
+                    .part_definition_form
+                    .composing_expression
+                    .as_ref()
+                    .map(expression_to_source)
+                    .unwrap_or_else(|| {
+                        context.language.label("(none)", "(なし)", "(neniu)").to_string()
+                    });
+                let current_label = format!(
+                    "{} {expr_str}",
+                    context.language.label("Current:", "現在:", "Nuna:"),
+                );
                 rsx! {
                     div {
                         class: "mono",
@@ -216,8 +222,7 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                     }
                 }
             }
-            div {
-                style: "display: flex; gap: 0.45rem;",
+            div { style: "display: flex; gap: 0.45rem;",
                 if state.part_definition_form.composing_expression.is_some() {
                     button {
                         r#type: "button",
@@ -225,13 +230,35 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         onclick: move |_| {
                             let mut state_sig = use_context::<Signal<AppState>>();
                             let events_vec: Vec<_> = state_sig.read().events_with_hash();
-                            let result = if let Some(expr) = &state_sig.read().part_definition_form.composing_expression {
+                            let result = if let Some(expr) = &state_sig
+                                .read()
+                                .part_definition_form
+                                .composing_expression
+                            {
                                 match evaluate_expression(expr, &events_vec) {
-                                    Ok(value) => format!("{} {}", language.label("Result:", "結果:", "Rezulto:"), value),
-                                    Err(error) => format!("{} {}", language.label("Error:", "エラー:", "Eraro:"), error),
+                                    Ok(value) => {
+                                        format!(
+                                            "{} {}",
+                                            language.label("Result:", "結果:", "Rezulto:"),
+                                            value,
+                                        )
+                                    }
+                                    Err(error) => {
+                                        format!(
+                                            "{} {}",
+                                            language.label("Error:", "エラー:", "Eraro:"),
+                                            error,
+                                        )
+                                    }
                                 }
                             } else {
-                                language.label("No expression to evaluate", "評価する式がありません", "Neniu esprimo por taksi").to_string()
+                                language
+                                    .label(
+                                        "No expression to evaluate",
+                                        "評価する式がありません",
+                                        "Neniu esprimo por taksi",
+                                    )
+                                    .to_string()
                             };
                             state_sig.write().part_definition_form.eval_result = Some(result);
                         },
@@ -249,50 +276,91 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         } else {
                             return;
                         };
-                        let part_name = state_val.part_definition_form.part_name_input.trim().to_string();
+                        let part_name = state_val
+                            .part_definition_form
+
+                            .part_name_input
+                            .trim()
+                            .to_string();
                         let description = state_val.part_definition_form.part_description_input.clone();
                         let part_type = state_val.part_definition_form.part_type_input.clone();
-                        let module_definition_event_hash = state_val.part_definition_form.module_definition_event_hash.clone();
+                        let modules = collect_module_snapshots(&state_val);
+                        let module_definition_event_hash = state_val
+                            .part_definition_form
+                            .module_definition_event_hash
+                            .clone()
+                            .or_else(|| modules.first().map(|m| m.definition_event_hash.clone()));
+                        let Some(module_definition_event_hash) = module_definition_event_hash else {
+                            state_sig.write().part_definition_form.eval_result = Some(
+                                language
+                                    .label(
+                                        "Error: module is required (create a module first)",
+                                        "エラー: モジュールを選択してください (先にモジュールを作成してください)",
+                                        "Eraro: modulo estas bezonata (kreu modulon unue)",
+                                    )
+                                    .to_string(),
+                            );
+                            return;
+                        };
                         if part_name.is_empty() {
                             state_sig.write().part_definition_form.eval_result = Some(
-                                language.label("Error: part name is required", "エラー: パーツ名は必須です", "Eraro: parto-nomo estas bezonata").to_string(),
+                                language
+                                    .label(
+                                        "Error: part name is required",
+                                        "エラー: パーツ名は必須です",
+                                        "Eraro: parto-nomo estas bezonata",
+                                    )
+                                    .to_string(),
                             );
                             return;
                         }
                         let expression = state_val.part_definition_form.composing_expression.clone();
                         let force_offline = state_val.force_offline;
-
                         spawn(async move {
                             crate::event_submit::submit_event(
-                                definy_event::event::EventContent::PartDefinition(
-                                    definy_event::event::PartDefinitionEvent {
+                                    definy_event::event::EventContent::PartDefinition(definy_event::event::PartDefinitionEvent {
                                         part_name: part_name.into(),
                                         description: description.into(),
                                         part_type,
                                         expression,
                                         module_definition_event_hash,
+                                    }),
+                                    key,
+                                    force_offline,
+                                    None,
+                                    state_sig,
+                                    move |next, record| {
+                                        if record.status == crate::local_event::LocalEventStatus::Sent {
+                                            next.part_definition_form.eval_result = None;
+                                        } else {
+                                            next.part_definition_form.eval_result = Some(
+                                                match record.status {
+                                                    crate::local_event::LocalEventStatus::Queued => {
+                                                        language
+                                                            .label(
+                                                                "PartDefinition queued (offline)",
+                                                                "PartDefinition をキューに追加しました (オフライン)",
+                                                                "PartDefinition envicigita (senkonekte)",
+                                                            )
+                                                            .to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Failed => {
+                                                        language
+                                                            .label(
+                                                                "PartDefinition failed to send",
+                                                                "PartDefinition の送信に失敗しました",
+                                                                "PartDefinition sendado malsukcesis",
+                                                            )
+                                                            .to_string()
+                                                    }
+                                                    crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                                },
+                                            );
+                                        }
                                     },
-                                ),
-                                key,
-                                force_offline,
-                                None,
-                                state_sig,
-                                move |next, record| {
-                                    if record.status == crate::local_event::LocalEventStatus::Sent {
-                                        next.part_definition_form.eval_result = None;
-                                    } else {
-                                        next.part_definition_form.eval_result = Some(
-                                            match record.status {
-                                                crate::local_event::LocalEventStatus::Queued => language.label("PartDefinition queued (offline)", "PartDefinition をキューに追加しました (オフライン)", "PartDefinition envicigita (senkonekte)").to_string(),
-                                                crate::local_event::LocalEventStatus::Failed => language.label("PartDefinition failed to send", "PartDefinition の送信に失敗しました", "PartDefinition sendado malsukcesis").to_string(),
-                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
-                                            }
-                                        );
-                                    }
-                                },
-                            ).await;
+                                )
+                                .await;
                         });
-
                         let mut write_state = state_sig.write();
                         write_state.part_definition_form.is_form_open = false;
                         write_state.part_definition_form.part_name_input = String::new();
@@ -319,7 +387,7 @@ fn PartNameInput(state: AppState) -> Element {
             oninput: move |evt: FormEvent| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 state_sig.write().part_definition_form.part_name_input = evt.value();
-            }
+            },
         }
     }
 }
@@ -335,7 +403,7 @@ fn PartDescriptionInput(state: AppState) -> Element {
             oninput: move |evt: FormEvent| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 state_sig.write().part_definition_form.part_description_input = evt.value();
-            }
+            },
         }
     }
 }
@@ -343,10 +411,8 @@ fn PartDescriptionInput(state: AppState) -> Element {
 #[component]
 fn PartTypeInput(state: AppState, context: PageContext) -> Element {
     rsx! {
-        div {
-            style: "display: grid; gap: 0.35rem;",
-            div {
-                style: "font-size: 0.85rem; color: var(--text-secondary);",
+        div { style: "display: grid; gap: 0.35rem;",
+            div { style: "font-size: 0.85rem; color: var(--text-secondary);",
                 "{context.language.label(\"Part Type\", \"パーツ型\", \"Parto-tipo\")}"
             }
             RenderPartTypeEditor {
@@ -361,41 +427,45 @@ fn PartTypeInput(state: AppState, context: PageContext) -> Element {
 
 #[component]
 fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
-    let mut options = vec![(
-        "".to_string(),
-        context
-            .language
-            .label("No module", "モジュールなし", "Neniu modulo")
-            .to_string(),
-    )];
-    options.extend(
-        collect_module_snapshots(&state)
-            .into_iter()
-            .map(|module| (module.definition_event_hash.to_string(), module.module_name)),
-    );
+    let modules = collect_module_snapshots(&state);
+    let options: Vec<(String, String)> = modules
+        .iter()
+        .map(|module| {
+            (
+                module.definition_event_hash.to_string(),
+                module.module_name.clone(),
+            )
+        })
+        .collect();
 
-    let current_value: String = state
+    let current_value = state
         .part_definition_form
         .module_definition_event_hash
-        .clone()
+        .as_ref()
         .map(|hash| hash.to_string())
-        .unwrap_or_default();
+        .unwrap_or_else(|| {
+            modules
+                .first()
+                .map(|m| m.definition_event_hash.to_string())
+                .unwrap_or_default()
+        });
 
     rsx! {
-        div {
-            style: "display: grid; gap: 0.35rem;",
-            div {
-                style: "font-size: 0.85rem; color: var(--text-secondary);",
+        div { style: "display: grid; gap: 0.35rem;",
+            div { style: "font-size: 0.85rem; color: var(--text-secondary);",
                 "{context.language.label(\"Module\", \"モジュール\", \"Modulo\")}"
             }
             crate::dropdown::SearchableDropdown {
                 name: "part-definition-module".to_string(),
-                current_value: current_value,
-                options: options,
+                current_value,
+                options,
                 on_change: move |val: String| {
                     let mut state_sig = use_context::<Signal<AppState>>();
-                    state_sig.write().part_definition_form.module_definition_event_hash = EventHashId::from_str(&val).ok();
-                }
+                    state_sig.write().part_definition_form.module_definition_event_hash = EventHashId::from_str(
+                            &val,
+                        )
+                        .ok();
+                },
             }
         }
     }
@@ -442,30 +512,22 @@ fn RenderPartTypeEditor(
     };
 
     rsx! {
-        div {
-            style: "display: grid; gap: 0.45rem;",
+        div { style: "display: grid; gap: 0.45rem;",
             crate::dropdown::SearchableDropdown {
-                name: name,
+                name,
                 current_value: selected,
-                options: options,
+                options,
                 on_change: move |val: String| {
                     let mut state_sig = use_context::<Signal<AppState>>();
                     let state_val = state_sig.read().clone();
                     let mut new_part_type = state_val.part_definition_form.part_type_input.clone();
-                    update_part_type_at_depth(
-                        &state_val,
-                        &mut new_part_type,
-                        depth,
-                        val.as_str(),
-                    );
+                    update_part_type_at_depth(&state_val, &mut new_part_type, depth, val.as_str());
                     state_sig.write().part_definition_form.part_type_input = new_part_type;
-                }
+                },
             }
             if let Some(item_type) = item_type_opt {
-                div {
-                    style: "padding-left: 1rem; border-left: 2px solid var(--border);",
-                    div {
-                        style: "font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.25rem;",
+                div { style: "padding-left: 1rem; border-left: 2px solid var(--border);",
+                    div { style: "font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.25rem;",
                         "{context.language.label(\"Item Type\", \"要素型\", \"Ero-tipo\")}"
                     }
                     RenderPartTypeEditor {

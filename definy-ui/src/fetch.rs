@@ -1,12 +1,50 @@
 use definy_event::EventHashId;
 use wasm_bindgen::JsValue;
 
+pub fn api_base_url() -> String {
+    // 1. Check compile-time environment variable DEFINY_API_URL
+    if let Some(url) = option_env!("DEFINY_API_URL") {
+        let trimmed = url.trim();
+        if !trimmed.is_empty() {
+            return trimmed.trim_end_matches('/').to_string();
+        }
+    }
+
+    // 2. In browser runtime, check query parameter or dev port default
+    if let Some(window) = web_sys::window() {
+        if let Ok(search) = window.location().search() {
+            for part in search.trim_start_matches('?').split('&') {
+                if let Some(api_val) = part.strip_prefix("api=") {
+                    if let Ok(decoded) = js_sys::decode_uri_component(api_val) {
+                        let decoded_str = String::from(decoded);
+                        let trimmed = decoded_str.trim();
+                        if !trimmed.is_empty() {
+                            return trimmed.trim_end_matches('/').to_string();
+                        }
+                    }
+                }
+            }
+        }
+
+        // When running under Dioxus dev server (port 8080) and no explicit env/query is provided,
+        // default to http://localhost:3000 where definy-server runs.
+        if let Ok(port) = window.location().port() {
+            if port == "8080" {
+                return "http://localhost:3000".to_string();
+            }
+        }
+    }
+
+    "".to_string()
+}
+
 pub async fn get_events_raw(
     event_type: Option<definy_event::event::EventType>,
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<Vec<u8>, anyhow::Error> {
-    let mut url = "/events".to_string();
+    let base = api_base_url();
+    let mut url = format!("{}/events", base);
     let mut params = Vec::new();
     if let Some(event_type) = event_type {
         params.push(format!("event_type={}", event_type));
@@ -96,7 +134,8 @@ pub async fn get_event(
         >,
     )>,
 > {
-    let url = format!("/events/{}", hash);
+    let base = api_base_url();
+    let url = format!("{}/events/{}", base, hash);
     let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
     let response_raw = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url))
         .await
@@ -140,11 +179,12 @@ pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
     request_init.set_headers(&headers);
     request_init.set_body(&js_sys::Uint8Array::from(signated_event));
     let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
-    let response_raw = wasm_bindgen_futures::JsFuture::from(
-        window.fetch_with_str_and_init("/events", &request_init),
-    )
-    .await
-    .map_err(js_error_to_anyhow)?;
+    let base = api_base_url();
+    let url = format!("{}/events", base);
+    let response_raw =
+        wasm_bindgen_futures::JsFuture::from(window.fetch_with_str_and_init(&url, &request_init))
+            .await
+            .map_err(js_error_to_anyhow)?;
 
     let response: web_sys::Response =
         wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;

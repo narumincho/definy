@@ -8,7 +8,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2
+      - name: Install Dioxus CLI
+        run: curl -sSL https://dioxus.dev/install.sh | bash
       - run: cargo fmt --check
+      - run: dx fmt --check
       - name: Setup ChromeDriver
         run: |
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)

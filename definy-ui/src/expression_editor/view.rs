@@ -57,24 +57,24 @@ pub fn render_expression_editor(
                 }
             }
             if let Some(msg) = warning_message {
-                div {
-                    style: "font-size: 0.8rem; color: var(--error);",
-                    "{msg}"
-                }
+                div { style: "font-size: 0.8rem; color: var(--error);", "{msg}" }
             }
             {
                 match expression {
-                    definy_event::event::Expression::Number(number_expression) => rsx! {
-                        {number_input(path.clone(), target, number_expression.value)}
-                    },
-                    definy_event::event::Expression::String(string_expression) => rsx! {
-                        {string_input(path.clone(), target, string_expression.value.as_ref())}
-                    },
+                    definy_event::event::Expression::Number(number_expression) => {
+                        rsx! {
+                            {number_input(path.clone(), target, number_expression.value)}
+                        }
+                    }
+                    definy_event::event::Expression::String(string_expression) => {
+                        rsx! {
+                            {string_input(path.clone(), target, string_expression.value.as_ref())}
+                        }
+                    }
                     definy_event::event::Expression::TypeNumber
                     | definy_event::event::Expression::TypeString
                     | definy_event::event::Expression::TypeBoolean => rsx! {
-                        div {
-                            style: "font-size: 0.8rem; color: var(--text-secondary);",
+                        div { style: "font-size: 0.8rem; color: var(--text-secondary);",
                             "{language.label(\"Built-in types\", \"組み込み型\", \"Enkonstruitaj tipoj\")}"
                         }
                     },
@@ -82,30 +82,30 @@ pub fn render_expression_editor(
                         let mut item_type_path = path.clone();
                         item_type_path.push(PathStep::TypeListItem);
                         rsx! {
-                            div {
-                                style: "display: grid; gap: 0.3rem;",
+                            div { style: "display: grid; gap: 0.3rem;",
                                 "{language.label(\"Item Type\", \"要素型\", \"Ero-tipo\")}"
-                                {render_expression_editor(
-                                    state,
-                                    type_list_expression.item_type.as_ref(),
-                                    context.child(
-                                        item_type_path,
-                                        scope_variables.clone(),
-                                        structure_locked,
-                                        allow_kind_change,
-                                    ),
-                                )}
+                                {
+                                    render_expression_editor(
+                                        state,
+                                        type_list_expression.item_type.as_ref(),
+                                        context
+                                            .child(
+                                                item_type_path,
+                                                scope_variables.clone(),
+                                                structure_locked,
+                                                allow_kind_change,
+                                            ),
+                                    )
+                                }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::ListLiteral(list_expression) => {
                         let tabular_keys = get_tabular_keys(list_expression);
                         if let Some(keys) = tabular_keys {
                             rsx! {
-                                div {
-                                    style: "display: grid; grid-template-columns: max-content repeat({keys.len()}, 1fr); gap: 0.2rem; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; overflow-x: auto;",
-                                    div {
-                                        style: "font-weight: bold; font-size: 0.8rem; color: var(--text-secondary); padding: 0.2rem 0.5rem;",
+                                div { style: "display: grid; grid-template-columns: max-content repeat({keys.len()}, 1fr); gap: 0.2rem; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; overflow-x: auto;",
+                                    div { style: "font-weight: bold; font-size: 0.8rem; color: var(--text-secondary); padding: 0.2rem 0.5rem;",
                                         "{language.label(\"Item\", \"項目\", \"Ero\")}"
                                     }
                                     for key in &keys {
@@ -119,7 +119,10 @@ pub fn render_expression_editor(
                                         {
                                             let mut item_path = path.clone();
                                             item_path.push(PathStep::ListItemValue(index));
-                                            let allow_kind_for_item = allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
+                                            let allow_kind_for_item = allow_kind_change_for_nested_values(
+                                                allow_kind_change,
+                                                path.as_slice(),
+                                            );
                                             rsx! {
                                                 div {
                                                     key: "row-{index}",
@@ -136,16 +139,19 @@ pub fn render_expression_editor(
                                                                 div {
                                                                     key: "cell-{index}-{i}",
                                                                     style: "display: flex; align-items: stretch; padding: 0.2rem;",
-                                                                    {render_expression_editor(
-                                                                        state,
-                                                                        record_item.value.as_ref(),
-                                                                        context.child(
-                                                                            value_path,
-                                                                            scope_variables.clone(),
-                                                                            structure_locked,
-                                                                            allow_kind_for_item,
-                                                                        ),
-                                                                    )}
+                                                                    {
+                                                                        render_expression_editor(
+                                                                            state,
+                                                                            record_item.value.as_ref(),
+                                                                            context
+                                                                                .child(
+                                                                                    value_path,
+                                                                                    scope_variables.clone(),
+                                                                                    structure_locked,
+                                                                                    allow_kind_for_item,
+                                                                                ),
+                                                                        )
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -159,35 +165,38 @@ pub fn render_expression_editor(
                             }
                         } else {
                             rsx! {
-                                div {
-                                    style: "display: flex; flex-direction: column; gap: 0.6rem;",
+                                div { style: "display: flex; flex-direction: column; gap: 0.6rem;",
                                     for (index, item) in list_expression.items.iter().enumerate() {
                                         {
                                             let mut item_path = path.clone();
                                             item_path.push(PathStep::ListItemValue(index));
-                                            let allow_kind_for_item = allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
+                                            let allow_kind_for_item = allow_kind_change_for_nested_values(
+                                                allow_kind_change,
+                                                path.as_slice(),
+                                            );
                                             rsx! {
                                                 div {
                                                     key: "list-item-{index}",
                                                     style: "display: flex; flex-direction: column; gap: 0.4rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                                    div {
-                                                        style: "display: flex; gap: 0.5rem;",
-                                                        div {
-                                                            style: "font-size: 0.8rem; color: var(--text-secondary); flex: 1;",
+                                                    div { style: "display: flex; gap: 0.5rem;",
+                                                        div { style: "font-size: 0.8rem; color: var(--text-secondary); flex: 1;",
                                                             "{language.label(\"Item\", \"項目\", \"Ero\")} {index + 1}"
                                                         }
                                                         {remove_list_item_button(path.clone(), index, target)}
                                                     }
-                                                    {render_expression_editor(
-                                                        state,
-                                                        item,
-                                                        context.child(
-                                                            item_path,
-                                                            scope_variables.clone(),
-                                                            structure_locked,
-                                                            allow_kind_for_item,
-                                                        ),
-                                                    )}
+                                                    {
+                                                        render_expression_editor(
+                                                            state,
+                                                            item,
+                                                            context
+                                                                .child(
+                                                                    item_path,
+                                                                    scope_variables.clone(),
+                                                                    structure_locked,
+                                                                    allow_kind_for_item,
+                                                                ),
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -196,49 +205,54 @@ pub fn render_expression_editor(
                                 }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::Add(add_expression) => {
                         let mut left_path = path.clone();
                         left_path.push(PathStep::Left);
                         let mut right_path = path.clone();
                         right_path.push(PathStep::Right);
                         rsx! {
-                            div {
-                                style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Left\", \"左\", \"Maldekstre\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        add_expression.left.as_ref(),
-                                        context.child(
-                                            left_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            add_expression.left.as_ref(),
+                                            context
+                                                .child(
+                                                    left_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Right\", \"右\", \"Dekstre\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        add_expression.right.as_ref(),
-                                        context.child(
-                                            right_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            add_expression.right.as_ref(),
+                                            context
+                                                .child(
+                                                    right_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
                             }
                         }
-                    },
-                    definy_event::event::Expression::Boolean(boolean_expression) => rsx! {
-                        {boolean_input(language, path.clone(), target, boolean_expression.value)}
-                    },
+                    }
+                    definy_event::event::Expression::Boolean(boolean_expression) => {
+                        rsx! {
+                            {boolean_input(language, path.clone(), target, boolean_expression.value)}
+                        }
+                    }
                     definy_event::event::Expression::If(if_expression) => {
                         let mut cond_path = path.clone();
                         cond_path.push(PathStep::Condition);
@@ -247,92 +261,100 @@ pub fn render_expression_editor(
                         let mut else_path = path.clone();
                         else_path.push(PathStep::Else);
                         rsx! {
-                            div {
-                                style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Condition\", \"条件\", \"Kondiĉo\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        if_expression.condition.as_ref(),
-                                        context.child(
-                                            cond_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            if_expression.condition.as_ref(),
+                                            context
+                                                .child(
+                                                    cond_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Then\", \"なら\", \"Tiam\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        if_expression.then_expr.as_ref(),
-                                        context.child(
-                                            then_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            if_expression.then_expr.as_ref(),
+                                            context
+                                                .child(
+                                                    then_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Else\", \"それ以外\", \"Alie\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        if_expression.else_expr.as_ref(),
-                                        context.child(
-                                            else_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            if_expression.else_expr.as_ref(),
+                                            context
+                                                .child(
+                                                    else_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::Equal(equal_expression) => {
                         let mut left_path = path.clone();
                         left_path.push(PathStep::Left);
                         let mut right_path = path.clone();
                         right_path.push(PathStep::Right);
                         rsx! {
-                            div {
-                                style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Left\", \"左\", \"Maldekstre\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        equal_expression.left.as_ref(),
-                                        context.child(
-                                            left_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            equal_expression.left.as_ref(),
+                                            context
+                                                .child(
+                                                    left_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Right\", \"右\", \"Dekstre\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        equal_expression.right.as_ref(),
-                                        context.child(
-                                            right_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            equal_expression.right.as_ref(),
+                                            context
+                                                .child(
+                                                    right_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::Let(let_expression) => {
                         let mut value_path = path.clone();
                         value_path.push(PathStep::LetValue);
@@ -340,102 +362,88 @@ pub fn render_expression_editor(
                         body_path.push(PathStep::LetBody);
                         let var_name = let_expression.variable_name.clone();
                         let mut body_scope = scope_variables.clone();
-                        body_scope.push(ScopeVariable {
-                            id: let_expression.variable_id,
-                            name: let_expression.variable_name.to_string(),
-                        });
+                        body_scope
+                            .push(ScopeVariable {
+                                id: let_expression.variable_id,
+                                name: let_expression.variable_name.to_string(),
+                            });
                         rsx! {
-                            div {
-                                style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Let Name\", \"変数名\", \"Nomo\")}"
                                     {let_name_input(path.clone(), target, &var_name)}
                                 }
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Value\", \"値\", \"Valoro\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        let_expression.value.as_ref(),
-                                        context.child(
-                                            value_path,
-                                            scope_variables.clone(),
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            let_expression.value.as_ref(),
+                                            context
+                                                .child(
+                                                    value_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
                                 }
-                                div {
-                                    style: "display: grid; gap: 0.3rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
                                     "{language.label(\"Body\", \"本体\", \"Kerno\")}"
-                                    {render_expression_editor(
-                                        state,
-                                        let_expression.body.as_ref(),
-                                        context.child(
-                                            body_path,
-                                            body_scope,
-                                            structure_locked,
-                                            allow_kind_change,
-                                        ),
-                                    )}
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            let_expression.body.as_ref(),
+                                            context.child(body_path, body_scope, structure_locked, allow_kind_change),
+                                        )
+                                    }
                                 }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::TypeLiteral(record_expression) => {
                         rsx! {
-                            div {
-                                style: "display: grid; gap: 0.6rem;",
+                            div { style: "display: grid; gap: 0.6rem;",
                                 for (index, item) in record_expression.items.iter().enumerate() {
                                     {
                                         let mut value_path = path.clone();
                                         value_path.push(PathStep::RecordItemValue(index));
-                                        let allow_kind_for_value = allow_kind_change_for_nested_values(allow_kind_change, path.as_slice());
+                                        let allow_kind_for_value = allow_kind_change_for_nested_values(
+                                            allow_kind_change,
+                                            path.as_slice(),
+                                        );
                                         let key_str = item.key.clone();
                                         rsx! {
                                             div {
                                                 key: "rec-{index}",
                                                 style: "display: grid; gap: 0.4rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                                div {
-                                                    style: "display: flex; gap: 0.5rem; align-items: center;",
-                                                    div {
-                                                        style: "min-width: 2.4rem; font-size: 0.8rem; color: var(--text-secondary);",
+                                                div { style: "display: flex; gap: 0.5rem; align-items: center;",
+                                                    div { style: "min-width: 2.4rem; font-size: 0.8rem; color: var(--text-secondary);",
                                                         "{language.label(\"Key\", \"キー\", \"Ŝlosilo\")}"
                                                     }
                                                     if structure_locked {
-                                                        div {
-                                                            style: "font-size: 0.9rem;",
-                                                            "{key_str}"
-                                                        }
+                                                        div { style: "font-size: 0.9rem;", "{key_str}" }
                                                     } else {
-                                                        {record_item_key_input(
-                                                            path.clone(),
-                                                            index,
-                                                            target,
-                                                            key_str.as_ref(),
-                                                        )}
-                                                        {remove_record_item_button(
-                                                            language,
-                                                            path.clone(),
-                                                            index,
-                                                            target,
-                                                        )}
+                                                        {record_item_key_input(path.clone(), index, target, key_str.as_ref())}
+                                                        {remove_record_item_button(language, path.clone(), index, target)}
                                                     }
                                                 }
-                                                div {
-                                                    style: "display: grid; gap: 0.3rem;",
+                                                div { style: "display: grid; gap: 0.3rem;",
                                                     "{language.label(\"Value\", \"値\", \"Valoro\")}"
-                                                    {render_expression_editor(
-                                                        state,
-                                                        item.value.as_ref(),
-                                                        context.child(
-                                                            value_path,
-                                                            scope_variables.clone(),
-                                                            structure_locked,
-                                                            allow_kind_for_value,
-                                                        ),
-                                                    )}
+                                                    {
+                                                        render_expression_editor(
+                                                            state,
+                                                            item.value.as_ref(),
+                                                            context
+                                                                .child(
+                                                                    value_path,
+                                                                    scope_variables.clone(),
+                                                                    structure_locked,
+                                                                    allow_kind_for_value,
+                                                                ),
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -446,51 +454,54 @@ pub fn render_expression_editor(
                                 }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::Constructor(constructor_expression) => {
                         let mut value_path = path.clone();
                         value_path.push(PathStep::ConstructorValue);
                         let type_part_name = crate::part_projection::find_part_snapshot(
-                            state,
-                            &constructor_expression.type_part_definition_event_hash,
-                        )
-                        .map(|snapshot| snapshot.part_name)
-                        .unwrap_or_else(|| {
-                            format!(
-                                "(unknown: {})",
-                                constructor_expression.type_part_definition_event_hash
+                                state,
+                                &constructor_expression.type_part_definition_event_hash,
                             )
-                        });
-                        let type_label = format!("{} {type_part_name}", language.label("Type:", "型:", "Tipo:"));
+                            .map(|snapshot| snapshot.part_name)
+                            .unwrap_or_else(|| {
+                                format!(
+                                    "(unknown: {})",
+                                    constructor_expression.type_part_definition_event_hash,
+                                )
+                            });
+                        let type_label = format!(
+                            "{} {type_part_name}",
+                            language.label("Type:", "型:", "Tipo:"),
+                        );
                         rsx! {
-                            div {
-                                style: "display: grid; gap: 0.4rem;",
-                                div {
-                                    style: "font-size: 0.82rem; color: var(--text-secondary);",
-                                    "{type_label}"
+                            div { style: "display: grid; gap: 0.4rem;",
+                                div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{type_label}" }
+                                {
+                                    render_expression_editor(
+                                        state,
+                                        constructor_expression.value.as_ref(),
+                                        context.child(value_path, scope_variables.clone(), true, true),
+                                    )
                                 }
-                                {render_expression_editor(
-                                    state,
-                                    constructor_expression.value.as_ref(),
-                                    context.child(value_path, scope_variables.clone(), true, true),
-                                )}
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::Compiler(builtin) => {
                         let builtin_label = match builtin {
                             definy_event::event::CompilerBuiltin::Let => "[compiler let]",
                             definy_event::event::CompilerBuiltin::Plus => "[compiler plus]",
-                            definy_event::event::CompilerBuiltin::NumberLiteral => "[compiler number literal]",
+                            definy_event::event::CompilerBuiltin::NumberLiteral => {
+                                "[compiler number literal]"
+                            }
                             definy_event::event::CompilerBuiltin::If => "[compiler if]",
+                            definy_event::event::CompilerBuiltin::Equal => "[compiler equal]",
                         };
                         rsx! {
-                            div {
-                                style: "font-size: 0.85rem; color: var(--text-secondary); font-family: monospace;",
+                            div { style: "font-size: 0.85rem; color: var(--text-secondary); font-family: monospace;",
                                 "{builtin_label}"
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::PartReference(part_ref) => {
                         let part_info = crate::part_projection::find_part_snapshot(
                             state,
@@ -506,12 +517,8 @@ pub fn render_expression_editor(
                             .map(crate::part_list::part_type_text)
                             .unwrap_or_else(|| "Part".to_string());
                         rsx! {
-                            div {
-                                style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;",
-                                div {
-                                    style: "font-weight: 600;",
-                                    "{part_name}"
-                                }
+                            div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;",
+                                div { style: "font-weight: 600;", "{part_name}" }
                                 div {
                                     class: "badge",
                                     style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-full);",
@@ -519,10 +526,9 @@ pub fn render_expression_editor(
                                 }
                             }
                         }
-                    },
+                    }
                     definy_event::event::Expression::Variable(_) => rsx! {
-                        div {
-                            style: "font-size: 0.8rem; color: var(--text-secondary);",
+                        div { style: "font-size: 0.8rem; color: var(--text-secondary);",
                             "{language.label(\"Local variable reference\", \"ローカル変数参照\", \"Loka variabla referenco\")}"
                         }
                     },
@@ -559,7 +565,7 @@ pub fn expression_selector(
 
     rsx! {
         crate::dropdown::SearchableDropdown {
-            name: name,
+            name,
             current_value: current_val_str,
             options: options_vec,
             on_change: move |selected_value: String| {
@@ -586,7 +592,7 @@ pub fn expression_selector(
                     constructor_default,
                 );
                 state_sig.set(state_val);
-            }
+            },
         }
     }
 }
@@ -624,7 +630,7 @@ pub fn selector_options(
             "expr:type_literal".to_string(),
             "Record\tLiteral\t".to_string(),
         ),
-        ("expr:equal".to_string(), "==\tSyntax\tEqual".to_string()),
+        ("expr:equal".to_string(), "Equal\tSyntax\t".to_string()),
     ]);
 
     // Type constructors
@@ -681,6 +687,11 @@ fn current_selection_value(
                 .map(|h| format!("ref:global:{}", h))
                 .unwrap_or_else(|| "expr:if".to_string())
         }
+        definy_event::event::Expression::Equal(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Equal)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:equal".to_string())
+        }
         definy_event::event::Expression::Let(_) => {
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Let)
                 .map(|h| format!("ref:global:{}", h))
@@ -696,13 +707,13 @@ fn current_selection_value(
                         "expr:number".to_string()
                     }
                     definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
+                    definy_event::event::CompilerBuiltin::Equal => "expr:equal".to_string(),
                 })
         }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
-        definy_event::event::Expression::Equal(_) => "expr:equal".to_string(),
         definy_event::event::Expression::TypeNumber => "expr:type:number".to_string(),
         definy_event::event::Expression::TypeString => "expr:type:string".to_string(),
         definy_event::event::Expression::TypeBoolean => "expr:type:boolean".to_string(),
@@ -754,7 +765,7 @@ fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64) -> Elemen
                     set_number_value(root_expression, path.as_slice(), val);
                     state_sig.set(next);
                 }
-            }
+            },
         }
     }
 }
@@ -778,7 +789,7 @@ fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Eleme
                 let root_expression = target_expression_mut(&mut next, target);
                 set_string_value(root_expression, path.as_slice(), &evt.value());
                 state_sig.set(next);
-            }
+            },
         }
     }
 }
@@ -802,8 +813,7 @@ fn boolean_input(
     };
 
     rsx! {
-        div {
-            style: "display: flex; gap: 0.5rem;",
+        div { style: "display: flex; gap: 0.5rem;",
             button {
                 r#type: "button",
                 style: "{style_true}",
@@ -851,7 +861,7 @@ fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &str) -> Ele
                 let root_expression = target_expression_mut(&mut next, target);
                 set_let_variable_name(root_expression, path.as_slice(), &evt.value());
                 state_sig.set(next);
-            }
+            },
         }
     }
 }
@@ -881,7 +891,7 @@ fn record_item_key_input(
                 let root_expression = target_expression_mut(&mut next, target);
                 set_record_item_key(root_expression, path.as_slice(), item_index, &evt.value());
                 state_sig.set(next);
-            }
+            },
         }
     }
 }

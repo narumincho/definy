@@ -5,7 +5,7 @@ use definy_event::{
 
 use crate::AppState;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct ModuleSnapshot {
     pub definition_event_hash: EventHashId,
     pub latest_event_hash: EventHashId,

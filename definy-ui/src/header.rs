@@ -24,42 +24,71 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
         header {
             class: "app-header",
             style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.2rem; background: rgb(16 22 27 / 0.8); backdrop-filter: var(--glass-blur); left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; border-bottom: 1px solid var(--border); box-sizing: border-box;",
-            div {
-                style: "display: flex; align-items: center; gap: 1rem;",
+            div { style: "display: flex; align-items: center; gap: 1rem;",
                 a {
                     href: context.href_with_lang(Location::Home),
                     style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.3rem;",
-                    h1 {
-                        style: "font-size: 1.45rem; font-weight: 700; color: var(--primary); letter-spacing: -0.03em; margin: 0;",
+                    h1 { style: "font-size: 1.45rem; font-weight: 700; color: var(--primary); letter-spacing: -0.03em; margin: 0;",
                         "definy"
                     }
                 }
-                NavLink { context: context.clone(), target: Location::Home, label: "Events", label_ja: "イベント", label_eo: "Eventoj" }
-                NavLink { context: context.clone(), target: Location::PartList, label: "Parts", label_ja: "パーツ", label_eo: "Partoj" }
-                NavLink { context: context.clone(), target: Location::ModuleList, label: "Modules", label_ja: "モジュール", label_eo: "Moduloj" }
-                NavLink { context: context.clone(), target: Location::LocalEventQueue, label: "Local Events", label_ja: "ローカルイベント", label_eo: "Lokaj eventoj" }
-                NavLink { context: context.clone(), target: Location::AccountList, label: "Accounts", label_ja: "アカウント", label_eo: "Kontoj" }
+                NavLink {
+                    context: context.clone(),
+                    target: Location::Home,
+                    label: "Events",
+                    label_ja: "イベント",
+                    label_eo: "Eventoj",
+                }
+                NavLink {
+                    context: context.clone(),
+                    target: Location::PartList,
+                    label: "Parts",
+                    label_ja: "パーツ",
+                    label_eo: "Partoj",
+                }
+                NavLink {
+                    context: context.clone(),
+                    target: Location::ModuleList,
+                    label: "Modules",
+                    label_ja: "モジュール",
+                    label_eo: "Moduloj",
+                }
+                NavLink {
+                    context: context.clone(),
+                    target: Location::LocalEventQueue,
+                    label: "Local Events",
+                    label_ja: "ローカルイベント",
+                    label_eo: "Lokaj eventoj",
+                }
+                NavLink {
+                    context: context.clone(),
+                    target: Location::AccountList,
+                    label: "Accounts",
+                    label_ja: "アカウント",
+                    label_eo: "Kontoj",
+                }
             }
-            div {
-                style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
-                div {
-                    style: "font-size: 0.86rem; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+            div { style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
+                div { style: "font-size: 0.86rem; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                     "{title_text}"
                 }
             }
-            div {
-                style: "display: flex; align-items: center; gap: 0.65rem;",
+            div { style: "display: flex; align-items: center; gap: 0.65rem;",
                 LanguageDropdown { state: state.clone(), context: context.clone() }
                 if let Some(secret_key) = current_key_opt {
                     {
                         let account_id = definy_event::event::AccountId(secret_key.verifying_key());
-                        let account_name = state.account_name_map().get(&account_id).cloned().map(|s| s.to_string()).unwrap_or_else(|| {
-                            base64::Engine::encode(
-                                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                secret_key.verifying_key().to_bytes(),
-                            )
-                        });
-
+                        let account_name = state
+                            .account_name_map()
+                            .get(&account_id)
+                            .cloned()
+                            .map(|s| s.to_string())
+                            .unwrap_or_else(|| {
+                                base64::Engine::encode(
+                                    &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+                                    secret_key.verifying_key().to_bytes(),
+                                )
+                            });
                         rsx! {
                             button {
                                 r#type: "button",
@@ -77,7 +106,9 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                             let _ = web_sys::window()
                                 .and_then(|w| w.document())
                                 .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
-                                .and_then(|el| wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok())
+                                .and_then(|el| {
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok()
+                                })
                                 .map(|dlg| dlg.show_modal());
                         },
                         style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.88rem; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 8px rgb(124 192 216 / 0.22); transition: opacity 0.15s ease;",
@@ -115,16 +146,14 @@ fn NavLink(
             )
     );
 
-    let style = if is_active {
-        "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.08); font-weight: 500;"
+    let class_name = if is_active {
+        "nav-link active"
     } else {
-        "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text-secondary); font-weight: 400;"
+        "nav-link"
     };
 
     rsx! {
-        a {
-            href: context.href_with_lang(target),
-            style: "{style}",
+        a { class: "{class_name}", href: context.href_with_lang(target),
             "{context.language.label(label, label_ja, label_eo)}"
         }
     }
@@ -141,8 +170,7 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
     let supported = crate::language::SUPPORTED_LANGUAGES;
 
     rsx! {
-        div {
-            style: "display: grid; gap: 0.25rem; justify-items: start;",
+        div { style: "display: grid; gap: 0.25rem; justify-items: start;",
             div {
                 button {
                     r#type: "button",
@@ -150,17 +178,15 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
                     "popovertargetaction": "show",
                     style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; anchor-name: --dropdown-language;",
                     "{current_native}"
-                    div {
-                        style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
+                    div { style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
                         "▼"
                     }
                 }
                 div {
                     id: "dropdown-panel-language",
                     "popover": "auto",
-                    style: "position-anchor: --dropdown-language; top: anchor(bottom); left: anchor(left); min-width: max(100%, 12rem); margin: 2px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);",
-                    div {
-                        style: "display: flex; flex-direction: column;",
+                    style: "position-anchor: --dropdown-language; top: anchor(bottom); right: anchor(right); left: auto; width: max-content; min-width: 9rem; max-width: 14rem; margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+                    div { style: "display: flex; flex-direction: column;",
                         for lang in supported {
                             {
                                 let is_selected = lang.to_code() == current_code;
@@ -182,8 +208,7 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
                 }
             }
             if let Some(notice) = requested_code {
-                div {
-                    style: "font-size: 0.75rem; color: var(--text-secondary); max-width: 22rem;",
+                div { style: "font-size: 0.75rem; color: var(--text-secondary); max-width: 22rem;",
                     "言語「{notice}」はサポートされていないため「{context.language.native_name()}」にフォールバックしました"
                 }
             }
@@ -204,7 +229,7 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
         div {
             id: "header-popover",
             "popover": "auto",
-            style: "position-anchor: --header-popover-button; top: anchor(bottom); left: auto; right: anchor(right); margin: 4px; padding: 0.42rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); backdrop-filter: var(--glass-blur); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);",
+            style: "position-anchor: --header-popover-button; top: anchor(bottom); left: auto; right: anchor(right); width: max-content; min-width: 10rem; max-width: 18rem; margin: 4px 0 0 0; padding: 0.42rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); backdrop-filter: var(--glass-blur); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); box-sizing: border-box;",
             if let Some((account_id, account_name)) = account_link {
                 a {
                     href: context.href_with_lang(Location::Account(account_id)),
@@ -221,9 +246,17 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
                     dispatch.write().force_offline = !current;
                 },
                 if state.force_offline {
-                    {context.language.label("Offline: On", "オフライン: オン", "Senkonekte: En")}
+                    {
+                        context
+                            .language
+                            .label("Offline: On", "オフライン: オン", "Senkonekte: En")
+                    }
                 } else {
-                    {context.language.label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")}
+                    {
+                        context
+                            .language
+                            .label("Offline: Off", "オフライン: オフ", "Senkonekte: Malŝaltita")
+                    }
                 }
             }
             button {

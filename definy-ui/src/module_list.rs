@@ -11,13 +11,9 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
     rsx! {
-        div {
-            class: "page-shell",
-            style: "{page_shell_style}",
-            div {
-                style: "display: flex; justify-content: space-between; align-items: center;",
-                h2 {
-                    style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
+        div { class: "page-shell", style: "{page_shell_style}",
+            div { style: "display: flex; justify-content: space-between; align-items: center;",
+                h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Modules\", \"モジュール\", \"Moduloj\")}"
                 }
                 if state.current_key.is_some() && !state.module_definition_form.is_form_open {
@@ -46,12 +42,8 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                 div {
                     class: "event-detail-card",
                     style: "padding: 2rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary);",
-                    div {
-                        style: "font-size: 1.5rem; opacity: 0.5;",
-                        "📦"
-                    }
-                    div {
-                        style: "font-size: 0.95rem; color: var(--text);",
+                    div { style: "font-size: 1.5rem; opacity: 0.5;", "📦" }
+                    div { style: "font-size: 0.95rem; color: var(--text);",
                         "{context.language.label(\"No modules yet\", \"まだモジュールがありません\", \"Ankoraŭ neniuj moduloj\")}"
                     }
                 }
@@ -61,45 +53,36 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                     style: "display: grid; gap: 0.45rem;",
                     for module in snapshots {
                         {
-                            let account_name = crate::app_state::account_display_name(&account_name_map, &module.account_id);
+                            let account_name = crate::app_state::account_display_name(
+                                &account_name_map,
+                                &module.account_id,
+                            );
                             let def_hash = module.definition_event_hash.clone();
                             let latest_hash = module.latest_event_hash.clone();
                             let time_str = module.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
-
                             rsx! {
                                 div {
                                     key: "{def_hash}",
                                     class: "event-card",
                                     style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                    div {
-                                        style: "display: flex; justify-content: space-between; align-items: center;",
-                                        div {
-                                            style: "font-size: 1rem; font-weight: 600; color: var(--text);",
-                                            "{module.module_name}"
-                                        }
-                                        div {
-                                            style: "font-size: 0.76rem; color: var(--text-secondary);",
-                                            "{time_str}"
-                                        }
+                                    div { style: "display: flex; justify-content: space-between; align-items: center;",
+                                        div { style: "font-size: 1rem; font-weight: 600; color: var(--text);", "{module.module_name}" }
+                                        div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
                                     }
                                     if !module.has_definition {
-                                        div {
-                                            style: "font-size: 0.82rem; color: var(--error);",
+                                        div { style: "font-size: 0.82rem; color: var(--error);",
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }
                                     if !module.module_description.is_empty() {
-                                        div {
-                                            style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
+                                        div { style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
                                             "{module.module_description}"
                                         }
                                     }
-                                    div {
-                                        style: "font-size: 0.84rem; color: var(--text-secondary);",
+                                    div { style: "font-size: 0.84rem; color: var(--text-secondary);",
                                         "{context.language.label(\"Author\", \"作成者\", \"Aŭtoro\")}: {account_name}"
                                     }
-                                    div {
-                                        style: "display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; font-size: 0.78rem;",
+                                    div { style: "display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; font-size: 0.78rem;",
                                         a {
                                             href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
                                             style: "font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); text-decoration: none;",
@@ -134,10 +117,8 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
         div {
             class: "event-detail-card",
             style: "display: grid; gap: 0.5rem; padding: 0.8rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div {
-                style: "display: flex; justify-content: space-between; align-items: center;",
-                div {
-                    style: "font-size: 0.95rem; font-weight: 600;",
+            div { style: "display: flex; justify-content: space-between; align-items: center;",
+                div { style: "font-size: 0.95rem; font-weight: 600;",
                     "{context.language.label(\"Create module\", \"新規モジュール作成\", \"Krei modulon\")}"
                 }
                 button {
@@ -159,7 +140,7 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                 oninput: move |evt: FormEvent| {
                     let mut state_sig = use_context::<Signal<AppState>>();
                     state_sig.write().module_definition_form.module_name_input = evt.value();
-                }
+                },
             }
             textarea {
                 name: "module-description",
@@ -169,7 +150,7 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                 oninput: move |evt: FormEvent| {
                     let mut state_sig = use_context::<Signal<AppState>>();
                     state_sig.write().module_definition_form.module_description_input = evt.value();
-                }
+                },
             }
             button {
                 r#type: "button",
@@ -182,44 +163,70 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                     } else {
                         return;
                     };
-                    let module_name = state_val.module_definition_form.module_name_input.trim().to_string();
-                    let module_description = state_val.module_definition_form.module_description_input.clone();
+                    let module_name = state_val
+                        .module_definition_form
+                        .module_name_input
+                        .trim()
+                        .to_string();
+                    let module_description = state_val
+                        .module_definition_form
+                        .module_description_input
+                        .clone();
                     if module_name.is_empty() {
                         state_sig.write().module_definition_form.result_message = Some(
-                            language.label("Error: module name is required", "エラー: モジュール名は必須です", "Eraro: modulo-nomo estas bezonata").to_string(),
+                            language
+                                .label(
+                                    "Error: module name is required",
+                                    "エラー: モジュール名は必須です",
+                                    "Eraro: modulo-nomo estas bezonata",
+                                )
+                                .to_string(),
                         );
                         return;
                     }
                     let force_offline = state_val.force_offline;
-
                     spawn(async move {
                         crate::event_submit::submit_event(
-                            definy_event::event::EventContent::ModuleDefinition(
-                                definy_event::event::ModuleDefinitionEvent {
+                                definy_event::event::EventContent::ModuleDefinition(definy_event::event::ModuleDefinitionEvent {
                                     module_name: module_name.into(),
                                     description: module_description.into(),
+                                }),
+                                key,
+                                force_offline,
+                                None,
+                                state_sig,
+                                move |next, record| {
+                                    if record.status == crate::local_event::LocalEventStatus::Sent {
+                                        next.module_definition_form.result_message = None;
+                                    } else {
+                                        next.module_definition_form.result_message = Some(
+                                            match record.status {
+                                                crate::local_event::LocalEventStatus::Queued => {
+                                                    language
+                                                        .label(
+                                                            "ModuleDefinition queued (offline)",
+                                                            "ModuleDefinition をキューに追加しました (オフライン)",
+                                                            "ModuleDefinition envicigita (senkonekte)",
+                                                        )
+                                                        .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Failed => {
+                                                    language
+                                                        .label(
+                                                            "ModuleDefinition failed to send",
+                                                            "ModuleDefinition の送信に失敗しました",
+                                                            "ModuleDefinition sendado malsukcesis",
+                                                        )
+                                                        .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Sent => unreachable!(),
+                                            },
+                                        );
+                                    }
                                 },
-                            ),
-                            key,
-                            force_offline,
-                            None,
-                            state_sig,
-                            move |next, record| {
-                                if record.status == crate::local_event::LocalEventStatus::Sent {
-                                    next.module_definition_form.result_message = None;
-                                } else {
-                                    next.module_definition_form.result_message = Some(
-                                        match record.status {
-                                            crate::local_event::LocalEventStatus::Queued => language.label("ModuleDefinition queued (offline)", "ModuleDefinition をキューに追加しました (オフライン)", "ModuleDefinition envicigita (senkonekte)").to_string(),
-                                            crate::local_event::LocalEventStatus::Failed => language.label("ModuleDefinition failed to send", "ModuleDefinition の送信に失敗しました", "ModuleDefinition sendado malsukcesis").to_string(),
-                                            crate::local_event::LocalEventStatus::Sent => unreachable!(),
-                                        }
-                                    );
-                                }
-                            },
-                        ).await;
+                            )
+                            .await;
                     });
-
                     let mut write_state = state_sig.write();
                     write_state.module_definition_form.is_form_open = false;
                     write_state.module_definition_form.module_name_input = String::new();

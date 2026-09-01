@@ -34,9 +34,7 @@ pub fn AccountDetailView(
     let page_shell_style = crate::layout::page_shell_style("1.2rem");
 
     rsx! {
-        div {
-            class: "page-shell",
-            style: "{page_shell_style}",
+        div { class: "page-shell", style: "{page_shell_style}",
             a {
                 class: "back-link",
                 href: context.href_with_lang(Location::AccountList),
@@ -46,17 +44,13 @@ pub fn AccountDetailView(
             div {
                 class: "event-detail-card",
                 style: "display: grid; gap: 0.75rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                h2 {
-                    style: "font-size: 1.3rem; font-weight: 600; margin: 0;",
-                    "{account_name}"
-                }
+                h2 { style: "font-size: 1.3rem; font-weight: 600; margin: 0;", "{account_name}" }
                 div {
                     class: "mono",
                     style: "font-size: 0.76rem; word-break: break-all; border: 1px solid var(--border); padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--text-secondary); background: rgb(0 0 0 / 0.15);",
                     "{account_id.to_string()}"
                 }
-                div {
-                    style: "color: var(--text-secondary); font-size: 0.85rem;",
+                div { style: "color: var(--text-secondary); font-size: 0.85rem;",
                     "{account_events.len()} {context.language.label(\"events\", \"イベント\", \"eventoj\")}"
                 }
             }
@@ -67,19 +61,13 @@ pub fn AccountDetailView(
                 div {
                     class: "event-detail-card",
                     style: "padding: 2.5rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                    div {
-                        style: "font-size: 1.5rem; opacity: 0.5;",
-                        "📄"
-                    }
-                    div {
-                        style: "font-size: 0.95rem; color: var(--text);",
+                    div { style: "font-size: 1.5rem; opacity: 0.5;", "📄" }
+                    div { style: "font-size: 0.95rem; color: var(--text);",
                         "{context.language.label(\"This account has not posted any events yet.\", \"このアカウントはまだイベントを投稿していません。\", \"Ĉi tiu konto ankoraŭ ne afiŝis eventojn.\")}"
                     }
                 }
             } else {
-                div {
-                    class: "event-list",
-                    style: "display: grid; gap: 0.6rem;",
+                div { class: "event-list", style: "display: grid; gap: 0.6rem;",
                     for (hash, ev) in account_events {
                         {
                             let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -90,10 +78,7 @@ pub fn AccountDetailView(
                                     class: "event-card",
                                     href: context.href_with_lang(Location::Event(hash)),
                                     style: "display: grid; gap: 0.5rem; padding: 0.8rem; text-decoration: none; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                    div {
-                                        style: "font-size: 0.85rem; color: var(--text-secondary);",
-                                        "{time_str}"
-                                    }
+                                    div { style: "font-size: 0.85rem; color: var(--text-secondary);", "{time_str}" }
                                     div { "{summary}" }
                                 }
                             }
@@ -111,8 +96,7 @@ fn ProfileForm(state: AppState, context: PageContext) -> Element {
         div {
             class: "event-detail-card",
             style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div {
-                style: "font-weight: 600;",
+            div { style: "font-weight: 600;",
                 "{context.language.label(\"Change account name\", \"アカウント名を変更\", \"Ŝanĝi kontonomon\")}"
             }
             input {
@@ -123,7 +107,7 @@ fn ProfileForm(state: AppState, context: PageContext) -> Element {
                 oninput: move |evt: FormEvent| {
                     let mut state_sig = use_context::<Signal<AppState>>();
                     state_sig.write().profile_name_input = evt.value();
-                }
+                },
             }
             button {
                 r#type: "button",
@@ -145,19 +129,18 @@ fn ProfileForm(state: AppState, context: PageContext) -> Element {
 
                     spawn(async move {
                         crate::event_submit::submit_event(
-                            definy_event::event::EventContent::ChangeProfile(
-                                definy_event::event::ChangeProfileEvent {
+                                definy_event::event::EventContent::ChangeProfile(definy_event::event::ChangeProfileEvent {
                                     account_name: new_name.into(),
+                                }),
+                                key,
+                                force_offline,
+                                filter,
+                                state_sig,
+                                |next, _| {
+                                    next.profile_name_input = String::new();
                                 },
-                            ),
-                            key,
-                            force_offline,
-                            filter,
-                            state_sig,
-                            |next, _| {
-                                next.profile_name_input = String::new();
-                            },
-                        ).await;
+                            )
+                            .await;
                     });
                 },
                 "{context.language.label(\"Change Name\", \"名前を変更\", \"Ŝanĝi nomon\")}"

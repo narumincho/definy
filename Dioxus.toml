@@ -1,0 +1,10 @@
+[application]
+name = "definy_client"
+default_platform = "web"
+
+[web.app]
+title = "definy"
+
+[web.watcher]
+reload_html = true
+watch_path = ["definy-client", "definy-ui"]

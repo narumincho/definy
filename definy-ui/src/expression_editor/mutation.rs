@@ -451,6 +451,18 @@ fn build_expression_from_selection(
                             definy_event::event::NumberExpression { value: 0 },
                         )),
                     }),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Equal,
+                    )) => definy_event::event::Expression::Equal(
+                        definy_event::event::EqualExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
                     _ => definy_event::event::Expression::PartReference(
                         definy_event::event::PartReferenceExpression {
                             part_definition_event_hash: hash,

@@ -37,11 +37,13 @@ pub async fn handle_event_get(
             Response::builder()
                 .status(503)
                 .header("Content-Type", "text/html; charset=utf-8")
+                .header("Access-Control-Allow-Origin", "*")
                 .body(Full::new(Bytes::from("Database is unavailable")))
         }
         Ok(None) => Response::builder()
             .status(404)
             .header("Content-Type", "text/html; charset=utf-8")
+            .header("Access-Control-Allow-Origin", "*")
             .body(Full::new(Bytes::from("404 Not Found"))),
         Ok(Some(event_binary)) => {
             if let Some(accept) = request.headers().get("accept")
@@ -51,11 +53,13 @@ pub async fn handle_event_get(
                 return Response::builder()
                     .status(200)
                     .header("Content-Type", "text/html; charset=utf-8")
+                    .header("Access-Control-Allow-Origin", "*")
                     .body(Full::new(Bytes::from("todo")));
             }
             Response::builder()
                 .status(200)
                 .header("Content-Type", "application/cbor")
+                .header("Access-Control-Allow-Origin", "*")
                 .body(Full::new(Bytes::from(event_binary)))
         }
     }
@@ -91,6 +95,7 @@ async fn handle_events_get(
         Err(_) => Response::builder()
             .status(400)
             .header("Content-Type", "text/html; charset=utf-8")
+            .header("Access-Control-Allow-Origin", "*")
             .body(Full::new(Bytes::from(
                 "400 Bad Request: Invalid query format",
             ))),
@@ -101,6 +106,7 @@ async fn handle_events_get(
                     Response::builder()
                         .status(503)
                         .header("Content-Type", "text/html; charset=utf-8")
+                        .header("Access-Control-Allow-Origin", "*")
                         .body(Full::new(Bytes::from("Database is unavailable")))
                 }
                 Ok(events) => {
@@ -111,12 +117,14 @@ async fn handle_events_get(
                         Ok(cbor) => Response::builder()
                             .status(200)
                             .header("Content-Type", "application/cbor")
+                            .header("Access-Control-Allow-Origin", "*")
                             .body(Full::new(Bytes::from(cbor))),
                         Err(e) => {
                             eprintln!("Failed to serialize events: {:?}", e);
                             Response::builder()
                                 .status(500)
                                 .header("Content-Type", "text/html; charset=utf-8")
+                                .header("Access-Control-Allow-Origin", "*")
                                 .body(Full::new(Bytes::from("Internal Server Error")))
                         }
                     }
@@ -140,12 +148,14 @@ async fn handle_events_post(
                     match crate::db::save_event(&data, &signature, &bytes, address, db).await {
                         Ok(()) => Response::builder()
                             .header("content-type", "text/plain; charset=utf-8")
+                            .header("Access-Control-Allow-Origin", "*")
                             .body(Full::new(Bytes::from("OK"))),
                         Err(e) => {
                             eprintln!("Failed to save event: {:?}", e);
                             Response::builder()
                                 .status(503)
                                 .header("content-type", "text/plain; charset=utf-8")
+                                .header("Access-Control-Allow-Origin", "*")
                                 .body(Full::new(Bytes::from("Database is unavailable")))
                         }
                     }
@@ -155,6 +165,7 @@ async fn handle_events_post(
                     Response::builder()
                         .status(400)
                         .header("content-type", "text/plain; charset=utf-8")
+                        .header("Access-Control-Allow-Origin", "*")
                         .body(Full::new(Bytes::from("Failed to parse or verify CBOR")))
                 }
             }
@@ -162,6 +173,7 @@ async fn handle_events_post(
         Err(_) => Response::builder()
             .status(500)
             .header("content-type", "text/plain; charset=utf-8")
+            .header("Access-Control-Allow-Origin", "*")
             .body(Full::new(Bytes::from("Failed to read body"))),
     }
 }

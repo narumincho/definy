@@ -52,7 +52,37 @@ docker run -d --name definy-dev-db -p 8000:8000 surrealdb/surrealdb:latest start
 cargo run -p definy-build && cargo run -p definy-server
 ```
 
-### 2. SurrealDB サーバー / Surreal Cloud に接続して起動する場合
+### 2. Dioxus のホットリロードで開発する場合
+
+Dioxus CLI (`dx`) を使用してホットリロード付きで Web クライアントを開発・即座に画面確認できます。
+バックエンド API (`definy-server`) と通信する場合は、`definy-server` を別ターミナルで起動します（ポート 8080 からアクセス時はデフォルトで `http://localhost:8000` に接続します。接続先を変更したい場合は環境変数 `DEFINY_API_URL` を指定可能です）。
+
+事前準備 (初回のみ):
+```sh
+curl -sSL https://dioxus.dev/install.sh | bash
+```
+
+ターミナル 1 (APIサーバー起動):
+```sh
+cargo run -p definy-server
+```
+
+ターミナル 2 (ホットリロードクライアント起動):
+```sh
+dx serve --package definy-client
+# 別のAPIサーバーURLを指定する場合:
+# DEFINY_API_URL=http://localhost:8000 dx serve --package definy-client
+```
+
+※ UIコード (`definy-ui`) やクライアントコードを編集・保存すると、ブラウザ上で即座に変更が反映されます。
+
+また、サーバーやビルドを含む全体の変更を検知して自動再起動したい場合は `cargo-watch` を利用することも可能です:
+```sh
+cargo install cargo-watch
+cargo watch -x "run -p definy-build" -x "run -p definy-server"
+```
+
+### 3. SurrealDB サーバー / Surreal Cloud に接続して起動する場合
 
 環境変数を指定して起動します：
 
@@ -84,4 +114,5 @@ cargo run -p definy-build
     cargo run -p definy-server
 }
 ```
+
 
