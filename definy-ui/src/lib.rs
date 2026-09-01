@@ -146,6 +146,7 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
     };
 
     rsx! {
+        style { {include_str!("../main.css")} }
         div {
             style: "display: grid; gap: 0.8rem; align-content: start; padding-top: 4.2rem; padding-bottom: 5rem;",
             header::HeaderView { state: state.clone(), context: context.clone() }
