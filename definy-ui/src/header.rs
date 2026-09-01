@@ -115,16 +115,16 @@ fn NavLink(
             )
     );
 
-    let style = if is_active {
-        "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.08); font-weight: 500;"
+    let class_name = if is_active {
+        "nav-link active"
     } else {
-        "font-size: 0.88rem; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); transition: all 0.15s ease; text-decoration: none; color: var(--text-secondary); font-weight: 400;"
+        "nav-link"
     };
 
     rsx! {
         a {
+            class: "{class_name}",
             href: context.href_with_lang(target),
-            style: "{style}",
             "{context.language.label(label, label_ja, label_eo)}"
         }
     }
