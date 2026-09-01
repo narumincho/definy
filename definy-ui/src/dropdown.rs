@@ -41,16 +41,14 @@ pub fn SearchableDropdown(
         .collect();
 
     rsx! {
-        div {
-            style: "width: 100%; max-width: 22rem; position: relative;",
+        div { style: "width: 100%; max-width: 22rem; position: relative;",
             button {
                 r#type: "button",
                 style: "width: 100%; text-align: left; padding: 0.42rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name}; box-sizing: border-box;",
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "show",
                 "{current_label}"
-                div {
-                    style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
+                div { style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
                     "▼"
                 }
             }
@@ -68,8 +66,7 @@ pub fn SearchableDropdown(
                         search_query.set(evt.value());
                     },
                 }
-                div {
-                    style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
+                div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
                     for (opt_val, opt_label) in filtered_options {
                         {
                             let is_selected = opt_val == current_value;
@@ -90,8 +87,7 @@ pub fn SearchableDropdown(
                                         on_change.call(opt_val_clone.clone());
                                     },
                                     if parts.len() > 1 {
-                                        div {
-                                            style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                                        div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
                                             "{parts[0]}"
                                         }
                                         div {
@@ -100,8 +96,7 @@ pub fn SearchableDropdown(
                                             "{parts[1..].join(\" · \")}"
                                         }
                                     } else {
-                                        div {
-                                            style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                                        div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
                                             "{opt_label}"
                                         }
                                     }

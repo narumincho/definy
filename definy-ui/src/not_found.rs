@@ -18,7 +18,15 @@ pub fn NotFoundView(state: AppState, context: PageContext) -> Element {
             div {
                 class: "not-found-title",
                 style: "font-size: 1.5rem; color: var(--text); margin-bottom: 2rem;",
-                {context.language.label("Page Not Found", "ページが見つかりません", "Paĝo ne trovita")}
+                {
+                    context
+                        .language
+                        .label(
+                            "Page Not Found",
+                            "ページが見つかりません",
+                            "Paĝo ne trovita",
+                        )
+                }
             }
             a {
                 class: "cta-link",

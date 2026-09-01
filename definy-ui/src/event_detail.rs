@@ -328,7 +328,7 @@ fn RelatedPartEvents(
                 "{context.language.label(\"History & Related Events\", \"変更履歴・関連イベント\", \"Historio kaj rilataj eventoj\")}"
             }
             div { style: "display: grid; gap: 0.4rem;",
-                for (event_hash , ev) in related_events {
+                for (event_hash, ev) in related_events {
                     {
                         let label = crate::event_presenter::event_kind_label(context.language, &ev);
                         let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();

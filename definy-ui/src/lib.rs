@@ -116,39 +116,74 @@ pub fn render(state: &AppState, context: &PageContext) -> Element {
 fn render_inner(state: &AppState, context: &PageContext) -> Element {
     let page_content = match &context.location {
         Some(Location::Home) => {
-            rsx! { event_list::EventListView { state: state.clone(), context: context.clone() } }
+            rsx! {
+                event_list::EventListView { state: state.clone(), context: context.clone() }
+            }
         }
         Some(Location::AccountList) => {
-            rsx! { account_list::AccountListView { state: state.clone(), context: context.clone() } }
+            rsx! {
+                account_list::AccountListView { state: state.clone(), context: context.clone() }
+            }
         }
         Some(Location::PartList) => {
-            rsx! { part_list::PartListView { state: state.clone(), context: context.clone() } }
+            rsx! {
+                part_list::PartListView { state: state.clone(), context: context.clone() }
+            }
         }
         Some(Location::ModuleList) => {
-            rsx! { module_list::ModuleListView { state: state.clone(), context: context.clone() } }
+            rsx! {
+                module_list::ModuleListView { state: state.clone(), context: context.clone() }
+            }
         }
         Some(Location::LocalEventQueue) => {
-            rsx! { local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() } }
+            rsx! {
+                local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() }
+            }
         }
         Some(Location::Module(hash)) => {
-            rsx! { module_detail::ModuleDetailView { state: state.clone(), context: context.clone(), definition_event_hash: hash.clone() } }
+            rsx! {
+                module_detail::ModuleDetailView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    definition_event_hash: hash.clone(),
+                }
+            }
         }
         Some(Location::Part(hash)) => {
-            rsx! { part_detail::PartDetailView { state: state.clone(), context: context.clone(), definition_event_hash: hash.clone() } }
+            rsx! {
+                part_detail::PartDetailView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    definition_event_hash: hash.clone(),
+                }
+            }
         }
         Some(Location::Event(hash)) => {
-            rsx! { event_detail::EventDetailView { state: state.clone(), context: context.clone(), target_hash: hash.clone() } }
+            rsx! {
+                event_detail::EventDetailView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    target_hash: hash.clone(),
+                }
+            }
         }
         Some(Location::Account(account_id)) => {
-            rsx! { account_detail::AccountDetailView { state: state.clone(), context: context.clone(), account_id: account_id.clone() } }
+            rsx! {
+                account_detail::AccountDetailView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    account_id: account_id.clone(),
+                }
+            }
         }
-        None => rsx! { not_found::NotFoundView { state: state.clone(), context: context.clone() } },
+        None => rsx! {
+            not_found::NotFoundView { state: state.clone(), context: context.clone() }
+        },
     };
 
     rsx! {
         style { {include_str!("../main.css")} }
-        div {
-            style: "display: grid; gap: 0.8rem; align-content: start; padding-top: 4.2rem; padding-bottom: 5rem;",
+        div { style: "display: grid; gap: 0.8rem; align-content: start; padding-top: 4.2rem; padding-bottom: 5rem;",
             header::HeaderView { state: state.clone(), context: context.clone() }
             div {
                 key: "main-wrapper",
@@ -169,18 +204,13 @@ fn DbWarningBanner(context: PageContext) -> Element {
         div {
             class: "db-warning-banner",
             style: "width: calc(100% - 1.8rem); max-width: 920px; margin: 0.4rem auto 0; padding: 0.65rem 1rem; background: rgb(245 158 11 / 0.12); border: 1px solid rgb(245 158 11 / 0.35); border-radius: var(--radius-md); color: #fcd34d; font-size: 0.86rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;",
-            div {
-                style: "display: flex; align-items: center; gap: 0.5rem;",
-                div {
-                    style: "font-size: 1rem;",
-                    "⚠️"
-                }
+            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                div { style: "font-size: 1rem;", "⚠️" }
                 div {
                     "{context.language.label(\"Cannot connect to database. Local and offline features are available. Retrying connection...\", \"データベースに接続できません。ローカル機能・式の計算は利用可能です。接続を再試行しています...\", \"Ne povas konektiĝi al datumbazo. Lokaj funkcioj disponeblas. Rekonektante...\")}"
                 }
             }
-            div {
-                style: "font-size: 0.75rem; opacity: 0.8; white-space: nowrap;",
+            div { style: "font-size: 0.75rem; opacity: 0.8; white-space: nowrap;",
                 "{context.language.label(\"Retrying...\", \"再接続中...\", \"Rekonektante...\")}"
             }
         }

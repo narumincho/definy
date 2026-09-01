@@ -227,10 +227,7 @@ fn AppRoot() -> Element {
     let ctx_val = current_context.read().clone();
 
     rsx! {
-        definy_ui::App {
-            state: state_val,
-            context: ctx_val,
-        }
+        definy_ui::App { state: state_val, context: ctx_val }
     }
 }
 
