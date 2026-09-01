@@ -3,8 +3,9 @@ name = "definy-client"
 version = "0.1.0"
 edition = "2024"
 
-[lib]
-crate-type = ["cdylib"]
+[[bin]]
+name = "definy_client"
+path = "src/main.rs"
 
 [dependencies]
 js-sys = "0.3"

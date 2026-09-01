@@ -6,8 +6,7 @@ use wasm_bindgen::prelude::*;
 
 mod keyboard_nav;
 
-#[wasm_bindgen(start)]
-fn run() -> Result<(), JsValue> {
+fn main() {
     console_error_panic_hook::set_once();
     if let Some(window) = web_sys::window()
         && let Some(document) = window.document()
@@ -16,7 +15,6 @@ fn run() -> Result<(), JsValue> {
         main.set_inner_html("");
     }
     dioxus_web::launch::launch_cfg(AppRoot, dioxus_web::Config::new().rootname("main"));
-    Ok(())
 }
 
 static SSR_INITIAL_STATE_TEXT: std::sync::LazyLock<Option<String>> =
