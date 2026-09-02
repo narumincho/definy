@@ -186,72 +186,145 @@ fn check_expression_type(
                 ExpressionType::Record
             }
         }
-        definy_event::event::Expression::Add(add_expression) => {
-            let mut left_path = path.to_vec();
-            left_path.push(PathStep::Left);
-            let left_type = check_expression_type(
-                add_expression.left.as_ref(),
-                left_path.as_slice(),
-                Some(ExpressionType::Number),
+        definy_event::event::Expression::Add(add_expression) => check_binary_arithmetic(
+            &add_expression.left,
+            &add_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::Subtract(sub_expression) => check_binary_arithmetic(
+            &sub_expression.left,
+            &sub_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::Multiply(mul_expression) => check_binary_arithmetic(
+            &mul_expression.left,
+            &mul_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::Divide(div_expression) => check_binary_arithmetic(
+            &div_expression.left,
+            &div_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::Remainder(rem_expression) => check_binary_arithmetic(
+            &rem_expression.left,
+            &rem_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::LessThan(lt_expression) => {
+            check_binary_comparison_numbers(
+                &lt_expression.left,
+                &lt_expression.right,
+                path,
                 env,
                 part_type_map,
                 part_snapshot_map,
                 diagnostics,
-            );
-            let mut right_path = path.to_vec();
-            right_path.push(PathStep::Right);
-            let right_type = check_expression_type(
-                add_expression.right.as_ref(),
-                right_path.as_slice(),
-                Some(ExpressionType::Number),
-                env,
-                part_type_map,
-                part_snapshot_map,
-                diagnostics,
-            );
-
-            if left_type == ExpressionType::Number && right_type == ExpressionType::Number {
-                ExpressionType::Number
-            } else {
-                ExpressionType::Unknown
-            }
+            )
         }
-        definy_event::event::Expression::Equal(equal_expression) => {
-            let mut left_path = path.to_vec();
-            left_path.push(PathStep::Left);
-            let left_type = check_expression_type(
-                equal_expression.left.as_ref(),
-                left_path.as_slice(),
-                None,
+        definy_event::event::Expression::LessThanOrEqual(le_expression) => {
+            check_binary_comparison_numbers(
+                &le_expression.left,
+                &le_expression.right,
+                path,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            )
+        }
+        definy_event::event::Expression::GreaterThan(gt_expression) => {
+            check_binary_comparison_numbers(
+                &gt_expression.left,
+                &gt_expression.right,
+                path,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            )
+        }
+        definy_event::event::Expression::GreaterThanOrEqual(ge_expression) => {
+            check_binary_comparison_numbers(
+                &ge_expression.left,
+                &ge_expression.right,
+                path,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            )
+        }
+        definy_event::event::Expression::Not(not_expression) => {
+            let mut value_path = path.to_vec();
+            value_path.push(PathStep::Condition);
+            check_expression_type(
+                not_expression.value.as_ref(),
+                value_path.as_slice(),
+                Some(ExpressionType::Boolean),
                 env,
                 part_type_map,
                 part_snapshot_map,
                 diagnostics,
             );
-            let mut right_path = path.to_vec();
-            right_path.push(PathStep::Right);
-            let right_type = check_expression_type(
-                equal_expression.right.as_ref(),
-                right_path.as_slice(),
-                None,
-                env,
-                part_type_map,
-                part_snapshot_map,
-                diagnostics,
-            );
-            if left_type != ExpressionType::Unknown
-                && right_type != ExpressionType::Unknown
-                && left_type != right_type
-            {
-                push_type_mismatch_diagnostic(
-                    diagnostics,
-                    right_path.as_slice(),
-                    &left_type,
-                    &right_type,
-                );
-            }
             ExpressionType::Boolean
         }
+        definy_event::event::Expression::And(and_expression) => check_binary_boolean(
+            &and_expression.left,
+            &and_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::Or(or_expression) => check_binary_boolean(
+            &or_expression.left,
+            &or_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::Equal(equal_expression) => check_binary_equality(
+            &equal_expression.left,
+            &equal_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
+        definy_event::event::Expression::NotEqual(ne_expression) => check_binary_equality(
+            &ne_expression.left,
+            &ne_expression.right,
+            path,
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+        ),
         definy_event::event::Expression::If(if_expression) => {
             let mut condition_path = path.to_vec();
             condition_path.push(PathStep::Condition);
@@ -586,4 +659,150 @@ pub fn constructor_default_value_from_type_part(
     let shape =
         infer_constructor_shape_from_type_part(&part_snapshot_map, type_part_definition_event_hash);
     default_expression_from_constructor_shape(&shape)
+}
+
+fn check_binary_arithmetic(
+    left: &definy_event::event::Expression,
+    right: &definy_event::event::Expression,
+    path: &[PathStep],
+    env: &HashMap<i64, ExpressionType>,
+    part_type_map: &HashMap<EventHashId, ExpressionType>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    diagnostics: &mut Vec<TypeDiagnostic>,
+) -> ExpressionType {
+    let mut left_path = path.to_vec();
+    left_path.push(PathStep::Left);
+    let left_type = check_expression_type(
+        left,
+        left_path.as_slice(),
+        Some(ExpressionType::Number),
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    let mut right_path = path.to_vec();
+    right_path.push(PathStep::Right);
+    let right_type = check_expression_type(
+        right,
+        right_path.as_slice(),
+        Some(ExpressionType::Number),
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    if left_type == ExpressionType::Number && right_type == ExpressionType::Number {
+        ExpressionType::Number
+    } else {
+        ExpressionType::Unknown
+    }
+}
+
+fn check_binary_comparison_numbers(
+    left: &definy_event::event::Expression,
+    right: &definy_event::event::Expression,
+    path: &[PathStep],
+    env: &HashMap<i64, ExpressionType>,
+    part_type_map: &HashMap<EventHashId, ExpressionType>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    diagnostics: &mut Vec<TypeDiagnostic>,
+) -> ExpressionType {
+    let mut left_path = path.to_vec();
+    left_path.push(PathStep::Left);
+    check_expression_type(
+        left,
+        left_path.as_slice(),
+        Some(ExpressionType::Number),
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    let mut right_path = path.to_vec();
+    right_path.push(PathStep::Right);
+    check_expression_type(
+        right,
+        right_path.as_slice(),
+        Some(ExpressionType::Number),
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    ExpressionType::Boolean
+}
+
+fn check_binary_boolean(
+    left: &definy_event::event::Expression,
+    right: &definy_event::event::Expression,
+    path: &[PathStep],
+    env: &HashMap<i64, ExpressionType>,
+    part_type_map: &HashMap<EventHashId, ExpressionType>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    diagnostics: &mut Vec<TypeDiagnostic>,
+) -> ExpressionType {
+    let mut left_path = path.to_vec();
+    left_path.push(PathStep::Left);
+    check_expression_type(
+        left,
+        left_path.as_slice(),
+        Some(ExpressionType::Boolean),
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    let mut right_path = path.to_vec();
+    right_path.push(PathStep::Right);
+    check_expression_type(
+        right,
+        right_path.as_slice(),
+        Some(ExpressionType::Boolean),
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    ExpressionType::Boolean
+}
+
+fn check_binary_equality(
+    left: &definy_event::event::Expression,
+    right: &definy_event::event::Expression,
+    path: &[PathStep],
+    env: &HashMap<i64, ExpressionType>,
+    part_type_map: &HashMap<EventHashId, ExpressionType>,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    diagnostics: &mut Vec<TypeDiagnostic>,
+) -> ExpressionType {
+    let mut left_path = path.to_vec();
+    left_path.push(PathStep::Left);
+    let left_type = check_expression_type(
+        left,
+        left_path.as_slice(),
+        None,
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    let mut right_path = path.to_vec();
+    right_path.push(PathStep::Right);
+    let right_type = check_expression_type(
+        right,
+        right_path.as_slice(),
+        None,
+        env,
+        part_type_map,
+        part_snapshot_map,
+        diagnostics,
+    );
+    if left_type != ExpressionType::Unknown
+        && right_type != ExpressionType::Unknown
+        && left_type != right_type
+    {
+        push_type_mismatch_diagnostic(diagnostics, right_path.as_slice(), &left_type, &right_type);
+    }
+    ExpressionType::Boolean
 }

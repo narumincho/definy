@@ -81,6 +81,18 @@ pub enum Expression {
     TypeList(TypeListExpression),
     ListLiteral(ListLiteralExpression),
     Add(AddExpression),
+    Subtract(SubtractExpression),
+    Multiply(MultiplyExpression),
+    Divide(DivideExpression),
+    Remainder(RemainderExpression),
+    LessThan(LessThanExpression),
+    LessThanOrEqual(LessThanOrEqualExpression),
+    GreaterThan(GreaterThanExpression),
+    GreaterThanOrEqual(GreaterThanOrEqualExpression),
+    NotEqual(NotEqualExpression),
+    Not(NotExpression),
+    And(AndExpression),
+    Or(OrExpression),
     PartReference(PartReferenceExpression),
     Boolean(BooleanExpression),
     If(IfExpression),
@@ -98,13 +110,96 @@ pub enum Expression {
 pub enum CompilerBuiltin {
     Let,
     Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Remainder,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+    Equal,
+    NotEqual,
+    Not,
+    And,
+    Or,
     NumberLiteral,
     If,
-    Equal,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AddExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SubtractExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MultiplyExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DivideExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RemainderExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LessThanExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LessThanOrEqualExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GreaterThanExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GreaterThanOrEqualExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NotEqualExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NotExpression {
+    pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct AndExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }

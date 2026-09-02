@@ -60,6 +60,34 @@ pub fn get_mut_expression_at_path<'a>(
             }
             _ => None,
         },
+        definy_event::event::Expression::Subtract(sub_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(sub_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => {
+                get_mut_expression_at_path(sub_expression.right.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Multiply(mul_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(mul_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => {
+                get_mut_expression_at_path(mul_expression.right.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Divide(div_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(div_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => {
+                get_mut_expression_at_path(div_expression.right.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Remainder(rem_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(rem_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => {
+                get_mut_expression_at_path(rem_expression.right.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
         definy_event::event::Expression::Equal(equal_expression) => match path[0] {
             PathStep::Left => {
                 get_mut_expression_at_path(equal_expression.left.as_mut(), &path[1..])
@@ -67,6 +95,49 @@ pub fn get_mut_expression_at_path<'a>(
             PathStep::Right => {
                 get_mut_expression_at_path(equal_expression.right.as_mut(), &path[1..])
             }
+            _ => None,
+        },
+        definy_event::event::Expression::NotEqual(ne_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(ne_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => get_mut_expression_at_path(ne_expression.right.as_mut(), &path[1..]),
+            _ => None,
+        },
+        definy_event::event::Expression::LessThan(lt_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(lt_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => get_mut_expression_at_path(lt_expression.right.as_mut(), &path[1..]),
+            _ => None,
+        },
+        definy_event::event::Expression::LessThanOrEqual(le_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(le_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => get_mut_expression_at_path(le_expression.right.as_mut(), &path[1..]),
+            _ => None,
+        },
+        definy_event::event::Expression::GreaterThan(gt_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(gt_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => get_mut_expression_at_path(gt_expression.right.as_mut(), &path[1..]),
+            _ => None,
+        },
+        definy_event::event::Expression::GreaterThanOrEqual(ge_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(ge_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => get_mut_expression_at_path(ge_expression.right.as_mut(), &path[1..]),
+            _ => None,
+        },
+        definy_event::event::Expression::Not(not_expression) => match path[0] {
+            PathStep::Condition | PathStep::Left => {
+                get_mut_expression_at_path(not_expression.value.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::And(and_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(and_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => {
+                get_mut_expression_at_path(and_expression.right.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Or(or_expression) => match path[0] {
+            PathStep::Left => get_mut_expression_at_path(or_expression.left.as_mut(), &path[1..]),
+            PathStep::Right => get_mut_expression_at_path(or_expression.right.as_mut(), &path[1..]),
             _ => None,
         },
         definy_event::event::Expression::If(if_expression) => match path[0] {
@@ -290,14 +361,61 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                 max_local_variable_id(add_expression.left.as_ref())
                     .max(max_local_variable_id(add_expression.right.as_ref()))
             }
-            definy_event::event::Expression::If(if_expression) => {
-                max_local_variable_id(if_expression.condition.as_ref())
-                    .max(max_local_variable_id(if_expression.then_expr.as_ref()))
-                    .max(max_local_variable_id(if_expression.else_expr.as_ref()))
+            definy_event::event::Expression::Subtract(sub_expression) => {
+                max_local_variable_id(sub_expression.left.as_ref())
+                    .max(max_local_variable_id(sub_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::Multiply(mul_expression) => {
+                max_local_variable_id(mul_expression.left.as_ref())
+                    .max(max_local_variable_id(mul_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::Divide(div_expression) => {
+                max_local_variable_id(div_expression.left.as_ref())
+                    .max(max_local_variable_id(div_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::Remainder(rem_expression) => {
+                max_local_variable_id(rem_expression.left.as_ref())
+                    .max(max_local_variable_id(rem_expression.right.as_ref()))
             }
             definy_event::event::Expression::Equal(equal_expression) => {
                 max_local_variable_id(equal_expression.left.as_ref())
                     .max(max_local_variable_id(equal_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::NotEqual(ne_expression) => {
+                max_local_variable_id(ne_expression.left.as_ref())
+                    .max(max_local_variable_id(ne_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::LessThan(lt_expression) => {
+                max_local_variable_id(lt_expression.left.as_ref())
+                    .max(max_local_variable_id(lt_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::LessThanOrEqual(le_expression) => {
+                max_local_variable_id(le_expression.left.as_ref())
+                    .max(max_local_variable_id(le_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::GreaterThan(gt_expression) => {
+                max_local_variable_id(gt_expression.left.as_ref())
+                    .max(max_local_variable_id(gt_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::GreaterThanOrEqual(ge_expression) => {
+                max_local_variable_id(ge_expression.left.as_ref())
+                    .max(max_local_variable_id(ge_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::Not(not_expression) => {
+                max_local_variable_id(not_expression.value.as_ref())
+            }
+            definy_event::event::Expression::And(and_expression) => {
+                max_local_variable_id(and_expression.left.as_ref())
+                    .max(max_local_variable_id(and_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::Or(or_expression) => {
+                max_local_variable_id(or_expression.left.as_ref())
+                    .max(max_local_variable_id(or_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::If(if_expression) => {
+                max_local_variable_id(if_expression.condition.as_ref())
+                    .max(max_local_variable_id(if_expression.then_expr.as_ref()))
+                    .max(max_local_variable_id(if_expression.else_expr.as_ref()))
             }
             definy_event::event::Expression::Let(let_expression) => let_expression
                 .variable_id
@@ -355,6 +473,42 @@ fn build_expression_from_selection(
                 definy_event::event::NumberExpression { value: 0 },
             )),
         })
+    } else if selected_value == "expr:subtract" || selected_value == "expr:minus" {
+        definy_event::event::Expression::Subtract(definy_event::event::SubtractExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:multiply" {
+        definy_event::event::Expression::Multiply(definy_event::event::MultiplyExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:divide" {
+        definy_event::event::Expression::Divide(definy_event::event::DivideExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 1 },
+            )),
+        })
+    } else if selected_value == "expr:remainder" {
+        definy_event::event::Expression::Remainder(definy_event::event::RemainderExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 1 },
+            )),
+        })
     } else if selected_value == "expr:equal" {
         definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
             left: Box::new(definy_event::event::Expression::Number(
@@ -362,6 +516,79 @@ fn build_expression_from_selection(
             )),
             right: Box::new(definy_event::event::Expression::Number(
                 definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:not_equal" {
+        definy_event::event::Expression::NotEqual(definy_event::event::NotEqualExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:less_than" {
+        definy_event::event::Expression::LessThan(definy_event::event::LessThanExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:less_than_or_equal" {
+        definy_event::event::Expression::LessThanOrEqual(
+            definy_event::event::LessThanOrEqualExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            },
+        )
+    } else if selected_value == "expr:greater_than" {
+        definy_event::event::Expression::GreaterThan(definy_event::event::GreaterThanExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:greater_than_or_equal" {
+        definy_event::event::Expression::GreaterThanOrEqual(
+            definy_event::event::GreaterThanOrEqualExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            },
+        )
+    } else if selected_value == "expr:not" {
+        definy_event::event::Expression::Not(definy_event::event::NotExpression {
+            value: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: false },
+            )),
+        })
+    } else if selected_value == "expr:and" {
+        definy_event::event::Expression::And(definy_event::event::AndExpression {
+            left: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: true },
+            )),
+            right: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: true },
+            )),
+        })
+    } else if selected_value == "expr:or" {
+        definy_event::event::Expression::Or(definy_event::event::OrExpression {
+            left: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: false },
+            )),
+            right: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: false },
             )),
         })
     } else if selected_value == "expr:if" {
@@ -417,6 +644,145 @@ fn build_expression_from_selection(
                             )),
                         })
                     }
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Minus,
+                    )) => definy_event::event::Expression::Subtract(
+                        definy_event::event::SubtractExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Multiply,
+                    )) => definy_event::event::Expression::Multiply(
+                        definy_event::event::MultiplyExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Divide,
+                    )) => definy_event::event::Expression::Divide(
+                        definy_event::event::DivideExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 1 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Remainder,
+                    )) => definy_event::event::Expression::Remainder(
+                        definy_event::event::RemainderExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 1 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::LessThan,
+                    )) => definy_event::event::Expression::LessThan(
+                        definy_event::event::LessThanExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::LessThanOrEqual,
+                    )) => definy_event::event::Expression::LessThanOrEqual(
+                        definy_event::event::LessThanOrEqualExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::GreaterThan,
+                    )) => definy_event::event::Expression::GreaterThan(
+                        definy_event::event::GreaterThanExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
+                    )) => definy_event::event::Expression::GreaterThanOrEqual(
+                        definy_event::event::GreaterThanOrEqualExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::NotEqual,
+                    )) => definy_event::event::Expression::NotEqual(
+                        definy_event::event::NotEqualExpression {
+                            left: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ),
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Not,
+                    )) => {
+                        definy_event::event::Expression::Not(definy_event::event::NotExpression {
+                            value: Box::new(definy_event::event::Expression::Boolean(
+                                definy_event::event::BooleanExpression { value: false },
+                            )),
+                        })
+                    }
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::And,
+                    )) => {
+                        definy_event::event::Expression::And(definy_event::event::AndExpression {
+                            left: Box::new(definy_event::event::Expression::Boolean(
+                                definy_event::event::BooleanExpression { value: true },
+                            )),
+                            right: Box::new(definy_event::event::Expression::Boolean(
+                                definy_event::event::BooleanExpression { value: true },
+                            )),
+                        })
+                    }
+                    Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Or,
+                    )) => definy_event::event::Expression::Or(definy_event::event::OrExpression {
+                        left: Box::new(definy_event::event::Expression::Boolean(
+                            definy_event::event::BooleanExpression { value: false },
+                        )),
+                        right: Box::new(definy_event::event::Expression::Boolean(
+                            definy_event::event::BooleanExpression { value: false },
+                        )),
+                    }),
                     Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Let,
                     )) => {

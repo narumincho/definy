@@ -37,304 +37,9 @@ pub fn evaluate_expression(
     expression: &definy_event::event::Expression,
     events: &[crate::app_state::EventWithHash],
 ) -> Result<Value, &'static str> {
-    // Try to evaluate purely via WebAssembly first!
-    if let Some(result) = evaluate_via_wasm(expression) {
-        return result;
-    }
-
-    let env = std::collections::HashMap::new();
-    evaluate_expression_with_depth(expression, events, &env, 0)
-}
-
-fn evaluate_via_wasm(
-    #[allow(unused_variables)] expression: &definy_event::event::Expression,
-) -> Option<Result<Value, &'static str>> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        // For expressions containing PartReferences, fallback to Rust for now since
-        // the Wasm emitter doesn't yet resolve them from the `events` store.
-        if has_part_references(expression) {
-            return None;
-        }
-
-        let wasm_bytes = crate::wasm_emitter::compile_expression_to_wasm(expression).ok()?;
-
-        let uint8_array = js_sys::Uint8Array::from(wasm_bytes.as_slice());
-        let module_result = js_sys::WebAssembly::Module::new(&uint8_array);
-        let module = match module_result {
-            Ok(m) => m,
-            Err(_) => {
-                web_sys::console::warn_1(&wasm_bindgen::JsValue::from_str(
-                    "Wasm compilation failed",
-                ));
-                return None;
-            }
-        };
-
-        let imports = js_sys::Object::new();
-        let instance_result = js_sys::WebAssembly::Instance::new(&module, &imports);
-        let instance = match instance_result {
-            Ok(i) => i,
-            Err(_) => return None,
-        };
-
-        let exports = instance.exports();
-        let evaluate_func =
-            js_sys::Reflect::get(&exports, &wasm_bindgen::JsValue::from_str("evaluate")).ok()?;
-
-        if evaluate_func.is_function() {
-            let func_obj: &js_sys::Function = wasm_bindgen::JsCast::unchecked_ref(&evaluate_func);
-            let call_result = func_obj.call0(&wasm_bindgen::JsValue::NULL);
-
-            match call_result {
-                Ok(val) => {
-                    if let Some(num) = val.as_f64() {
-                        let i64_val = num as i64;
-                        // Determine if we should treat it as bool or number based on expression type
-                        if is_boolean_expression(expression) {
-                            return Some(Ok(Value::Bool(i64_val != 0)));
-                        } else {
-                            return Some(Ok(Value::Number(i64_val)));
-                        }
-                    }
-                }
-                Err(e) => {
-                    web_sys::console::error_1(&e);
-                    return Some(Err("Exception executing Wasm"));
-                }
-            }
-        }
-    }
-
-    None
-}
-
-#[allow(dead_code)]
-fn has_part_references(expr: &definy_event::event::Expression) -> bool {
-    match expr {
-        definy_event::event::Expression::PartReference(_) => true,
-        definy_event::event::Expression::TypeNumber
-        | definy_event::event::Expression::TypeString
-        | definy_event::event::Expression::TypeBoolean => false,
-        definy_event::event::Expression::TypeList(type_list_expression) => {
-            has_part_references(type_list_expression.item_type.as_ref())
-        }
-        definy_event::event::Expression::ListLiteral(list_expression) => {
-            list_expression.items.iter().any(has_part_references)
-        }
-        definy_event::event::Expression::Add(a) => {
-            has_part_references(&a.left) || has_part_references(&a.right)
-        }
-        definy_event::event::Expression::If(i) => {
-            has_part_references(&i.condition)
-                || has_part_references(&i.then_expr)
-                || has_part_references(&i.else_expr)
-        }
-        definy_event::event::Expression::Equal(e) => {
-            has_part_references(&e.left) || has_part_references(&e.right)
-        }
-        definy_event::event::Expression::Let(l) => {
-            has_part_references(&l.value) || has_part_references(&l.body)
-        }
-        definy_event::event::Expression::Constructor(_) => true,
-        definy_event::event::Expression::TypeLiteral(record_expression) => record_expression
-            .items
-            .iter()
-            .any(|item| has_part_references(item.value.as_ref())),
-        definy_event::event::Expression::Variable(_) => false,
-        definy_event::event::Expression::String(_) => false,
-        _ => false,
-    }
-}
-
-#[allow(dead_code)]
-fn is_boolean_expression(expr: &definy_event::event::Expression) -> bool {
-    match expr {
-        definy_event::event::Expression::Boolean(_) | definy_event::event::Expression::Equal(_) => {
-            true
-        }
-        definy_event::event::Expression::TypeNumber
-        | definy_event::event::Expression::TypeString
-        | definy_event::event::Expression::TypeBoolean
-        | definy_event::event::Expression::TypeList(_) => false,
-        definy_event::event::Expression::If(i) => {
-            is_boolean_expression(&i.then_expr) && is_boolean_expression(&i.else_expr)
-        }
-        definy_event::event::Expression::Let(l) => is_boolean_expression(&l.body),
-        definy_event::event::Expression::Constructor(c) => is_boolean_expression(&c.value),
-        definy_event::event::Expression::ListLiteral(_) => false,
-        definy_event::event::Expression::TypeLiteral(_) => false,
-        definy_event::event::Expression::Variable(_) => false,
-        definy_event::event::Expression::String(_) => false,
-        _ => false,
-    }
-}
-
-fn evaluate_expression_with_depth(
-    expression: &definy_event::event::Expression,
-    events: &[crate::app_state::EventWithHash],
-    env: &std::collections::HashMap<i64, Value>,
-    depth: usize,
-) -> Result<Value, &'static str> {
-    if depth > 100 {
-        return Err("Maximum evaluation depth exceeded (possible circular reference)");
-    }
-    match expression {
-        definy_event::event::Expression::Number(number_expression) => {
-            Ok(Value::Number(number_expression.value))
-        }
-        definy_event::event::Expression::String(string_expression) => {
-            Ok(Value::String(string_expression.value.to_string()))
-        }
-        definy_event::event::Expression::TypeNumber => {
-            Err("TypeNumber expression cannot be evaluated as runtime value")
-        }
-        definy_event::event::Expression::TypeString => {
-            Err("TypeString expression cannot be evaluated as runtime value")
-        }
-        definy_event::event::Expression::TypeBoolean => {
-            Err("TypeBoolean expression cannot be evaluated as runtime value")
-        }
-        definy_event::event::Expression::TypeList(_) => {
-            Err("TypeList expression cannot be evaluated as runtime value")
-        }
-        definy_event::event::Expression::ListLiteral(list_expression) => {
-            let mut items = Vec::with_capacity(list_expression.items.len());
-            for item in &list_expression.items {
-                let value = evaluate_expression_with_depth(item, events, env, depth + 1)?;
-                items.push(value);
-            }
-            Ok(Value::List(items))
-        }
-        definy_event::event::Expression::Add(add_expression) => {
-            let left = evaluate_expression_with_depth(
-                add_expression.left.as_ref(),
-                events,
-                env,
-                depth + 1,
-            )?;
-            let right = evaluate_expression_with_depth(
-                add_expression.right.as_ref(),
-                events,
-                env,
-                depth + 1,
-            )?;
-            match (left, right) {
-                (Value::Number(l), Value::Number(r)) => l
-                    .checked_add(r)
-                    .map(Value::Number)
-                    .ok_or("overflow while adding two numbers"),
-                _ => Err("can only add numbers"),
-            }
-        }
-        definy_event::event::Expression::Boolean(boolean_expression) => {
-            Ok(Value::Bool(boolean_expression.value))
-        }
-        definy_event::event::Expression::If(if_expression) => {
-            let condition = evaluate_expression_with_depth(
-                if_expression.condition.as_ref(),
-                events,
-                env,
-                depth + 1,
-            )?;
-            match condition {
-                Value::Bool(b) => {
-                    if b {
-                        evaluate_expression_with_depth(
-                            if_expression.then_expr.as_ref(),
-                            events,
-                            env,
-                            depth + 1,
-                        )
-                    } else {
-                        evaluate_expression_with_depth(
-                            if_expression.else_expr.as_ref(),
-                            events,
-                            env,
-                            depth + 1,
-                        )
-                    }
-                }
-                _ => Err("condition of an if expression must evaluate to a boolean"),
-            }
-        }
-        definy_event::event::Expression::Equal(equal_expression) => {
-            let left = evaluate_expression_with_depth(
-                equal_expression.left.as_ref(),
-                events,
-                env,
-                depth + 1,
-            )?;
-            let right = evaluate_expression_with_depth(
-                equal_expression.right.as_ref(),
-                events,
-                env,
-                depth + 1,
-            )?;
-            Ok(Value::Bool(left == right))
-        }
-        definy_event::event::Expression::Let(let_expr) => {
-            let value =
-                evaluate_expression_with_depth(let_expr.value.as_ref(), events, env, depth + 1)?;
-            let mut new_env = env.clone();
-            new_env.insert(let_expr.variable_id, value);
-            evaluate_expression_with_depth(let_expr.body.as_ref(), events, &new_env, depth + 1)
-        }
-        definy_event::event::Expression::Variable(var_expr) => env
-            .get(&var_expr.variable_id)
-            .cloned()
-            .ok_or("undefined variable"),
-        definy_event::event::Expression::PartReference(part_reference_expression) => {
-            let mut latest_expression = None;
-            for (event_hash, event_result) in events.iter().rev() {
-                if let Ok((_, event)) = event_result {
-                    match &event.content {
-                        definy_event::event::EventContent::PartDefinition(part_definition)
-                            if part_reference_expression.part_definition_event_hash
-                                == *event_hash =>
-                        {
-                            latest_expression = part_definition.expression.as_ref();
-                            break;
-                        }
-                        definy_event::event::EventContent::PartUpdate(part_update)
-                            if part_update.part_definition_event_hash
-                                == part_reference_expression.part_definition_event_hash =>
-                        {
-                            latest_expression = part_update.expression.as_ref();
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            if let Some(expr) = latest_expression {
-                let empty_env = std::collections::HashMap::new();
-                evaluate_expression_with_depth(expr, events, &empty_env, depth + 1)
-            } else {
-                Err("Part not found or has no expression")
-            }
-        }
-        definy_event::event::Expression::TypeLiteral(record_expression) => {
-            let mut items = Vec::with_capacity(record_expression.items.len());
-            for item in &record_expression.items {
-                let value =
-                    evaluate_expression_with_depth(item.value.as_ref(), events, env, depth + 1)?;
-                items.push((item.key.to_string(), value));
-            }
-            Ok(Value::Record(items))
-        }
-        definy_event::event::Expression::Constructor(constructor_expression) => {
-            evaluate_expression_with_depth(
-                constructor_expression.value.as_ref(),
-                events,
-                env,
-                depth + 1,
-            )
-        }
-        definy_event::event::Expression::Compiler(_) => {
-            Err("Compiler builtin expression cannot be evaluated as runtime value")
-        }
-    }
+    let wasm_bytes = crate::wasm_emitter::compile_expression_to_wasm(expression, events)
+        .map_err(|_| "Failed to compile expression to WebAssembly")?;
+    crate::wasm_emitter::execute_wasm(&wasm_bytes)
 }
 
 pub fn expression_to_source(expression: &definy_event::event::Expression) -> String {
@@ -347,11 +52,35 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             definy_event::event::Expression::Compiler(builtin) => match builtin {
                 definy_event::event::CompilerBuiltin::Let => "[compiler let]".to_string(),
                 definy_event::event::CompilerBuiltin::Plus => "[compiler plus]".to_string(),
+                definy_event::event::CompilerBuiltin::Minus => "[compiler minus]".to_string(),
+                definy_event::event::CompilerBuiltin::Multiply => "[compiler multiply]".to_string(),
+                definy_event::event::CompilerBuiltin::Divide => "[compiler divide]".to_string(),
+                definy_event::event::CompilerBuiltin::Remainder => {
+                    "[compiler remainder]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::LessThan => {
+                    "[compiler less than]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::LessThanOrEqual => {
+                    "[compiler less than or equal]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::GreaterThan => {
+                    "[compiler greater than]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::GreaterThanOrEqual => {
+                    "[compiler greater than or equal]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::Equal => "[compiler equal]".to_string(),
+                definy_event::event::CompilerBuiltin::NotEqual => {
+                    "[compiler not equal]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::Not => "[compiler not]".to_string(),
+                definy_event::event::CompilerBuiltin::And => "[compiler and]".to_string(),
+                definy_event::event::CompilerBuiltin::Or => "[compiler or]".to_string(),
                 definy_event::event::CompilerBuiltin::NumberLiteral => {
                     "[compiler number literal]".to_string()
                 }
                 definy_event::event::CompilerBuiltin::If => "[compiler if]".to_string(),
-                definy_event::event::CompilerBuiltin::Equal => "[compiler equal]".to_string(),
             },
             definy_event::event::Expression::Number(number_expression) => {
                 number_expression.value.to_string()
@@ -389,6 +118,54 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     source
                 }
             }
+            definy_event::event::Expression::Subtract(sub_expression) => {
+                let source = format!(
+                    "- {} {}",
+                    render(sub_expression.left.as_ref(), true, scope),
+                    render(sub_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Multiply(mul_expression) => {
+                let source = format!(
+                    "* {} {}",
+                    render(mul_expression.left.as_ref(), true, scope),
+                    render(mul_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Divide(div_expression) => {
+                let source = format!(
+                    "/ {} {}",
+                    render(div_expression.left.as_ref(), true, scope),
+                    render(div_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Remainder(rem_expression) => {
+                let source = format!(
+                    "% {} {}",
+                    render(rem_expression.left.as_ref(), true, scope),
+                    render(rem_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
             definy_event::event::Expression::Boolean(boolean_expression) => {
                 if boolean_expression.value {
                     "True".to_string()
@@ -414,6 +191,98 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "equal {} {}",
                     render(equal_expression.left.as_ref(), true, scope),
                     render(equal_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::NotEqual(ne_expression) => {
+                let source = format!(
+                    "!= {} {}",
+                    render(ne_expression.left.as_ref(), true, scope),
+                    render(ne_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::LessThan(lt_expression) => {
+                let source = format!(
+                    "< {} {}",
+                    render(lt_expression.left.as_ref(), true, scope),
+                    render(lt_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::LessThanOrEqual(le_expression) => {
+                let source = format!(
+                    "<= {} {}",
+                    render(le_expression.left.as_ref(), true, scope),
+                    render(le_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::GreaterThan(gt_expression) => {
+                let source = format!(
+                    "> {} {}",
+                    render(gt_expression.left.as_ref(), true, scope),
+                    render(gt_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::GreaterThanOrEqual(ge_expression) => {
+                let source = format!(
+                    ">= {} {}",
+                    render(ge_expression.left.as_ref(), true, scope),
+                    render(ge_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Not(not_expression) => {
+                let source = format!("not {}", render(not_expression.value.as_ref(), true, scope));
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::And(and_expression) => {
+                let source = format!(
+                    "and {} {}",
+                    render(and_expression.left.as_ref(), true, scope),
+                    render(and_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Or(or_expression) => {
+                let source = format!(
+                    "or {} {}",
+                    render(or_expression.left.as_ref(), true, scope),
+                    render(or_expression.right.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)
@@ -530,77 +399,158 @@ mod tests {
         );
 
         let expression2 =
-            definy_event::event::Expression::Add(definy_event::event::AddExpression {
+            definy_event::event::Expression::Subtract(definy_event::event::SubtractExpression {
                 left: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 1 },
+                    definy_event::event::NumberExpression { value: 10 },
                 )),
-                right: Box::new(definy_event::event::Expression::Add(
-                    definy_event::event::AddExpression {
-                        left: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 2 },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 4 },
-                        )),
-                    },
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 3 },
                 )),
             });
         assert_eq!(
             evaluate_expression(&expression2, &[]),
             Ok(crate::expression_eval::Value::Number(7))
         );
+        assert_eq!(expression_to_source(&expression2), "- 10 3");
 
         let expression3 =
-            definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                left: Box::new(definy_event::event::Expression::Add(
-                    definy_event::event::AddExpression {
-                        left: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 321 },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 1 },
-                        )),
-                    },
+            definy_event::event::Expression::Multiply(definy_event::event::MultiplyExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 6 },
                 )),
-                right: Box::new(definy_event::event::Expression::Add(
-                    definy_event::event::AddExpression {
-                        left: Box::new(definy_event::event::Expression::Add(
-                            definy_event::event::AddExpression {
-                                left: Box::new(definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 1 },
-                                )),
-                                right: Box::new(definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 3 },
-                                )),
-                            },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 4 },
-                        )),
-                    },
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 7 },
                 )),
             });
         assert_eq!(
             evaluate_expression(&expression3, &[]),
-            Ok(crate::expression_eval::Value::Number(330))
+            Ok(crate::expression_eval::Value::Number(42))
         );
+        assert_eq!(expression_to_source(&expression3), "* 6 7");
     }
 
     #[test]
-    fn source_for_simple_add() {
-        let expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 1 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 2 },
+    fn evaluate_division_and_remainder() {
+        let div_expr =
+            definy_event::event::Expression::Divide(definy_event::event::DivideExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 20 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 4 },
+                )),
+            });
+        assert_eq!(
+            evaluate_expression(&div_expr, &[]),
+            Ok(crate::expression_eval::Value::Number(5))
+        );
+        assert_eq!(expression_to_source(&div_expr), "/ 20 4");
+
+        let rem_expr =
+            definy_event::event::Expression::Remainder(definy_event::event::RemainderExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 17 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 5 },
+                )),
+            });
+        assert_eq!(
+            evaluate_expression(&rem_expr, &[]),
+            Ok(crate::expression_eval::Value::Number(2))
+        );
+        assert_eq!(expression_to_source(&rem_expr), "% 17 5");
+    }
+
+    #[test]
+    fn evaluate_comparisons() {
+        let lt_expr =
+            definy_event::event::Expression::LessThan(definy_event::event::LessThanExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 3 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 5 },
+                )),
+            });
+        assert_eq!(
+            evaluate_expression(&lt_expr, &[]),
+            Ok(crate::expression_eval::Value::Bool(true))
+        );
+        assert_eq!(expression_to_source(&lt_expr), "< 3 5");
+
+        let ge_expr = definy_event::event::Expression::GreaterThanOrEqual(
+            definy_event::event::GreaterThanOrEqualExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 5 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 5 },
+                )),
+            },
+        );
+        assert_eq!(
+            evaluate_expression(&ge_expr, &[]),
+            Ok(crate::expression_eval::Value::Bool(true))
+        );
+        assert_eq!(expression_to_source(&ge_expr), ">= 5 5");
+
+        let ne_expr =
+            definy_event::event::Expression::NotEqual(definy_event::event::NotEqualExpression {
+                left: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 3 },
+                )),
+                right: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 5 },
+                )),
+            });
+        assert_eq!(
+            evaluate_expression(&ne_expr, &[]),
+            Ok(crate::expression_eval::Value::Bool(true))
+        );
+        assert_eq!(expression_to_source(&ne_expr), "!= 3 5");
+    }
+
+    #[test]
+    fn evaluate_boolean_logic() {
+        let not_expr = definy_event::event::Expression::Not(definy_event::event::NotExpression {
+            value: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: false },
             )),
         });
         assert_eq!(
-            evaluate_expression(&expression, &[]),
-            Ok(crate::expression_eval::Value::Number(3))
+            evaluate_expression(&not_expr, &[]),
+            Ok(crate::expression_eval::Value::Bool(true))
         );
-        assert_eq!(expression_to_source(&expression), "+ 1 2");
+        assert_eq!(expression_to_source(&not_expr), "not False");
+
+        let and_expr = definy_event::event::Expression::And(definy_event::event::AndExpression {
+            left: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: true },
+            )),
+            right: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: false },
+            )),
+        });
+        assert_eq!(
+            evaluate_expression(&and_expr, &[]),
+            Ok(crate::expression_eval::Value::Bool(false))
+        );
+        assert_eq!(expression_to_source(&and_expr), "and True False");
+
+        let or_expr = definy_event::event::Expression::Or(definy_event::event::OrExpression {
+            left: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: true },
+            )),
+            right: Box::new(definy_event::event::Expression::Boolean(
+                definy_event::event::BooleanExpression { value: false },
+            )),
+        });
+        assert_eq!(
+            evaluate_expression(&or_expr, &[]),
+            Ok(crate::expression_eval::Value::Bool(true))
+        );
+        assert_eq!(expression_to_source(&or_expr), "or True False");
     }
 
     #[test]
@@ -821,6 +771,10 @@ mod tests {
         let plus_expr = Expression::Compiler(CompilerBuiltin::Plus);
         assert_eq!(expression_to_source(&plus_expr), "[compiler plus]");
         assert!(evaluate_expression(&plus_expr, &[]).is_err());
+
+        let minus_expr = Expression::Compiler(CompilerBuiltin::Minus);
+        assert_eq!(expression_to_source(&minus_expr), "[compiler minus]");
+        assert!(evaluate_expression(&minus_expr, &[]).is_err());
 
         let num_expr = Expression::Compiler(CompilerBuiltin::NumberLiteral);
         assert_eq!(expression_to_source(&num_expr), "[compiler number literal]");

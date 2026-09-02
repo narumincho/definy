@@ -329,6 +329,186 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 },
             ),
         },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(11),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "minus".into(),
+                    part_type: None,
+                    description: "Compiler built-in subtraction".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Minus,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(12),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "multiply".into(),
+                    part_type: None,
+                    description: "Compiler built-in multiplication".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Multiply,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(13),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "divide".into(),
+                    part_type: None,
+                    description: "Compiler built-in division".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Divide,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(14),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "remainder".into(),
+                    part_type: None,
+                    description: "Compiler built-in remainder".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Remainder,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(15),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "less than".into(),
+                    part_type: None,
+                    description: "Compiler built-in less than comparison".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::LessThan,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(16),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "less than or equal".into(),
+                    part_type: None,
+                    description: "Compiler built-in less than or equal comparison".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::LessThanOrEqual,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(17),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "greater than".into(),
+                    part_type: None,
+                    description: "Compiler built-in greater than comparison".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::GreaterThan,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(18),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "greater than or equal".into(),
+                    part_type: None,
+                    description: "Compiler built-in greater than or equal comparison".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(19),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "not equal".into(),
+                    part_type: None,
+                    description: "Compiler built-in not equal comparison".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::NotEqual,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(20),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "not".into(),
+                    part_type: None,
+                    description: "Compiler built-in boolean negation".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Not,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(21),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "and".into(),
+                    part_type: None,
+                    description: "Compiler built-in boolean and".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::And,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(22),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "or".into(),
+                    part_type: None,
+                    description: "Compiler built-in boolean or".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Or,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
     ];
 
     for event in events {
@@ -480,9 +660,9 @@ mod tests {
     async fn test_builtin_migration() {
         let db = init_db().await.unwrap();
 
-        let events = get_events(&db, None, Some(20), Some(0)).await.unwrap();
-        // 1 CreateAccount + 1 ModuleDefinition + 9 PartDefinition = 11 events
-        assert_eq!(events.len(), 11);
+        let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
+        // 1 CreateAccount + 1 ModuleDefinition + 21 PartDefinition = 23 events
+        assert_eq!(events.len(), 23);
 
         let mut part_names = Vec::new();
         let mut has_core_module = false;
@@ -513,10 +693,22 @@ mod tests {
         assert!(part_names.contains(&"Boolean".to_string()));
         assert!(part_names.contains(&"List".to_string()));
         assert!(part_names.contains(&"Equal".to_string()));
+        assert!(part_names.contains(&"minus".to_string()));
+        assert!(part_names.contains(&"multiply".to_string()));
+        assert!(part_names.contains(&"divide".to_string()));
+        assert!(part_names.contains(&"remainder".to_string()));
+        assert!(part_names.contains(&"less than".to_string()));
+        assert!(part_names.contains(&"less than or equal".to_string()));
+        assert!(part_names.contains(&"greater than".to_string()));
+        assert!(part_names.contains(&"greater than or equal".to_string()));
+        assert!(part_names.contains(&"not equal".to_string()));
+        assert!(part_names.contains(&"not".to_string()));
+        assert!(part_names.contains(&"and".to_string()));
+        assert!(part_names.contains(&"or".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
-        let events_after = get_events(&db, None, Some(20), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 11);
+        let events_after = get_events(&db, None, Some(50), Some(0)).await.unwrap();
+        assert_eq!(events_after.len(), 23);
     }
 }
