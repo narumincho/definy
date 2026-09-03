@@ -509,6 +509,111 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 },
             ),
         },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(23),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "string concat".into(),
+                    part_type: None,
+                    description: "Compiler built-in string concatenation".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::StringConcat,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(24),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "string length".into(),
+                    part_type: None,
+                    description: "Compiler built-in string length".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::StringLength,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(25),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "string slice".into(),
+                    part_type: None,
+                    description: "Compiler built-in string slice".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::StringSlice,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(26),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "list length".into(),
+                    part_type: None,
+                    description: "Compiler built-in list length".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::ListLength,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(27),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "list concat".into(),
+                    part_type: None,
+                    description: "Compiler built-in list concatenation".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::ListConcat,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(28),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "list get".into(),
+                    part_type: None,
+                    description: "Compiler built-in list element retrieval".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::ListGet,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(29),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "list append".into(),
+                    part_type: None,
+                    description: "Compiler built-in list append".into(),
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::ListAppend,
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
     ];
 
     for event in events {
@@ -661,8 +766,8 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 1 CreateAccount + 1 ModuleDefinition + 21 PartDefinition = 23 events
-        assert_eq!(events.len(), 23);
+        // 1 CreateAccount + 1 ModuleDefinition + 28 PartDefinition = 30 events
+        assert_eq!(events.len(), 30);
 
         let mut part_names = Vec::new();
         let mut has_core_module = false;
@@ -705,10 +810,17 @@ mod tests {
         assert!(part_names.contains(&"not".to_string()));
         assert!(part_names.contains(&"and".to_string()));
         assert!(part_names.contains(&"or".to_string()));
+        assert!(part_names.contains(&"string concat".to_string()));
+        assert!(part_names.contains(&"string length".to_string()));
+        assert!(part_names.contains(&"string slice".to_string()));
+        assert!(part_names.contains(&"list length".to_string()));
+        assert!(part_names.contains(&"list concat".to_string()));
+        assert!(part_names.contains(&"list get".to_string()));
+        assert!(part_names.contains(&"list append".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 23);
+        assert_eq!(events_after.len(), 30);
     }
 }

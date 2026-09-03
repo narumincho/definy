@@ -325,6 +325,202 @@ fn check_expression_type(
             part_snapshot_map,
             diagnostics,
         ),
+        definy_event::event::Expression::StringConcat(concat_expr) => {
+            let mut left_path = path.to_vec();
+            left_path.push(PathStep::Left);
+            check_expression_type(
+                concat_expr.left.as_ref(),
+                left_path.as_slice(),
+                Some(ExpressionType::String),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let mut right_path = path.to_vec();
+            right_path.push(PathStep::Right);
+            check_expression_type(
+                concat_expr.right.as_ref(),
+                right_path.as_slice(),
+                Some(ExpressionType::String),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::String
+        }
+        definy_event::event::Expression::StringLength(len_expr) => {
+            let mut val_path = path.to_vec();
+            val_path.push(PathStep::Condition);
+            check_expression_type(
+                len_expr.value.as_ref(),
+                val_path.as_slice(),
+                Some(ExpressionType::String),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::Number
+        }
+        definy_event::event::Expression::StringSlice(slice_expr) => {
+            let mut val_path = path.to_vec();
+            val_path.push(PathStep::Condition);
+            check_expression_type(
+                slice_expr.value.as_ref(),
+                val_path.as_slice(),
+                Some(ExpressionType::String),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let mut start_path = path.to_vec();
+            start_path.push(PathStep::Start);
+            check_expression_type(
+                slice_expr.start.as_ref(),
+                start_path.as_slice(),
+                Some(ExpressionType::Number),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let mut end_path = path.to_vec();
+            end_path.push(PathStep::End);
+            check_expression_type(
+                slice_expr.end.as_ref(),
+                end_path.as_slice(),
+                Some(ExpressionType::Number),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::String
+        }
+        definy_event::event::Expression::ListLength(len_expr) => {
+            let mut val_path = path.to_vec();
+            val_path.push(PathStep::Condition);
+            check_expression_type(
+                len_expr.value.as_ref(),
+                val_path.as_slice(),
+                Some(ExpressionType::List(Box::new(ExpressionType::Unknown))),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::Number
+        }
+        definy_event::event::Expression::ListConcat(concat_expr) => {
+            let item_expected = match expected_type.as_ref() {
+                Some(ExpressionType::List(item)) => Some(ExpressionType::List(item.clone())),
+                _ => None,
+            };
+            let mut left_path = path.to_vec();
+            left_path.push(PathStep::Left);
+            let left_type = check_expression_type(
+                concat_expr.left.as_ref(),
+                left_path.as_slice(),
+                item_expected.clone(),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let mut right_path = path.to_vec();
+            right_path.push(PathStep::Right);
+            let right_type = check_expression_type(
+                concat_expr.right.as_ref(),
+                right_path.as_slice(),
+                item_expected,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            match (left_type, right_type) {
+                (ExpressionType::List(left_item), ExpressionType::List(right_item)) => {
+                    if *left_item != ExpressionType::Unknown {
+                        ExpressionType::List(left_item)
+                    } else {
+                        ExpressionType::List(right_item)
+                    }
+                }
+                (ExpressionType::List(item), _) => ExpressionType::List(item),
+                (_, ExpressionType::List(item)) => ExpressionType::List(item),
+                _ => ExpressionType::List(Box::new(ExpressionType::Unknown)),
+            }
+        }
+        definy_event::event::Expression::ListGet(get_expr) => {
+            let mut list_path = path.to_vec();
+            list_path.push(PathStep::Left);
+            let expected_list = expected_type
+                .as_ref()
+                .map(|t| ExpressionType::List(Box::new(t.clone())));
+            let list_type = check_expression_type(
+                get_expr.list.as_ref(),
+                list_path.as_slice(),
+                expected_list,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let mut idx_path = path.to_vec();
+            idx_path.push(PathStep::Index);
+            check_expression_type(
+                get_expr.index.as_ref(),
+                idx_path.as_slice(),
+                Some(ExpressionType::Number),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            match list_type {
+                ExpressionType::List(item_type) => *item_type,
+                _ => ExpressionType::Unknown,
+            }
+        }
+        definy_event::event::Expression::ListAppend(append_expr) => {
+            let item_expected = match expected_type.as_ref() {
+                Some(ExpressionType::List(item)) => Some(*item.clone()),
+                _ => None,
+            };
+            let mut list_path = path.to_vec();
+            list_path.push(PathStep::Left);
+            let list_type = check_expression_type(
+                append_expr.list.as_ref(),
+                list_path.as_slice(),
+                item_expected
+                    .as_ref()
+                    .map(|t| ExpressionType::List(Box::new(t.clone()))),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let inferred_item = match list_type {
+                ExpressionType::List(item) if *item != ExpressionType::Unknown => Some(*item),
+                _ => item_expected,
+            };
+            let mut item_path = path.to_vec();
+            item_path.push(PathStep::Item);
+            let item_type = check_expression_type(
+                append_expr.item.as_ref(),
+                item_path.as_slice(),
+                inferred_item.clone(),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            let final_item = inferred_item.unwrap_or(item_type);
+            ExpressionType::List(Box::new(final_item))
+        }
         definy_event::event::Expression::If(if_expression) => {
             let mut condition_path = path.to_vec();
             condition_path.push(PathStep::Condition);

@@ -81,6 +81,25 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "[compiler number literal]".to_string()
                 }
                 definy_event::event::CompilerBuiltin::If => "[compiler if]".to_string(),
+                definy_event::event::CompilerBuiltin::StringConcat => {
+                    "[compiler string concat]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::StringLength => {
+                    "[compiler string length]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::StringSlice => {
+                    "[compiler string slice]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::ListLength => {
+                    "[compiler list length]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::ListConcat => {
+                    "[compiler list concat]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::ListGet => "[compiler list get]".to_string(),
+                definy_event::event::CompilerBuiltin::ListAppend => {
+                    "[compiler list append]".to_string()
+                }
             },
             definy_event::event::Expression::Number(number_expression) => {
                 number_expression.value.to_string()
@@ -283,6 +302,89 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "or {} {}",
                     render(or_expression.left.as_ref(), true, scope),
                     render(or_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::StringConcat(concat_expr) => {
+                let source = format!(
+                    "string_concat {} {}",
+                    render(concat_expr.left.as_ref(), true, scope),
+                    render(concat_expr.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::StringLength(len_expr) => {
+                let source = format!(
+                    "string_length {}",
+                    render(len_expr.value.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::StringSlice(slice_expr) => {
+                let source = format!(
+                    "string_slice {} {} {}",
+                    render(slice_expr.value.as_ref(), true, scope),
+                    render(slice_expr.start.as_ref(), true, scope),
+                    render(slice_expr.end.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::ListLength(len_expr) => {
+                let source = format!(
+                    "list_length {}",
+                    render(len_expr.value.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::ListConcat(concat_expr) => {
+                let source = format!(
+                    "list_concat {} {}",
+                    render(concat_expr.left.as_ref(), true, scope),
+                    render(concat_expr.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::ListGet(get_expr) => {
+                let source = format!(
+                    "list_get {} {}",
+                    render(get_expr.list.as_ref(), true, scope),
+                    render(get_expr.index.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::ListAppend(append_expr) => {
+                let source = format!(
+                    "list_append {} {}",
+                    render(append_expr.list.as_ref(), true, scope),
+                    render(append_expr.item.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)
@@ -787,5 +889,100 @@ mod tests {
         let equal_expr = Expression::Compiler(CompilerBuiltin::Equal);
         assert_eq!(expression_to_source(&equal_expr), "[compiler equal]");
         assert!(evaluate_expression(&equal_expr, &[]).is_err());
+
+        let str_concat = Expression::Compiler(CompilerBuiltin::StringConcat);
+        assert_eq!(
+            expression_to_source(&str_concat),
+            "[compiler string concat]"
+        );
+        assert!(evaluate_expression(&str_concat, &[]).is_err());
+
+        let list_get = Expression::Compiler(CompilerBuiltin::ListGet);
+        assert_eq!(expression_to_source(&list_get), "[compiler list get]");
+        assert!(evaluate_expression(&list_get, &[]).is_err());
+    }
+
+    #[test]
+    fn test_string_and_list_evaluation() {
+        use definy_event::event::*;
+
+        // string concat
+        let concat = Expression::StringConcat(StringConcatExpression {
+            left: Box::new(Expression::String(StringExpression {
+                value: "foo".into(),
+            })),
+            right: Box::new(Expression::String(StringExpression {
+                value: "bar".into(),
+            })),
+        });
+        assert_eq!(
+            evaluate_expression(&concat, &[]).unwrap(),
+            crate::expression_eval::Value::String("foobar".to_string())
+        );
+        assert_eq!(
+            expression_to_source(&concat),
+            "string_concat \"foo\" \"bar\""
+        );
+
+        // string length
+        let len = Expression::StringLength(StringLengthExpression {
+            value: Box::new(Expression::String(StringExpression {
+                value: "hello".into(),
+            })),
+        });
+        assert_eq!(
+            evaluate_expression(&len, &[]).unwrap(),
+            crate::expression_eval::Value::Number(5)
+        );
+
+        // string slice
+        let slice = Expression::StringSlice(StringSliceExpression {
+            value: Box::new(Expression::String(StringExpression {
+                value: "abcdef".into(),
+            })),
+            start: Box::new(Expression::Number(NumberExpression { value: 2 })),
+            end: Box::new(Expression::Number(NumberExpression { value: 5 })),
+        });
+        assert_eq!(
+            evaluate_expression(&slice, &[]).unwrap(),
+            crate::expression_eval::Value::String("cde".to_string())
+        );
+
+        // list operations
+        let list_lit = Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                Expression::Number(NumberExpression { value: 100 }),
+                Expression::Number(NumberExpression { value: 200 }),
+            ],
+        });
+        let list_len = Expression::ListLength(ListLengthExpression {
+            value: Box::new(list_lit.clone()),
+        });
+        assert_eq!(
+            evaluate_expression(&list_len, &[]).unwrap(),
+            crate::expression_eval::Value::Number(2)
+        );
+
+        let list_get = Expression::ListGet(ListGetExpression {
+            list: Box::new(list_lit.clone()),
+            index: Box::new(Expression::Number(NumberExpression { value: 1 })),
+        });
+        assert_eq!(
+            evaluate_expression(&list_get, &[]).unwrap(),
+            crate::expression_eval::Value::Number(200)
+        );
+
+        let list_append = Expression::ListAppend(ListAppendExpression {
+            list: Box::new(list_lit.clone()),
+            item: Box::new(Expression::Number(NumberExpression { value: 300 })),
+        });
+        assert_eq!(
+            evaluate_expression(&list_append, &[]).unwrap(),
+            crate::expression_eval::Value::List(vec![
+                crate::expression_eval::Value::Number(100),
+                crate::expression_eval::Value::Number(200),
+                crate::expression_eval::Value::Number(300),
+            ])
+        );
     }
 }

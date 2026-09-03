@@ -93,6 +93,13 @@ pub enum Expression {
     Not(NotExpression),
     And(AndExpression),
     Or(OrExpression),
+    StringConcat(StringConcatExpression),
+    StringLength(StringLengthExpression),
+    StringSlice(StringSliceExpression),
+    ListLength(ListLengthExpression),
+    ListConcat(ListConcatExpression),
+    ListGet(ListGetExpression),
+    ListAppend(ListAppendExpression),
     PartReference(PartReferenceExpression),
     Boolean(BooleanExpression),
     If(IfExpression),
@@ -123,6 +130,13 @@ pub enum CompilerBuiltin {
     Not,
     And,
     Or,
+    StringConcat,
+    StringLength,
+    StringSlice,
+    ListLength,
+    ListConcat,
+    ListGet,
+    ListAppend,
     NumberLiteral,
     If,
 }
@@ -202,6 +216,47 @@ pub struct AndExpression {
 pub struct OrExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StringConcatExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StringLengthExpression {
+    pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct StringSliceExpression {
+    pub value: Box<Expression>,
+    pub start: Box<Expression>,
+    pub end: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListLengthExpression {
+    pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListConcatExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListGetExpression {
+    pub list: Box<Expression>,
+    pub index: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ListAppendExpression {
+    pub list: Box<Expression>,
+    pub item: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
