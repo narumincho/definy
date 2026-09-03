@@ -182,7 +182,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         content: definy_event::event::EventContent::ModuleDefinition(
             definy_event::event::ModuleDefinitionEvent {
                 module_name: "core".into(),
-                description: "Core built-in module for definy".into(),
+                description: definy_event::event::Description::localized(vec![
+                    ("en", "Core built-in module for definy"),
+                    ("ja", "definy のコア組み込みモジュール"),
+                ]),
             },
         ),
     };
@@ -209,7 +212,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "let".into(),
                     part_type: None,
-                    description: "Compiler built-in let binding".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in let binding"),
+                        ("ja", "ローカル変数を定義する組み込み構文 (let)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Let,
                     )),
@@ -224,7 +230,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "plus".into(),
                     part_type: None,
-                    description: "Compiler built-in addition".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in addition"),
+                        ("ja", "数値の加算を行う組み込み関数 (+)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Plus,
                     )),
@@ -239,7 +248,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "number literal".into(),
                     part_type: Some(definy_event::event::PartType::Number),
-                    description: "Compiler built-in number literal".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in number literal"),
+                        ("ja", "数値リテラル"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::NumberLiteral,
                     )),
@@ -254,7 +266,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "if".into(),
                     part_type: None,
-                    description: "Compiler built-in conditional expression".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in conditional expression"),
+                        ("ja", "条件分岐を行う組み込み構文 (if)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::If,
                     )),
@@ -269,7 +284,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "Number".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in 64-bit integer type".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Built-in 64-bit integer type"),
+                        ("ja", "組み込み 64ビット符号付き整数型"),
+                    ]),
                     expression: None,
                     module_definition_event_hash: core_module_hash.clone(),
                 },
@@ -282,7 +300,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "String".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in UTF-8 string type".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Built-in UTF-8 string type"),
+                        ("ja", "組み込み UTF-8 文字列型"),
+                    ]),
                     expression: None,
                     module_definition_event_hash: core_module_hash.clone(),
                 },
@@ -295,7 +316,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "Boolean".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in boolean type".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Built-in boolean type"),
+                        ("ja", "組み込み真偽値型"),
+                    ]),
                     expression: None,
                     module_definition_event_hash: core_module_hash.clone(),
                 },
@@ -308,7 +332,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "List".into(),
                     part_type: Some(definy_event::event::PartType::Type),
-                    description: "Built-in list type constructor".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Built-in list type constructor"),
+                        ("ja", "組み込みリスト型コンストラクタ"),
+                    ]),
                     expression: None,
                     module_definition_event_hash: core_module_hash.clone(),
                 },
@@ -321,7 +348,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "Equal".into(),
                     part_type: None,
-                    description: "Compiler built-in equality comparison".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in equality comparison"),
+                        ("ja", "値が等しいかを判定する組み込み関数 (==)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Equal,
                     )),
@@ -336,7 +366,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "minus".into(),
                     part_type: None,
-                    description: "Compiler built-in subtraction".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in subtraction"),
+                        ("ja", "数値の減算を行う組み込み関数 (-)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Minus,
                     )),
@@ -351,7 +384,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "multiply".into(),
                     part_type: None,
-                    description: "Compiler built-in multiplication".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in multiplication"),
+                        ("ja", "数値の乗算を行う組み込み関数 (*)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Multiply,
                     )),
@@ -366,7 +402,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "divide".into(),
                     part_type: None,
-                    description: "Compiler built-in division".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in division"),
+                        ("ja", "数値の除算を行う組み込み関数 (/)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Divide,
                     )),
@@ -381,7 +420,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "remainder".into(),
                     part_type: None,
-                    description: "Compiler built-in remainder".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in remainder"),
+                        ("ja", "数値の剰余を求める組み込み関数 (%)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Remainder,
                     )),
@@ -396,7 +438,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "less than".into(),
                     part_type: None,
-                    description: "Compiler built-in less than comparison".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in less than comparison"),
+                        ("ja", "左辺が右辺より小さいかを判定する組み込み関数 (<)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::LessThan,
                     )),
@@ -411,7 +456,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "less than or equal".into(),
                     part_type: None,
-                    description: "Compiler built-in less than or equal comparison".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in less than or equal comparison"),
+                        ("ja", "左辺が右辺以下かを判定する組み込み関数 (<=)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::LessThanOrEqual,
                     )),
@@ -426,7 +474,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "greater than".into(),
                     part_type: None,
-                    description: "Compiler built-in greater than comparison".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in greater than comparison"),
+                        ("ja", "左辺が右辺より大きいかを判定する組み込み関数 (>)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::GreaterThan,
                     )),
@@ -441,7 +492,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "greater than or equal".into(),
                     part_type: None,
-                    description: "Compiler built-in greater than or equal comparison".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in greater than or equal comparison"),
+                        ("ja", "左辺が右辺以上かを判定する組み込み関数 (>=)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
                     )),
@@ -456,7 +510,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "not equal".into(),
                     part_type: None,
-                    description: "Compiler built-in not equal comparison".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in not equal comparison"),
+                        ("ja", "値が等しくないかを判定する組み込み関数 (!=)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::NotEqual,
                     )),
@@ -471,7 +528,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "not".into(),
                     part_type: None,
-                    description: "Compiler built-in boolean negation".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in boolean negation"),
+                        ("ja", "真偽値の否定を行う組み込み関数 (not)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Not,
                     )),
@@ -486,7 +546,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "and".into(),
                     part_type: None,
-                    description: "Compiler built-in boolean and".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in boolean and"),
+                        ("ja", "真偽値の論理積を行う組み込み関数 (and)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::And,
                     )),
@@ -501,7 +564,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "or".into(),
                     part_type: None,
-                    description: "Compiler built-in boolean or".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in boolean or"),
+                        ("ja", "真偽値の論理和を行う組み込み関数 (or)"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::Or,
                     )),
@@ -516,7 +582,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "string concat".into(),
                     part_type: None,
-                    description: "Compiler built-in string concatenation".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in string concatenation"),
+                        ("ja", "文字列の結合を行う組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::StringConcat,
                     )),
@@ -531,7 +600,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "string length".into(),
                     part_type: None,
-                    description: "Compiler built-in string length".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in string length"),
+                        ("ja", "文字列の文字数を取得する組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::StringLength,
                     )),
@@ -546,7 +618,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "string slice".into(),
                     part_type: None,
-                    description: "Compiler built-in string slice".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in string slice"),
+                        ("ja", "文字列の部分文字列を取得する組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::StringSlice,
                     )),
@@ -561,7 +636,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "list length".into(),
                     part_type: None,
-                    description: "Compiler built-in list length".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in list length"),
+                        ("ja", "リストの要素数を取得する組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::ListLength,
                     )),
@@ -576,7 +654,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "list concat".into(),
                     part_type: None,
-                    description: "Compiler built-in list concatenation".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in list concatenation"),
+                        ("ja", "2つのリストを結合する組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::ListConcat,
                     )),
@@ -591,7 +672,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "list get".into(),
                     part_type: None,
-                    description: "Compiler built-in list element retrieval".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in list element retrieval"),
+                        ("ja", "リストの指定位置の要素を取得する組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::ListGet,
                     )),
@@ -606,7 +690,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 definy_event::event::PartDefinitionEvent {
                     part_name: "list append".into(),
                     part_type: None,
-                    description: "Compiler built-in list append".into(),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Compiler built-in list append"),
+                        ("ja", "リストの末尾に要素を追加する組み込み関数"),
+                    ]),
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::ListAppend,
                     )),
@@ -776,9 +863,13 @@ mod tests {
             match event.content {
                 definy_event::event::EventContent::ModuleDefinition(module) => {
                     assert_eq!(module.module_name.as_ref(), "core");
+                    assert!(module.description.get("en").is_some());
+                    assert!(module.description.get("ja").is_some());
                     has_core_module = true;
                 }
                 definy_event::event::EventContent::PartDefinition(part) => {
+                    assert!(part.description.get("en").is_some());
+                    assert!(part.description.get("ja").is_some());
                     part_names.push(part.part_name.to_string());
                 }
                 definy_event::event::EventContent::CreateAccount(account) => {

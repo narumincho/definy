@@ -135,9 +135,16 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }
-                                    if !part.part_description.is_empty() {
-                                        div { style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
-                                            "{part.part_description}"
+                                    {
+                                        let desc = part.description_for(context.language);
+                                        if !desc.is_empty() {
+                                            rsx! {
+                                                div { style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
+                                                    "{desc}"
+                                                }
+                                            }
+                                        } else {
+                                            rsx! {}
                                         }
                                     }
                                     div { class: "mono", style: "font-size: 0.78rem; opacity: 0.8;", "{expr_str}" }
