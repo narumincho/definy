@@ -220,7 +220,9 @@ fn RenderDetailContent(
                         }
                     }
                     {
-                        let desc = part_definition_event.description.to_display_string(context.language.to_code());
+                        let desc = part_definition_event
+                            .description
+                            .to_display_string(context.language.to_code());
                         if !desc.is_empty() {
                             rsx! {
                                 div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
@@ -338,7 +340,9 @@ fn RenderDetailContent(
                     }
                 }
                 {
-                    let desc = module_definition_event.description.to_display_string(context.language.to_code());
+                    let desc = module_definition_event
+                        .description
+                        .to_display_string(context.language.to_code());
                     if !desc.is_empty() {
                         rsx! {
                             div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
@@ -366,7 +370,9 @@ fn RenderDetailContent(
                         }
                     }
                     {
-                        let desc = module_update_event.module_description.to_display_string(context.language.to_code());
+                        let desc = module_update_event
+                            .module_description
+                            .to_display_string(context.language.to_code());
                         if !desc.is_empty() {
                             rsx! {
                                 div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",

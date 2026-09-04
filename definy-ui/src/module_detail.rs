@@ -156,10 +156,9 @@ fn ModulePartItem(
                 let desc = part.description_for(context.language);
                 if !desc.is_empty() {
                     rsx! {
-                        div { style: "white-space: pre-wrap; color: var(--text-secondary);",
-                            "{desc}"
-                        }
+                        div { style: "white-space: pre-wrap; color: var(--text-secondary);", "{desc}" }
                     }
+                }
                 } else {
                     rsx! {}
                 }

@@ -207,37 +207,103 @@ pub fn render_expression_editor(
                         }
                     }
                     definy_event::event::Expression::Add(add_expression) => {
-                        render_binary_inputs(state, &context, &path, &add_expression.left, &add_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &add_expression.left,
+                            &add_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Subtract(sub_expression) => {
-                        render_binary_inputs(state, &context, &path, &sub_expression.left, &sub_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &sub_expression.left,
+                            &sub_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Multiply(mul_expression) => {
-                        render_binary_inputs(state, &context, &path, &mul_expression.left, &mul_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &mul_expression.left,
+                            &mul_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Divide(div_expression) => {
-                        render_binary_inputs(state, &context, &path, &div_expression.left, &div_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &div_expression.left,
+                            &div_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Remainder(rem_expression) => {
-                        render_binary_inputs(state, &context, &path, &rem_expression.left, &rem_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &rem_expression.left,
+                            &rem_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Equal(equal_expression) => {
-                        render_binary_inputs(state, &context, &path, &equal_expression.left, &equal_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &equal_expression.left,
+                            &equal_expression.right,
+                        )
                     }
                     definy_event::event::Expression::NotEqual(ne_expression) => {
-                        render_binary_inputs(state, &context, &path, &ne_expression.left, &ne_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &ne_expression.left,
+                            &ne_expression.right,
+                        )
                     }
                     definy_event::event::Expression::LessThan(lt_expression) => {
-                        render_binary_inputs(state, &context, &path, &lt_expression.left, &lt_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &lt_expression.left,
+                            &lt_expression.right,
+                        )
                     }
                     definy_event::event::Expression::LessThanOrEqual(le_expression) => {
-                        render_binary_inputs(state, &context, &path, &le_expression.left, &le_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &le_expression.left,
+                            &le_expression.right,
+                        )
                     }
                     definy_event::event::Expression::GreaterThan(gt_expression) => {
-                        render_binary_inputs(state, &context, &path, &gt_expression.left, &gt_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &gt_expression.left,
+                            &gt_expression.right,
+                        )
                     }
                     definy_event::event::Expression::GreaterThanOrEqual(ge_expression) => {
-                        render_binary_inputs(state, &context, &path, &ge_expression.left, &ge_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &ge_expression.left,
+                            &ge_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Not(not_expression) => {
                         let mut val_path = path.clone();
@@ -262,13 +328,31 @@ pub fn render_expression_editor(
                         }
                     }
                     definy_event::event::Expression::And(and_expression) => {
-                        render_binary_inputs(state, &context, &path, &and_expression.left, &and_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &and_expression.left,
+                            &and_expression.right,
+                        )
                     }
                     definy_event::event::Expression::Or(or_expression) => {
-                        render_binary_inputs(state, &context, &path, &or_expression.left, &or_expression.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &or_expression.left,
+                            &or_expression.right,
+                        )
                     }
                     definy_event::event::Expression::StringConcat(concat_expr) => {
-                        render_binary_inputs(state, &context, &path, &concat_expr.left, &concat_expr.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &concat_expr.left,
+                            &concat_expr.right,
+                        )
                     }
                     definy_event::event::Expression::StringLength(len_expr) => {
                         let mut val_path = path.clone();
@@ -375,7 +459,13 @@ pub fn render_expression_editor(
                         }
                     }
                     definy_event::event::Expression::ListConcat(concat_expr) => {
-                        render_binary_inputs(state, &context, &path, &concat_expr.left, &concat_expr.right)
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &concat_expr.left,
+                            &concat_expr.right,
+                        )
                     }
                     definy_event::event::Expression::ListGet(get_expr) => {
                         let mut list_path = path.clone();
@@ -580,7 +670,7 @@ pub fn render_expression_editor(
                                     "{language.label(\"Record fields\", \"レコードフィールド\", \"Kampoj de rikordo\")}"
                                 }
                                 div { style: "display: grid; gap: 0.45rem;",
-                                    for (index , item) in record_expression.items.iter().enumerate() {
+                                    for (index, item) in record_expression.items.iter().enumerate() {
                                         {
                                             let mut item_path = path.clone();
                                             item_path.push(PathStep::RecordItemValue(index));
@@ -622,20 +712,18 @@ pub fn render_expression_editor(
                         let mut value_path = path.clone();
                         value_path.push(PathStep::ConstructorValue);
                         let type_part_name = crate::part_projection::find_part_snapshot(
-                            state,
-                            &constructor_expression.type_part_definition_event_hash,
-                        )
-                        .map(|s| s.part_name)
-                        .unwrap_or_else(|| {
-                            constructor_expression
-                                .type_part_definition_event_hash
-                                .to_string()
-                        });
+                                state,
+                                &constructor_expression.type_part_definition_event_hash,
+                            )
+                            .map(|s| s.part_name)
+                            .unwrap_or_else(|| {
+                                constructor_expression
+                                    .type_part_definition_event_hash
+                                    .to_string()
+                            });
                         rsx! {
                             div { style: "display: grid; gap: 0.45rem;",
-                                div { style: "font-size: 0.8rem; color: var(--text-secondary);",
-                                    "{type_part_name}"
-                                }
+                                div { style: "font-size: 0.8rem; color: var(--text-secondary);", "{type_part_name}" }
                                 {
                                     render_expression_editor(
                                         state,
@@ -652,7 +740,9 @@ pub fn render_expression_editor(
                             }
                         }
                     }
-                    definy_event::event::Expression::PartReference(part_reference_expression) => {
+                    definy_event::event::Expression::PartReference(
+                        part_reference_expression,
+                    ) => {
                         let part = crate::part_projection::find_part_snapshot(
                             state,
                             &part_reference_expression.part_definition_event_hash,
