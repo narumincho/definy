@@ -327,7 +327,9 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
         EventContent::PartDefinition(part_definition_event) => {
             let part_name = part_definition_event.part_name.to_string();
             let part_type_badge = part_definition_event.part_type.as_ref().map(part_type_text);
-            let desc = part_definition_event.description.to_string();
+            let desc = part_definition_event
+                .description
+                .to_display_string(context.language.to_code());
 
             rsx! {
                 div { style: "display: grid; gap: 0.35rem;",
@@ -382,7 +384,9 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
         }
         EventContent::ModuleDefinition(module_definition_event) => {
             let mod_name = module_definition_event.module_name.to_string();
-            let desc = module_definition_event.description.to_string();
+            let desc = module_definition_event
+                .description
+                .to_display_string(context.language.to_code());
 
             rsx! {
                 div { style: "display: grid; gap: 0.35rem;",
@@ -402,7 +406,9 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
         EventContent::ModuleUpdate(module_update_event) => {
             let mod_name = module_update_event.module_name.to_string();
             let base_hash = module_update_event.module_definition_event_hash.clone();
-            let desc = module_update_event.module_description.to_string();
+            let desc = module_update_event
+                .module_description
+                .to_display_string(context.language.to_code());
 
             rsx! {
                 div { style: "display: grid; gap: 0.35rem;",

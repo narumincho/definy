@@ -48,9 +48,16 @@ pub fn ModuleDetailView(
                     h2 { style: "font-size: 1.4rem; font-weight: 600; margin: 0;",
                         "{module_snapshot.module_name}"
                     }
-                    if !module_snapshot.module_description.is_empty() {
-                        div { style: "white-space: pre-wrap; font-size: 0.92rem; color: var(--text-secondary);",
-                            "{module_snapshot.module_description}"
+                    {
+                        let desc = module_snapshot.description_for(context.language);
+                        if !desc.is_empty() {
+                            rsx! {
+                                div { style: "white-space: pre-wrap; font-size: 0.92rem; color: var(--text-secondary);",
+                                    "{desc}"
+                                }
+                            }
+                        } else {
+                            rsx! {}
                         }
                     }
                     div { style: "font-size: 0.85rem; color: var(--primary);", "{author_label}" }
@@ -129,8 +136,8 @@ fn ModulePartItem(
     account_name: String,
     context: PageContext,
 ) -> Element {
-    let def_hash = part.definition_event_hash;
-    let latest_hash = part.latest_event_hash;
+    let def_hash = part.definition_event_hash.clone();
+    let latest_hash = part.latest_event_hash.clone();
     let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let author_label = format!(
         "{} {account_name}",
@@ -145,9 +152,15 @@ fn ModulePartItem(
             style: "display: grid; gap: 0.5rem; padding: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
             div { style: "font-size: 0.85rem; color: var(--text-secondary);", "{time_str}" }
             div { style: "font-size: 0.98rem; font-weight: 600;", "{part.part_name}" }
-            if !part.part_description.is_empty() {
-                div { style: "white-space: pre-wrap; color: var(--text-secondary);",
-                    "{part.part_description}"
+            {
+                let desc = part.description_for(context.language);
+                if !desc.is_empty() {
+                    rsx! {
+                        div { style: "white-space: pre-wrap; color: var(--text-secondary);", "{desc}" }
+                    }
+                }
+                } else {
+                    rsx! {}
                 }
             }
             div { style: "font-size: 0.85rem; color: var(--primary);", "{author_label}" }
@@ -299,9 +312,9 @@ fn handle_module_update_submit(
                     if let Some(snapshot) = find_module_snapshot(next, &def_hash_for_cb) {
                         next.module_update_form.module_definition_event_hash =
                             Some(def_hash_for_cb);
+                        let desc = snapshot.description_for(language);
                         next.module_update_form.module_name_input = snapshot.module_name;
-                        next.module_update_form.module_description_input =
-                            snapshot.module_description;
+                        next.module_update_form.module_description_input = desc;
                     }
                     next.module_update_form.result_message = Some(
                         language
@@ -353,11 +366,12 @@ fn effective_module_update_form(
     if let Some(snapshot) = snapshot {
         return (
             snapshot.module_name.clone(),
-            snapshot.module_description.clone(),
+            snapshot.description_for(crate::language::default_language()),
         );
     }
     if let Some(snapshot) = find_module_snapshot(state, definition_event_hash) {
-        return (snapshot.module_name, snapshot.module_description);
+        let desc = snapshot.description_for(crate::language::default_language());
+        return (snapshot.module_name, desc);
     }
     (
         state.module_update_form.module_name_input.clone(),

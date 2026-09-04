@@ -74,9 +74,16 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }
-                                    if !module.module_description.is_empty() {
-                                        div { style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
-                                            "{module.module_description}"
+                                    {
+                                        let desc = module.description_for(context.language);
+                                        if !desc.is_empty() {
+                                            rsx! {
+                                                div { style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
+                                                    "{desc}"
+                                                }
+                                            }
+                                        } else {
+                                            rsx! {}
                                         }
                                     }
                                     div { style: "font-size: 0.84rem; color: var(--text-secondary);",

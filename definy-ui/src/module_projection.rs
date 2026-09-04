@@ -11,9 +11,16 @@ pub struct ModuleSnapshot {
     pub latest_event_hash: EventHashId,
     pub account_id: AccountId,
     pub module_name: String,
-    pub module_description: String,
+    pub module_description: definy_event::event::Description,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub has_definition: bool,
+}
+
+impl ModuleSnapshot {
+    pub fn description_for(&self, language: crate::language::Language) -> String {
+        self.module_description
+            .to_display_string(language.to_code())
+    }
 }
 
 pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
@@ -38,7 +45,7 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
                         latest_event_hash: event_hash,
                         account_id: event.account_id.clone(),
                         module_name: module_definition.module_name.to_string(),
-                        module_description: module_definition.description.to_string(),
+                        module_description: module_definition.description.clone(),
                         updated_at: event.time,
                         has_definition: true,
                     },
@@ -52,14 +59,14 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
                         latest_event_hash: event_hash.clone(),
                         account_id: event.account_id.clone(),
                         module_name: String::new(),
-                        module_description: String::new(),
+                        module_description: definy_event::event::Description::default(),
                         updated_at: event.time,
                         has_definition: false,
                     });
                 entry.latest_event_hash = event_hash.clone();
                 entry.account_id = event.account_id.clone();
                 entry.module_name = module_update.module_name.to_string();
-                entry.module_description = module_update.module_description.to_string();
+                entry.module_description = module_update.module_description.clone();
                 entry.updated_at = event.time;
             }
             _ => {}

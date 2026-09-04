@@ -12,11 +12,17 @@ pub struct PartSnapshot {
     pub account_id: AccountId,
     pub part_name: String,
     pub part_type: Option<definy_event::event::PartType>,
-    pub part_description: String,
+    pub part_description: definy_event::event::Description,
     pub expression: Option<Expression>,
     pub module_definition_event_hash: EventHashId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub has_definition: bool,
+}
+
+impl PartSnapshot {
+    pub fn description_for(&self, language: crate::language::Language) -> String {
+        self.part_description.to_display_string(language.to_code())
+    }
 }
 
 pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
@@ -42,7 +48,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         account_id: event.account_id.clone(),
                         part_name: part_definition.part_name.to_string(),
                         part_type: part_definition.part_type.clone(),
-                        part_description: part_definition.description.to_string(),
+                        part_description: part_definition.description.clone(),
                         expression: part_definition.expression.clone(),
                         module_definition_event_hash: part_definition
                             .module_definition_event_hash
@@ -61,7 +67,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         account_id: event.account_id.clone(),
                         part_name: String::new(),
                         part_type: None,
-                        part_description: String::new(),
+                        part_description: definy_event::event::Description::default(),
                         expression: part_update.expression.clone(),
                         module_definition_event_hash: part_update
                             .module_definition_event_hash
@@ -72,7 +78,7 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                 entry.latest_event_hash = event_hash.clone();
                 entry.account_id = event.account_id.clone();
                 entry.part_name = part_update.part_name.to_string();
-                entry.part_description = part_update.part_description.to_string();
+                entry.part_description = part_update.part_description.clone();
                 entry.expression = part_update.expression.clone();
                 entry.module_definition_event_hash =
                     part_update.module_definition_event_hash.clone();

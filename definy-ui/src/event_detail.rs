@@ -219,9 +219,18 @@ fn RenderDetailContent(
                             "{module_name}"
                         }
                     }
-                    if !part_definition_event.description.is_empty() {
-                        div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
-                            "{part_definition_event.description}"
+                    {
+                        let desc = part_definition_event
+                            .description
+                            .to_display_string(context.language.to_code());
+                        if !desc.is_empty() {
+                            rsx! {
+                                div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                                    "{desc}"
+                                }
+                            }
+                        } else {
+                            rsx! {}
                         }
                     }
                     if let Some(expr) = &part_definition_event.expression {
@@ -330,9 +339,18 @@ fn RenderDetailContent(
                         "{context.language.label(\"Open module detail →\", \"モジュール詳細を開く →\", \"Malfermi modulajn detalojn →\")}"
                     }
                 }
-                if !module_definition_event.description.is_empty() {
-                    div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
-                        "{module_definition_event.description}"
+                {
+                    let desc = module_definition_event
+                        .description
+                        .to_display_string(context.language.to_code());
+                    if !desc.is_empty() {
+                        rsx! {
+                            div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                                "{desc}"
+                            }
+                        }
+                    } else {
+                        rsx! {}
                     }
                 }
             }
@@ -351,9 +369,18 @@ fn RenderDetailContent(
                             "{context.language.label(\"Open module detail →\", \"モジュール詳細を開く →\", \"Malfermi modulajn detalojn →\")}"
                         }
                     }
-                    if !module_update_event.module_description.is_empty() {
-                        div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
-                            "{module_update_event.module_description}"
+                    {
+                        let desc = module_update_event
+                            .module_description
+                            .to_display_string(context.language.to_code());
+                        if !desc.is_empty() {
+                            rsx! {
+                                div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
+                                    "{desc}"
+                                }
+                            }
+                        } else {
+                            rsx! {}
                         }
                     }
                 }

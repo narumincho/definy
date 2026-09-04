@@ -207,21 +207,193 @@ pub fn render_expression_editor(
                         }
                     }
                     definy_event::event::Expression::Add(add_expression) => {
-                        let mut left_path = path.clone();
-                        left_path.push(PathStep::Left);
-                        let mut right_path = path.clone();
-                        right_path.push(PathStep::Right);
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &add_expression.left,
+                            &add_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Subtract(sub_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &sub_expression.left,
+                            &sub_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Multiply(mul_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &mul_expression.left,
+                            &mul_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Divide(div_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &div_expression.left,
+                            &div_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Remainder(rem_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &rem_expression.left,
+                            &rem_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Equal(equal_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &equal_expression.left,
+                            &equal_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::NotEqual(ne_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &ne_expression.left,
+                            &ne_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::LessThan(lt_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &lt_expression.left,
+                            &lt_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::LessThanOrEqual(le_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &le_expression.left,
+                            &le_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::GreaterThan(gt_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &gt_expression.left,
+                            &gt_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::GreaterThanOrEqual(ge_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &ge_expression.left,
+                            &ge_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Not(not_expression) => {
+                        let mut val_path = path.clone();
+                        val_path.push(PathStep::Condition);
+                        rsx! {
+                            div { style: "display: grid; gap: 0.3rem;",
+                                "{language.label(\"Value\", \"値\", \"Valoro\")}"
+                                {
+                                    render_expression_editor(
+                                        state,
+                                        not_expression.value.as_ref(),
+                                        context
+                                            .child(
+                                                val_path,
+                                                scope_variables.clone(),
+                                                structure_locked,
+                                                allow_kind_change,
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::And(and_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &and_expression.left,
+                            &and_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::Or(or_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &or_expression.left,
+                            &or_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::StringConcat(concat_expr) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &concat_expr.left,
+                            &concat_expr.right,
+                        )
+                    }
+                    definy_event::event::Expression::StringLength(len_expr) => {
+                        let mut val_path = path.clone();
+                        val_path.push(PathStep::Condition);
+                        rsx! {
+                            div { style: "display: grid; gap: 0.3rem;",
+                                "{language.label(\"String\", \"文字列\", \"Ĉeno\")}"
+                                {
+                                    render_expression_editor(
+                                        state,
+                                        len_expr.value.as_ref(),
+                                        context
+                                            .child(
+                                                val_path,
+                                                scope_variables.clone(),
+                                                structure_locked,
+                                                allow_kind_change,
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::StringSlice(slice_expr) => {
+                        let mut val_path = path.clone();
+                        val_path.push(PathStep::Condition);
+                        let mut start_path = path.clone();
+                        start_path.push(PathStep::Start);
+                        let mut end_path = path.clone();
+                        end_path.push(PathStep::End);
                         rsx! {
                             div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
                                 div { style: "display: grid; gap: 0.3rem;",
-                                    "{language.label(\"Left\", \"左\", \"Maldekstre\")}"
+                                    "{language.label(\"String\", \"文字列\", \"Ĉeno\")}"
                                     {
                                         render_expression_editor(
                                             state,
-                                            add_expression.left.as_ref(),
+                                            slice_expr.value.as_ref(),
                                             context
                                                 .child(
-                                                    left_path,
+                                                    val_path,
                                                     scope_variables.clone(),
                                                     structure_locked,
                                                     allow_kind_change,
@@ -230,14 +402,145 @@ pub fn render_expression_editor(
                                     }
                                 }
                                 div { style: "display: grid; gap: 0.3rem;",
-                                    "{language.label(\"Right\", \"右\", \"Dekstre\")}"
+                                    "{language.label(\"Start\", \"開始位置\", \"Komenco\")}"
                                     {
                                         render_expression_editor(
                                             state,
-                                            add_expression.right.as_ref(),
+                                            slice_expr.start.as_ref(),
                                             context
                                                 .child(
-                                                    right_path,
+                                                    start_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
+                                }
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    "{language.label(\"End\", \"終了位置\", \"Fino\")}"
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            slice_expr.end.as_ref(),
+                                            context
+                                                .child(
+                                                    end_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::ListLength(len_expr) => {
+                        let mut val_path = path.clone();
+                        val_path.push(PathStep::Condition);
+                        rsx! {
+                            div { style: "display: grid; gap: 0.3rem;",
+                                "{language.label(\"List\", \"リスト\", \"Listo\")}"
+                                {
+                                    render_expression_editor(
+                                        state,
+                                        len_expr.value.as_ref(),
+                                        context
+                                            .child(
+                                                val_path,
+                                                scope_variables.clone(),
+                                                structure_locked,
+                                                allow_kind_change,
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::ListConcat(concat_expr) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &concat_expr.left,
+                            &concat_expr.right,
+                        )
+                    }
+                    definy_event::event::Expression::ListGet(get_expr) => {
+                        let mut list_path = path.clone();
+                        list_path.push(PathStep::Left);
+                        let mut idx_path = path.clone();
+                        idx_path.push(PathStep::Index);
+                        rsx! {
+                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    "{language.label(\"List\", \"リスト\", \"Listo\")}"
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            get_expr.list.as_ref(),
+                                            context
+                                                .child(
+                                                    list_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
+                                }
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    "{language.label(\"Index\", \"インデックス\", \"Indekso\")}"
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            get_expr.index.as_ref(),
+                                            context
+                                                .child(
+                                                    idx_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::ListAppend(append_expr) => {
+                        let mut list_path = path.clone();
+                        list_path.push(PathStep::Left);
+                        let mut item_path = path.clone();
+                        item_path.push(PathStep::Item);
+                        rsx! {
+                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    "{language.label(\"List\", \"リスト\", \"Listo\")}"
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            append_expr.list.as_ref(),
+                                            context
+                                                .child(
+                                                    list_path,
+                                                    scope_variables.clone(),
+                                                    structure_locked,
+                                                    allow_kind_change,
+                                                ),
+                                        )
+                                    }
+                                }
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    "{language.label(\"Item\", \"項目\", \"Elemento\")}"
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            append_expr.item.as_ref(),
+                                            context
+                                                .child(
+                                                    item_path,
                                                     scope_variables.clone(),
                                                     structure_locked,
                                                     allow_kind_change,
@@ -313,48 +616,6 @@ pub fn render_expression_editor(
                             }
                         }
                     }
-                    definy_event::event::Expression::Equal(equal_expression) => {
-                        let mut left_path = path.clone();
-                        left_path.push(PathStep::Left);
-                        let mut right_path = path.clone();
-                        right_path.push(PathStep::Right);
-                        rsx! {
-                            div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
-                                div { style: "display: grid; gap: 0.3rem;",
-                                    "{language.label(\"Left\", \"左\", \"Maldekstre\")}"
-                                    {
-                                        render_expression_editor(
-                                            state,
-                                            equal_expression.left.as_ref(),
-                                            context
-                                                .child(
-                                                    left_path,
-                                                    scope_variables.clone(),
-                                                    structure_locked,
-                                                    allow_kind_change,
-                                                ),
-                                        )
-                                    }
-                                }
-                                div { style: "display: grid; gap: 0.3rem;",
-                                    "{language.label(\"Right\", \"右\", \"Dekstre\")}"
-                                    {
-                                        render_expression_editor(
-                                            state,
-                                            equal_expression.right.as_ref(),
-                                            context
-                                                .child(
-                                                    right_path,
-                                                    scope_variables.clone(),
-                                                    structure_locked,
-                                                    allow_kind_change,
-                                                ),
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                     definy_event::event::Expression::Let(let_expression) => {
                         let mut value_path = path.clone();
                         value_path.push(PathStep::LetValue);
@@ -405,42 +666,36 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::TypeLiteral(record_expression) => {
                         rsx! {
                             div { style: "display: grid; gap: 0.6rem;",
-                                for (index, item) in record_expression.items.iter().enumerate() {
-                                    {
-                                        let mut value_path = path.clone();
-                                        value_path.push(PathStep::RecordItemValue(index));
-                                        let allow_kind_for_value = allow_kind_change_for_nested_values(
-                                            allow_kind_change,
-                                            path.as_slice(),
-                                        );
-                                        let key_str = item.key.clone();
-                                        rsx! {
-                                            div {
-                                                key: "rec-{index}",
-                                                style: "display: grid; gap: 0.4rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                                div { style: "display: flex; gap: 0.5rem; align-items: center;",
-                                                    div { style: "min-width: 2.4rem; font-size: 0.8rem; color: var(--text-secondary);",
-                                                        "{language.label(\"Key\", \"キー\", \"Ŝlosilo\")}"
+                                div { style: "font-size: 0.8rem; color: var(--text-secondary);",
+                                    "{language.label(\"Record fields\", \"レコードフィールド\", \"Kampoj de rikordo\")}"
+                                }
+                                div { style: "display: grid; gap: 0.45rem;",
+                                    for (index, item) in record_expression.items.iter().enumerate() {
+                                        {
+                                            let mut item_path = path.clone();
+                                            item_path.push(PathStep::RecordItemValue(index));
+                                            let key = item.key.clone();
+                                            let is_not_first = index > 0;
+                                            rsx! {
+                                                div {
+                                                    key: "record-item-{index}",
+                                                    style: "display: grid; gap: 0.4rem; padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm);",
+                                                    div { style: "display: flex; gap: 0.5rem; align-items: center;",
+                                                        {record_item_key_input(path.clone(), index, target, &key)}
+                                                        if is_not_first {
+                                                            {remove_record_item_button(language, path.clone(), index, target)}
+                                                        }
                                                     }
-                                                    if structure_locked {
-                                                        div { style: "font-size: 0.9rem;", "{key_str}" }
-                                                    } else {
-                                                        {record_item_key_input(path.clone(), index, target, key_str.as_ref())}
-                                                        {remove_record_item_button(language, path.clone(), index, target)}
-                                                    }
-                                                }
-                                                div { style: "display: grid; gap: 0.3rem;",
-                                                    "{language.label(\"Value\", \"値\", \"Valoro\")}"
                                                     {
                                                         render_expression_editor(
                                                             state,
                                                             item.value.as_ref(),
                                                             context
                                                                 .child(
-                                                                    value_path,
+                                                                    item_path,
                                                                     scope_variables.clone(),
                                                                     structure_locked,
-                                                                    allow_kind_for_value,
+                                                                    allow_kind_change,
                                                                 ),
                                                         )
                                                     }
@@ -448,8 +703,6 @@ pub fn render_expression_editor(
                                             }
                                         }
                                     }
-                                }
-                                if !structure_locked {
                                     {add_record_item_button(language, path.clone(), target)}
                                 }
                             }
@@ -462,58 +715,45 @@ pub fn render_expression_editor(
                                 state,
                                 &constructor_expression.type_part_definition_event_hash,
                             )
-                            .map(|snapshot| snapshot.part_name)
+                            .map(|s| s.part_name)
                             .unwrap_or_else(|| {
-                                format!(
-                                    "(unknown: {})",
-                                    constructor_expression.type_part_definition_event_hash,
-                                )
+                                constructor_expression
+                                    .type_part_definition_event_hash
+                                    .to_string()
                             });
-                        let type_label = format!(
-                            "{} {type_part_name}",
-                            language.label("Type:", "型:", "Tipo:"),
-                        );
                         rsx! {
-                            div { style: "display: grid; gap: 0.4rem;",
-                                div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{type_label}" }
+                            div { style: "display: grid; gap: 0.45rem;",
+                                div { style: "font-size: 0.8rem; color: var(--text-secondary);", "{type_part_name}" }
                                 {
                                     render_expression_editor(
                                         state,
                                         constructor_expression.value.as_ref(),
-                                        context.child(value_path, scope_variables.clone(), true, true),
+                                        context
+                                            .child(
+                                                value_path,
+                                                scope_variables.clone(),
+                                                structure_locked,
+                                                allow_kind_change,
+                                            ),
                                     )
                                 }
                             }
                         }
                     }
-                    definy_event::event::Expression::Compiler(builtin) => {
-                        let builtin_label = match builtin {
-                            definy_event::event::CompilerBuiltin::Let => "[compiler let]",
-                            definy_event::event::CompilerBuiltin::Plus => "[compiler plus]",
-                            definy_event::event::CompilerBuiltin::NumberLiteral => {
-                                "[compiler number literal]"
-                            }
-                            definy_event::event::CompilerBuiltin::If => "[compiler if]",
-                            definy_event::event::CompilerBuiltin::Equal => "[compiler equal]",
-                        };
-                        rsx! {
-                            div { style: "font-size: 0.85rem; color: var(--text-secondary); font-family: monospace;",
-                                "{builtin_label}"
-                            }
-                        }
-                    }
-                    definy_event::event::Expression::PartReference(part_ref) => {
-                        let part_info = crate::part_projection::find_part_snapshot(
+                    definy_event::event::Expression::PartReference(
+                        part_reference_expression,
+                    ) => {
+                        let part = crate::part_projection::find_part_snapshot(
                             state,
-                            &part_ref.part_definition_event_hash,
+                            &part_reference_expression.part_definition_event_hash,
                         );
-                        let part_name = part_info
+                        let part_name = part
                             .as_ref()
-                            .map(|s| s.part_name.as_str())
-                            .unwrap_or("(unknown)");
-                        let part_type = part_info
+                            .map(|p| p.part_name.as_str())
+                            .unwrap_or("Unknown");
+                        let part_type = part
                             .as_ref()
-                            .and_then(|s| s.part_type.as_ref())
+                            .and_then(|p| p.part_type.as_ref())
                             .map(crate::part_list::part_type_text)
                             .unwrap_or_else(|| "Part".to_string());
                         rsx! {
@@ -532,6 +772,61 @@ pub fn render_expression_editor(
                             "{language.label(\"Local variable reference\", \"ローカル変数参照\", \"Loka variabla referenco\")}"
                         }
                     },
+                    definy_event::event::Expression::Compiler(_) => rsx! {
+                        div { style: "font-size: 0.8rem; color: var(--text-secondary);",
+                            "{language.label(\"Compiler Builtin\", \"コンパイラ組み込み\", \"Kompililo enkonstruita\")}"
+                        }
+                    },
+                }
+            }
+        }
+    }
+}
+
+fn render_binary_inputs(
+    state: &AppState,
+    context: &ExpressionEditorContext,
+    path: &[PathStep],
+    left: &definy_event::event::Expression,
+    right: &definy_event::event::Expression,
+) -> Element {
+    let mut left_path = path.to_vec();
+    left_path.push(PathStep::Left);
+    let mut right_path = path.to_vec();
+    right_path.push(PathStep::Right);
+    let language = context.language;
+    rsx! {
+        div { style: "display: flex; flex-wrap: wrap; gap: 0.6rem;",
+            div { style: "display: grid; gap: 0.3rem;",
+                "{language.label(\"Left\", \"左\", \"Maldekstre\")}"
+                {
+                    render_expression_editor(
+                        state,
+                        left,
+                        context
+                            .child(
+                                left_path,
+                                context.scope_variables.clone(),
+                                context.structure_locked,
+                                context.allow_kind_change,
+                            ),
+                    )
+                }
+            }
+            div { style: "display: grid; gap: 0.3rem;",
+                "{language.label(\"Right\", \"右\", \"Dekstre\")}"
+                {
+                    render_expression_editor(
+                        state,
+                        right,
+                        context
+                            .child(
+                                right_path,
+                                context.scope_variables.clone(),
+                                context.structure_locked,
+                                context.allow_kind_change,
+                            ),
+                    )
                 }
             }
         }
@@ -623,6 +918,7 @@ pub fn selector_options(
 
     // Literals and generic constructors
     options.extend([
+        ("expr:number".to_string(), "Number\tLiteral\t".to_string()),
         ("expr:string".to_string(), "String\tLiteral\t".to_string()),
         ("expr:boolean".to_string(), "Boolean\tLiteral\t".to_string()),
         ("expr:list".to_string(), "List\tLiteral\t".to_string()),
@@ -630,7 +926,80 @@ pub fn selector_options(
             "expr:type_literal".to_string(),
             "Record\tLiteral\t".to_string(),
         ),
-        ("expr:equal".to_string(), "Equal\tSyntax\t".to_string()),
+        ("expr:add".to_string(), "Add (+)\tFunction\t".to_string()),
+        (
+            "expr:subtract".to_string(),
+            "Subtract (-)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:multiply".to_string(),
+            "Multiply (*)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:divide".to_string(),
+            "Divide (/)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:remainder".to_string(),
+            "Remainder (%)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:equal".to_string(),
+            "Equal (==)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:not_equal".to_string(),
+            "Not Equal (!=)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:less_than".to_string(),
+            "Less Than (<)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:less_than_or_equal".to_string(),
+            "Less Than or Equal (<=)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:greater_than".to_string(),
+            "Greater Than (>)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:greater_than_or_equal".to_string(),
+            "Greater Than or Equal (>=)\tFunction\t".to_string(),
+        ),
+        ("expr:not".to_string(), "Not (not)\tFunction\t".to_string()),
+        ("expr:and".to_string(), "And (and)\tFunction\t".to_string()),
+        ("expr:or".to_string(), "Or (or)\tFunction\t".to_string()),
+        (
+            "expr:string_concat".to_string(),
+            "String Concat (string_concat)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:string_length".to_string(),
+            "String Length (string_length)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:string_slice".to_string(),
+            "String Slice (string_slice)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:list_length".to_string(),
+            "List Length (list_length)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:list_concat".to_string(),
+            "List Concat (list_concat)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:list_get".to_string(),
+            "List Get (list_get)\tFunction\t".to_string(),
+        ),
+        (
+            "expr:list_append".to_string(),
+            "List Append (list_append)\tFunction\t".to_string(),
+        ),
+        ("expr:if".to_string(), "If\tSyntax\t".to_string()),
+        ("expr:let".to_string(), "Let\tSyntax\t".to_string()),
     ]);
 
     // Type constructors
@@ -682,6 +1051,26 @@ fn current_selection_value(
                 .map(|h| format!("ref:global:{}", h))
                 .unwrap_or_else(|| "expr:add".to_string())
         }
+        definy_event::event::Expression::Subtract(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Minus)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:subtract".to_string())
+        }
+        definy_event::event::Expression::Multiply(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Multiply)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:multiply".to_string())
+        }
+        definy_event::event::Expression::Divide(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Divide)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:divide".to_string())
+        }
+        definy_event::event::Expression::Remainder(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Remainder)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:remainder".to_string())
+        }
         definy_event::event::Expression::If(_) => {
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::If)
                 .map(|h| format!("ref:global:{}", h))
@@ -691,6 +1080,82 @@ fn current_selection_value(
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Equal)
                 .map(|h| format!("ref:global:{}", h))
                 .unwrap_or_else(|| "expr:equal".to_string())
+        }
+        definy_event::event::Expression::NotEqual(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::NotEqual)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:not_equal".to_string())
+        }
+        definy_event::event::Expression::LessThan(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::LessThan)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:less_than".to_string())
+        }
+        definy_event::event::Expression::LessThanOrEqual(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::LessThanOrEqual)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:less_than_or_equal".to_string())
+        }
+        definy_event::event::Expression::GreaterThan(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::GreaterThan)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:greater_than".to_string())
+        }
+        definy_event::event::Expression::GreaterThanOrEqual(_) => find_builtin_part_hash(
+            state,
+            definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
+        )
+        .map(|h| format!("ref:global:{}", h))
+        .unwrap_or_else(|| "expr:greater_than_or_equal".to_string()),
+        definy_event::event::Expression::Not(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Not)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:not".to_string())
+        }
+        definy_event::event::Expression::And(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::And)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:and".to_string())
+        }
+        definy_event::event::Expression::Or(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Or)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:or".to_string())
+        }
+        definy_event::event::Expression::StringConcat(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringConcat)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:string_concat".to_string())
+        }
+        definy_event::event::Expression::StringLength(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringLength)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:string_length".to_string())
+        }
+        definy_event::event::Expression::StringSlice(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringSlice)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:string_slice".to_string())
+        }
+        definy_event::event::Expression::ListLength(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListLength)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:list_length".to_string())
+        }
+        definy_event::event::Expression::ListConcat(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListConcat)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:list_concat".to_string())
+        }
+        definy_event::event::Expression::ListGet(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListGet)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:list_get".to_string())
+        }
+        definy_event::event::Expression::ListAppend(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListAppend)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:list_append".to_string())
         }
         definy_event::event::Expression::Let(_) => {
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Let)
@@ -703,11 +1168,48 @@ fn current_selection_value(
                 .unwrap_or_else(|| match builtin {
                     definy_event::event::CompilerBuiltin::Let => "expr:let".to_string(),
                     definy_event::event::CompilerBuiltin::Plus => "expr:add".to_string(),
+                    definy_event::event::CompilerBuiltin::Minus => "expr:subtract".to_string(),
+                    definy_event::event::CompilerBuiltin::Multiply => "expr:multiply".to_string(),
+                    definy_event::event::CompilerBuiltin::Divide => "expr:divide".to_string(),
+                    definy_event::event::CompilerBuiltin::Remainder => "expr:remainder".to_string(),
+                    definy_event::event::CompilerBuiltin::Equal => "expr:equal".to_string(),
+                    definy_event::event::CompilerBuiltin::NotEqual => "expr:not_equal".to_string(),
+                    definy_event::event::CompilerBuiltin::LessThan => "expr:less_than".to_string(),
+                    definy_event::event::CompilerBuiltin::LessThanOrEqual => {
+                        "expr:less_than_or_equal".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::GreaterThan => {
+                        "expr:greater_than".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::GreaterThanOrEqual => {
+                        "expr:greater_than_or_equal".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::Not => "expr:not".to_string(),
+                    definy_event::event::CompilerBuiltin::And => "expr:and".to_string(),
+                    definy_event::event::CompilerBuiltin::Or => "expr:or".to_string(),
+                    definy_event::event::CompilerBuiltin::StringConcat => {
+                        "expr:string_concat".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::StringLength => {
+                        "expr:string_length".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::StringSlice => {
+                        "expr:string_slice".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::ListLength => {
+                        "expr:list_length".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::ListConcat => {
+                        "expr:list_concat".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::ListGet => "expr:list_get".to_string(),
+                    definy_event::event::CompilerBuiltin::ListAppend => {
+                        "expr:list_append".to_string()
+                    }
                     definy_event::event::CompilerBuiltin::NumberLiteral => {
                         "expr:number".to_string()
                     }
                     definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
-                    definy_event::event::CompilerBuiltin::Equal => "expr:equal".to_string(),
                 })
         }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),

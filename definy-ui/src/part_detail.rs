@@ -70,12 +70,19 @@ pub fn PartDetailView(
                                 }
                             }
                             div { style: "font-size: 0.86rem; color: var(--text-secondary);", "{updated_at_label}" }
-                            if snapshot.part_description.is_empty() {
-                                div { style: "color: var(--text-secondary);",
-                                    {context.language.label("(no description)", "(説明なし)", "(sen priskribo)")}
+                            {
+                                let desc = snapshot.description_for(context.language);
+                                if desc.is_empty() {
+                                    rsx! {
+                                        div { style: "color: var(--text-secondary);",
+                                            {context.language.label("(no description)", "(説明なし)", "(sen priskribo)")}
+                                        }
+                                    }
+                                } else {
+                                    rsx! {
+                                        div { style: "white-space: pre-wrap;", "{desc}" }
+                                    }
                                 }
-                            } else {
-                                div { style: "white-space: pre-wrap;", "{snapshot.part_description}" }
                             }
                             {
                                 let expr_text = snapshot
@@ -365,9 +372,9 @@ fn PartUpdateForm(
                                             next.part_update_form.part_definition_event_hash = Some(
                                                 def_hash_for_cb.clone(),
                                             );
+                                            let desc = snapshot.description_for(language);
                                             next.part_update_form.part_name_input = snapshot.part_name;
-                                            next.part_update_form.part_description_input = snapshot
-                                                .part_description;
+                                            next.part_update_form.part_description_input = desc;
                                             next.part_update_form.expression_input = snapshot
                                                 .expression;
                                             next.part_update_form.module_definition_event_hash = Some(
@@ -444,9 +451,10 @@ fn effective_part_update_form(
         );
     }
     if let Some(snapshot) = find_part_snapshot(state, definition_event_hash) {
+        let desc = snapshot.description_for(crate::language::default_language());
         return (
             snapshot.part_name,
-            snapshot.part_description,
+            desc,
             snapshot.expression,
             Some(snapshot.module_definition_event_hash),
         );

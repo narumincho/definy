@@ -126,4 +126,32 @@ mod tests {
         let result = verify_and_deserialize(&serialized);
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_description_serde_plain_and_localized() {
+        use crate::event::{Description, LocalizedText};
+
+        // Plain string
+        let plain = Description::Plain("Plain description".into());
+        let cbor = serde_cbor::to_vec(&plain).unwrap();
+        let deserialized_plain: Description = serde_cbor::from_slice(&cbor).unwrap();
+        assert_eq!(deserialized_plain, plain);
+        assert_eq!(deserialized_plain.get("en"), Some("Plain description"));
+        assert_eq!(deserialized_plain.get("ja"), Some("Plain description"));
+
+        // Localized list
+        let localized = Description::Localized(vec![
+            LocalizedText::new("en", "English description"),
+            LocalizedText::new("ja", "日本語の説明"),
+        ]);
+        let cbor_loc = serde_cbor::to_vec(&localized).unwrap();
+        let deserialized_loc: Description = serde_cbor::from_slice(&cbor_loc).unwrap();
+        assert_eq!(deserialized_loc, localized);
+        assert_eq!(deserialized_loc.get("en"), Some("English description"));
+        assert_eq!(deserialized_loc.get("ja"), Some("日本語の説明"));
+        assert_eq!(
+            deserialized_loc.get("eo"),
+            Some("English description") // fallback to "en"
+        );
+    }
 }
