@@ -42,40 +42,14 @@ pub fn ModuleDetailView(
                     style: "display: inline-flex; align-items: center; gap: 0.4rem; color: var(--primary); font-size: 0.88rem; font-weight: 500; text-decoration: none;",
                     "{context.language.label(\"← Back to Modules\", \"← モジュール一覧へ戻る\", \"← Reen al moduloj\")}"
                 }
-                div {
-                    class: "event-detail-card",
-                    style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                    h2 { style: "font-size: 1.4rem; font-weight: 600; margin: 0;",
-                        "{module_snapshot.module_name}"
-                    }
-                    {
-                        let desc = module_snapshot.description_for(context.language);
-                        if !desc.is_empty() {
-                            rsx! {
-                                div { style: "white-space: pre-wrap; font-size: 0.92rem; color: var(--text-secondary);",
-                                    "{desc}"
-                                }
-                            }
-                        } else {
-                            rsx! {}
-                        }
-                    }
-                    div { style: "font-size: 0.85rem; color: var(--primary);", "{author_label}" }
-                }
-                if state.current_key.is_some() {
-                    ModuleUpdateForm {
-                        state: state.clone(),
-                        context: context.clone(),
-                        definition_event_hash: definition_event_hash.clone(),
-                        initial_name,
-                        initial_description,
-                    }
-                } else {
-                    div {
-                        class: "event-detail-card",
-                        style: "padding: 0.9rem; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                        "{context.language.label(\"Login required to update modules.\", \"モジュール更新にはログインが必要です。\", \"Ensaluto necesas por ĝisdatigi modulojn.\")}"
-                    }
+                ModuleEditorCard {
+                    state: state.clone(),
+                    context: context.clone(),
+                    definition_event_hash: definition_event_hash.clone(),
+                    module_snapshot,
+                    author_label,
+                    initial_name,
+                    initial_description,
                 }
                 div { style: "margin-top: 1rem; font-weight: 600;",
                     "{context.language.label(\"Parts in this module\", \"このモジュールのパーツ\", \"Partoj en ĉi tiu modulo\")}"
@@ -146,7 +120,9 @@ fn ModulePartItem(
                 let desc = part.description_for(context.language);
                 if !desc.is_empty() {
                     rsx! {
-                        div { style: "white-space: pre-wrap; color: var(--text-secondary);", "{desc}" }
+                        div { style: "white-space: pre-wrap; font-size: 0.88rem; color: var(--text-secondary);",
+                            "{desc}"
+                        }
                     }
                 } else {
                     rsx! {}
@@ -158,10 +134,12 @@ fn ModulePartItem(
 }
 
 #[component]
-fn ModuleUpdateForm(
+fn ModuleEditorCard(
     state: AppState,
     context: PageContext,
     definition_event_hash: EventHashId,
+    module_snapshot: crate::module_projection::ModuleSnapshot,
+    author_label: String,
     initial_name: String,
     initial_description: String,
 ) -> Element {
@@ -169,64 +147,99 @@ fn ModuleUpdateForm(
     let def_hash_clone = definition_event_hash.clone();
     let def_hash_name = definition_event_hash.clone();
     let def_hash_desc = definition_event_hash.clone();
-    let title_label = language.label("Update module", "モジュールを更新", "Ĝisdatigi modulon");
     let placeholder_text = language.label(
         "module description (supports multiple lines)",
         "モジュール説明 (複数行対応)",
         "modula priskribo (subtenas plurajn liniojn)",
     );
-    let submit_label = language.label(
-        "Send ModuleUpdate",
-        "ModuleUpdate を送信",
-        "Sendi ModuleUpdate",
+
+    let updated_at_str = module_snapshot
+        .updated_at
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+    let updated_at_label = format!(
+        "{} {updated_at_str}",
+        context
+            .language
+            .label("Updated at:", "更新日時:", "Ĝisdatigita je:"),
     );
+
+    let is_logged_in = state.current_key.is_some();
 
     rsx! {
         div {
             class: "event-detail-card",
-            style: "display: grid; gap: 0.45rem; padding: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div { style: "font-weight: 600;", "{title_label}" }
-            input {
-                r#type: "text",
-                name: "module-update-name",
-                value: "{initial_name}",
-                style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
-                oninput: move |evt: FormEvent| {
-                    let mut state_sig = use_context::<Signal<AppState>>();
-                    let mut next = state_sig.write();
-                    next.module_update_form.module_definition_event_hash = Some(
-                        def_hash_name.clone(),
-                    );
-                    next.module_update_form.module_name_input = evt.value();
-                },
+            style: "display: grid; gap: 1rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+            div { style: "display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;",
+                div {
+                    h2 { style: "font-size: 1.4rem; font-weight: 600; margin: 0;",
+                        "{initial_name}"
+                    }
+                    div { style: "font-size: 0.85rem; color: var(--primary); margin-top: 0.2rem;",
+                        "{author_label}"
+                    }
+                }
+                div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{updated_at_label}" }
             }
-            textarea {
-                name: "module-update-description",
-                value: "{initial_description}",
-                placeholder: "{placeholder_text}",
-                style: "min-height: 5rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
-                oninput: move |evt: FormEvent| {
-                    let mut state_sig = use_context::<Signal<AppState>>();
-                    let mut next = state_sig.write();
-                    next.module_update_form.module_definition_event_hash = Some(
-                        def_hash_desc.clone(),
-                    );
-                    next.module_update_form.module_description_input = evt.value();
-                },
+            div { style: "display: grid; gap: 0.35rem;",
+                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
+                    "{context.language.label(\"Module Name\", \"モジュール名\", \"Modula nomo\")}"
+                }
+                input {
+                    r#type: "text",
+                    name: "module-update-name",
+                    value: "{initial_name}",
+                    style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
+                    oninput: move |evt: FormEvent| {
+                        let mut state_sig = use_context::<Signal<AppState>>();
+                        let mut next = state_sig.write();
+                        next.module_update_form.module_definition_event_hash = Some(
+                            def_hash_name.clone(),
+                        );
+                        next.module_update_form.module_name_input = evt.value();
+                    },
+                }
             }
-            button {
-                r#type: "button",
-                style: "padding: 0.4rem 0.9rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; justify-self: start;",
-                onclick: move |_| {
-                    let state_sig = use_context::<Signal<AppState>>();
-                    handle_module_update_submit(state_sig, def_hash_clone.clone(), language);
-                },
-                "{submit_label}"
+            div { style: "display: grid; gap: 0.35rem;",
+                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
+                    "{context.language.label(\"Description\", \"説明文\", \"Priskribo\")}"
+                }
+                textarea {
+                    name: "module-update-description",
+                    value: "{initial_description}",
+                    placeholder: "{placeholder_text}",
+                    style: "min-height: 4.5rem; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.92rem; resize: vertical;",
+                    oninput: move |evt: FormEvent| {
+                        let mut state_sig = use_context::<Signal<AppState>>();
+                        let mut next = state_sig.write();
+                        next.module_update_form.module_definition_event_hash = Some(
+                            def_hash_desc.clone(),
+                        );
+                        next.module_update_form.module_description_input = evt.value();
+                    },
+                }
+            }
+            div { style: "display: flex; align-items: center; gap: 0.8rem; margin-top: 0.3rem; flex-wrap: wrap;",
+                button {
+                    r#type: "button",
+                    disabled: !is_logged_in,
+                    style: if is_logged_in { "padding: 0.5rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;" } else { "padding: 0.5rem 1.2rem; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: not-allowed; opacity: 0.6;" },
+                    onclick: move |_| {
+                        let state_sig = use_context::<Signal<AppState>>();
+                        handle_module_update_submit(state_sig, def_hash_clone.clone(), language);
+                    },
+                    "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
+                }
+                if !is_logged_in {
+                    span { style: "font-size: 0.84rem; color: var(--text-secondary);",
+                        "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por konservi ŝanĝojn.\")}"
+                    }
+                }
             }
             if let Some(result) = &state.module_update_form.result_message {
                 div {
                     class: "mono",
-                    style: "font-size: 0.85rem; word-break: break-word; background: rgb(124 192 216 / 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm);",
+                    style: "font-size: 0.85rem; word-break: break-word; background: rgb(124 192 216 / 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
                     "{result}"
                 }
             }
@@ -296,9 +309,9 @@ fn handle_module_update_submit(
                     next.module_update_form.result_message = Some(
                         language
                             .label(
-                                "ModuleUpdate event posted",
-                                "ModuleUpdate を投稿しました",
-                                "ModuleUpdate sendita",
+                                "Changes saved successfully",
+                                "変更を保存しました",
+                                "Ŝanĝoj konservitaj",
                             )
                             .to_string(),
                     );
@@ -306,16 +319,16 @@ fn handle_module_update_submit(
                     next.module_update_form.result_message = Some(match record.status {
                         crate::local_event::LocalEventStatus::Queued => language
                             .label(
-                                "ModuleUpdate queued (offline)",
-                                "ModuleUpdate をキューに追加しました (オフライン)",
-                                "ModuleUpdate envicigita (senkonekte)",
+                                "Changes queued (offline)",
+                                "変更をキューに追加しました (オフライン)",
+                                "Ŝanĝoj envicigitaj (senkonekte)",
                             )
                             .to_string(),
                         crate::local_event::LocalEventStatus::Failed => language
                             .label(
-                                "ModuleUpdate failed to send",
-                                "ModuleUpdate の送信に失敗しました",
-                                "ModuleUpdate sendado malsukcesis",
+                                "Failed to save changes",
+                                "変更の保存に失敗しました",
+                                "Konservado de ŝanĝoj malsukcesis",
                             )
                             .to_string(),
                         crate::local_event::LocalEventStatus::Sent => unreachable!(),
