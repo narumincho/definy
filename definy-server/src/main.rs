@@ -1,3 +1,4 @@
+mod builtin_migration;
 mod db;
 mod event;
 mod html;
