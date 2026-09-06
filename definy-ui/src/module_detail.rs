@@ -158,7 +158,6 @@ fn ModulePartItem(
                     rsx! {
                         div { style: "white-space: pre-wrap; color: var(--text-secondary);", "{desc}" }
                     }
-                }
                 } else {
                     rsx! {}
                 }
