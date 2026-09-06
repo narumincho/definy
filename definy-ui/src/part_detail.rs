@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_editor::{EditorTarget, render_root_expression_editor};
-use crate::expression_eval::expression_to_source;
+use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
@@ -89,6 +89,7 @@ fn PartEditorCard(
     definition_event_hash: EventHashId,
     snapshot: crate::part_projection::PartSnapshot,
 ) -> Element {
+    let mut eval_result = use_signal(|| None::<String>);
     let hash_as_base64 = definition_event_hash.to_string();
     let (initial_name, initial_description, initial_expression, initial_module_hash) =
         effective_part_update_form(&state, &definition_event_hash);
@@ -123,6 +124,7 @@ fn PartEditorCard(
     let is_logged_in = state.current_key.is_some();
     let language = context.language;
     let def_hash_clone = definition_event_hash.clone();
+    let def_hash_for_eval = definition_event_hash.clone();
 
     rsx! {
         div {
@@ -223,6 +225,21 @@ fn PartEditorCard(
                 }
             }
             div { style: "display: flex; align-items: center; gap: 0.8rem; margin-top: 0.3rem; flex-wrap: wrap;",
+                button {
+                    r#type: "button",
+                    style: "padding: 0.5rem 1.1rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;",
+                    onclick: move |_| {
+                        let state_sig = use_context::<Signal<AppState>>();
+                        let state_val = state_sig.read().clone();
+                        let result = evaluate_current_part_expression(
+                            &state_val,
+                            &def_hash_for_eval,
+                            language,
+                        );
+                        eval_result.set(Some(result));
+                    },
+                    "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
+                }
                 button {
                     r#type: "button",
                     disabled: !is_logged_in,
@@ -357,6 +374,13 @@ fn PartEditorCard(
                     }
                 }
             }
+            if let Some(eval) = eval_result() {
+                div {
+                    class: "mono",
+                    style: "font-size: 0.88rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid rgb(124 192 216 / 0.3); color: var(--text); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
+                    "{eval}"
+                }
+            }
             if let Some(result) = &state.event_detail_eval_result {
                 div {
                     class: "mono",
@@ -400,4 +424,39 @@ fn effective_part_update_form(
         state.part_update_form.expression_input.clone(),
         state.part_update_form.module_definition_event_hash.clone(),
     )
+}
+
+fn evaluate_current_part_expression(
+    state: &AppState,
+    definition_event_hash: &EventHashId,
+    language: crate::language::Language,
+) -> String {
+    let events_vec = state.events_with_hash();
+    let (_, _, current_expression, _) = effective_part_update_form(state, definition_event_hash);
+    if let Some(expr) = &current_expression {
+        match evaluate_expression(expr, &events_vec) {
+            Ok(value) => {
+                format!(
+                    "{} {}",
+                    language.label("Result:", "結果:", "Rezulto:"),
+                    value,
+                )
+            }
+            Err(error) => {
+                format!(
+                    "{} {}",
+                    language.label("Error:", "エラー:", "Eraro:"),
+                    error,
+                )
+            }
+        }
+    } else {
+        language
+            .label(
+                "No expression to evaluate",
+                "評価する式がありません",
+                "Neniu esprimo por taksi",
+            )
+            .to_string()
+    }
 }
