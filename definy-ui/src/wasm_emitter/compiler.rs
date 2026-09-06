@@ -65,7 +65,9 @@ pub fn compile_expression_to_wasm(
 ) -> Result<Vec<u8>, String> {
     let mut ctx = CompileContext::new(events);
     let mut code_bytes = Vec::new();
-    let mut next_local_idx = 0;
+    // Local 0 is reserved as an i64 scratch local for number arithmetic.
+    // Locals starting at index 1 are i32 (used for pointers, temps, variables).
+    let mut next_local_idx = 1;
     let env = HashMap::new();
 
     emit_expression(
@@ -133,10 +135,12 @@ pub fn compile_expression_to_wasm(
     code_section.push(1); // 1 function body
 
     let mut func_body = Vec::new();
-    let locals_count = count_locals(expression) + 32; // allocate ample i32 locals for temps & variables
-    func_body.push(1); // 1 local declaration group
+    let locals_count = count_locals(expression) + 64; // allocate ample i32 locals for temps & variables
+    func_body.push(2); // 2 local declaration groups
+    encode_u32_leb128(&mut func_body, 1);
+    func_body.push(I64); // local 0 is i64 (temp for number arithmetic)
     encode_u32_leb128(&mut func_body, locals_count);
-    func_body.push(I32); // all locals are i32 (pointers / temp values)
+    func_body.push(I32); // locals 1 .. 1 + locals_count are i32 (pointers / temp values)
 
     func_body.extend_from_slice(&code_bytes);
 
@@ -598,13 +602,13 @@ fn emit_binary_comparison(
 }
 
 pub(crate) fn emit_alloc_number_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
-    let val_local = *next_local_idx;
-    *next_local_idx += 1;
-    let res_ptr_local = *next_local_idx;
-    *next_local_idx += 1;
+    const TEMP_I64_LOCAL: u32 = 0;
 
     out.push(LOCAL_SET);
-    encode_u32_leb128(out, val_local);
+    encode_u32_leb128(out, TEMP_I64_LOCAL);
+
+    let res_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
 
     out.push(GLOBAL_GET);
     out.push(0);
@@ -632,7 +636,7 @@ pub(crate) fn emit_alloc_number_from_stack(out: &mut Vec<u8>, next_local_idx: &m
     out.push(LOCAL_GET);
     encode_u32_leb128(out, res_ptr_local);
     out.push(LOCAL_GET);
-    encode_u32_leb128(out, val_local);
+    encode_u32_leb128(out, TEMP_I64_LOCAL);
     out.push(I64_STORE);
     encode_mem_arg(out, 3, 8);
 

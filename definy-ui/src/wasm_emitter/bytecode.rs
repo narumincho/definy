@@ -13,6 +13,7 @@ pub const DATA_SECTION: u8 = 11;
 
 // ValTypes
 pub const I32: u8 = 0x7F;
+pub const I64: u8 = 0x7E;
 
 // Opcodes
 pub const BLOCK: u8 = 0x02;
