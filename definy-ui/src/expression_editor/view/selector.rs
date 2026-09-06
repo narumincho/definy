@@ -43,6 +43,7 @@ pub fn expression_selector(
             name,
             current_value: current_val_str,
             options: options_vec,
+            compact: true,
             on_change: move |selected_value: String| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let constructor_default = selected_value
