@@ -1,179 +1,224 @@
 use std::net::SocketAddr;
 
-use http_body_util::{BodyExt, Full};
-use hyper::body::Bytes;
-use hyper::{Request, Response};
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
+use axum::body::Bytes;
+use axum::extract::{ConnectInfo, Path, Query, State};
+use axum::http::{HeaderMap, StatusCode};
+use axum::response::{IntoResponse, Response};
+
+use crate::AppState;
+
+#[derive(serde::Deserialize)]
+pub struct EventsQuery {
+    pub event_type: Option<definy_event::event::EventType>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+}
 
 pub async fn handle_event_get(
-    request: Request<impl hyper::body::Body>,
-    db: &Surreal<Any>,
-    event_binary_hash_base64: &str,
-) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    if request.method() != hyper::Method::GET {
-        return Response::builder()
-            .status(405)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .body(Full::new(Bytes::from("405 Method Not Allowed")));
-    }
-
+    State(state): State<AppState>,
+    Path(event_binary_hash_base64): Path<String>,
+    headers: HeaderMap,
+) -> Response {
     let event_binary_hash = match base64::Engine::decode(
         &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-        event_binary_hash_base64,
+        &event_binary_hash_base64,
     ) {
         Ok(event_binary_hash) => event_binary_hash,
         Err(_) => {
-            return Response::builder()
-                .status(400)
-                .header("Content-Type", "text/html; charset=utf-8")
-                .body(Full::new(Bytes::from("400 Bad Request: Invalid ID format")));
+            return (
+                StatusCode::BAD_REQUEST,
+                [("Content-Type", "text/html; charset=utf-8")],
+                "400 Bad Request: Invalid ID format",
+            )
+                .into_response();
         }
     };
 
-    match crate::db::get_event(db, &event_binary_hash).await {
+    let db = match crate::ensure_db(&state).await {
+        Some(db) => db,
+        None => {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                [
+                    ("Content-Type", "text/html; charset=utf-8"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                "Database is unavailable",
+            )
+                .into_response();
+        }
+    };
+
+    match crate::db::get_event(&db, &event_binary_hash).await {
         Err(e) => {
             eprintln!("Failed to get event: {:?}", e);
-            Response::builder()
-                .status(503)
-                .header("Content-Type", "text/html; charset=utf-8")
-                .header("Access-Control-Allow-Origin", "*")
-                .body(Full::new(Bytes::from("Database is unavailable")))
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                [
+                    ("Content-Type", "text/html; charset=utf-8"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                "Database is unavailable",
+            )
+                .into_response()
         }
-        Ok(None) => Response::builder()
-            .status(404)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
-            .body(Full::new(Bytes::from("404 Not Found"))),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            [
+                ("Content-Type", "text/html; charset=utf-8"),
+                ("Access-Control-Allow-Origin", "*"),
+            ],
+            "404 Not Found",
+        )
+            .into_response(),
         Ok(Some(event_binary)) => {
-            if let Some(accept) = request.headers().get("accept")
+            if let Some(accept) = headers.get("accept")
                 && let Ok(accept_as_str) = accept.to_str()
                 && accept_as_str.contains("text/html")
             {
-                return Response::builder()
-                    .status(200)
-                    .header("Content-Type", "text/html; charset=utf-8")
-                    .header("Access-Control-Allow-Origin", "*")
-                    .body(Full::new(Bytes::from("todo")));
+                return (
+                    StatusCode::OK,
+                    [
+                        ("Content-Type", "text/html; charset=utf-8"),
+                        ("Access-Control-Allow-Origin", "*"),
+                    ],
+                    "todo",
+                )
+                    .into_response();
             }
-            Response::builder()
-                .status(200)
-                .header("Content-Type", "application/cbor")
-                .header("Access-Control-Allow-Origin", "*")
-                .body(Full::new(Bytes::from(event_binary)))
+            (
+                StatusCode::OK,
+                [
+                    ("Content-Type", "application/cbor"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                event_binary,
+            )
+                .into_response()
         }
     }
 }
 
-#[derive(serde::Deserialize)]
-struct EventsQuery {
-    event_type: Option<definy_event::event::EventType>,
-    limit: Option<usize>,
-    offset: Option<usize>,
-}
+pub async fn handle_events_get(
+    State(state): State<AppState>,
+    Query(query): Query<EventsQuery>,
+) -> Response {
+    let db = match crate::ensure_db(&state).await {
+        Some(db) => db,
+        None => {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                [
+                    ("Content-Type", "text/html; charset=utf-8"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                "Database is unavailable",
+            )
+                .into_response();
+        }
+    };
 
-pub async fn handle_events(
-    request: Request<impl hyper::body::Body>,
-    address: SocketAddr,
-    db: &Surreal<Any>,
-) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    match *request.method() {
-        hyper::Method::GET => handle_events_get(request.uri().query(), db).await,
-        hyper::Method::POST => handle_events_post(request, address, db).await,
-        _ => Response::builder()
-            .status(405)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .body(Full::new(Bytes::from("405 Method Not Allowed"))),
-    }
-}
-
-async fn handle_events_get(
-    query: Option<&str>,
-    db: &Surreal<Any>,
-) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    match serde_urlencoded::from_str::<EventsQuery>(query.unwrap_or("")) {
-        Err(_) => Response::builder()
-            .status(400)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
-            .body(Full::new(Bytes::from(
-                "400 Bad Request: Invalid query format",
-            ))),
-        Ok(query) => {
-            match crate::db::get_events(db, query.event_type, query.limit, query.offset).await {
+    match crate::db::get_events(&db, query.event_type, query.limit, query.offset).await {
+        Err(e) => {
+            eprintln!("Failed to get events: {:?}", e);
+            (
+                StatusCode::SERVICE_UNAVAILABLE,
+                [
+                    ("Content-Type", "text/html; charset=utf-8"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                "Database is unavailable",
+            )
+                .into_response()
+        }
+        Ok(events) => {
+            match serde_cbor::to_vec(&definy_event::response::EventsResponse {
+                events,
+                next_cursor: None,
+            }) {
+                Ok(cbor) => (
+                    StatusCode::OK,
+                    [
+                        ("Content-Type", "application/cbor"),
+                        ("Access-Control-Allow-Origin", "*"),
+                    ],
+                    cbor,
+                )
+                    .into_response(),
                 Err(e) => {
-                    eprintln!("Failed to get events: {:?}", e);
-                    Response::builder()
-                        .status(503)
-                        .header("Content-Type", "text/html; charset=utf-8")
-                        .header("Access-Control-Allow-Origin", "*")
-                        .body(Full::new(Bytes::from("Database is unavailable")))
-                }
-                Ok(events) => {
-                    match serde_cbor::to_vec(&definy_event::response::EventsResponse {
-                        events,
-                        next_cursor: None,
-                    }) {
-                        Ok(cbor) => Response::builder()
-                            .status(200)
-                            .header("Content-Type", "application/cbor")
-                            .header("Access-Control-Allow-Origin", "*")
-                            .body(Full::new(Bytes::from(cbor))),
-                        Err(e) => {
-                            eprintln!("Failed to serialize events: {:?}", e);
-                            Response::builder()
-                                .status(500)
-                                .header("Content-Type", "text/html; charset=utf-8")
-                                .header("Access-Control-Allow-Origin", "*")
-                                .body(Full::new(Bytes::from("Internal Server Error")))
-                        }
-                    }
+                    eprintln!("Failed to serialize events: {:?}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        [
+                            ("Content-Type", "text/html; charset=utf-8"),
+                            ("Access-Control-Allow-Origin", "*"),
+                        ],
+                        "Internal Server Error",
+                    )
+                        .into_response()
                 }
             }
         }
     }
 }
 
-async fn handle_events_post(
-    request: Request<impl hyper::body::Body>,
-    address: SocketAddr,
-    db: &Surreal<Any>,
-) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    let body = request.into_body();
-    match body.collect().await {
-        Ok(collected) => {
-            let bytes = collected.to_bytes();
-            match definy_event::verify_and_deserialize(&bytes) {
-                Ok((signature, data)) => {
-                    match crate::db::save_event(&data, &signature, &bytes, address, db).await {
-                        Ok(()) => Response::builder()
-                            .header("content-type", "text/plain; charset=utf-8")
-                            .header("Access-Control-Allow-Origin", "*")
-                            .body(Full::new(Bytes::from("OK"))),
-                        Err(e) => {
-                            eprintln!("Failed to save event: {:?}", e);
-                            Response::builder()
-                                .status(503)
-                                .header("content-type", "text/plain; charset=utf-8")
-                                .header("Access-Control-Allow-Origin", "*")
-                                .body(Full::new(Bytes::from("Database is unavailable")))
-                        }
-                    }
-                }
+pub async fn handle_events_post(
+    State(state): State<AppState>,
+    ConnectInfo(address): ConnectInfo<SocketAddr>,
+    body: Bytes,
+) -> Response {
+    let db = match crate::ensure_db(&state).await {
+        Some(db) => db,
+        None => {
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                [
+                    ("content-type", "text/plain; charset=utf-8"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                "Database is unavailable",
+            )
+                .into_response();
+        }
+    };
+
+    match definy_event::verify_and_deserialize(&body) {
+        Ok((signature, data)) => {
+            match crate::db::save_event(&data, &signature, &body, address, &db).await {
+                Ok(()) => (
+                    StatusCode::OK,
+                    [
+                        ("content-type", "text/plain; charset=utf-8"),
+                        ("Access-Control-Allow-Origin", "*"),
+                    ],
+                    "OK",
+                )
+                    .into_response(),
                 Err(e) => {
-                    eprintln!("Failed to parse or verify CBOR: {:?}", e);
-                    Response::builder()
-                        .status(400)
-                        .header("content-type", "text/plain; charset=utf-8")
-                        .header("Access-Control-Allow-Origin", "*")
-                        .body(Full::new(Bytes::from("Failed to parse or verify CBOR")))
+                    eprintln!("Failed to save event: {:?}", e);
+                    (
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        [
+                            ("content-type", "text/plain; charset=utf-8"),
+                            ("Access-Control-Allow-Origin", "*"),
+                        ],
+                        "Database is unavailable",
+                    )
+                        .into_response()
                 }
             }
         }
-        Err(_) => Response::builder()
-            .status(500)
-            .header("content-type", "text/plain; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
-            .body(Full::new(Bytes::from("Failed to read body"))),
+        Err(e) => {
+            eprintln!("Failed to parse or verify CBOR: {:?}", e);
+            (
+                StatusCode::BAD_REQUEST,
+                [
+                    ("content-type", "text/plain; charset=utf-8"),
+                    ("Access-Control-Allow-Origin", "*"),
+                ],
+                "Failed to parse or verify CBOR",
+            )
+                .into_response()
+        }
     }
 }

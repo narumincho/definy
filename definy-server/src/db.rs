@@ -95,7 +95,7 @@ pub fn load_db_config_from_env() -> Option<DbConfig> {
 
 const SCHEMA_SQL: &str = include_str!("../schema.surql");
 
-pub use crate::builtin_migration::{COMPILER_SYSTEM_KEY_SEED, migrate_builtin_data};
+pub use crate::builtin_migration::migrate_builtin_data;
 
 pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
     let db = match load_db_config_from_env() {
@@ -266,6 +266,7 @@ pub async fn get_event(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED;
 
     #[tokio::test]
     async fn test_save_and_get_create_account_event() {

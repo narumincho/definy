@@ -6,26 +6,25 @@ mod html;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use http_body_util::Full;
-use hyper::body::Bytes;
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
-use hyper::{Request, Response};
-use hyper_util::rt::TokioIo;
-
+use axum::body::Bytes;
+use axum::extract::State;
+use axum::http::{HeaderMap, StatusCode, Uri};
+use axum::response::{IntoResponse, Redirect, Response};
+use axum::routing::get;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
+use tower_http::cors::CorsLayer;
 
 #[derive(Clone)]
-struct AppState {
-    db: Arc<RwLock<Option<Surreal<Any>>>>,
+pub struct AppState {
+    pub db: Arc<RwLock<Option<Surreal<Any>>>>,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    println!("Starting definy server...");
+    println!("Starting definy server (Axum)...");
     let state = AppState {
         db: Arc::new(RwLock::new(None)),
     };
@@ -43,28 +42,40 @@ async fn main() -> Result<(), anyhow::Error> {
         port,
     ));
 
-    let listener = TcpListener::bind(addr).await?;
+    let cors = CorsLayer::new()
+        .allow_origin(tower_http::cors::Any)
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::OPTIONS,
+        ])
+        .allow_headers([
+            axum::http::header::CONTENT_TYPE,
+            axum::http::header::AUTHORIZATION,
+            axum::http::header::ACCEPT,
+        ])
+        .max_age(std::time::Duration::from_secs(86400));
 
+    let app = axum::Router::new()
+        .route(
+            "/events",
+            get(event::handle_events_get).post(event::handle_events_post),
+        )
+        .route("/events/{hash}", get(event::handle_event_get))
+        .fallback(handle_fallback)
+        .layer(cors)
+        .with_state(state);
+
+    let listener = TcpListener::bind(addr).await?;
     println!("Listening on http://{}", addr);
 
-    loop {
-        let (stream, address) = listener.accept().await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
 
-        let io = TokioIo::new(stream);
-        let state = state.clone();
-
-        tokio::task::spawn(async move {
-            if let Err(err) = http1::Builder::new()
-                .serve_connection(
-                    io,
-                    service_fn(move |request| handler(request, address, state.clone())),
-                )
-                .await
-            {
-                eprintln!("Error serving connection: {:?}", err);
-            }
-        });
-    }
+    Ok(())
 }
 
 const JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
@@ -82,107 +93,7 @@ const ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 static SNIPPETS_DIR: include_dir::Dir =
     include_dir::include_dir!("$CARGO_MANIFEST_DIR/../web-distribution/snippets");
 
-async fn handler(
-    request: Request<impl hyper::body::Body>,
-    address: SocketAddr,
-    state: AppState,
-) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    let uri = request.uri().clone();
-    let path = uri.path();
-    println!(
-        "Received request: {} {} from {}",
-        request.method(),
-        path,
-        address
-    );
-
-    if request.method() == hyper::Method::OPTIONS {
-        return Response::builder()
-            .status(204)
-            .header("Access-Control-Allow-Origin", "*")
-            .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            .header(
-                "Access-Control-Allow-Headers",
-                "Content-Type, Authorization, Accept",
-            )
-            .header("Access-Control-Max-Age", "86400")
-            .body(Full::new(Bytes::new()));
-    }
-
-    let accepts_html = request
-        .headers()
-        .get("accept")
-        .and_then(|value| value.to_str().ok())
-        .is_some_and(|value| value.contains("text/html"));
-
-    if accepts_html {
-        if let Some(redirect_url) = lang_redirect_url(&request) {
-            return Response::builder()
-                .status(302)
-                .header("Location", redirect_url)
-                .body(Full::new(Bytes::from("Redirecting...")));
-        }
-        let accept_language = request
-            .headers()
-            .get("accept-language")
-            .and_then(|value| value.to_str().ok());
-        let language_resolution =
-            definy_ui::language::resolve_language(uri.query(), accept_language);
-        let db = ensure_db(&state).await;
-        return handle_html(&uri, db.as_ref(), language_resolution.language).await;
-    }
-
-    match path.trim_start_matches('/') {
-        JAVASCRIPT_HASH => Response::builder()
-            .header("Content-Type", "application/javascript; charset=utf-8")
-            .header("Cache-Control", "public, max-age=31536000, immutable")
-            .body(Full::new(Bytes::from_static(JAVASCRIPT_CONTENT))),
-        WASM_HASH => Response::builder()
-            .header("Content-Type", "application/wasm")
-            .header("Cache-Control", "public, max-age=31536000, immutable")
-            .body(Full::new(Bytes::from_static(WASM_CONTENT))),
-        ICON_HASH => Response::builder()
-            .header("Content-Type", "image/png")
-            .header("Cache-Control", "public, max-age=31536000, immutable")
-            .body(Full::new(Bytes::from_static(ICON_CONTENT))),
-        "events" => {
-            let db = ensure_db(&state).await;
-            match db {
-                Some(db) => event::handle_events(request, address, &db).await,
-                None => db_unavailable_response(false),
-            }
-        }
-        path => {
-            if let Some(snippet_path) = path.strip_prefix("snippets/") {
-                if let Some(file) = SNIPPETS_DIR.get_file(snippet_path) {
-                    Response::builder()
-                        .header("Content-Type", "application/javascript; charset=utf-8")
-                        .header("Cache-Control", "public, max-age=31536000, immutable")
-                        .body(Full::new(Bytes::from_static(file.contents())))
-                } else {
-                    Response::builder()
-                        .status(404)
-                        .header("Content-Type", "text/plain; charset=utf-8")
-                        .body(Full::new(Bytes::from("Snippet Not Found")))
-                }
-            } else if let Some(event_binary_hash_hex) = path.strip_prefix("events/") {
-                let event_binary_hash_hex = event_binary_hash_hex.to_string();
-                let db = ensure_db(&state).await;
-                match db {
-                    Some(db) => event::handle_event_get(request, &db, &event_binary_hash_hex).await,
-                    None => db_unavailable_response(false),
-                }
-            } else {
-                Response::builder()
-                    .status(404)
-                    .header("Content-Type", "text/html; charset=utf-8")
-                    .body(Full::new(Bytes::from("404 Not Found")))
-            }
-        }
-    }
-}
-
-async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
+pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
     if let Some(db) = state.db.read().await.clone() {
         return Some(db);
     }
@@ -208,29 +119,98 @@ async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
     }
 }
 
-fn db_unavailable_response(wants_html: bool) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
-    if wants_html {
-        return Response::builder()
-            .status(503)
-            .header("Content-Type", "text/html; charset=utf-8")
-            .header("Access-Control-Allow-Origin", "*")
-            .body(Full::new(Bytes::from(
-                "<!doctype html><html><head><meta charset=\"utf-8\"><title>503 Service Unavailable</title></head><body><h1>データベースに接続できません</h1></body></html>",
-            )));
+async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
+    let path = uri.path();
+    let trimmed_path = path.trim_start_matches('/');
+
+    if trimmed_path == JAVASCRIPT_HASH {
+        return (
+            StatusCode::OK,
+            [
+                ("Content-Type", "application/javascript; charset=utf-8"),
+                ("Cache-Control", "public, max-age=31536000, immutable"),
+            ],
+            Bytes::from_static(JAVASCRIPT_CONTENT),
+        )
+            .into_response();
     }
 
-    Response::builder()
-        .status(503)
-        .header("Content-Type", "text/plain; charset=utf-8")
-        .header("Access-Control-Allow-Origin", "*")
-        .body(Full::new(Bytes::from("Database is unavailable")))
+    if trimmed_path == WASM_HASH {
+        return (
+            StatusCode::OK,
+            [
+                ("Content-Type", "application/wasm"),
+                ("Cache-Control", "public, max-age=31536000, immutable"),
+            ],
+            Bytes::from_static(WASM_CONTENT),
+        )
+            .into_response();
+    }
+
+    if trimmed_path == ICON_HASH {
+        return (
+            StatusCode::OK,
+            [
+                ("Content-Type", "image/png"),
+                ("Cache-Control", "public, max-age=31536000, immutable"),
+            ],
+            Bytes::from_static(ICON_CONTENT),
+        )
+            .into_response();
+    }
+
+    if let Some(snippet_path) = trimmed_path.strip_prefix("snippets/") {
+        if let Some(file) = SNIPPETS_DIR.get_file(snippet_path) {
+            return (
+                StatusCode::OK,
+                [
+                    ("Content-Type", "application/javascript; charset=utf-8"),
+                    ("Cache-Control", "public, max-age=31536000, immutable"),
+                ],
+                Bytes::from_static(file.contents()),
+            )
+                .into_response();
+        } else {
+            return (
+                StatusCode::NOT_FOUND,
+                [("Content-Type", "text/plain; charset=utf-8")],
+                "Snippet Not Found",
+            )
+                .into_response();
+        }
+    }
+
+    let accepts_html = headers
+        .get("accept")
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.contains("text/html"));
+
+    if accepts_html {
+        if let Some(redirect_url) = lang_redirect_url(&uri, &headers) {
+            return Redirect::temporary(&redirect_url).into_response();
+        }
+        let accept_language = headers
+            .get("accept-language")
+            .and_then(|value| value.to_str().ok());
+        let language_resolution =
+            definy_ui::language::resolve_language(uri.query(), accept_language);
+        let db = ensure_db(&state).await;
+        return handle_html(&uri, db.as_ref(), language_resolution.language).await;
+    }
+
+    (
+        StatusCode::NOT_FOUND,
+        [("Content-Type", "text/html; charset=utf-8")],
+        "404 Not Found",
+    )
+        .into_response()
 }
 
 async fn handle_html(
-    uri: &hyper::Uri,
+    uri: &Uri,
     db: Option<&Surreal<Any>>,
     language: definy_ui::language::Language,
-) -> Result<Response<Full<Bytes>>, hyper::http::Error> {
+) -> Response {
     let path = uri.path();
     let query = uri.query();
     let location = definy_ui::Location::from_url(path);
@@ -244,10 +224,7 @@ async fn handle_html(
             redirect_url.push('?');
             redirect_url.push_str(query);
         }
-        return Response::builder()
-            .status(301)
-            .header("Location", redirect_url)
-            .body(Full::new(Bytes::from("Redirecting...")));
+        return Redirect::permanent(&redirect_url).into_response();
     }
 
     let filter_event_type = definy_ui::event_filter_from_query(query);
@@ -317,27 +294,26 @@ async fn handle_html(
         &ssr_initial_state_json,
     );
 
-    Response::builder()
-        .header("Content-Type", "text/html; charset=utf-8")
-        .body(Full::new(Bytes::from(html)))
+    (
+        StatusCode::OK,
+        [("Content-Type", "text/html; charset=utf-8")],
+        html,
+    )
+        .into_response()
 }
 
-fn lang_redirect_url(request: &Request<impl hyper::body::Body>) -> Option<String> {
-    if definy_ui::query::parse_query(request.uri().query())
-        .lang
-        .is_some()
-    {
+fn lang_redirect_url(uri: &Uri, headers: &HeaderMap) -> Option<String> {
+    if definy_ui::query::parse_query(uri.query()).lang.is_some() {
         return None;
     }
-    let accept_language = request
-        .headers()
+    let accept_language = headers
         .get("accept-language")
         .and_then(|value| value.to_str().ok());
     let best = definy_ui::language::best_language_from_accept_language(accept_language);
-    Some(build_url_with_lang(request.uri(), best.to_code()))
+    Some(build_url_with_lang(uri, best.to_code()))
 }
 
-fn build_url_with_lang(uri: &hyper::Uri, lang_code: &str) -> String {
+fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
     let mut params = definy_ui::query::parse_query(uri.query());
     params.lang = Some(lang_code.to_string());
     let mut url = uri.path().to_string();
