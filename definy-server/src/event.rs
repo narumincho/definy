@@ -4,16 +4,68 @@ use axum::body::Bytes;
 use axum::extract::{ConnectInfo, Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
+use utoipa::{IntoParams, ToSchema};
 
 use crate::AppState;
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum EventTypeDoc {
+    CreateAccount,
+    ChangeProfile,
+    PartDefinition,
+    PartUpdate,
+    ModuleDefinition,
+    ModuleUpdate,
+}
+
+impl From<EventTypeDoc> for definy_event::event::EventType {
+    fn from(doc: EventTypeDoc) -> Self {
+        match doc {
+            EventTypeDoc::CreateAccount => definy_event::event::EventType::CreateAccount,
+            EventTypeDoc::ChangeProfile => definy_event::event::EventType::ChangeProfile,
+            EventTypeDoc::PartDefinition => definy_event::event::EventType::PartDefinition,
+            EventTypeDoc::PartUpdate => definy_event::event::EventType::PartUpdate,
+            EventTypeDoc::ModuleDefinition => definy_event::event::EventType::ModuleDefinition,
+            EventTypeDoc::ModuleUpdate => definy_event::event::EventType::ModuleUpdate,
+        }
+    }
+}
+
+#[derive(serde::Deserialize, IntoParams, ToSchema)]
 pub struct EventsQuery {
-    pub event_type: Option<definy_event::event::EventType>,
+    /// Filter events by event type
+    #[param(inline)]
+    pub event_type: Option<EventTypeDoc>,
+    /// Maximum number of events to return
     pub limit: Option<usize>,
+    /// Offset of events for pagination
     pub offset: Option<usize>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, ToSchema)]
+pub struct EventsResponseDoc {
+    /// List of CBOR-encoded event binaries (raw bytes)
+    #[schema(value_type = Vec<String>)]
+    pub events: Vec<Vec<u8>>,
+    /// Next cursor for pagination if available
+    pub next_cursor: Option<Vec<u8>>,
+}
+
+#[utoipa::path(
+    get,
+    path = "/events/{hash}",
+    tag = "events",
+    params(
+        ("hash" = String, Path, description = "URL-safe base64 encoded event binary hash")
+    ),
+    responses(
+        (status = 200, description = "CBOR binary of the requested event", content_type = "application/cbor"),
+        (status = 400, description = "Invalid event hash format"),
+        (status = 404, description = "Event not found"),
+        (status = 503, description = "Database is unavailable")
+    )
+)]
 pub async fn handle_event_get(
     State(state): State<AppState>,
     Path(event_binary_hash_base64): Path<String>,
@@ -99,6 +151,17 @@ pub async fn handle_event_get(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/events",
+    tag = "events",
+    params(EventsQuery),
+    responses(
+        (status = 200, description = "Events fetched successfully as CBOR", body = EventsResponseDoc, content_type = "application/cbor"),
+        (status = 500, description = "Failed to serialize events"),
+        (status = 503, description = "Database is unavailable")
+    )
+)]
 pub async fn handle_events_get(
     State(state): State<AppState>,
     Query(query): Query<EventsQuery>,
@@ -118,7 +181,14 @@ pub async fn handle_events_get(
         }
     };
 
-    match crate::db::get_events(&db, query.event_type, query.limit, query.offset).await {
+    match crate::db::get_events(
+        &db,
+        query.event_type.map(Into::into),
+        query.limit,
+        query.offset,
+    )
+    .await
+    {
         Err(e) => {
             eprintln!("Failed to get events: {:?}", e);
             (
@@ -162,6 +232,21 @@ pub async fn handle_events_get(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/events",
+    tag = "events",
+    request_body(
+        content = inline(Vec<u8>),
+        content_type = "application/cbor",
+        description = "Signed event serialized in CBOR format"
+    ),
+    responses(
+        (status = 200, description = "Event saved successfully", body = String, content_type = "text/plain"),
+        (status = 400, description = "Failed to parse or verify CBOR", body = String, content_type = "text/plain"),
+        (status = 503, description = "Database is unavailable", body = String, content_type = "text/plain")
+    )
+)]
 pub async fn handle_events_post(
     State(state): State<AppState>,
     ConnectInfo(address): ConnectInfo<SocketAddr>,

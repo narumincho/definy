@@ -57,6 +57,10 @@ async fn main() -> Result<(), anyhow::Error> {
         .max_age(std::time::Duration::from_secs(86400));
 
     let app = axum::Router::new()
+        .merge(utoipa_swagger_ui::SwaggerUi::new("/swagger-ui").url(
+            "/api-docs/openapi.json",
+            <ApiDoc as utoipa::OpenApi>::openapi(),
+        ))
         .route(
             "/events",
             get(event::handle_events_get).post(event::handle_events_post),
@@ -322,4 +326,47 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         url.push_str(query.as_str());
     }
     url
+}
+
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    paths(
+        event::handle_events_get,
+        event::handle_event_get,
+        event::handle_events_post,
+    ),
+    components(
+        schemas(
+            event::EventsQuery,
+            event::EventTypeDoc,
+            event::EventsResponseDoc,
+        )
+    ),
+    tags(
+        (name = "events", description = "Definy event management API")
+    ),
+    info(
+        title = "definy API",
+        version = "0.1.0",
+        description = "OpenAPI documentation for definy server"
+    )
+)]
+pub struct ApiDoc;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use utoipa::OpenApi;
+
+    #[test]
+    fn test_openapi_spec_generation() {
+        let openapi = ApiDoc::openapi();
+        let json = openapi
+            .to_pretty_json()
+            .expect("Failed to serialize OpenAPI spec to JSON");
+        assert!(json.contains("definy API"));
+        assert!(json.contains("/events"));
+        assert!(json.contains("/events/{hash}"));
+        assert!(json.contains("create_account"));
+    }
 }
