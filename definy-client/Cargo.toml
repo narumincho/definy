@@ -9,8 +9,8 @@ path = "src/main.rs"
 
 [dependencies]
 js-sys = "0.3"
-wasm-bindgen = "0.2.127"
-web-sys = { version = "0.3.103", features = ["console", "Window", "Document", "Element", "Node", "NodeList", "HtmlElement", "Event", "MouseEvent", "HtmlAnchorElement", "History", "PopStateEvent", "HtmlDialogElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response", "Headers", "Url", "KeyboardEvent", "DomRect", "ScrollIntoViewOptions", "ScrollBehavior", "ScrollLogicalPosition"] }
+wasm-bindgen = "0.2.128"
+web-sys = { version = "0.3.105", features = ["console", "Window", "Document", "Element", "Node", "NodeList", "HtmlElement", "Event", "MouseEvent", "HtmlAnchorElement", "History", "PopStateEvent", "HtmlDialogElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response", "Headers", "Url", "KeyboardEvent", "DomRect", "ScrollIntoViewOptions", "ScrollBehavior", "ScrollLogicalPosition"] }
 definy-ui = { path = "../definy-ui" }
 definy-event = { path = "../definy-event" }
 dioxus = { version = "0.7.10", default-features = false, features = ["web", "launch", "macro", "hooks"] }
@@ -18,7 +18,7 @@ dioxus-web = { version = "0.7.10" }
 ed25519-dalek = { version = "2.2", features = ["rand_core"] }
 getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
-wasm-bindgen-futures = "0.4.76"
+wasm-bindgen-futures = "0.4.78"
 chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde", "wasmbind", "now"] }
 anyhow = "1.0.104"
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }

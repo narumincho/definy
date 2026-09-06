@@ -8,7 +8,7 @@ dioxus = { version = "0.7.10", default-features = false, features = ["macro", "h
 base64 = "0.22"
 ed25519-dalek = { version = "2.2", features = ["rand_core"] }
 definy-event = { path = "../definy-event" }
-web-sys = { version = "0.3.103", features = [
+web-sys = { version = "0.3.105", features = [
   "console",
   "Window",
   "History",
@@ -41,10 +41,10 @@ web-sys = { version = "0.3.103", features = [
   "Storage",
   "Location",
 ] }
-wasm-bindgen = "0.2.127"
+wasm-bindgen = "0.2.128"
 rand_core = { version = "0.6.4", features = ["getrandom"] }
-wasm-bindgen-futures = "0.4.76"
-js-sys = "0.3.103"
+wasm-bindgen-futures = "0.4.78"
+js-sys = "0.3.105"
 anyhow = "1.0.104"
 chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde", "wasmbind", "now"] }
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
@@ -57,6 +57,6 @@ dioxus-ssr = { version = "0.7.10" }
 include_dir = "0.7.4"
 hyper = { version = "1.11", features = ["http1", "server"] }
 hyper-util = { version = "0.1.20", features = ["client-legacy", "http1"] }
-http-body-util = "0.1.4"
+http-body-util = "0.1.5"
 tokio = { version = "1.53", features = ["macros", "rt-multi-thread", "net", "time"] }
 serde_json = "1.0.151"
