@@ -1,6 +1,8 @@
 mod builtin_migration;
 mod db;
+mod error;
 mod event;
+mod extractor;
 mod html;
 
 use std::net::SocketAddr;
@@ -338,8 +340,8 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
     components(
         schemas(
             event::EventsQuery,
-            event::EventTypeDoc,
-            event::EventsResponseDoc,
+            definy_event::event::EventType,
+            definy_event::response::EventsResponse,
         )
     ),
     tags(

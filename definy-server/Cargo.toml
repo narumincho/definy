@@ -10,7 +10,7 @@ tokio = { version = "1", features = ["full"] }
 http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 definy-ui = { path = "../definy-ui" }
-definy-event = { path = "../definy-event" }
+definy-event = { path = "../definy-event", features = ["utoipa"] }
 dioxus = { version = "0.7.10", default-features = false, features = ["macro", "hooks"] }
 dioxus-fullstack = "0.7.10"
 dioxus-ssr = { version = "0.7.10" }
