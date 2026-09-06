@@ -37,10 +37,10 @@ async fn main() -> Result<(), anyhow::Error> {
         .unwrap_or(8000);
 
     let addr = SocketAddr::from((
-        std::net::IpAddr::V6(match std::env::var("FLY_APP_NAME") {
-            Ok(_) => std::net::Ipv6Addr::UNSPECIFIED,
-            Err(_) => std::net::Ipv6Addr::LOCALHOST,
-        }),
+        match std::env::var("FLY_APP_NAME") {
+            Ok(_) => std::net::IpAddr::V6(std::net::Ipv6Addr::UNSPECIFIED),
+            Err(_) => std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST),
+        },
         port,
     ));
 

@@ -67,7 +67,11 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                     label_ja: "アカウント",
                     label_eo: "Kontoj",
                 }
-                a { class: "nav-link", href: "/swagger-ui", "API" }
+                a {
+                    class: "nav-link",
+                    href: "{crate::fetch::api_base_url()}/swagger-ui/",
+                    "API"
+                }
             }
             div { style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
                 div { style: "font-size: 0.86rem; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
