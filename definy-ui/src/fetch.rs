@@ -27,10 +27,10 @@ pub fn api_base_url() -> String {
         }
 
         // When running under Dioxus dev server (port 8080) and no explicit env/query is provided,
-        // default to http://localhost:3000 where definy-server runs.
+        // default to http://localhost:8000 where definy-server runs.
         if let Ok(port) = window.location().port() {
             if port == "8080" {
-                return "http://localhost:3000".to_string();
+                return "http://localhost:8000".to_string();
             }
         }
     }

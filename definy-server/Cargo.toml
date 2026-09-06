@@ -4,13 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+axum = "0.8"
 hyper = { version = "1", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 http-body-util = "0.1"
 hyper-util = { version = "0.1", features = ["full"] }
 definy-ui = { path = "../definy-ui" }
 definy-event = { path = "../definy-event" }
-dioxus = { version = "0.7.10", default-features = false, features = ["ssr", "macro", "hooks"] }
+dioxus = { version = "0.7.10", default-features = false, features = ["macro", "hooks"] }
+dioxus-fullstack = "0.7.10"
 dioxus-ssr = { version = "0.7.10" }
 sha2 = "0.10.9"
 serde = { version = "1", features = ["derive"] }
@@ -29,6 +31,7 @@ serde_urlencoded = "0.7.1"
 strum = { version = "0.27.2", features = ["derive"] }
 strum_macros = "0.27.2"
 url = "2.5.8"
-chrono = { version = "0.4.44", features = ["serde"] }
-rand = "0.8.5"
+chrono = { version = "0.4.45", features = ["serde"] }
+rand = "0.8.8"
 include_dir = "0.7.4"
+tower-http = { version = "0.6", features = ["cors"] }

@@ -43,7 +43,7 @@ pub fn AccountDetailView(
             }
             div {
                 class: "event-detail-card",
-                style: "display: grid; gap: 0.75rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
+                style: "display: grid; gap: 0.85rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
                 h2 { style: "font-size: 1.3rem; font-weight: 600; margin: 0;", "{account_name}" }
                 div {
                     class: "mono",
@@ -53,9 +53,62 @@ pub fn AccountDetailView(
                 div { style: "color: var(--text-secondary); font-size: 0.85rem;",
                     "{account_events.len()} {context.language.label(\"events\", \"イベント\", \"eventoj\")}"
                 }
-            }
-            if is_current_account {
-                ProfileForm { state: state.clone(), context: context.clone() }
+                if is_current_account {
+                    div { style: "display: grid; gap: 0.35rem; margin-top: 0.3rem;",
+                        div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
+                            "{context.language.label(\"Account Name\", \"アカウント名\", \"Konta nomo\")}"
+                        }
+                        input {
+                            r#type: "text",
+                            name: "profile-name",
+                            value: "{state.profile_name_input}",
+                            placeholder: "{account_name}",
+                            style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
+                            oninput: move |evt: FormEvent| {
+                                let mut state_sig = use_context::<Signal<AppState>>();
+                                state_sig.write().profile_name_input = evt.value();
+                            },
+                        }
+                        div { style: "display: flex; align-items: center; gap: 0.8rem; margin-top: 0.3rem;",
+                            button {
+                                r#type: "button",
+                                style: "padding: 0.5rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; justify-self: start;",
+                                onclick: move |_| {
+                                    let state_sig = use_context::<Signal<AppState>>();
+                                    let state_val = state_sig.read().clone();
+                                    let key = if let Some(key) = &state_val.current_key {
+                                        key.clone()
+                                    } else {
+                                        return;
+                                    };
+                                    let new_name = state_val.profile_name_input.trim().to_string();
+                                    if new_name.is_empty() {
+                                        return;
+                                    }
+                                    let filter = state_val.event_list_state.filter_event_type;
+                                    let force_offline = state_val.force_offline;
+
+                                    spawn(async move {
+                                        crate::event_submit::submit_event(
+                                                definy_event::event::EventContent::ChangeProfile(definy_event::event::ChangeProfileEvent {
+                                                    account_name: new_name.into(),
+                                                }),
+                                                key,
+                                                force_offline,
+                                                filter,
+                                                state_sig,
+                                                |next, _| {
+                                                    next.profile_name_input = String::new();
+                                                },
+                                            )
+                                            .await;
+                                    });
+                                },
+                                "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
+                            }
+                        }
+                    }
+                }
             }
             if account_events.is_empty() {
                 div {
@@ -85,65 +138,6 @@ pub fn AccountDetailView(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-#[component]
-fn ProfileForm(state: AppState, context: PageContext) -> Element {
-    rsx! {
-        div {
-            class: "event-detail-card",
-            style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div { style: "font-weight: 600;",
-                "{context.language.label(\"Change account name\", \"アカウント名を変更\", \"Ŝanĝi kontonomon\")}"
-            }
-            input {
-                r#type: "text",
-                name: "profile-name",
-                value: "{state.profile_name_input}",
-                style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
-                oninput: move |evt: FormEvent| {
-                    let mut state_sig = use_context::<Signal<AppState>>();
-                    state_sig.write().profile_name_input = evt.value();
-                },
-            }
-            button {
-                r#type: "button",
-                style: "padding: 0.4rem 0.9rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; justify-self: start;",
-                onclick: move |_| {
-                    let state_sig = use_context::<Signal<AppState>>();
-                    let state_val = state_sig.read().clone();
-                    let key = if let Some(key) = &state_val.current_key {
-                        key.clone()
-                    } else {
-                        return;
-                    };
-                    let new_name = state_val.profile_name_input.trim().to_string();
-                    if new_name.is_empty() {
-                        return;
-                    }
-                    let filter = state_val.event_list_state.filter_event_type;
-                    let force_offline = state_val.force_offline;
-
-                    spawn(async move {
-                        crate::event_submit::submit_event(
-                                definy_event::event::EventContent::ChangeProfile(definy_event::event::ChangeProfileEvent {
-                                    account_name: new_name.into(),
-                                }),
-                                key,
-                                force_offline,
-                                filter,
-                                state_sig,
-                                |next, _| {
-                                    next.profile_name_input = String::new();
-                                },
-                            )
-                            .await;
-                    });
-                },
-                "{context.language.label(\"Change Name\", \"名前を変更\", \"Ŝanĝi nomon\")}"
             }
         }
     }

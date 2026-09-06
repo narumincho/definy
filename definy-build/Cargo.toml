@@ -6,9 +6,9 @@ edition = "2024"
 [dependencies]
 base64 = "0.22.1"
 sha2 = "0.10.9"
-wasm-bindgen-cli-support = "0.2.127"
+wasm-bindgen-cli-support = "0.2.128"
 ureq = "3.4.0"
-flate2 = "1.1.9"
+flate2 = "1.1.10"
 tar = "0.4.46"
 
 

@@ -86,7 +86,6 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                 &part.account_id,
                             );
                             let def_hash = part.definition_event_hash.clone();
-                            let latest_hash = part.latest_event_hash.clone();
                             let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
                             let expr_str = part
                                 .expression
@@ -135,25 +134,20 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }
-                                    if !part.part_description.is_empty() {
-                                        div { style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
-                                            "{part.part_description}"
+                                    {
+                                        let desc = part.description_for(context.language);
+                                        if !desc.is_empty() {
+                                            rsx! {
+                                                div { style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
+                                                    "{desc}"
+                                                }
+                                            }
+                                        } else {
+                                            rsx! {}
                                         }
                                     }
                                     div { class: "mono", style: "font-size: 0.78rem; opacity: 0.8;", "{expr_str}" }
                                     div { style: "font-size: 0.8rem; color: var(--primary);", "{account_name}" }
-                                    div { style: "display: flex; gap: 0.45rem; font-size: 0.78rem;",
-                                        a {
-                                            href: context.href_with_lang(Location::Event(latest_hash)),
-                                            style: "color: var(--text-secondary); text-decoration: none;",
-                                            "{context.language.label(\"Latest event\", \"最新イベント\", \"Lasta evento\")}"
-                                        }
-                                        a {
-                                            href: context.href_with_lang(Location::Event(def_hash)),
-                                            style: "color: var(--text-secondary); text-decoration: none;",
-                                            "{context.language.label(\"Definition event\", \"定義イベント\", \"Difina evento\")}"
-                                        }
-                                    }
                                 }
                             }
                         }

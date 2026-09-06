@@ -22,6 +22,10 @@ pub enum PathStep {
     RecordItemValue(usize),
     ConstructorValue,
     TypeListItem,
+    Start,
+    End,
+    Index,
+    Item,
 }
 
 impl std::fmt::Display for PathStep {
@@ -38,6 +42,10 @@ impl std::fmt::Display for PathStep {
             PathStep::RecordItemValue(index) => return write!(f, "RecordItemValue({})", index),
             PathStep::ConstructorValue => "ConstructorValue",
             PathStep::TypeListItem => "TypeListItem",
+            PathStep::Start => "Start",
+            PathStep::End => "End",
+            PathStep::Index => "Index",
+            PathStep::Item => "Item",
         };
         write!(f, "{}", s)
     }
@@ -70,6 +78,14 @@ impl PathStep {
             Some(PathStep::ConstructorValue)
         } else if s == "TypeListItem" {
             Some(PathStep::TypeListItem)
+        } else if s == "Start" {
+            Some(PathStep::Start)
+        } else if s == "End" {
+            Some(PathStep::End)
+        } else if s == "Index" {
+            Some(PathStep::Index)
+        } else if s == "Item" {
+            Some(PathStep::Item)
         } else {
             None
         }

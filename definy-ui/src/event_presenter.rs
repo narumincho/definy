@@ -19,37 +19,50 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
                 change_profile_event.account_name
             )
         }
-        EventContent::PartDefinition(part_definition_event) => format!(
-            "{}{}{}",
-            part_definition_event.part_name,
-            part_definition_event
-                .expression
-                .as_ref()
-                .map(|e| format!(" = {}", expression_to_source(e)))
-                .unwrap_or_default(),
-            if part_definition_event.description.is_empty() {
-                String::new()
-            } else {
-                format!(" - {}", part_definition_event.description)
-            }
-        ),
-        EventContent::PartUpdate(part_update_event) => format!(
-            "{} {}{}{}",
-            language.label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
-            part_update_event.part_name,
-            if part_update_event.part_description.is_empty() {
-                String::new()
-            } else {
-                format!(" - {}", part_update_event.part_description)
-            },
-            part_update_event
-                .expression
-                .as_ref()
-                .map(|e| format!(" | {}", expression_to_source(e)))
-                .unwrap_or_default()
-        ),
+        EventContent::PartDefinition(part_definition_event) => {
+            let desc = part_definition_event
+                .description
+                .to_display_string(language.to_code());
+            format!(
+                "{}{}{}",
+                part_definition_event.part_name,
+                part_definition_event
+                    .expression
+                    .as_ref()
+                    .map(|e| format!(" = {}", expression_to_source(e)))
+                    .unwrap_or_default(),
+                if desc.is_empty() {
+                    String::new()
+                } else {
+                    format!(" - {}", desc)
+                }
+            )
+        }
+        EventContent::PartUpdate(part_update_event) => {
+            let desc = part_update_event
+                .part_description
+                .to_display_string(language.to_code());
+            format!(
+                "{} {}{}{}",
+                language.label("Part updated:", "パーツ更新:", "Parto ĝisdatigita:"),
+                part_update_event.part_name,
+                if desc.is_empty() {
+                    String::new()
+                } else {
+                    format!(" - {}", desc)
+                },
+                part_update_event
+                    .expression
+                    .as_ref()
+                    .map(|e| format!(" | {}", expression_to_source(e)))
+                    .unwrap_or_default()
+            )
+        }
         EventContent::ModuleDefinition(module_definition_event) => {
-            if module_definition_event.description.is_empty() {
+            let desc = module_definition_event
+                .description
+                .to_display_string(language.to_code());
+            if desc.is_empty() {
                 format!(
                     "{} {}",
                     language.label("Module created:", "モジュール作成:", "Modulo kreita:"),
@@ -60,12 +73,15 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
                     "{} {} - {}",
                     language.label("Module created:", "モジュール作成:", "Modulo kreita:"),
                     module_definition_event.module_name,
-                    module_definition_event.description
+                    desc
                 )
             }
         }
         EventContent::ModuleUpdate(module_update_event) => {
-            if module_update_event.module_description.is_empty() {
+            let desc = module_update_event
+                .module_description
+                .to_display_string(language.to_code());
+            if desc.is_empty() {
                 format!(
                     "{} {}",
                     language.label("Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
@@ -76,7 +92,7 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
                     "{} {} - {}",
                     language.label("Module updated:", "モジュール更新:", "Modulo ĝisdatigita:"),
                     module_update_event.module_name,
-                    module_update_event.module_description
+                    desc
                 )
             }
         }

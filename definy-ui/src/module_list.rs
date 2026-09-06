@@ -58,7 +58,6 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                 &module.account_id,
                             );
                             let def_hash = module.definition_event_hash.clone();
-                            let latest_hash = module.latest_event_hash.clone();
                             let time_str = module.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
                             rsx! {
                                 div {
@@ -66,7 +65,11 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                     class: "event-card",
                                     style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
                                     div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                        div { style: "font-size: 1rem; font-weight: 600; color: var(--text);", "{module.module_name}" }
+                                        a {
+                                            href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
+                                            style: "font-size: 1rem; font-weight: 600; color: var(--text);",
+                                            "{module.module_name}"
+                                        }
                                         div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
                                     }
                                     if !module.has_definition {
@@ -74,30 +77,20 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }
-                                    if !module.module_description.is_empty() {
-                                        div { style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
-                                            "{module.module_description}"
+                                    {
+                                        let desc = module.description_for(context.language);
+                                        if !desc.is_empty() {
+                                            rsx! {
+                                                div { style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
+                                                    "{desc}"
+                                                }
+                                            }
+                                        } else {
+                                            rsx! {}
                                         }
                                     }
                                     div { style: "font-size: 0.84rem; color: var(--text-secondary);",
                                         "{context.language.label(\"Author\", \"作成者\", \"Aŭtoro\")}: {account_name}"
-                                    }
-                                    div { style: "display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.2rem; font-size: 0.78rem;",
-                                        a {
-                                            href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
-                                            style: "font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); text-decoration: none;",
-                                            "{context.language.label(\"Open module detail\", \"モジュール詳細を開く\", \"Malfermi modulajn detalojn\")}"
-                                        }
-                                        a {
-                                            href: context.href_with_lang(crate::Location::Event(latest_hash)),
-                                            style: "color: var(--text-secondary); text-decoration: none;",
-                                            "{context.language.label(\"Latest event\", \"最新イベント\", \"Lasta evento\")}"
-                                        }
-                                        a {
-                                            href: context.href_with_lang(crate::Location::Event(def_hash)),
-                                            style: "color: var(--text-secondary); text-decoration: none;",
-                                            "{context.language.label(\"Definition event\", \"定義イベント\", \"Difina evento\")}"
-                                        }
                                     }
                                 }
                             }
