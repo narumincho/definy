@@ -86,7 +86,6 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                 &part.account_id,
                             );
                             let def_hash = part.definition_event_hash.clone();
-                            let latest_hash = part.latest_event_hash.clone();
                             let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
                             let expr_str = part
                                 .expression

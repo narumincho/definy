@@ -124,7 +124,6 @@ fn ModulePartItem(
     context: PageContext,
 ) -> Element {
     let def_hash = part.definition_event_hash.clone();
-    let latest_hash = part.latest_event_hash.clone();
     let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let author_label = format!(
         "{} {account_name}",
@@ -138,7 +137,11 @@ fn ModulePartItem(
             class: "event-card",
             style: "display: grid; gap: 0.5rem; padding: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
             div { style: "font-size: 0.85rem; color: var(--text-secondary);", "{time_str}" }
-            div { style: "font-size: 0.98rem; font-weight: 600;", "{part.part_name}" }
+            a {
+                href: context.href_with_lang(Location::Part(def_hash)),
+                style: "font-size: 0.98rem; font-weight: 600; color: var(--text); text-decoration: none;",
+                "{part.part_name}"
+            }
             {
                 let desc = part.description_for(context.language);
                 if !desc.is_empty() {
