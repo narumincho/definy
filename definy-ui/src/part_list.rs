@@ -149,18 +149,6 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                     }
                                     div { class: "mono", style: "font-size: 0.78rem; opacity: 0.8;", "{expr_str}" }
                                     div { style: "font-size: 0.8rem; color: var(--primary);", "{account_name}" }
-                                    div { style: "display: flex; gap: 0.45rem; font-size: 0.78rem;",
-                                        a {
-                                            href: context.href_with_lang(Location::Event(latest_hash)),
-                                            style: "color: var(--text-secondary); text-decoration: none;",
-                                            "{context.language.label(\"Latest event\", \"最新イベント\", \"Lasta evento\")}"
-                                        }
-                                        a {
-                                            href: context.href_with_lang(Location::Event(def_hash)),
-                                            style: "color: var(--text-secondary); text-decoration: none;",
-                                            "{context.language.label(\"Definition event\", \"定義イベント\", \"Difina evento\")}"
-                                        }
-                                    }
                                 }
                             }
                         }

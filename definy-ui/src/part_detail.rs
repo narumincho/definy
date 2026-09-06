@@ -100,20 +100,6 @@ pub fn PartDetailView(
                                     }
                                 }
                             }
-                            div { style: "display: flex; gap: 0.6rem; font-size: 0.84rem;",
-                                a {
-                                    href: context.href_with_lang(Location::Event(definition_event_hash.clone())),
-                                    style: "color: var(--primary); text-decoration: none;",
-                                    {
-                                        context.language.label("Definition event", "定義イベント", "Difina evento")
-                                    }
-                                }
-                                a {
-                                    href: context.href_with_lang(Location::Event(snapshot.latest_event_hash)),
-                                    style: "color: var(--primary); text-decoration: none;",
-                                    {context.language.label("Latest event", "最新イベント", "Lasta evento")}
-                                }
-                            }
                         }
                     }
                 }
@@ -129,7 +115,7 @@ pub fn PartDetailView(
                         "{context.language.label(\"History\", \"履歴\", \"Historio\")}"
                     }
                     div { style: "display: grid; gap: 0.4rem;",
-                        for (event_hash, ev) in related_events {
+                        for (event_hash , ev) in related_events {
                             {
                                 let label = crate::event_presenter::event_kind_label(context.language, &ev);
                                 let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();

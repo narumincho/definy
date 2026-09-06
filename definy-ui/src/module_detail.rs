@@ -61,19 +61,6 @@ pub fn ModuleDetailView(
                         }
                     }
                     div { style: "font-size: 0.85rem; color: var(--primary);", "{author_label}" }
-                    div { style: "display: flex; gap: 0.45rem; font-size: 0.84rem;",
-                        a {
-                            href: context
-                                .href_with_lang(Location::Event(module_snapshot.definition_event_hash.clone())),
-                            style: "color: var(--primary); text-decoration: none;",
-                            "{context.language.label(\"Definition event\", \"定義イベント\", \"Difina evento\")}"
-                        }
-                        a {
-                            href: context.href_with_lang(Location::Event(module_snapshot.latest_event_hash)),
-                            style: "color: var(--primary); text-decoration: none;",
-                            "{context.language.label(\"Latest event\", \"最新イベント\", \"Lasta evento\")}"
-                        }
-                    }
                 }
                 if state.current_key.is_some() {
                     ModuleUpdateForm {
@@ -163,18 +150,6 @@ fn ModulePartItem(
                 }
             }
             div { style: "font-size: 0.85rem; color: var(--primary);", "{author_label}" }
-            div { style: "display: flex; gap: 0.45rem; font-size: 0.82rem;",
-                a {
-                    href: context.href_with_lang(Location::Part(def_hash)),
-                    style: "color: var(--primary); text-decoration: none;",
-                    "{context.language.label(\"Open part detail\", \"パーツ詳細を開く\", \"Malfermi partajn detalojn\")}"
-                }
-                a {
-                    href: context.href_with_lang(Location::Event(latest_hash)),
-                    style: "color: var(--text-secondary); text-decoration: none;",
-                    "{context.language.label(\"Latest event\", \"最新イベント\", \"Lasta evento\")}"
-                }
-            }
         }
     }
 }
