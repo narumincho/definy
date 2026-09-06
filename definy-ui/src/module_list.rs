@@ -65,13 +65,15 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                     class: "event-card",
                                     style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
                                     div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                        div { style: "font-size: 1rem; font-weight: 600; color: var(--text);", "{module.module_name}" }
+                                        a {
+                                            href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
+                                            style: "font-size: 1rem; font-weight: 600; color: var(--text);",
+                                            "{module.module_name}"
+                                        }
                                         div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
                                     }
                                     if !module.has_definition {
-                                        a {
-                                            href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
-                                            style: "font-size: 0.82rem; color: var(--error);",
+                                        div { style: "font-size: 0.82rem; color: var(--error);",
                                             "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
                                         }
                                     }

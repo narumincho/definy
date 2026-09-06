@@ -40,6 +40,30 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             .map_err(|e| anyhow::anyhow!("Failed to serialize core module event: {:?}", e))?;
     let core_module_hash = definy_event::EventHashId::from_bytes(&core_module_binary);
 
+    let sample_module_event = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(30),
+        content: definy_event::event::EventContent::ModuleDefinition(
+            definy_event::event::ModuleDefinitionEvent {
+                module_name: "sample".into(),
+                description: definy_event::event::Description::localized(vec![
+                    (
+                        "en",
+                        "Sample programs showcasing definy expressions and computations",
+                    ),
+                    (
+                        "ja",
+                        "definy の計算式や機能を体験できるサンプルプログラム集",
+                    ),
+                ]),
+            },
+        ),
+    };
+    let sample_module_binary =
+        definy_event::sign_and_serialize(sample_module_event.clone(), &signing_key)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize sample module event: {:?}", e))?;
+    let sample_module_hash = definy_event::EventHashId::from_bytes(&sample_module_binary);
+
     let events = vec![
         definy_event::event::Event {
             account_id: account_id.clone(),
@@ -544,6 +568,219 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                         definy_event::event::CompilerBuiltin::ListAppend,
                     )),
                     module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        sample_module_event,
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(31),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "triangle_area".into(),
+                    part_type: Some(definy_event::event::PartType::Number),
+                    description: definy_event::event::Description::localized(vec![
+                        (
+                            "en",
+                            "Calculate the area of a triangle (base 10, height 5)",
+                        ),
+                        (
+                            "ja",
+                            "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)",
+                        ),
+                    ]),
+                    expression: Some(definy_event::event::Expression::Let(
+                        definy_event::event::LetExpression {
+                            variable_id: 1,
+                            variable_name: "base".into(),
+                            value: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 10 },
+                            )),
+                            body: Box::new(definy_event::event::Expression::Let(
+                                definy_event::event::LetExpression {
+                                    variable_id: 2,
+                                    variable_name: "height".into(),
+                                    value: Box::new(definy_event::event::Expression::Number(
+                                        definy_event::event::NumberExpression { value: 5 },
+                                    )),
+                                    body: Box::new(definy_event::event::Expression::Divide(
+                                        definy_event::event::DivideExpression {
+                                            left: Box::new(
+                                                definy_event::event::Expression::Multiply(
+                                                    definy_event::event::MultiplyExpression {
+                                                        left: Box::new(
+                                                            definy_event::event::Expression::Variable(
+                                                                definy_event::event::VariableExpression {
+                                                                    variable_id: 1,
+                                                                },
+                                                            ),
+                                                        ),
+                                                        right: Box::new(
+                                                            definy_event::event::Expression::Variable(
+                                                                definy_event::event::VariableExpression {
+                                                                    variable_id: 2,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    },
+                                                ),
+                                            ),
+                                            right: Box::new(
+                                                definy_event::event::Expression::Number(
+                                                    definy_event::event::NumberExpression {
+                                                        value: 2,
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                    )),
+                                },
+                            )),
+                        },
+                    )),
+                    module_definition_event_hash: sample_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(32),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "greet".into(),
+                    part_type: Some(definy_event::event::PartType::String),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Greeting message using string concatenation"),
+                        ("ja", "文字列結合を使った挨拶メッセージの生成サンプル"),
+                    ]),
+                    expression: Some(definy_event::event::Expression::StringConcat(
+                        definy_event::event::StringConcatExpression {
+                            left: Box::new(definy_event::event::Expression::String(
+                                definy_event::event::StringExpression {
+                                    value: "Hello, ".into(),
+                                },
+                            )),
+                            right: Box::new(definy_event::event::Expression::String(
+                                definy_event::event::StringExpression {
+                                    value: "definy!".into(),
+                                },
+                            )),
+                        },
+                    )),
+                    module_definition_event_hash: sample_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(33),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "is_even_sample".into(),
+                    part_type: Some(definy_event::event::PartType::String),
+                    description: definy_event::event::Description::localized(vec![
+                        (
+                            "en",
+                            "Check if a number is even using conditional expression",
+                        ),
+                        (
+                            "ja",
+                            "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)",
+                        ),
+                    ]),
+                    expression: Some(definy_event::event::Expression::Let(
+                        definy_event::event::LetExpression {
+                            variable_id: 1,
+                            variable_name: "n".into(),
+                            value: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 4 },
+                            )),
+                            body: Box::new(definy_event::event::Expression::If(
+                                definy_event::event::IfExpression {
+                                    condition: Box::new(definy_event::event::Expression::Equal(
+                                        definy_event::event::EqualExpression {
+                                            left: Box::new(
+                                                definy_event::event::Expression::Remainder(
+                                                    definy_event::event::RemainderExpression {
+                                                        left: Box::new(
+                                                            definy_event::event::Expression::Variable(
+                                                                definy_event::event::VariableExpression {
+                                                                    variable_id: 1,
+                                                                },
+                                                            ),
+                                                        ),
+                                                        right: Box::new(
+                                                            definy_event::event::Expression::Number(
+                                                                definy_event::event::NumberExpression {
+                                                                    value: 2,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    },
+                                                ),
+                                            ),
+                                            right: Box::new(
+                                                definy_event::event::Expression::Number(
+                                                    definy_event::event::NumberExpression {
+                                                        value: 0,
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                    )),
+                                    then_expr: Box::new(definy_event::event::Expression::String(
+                                        definy_event::event::StringExpression {
+                                            value: "even".into(),
+                                        },
+                                    )),
+                                    else_expr: Box::new(definy_event::event::Expression::String(
+                                        definy_event::event::StringExpression {
+                                            value: "odd".into(),
+                                        },
+                                    )),
+                                },
+                            )),
+                        },
+                    )),
+                    module_definition_event_hash: sample_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(34),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "prime_numbers".into(),
+                    part_type: Some(definy_event::event::PartType::List(Box::new(
+                        definy_event::event::PartType::Number,
+                    ))),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "List literal containing prime numbers"),
+                        ("ja", "素数のリストリテラルサンプル [2, 3, 5, 7, 11]"),
+                    ]),
+                    expression: Some(definy_event::event::Expression::ListLiteral(
+                        definy_event::event::ListLiteralExpression {
+                            items: vec![
+                                definy_event::event::Expression::Number(
+                                    definy_event::event::NumberExpression { value: 2 },
+                                ),
+                                definy_event::event::Expression::Number(
+                                    definy_event::event::NumberExpression { value: 3 },
+                                ),
+                                definy_event::event::Expression::Number(
+                                    definy_event::event::NumberExpression { value: 5 },
+                                ),
+                                definy_event::event::Expression::Number(
+                                    definy_event::event::NumberExpression { value: 7 },
+                                ),
+                                definy_event::event::Expression::Number(
+                                    definy_event::event::NumberExpression { value: 11 },
+                                ),
+                            ],
+                        },
+                    )),
+                    module_definition_event_hash: sample_module_hash.clone(),
                 },
             ),
         },
