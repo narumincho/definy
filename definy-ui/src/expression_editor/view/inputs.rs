@@ -5,8 +5,8 @@ use crate::language::Language;
 
 use super::super::mutation::{
     add_list_item, add_record_item, path_to_key, remove_list_item, remove_record_item,
-    selector_prefix, set_boolean_value, set_let_variable_name, set_number_value,
-    set_record_item_key, set_string_value, target_expression_mut,
+    selector_prefix, set_boolean_value, set_function_parameter_name, set_let_variable_name,
+    set_number_value, set_record_item_key, set_string_value, target_expression_mut,
 };
 use super::super::types::EditorTarget;
 
@@ -126,6 +126,34 @@ pub(crate) fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &
                 let mut next = state_sig.read().clone();
                 let root_expression = target_expression_mut(&mut next, target);
                 set_let_variable_name(root_expression, path.as_slice(), &evt.value());
+                state_sig.set(next);
+            },
+        }
+    }
+}
+
+pub(crate) fn function_param_name_input(
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    value: &str,
+) -> Element {
+    let name = format!(
+        "{}-expr-func-param-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
+
+    rsx! {
+        input {
+            name: "{name}",
+            r#type: "text",
+            value: "{value}",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 7.5rem; box-sizing: border-box;",
+            oninput: move |evt: FormEvent| {
+                let mut state_sig = use_context::<Signal<AppState>>();
+                let mut next = state_sig.read().clone();
+                let root_expression = target_expression_mut(&mut next, target);
+                set_function_parameter_name(root_expression, path.as_slice(), &evt.value());
                 state_sig.set(next);
             },
         }

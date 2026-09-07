@@ -173,6 +173,10 @@ pub enum PartType {
     Type,
     TypePart(EventHashId),
     List(Box<PartType>),
+    Function {
+        parameter: Box<PartType>,
+        return_type: Box<PartType>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -213,6 +217,9 @@ pub enum Expression {
     #[serde(alias = "RecordLiteral")]
     TypeLiteral(TypeLiteralExpression),
     Constructor(ConstructorExpression),
+    Function(FunctionExpression),
+    Call(CallExpression),
+    TypeFunction(TypeFunctionExpression),
     Compiler(CompilerBuiltin),
 }
 
@@ -243,6 +250,8 @@ pub enum CompilerBuiltin {
     ListAppend,
     NumberLiteral,
     If,
+    Function,
+    Call,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -434,6 +443,25 @@ pub struct TypeLiteralItemExpression {
 pub struct ConstructorExpression {
     pub type_part_definition_event_hash: EventHashId,
     pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FunctionExpression {
+    pub parameter_id: i64,
+    pub parameter_name: Box<str>,
+    pub body: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CallExpression {
+    pub function: Box<Expression>,
+    pub argument: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeFunctionExpression {
+    pub parameter: Box<Expression>,
+    pub return_type: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

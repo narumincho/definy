@@ -72,16 +72,30 @@ enum ControlFrame {
     If { end_ip: usize },
 }
 
+#[derive(Debug, Clone)]
+struct WasmFunction {
+    num_locals: usize,
+    instructions: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+struct CallFrame {
+    func_idx: usize,
+    ip: usize,
+    locals: Vec<StackVal>,
+}
+
 pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
     if !wasm_bytes.starts_with(&WASM_MAGIC) {
         return Err("Invalid Wasm magic");
     }
 
     let mut pos = 8;
-    let mut code_bytes = Vec::new();
     let mut initial_data = Vec::new();
     let mut data_offset = 1024;
     let memory_pages = 2;
+    let mut table: Vec<u32> = Vec::new();
+    let mut functions: Vec<WasmFunction> = Vec::new();
 
     while pos < wasm_bytes.len() {
         let section_id = wasm_bytes[pos];
@@ -90,7 +104,48 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
         pos += len_bytes;
         let section_end = pos + section_len as usize;
 
-        if section_id == DATA_SECTION {
+        if section_id == TABLE_SECTION {
+            let mut t_pos = pos;
+            let (count, c_bytes) = read_u32_leb128(&wasm_bytes[t_pos..])?;
+            t_pos += c_bytes;
+            for _ in 0..count {
+                t_pos += 1; // elem type (FUNCREF)
+                let flags = wasm_bytes[t_pos];
+                t_pos += 1;
+                let (min, m_bytes) = read_u32_leb128(&wasm_bytes[t_pos..])?;
+                t_pos += m_bytes;
+                if flags & 1 != 0 {
+                    let (_max, max_bytes) = read_u32_leb128(&wasm_bytes[t_pos..])?;
+                    t_pos += max_bytes;
+                }
+                table.resize(min as usize, 0);
+            }
+        } else if section_id == ELEMENT_SECTION {
+            let mut e_pos = pos;
+            let (count, c_bytes) = read_u32_leb128(&wasm_bytes[e_pos..])?;
+            e_pos += c_bytes;
+            for _ in 0..count {
+                let (_table_idx, tb_bytes) = read_u32_leb128(&wasm_bytes[e_pos..])?;
+                e_pos += tb_bytes;
+                if wasm_bytes[e_pos] == I32_CONST {
+                    e_pos += 1;
+                    let (offset, o_bytes) = read_i32_sleb128(&wasm_bytes[e_pos..])?;
+                    e_pos += o_bytes;
+                    e_pos += 1; // END
+                    let (elem_count, el_bytes) = read_u32_leb128(&wasm_bytes[e_pos..])?;
+                    e_pos += el_bytes;
+                    let offset_usize = offset as usize;
+                    if table.len() < offset_usize + elem_count as usize {
+                        table.resize(offset_usize + elem_count as usize, 0);
+                    }
+                    for i in 0..elem_count as usize {
+                        let (func_idx, f_bytes) = read_u32_leb128(&wasm_bytes[e_pos..])?;
+                        e_pos += f_bytes;
+                        table[offset_usize + i] = func_idx;
+                    }
+                }
+            }
+        } else if section_id == DATA_SECTION {
             let mut d_pos = pos;
             let (_count, c_bytes) = read_u32_leb128(&wasm_bytes[d_pos..])?;
             d_pos += c_bytes;
@@ -107,14 +162,40 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
             }
         } else if section_id == CODE_SECTION {
             let mut c_pos = pos;
-            let (_count, count_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+            let (func_count, count_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
             c_pos += count_bytes;
-            let (_body_size, b_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
-            c_pos += b_bytes;
-            code_bytes = wasm_bytes[c_pos..section_end].to_vec();
+
+            for _ in 0..func_count {
+                let (body_size, b_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                c_pos += b_bytes;
+                let body_end = c_pos + body_size as usize;
+
+                let (num_local_groups, g_bytes) =
+                    read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                c_pos += g_bytes;
+                let mut total_locals = 0;
+                for _ in 0..num_local_groups {
+                    let (count, count_bytes) =
+                        read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                    c_pos += count_bytes;
+                    c_pos += 1; // type
+                    total_locals += count as usize;
+                }
+
+                let instructions = wasm_bytes[c_pos..body_end].to_vec();
+                functions.push(WasmFunction {
+                    num_locals: total_locals,
+                    instructions,
+                });
+                c_pos = body_end;
+            }
         }
 
         pos = section_end;
+    }
+
+    if functions.is_empty() {
+        return Err("No functions found in Wasm module");
     }
 
     let mut memory = vec![0u8; memory_pages * 65536];
@@ -124,24 +205,15 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
 
     let mut globals = vec![HEAP_START_OFFSET as i32];
 
-    let mut c_pos = 0;
-    let (num_local_groups, g_bytes) = read_u32_leb128(&code_bytes[c_pos..])?;
-    c_pos += g_bytes;
-    let mut total_locals = 0;
-    for _ in 0..num_local_groups {
-        let (count, count_bytes) = read_u32_leb128(&code_bytes[c_pos..])?;
-        c_pos += count_bytes;
-        c_pos += 1; // type
-        total_locals += count as usize;
-    }
-
-    let instructions = &code_bytes[c_pos..];
-    let mut locals = vec![StackVal::I32(0); total_locals];
+    let mut current_func_idx = 0;
+    let mut locals = vec![StackVal::I32(0); functions[0].num_locals];
     let mut stack: Vec<StackVal> = Vec::new();
     let mut control_stack: Vec<ControlFrame> = Vec::new();
+    let mut call_stack: Vec<CallFrame> = Vec::new();
 
     let mut ip = 0;
-    while ip < instructions.len() {
+    while ip < functions[current_func_idx].instructions.len() {
+        let instructions = &functions[current_func_idx].instructions;
         let op = instructions[ip];
         ip += 1;
 
@@ -450,10 +522,49 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                     ip = end_ip;
                 }
             }
+            CALL_INDIRECT => {
+                let (_type_idx, t_bytes) = read_u32_leb128(&instructions[ip..])?;
+                ip += t_bytes;
+                let (_table_idx, tb_bytes) = read_u32_leb128(&instructions[ip..])?;
+                ip += tb_bytes;
+
+                let table_elem_idx = pop_i32(&mut stack)? as usize;
+                if table_elem_idx >= table.len() {
+                    return Err("Table index out of bounds in CALL_INDIRECT");
+                }
+                let target_func_idx = table[table_elem_idx] as usize;
+                if target_func_idx >= functions.len() {
+                    return Err("Function index out of bounds in CALL_INDIRECT");
+                }
+
+                let arg_ptr = pop_i32(&mut stack)?;
+                let env_ptr = pop_i32(&mut stack)?;
+
+                let target_func = &functions[target_func_idx];
+                let mut target_locals = vec![StackVal::I32(0); target_func.num_locals + 2];
+                target_locals[0] = StackVal::I32(env_ptr);
+                target_locals[1] = StackVal::I32(arg_ptr);
+
+                call_stack.push(CallFrame {
+                    func_idx: current_func_idx,
+                    ip,
+                    locals,
+                });
+
+                current_func_idx = target_func_idx;
+                locals = target_locals;
+                ip = 0;
+            }
             END => {
                 control_stack.pop();
                 if ip >= instructions.len() {
-                    break;
+                    if let Some(frame) = call_stack.pop() {
+                        current_func_idx = frame.func_idx;
+                        ip = frame.ip;
+                        locals = frame.locals;
+                    } else {
+                        break;
+                    }
                 }
             }
             _ => {
@@ -523,6 +634,12 @@ fn skip_op_payload(op: u8, instructions: &[u8], ip: &mut usize) -> Result<(), &'
             *ip += bytes;
         }
         I32_LOAD8_U | I32_LOAD | I64_LOAD | I32_STORE8 | I32_STORE | I64_STORE => {
+            let (_, b1) = read_u32_leb128(&instructions[*ip..])?;
+            *ip += b1;
+            let (_, b2) = read_u32_leb128(&instructions[*ip..])?;
+            *ip += b2;
+        }
+        CALL_INDIRECT => {
             let (_, b1) = read_u32_leb128(&instructions[*ip..])?;
             *ip += b1;
             let (_, b2) = read_u32_leb128(&instructions[*ip..])?;

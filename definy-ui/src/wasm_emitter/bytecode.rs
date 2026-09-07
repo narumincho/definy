@@ -5,15 +5,18 @@ pub const WASM_VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00];
 // Section IDs
 pub const TYPE_SECTION: u8 = 1;
 pub const FUNCTION_SECTION: u8 = 3;
+pub const TABLE_SECTION: u8 = 4;
 pub const MEMORY_SECTION: u8 = 5;
 pub const GLOBAL_SECTION: u8 = 6;
 pub const EXPORT_SECTION: u8 = 7;
+pub const ELEMENT_SECTION: u8 = 9;
 pub const CODE_SECTION: u8 = 10;
 pub const DATA_SECTION: u8 = 11;
 
 // ValTypes
 pub const I32: u8 = 0x7F;
 pub const I64: u8 = 0x7E;
+pub const FUNCREF: u8 = 0x70;
 
 // Opcodes
 pub const BLOCK: u8 = 0x02;
@@ -23,6 +26,8 @@ pub const ELSE: u8 = 0x05;
 pub const END: u8 = 0x0B;
 pub const BR: u8 = 0x0C;
 pub const BR_IF: u8 = 0x0D;
+pub const CALL: u8 = 0x10;
+pub const CALL_INDIRECT: u8 = 0x11;
 pub const LOCAL_GET: u8 = 0x20;
 pub const LOCAL_SET: u8 = 0x21;
 pub const LOCAL_TEE: u8 = 0x22;

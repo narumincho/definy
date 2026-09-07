@@ -522,6 +522,58 @@ pub fn render_expression_editor(
                             }
                         }
                     },
+                    definy_event::event::Expression::Function(func_expression) => {
+                        rsx! {
+                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                                if allow_kind_change {
+                                    {
+                                        expression_selector(
+                                            state,
+                                            path.clone(),
+                                            target,
+                                            &current_selection,
+                                            &selector_options,
+                                        )
+                                    }
+                                }
+                                {render_function(state, &context, &path, target, func_expression)}
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::Call(call_expression) => rsx! {
+                        div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                            if allow_kind_change {
+                                {
+                                    expression_selector(
+                                        state,
+                                        path.clone(),
+                                        target,
+                                        &current_selection,
+                                        &selector_options,
+                                    )
+                                }
+                            }
+                            {render_call(state, &context, &path, target, call_expression)}
+                        }
+                    },
+                    definy_event::event::Expression::TypeFunction(type_func_expression) => {
+                        rsx! {
+                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                                if allow_kind_change {
+                                    {
+                                        expression_selector(
+                                            state,
+                                            path.clone(),
+                                            target,
+                                            &current_selection,
+                                            &selector_options,
+                                        )
+                                    }
+                                }
+                                {render_type_function(state, &context, &path, target, type_func_expression)}
+                            }
+                        }
+                    }
                 }
             }
         }

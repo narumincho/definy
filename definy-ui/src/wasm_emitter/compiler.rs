@@ -2,13 +2,14 @@ use std::collections::HashMap;
 
 use definy_event::event::*;
 
-use super::bytecode::*;
+use super::{bytecode::*, function_ops::PendingFunction};
 
 pub(crate) struct CompileContext<'a> {
     events: &'a [crate::app_state::EventWithHash],
     static_data: Vec<u8>,
     current_static_offset: u32,
     visited_parts: Vec<definy_event::EventHashId>,
+    pub(crate) pending_functions: Vec<PendingFunction>,
 }
 
 impl<'a> CompileContext<'a> {
@@ -18,6 +19,7 @@ impl<'a> CompileContext<'a> {
             static_data: Vec::new(),
             current_static_offset: 1024,
             visited_parts: Vec::new(),
+            pending_functions: Vec::new(),
         }
     }
 
@@ -81,6 +83,17 @@ pub fn compile_expression_to_wasm(
     // Append function end
     code_bytes.push(END);
 
+    // Compile pending functions
+    let mut compiled_function_bodies = Vec::new();
+    let mut func_idx = 0;
+    while func_idx < ctx.pending_functions.len() {
+        let pending = ctx.pending_functions[func_idx].clone();
+        func_idx += 1;
+
+        let func_body = super::function_ops::compile_pending_function(&pending, &mut ctx)?;
+        compiled_function_bodies.push(func_body);
+    }
+
     // Assemble full Wasm binary module
     let mut module = Vec::new();
     module.extend_from_slice(&WASM_MAGIC);
@@ -88,18 +101,36 @@ pub fn compile_expression_to_wasm(
 
     // 1. Type Section:
     // Type 0: () -> i32 (returns pointer to Value in memory)
-    let type_section = vec![1, 0x60, 0, 1, I32];
+    // Type 1: (i32, i32) -> i32 (function with env_ptr and arg_ptr returning Value pointer)
+    let mut type_section = Vec::new();
+    type_section.push(2); // 2 types
+    type_section.extend_from_slice(&[0x60, 0, 1, I32]);
+    type_section.extend_from_slice(&[0x60, 2, I32, I32, 1, I32]);
     emit_section(&mut module, TYPE_SECTION, &type_section);
 
-    // 2. Function Section: 1 function of type 0
-    let function_section = vec![1, 0];
+    // 2. Function Section:
+    let num_funcs = compiled_function_bodies.len();
+    let mut function_section = Vec::new();
+    encode_u32_leb128(&mut function_section, (1 + num_funcs) as u32);
+    function_section.push(0); // function 0 is evaluate (type 0)
+    for _ in 0..num_funcs {
+        function_section.push(1); // function 1.. are compiled functions (type 1)
+    }
     emit_section(&mut module, FUNCTION_SECTION, &function_section);
 
-    // 3. Memory Section: 1 memory, min 2 pages (128KB)
+    // 3. Table Section:
+    let mut table_section = Vec::new();
+    table_section.push(1); // 1 table
+    table_section.push(FUNCREF);
+    table_section.push(0x00); // limits: flag 0 (min only)
+    encode_u32_leb128(&mut table_section, num_funcs.max(1) as u32);
+    emit_section(&mut module, TABLE_SECTION, &table_section);
+
+    // 4. Memory Section: 1 memory, min 2 pages (128KB)
     let memory_section = vec![1, 0x00, 2];
     emit_section(&mut module, MEMORY_SECTION, &memory_section);
 
-    // 4. Global Section:
+    // 5. Global Section:
     // Global 0: mut i32 = HEAP_START_OFFSET (bump heap pointer)
     let mut global_section = Vec::new();
     global_section.push(1); // 1 global
@@ -110,9 +141,7 @@ pub fn compile_expression_to_wasm(
     global_section.push(END);
     emit_section(&mut module, GLOBAL_SECTION, &global_section);
 
-    // 5. Export Section:
-    // Export "evaluate" (function 0)
-    // Export "memory" (memory 0)
+    // 6. Export Section:
     let mut export_section = Vec::new();
     export_section.push(2); // 2 exports
 
@@ -130,26 +159,45 @@ pub fn compile_expression_to_wasm(
 
     emit_section(&mut module, EXPORT_SECTION, &export_section);
 
-    // 6. Code Section:
+    // 7. Element Section: initialize Table with Function indices 1..=num_funcs
+    if num_funcs > 0 {
+        let mut element_section = Vec::new();
+        element_section.push(1); // 1 segment
+        element_section.push(0); // table index 0
+        element_section.push(I32_CONST);
+        encode_i32_sleb128(&mut element_section, 0); // table offset 0
+        element_section.push(END);
+        encode_u32_leb128(&mut element_section, num_funcs as u32);
+        for f in 0..num_funcs {
+            encode_u32_leb128(&mut element_section, (1 + f) as u32);
+        }
+        emit_section(&mut module, ELEMENT_SECTION, &element_section);
+    }
+
+    // 8. Code Section:
     let mut code_section = Vec::new();
-    code_section.push(1); // 1 function body
+    encode_u32_leb128(&mut code_section, (1 + num_funcs) as u32);
 
     let mut func_body = Vec::new();
-    let locals_count = count_locals(expression) + 64; // allocate ample i32 locals for temps & variables
+    let locals_count = count_locals(expression) + next_local_idx + 64;
     func_body.push(2); // 2 local declaration groups
     encode_u32_leb128(&mut func_body, 1);
     func_body.push(I64); // local 0 is i64 (temp for number arithmetic)
     encode_u32_leb128(&mut func_body, locals_count);
     func_body.push(I32); // locals 1 .. 1 + locals_count are i32 (pointers / temp values)
-
     func_body.extend_from_slice(&code_bytes);
 
     encode_u32_leb128(&mut code_section, func_body.len() as u32);
     code_section.extend_from_slice(&func_body);
 
+    for f_body in &compiled_function_bodies {
+        encode_u32_leb128(&mut code_section, f_body.len() as u32);
+        code_section.extend_from_slice(f_body);
+    }
+
     emit_section(&mut module, CODE_SECTION, &code_section);
 
-    // 7. Data Section:
+    // 9. Data Section:
     if !ctx.static_data.is_empty() {
         let mut data_section = Vec::new();
         data_section.push(1); // 1 segment
@@ -541,10 +589,17 @@ pub(crate) fn emit_expression(
                 ));
             }
         }
+        Expression::Function(f) => {
+            super::function_ops::emit_function(f, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Call(c) => {
+            super::function_ops::emit_call(c, out, env, next_local_idx, ctx)?;
+        }
         Expression::TypeNumber
         | Expression::TypeString
         | Expression::TypeBoolean
-        | Expression::TypeList(_) => {
+        | Expression::TypeList(_)
+        | Expression::TypeFunction(_) => {
             return Err("Type expressions cannot be evaluated at runtime".into());
         }
         Expression::Compiler(_) => {
@@ -686,12 +741,12 @@ fn emit_alloc_bool_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
     encode_u32_leb128(out, res_ptr_local);
 }
 
-fn encode_mem_arg(out: &mut Vec<u8>, align: u32, offset: u32) {
+pub(crate) fn encode_mem_arg(out: &mut Vec<u8>, align: u32, offset: u32) {
     encode_u32_leb128(out, align);
     encode_u32_leb128(out, offset);
 }
 
-fn count_locals(expr: &Expression) -> u32 {
+pub(crate) fn count_locals(expr: &Expression) -> u32 {
     match expr {
         Expression::Let(LetExpression { value, body, .. }) => {
             8 + count_locals(value) + count_locals(body)
@@ -731,6 +786,8 @@ fn count_locals(expr: &Expression) -> u32 {
                 .sum::<u32>()
         }
         Expression::Constructor(c) => count_locals(c.value.as_ref()),
+        Expression::Function(f) => 6 + count_locals(&f.body),
+        Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
         _ => 2,
     }
 }

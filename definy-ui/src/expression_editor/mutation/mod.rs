@@ -47,6 +47,11 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::End => "ED".to_string(),
             PathStep::Index => "IX".to_string(),
             PathStep::Item => "IT".to_string(),
+            PathStep::FunctionBody => "FB".to_string(),
+            PathStep::CallFunction => "CF".to_string(),
+            PathStep::CallArgument => "CA".to_string(),
+            PathStep::TypeFunctionParameter => "TFP".to_string(),
+            PathStep::TypeFunctionReturn => "TFR".to_string(),
         })
         .collect::<Vec<String>>()
         .join("-")
@@ -245,6 +250,30 @@ pub fn get_mut_expression_at_path<'a>(
         definy_event::event::Expression::Constructor(constructor_expression) => match path[0] {
             PathStep::ConstructorValue => {
                 get_mut_expression_at_path(constructor_expression.value.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Function(func_expression) => match path[0] {
+            PathStep::FunctionBody => {
+                get_mut_expression_at_path(func_expression.body.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Call(call_expression) => match path[0] {
+            PathStep::CallFunction | PathStep::Left => {
+                get_mut_expression_at_path(call_expression.function.as_mut(), &path[1..])
+            }
+            PathStep::CallArgument | PathStep::Right => {
+                get_mut_expression_at_path(call_expression.argument.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::TypeFunction(type_func_expression) => match path[0] {
+            PathStep::TypeFunctionParameter | PathStep::Left => {
+                get_mut_expression_at_path(type_func_expression.parameter.as_mut(), &path[1..])
+            }
+            PathStep::TypeFunctionReturn | PathStep::Right => {
+                get_mut_expression_at_path(type_func_expression.return_type.as_mut(), &path[1..])
             }
             _ => None,
         },

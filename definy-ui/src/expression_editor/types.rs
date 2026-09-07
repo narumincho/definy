@@ -30,6 +30,10 @@ pub enum ExpressionType {
     TypePart(EventHashId),
     List(Box<ExpressionType>),
     Record,
+    Function {
+        parameter: Box<ExpressionType>,
+        return_type: Box<ExpressionType>,
+    },
     Unknown,
 }
 
@@ -43,6 +47,10 @@ impl ExpressionType {
             ExpressionType::TypePart(hash) => format!("TypePart({})", hash),
             ExpressionType::List(item) => format!("list<{}>", item.text()),
             ExpressionType::Record => "Record".to_string(),
+            ExpressionType::Function {
+                parameter,
+                return_type,
+            } => format!("{} -> {}", parameter.text(), return_type.text()),
             ExpressionType::Unknown => "Unknown".to_string(),
         }
     }

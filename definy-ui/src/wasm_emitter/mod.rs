@@ -1,5 +1,6 @@
 pub mod bytecode;
 pub mod compiler;
+pub mod function_ops;
 pub mod list_ops;
 pub mod memory;
 pub mod string_ops;

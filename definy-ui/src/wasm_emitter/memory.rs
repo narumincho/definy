@@ -73,6 +73,10 @@ pub fn read_value_from_memory(memory: &[u8], ptr: usize) -> Result<Value, &'stat
             }
             Ok(Value::Record(items))
         }
+        5 => {
+            // Function / Closure (table_idx at ptr + 4, env_ptr at ptr + 8)
+            Ok(Value::Function)
+        }
         _ => Err("Unknown value tag in Wasm memory"),
     }
 }

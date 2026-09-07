@@ -21,6 +21,16 @@ pub(crate) fn part_type_text(part_type: &definy_event::event::PartType) -> Strin
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
+        definy_event::event::PartType::Function {
+            parameter,
+            return_type,
+        } => {
+            format!(
+                "{} -> {}",
+                part_type_text(parameter.as_ref()),
+                part_type_text(return_type.as_ref())
+            )
+        }
     }
 }
 
@@ -709,6 +719,9 @@ fn current_part_type_selection(
         }
         Some(definy_event::event::PartType::List(_)) => {
             find_type_part("List").unwrap_or_else(|| "list".to_string())
+        }
+        Some(definy_event::event::PartType::Function { .. }) => {
+            find_type_part("Function").unwrap_or_else(|| "function".to_string())
         }
     }
 }

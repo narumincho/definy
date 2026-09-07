@@ -181,6 +181,11 @@ pub fn selector_options(
         ),
         ("expr:if".to_string(), "If\tSyntax\t".to_string()),
         ("expr:let".to_string(), "Let\tSyntax\t".to_string()),
+        (
+            "expr:function".to_string(),
+            "Function (fn x -> ...)\tSyntax\t".to_string(),
+        ),
+        ("expr:call".to_string(), "Call (f x)\tSyntax\t".to_string()),
     ]);
 
     // Type constructors
@@ -391,6 +396,8 @@ pub(crate) fn current_selection_value(
                         "expr:number".to_string()
                     }
                     definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
+                    definy_event::event::CompilerBuiltin::Function => "expr:function".to_string(),
+                    definy_event::event::CompilerBuiltin::Call => "expr:call".to_string(),
                 })
         }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
@@ -405,6 +412,17 @@ pub(crate) fn current_selection_value(
             "expr:constructor:{}",
             constructor_expression.type_part_definition_event_hash
         ),
+        definy_event::event::Expression::Function(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Function)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:function".to_string())
+        }
+        definy_event::event::Expression::Call(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Call)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:call".to_string())
+        }
+        definy_event::event::Expression::TypeFunction(_) => "expr:type:function".to_string(),
         definy_event::event::Expression::PartReference(part_ref) => {
             format!("ref:global:{}", part_ref.part_definition_event_hash)
         }

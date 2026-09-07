@@ -118,6 +118,18 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 max_local_variable_id(constructor_expression.value.as_ref())
             }
+            definy_event::event::Expression::Function(func_expression) => func_expression
+                .parameter_id
+                .max(max_local_variable_id(func_expression.body.as_ref())),
+            definy_event::event::Expression::Call(call_expression) => {
+                max_local_variable_id(call_expression.function.as_ref())
+                    .max(max_local_variable_id(call_expression.argument.as_ref()))
+            }
+            definy_event::event::Expression::TypeFunction(type_func_expression) => {
+                max_local_variable_id(type_func_expression.parameter.as_ref()).max(
+                    max_local_variable_id(type_func_expression.return_type.as_ref()),
+                )
+            }
             definy_event::event::Expression::Compiler(_) => 0,
         }
     }

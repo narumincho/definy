@@ -26,6 +26,11 @@ pub enum PathStep {
     End,
     Index,
     Item,
+    FunctionBody,
+    CallFunction,
+    CallArgument,
+    TypeFunctionParameter,
+    TypeFunctionReturn,
 }
 
 impl std::fmt::Display for PathStep {
@@ -46,6 +51,11 @@ impl std::fmt::Display for PathStep {
             PathStep::End => "End",
             PathStep::Index => "Index",
             PathStep::Item => "Item",
+            PathStep::FunctionBody => "FunctionBody",
+            PathStep::CallFunction => "CallFunction",
+            PathStep::CallArgument => "CallArgument",
+            PathStep::TypeFunctionParameter => "TypeFunctionParameter",
+            PathStep::TypeFunctionReturn => "TypeFunctionReturn",
         };
         write!(f, "{}", s)
     }
@@ -86,6 +96,16 @@ impl PathStep {
             Some(PathStep::Index)
         } else if s == "Item" {
             Some(PathStep::Item)
+        } else if s == "FunctionBody" {
+            Some(PathStep::FunctionBody)
+        } else if s == "CallFunction" {
+            Some(PathStep::CallFunction)
+        } else if s == "CallArgument" {
+            Some(PathStep::CallArgument)
+        } else if s == "TypeFunctionParameter" {
+            Some(PathStep::TypeFunctionParameter)
+        } else if s == "TypeFunctionReturn" {
+            Some(PathStep::TypeFunctionReturn)
         } else {
             None
         }
