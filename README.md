@@ -57,7 +57,7 @@ cargo run -p definy-build && cargo run -p definy-server
 Dioxus CLI (`dx`) を使用してホットリロード付きで Web クライアントを開発・即座に画面確認できます。
 バックエンド API (`definy-server`) と通信する場合は、`definy-server` を別ターミナルで起動します（ポート 8080 からアクセス時はデフォルトで `http://localhost:8000` に接続します。接続先を変更したい場合は環境変数 `DEFINY_API_URL` を指定可能です）。
 
-事前準備 (初回のみ):
+事前準備 (初回のみ): https://dioxuslabs.com/learn/0.7/getting_started/#install-the-dioxus-cli
 ```sh
 curl -sSL https://dioxus.dev/install.sh | bash
 ```
