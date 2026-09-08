@@ -48,6 +48,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
     use_effect(move || {
+        #[cfg(target_arch = "wasm32")]
         spawn(async move {
             let mut state_sig = use_context::<Signal<AppState>>();
             if collect_module_snapshots(&state_sig.read()).is_empty() {
@@ -390,9 +391,9 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         }
                         let expression = state_val.part_definition_form.composing_expression.clone();
                         let force_offline = state_val.force_offline;
-                        spawn(async move {
+                        let fut = async move {
                             if let Some(module_binary) = auto_create_module_binary {
-                                let _ = crate::fetch::post_event_with_queue(
+                                let _res = crate::fetch::post_event_with_queue(
                                         &module_binary,
                                         force_offline,
                                     )
@@ -413,10 +414,18 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                     move |next, record| {
                                         if record.status == crate::local_event::LocalEventStatus::Sent {
                                             next.part_definition_form.eval_result = None;
+                                            next.part_definition_form.is_form_open = false;
+                                            next.part_definition_form.part_name_input = String::new();
+                                            next.part_definition_form.part_description_input = String::new();
+                                            next.part_definition_form.composing_expression = None;
                                         } else {
                                             next.part_definition_form.eval_result = Some(
                                                 match record.status {
                                                     crate::local_event::LocalEventStatus::Queued => {
+                                                        next.part_definition_form.is_form_open = false;
+                                                        next.part_definition_form.part_name_input = String::new();
+                                                        next.part_definition_form.part_description_input = String::new();
+                                                        next.part_definition_form.composing_expression = None;
                                                         language
                                                             .label(
                                                                 "PartDefinition queued (offline)",
@@ -441,12 +450,11 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                     },
                                 )
                                 .await;
-                        });
-                        let mut write_state = state_sig.write();
-                        write_state.part_definition_form.is_form_open = false;
-                        write_state.part_definition_form.part_name_input = String::new();
-                        write_state.part_definition_form.part_description_input = String::new();
-                        write_state.part_definition_form.composing_expression = None;
+                        };
+                        #[cfg(target_arch = "wasm32")]
+                        wasm_bindgen_futures::spawn_local(fut);
+                        #[cfg(not(target_arch = "wasm32"))]
+                        spawn(fut);
                     },
                     "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
                 }

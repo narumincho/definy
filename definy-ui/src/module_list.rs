@@ -192,7 +192,7 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                         return;
                     }
                     let force_offline = state_val.force_offline;
-                    spawn(async move {
+                    let fut = async move {
                         crate::event_submit::submit_event(
                                 definy_event::event::EventContent::ModuleDefinition(definy_event::event::ModuleDefinitionEvent {
                                     module_name: module_name.into(),
@@ -205,10 +205,16 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                                 move |next, record| {
                                     if record.status == crate::local_event::LocalEventStatus::Sent {
                                         next.module_definition_form.result_message = None;
+                                        next.module_definition_form.is_form_open = false;
+                                        next.module_definition_form.module_name_input = String::new();
+                                        next.module_definition_form.module_description_input = String::new();
                                     } else {
                                         next.module_definition_form.result_message = Some(
                                             match record.status {
                                                 crate::local_event::LocalEventStatus::Queued => {
+                                                    next.module_definition_form.is_form_open = false;
+                                                    next.module_definition_form.module_name_input = String::new();
+                                                    next.module_definition_form.module_description_input = String::new();
                                                     language
                                                         .label(
                                                             "ModuleDefinition queued (offline)",
@@ -233,12 +239,11 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                                 },
                             )
                             .await;
-                    });
-                    let mut write_state = state_sig.write();
-                    write_state.module_definition_form.is_form_open = false;
-                    write_state.module_definition_form.module_name_input = String::new();
-                    write_state.module_definition_form.module_description_input = String::new();
-                    write_state.module_definition_form.result_message = None;
+                    };
+                    #[cfg(target_arch = "wasm32")]
+                    wasm_bindgen_futures::spawn_local(fut);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    spawn(fut);
                 },
                 "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
             }

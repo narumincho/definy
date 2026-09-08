@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
 
 use crate::{
@@ -371,10 +372,13 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                         r#type: "button",
                         style: "padding: 0.4rem 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
                         onclick: {
+                            #[cfg(target_arch = "wasm32")]
                             let key_to_copy = dialog_state.generated_key.clone();
                             move |_| {
+                                #[cfg(target_arch = "wasm32")]
                                 if let Some(window) = web_sys::window()
-                                    && let Some(key) = &key_to_copy {
+                                    && let Some(key) = &key_to_copy
+                                {
                                     let _ = window
                                         .navigator()
                                         .clipboard()
@@ -447,6 +451,7 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
 }
 
 fn dialog_close() {
+    #[cfg(target_arch = "wasm32")]
     if let Some(dlg) = web_sys::window()
         .and_then(|w| w.document())
         .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))

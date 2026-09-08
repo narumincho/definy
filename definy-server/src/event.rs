@@ -135,12 +135,21 @@ pub async fn handle_events_post(
         ApiError::BadRequest("Failed to parse or verify CBOR".to_string())
     })?;
 
+    let event_type = strum::IntoDiscriminant::discriminant(&data.content);
+    println!(
+        "Received POST /events: event_type={:?}, account_id={}",
+        event_type,
+        hex::encode(data.account_id.0.as_bytes())
+    );
+
     crate::db::save_event(&data, &signature, &body, address, &db)
         .await
         .map_err(|e| {
-            eprintln!("Failed to save event: {:?}", e);
-            ApiError::DatabaseUnavailable
+            eprintln!("Failed to save event to database: {:?}", e);
+            ApiError::Internal(format!("Failed to save event: {:?}", e))
         })?;
+
+    println!("Successfully saved event: event_type={:?}", event_type);
 
     Ok((
         StatusCode::OK,

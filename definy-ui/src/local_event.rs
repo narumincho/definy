@@ -1,11 +1,11 @@
-#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub enum LocalEventStatus {
     Queued,
     Sent,
     Failed,
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct LocalEventRecord {
     pub hash: definy_event::EventHashId,
     pub event_binary: Vec<u8>,

@@ -121,9 +121,11 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                 current_value: current_filter.clone(),
                 options: filter_options.clone(),
                 on_change: {
+                    #[cfg(target_arch = "wasm32")]
                     let context = context.clone();
-                    move |val: String| {
-                        let event_type = match val.as_str() {
+                    move |_val: String| {
+                        #[cfg(target_arch = "wasm32")]
+                        let event_type = match _val.as_str() {
                             "create_account" => Some(EventType::CreateAccount),
                             "change_profile" => Some(EventType::ChangeProfile),
                             "part_definition" => Some(EventType::PartDefinition),
@@ -132,11 +134,13 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                             "module_update" => Some(EventType::ModuleUpdate),
                             _ => None,
                         };
+                        #[cfg(target_arch = "wasm32")]
                         let url = PageContext::build_url(
                             &crate::Location::Home,
                             context.language.to_code(),
                             event_type,
                         );
+                        #[cfg(target_arch = "wasm32")]
                         if let Some(window) = web_sys::window() {
                             let _ = window.location().set_href(&url);
                         }

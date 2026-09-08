@@ -221,59 +221,19 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
 async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let path = uri.path();
     let trimmed_path = path.trim_start_matches('/');
+    let clean_path = trimmed_path
+        .strip_prefix("pkg/")
+        .or_else(|| trimmed_path.strip_prefix("wasm/"))
+        .unwrap_or(trimmed_path);
 
-    let js = resolve_client_js();
-    if trimmed_path == js.hash
-        || trimmed_path == JAVASCRIPT_HASH
-        || trimmed_path == "definy_client.js"
-    {
-        return (
-            StatusCode::OK,
-            [
-                ("Content-Type", js.content_type),
-                ("Cache-Control", "no-cache"),
-            ],
-            Bytes::from(js.bytes),
-        )
-            .into_response();
-    }
-
-    let wasm = resolve_client_wasm();
-    if trimmed_path == wasm.hash
-        || trimmed_path == WASM_HASH
-        || trimmed_path == "definy_client_bg.wasm"
-    {
-        return (
-            StatusCode::OK,
-            [
-                ("Content-Type", wasm.content_type),
-                ("Cache-Control", "no-cache"),
-            ],
-            Bytes::from(wasm.bytes),
-        )
-            .into_response();
-    }
-
-    let icon = resolve_icon();
-    if trimmed_path == icon.hash || trimmed_path == ICON_HASH || trimmed_path == "icon.png" {
-        return (
-            StatusCode::OK,
-            [
-                ("Content-Type", icon.content_type),
-                ("Cache-Control", "no-cache"),
-            ],
-            Bytes::from(icon.bytes),
-        )
-            .into_response();
-    }
-
-    if let Some(snippet_path) = trimmed_path.strip_prefix("snippets/") {
+    if let Some(pos) = trimmed_path.find("snippets/") {
+        let snippet_path = &trimmed_path[pos + "snippets/".len()..];
         if let Some(contents) = resolve_snippet(snippet_path) {
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", "application/javascript; charset=utf-8"),
-                    ("Cache-Control", "no-cache"),
+                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
                 ],
                 Bytes::from(contents),
             )
@@ -286,6 +246,57 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
             )
                 .into_response();
         }
+    }
+
+    let js = resolve_client_js();
+    let js_file_with_ext = format!("{}.js", js.hash);
+    if clean_path == js.hash
+        || clean_path == JAVASCRIPT_HASH
+        || clean_path == "definy_client.js"
+        || clean_path == js_file_with_ext
+        || clean_path.ends_with("definy_client.js")
+    {
+        return (
+            StatusCode::OK,
+            [
+                ("Content-Type", js.content_type),
+                ("Cache-Control", "no-cache, no-store, must-revalidate"),
+            ],
+            Bytes::from(js.bytes),
+        )
+            .into_response();
+    }
+
+    let wasm = resolve_client_wasm();
+    let wasm_file_with_ext = format!("{}.wasm", wasm.hash);
+    if clean_path == wasm.hash
+        || clean_path == WASM_HASH
+        || clean_path == "definy_client_bg.wasm"
+        || clean_path == wasm_file_with_ext
+        || clean_path.ends_with("definy_client_bg.wasm")
+    {
+        return (
+            StatusCode::OK,
+            [
+                ("Content-Type", wasm.content_type),
+                ("Cache-Control", "no-cache, no-store, must-revalidate"),
+            ],
+            Bytes::from(wasm.bytes),
+        )
+            .into_response();
+    }
+
+    let icon = resolve_icon();
+    if clean_path == icon.hash || clean_path == ICON_HASH || clean_path == "icon.png" {
+        return (
+            StatusCode::OK,
+            [
+                ("Content-Type", icon.content_type),
+                ("Cache-Control", "no-cache, no-store, must-revalidate"),
+            ],
+            Bytes::from(icon.bytes),
+        )
+            .into_response();
     }
 
     let accepts_html = headers

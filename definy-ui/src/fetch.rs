@@ -11,6 +11,7 @@ pub fn api_base_url() -> String {
     }
 
     // 2. In browser runtime, check query parameter or dev port default
+    #[cfg(target_arch = "wasm32")]
     if let Some(window) = web_sys::window() {
         if let Ok(search) = window.location().search() {
             for part in search.trim_start_matches('?').split('&') {
@@ -181,13 +182,23 @@ pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
     let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
     let base = api_base_url();
     let url = format!("{}/events", base);
-    let response_raw =
-        wasm_bindgen_futures::JsFuture::from(window.fetch_with_str_and_init(&url, &request_init))
-            .await
-            .map_err(js_error_to_anyhow)?;
+    let response_raw = match wasm_bindgen_futures::JsFuture::from(
+        window.fetch_with_str_and_init(&url, &request_init),
+    )
+    .await
+    {
+        Ok(val) => val,
+        Err(err) => {
+            web_sys::console::error_1(&format!("fetch POST {} failed: {:?}", url, err).into());
+            return Err(js_error_to_anyhow(err));
+        }
+    };
 
     let response: web_sys::Response =
         wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
+    web_sys::console::log_1(
+        &format!("fetch POST {} returned status: {}", url, response.status()).into(),
+    );
     Ok(response.status())
 }
 
