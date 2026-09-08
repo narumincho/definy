@@ -16,13 +16,27 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                 h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Modules\", \"モジュール\", \"Moduloj\")}"
                 }
-                if state.current_key.is_some() && !state.module_definition_form.is_form_open {
+                if !state.module_definition_form.is_form_open {
                     button {
                         r#type: "button",
                         style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                         onclick: move |_| {
                             let mut state_sig = use_context::<Signal<AppState>>();
-                            state_sig.write().module_definition_form.is_form_open = true;
+                            if state_sig.read().current_key.is_none() {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let _ = web_sys::window()
+                                        .and_then(|w| w.document())
+                                        .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
+                                        .and_then(|el| {
+                                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el)
+                                                .ok()
+                                        })
+                                        .map(|dlg| dlg.show_modal());
+                                }
+                            } else {
+                                state_sig.write().module_definition_form.is_form_open = true;
+                            }
                         },
                         "{context.language.label(\"+ Create Module\", \"+ モジュールを作成\", \"+ Krei modulon\")}"
                     }

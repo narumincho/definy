@@ -47,21 +47,80 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
     let account_name_map = state.account_name_map();
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
+    use_effect(move || {
+        spawn(async move {
+            let mut state_sig = use_context::<Signal<AppState>>();
+            if collect_module_snapshots(&state_sig.read()).is_empty() {
+                if let Ok(events) = crate::fetch::get_events(
+                    Some(definy_event::event::EventType::ModuleDefinition),
+                    Some(100),
+                    Some(0),
+                )
+                .await
+                {
+                    let mut next = state_sig.read().clone();
+                    for (hash, event) in events {
+                        next.event_cache.insert(hash, event);
+                    }
+                    state_sig.set(next);
+                }
+            }
+        });
+    });
+
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
             div { style: "display: flex; justify-content: space-between; align-items: center;",
                 h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Parts\", \"パーツ\", \"Partoj\")}"
                 }
-                if state.current_key.is_some() && !state.part_definition_form.is_form_open {
+                if !state.part_definition_form.is_form_open {
                     button {
                         r#type: "button",
                         style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                         onclick: move |_| {
                             let mut state_sig = use_context::<Signal<AppState>>();
-                            state_sig.write().part_definition_form.is_form_open = true;
+                            if state_sig.read().current_key.is_none() {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let _ = web_sys::window()
+                                        .and_then(|w| w.document())
+                                        .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
+                                        .and_then(|el| {
+                                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el)
+                                                .ok()
+                                        })
+                                        .map(|dlg| dlg.show_modal());
+                                }
+                            } else {
+                                state_sig.write().part_definition_form.is_form_open = true;
+                            }
                         },
                         "{context.language.label(\"+ Create Part\", \"+ パーツを作成\", \"+ Krei parton\")}"
+                    }
+                }
+            }
+            if state.current_key.is_none() && !state.part_definition_form.is_form_open {
+                div { style: "padding: 0.5rem 0.8rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;",
+                    span {
+                        "{context.language.label(\"Log in or sign up to create and edit parts.\", \"パーツの作成や編集を行うにはログインまたはサインアップが必要です。\", \"Ensalutu aŭ registriĝu por krei kaj redakti partojn.\")}"
+                    }
+                    button {
+                        r#type: "button",
+                        style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); cursor: pointer;",
+                        onclick: move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                let _ = web_sys::window()
+                                    .and_then(|w| w.document())
+                                    .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
+                                    .and_then(|el| {
+                                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok()
+                                    })
+                                    .map(|dlg| dlg.show_modal());
+                            }
+                        },
+                        "{context.language.label(\"Log In / Sign Up\", \"ログイン / サインアップ\", \"Ensaluti / Registriĝi\")}"
                     }
                 }
             }
@@ -226,6 +285,11 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                     }
                 }
             }
+            if let Some(result) = &state.part_definition_form.eval_result {
+                div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
+                    "{result}"
+                }
+            }
             div { style: "display: flex; gap: 0.45rem;",
                 if state.part_definition_form.composing_expression.is_some() {
                     button {
@@ -278,11 +342,19 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         let key = if let Some(key) = &state_val.current_key {
                             key.clone()
                         } else {
+                            state_sig.write().part_definition_form.eval_result = Some(
+                                language
+                                    .label(
+                                        "Error: log in to create parts",
+                                        "エラー: パーツを作成するにはログインしてください",
+                                        "Eraro: ensalutu por krei partojn",
+                                    )
+                                    .to_string(),
+                            );
                             return;
                         };
                         let part_name = state_val
                             .part_definition_form
-
                             .part_name_input
                             .trim()
                             .to_string();
@@ -294,17 +366,36 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                             .module_definition_event_hash
                             .clone()
                             .or_else(|| modules.first().map(|m| m.definition_event_hash.clone()));
-                        let Some(module_definition_event_hash) = module_definition_event_hash else {
-                            state_sig.write().part_definition_form.eval_result = Some(
-                                language
-                                    .label(
-                                        "Error: module is required (create a module first)",
-                                        "エラー: モジュールを選択してください (先にモジュールを作成してください)",
-                                        "Eraro: modulo estas bezonata (kreu modulon unue)",
-                                    )
-                                    .to_string(),
-                            );
-                            return;
+
+                        let (module_hash, auto_create_module_binary) = if let Some(hash) = module_definition_event_hash {
+                            (hash, None)
+                        } else {
+                            // If no modules exist yet, automatically create a default "main" module
+                            let module_event = definy_event::event::Event {
+                                account_id: definy_event::event::AccountId(key.verifying_key()),
+                                time: chrono::Utc::now(),
+                                content: definy_event::event::EventContent::ModuleDefinition(definy_event::event::ModuleDefinitionEvent {
+                                    module_name: "main".into(),
+                                    description: definy_event::event::Description::localized(
+                                        vec![
+                                            ("en", "Default main module"),
+                                            ("ja", "デフォルトのメインモジュール"),
+                                        ],
+                                    ),
+                                }),
+                            };
+                            match definy_event::sign_and_serialize(module_event, &key) {
+                                Ok(binary) => {
+                                    let hash = EventHashId::from_bytes(&binary);
+                                    (hash, Some(binary))
+                                }
+                                Err(err) => {
+                                    state_sig.write().part_definition_form.eval_result = Some(
+                                        format!("Failed to create module: {err:?}"),
+                                    );
+                                    return;
+                                }
+                            }
                         };
                         if part_name.is_empty() {
                             state_sig.write().part_definition_form.eval_result = Some(
@@ -321,13 +412,20 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         let expression = state_val.part_definition_form.composing_expression.clone();
                         let force_offline = state_val.force_offline;
                         spawn(async move {
+                            if let Some(module_binary) = auto_create_module_binary {
+                                let _ = crate::fetch::post_event_with_queue(
+                                        &module_binary,
+                                        force_offline,
+                                    )
+                                    .await;
+                            }
                             crate::event_submit::submit_event(
                                     definy_event::event::EventContent::PartDefinition(definy_event::event::PartDefinitionEvent {
                                         part_name: part_name.into(),
                                         description: description.into(),
                                         part_type,
                                         expression,
-                                        module_definition_event_hash,
+                                        module_definition_event_hash: module_hash,
                                     }),
                                     key,
                                     force_offline,
@@ -370,7 +468,6 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                         write_state.part_definition_form.part_name_input = String::new();
                         write_state.part_definition_form.part_description_input = String::new();
                         write_state.part_definition_form.composing_expression = None;
-                        write_state.part_definition_form.eval_result = None;
                     },
                     "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
                 }
@@ -459,17 +556,23 @@ fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
             div { style: "font-size: 0.85rem; color: var(--text-secondary);",
                 "{context.language.label(\"Module\", \"モジュール\", \"Modulo\")}"
             }
-            crate::dropdown::SearchableDropdown {
-                name: "part-definition-module".to_string(),
-                current_value,
-                options,
-                on_change: move |val: String| {
-                    let mut state_sig = use_context::<Signal<AppState>>();
-                    state_sig.write().part_definition_form.module_definition_event_hash = EventHashId::from_str(
-                            &val,
-                        )
-                        .ok();
-                },
+            if modules.is_empty() {
+                div { style: "font-size: 0.8rem; color: var(--text-secondary); padding: 0.3rem 0;",
+                    "{context.language.label(\"No module found. A 'main' module will be created automatically.\", \"モジュールがありません。自動で 'main' モジュールが作成されます。\", \"Neniu modulo trovita. 'main' modulo estos kreita aŭtomate.\")}"
+                }
+            } else {
+                crate::dropdown::SearchableDropdown {
+                    name: "part-definition-module".to_string(),
+                    current_value,
+                    options,
+                    on_change: move |val: String| {
+                        let mut state_sig = use_context::<Signal<AppState>>();
+                        state_sig.write().part_definition_form.module_definition_event_hash = EventHashId::from_str(
+                                &val,
+                            )
+                            .ok();
+                    },
+                }
             }
         }
     }
@@ -493,10 +596,47 @@ fn RenderPartTypeEditor(
         ));
     }
 
+    options.extend([
+        (
+            "number".to_string(),
+            format!(
+                "{}\tType\t",
+                context.language.label("Number", "数値", "Nombro")
+            ),
+        ),
+        (
+            "string".to_string(),
+            format!(
+                "{}\tType\t",
+                context.language.label("String", "文字列", "Ĉeno")
+            ),
+        ),
+        (
+            "boolean".to_string(),
+            format!(
+                "{}\tType\t",
+                context.language.label("Boolean", "真偽値", "Bulea")
+            ),
+        ),
+        (
+            "list".to_string(),
+            format!(
+                "{}\tType\t",
+                context.language.label("List", "リスト", "Listo")
+            ),
+        ),
+    ]);
+
     options.extend(
         collect_part_snapshots(&state)
             .into_iter()
             .filter(|snapshot| snapshot.part_type == Some(definy_event::event::PartType::Type))
+            .filter(|snapshot| {
+                !matches!(
+                    snapshot.part_name.as_str(),
+                    "Number" | "String" | "Boolean" | "List" | "Type"
+                )
+            })
             .map(|snapshot| {
                 let value = format!("type_part:{}", snapshot.definition_event_hash);
                 (
