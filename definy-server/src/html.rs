@@ -3,6 +3,7 @@ use definy_ui::{AppState, PageContext};
 pub struct ResourceHash<'a> {
     pub js: &'a str,
     pub wasm: &'a str,
+    pub icon: &'a str,
 }
 
 pub fn render_to_html(
@@ -13,10 +14,12 @@ pub fn render_to_html(
 ) -> String {
     let title = definy_ui::document_title_text(state, context);
     let lang_code = context.language.to_code();
-    let css = include_str!("../../definy-ui/main.css");
+    let css = std::fs::read_to_string("definy-ui/main.css")
+        .unwrap_or_else(|_| include_str!("../../definy-ui/main.css").to_string());
     let ssr_id = definy_ui::SSR_INITIAL_STATE_ELEMENT_ID;
     let js_path = resource_hash.js;
     let wasm_path = resource_hash.wasm;
+    let icon_href = resource_hash.icon;
 
     let body_html = dioxus_ssr::render_element(definy_ui::render(state, context));
 
@@ -34,7 +37,6 @@ pub fn render_to_html(
 <body>
 <div id="main">{body_html}</div>
 </body>
-</html>"#,
-        icon_href = include_str!("../../web-distribution/icon.png.sha256")
+</html>"#
     )
 }

@@ -13,6 +13,8 @@ use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
 use axum::routing::get;
+use base64::Engine;
+use sha2::Digest;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 use tokio::net::TcpListener;
@@ -99,6 +101,97 @@ const ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
 static SNIPPETS_DIR: include_dir::Dir =
     include_dir::include_dir!("$CARGO_MANIFEST_DIR/../web-distribution/snippets");
 
+pub struct ResolvedAsset {
+    pub bytes: Vec<u8>,
+    pub hash: String,
+    pub content_type: &'static str,
+}
+
+pub fn resolve_client_js() -> ResolvedAsset {
+    let candidate_paths = [
+        "target/dx/definy_client/debug/web/public/wasm/definy_client.js",
+        "target/dx/definy_client/release/web/public/wasm/definy_client.js",
+        "web-distribution/definy_client.js",
+    ];
+    for p in candidate_paths {
+        if let Ok(bytes) = std::fs::read(p) {
+            let hash = sha2::Sha256::digest(&bytes);
+            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+            return ResolvedAsset {
+                bytes,
+                hash: hash_hex,
+                content_type: "application/javascript; charset=utf-8",
+            };
+        }
+    }
+    ResolvedAsset {
+        bytes: JAVASCRIPT_CONTENT.to_vec(),
+        hash: JAVASCRIPT_HASH.to_string(),
+        content_type: "application/javascript; charset=utf-8",
+    }
+}
+
+pub fn resolve_client_wasm() -> ResolvedAsset {
+    let candidate_paths = [
+        "target/dx/definy_client/debug/web/public/wasm/definy_client_bg.wasm",
+        "target/dx/definy_client/release/web/public/wasm/definy_client_bg.wasm",
+        "web-distribution/definy_client_bg.wasm",
+    ];
+    for p in candidate_paths {
+        if let Ok(bytes) = std::fs::read(p) {
+            let hash = sha2::Sha256::digest(&bytes);
+            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+            return ResolvedAsset {
+                bytes,
+                hash: hash_hex,
+                content_type: "application/wasm",
+            };
+        }
+    }
+    ResolvedAsset {
+        bytes: WASM_CONTENT.to_vec(),
+        hash: WASM_HASH.to_string(),
+        content_type: "application/wasm",
+    }
+}
+
+pub fn resolve_icon() -> ResolvedAsset {
+    let candidate_paths = ["assets/icon.png", "web-distribution/icon.png"];
+    for p in candidate_paths {
+        if let Ok(bytes) = std::fs::read(p) {
+            let hash = sha2::Sha256::digest(&bytes);
+            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+            return ResolvedAsset {
+                bytes,
+                hash: hash_hex,
+                content_type: "image/png",
+            };
+        }
+    }
+    ResolvedAsset {
+        bytes: ICON_CONTENT.to_vec(),
+        hash: ICON_HASH.to_string(),
+        content_type: "image/png",
+    }
+}
+
+pub fn resolve_snippet(snippet_path: &str) -> Option<Vec<u8>> {
+    let candidate_dirs = [
+        "target/dx/definy_client/debug/web/public/wasm/snippets",
+        "target/dx/definy_client/release/web/public/wasm/snippets",
+        "web-distribution/snippets",
+    ];
+    for dir in candidate_dirs {
+        let full = std::path::Path::new(dir).join(snippet_path);
+        if let Ok(bytes) = std::fs::read(&full) {
+            return Some(bytes);
+        }
+    }
+    SNIPPETS_DIR
+        .get_file(snippet_path)
+        .map(|f| f.contents().to_vec())
+}
+
 pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
     if let Some(db) = state.db.read().await.clone() {
         return Some(db);
@@ -129,51 +222,60 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
     let path = uri.path();
     let trimmed_path = path.trim_start_matches('/');
 
-    if trimmed_path == JAVASCRIPT_HASH {
+    let js = resolve_client_js();
+    if trimmed_path == js.hash
+        || trimmed_path == JAVASCRIPT_HASH
+        || trimmed_path == "definy_client.js"
+    {
         return (
             StatusCode::OK,
             [
-                ("Content-Type", "application/javascript; charset=utf-8"),
-                ("Cache-Control", "public, max-age=31536000, immutable"),
+                ("Content-Type", js.content_type),
+                ("Cache-Control", "no-cache"),
             ],
-            Bytes::from_static(JAVASCRIPT_CONTENT),
+            Bytes::from(js.bytes),
         )
             .into_response();
     }
 
-    if trimmed_path == WASM_HASH {
+    let wasm = resolve_client_wasm();
+    if trimmed_path == wasm.hash
+        || trimmed_path == WASM_HASH
+        || trimmed_path == "definy_client_bg.wasm"
+    {
         return (
             StatusCode::OK,
             [
-                ("Content-Type", "application/wasm"),
-                ("Cache-Control", "public, max-age=31536000, immutable"),
+                ("Content-Type", wasm.content_type),
+                ("Cache-Control", "no-cache"),
             ],
-            Bytes::from_static(WASM_CONTENT),
+            Bytes::from(wasm.bytes),
         )
             .into_response();
     }
 
-    if trimmed_path == ICON_HASH {
+    let icon = resolve_icon();
+    if trimmed_path == icon.hash || trimmed_path == ICON_HASH || trimmed_path == "icon.png" {
         return (
             StatusCode::OK,
             [
-                ("Content-Type", "image/png"),
-                ("Cache-Control", "public, max-age=31536000, immutable"),
+                ("Content-Type", icon.content_type),
+                ("Cache-Control", "no-cache"),
             ],
-            Bytes::from_static(ICON_CONTENT),
+            Bytes::from(icon.bytes),
         )
             .into_response();
     }
 
     if let Some(snippet_path) = trimmed_path.strip_prefix("snippets/") {
-        if let Some(file) = SNIPPETS_DIR.get_file(snippet_path) {
+        if let Some(contents) = resolve_snippet(snippet_path) {
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", "application/javascript; charset=utf-8"),
-                    ("Cache-Control", "public, max-age=31536000, immutable"),
+                    ("Cache-Control", "no-cache"),
                 ],
-                Bytes::from_static(file.contents()),
+                Bytes::from(contents),
             )
                 .into_response();
         } else {
@@ -290,12 +392,16 @@ async fn handle_html(
         filter_event_type,
         is_db_connected,
     );
+    let js = resolve_client_js();
+    let wasm = resolve_client_wasm();
+    let icon = resolve_icon();
     let html = html::render_to_html(
         &initial_state,
         &context,
         &html::ResourceHash {
-            js: JAVASCRIPT_HASH,
-            wasm: WASM_HASH,
+            js: &js.hash,
+            wasm: &wasm.hash,
+            icon: &icon.hash,
         },
         &ssr_initial_state_json,
     );

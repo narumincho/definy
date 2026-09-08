@@ -49,10 +49,11 @@ docker run -d --name definy-dev-db -p 8000:8000 surrealdb/surrealdb:latest start
 ### 1. インメモリDBで手軽に起動する場合 (DATABASE_URL 不要)
 
 ```sh
-cargo run -p definy-build && cargo run -p definy-server
+cargo run -p definy-server
 ```
+※ クライアントの最新 Wasm をビルドする場合は `dx build --package definy-client` を実行します（`definy-server` はディスク上の最新 Wasm/JS/CSS を自動検出して配信するため、サーバーの再起動なしでブラウザのリロードだけで反映されます）。
 
-### 2. Dioxus のホットリロードで開発する場合
+### 2. Dioxus のホットリロードで開発する場合 (推奨)
 
 Dioxus CLI (`dx`) を使用してホットリロード付きで Web クライアントを開発・即座に画面確認できます。
 バックエンド API (`definy-server`) と通信する場合は、`definy-server` を別ターミナルで起動します（ポート 8080 からアクセス時はデフォルトで `http://localhost:8000` に接続します。接続先を変更したい場合は環境変数 `DEFINY_API_URL` を指定可能です）。
@@ -76,12 +77,6 @@ dx serve --package definy-client
 
 ※ UIコード (`definy-ui`) やクライアントコードを編集・保存すると、ブラウザ上で即座に変更が反映されます。
 
-また、サーバーやビルドを含む全体の変更を検知して自動再起動したい場合は `cargo-watch` を利用することも可能です:
-```sh
-cargo install cargo-watch
-cargo watch -x "run -p definy-build" -x "run -p definy-server"
-```
-
 ### 3. SurrealDB サーバー / Surreal Cloud に接続して起動する場合
 
 環境変数を指定して起動します：
@@ -96,7 +91,6 @@ cargo watch -x "run -p definy-build" -x "run -p definy-server"
 Linux, Mac の場合
 
 ```sh
-cargo run -p definy-build
 DATABASE_URL=wss://definy-xxx.aws-aps1.surreal.cloud \
 DATABASE_USER=flyio \
 DATABASE_PASS=password \
