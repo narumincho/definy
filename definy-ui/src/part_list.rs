@@ -264,27 +264,6 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                     EditorTarget::PartDefinition,
                 )
             }
-            {
-                let expr_str = state
-                    .part_definition_form
-                    .composing_expression
-                    .as_ref()
-                    .map(expression_to_source)
-                    .unwrap_or_else(|| {
-                        context.language.label("(none)", "(なし)", "(neniu)").to_string()
-                    });
-                let current_label = format!(
-                    "{} {expr_str}",
-                    context.language.label("Current:", "現在:", "Nuna:"),
-                );
-                rsx! {
-                    div {
-                        class: "mono",
-                        style: "font-size: 0.76rem; padding: 0.3rem 0.5rem; opacity: 0.85;",
-                        "{current_label}"
-                    }
-                }
-            }
             if let Some(result) = &state.part_definition_form.eval_result {
                 div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
                     "{result}"
