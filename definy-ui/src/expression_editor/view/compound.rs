@@ -498,9 +498,7 @@ pub fn render_list_literal(
     if let Some(keys) = tabular_keys {
         rsx! {
             div { style: "display: grid; grid-template-columns: max-content repeat({keys.len()}, 1fr); gap: 0.2rem; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; overflow-x: auto;",
-                div { style: "font-weight: bold; font-size: 0.8rem; color: var(--text-secondary); padding: 0.2rem 0.5rem;",
-                    "{language.label(\"Item\", \"項目\", \"Ero\")}"
-                }
+                div { style: "font-weight: bold; font-size: 0.8rem; color: var(--text-secondary); padding: 0.2rem 0.5rem;" }
                 for key in &keys {
                     div {
                         key: "{key}",
@@ -519,8 +517,7 @@ pub fn render_list_literal(
                         rsx! {
                             div {
                                 key: "row-{index}",
-                                style: "display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0.5rem;",
-                                "{index + 1}"
+                                style: "display: flex; align-items: center; justify-content: center; padding: 0.2rem 0.5rem;",
                                 {remove_list_item_button(path.to_vec(), index, target)}
                             }
                             if let definy_event::event::Expression::TypeLiteral(record) = item {
@@ -558,7 +555,7 @@ pub fn render_list_literal(
         }
     } else {
         rsx! {
-            div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+            div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
                 for (index, item) in list_expression.items.iter().enumerate() {
                     {
                         let mut item_path = path.to_vec();
@@ -570,26 +567,23 @@ pub fn render_list_literal(
                         rsx! {
                             div {
                                 key: "list-item-{index}",
-                                style: "display: flex; flex-direction: column; gap: 0.3rem; padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm);",
-                                div { style: "display: flex; gap: 0.5rem;",
-                                    div { style: "font-size: 0.75rem; color: var(--text-secondary); flex: 1;",
-                                        "{language.label(\"Item\", \"項目\", \"Ero\")} {index + 1}"
+                                style: "display: flex; align-items: center; gap: 0.35rem; width: 100%;",
+                                div { style: "flex: 1; min-width: 0;",
+                                    {
+                                        render_expression_editor(
+                                            state,
+                                            item,
+                                            context
+                                                .child(
+                                                    item_path,
+                                                    context.scope_variables.clone(),
+                                                    context.structure_locked,
+                                                    allow_kind_for_item,
+                                                ),
+                                        )
                                     }
-                                    {remove_list_item_button(path.to_vec(), index, target)}
                                 }
-                                {
-                                    render_expression_editor(
-                                        state,
-                                        item,
-                                        context
-                                            .child(
-                                                item_path,
-                                                context.scope_variables.clone(),
-                                                context.structure_locked,
-                                                allow_kind_for_item,
-                                            ),
-                                    )
-                                }
+                                {remove_list_item_button(path.to_vec(), index, target)}
                             }
                         }
                     }

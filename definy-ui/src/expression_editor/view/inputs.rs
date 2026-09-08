@@ -262,7 +262,7 @@ pub(crate) fn remove_list_item_button(
     rsx! {
         button {
             r#type: "button",
-            style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--error); cursor: pointer;",
+            style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--error); cursor: pointer; flex-shrink: 0;",
             onclick: move |_| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let mut next = state_sig.read().clone();
@@ -270,7 +270,7 @@ pub(crate) fn remove_list_item_button(
                 remove_list_item(root_expression, path.as_slice(), item_index);
                 state_sig.set(next);
             },
-            "x"
+            "×"
         }
     }
 }
