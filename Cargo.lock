@@ -1075,12 +1075,15 @@ dependencies = [
  "rand 0.8.8",
  "serde",
  "serde_cbor 0.10.2",
+ "serde_json",
  "serde_urlencoded",
  "sha2 0.10.9",
  "strum",
  "strum_macros",
  "surrealdb",
  "tokio",
+ "tokio-stream",
+ "tower",
  "tower-http",
  "url",
  "utoipa",
@@ -5761,6 +5764,7 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
+ "tokio-util",
 ]
 
 [[package]]

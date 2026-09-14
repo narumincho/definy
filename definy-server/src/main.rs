@@ -4,6 +4,7 @@ mod error;
 mod event;
 mod extractor;
 mod html;
+pub mod mcp;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -32,6 +33,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let state = AppState {
         db: Arc::new(RwLock::new(None)),
     };
+    let mcp_session_manager = mcp::McpSessionManager::new();
 
     let port: u16 = std::env::var("PORT")
         .ok()
@@ -70,6 +72,7 @@ async fn main() -> Result<(), anyhow::Error> {
             get(event::handle_events_get).post(event::handle_events_post),
         )
         .route("/events/{hash}", get(event::handle_event_get))
+        .merge(mcp::router(mcp_session_manager))
         .fallback(handle_fallback)
         .layer(cors)
         .with_state(state);
