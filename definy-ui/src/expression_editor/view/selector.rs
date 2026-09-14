@@ -417,6 +417,9 @@ pub(crate) fn current_selection_value(
                 .unwrap_or_else(|| "expr:call".to_string())
         }
         definy_event::event::Expression::TypeFunction(_) => "expr:type:function".to_string(),
+        definy_event::event::Expression::TypeUnion(_) => "expr:type:union".to_string(),
+        definy_event::event::Expression::Variant(_) => "expr:variant".to_string(),
+        definy_event::event::Expression::Match(_) => "expr:match".to_string(),
         definy_event::event::Expression::PartReference(part_ref) => {
             format!("ref:global:{}", part_ref.part_definition_event_hash)
         }

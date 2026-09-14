@@ -31,6 +31,11 @@ pub enum PathStep {
     CallArgument,
     TypeFunctionParameter,
     TypeFunctionReturn,
+    VariantPayload,
+    MatchTarget,
+    MatchArmBody(usize),
+    MatchDefault,
+    TypeUnionVariant(usize),
 }
 
 impl std::fmt::Display for PathStep {
@@ -56,6 +61,11 @@ impl std::fmt::Display for PathStep {
             PathStep::CallArgument => "CallArgument",
             PathStep::TypeFunctionParameter => "TypeFunctionParameter",
             PathStep::TypeFunctionReturn => "TypeFunctionReturn",
+            PathStep::VariantPayload => "VariantPayload",
+            PathStep::MatchTarget => "MatchTarget",
+            PathStep::MatchArmBody(index) => return write!(f, "MatchArmBody({})", index),
+            PathStep::MatchDefault => "MatchDefault",
+            PathStep::TypeUnionVariant(index) => return write!(f, "TypeUnionVariant({})", index),
         };
         write!(f, "{}", s)
     }
@@ -106,6 +116,19 @@ impl PathStep {
             Some(PathStep::TypeFunctionParameter)
         } else if s == "TypeFunctionReturn" {
             Some(PathStep::TypeFunctionReturn)
+        } else if s == "VariantPayload" {
+            Some(PathStep::VariantPayload)
+        } else if s == "MatchTarget" {
+            Some(PathStep::MatchTarget)
+        } else if s.starts_with("MatchArmBody(") && s.ends_with(")") {
+            s[13..s.len() - 1].parse().ok().map(PathStep::MatchArmBody)
+        } else if s == "MatchDefault" {
+            Some(PathStep::MatchDefault)
+        } else if s.starts_with("TypeUnionVariant(") && s.ends_with(")") {
+            s[17..s.len() - 1]
+                .parse()
+                .ok()
+                .map(PathStep::TypeUnionVariant)
         } else {
             None
         }

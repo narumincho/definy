@@ -515,3 +515,156 @@ fn test_string_and_list_evaluation() {
         ])
     );
 }
+
+#[test]
+fn test_variant_unit_and_with_payload() {
+    use definy_event::event::*;
+
+    // Unit variant
+    let none_var = Expression::Variant(VariantExpression {
+        tag: "none".into(),
+        payload: None,
+        type_part_definition_event_hash: None,
+    });
+    assert_eq!(
+        evaluate_expression(&none_var, &[]).unwrap(),
+        crate::expression_eval::Value::Variant {
+            tag: "none".to_string(),
+            payload: None,
+        }
+    );
+    assert_eq!(expression_to_source(&none_var), "none");
+
+    // Variant with number payload
+    let some_var = Expression::Variant(VariantExpression {
+        tag: "some".into(),
+        payload: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
+        type_part_definition_event_hash: None,
+    });
+    assert_eq!(
+        evaluate_expression(&some_var, &[]).unwrap(),
+        crate::expression_eval::Value::Variant {
+            tag: "some".to_string(),
+            payload: Some(Box::new(crate::expression_eval::Value::Number(42))),
+        }
+    );
+    assert_eq!(expression_to_source(&some_var), "some(42)");
+}
+
+#[test]
+fn test_match_expression_with_payload() {
+    use definy_event::event::*;
+
+    // match some(42) {
+    //   some(val) => val + 10,
+    //   none => 0
+    // }
+    let match_expr = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Variant(VariantExpression {
+            tag: "some".into(),
+            payload: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
+            type_part_definition_event_hash: None,
+        })),
+        arms: vec![
+            MatchArm {
+                tag: "some".into(),
+                variable_id: Some(1),
+                variable_name: Some("val".into()),
+                body: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 10 })),
+                })),
+            },
+            MatchArm {
+                tag: "none".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(Expression::Number(NumberExpression { value: 0 })),
+            },
+        ],
+        default: None,
+    });
+
+    assert_eq!(
+        evaluate_expression(&match_expr, &[]).unwrap(),
+        crate::expression_eval::Value::Number(52)
+    );
+}
+
+#[test]
+fn test_match_expression_branching_to_other_arm() {
+    use definy_event::event::*;
+
+    // match none {
+    //   some(val) => val + 10,
+    //   none => 999
+    // }
+    let match_expr = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Variant(VariantExpression {
+            tag: "none".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        })),
+        arms: vec![
+            MatchArm {
+                tag: "some".into(),
+                variable_id: Some(1),
+                variable_name: Some("val".into()),
+                body: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 10 })),
+                })),
+            },
+            MatchArm {
+                tag: "none".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(Expression::Number(NumberExpression { value: 999 })),
+            },
+        ],
+        default: None,
+    });
+
+    assert_eq!(
+        evaluate_expression(&match_expr, &[]).unwrap(),
+        crate::expression_eval::Value::Number(999)
+    );
+}
+
+#[test]
+fn test_match_expression_default_arm() {
+    use definy_event::event::*;
+
+    // match other {
+    //   first => 1,
+    //   second => 2,
+    //   _ => 42
+    // }
+    let match_expr = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Variant(VariantExpression {
+            tag: "third".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        })),
+        arms: vec![
+            MatchArm {
+                tag: "first".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(Expression::Number(NumberExpression { value: 1 })),
+            },
+            MatchArm {
+                tag: "second".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(Expression::Number(NumberExpression { value: 2 })),
+            },
+        ],
+        default: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
+    });
+
+    assert_eq!(
+        evaluate_expression(&match_expr, &[]).unwrap(),
+        crate::expression_eval::Value::Number(42)
+    );
+}

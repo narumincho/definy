@@ -6,6 +6,10 @@ pub enum Value {
     List(Vec<Value>),
     Record(Vec<(String, Value)>),
     Function,
+    Variant {
+        tag: String,
+        payload: Option<Box<Value>>,
+    },
 }
 
 impl std::fmt::Display for Value {
@@ -31,6 +35,10 @@ impl std::fmt::Display for Value {
                 write!(f, "{{{}}}", source)
             }
             Value::Function => write!(f, "<function>"),
+            Value::Variant { tag, payload } => match payload {
+                Some(val) => write!(f, "{}({})", tag, val),
+                None => write!(f, "{}", tag),
+            },
         }
     }
 }
@@ -491,6 +499,65 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "{} -> {}",
                     render(type_func_expression.parameter.as_ref(), true, scope),
                     render(type_func_expression.return_type.as_ref(), false, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::TypeUnion(union_expr) => {
+                let variants = union_expr
+                    .variants
+                    .iter()
+                    .map(|v| match &v.payload_type {
+                        Some(p) => format!("{}({})", v.tag, render(p.as_ref(), false, scope)),
+                        None => v.tag.to_string(),
+                    })
+                    .collect::<Vec<String>>()
+                    .join(" | ");
+                format!("type union {}", variants)
+            }
+            definy_event::event::Expression::Variant(variant_expr) => {
+                let source = match &variant_expr.payload {
+                    Some(payload) => format!(
+                        "{}({})",
+                        variant_expr.tag,
+                        render(payload.as_ref(), false, scope)
+                    ),
+                    None => variant_expr.tag.to_string(),
+                };
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::Match(match_expr) => {
+                let arms = match_expr
+                    .arms
+                    .iter()
+                    .map(|arm| {
+                        let mut arm_scope = scope.to_vec();
+                        let pat = match (arm.variable_id, &arm.variable_name) {
+                            (Some(id), Some(name)) => {
+                                arm_scope.push((id, name.to_string()));
+                                format!("{}({})", arm.tag, name)
+                            }
+                            _ => arm.tag.to_string(),
+                        };
+                        format!(
+                            "{} => {}",
+                            pat,
+                            render(arm.body.as_ref(), false, &arm_scope)
+                        )
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                let source = format!(
+                    "match {} {{{}}}",
+                    render(match_expr.target.as_ref(), false, scope),
+                    arms
                 );
                 if is_child {
                     format!("({})", source)

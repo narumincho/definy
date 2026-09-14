@@ -1,3 +1,4 @@
+pub mod adt;
 pub mod compound;
 pub mod inputs;
 pub mod selector;
@@ -8,6 +9,7 @@ use crate::app_state::{AppState, PathStep};
 
 use super::types::ExpressionEditorContext;
 
+pub use adt::*;
 pub use compound::*;
 use inputs::*;
 pub use selector::*;
@@ -571,6 +573,60 @@ pub fn render_expression_editor(
                                     }
                                 }
                                 {render_type_function(state, &context, &path, target, type_func_expression)}
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::TypeUnion(type_union_expression) => {
+                        rsx! {
+                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                                if allow_kind_change {
+                                    {
+                                        expression_selector(
+                                            state,
+                                            path.clone(),
+                                            target,
+                                            &current_selection,
+                                            &selector_options,
+                                        )
+                                    }
+                                }
+                                {render_type_union(state, &context, &path, target, type_union_expression)}
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::Variant(variant_expression) => {
+                        rsx! {
+                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                                if allow_kind_change {
+                                    {
+                                        expression_selector(
+                                            state,
+                                            path.clone(),
+                                            target,
+                                            &current_selection,
+                                            &selector_options,
+                                        )
+                                    }
+                                }
+                                {render_variant(state, &context, &path, target, variant_expression)}
+                            }
+                        }
+                    }
+                    definy_event::event::Expression::Match(match_expression) => {
+                        rsx! {
+                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                                if allow_kind_change {
+                                    {
+                                        expression_selector(
+                                            state,
+                                            path.clone(),
+                                            target,
+                                            &current_selection,
+                                            &selector_options,
+                                        )
+                                    }
+                                }
+                                {render_match(state, &context, &path, target, match_expression)}
                             }
                         }
                     }

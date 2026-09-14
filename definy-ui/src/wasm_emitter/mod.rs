@@ -1,3 +1,4 @@
+pub mod adt_ops;
 pub mod bytecode;
 pub mod compiler;
 pub mod function_ops;

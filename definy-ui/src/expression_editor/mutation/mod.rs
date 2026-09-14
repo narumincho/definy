@@ -52,6 +52,11 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::CallArgument => "CA".to_string(),
             PathStep::TypeFunctionParameter => "TFP".to_string(),
             PathStep::TypeFunctionReturn => "TFR".to_string(),
+            PathStep::VariantPayload => "VP".to_string(),
+            PathStep::MatchTarget => "MT".to_string(),
+            PathStep::MatchArmBody(index) => format!("MAB{}", index),
+            PathStep::MatchDefault => "MD".to_string(),
+            PathStep::TypeUnionVariant(index) => format!("TUV{}", index),
         })
         .collect::<Vec<String>>()
         .join("-")
@@ -274,6 +279,50 @@ pub fn get_mut_expression_at_path<'a>(
             }
             PathStep::TypeFunctionReturn | PathStep::Right => {
                 get_mut_expression_at_path(type_func_expression.return_type.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Variant(variant_expr) => match path[0] {
+            PathStep::VariantPayload => {
+                if let Some(payload) = variant_expr.payload.as_mut() {
+                    get_mut_expression_at_path(payload.as_mut(), &path[1..])
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Match(match_expr) => match path[0] {
+            PathStep::MatchTarget => {
+                get_mut_expression_at_path(match_expr.target.as_mut(), &path[1..])
+            }
+            PathStep::MatchArmBody(index) => {
+                if index < match_expr.arms.len() {
+                    get_mut_expression_at_path(match_expr.arms[index].body.as_mut(), &path[1..])
+                } else {
+                    None
+                }
+            }
+            PathStep::MatchDefault => {
+                if let Some(default_expr) = match_expr.default.as_mut() {
+                    get_mut_expression_at_path(default_expr.as_mut(), &path[1..])
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::TypeUnion(type_union) => match path[0] {
+            PathStep::TypeUnionVariant(index) => {
+                if index < type_union.variants.len() {
+                    if let Some(payload_type) = type_union.variants[index].payload_type.as_mut() {
+                        get_mut_expression_at_path(payload_type.as_mut(), &path[1..])
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
             }
             _ => None,
         },

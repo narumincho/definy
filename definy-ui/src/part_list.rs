@@ -31,6 +31,17 @@ pub(crate) fn part_type_text(part_type: &definy_event::event::PartType) -> Strin
                 part_type_text(return_type.as_ref())
             )
         }
+        definy_event::event::PartType::Union(variants) => {
+            let var_texts = variants
+                .iter()
+                .map(|v| match &v.payload {
+                    Some(p) => format!("{}({})", v.tag, part_type_text(p.as_ref())),
+                    None => v.tag.to_string(),
+                })
+                .collect::<Vec<String>>()
+                .join(" | ");
+            format!("union<{}>", var_texts)
+        }
     }
 }
 
@@ -850,5 +861,6 @@ fn current_part_type_selection(
         Some(definy_event::event::PartType::Function { .. }) => {
             find_type_part("Function").unwrap_or_else(|| "function".to_string())
         }
+        Some(definy_event::event::PartType::Union(_)) => "union".to_string(),
     }
 }

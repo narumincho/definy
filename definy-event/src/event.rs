@@ -177,6 +177,13 @@ pub enum PartType {
         parameter: Box<PartType>,
         return_type: Box<PartType>,
     },
+    Union(Vec<UnionVariantType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnionVariantType {
+    pub tag: Box<str>,
+    pub payload: Option<Box<PartType>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -220,6 +227,9 @@ pub enum Expression {
     Function(FunctionExpression),
     Call(CallExpression),
     TypeFunction(TypeFunctionExpression),
+    TypeUnion(TypeUnionExpression),
+    Variant(VariantExpression),
+    Match(MatchExpression),
     Compiler(CompilerBuiltin),
 }
 
@@ -462,6 +472,43 @@ pub struct CallExpression {
 pub struct TypeFunctionExpression {
     pub parameter: Box<Expression>,
     pub return_type: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeUnionExpression {
+    pub variants: Vec<TypeUnionVariant>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeUnionVariant {
+    pub tag: Box<str>,
+    pub payload_type: Option<Box<Expression>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VariantExpression {
+    pub tag: Box<str>,
+    pub payload: Option<Box<Expression>>,
+    #[serde(default)]
+    pub type_part_definition_event_hash: Option<EventHashId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MatchExpression {
+    pub target: Box<Expression>,
+    pub arms: Vec<MatchArm>,
+    #[serde(default)]
+    pub default: Option<Box<Expression>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MatchArm {
+    pub tag: Box<str>,
+    #[serde(default)]
+    pub variable_id: Option<i64>,
+    #[serde(default)]
+    pub variable_name: Option<Box<str>>,
+    pub body: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

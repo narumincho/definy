@@ -151,6 +151,24 @@ pub(crate) fn collect_free_variables(
         Expression::Constructor(c) => {
             collect_free_variables(&c.value, bound, free);
         }
+        Expression::Variant(v) => {
+            if let Some(payload) = &v.payload {
+                collect_free_variables(payload, bound, free);
+            }
+        }
+        Expression::Match(m) => {
+            collect_free_variables(&m.target, bound, free);
+            for arm in &m.arms {
+                let mut arm_bound = bound.clone();
+                if let Some(var_id) = arm.variable_id {
+                    arm_bound.insert(var_id);
+                }
+                collect_free_variables(&arm.body, &mut arm_bound, free);
+            }
+            if let Some(default) = &m.default {
+                collect_free_variables(default, bound, free);
+            }
+        }
         _ => {}
     }
 }

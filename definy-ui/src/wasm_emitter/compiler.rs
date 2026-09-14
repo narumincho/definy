@@ -595,11 +595,18 @@ pub(crate) fn emit_expression(
         Expression::Call(c) => {
             super::function_ops::emit_call(c, out, env, next_local_idx, ctx)?;
         }
+        Expression::Variant(v) => {
+            super::adt_ops::emit_variant(v, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Match(m) => {
+            super::adt_ops::emit_match(m, out, env, next_local_idx, ctx)?;
+        }
         Expression::TypeNumber
         | Expression::TypeString
         | Expression::TypeBoolean
         | Expression::TypeList(_)
-        | Expression::TypeFunction(_) => {
+        | Expression::TypeFunction(_)
+        | Expression::TypeUnion(_) => {
             return Err("Type expressions cannot be evaluated at runtime".into());
         }
         Expression::Compiler(_) => {
@@ -786,6 +793,24 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
                 .sum::<u32>()
         }
         Expression::Constructor(c) => count_locals(c.value.as_ref()),
+        Expression::Variant(v) => {
+            4 + v
+                .payload
+                .as_ref()
+                .map(|p| count_locals(p.as_ref()))
+                .unwrap_or(0)
+        }
+        Expression::Match(m) => {
+            12 + count_locals(&m.target)
+                + m.arms
+                    .iter()
+                    .map(|arm| 4 + count_locals(&arm.body))
+                    .sum::<u32>()
+                + m.default
+                    .as_ref()
+                    .map(|d| count_locals(d.as_ref()))
+                    .unwrap_or(0)
+        }
         Expression::Function(f) => 6 + count_locals(&f.body),
         Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
         _ => 2,

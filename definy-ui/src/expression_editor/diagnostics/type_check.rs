@@ -718,6 +718,92 @@ pub(crate) fn check_expression_type(
             );
             ExpressionType::Type
         }
+        definy_event::event::Expression::TypeUnion(type_union_expression) => {
+            for (idx, variant) in type_union_expression.variants.iter().enumerate() {
+                if let Some(payload_type) = &variant.payload_type {
+                    let mut variant_path = path.to_vec();
+                    variant_path.push(PathStep::TypeUnionVariant(idx));
+                    check_expression_type(
+                        payload_type.as_ref(),
+                        variant_path.as_slice(),
+                        Some(ExpressionType::Type),
+                        env,
+                        part_type_map,
+                        part_snapshot_map,
+                        diagnostics,
+                    );
+                }
+            }
+            ExpressionType::Type
+        }
+        definy_event::event::Expression::Variant(variant_expression) => {
+            if let Some(payload) = &variant_expression.payload {
+                let mut payload_path = path.to_vec();
+                payload_path.push(PathStep::VariantPayload);
+                check_expression_type(
+                    payload.as_ref(),
+                    payload_path.as_slice(),
+                    None,
+                    env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+            }
+            ExpressionType::Union
+        }
+        definy_event::event::Expression::Match(match_expression) => {
+            let mut target_path = path.to_vec();
+            target_path.push(PathStep::MatchTarget);
+            check_expression_type(
+                match_expression.target.as_ref(),
+                target_path.as_slice(),
+                None,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+
+            let mut result_type = ExpressionType::Unknown;
+            for (idx, arm) in match_expression.arms.iter().enumerate() {
+                let mut arm_env = env.clone();
+                if let Some(var_id) = arm.variable_id {
+                    arm_env.insert(var_id, ExpressionType::Unknown);
+                }
+                let mut arm_path = path.to_vec();
+                arm_path.push(PathStep::MatchArmBody(idx));
+                let arm_type = check_expression_type(
+                    arm.body.as_ref(),
+                    arm_path.as_slice(),
+                    None,
+                    &arm_env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+                if result_type == ExpressionType::Unknown {
+                    result_type = arm_type;
+                }
+            }
+            if let Some(default_expr) = &match_expression.default {
+                let mut default_path = path.to_vec();
+                default_path.push(PathStep::MatchDefault);
+                let default_type = check_expression_type(
+                    default_expr.as_ref(),
+                    default_path.as_slice(),
+                    None,
+                    env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+                if result_type == ExpressionType::Unknown {
+                    result_type = default_type;
+                }
+            }
+            result_type
+        }
         definy_event::event::Expression::Compiler(_) => ExpressionType::Unknown,
     };
 
