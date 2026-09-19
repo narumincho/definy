@@ -3,6 +3,14 @@ name = "definy-server"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "definy_server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "definy_server"
+path = "src/main.rs"
+
 [dependencies]
 axum = "0.8"
 hyper = { version = "1", features = ["full"] }

@@ -7,22 +7,36 @@ edition = "2024"
 name = "definy_client"
 path = "src/main.rs"
 
+[features]
+default = ["fullstack"]
+fullstack = ["server"]
+web = ["dioxus/web"]
+server = []
+
 [dependencies]
-js-sys = "0.3"
-wasm-bindgen = "0.2.128"
-web-sys = { version = "0.3.105", features = ["console", "Window", "Document", "Element", "Node", "NodeList", "HtmlElement", "Event", "MouseEvent", "HtmlAnchorElement", "History", "PopStateEvent", "HtmlDialogElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response", "Headers", "Url", "KeyboardEvent", "DomRect", "ScrollIntoViewOptions", "ScrollBehavior", "ScrollLogicalPosition"] }
 definy-ui = { path = "../definy-ui" }
 definy-event = { path = "../definy-event" }
-dioxus = { version = "0.7.10", default-features = false, features = ["web", "launch", "macro", "hooks"] }
-dioxus-web = { version = "0.7.10" }
+dioxus = { version = "0.7.10", default-features = false, features = ["launch", "macro", "hooks"] }
 ed25519-dalek = { version = "2.2", features = ["rand_core"] }
-getrandom = { version = "0.2", features = ["js"] }
 base64 = "0.22"
-wasm-bindgen-futures = "0.4.78"
 chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde", "wasmbind", "now"] }
 anyhow = "1.0.104"
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }
 sha2 = "0.10.9"
-console_error_panic_hook = "0.1.7"
 futures-channel = "0.3.34"
 futures-util = "0.3.34"
+
+# サーバー用依存 (Native 専用: WASM には一切含まれない)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+definy-server = { path = "../definy-server" }
+tokio = { version = "1", features = ["full"] }
+
+# Web / WASM 専用依存 (WASM 専用: Native には一切含まれない)
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = "0.3"
+wasm-bindgen = "0.2.128"
+web-sys = { version = "0.3.105", features = ["console", "Window", "Document", "Element", "Node", "NodeList", "HtmlElement", "Event", "MouseEvent", "HtmlAnchorElement", "History", "PopStateEvent", "HtmlDialogElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response", "Headers", "Url", "KeyboardEvent", "DomRect", "ScrollIntoViewOptions", "ScrollBehavior", "ScrollLogicalPosition"] }
+dioxus-web = { version = "0.7.10" }
+getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen-futures = "0.4.78"
+console_error_panic_hook = "0.1.7"

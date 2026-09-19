@@ -1,10 +1,10 @@
 [application]
 name = "definy_client"
-default_platform = "web"
+default_platform = "fullstack"
 
 [web.app]
 title = "definy"
 
 [web.watcher]
 reload_html = true
-watch_path = ["definy-client", "definy-ui"]
+watch_path = ["definy-client", "definy-server", "definy-ui", "definy-event"]
