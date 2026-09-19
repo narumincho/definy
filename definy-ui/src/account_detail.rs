@@ -121,7 +121,7 @@ pub fn AccountDetailView(
                 }
             } else {
                 div { class: "event-list", style: "display: grid; gap: 0.6rem;",
-                    for (hash, ev) in account_events {
+                    for (hash , ev) in account_events {
                         {
                             let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
                             let summary = crate::event_presenter::event_summary_text(context.language, &ev);

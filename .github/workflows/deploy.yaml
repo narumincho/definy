@@ -9,8 +9,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: Swatinem/rust-cache@v2
+      - name: Install Dioxus CLI
+        run: curl -sSL https://dioxus.dev/install.sh | bash
       - run: rustup target add wasm32-unknown-unknown
-      - run: cargo run -p definy-build
+      - run: dx build --package definy-client --release
       - run: cargo build -p definy-server --release
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to Fly

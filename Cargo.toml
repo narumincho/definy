@@ -1,7 +1,6 @@
 [workspace]
 
 members = [
-  "definy-build",
   "definy-client",
   "definy-event",
   "definy-server",

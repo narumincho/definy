@@ -240,10 +240,8 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                             )
                             .await;
                     };
-                    #[cfg(target_arch = "wasm32")]
-                    wasm_bindgen_futures::spawn_local(fut);
-                    #[cfg(not(target_arch = "wasm32"))]
-                    spawn(fut);
+                    #[cfg(target_arch = "wasm32")] wasm_bindgen_futures::spawn_local(fut);
+                    #[cfg(not(target_arch = "wasm32"))] spawn(fut);
                 },
                 "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
             }

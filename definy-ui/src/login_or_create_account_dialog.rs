@@ -376,9 +376,7 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                             let key_to_copy = dialog_state.generated_key.clone();
                             move |_| {
                                 #[cfg(target_arch = "wasm32")]
-                                if let Some(window) = web_sys::window()
-                                    && let Some(key) = &key_to_copy
-                                {
+                                if let Some(window) = web_sys::window() && let Some(key) = &key_to_copy {
                                     let _ = window
                                         .navigator()
                                         .clipboard()

@@ -20,7 +20,7 @@ jobs:
           sudo ln -sf "$CHROMEDRIVER_BIN" /usr/local/bin/chromedriver
           chromedriver --version
       - run: rustup target add wasm32-unknown-unknown
-      - run: cargo run -p definy-build
+      - run: dx build --package definy-client
       - run: cargo test
       - name: Run E2E test
         run: |

@@ -3,5 +3,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
 
 COPY target/release/definy-server /app/definy-server
+COPY target/dx/definy_client/release/web/public /app/public
 
 CMD ["/app/definy-server"]
