@@ -1,6 +1,44 @@
 use definy_event::EventHashId;
 use wasm_bindgen::JsValue;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FetchError {
+    /// Failed to connect to the API server (network error, refused, DNS failure)
+    ServerDisconnected(String),
+    /// API server is connected, but database is unavailable (HTTP 503)
+    DatabaseUnavailable,
+    /// Other HTTP error
+    HttpError(u16),
+    /// Failed to deserialize CBOR response
+    DeserializeError(String),
+    /// Other error
+    Other(String),
+}
+
+impl std::fmt::Display for FetchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ServerDisconnected(e) => write!(f, "Cannot connect to API server: {e}"),
+            Self::DatabaseUnavailable => write!(f, "Database is unavailable"),
+            Self::HttpError(status) => write!(f, "HTTP error: status {status}"),
+            Self::DeserializeError(e) => write!(f, "Deserialize error: {e}"),
+            Self::Other(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl std::error::Error for FetchError {}
+
+impl FetchError {
+    pub fn to_connection_status(&self) -> crate::app_state::ConnectionStatus {
+        match self {
+            Self::ServerDisconnected(_) => crate::app_state::ConnectionStatus::ServerDisconnected,
+            Self::DatabaseUnavailable => crate::app_state::ConnectionStatus::DatabaseUnavailable,
+            _ => crate::app_state::ConnectionStatus::ServerDisconnected,
+        }
+    }
+}
+
 pub fn api_base_url() -> String {
     // 1. Check compile-time environment variable DEFINY_API_URL
     if let Some(url) = option_env!("DEFINY_API_URL") {
@@ -10,7 +48,7 @@ pub fn api_base_url() -> String {
         }
     }
 
-    // 2. In browser runtime, check query parameter or dev port default
+    // 2. In browser runtime, check query parameter
     #[cfg(target_arch = "wasm32")]
     if let Some(window) = web_sys::window() {
         if let Ok(search) = window.location().search() {
@@ -26,14 +64,6 @@ pub fn api_base_url() -> String {
                 }
             }
         }
-
-        // When running under Dioxus dev server (port 8080) and no explicit env/query is provided,
-        // default to http://localhost:8000 where definy-server runs.
-        if let Ok(port) = window.location().port() {
-            if port == "8080" {
-                return "http://localhost:8000".to_string();
-            }
-        }
     }
 
     "".to_string()
@@ -43,7 +73,7 @@ pub async fn get_events_raw(
     event_type: Option<definy_event::event::EventType>,
     limit: Option<usize>,
     offset: Option<usize>,
-) -> Result<Vec<u8>, anyhow::Error> {
+) -> Result<Vec<u8>, FetchError> {
     let base = api_base_url();
     let mut url = format!("{}/events", base);
     let mut params = Vec::new();
@@ -60,25 +90,40 @@ pub async fn get_events_raw(
         url.push('?');
         url.push_str(&params.join("&"));
     }
-    let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
-    let response_raw = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url))
-        .await
-        .map_err(js_error_to_anyhow)?;
+    let window = web_sys::window().ok_or_else(|| FetchError::Other("no window".to_string()))?;
+    let response_raw = match wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url)).await
+    {
+        Ok(val) => val,
+        Err(err) => {
+            let msg = js_error_to_string(err);
+            return Err(FetchError::ServerDisconnected(msg));
+        }
+    };
 
-    let response: web_sys::Response =
-        wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
+    let response: web_sys::Response = match wasm_bindgen::JsCast::dyn_into(response_raw) {
+        Ok(r) => r,
+        Err(_) => return Err(FetchError::Other("failed to cast Response".to_string())),
+    };
 
-    if !response.ok() {
-        return Err(anyhow::anyhow!("HTTP error: status {}", response.status()));
+    if response.status() == 503 {
+        return Err(FetchError::DatabaseUnavailable);
     }
 
-    let array_buffer_promise = response.array_buffer().map_err(js_error_to_anyhow)?;
-    let response_body: js_sys::ArrayBuffer = wasm_bindgen::JsCast::dyn_into(
-        wasm_bindgen_futures::JsFuture::from(array_buffer_promise)
-            .await
-            .map_err(js_error_to_anyhow)?,
-    )
-    .map_err(js_error_to_anyhow)?;
+    if !response.ok() {
+        return Err(FetchError::HttpError(response.status()));
+    }
+
+    let array_buffer_promise = response
+        .array_buffer()
+        .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
+    let response_body: js_sys::ArrayBuffer =
+        match wasm_bindgen_futures::JsFuture::from(array_buffer_promise).await {
+            Ok(val) => match wasm_bindgen::JsCast::dyn_into(val) {
+                Ok(ab) => ab,
+                Err(_) => return Err(FetchError::Other("failed to cast ArrayBuffer".to_string())),
+            },
+            Err(e) => return Err(FetchError::Other(js_error_to_string(e))),
+        };
     let response_body_bytes = js_sys::Uint8Array::new(&response_body).to_vec();
     Ok(response_body_bytes)
 }
@@ -87,7 +132,7 @@ pub async fn get_events(
     event_type: Option<definy_event::event::EventType>,
     limit: Option<usize>,
     offset: Option<usize>,
-) -> anyhow::Result<
+) -> Result<
     Vec<(
         definy_event::EventHashId,
         Result<
@@ -95,11 +140,13 @@ pub async fn get_events(
             definy_event::VerifyAndDeserializeError,
         >,
     )>,
+    FetchError,
 > {
     let response_body_bytes = get_events_raw(event_type, limit, offset).await?;
 
     let value =
-        serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)?;
+        serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)
+            .map_err(|e| FetchError::DeserializeError(e.to_string()))?;
 
     let event_pairs = value.events.into_iter().collect::<Vec<Vec<u8>>>();
 
@@ -115,18 +162,12 @@ pub async fn get_events(
                 definy_event::verify_and_deserialize(&bytes),
             )
         })
-        .collect::<Vec<(
-            EventHashId,
-            Result<
-                (ed25519_dalek::Signature, definy_event::event::Event),
-                definy_event::VerifyAndDeserializeError,
-            >,
-        )>>())
+        .collect::<Vec<_>>())
 }
 
 pub async fn get_event(
     hash: &definy_event::EventHashId,
-) -> anyhow::Result<
+) -> Result<
     Option<(
         definy_event::EventHashId,
         Result<
@@ -134,31 +175,43 @@ pub async fn get_event(
             definy_event::VerifyAndDeserializeError,
         >,
     )>,
+    FetchError,
 > {
     let base = api_base_url();
     let url = format!("{}/events/{}", base, hash);
-    let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
-    let response_raw = wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url))
-        .await
-        .map_err(js_error_to_anyhow)?;
+    let window = web_sys::window().ok_or_else(|| FetchError::Other("no window".to_string()))?;
+    let response_raw = match wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url)).await
+    {
+        Ok(v) => v,
+        Err(e) => return Err(FetchError::ServerDisconnected(js_error_to_string(e))),
+    };
 
-    let response: web_sys::Response =
-        wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
+    let response: web_sys::Response = match wasm_bindgen::JsCast::dyn_into(response_raw) {
+        Ok(r) => r,
+        Err(_) => return Err(FetchError::Other("failed to cast Response".to_string())),
+    };
 
     if response.status() == 404 {
         return Ok(None);
     }
+    if response.status() == 503 {
+        return Err(FetchError::DatabaseUnavailable);
+    }
     if !response.ok() {
-        return Err(anyhow::anyhow!("HTTP error: status {}", response.status()));
+        return Err(FetchError::HttpError(response.status()));
     }
 
-    let array_buffer_promise = response.array_buffer().map_err(js_error_to_anyhow)?;
-    let response_body: js_sys::ArrayBuffer = wasm_bindgen::JsCast::dyn_into(
-        wasm_bindgen_futures::JsFuture::from(array_buffer_promise)
-            .await
-            .map_err(js_error_to_anyhow)?,
-    )
-    .map_err(js_error_to_anyhow)?;
+    let array_buffer_promise = response
+        .array_buffer()
+        .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
+    let response_body: js_sys::ArrayBuffer =
+        match wasm_bindgen_futures::JsFuture::from(array_buffer_promise).await {
+            Ok(v) => match wasm_bindgen::JsCast::dyn_into(v) {
+                Ok(ab) => ab,
+                Err(_) => return Err(FetchError::Other("failed to cast ArrayBuffer".to_string())),
+            },
+            Err(e) => return Err(FetchError::Other(js_error_to_string(e))),
+        };
     let bytes = js_sys::Uint8Array::new(&response_body).to_vec();
 
     if let Err(error) = crate::indexed_db::store_events(std::slice::from_ref(&bytes)).await {
@@ -242,10 +295,14 @@ pub async fn post_event_with_queue(
     Ok(record)
 }
 
-fn js_error_to_anyhow(value: JsValue) -> anyhow::Error {
+fn js_error_to_string(value: JsValue) -> String {
     if let Some(text) = value.as_string() {
-        anyhow::anyhow!(text)
+        text
     } else {
-        anyhow::anyhow!("{value:?}")
+        format!("{value:?}")
     }
+}
+
+fn js_error_to_anyhow(value: JsValue) -> anyhow::Error {
+    anyhow::anyhow!(js_error_to_string(value))
 }

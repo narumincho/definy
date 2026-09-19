@@ -151,8 +151,17 @@ pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
 
 use std::{collections::HashMap, str::FromStr};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum ConnectionStatus {
+    #[default]
+    Connected,
+    ServerDisconnected,
+    DatabaseUnavailable,
+}
+
 #[derive(Clone)]
 pub struct AppState {
+    pub connection_status: ConnectionStatus,
     pub is_db_connected: bool,
     pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
     pub event_cache: HashMap<
@@ -174,6 +183,13 @@ pub struct AppState {
     pub local_event_queue: LocalEventQueueState,
     pub focused_path: Option<Vec<PathStep>>,
     pub dropdown_search_query: String,
+}
+
+impl AppState {
+    pub fn set_connection_status(&mut self, status: ConnectionStatus) {
+        self.connection_status = status;
+        self.is_db_connected = status == ConnectionStatus::Connected;
+    }
 }
 
 impl PartialEq for AppState {
@@ -321,7 +337,14 @@ pub fn build_initial_state(
         event_hashes.push(hash);
     }
 
+    let connection_status = if is_db_connected {
+        ConnectionStatus::Connected
+    } else {
+        ConnectionStatus::DatabaseUnavailable
+    };
+
     AppState {
+        connection_status,
         is_db_connected,
         login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
             state: CreatingAccountState::LogIn,

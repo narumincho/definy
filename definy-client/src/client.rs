@@ -151,15 +151,15 @@ fn AppRoot() -> Element {
                 Ok(events) => {
                     let events_count = events.len();
                     let mut next = state_signal.read().clone();
-                    next.is_db_connected = true;
+                    next.set_connection_status(definy_ui::ConnectionStatus::Connected);
                     next.apply_latest_events(events, filter_for_fetch);
                     next.event_list_state.is_loading = false;
                     next.event_list_state.has_more = events_count == 100;
                     state_signal.set(next);
                 }
-                Err(_) => {
+                Err(err) => {
                     let mut next = state_signal.read().clone();
-                    next.is_db_connected = false;
+                    next.set_connection_status(err.to_connection_status());
                     next.event_list_state.is_loading = false;
                     state_signal.set(next);
                 }
@@ -262,21 +262,28 @@ async fn fetch_missing_events_async(
         | Some(definy_ui::Location::ModuleList)
         | Some(definy_ui::Location::Home) => {
             let filter = context.filter_event_type;
-            if let Ok(events) = definy_ui::fetch::get_events(filter, Some(100), Some(0)).await {
-                let events_count = events.len();
-                let mut next = state_signal.read().clone();
-                next.is_db_connected = true;
-                if filter.is_none() || next.event_list_state.event_hashes.is_empty() {
-                    next.apply_latest_events(events, filter);
-                    next.event_list_state.is_loading = false;
-                    next.event_list_state.has_more = events_count == 100;
-                } else {
-                    for (hash, event) in events {
-                        next.event_cache.insert(hash, event);
+            match definy_ui::fetch::get_events(filter, Some(100), Some(0)).await {
+                Ok(events) => {
+                    let events_count = events.len();
+                    let mut next = state_signal.read().clone();
+                    next.set_connection_status(definy_ui::ConnectionStatus::Connected);
+                    if filter.is_none() || next.event_list_state.event_hashes.is_empty() {
+                        next.apply_latest_events(events, filter);
+                        next.event_list_state.is_loading = false;
+                        next.event_list_state.has_more = events_count == 100;
+                    } else {
+                        for (hash, event) in events {
+                            next.event_cache.insert(hash, event);
+                        }
                     }
+                    next_state_ensure_cache(&mut next);
+                    state_signal.set(next);
                 }
-                next_state_ensure_cache(&mut next);
-                state_signal.set(next);
+                Err(err) => {
+                    let mut next = state_signal.read().clone();
+                    next.set_connection_status(err.to_connection_status());
+                    state_signal.set(next);
+                }
             }
         }
         _ => {}
