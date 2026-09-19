@@ -73,6 +73,36 @@ pub fn read_value_from_memory(memory: &[u8], ptr: usize) -> Result<Value, &'stat
             }
             Ok(Value::Record(items))
         }
+        5 => {
+            // Function / Closure (table_idx at ptr + 4, env_ptr at ptr + 8)
+            Ok(Value::Function)
+        }
+        6 => {
+            // Variant (tag_ptr at ptr + 4, payload_ptr at ptr + 8)
+            let tag_ptr_bytes: [u8; 4] = memory[ptr + 4..ptr + 8]
+                .try_into()
+                .map_err(|_| "Failed to read variant tag ptr")?;
+            let tag_ptr = u32::from_le_bytes(tag_ptr_bytes) as usize;
+            let tag_val = read_value_from_memory(memory, tag_ptr)?;
+            let tag_str = match tag_val {
+                Value::String(s) => s,
+                _ => return Err("Variant tag is not a string"),
+            };
+
+            let payload_ptr_bytes: [u8; 4] = memory[ptr + 8..ptr + 12]
+                .try_into()
+                .map_err(|_| "Failed to read variant payload ptr")?;
+            let payload_ptr = u32::from_le_bytes(payload_ptr_bytes) as usize;
+            let payload = if payload_ptr != 0 {
+                Some(Box::new(read_value_from_memory(memory, payload_ptr)?))
+            } else {
+                None
+            };
+            Ok(Value::Variant {
+                tag: tag_str,
+                payload,
+            })
+        }
         _ => Err("Unknown value tag in Wasm memory"),
     }
 }

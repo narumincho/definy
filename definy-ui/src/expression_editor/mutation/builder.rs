@@ -259,6 +259,38 @@ pub(crate) fn build_expression_from_selection(
                 value: Box::new(definy_event::event::Expression::TypeString),
             }],
         })
+    } else if selected_value == "expr:function" {
+        definy_event::event::Expression::Function(definy_event::event::FunctionExpression {
+            parameter_id: next_variable_id,
+            parameter_name: "x".into(),
+            body: Box::new(definy_event::event::Expression::Variable(
+                definy_event::event::VariableExpression {
+                    variable_id: next_variable_id,
+                },
+            )),
+        })
+    } else if selected_value == "expr:call" {
+        definy_event::event::Expression::Call(definy_event::event::CallExpression {
+            function: Box::new(definy_event::event::Expression::Function(
+                definy_event::event::FunctionExpression {
+                    parameter_id: next_variable_id,
+                    parameter_name: "x".into(),
+                    body: Box::new(definy_event::event::Expression::Variable(
+                        definy_event::event::VariableExpression {
+                            variable_id: next_variable_id,
+                        },
+                    )),
+                },
+            )),
+            argument: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        })
+    } else if selected_value == "expr:type:function" {
+        definy_event::event::Expression::TypeFunction(definy_event::event::TypeFunctionExpression {
+            parameter: Box::new(definy_event::event::Expression::TypeNumber),
+            return_type: Box::new(definy_event::event::Expression::TypeNumber),
+        })
     } else if let Some((type_part_definition_event_hash, default_value)) = constructor_default {
         definy_event::event::Expression::Constructor(definy_event::event::ConstructorExpression {
             type_part_definition_event_hash,

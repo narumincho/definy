@@ -118,6 +118,43 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 max_local_variable_id(constructor_expression.value.as_ref())
             }
+            definy_event::event::Expression::Function(func_expression) => func_expression
+                .parameter_id
+                .max(max_local_variable_id(func_expression.body.as_ref())),
+            definy_event::event::Expression::Call(call_expression) => {
+                max_local_variable_id(call_expression.function.as_ref())
+                    .max(max_local_variable_id(call_expression.argument.as_ref()))
+            }
+            definy_event::event::Expression::TypeFunction(type_func_expression) => {
+                max_local_variable_id(type_func_expression.parameter.as_ref()).max(
+                    max_local_variable_id(type_func_expression.return_type.as_ref()),
+                )
+            }
+            definy_event::event::Expression::TypeUnion(_) => 0,
+            definy_event::event::Expression::Variant(v) => v
+                .payload
+                .as_ref()
+                .map(|p| max_local_variable_id(p.as_ref()))
+                .unwrap_or(0),
+            definy_event::event::Expression::Match(m) => {
+                let target_max = max_local_variable_id(m.target.as_ref());
+                let arms_max = m
+                    .arms
+                    .iter()
+                    .map(|arm| {
+                        arm.variable_id
+                            .unwrap_or(0)
+                            .max(max_local_variable_id(arm.body.as_ref()))
+                    })
+                    .max()
+                    .unwrap_or(0);
+                let default_max = m
+                    .default
+                    .as_ref()
+                    .map(|d| max_local_variable_id(d.as_ref()))
+                    .unwrap_or(0);
+                target_max.max(arms_max).max(default_max)
+            }
             definy_event::event::Expression::Compiler(_) => 0,
         }
     }

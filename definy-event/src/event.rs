@@ -15,6 +15,7 @@ pub struct Event {
 #[strum_discriminants(serde(rename_all = "snake_case"))]
 #[strum_discriminants(strum(serialize_all = "snake_case"))]
 #[strum_discriminants(derive(Serialize, Deserialize, strum_macros::Display, strum::VariantNames))]
+#[cfg_attr(feature = "utoipa", strum_discriminants(derive(utoipa::ToSchema)))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
@@ -172,6 +173,17 @@ pub enum PartType {
     Type,
     TypePart(EventHashId),
     List(Box<PartType>),
+    Function {
+        parameter: Box<PartType>,
+        return_type: Box<PartType>,
+    },
+    Union(Vec<UnionVariantType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct UnionVariantType {
+    pub tag: Box<str>,
+    pub payload: Option<Box<PartType>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -212,6 +224,12 @@ pub enum Expression {
     #[serde(alias = "RecordLiteral")]
     TypeLiteral(TypeLiteralExpression),
     Constructor(ConstructorExpression),
+    Function(FunctionExpression),
+    Call(CallExpression),
+    TypeFunction(TypeFunctionExpression),
+    TypeUnion(TypeUnionExpression),
+    Variant(VariantExpression),
+    Match(MatchExpression),
     Compiler(CompilerBuiltin),
 }
 
@@ -242,6 +260,8 @@ pub enum CompilerBuiltin {
     ListAppend,
     NumberLiteral,
     If,
+    Function,
+    Call,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -433,6 +453,62 @@ pub struct TypeLiteralItemExpression {
 pub struct ConstructorExpression {
     pub type_part_definition_event_hash: EventHashId,
     pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FunctionExpression {
+    pub parameter_id: i64,
+    pub parameter_name: Box<str>,
+    pub body: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CallExpression {
+    pub function: Box<Expression>,
+    pub argument: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeFunctionExpression {
+    pub parameter: Box<Expression>,
+    pub return_type: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeUnionExpression {
+    pub variants: Vec<TypeUnionVariant>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TypeUnionVariant {
+    pub tag: Box<str>,
+    pub payload_type: Option<Box<Expression>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct VariantExpression {
+    pub tag: Box<str>,
+    pub payload: Option<Box<Expression>>,
+    #[serde(default)]
+    pub type_part_definition_event_hash: Option<EventHashId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MatchExpression {
+    pub target: Box<Expression>,
+    pub arms: Vec<MatchArm>,
+    #[serde(default)]
+    pub default: Option<Box<Expression>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MatchArm {
+    pub tag: Box<str>,
+    #[serde(default)]
+    pub variable_id: Option<i64>,
+    #[serde(default)]
+    pub variable_name: Option<Box<str>>,
+    pub body: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

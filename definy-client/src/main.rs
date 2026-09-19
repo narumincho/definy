@@ -147,14 +147,14 @@ fn AppRoot() -> Element {
                 state_signal.set(next);
             }
 
-            match definy_ui::fetch::get_events(filter_for_fetch, Some(20), Some(0)).await {
+            match definy_ui::fetch::get_events(filter_for_fetch, Some(100), Some(0)).await {
                 Ok(events) => {
                     let events_count = events.len();
                     let mut next = state_signal.read().clone();
                     next.is_db_connected = true;
                     next.apply_latest_events(events, filter_for_fetch);
                     next.event_list_state.is_loading = false;
-                    next.event_list_state.has_more = events_count == 20;
+                    next.event_list_state.has_more = events_count == 100;
                     state_signal.set(next);
                 }
                 Err(_) => {
@@ -163,6 +163,20 @@ fn AppRoot() -> Element {
                     next.event_list_state.is_loading = false;
                     state_signal.set(next);
                 }
+            }
+
+            if let Ok(modules) = definy_ui::fetch::get_events(
+                Some(definy_event::event::EventType::ModuleDefinition),
+                Some(100),
+                Some(0),
+            )
+            .await
+            {
+                let mut next = state_signal.read().clone();
+                for (hash, event) in modules {
+                    next.event_cache.insert(hash, event);
+                }
+                state_signal.set(next);
             }
 
             let local_events = definy_ui::indexed_db::load_event_records().await;
@@ -275,6 +289,9 @@ fn next_state_ensure_cache(state: &mut AppState) {
         .values()
         .filter_map(|ev| match ev {
             Ok((_, event)) => match &event.content {
+                definy_event::event::EventContent::PartDefinition(p) => {
+                    Some(p.module_definition_event_hash.clone())
+                }
                 definy_event::event::EventContent::PartUpdate(u) => {
                     Some(u.part_definition_event_hash.clone())
                 }

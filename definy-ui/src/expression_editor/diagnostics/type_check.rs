@@ -615,6 +615,195 @@ pub(crate) fn check_expression_type(
                     .clone(),
             )
         }
+        definy_event::event::Expression::Function(func_expression) => {
+            let (param_type, expected_body_type) = match &expected_type {
+                Some(ExpressionType::Function {
+                    parameter,
+                    return_type,
+                }) => ((**parameter).clone(), Some((**return_type).clone())),
+                _ => (ExpressionType::Unknown, None),
+            };
+
+            let mut body_env = env.clone();
+            body_env.insert(func_expression.parameter_id, param_type.clone());
+
+            let mut body_path = path.to_vec();
+            body_path.push(PathStep::FunctionBody);
+
+            let body_type = check_expression_type(
+                func_expression.body.as_ref(),
+                body_path.as_slice(),
+                expected_body_type,
+                &body_env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+
+            ExpressionType::Function {
+                parameter: Box::new(param_type),
+                return_type: Box::new(body_type),
+            }
+        }
+        definy_event::event::Expression::Call(call_expression) => {
+            let mut func_path = path.to_vec();
+            func_path.push(PathStep::CallFunction);
+
+            let func_type = check_expression_type(
+                call_expression.function.as_ref(),
+                func_path.as_slice(),
+                None,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+
+            let mut arg_path = path.to_vec();
+            arg_path.push(PathStep::CallArgument);
+
+            match func_type {
+                ExpressionType::Function {
+                    parameter,
+                    return_type,
+                } => {
+                    check_expression_type(
+                        call_expression.argument.as_ref(),
+                        arg_path.as_slice(),
+                        Some(*parameter),
+                        env,
+                        part_type_map,
+                        part_snapshot_map,
+                        diagnostics,
+                    );
+                    *return_type
+                }
+                _ => {
+                    check_expression_type(
+                        call_expression.argument.as_ref(),
+                        arg_path.as_slice(),
+                        None,
+                        env,
+                        part_type_map,
+                        part_snapshot_map,
+                        diagnostics,
+                    );
+                    ExpressionType::Unknown
+                }
+            }
+        }
+        definy_event::event::Expression::TypeFunction(type_func_expression) => {
+            let mut param_path = path.to_vec();
+            param_path.push(PathStep::TypeFunctionParameter);
+            check_expression_type(
+                type_func_expression.parameter.as_ref(),
+                param_path.as_slice(),
+                Some(ExpressionType::Type),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+
+            let mut ret_path = path.to_vec();
+            ret_path.push(PathStep::TypeFunctionReturn);
+            check_expression_type(
+                type_func_expression.return_type.as_ref(),
+                ret_path.as_slice(),
+                Some(ExpressionType::Type),
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+            ExpressionType::Type
+        }
+        definy_event::event::Expression::TypeUnion(type_union_expression) => {
+            for (idx, variant) in type_union_expression.variants.iter().enumerate() {
+                if let Some(payload_type) = &variant.payload_type {
+                    let mut variant_path = path.to_vec();
+                    variant_path.push(PathStep::TypeUnionVariant(idx));
+                    check_expression_type(
+                        payload_type.as_ref(),
+                        variant_path.as_slice(),
+                        Some(ExpressionType::Type),
+                        env,
+                        part_type_map,
+                        part_snapshot_map,
+                        diagnostics,
+                    );
+                }
+            }
+            ExpressionType::Type
+        }
+        definy_event::event::Expression::Variant(variant_expression) => {
+            if let Some(payload) = &variant_expression.payload {
+                let mut payload_path = path.to_vec();
+                payload_path.push(PathStep::VariantPayload);
+                check_expression_type(
+                    payload.as_ref(),
+                    payload_path.as_slice(),
+                    None,
+                    env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+            }
+            ExpressionType::Union
+        }
+        definy_event::event::Expression::Match(match_expression) => {
+            let mut target_path = path.to_vec();
+            target_path.push(PathStep::MatchTarget);
+            check_expression_type(
+                match_expression.target.as_ref(),
+                target_path.as_slice(),
+                None,
+                env,
+                part_type_map,
+                part_snapshot_map,
+                diagnostics,
+            );
+
+            let mut result_type = ExpressionType::Unknown;
+            for (idx, arm) in match_expression.arms.iter().enumerate() {
+                let mut arm_env = env.clone();
+                if let Some(var_id) = arm.variable_id {
+                    arm_env.insert(var_id, ExpressionType::Unknown);
+                }
+                let mut arm_path = path.to_vec();
+                arm_path.push(PathStep::MatchArmBody(idx));
+                let arm_type = check_expression_type(
+                    arm.body.as_ref(),
+                    arm_path.as_slice(),
+                    None,
+                    &arm_env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+                if result_type == ExpressionType::Unknown {
+                    result_type = arm_type;
+                }
+            }
+            if let Some(default_expr) = &match_expression.default {
+                let mut default_path = path.to_vec();
+                default_path.push(PathStep::MatchDefault);
+                let default_type = check_expression_type(
+                    default_expr.as_ref(),
+                    default_path.as_slice(),
+                    None,
+                    env,
+                    part_type_map,
+                    part_snapshot_map,
+                    diagnostics,
+                );
+                if result_type == ExpressionType::Unknown {
+                    result_type = default_type;
+                }
+            }
+            result_type
+        }
         definy_event::event::Expression::Compiler(_) => ExpressionType::Unknown,
     };
 

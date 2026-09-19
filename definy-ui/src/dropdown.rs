@@ -9,6 +9,7 @@ pub fn SearchableDropdown(
     current_value: String,
     options: Vec<(String, String)>,
     on_change: EventHandler<String>,
+    #[props(default = false)] compact: bool,
 ) -> Element {
     let mut search_query = use_signal(String::new);
 
@@ -40,22 +41,34 @@ pub fn SearchableDropdown(
         .cloned()
         .collect();
 
+    let container_style = if compact {
+        "width: fit-content; min-width: 6.5rem; max-width: 100%; position: relative;"
+    } else {
+        "width: 100%; max-width: 100%; position: relative;"
+    };
+
+    let button_padding = if compact {
+        "padding: 0.25rem 0.5rem; font-size: 0.82rem;"
+    } else {
+        "padding: 0.42rem 0.75rem;"
+    };
+
     rsx! {
-        div { style: "width: 100%; max-width: 22rem; position: relative;",
+        div { style: "{container_style}",
             button {
                 r#type: "button",
-                style: "width: 100%; text-align: left; padding: 0.42rem 0.75rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; anchor-name: {anchor_name}; box-sizing: border-box;",
+                style: "width: 100%; text-align: left; {button_padding} background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; anchor-name: {anchor_name}; box-sizing: border-box;",
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "show",
-                "{current_label}"
-                div { style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
-                    "▼"
+                span { style: "white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                    "{current_label}"
                 }
+                div { style: "opacity: 0.5; font-size: 0.75rem; flex-shrink: 0;", "▼" }
             }
             div {
                 id: "{panel_id}",
                 "popover": "auto",
-                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); width: anchor-size(width); min-width: 14rem; max-width: min(90vw, 22rem); margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
                 input {
                     r#type: "text",
                     autofocus: true,
@@ -92,7 +105,7 @@ pub fn SearchableDropdown(
                                         }
                                         div {
                                             class: "mono",
-                                            style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; max-width: 14rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;",
+                                            style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 0; white-space: nowrap; text-align: right;",
                                             "{parts[1..].join(\" · \")}"
                                         }
                                     } else {

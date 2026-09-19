@@ -47,6 +47,16 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::End => "ED".to_string(),
             PathStep::Index => "IX".to_string(),
             PathStep::Item => "IT".to_string(),
+            PathStep::FunctionBody => "FB".to_string(),
+            PathStep::CallFunction => "CF".to_string(),
+            PathStep::CallArgument => "CA".to_string(),
+            PathStep::TypeFunctionParameter => "TFP".to_string(),
+            PathStep::TypeFunctionReturn => "TFR".to_string(),
+            PathStep::VariantPayload => "VP".to_string(),
+            PathStep::MatchTarget => "MT".to_string(),
+            PathStep::MatchArmBody(index) => format!("MAB{}", index),
+            PathStep::MatchDefault => "MD".to_string(),
+            PathStep::TypeUnionVariant(index) => format!("TUV{}", index),
         })
         .collect::<Vec<String>>()
         .join("-")
@@ -245,6 +255,74 @@ pub fn get_mut_expression_at_path<'a>(
         definy_event::event::Expression::Constructor(constructor_expression) => match path[0] {
             PathStep::ConstructorValue => {
                 get_mut_expression_at_path(constructor_expression.value.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Function(func_expression) => match path[0] {
+            PathStep::FunctionBody => {
+                get_mut_expression_at_path(func_expression.body.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Call(call_expression) => match path[0] {
+            PathStep::CallFunction | PathStep::Left => {
+                get_mut_expression_at_path(call_expression.function.as_mut(), &path[1..])
+            }
+            PathStep::CallArgument | PathStep::Right => {
+                get_mut_expression_at_path(call_expression.argument.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::TypeFunction(type_func_expression) => match path[0] {
+            PathStep::TypeFunctionParameter | PathStep::Left => {
+                get_mut_expression_at_path(type_func_expression.parameter.as_mut(), &path[1..])
+            }
+            PathStep::TypeFunctionReturn | PathStep::Right => {
+                get_mut_expression_at_path(type_func_expression.return_type.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Variant(variant_expr) => match path[0] {
+            PathStep::VariantPayload => {
+                if let Some(payload) = variant_expr.payload.as_mut() {
+                    get_mut_expression_at_path(payload.as_mut(), &path[1..])
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::Match(match_expr) => match path[0] {
+            PathStep::MatchTarget => {
+                get_mut_expression_at_path(match_expr.target.as_mut(), &path[1..])
+            }
+            PathStep::MatchArmBody(index) => {
+                if index < match_expr.arms.len() {
+                    get_mut_expression_at_path(match_expr.arms[index].body.as_mut(), &path[1..])
+                } else {
+                    None
+                }
+            }
+            PathStep::MatchDefault => {
+                if let Some(default_expr) = match_expr.default.as_mut() {
+                    get_mut_expression_at_path(default_expr.as_mut(), &path[1..])
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::TypeUnion(type_union) => match path[0] {
+            PathStep::TypeUnionVariant(index) => {
+                if index < type_union.variants.len() {
+                    if let Some(payload_type) = type_union.variants[index].payload_type.as_mut() {
+                        get_mut_expression_at_path(payload_type.as_mut(), &path[1..])
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
             }
             _ => None,
         },

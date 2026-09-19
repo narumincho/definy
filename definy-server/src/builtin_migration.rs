@@ -784,6 +784,101 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 },
             ),
         },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(35),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "OptionNumber".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Option type for numbers (none or some(Number))"),
+                        ("ja", "数値用の Option 型 (none または some(Number))"),
+                    ]),
+                    expression: Some(definy_event::event::Expression::TypeUnion(
+                        definy_event::event::TypeUnionExpression {
+                            variants: vec![
+                                definy_event::event::TypeUnionVariant {
+                                    tag: "none".into(),
+                                    payload_type: None,
+                                },
+                                definy_event::event::TypeUnionVariant {
+                                    tag: "some".into(),
+                                    payload_type: Some(Box::new(
+                                        definy_event::event::Expression::TypeNumber,
+                                    )),
+                                },
+                            ],
+                        },
+                    )),
+                    module_definition_event_hash: core_module_hash.clone(),
+                },
+            ),
+        },
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time + chrono::Duration::milliseconds(36),
+            content: definy_event::event::EventContent::PartDefinition(
+                definy_event::event::PartDefinitionEvent {
+                    part_name: "match_option_sample".into(),
+                    part_type: Some(definy_event::event::PartType::Number),
+                    description: definy_event::event::Description::localized(vec![
+                        ("en", "Pattern match sample: unwrap some(100) and add 23"),
+                        ("ja", "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)"),
+                    ]),
+                    expression: Some(definy_event::event::Expression::Match(
+                        definy_event::event::MatchExpression {
+                            target: Box::new(definy_event::event::Expression::Variant(
+                                definy_event::event::VariantExpression {
+                                    tag: "some".into(),
+                                    payload: Some(Box::new(
+                                        definy_event::event::Expression::Number(
+                                            definy_event::event::NumberExpression { value: 100 },
+                                        ),
+                                    )),
+                                    type_part_definition_event_hash: None,
+                                },
+                            )),
+                            arms: vec![
+                                definy_event::event::MatchArm {
+                                    tag: "some".into(),
+                                    variable_id: Some(1),
+                                    variable_name: Some("val".into()),
+                                    body: Box::new(definy_event::event::Expression::Add(
+                                        definy_event::event::AddExpression {
+                                            left: Box::new(
+                                                definy_event::event::Expression::Variable(
+                                                    definy_event::event::VariableExpression {
+                                                        variable_id: 1,
+                                                    },
+                                                ),
+                                            ),
+                                            right: Box::new(
+                                                definy_event::event::Expression::Number(
+                                                    definy_event::event::NumberExpression {
+                                                        value: 23,
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                    )),
+                                },
+                                definy_event::event::MatchArm {
+                                    tag: "none".into(),
+                                    variable_id: None,
+                                    variable_name: None,
+                                    body: Box::new(definy_event::event::Expression::Number(
+                                        definy_event::event::NumberExpression { value: 0 },
+                                    )),
+                                },
+                            ],
+                            default: None,
+                        },
+                    )),
+                    module_definition_event_hash: sample_module_hash.clone(),
+                },
+            ),
+        },
     ];
 
     // Prepare serialized binaries and expected hashes for all valid built-in events

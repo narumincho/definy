@@ -1,224 +1,160 @@
 use std::net::SocketAddr;
 
 use axum::body::Bytes;
-use axum::extract::{ConnectInfo, Path, Query, State};
+use axum::extract::{ConnectInfo, Path, Query};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
+use definy_event::event::EventType;
+use definy_event::response::EventsResponse;
+use utoipa::{IntoParams, ToSchema};
 
-use crate::AppState;
+use crate::error::ApiError;
+use crate::extractor::Database;
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, IntoParams, ToSchema)]
 pub struct EventsQuery {
-    pub event_type: Option<definy_event::event::EventType>,
+    /// Filter events by event type
+    #[param(inline)]
+    pub event_type: Option<EventType>,
+    /// Maximum number of events to return
     pub limit: Option<usize>,
+    /// Offset of events for pagination
     pub offset: Option<usize>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/events/{hash}",
+    tag = "events",
+    params(
+        ("hash" = String, Path, description = "URL-safe base64 encoded event binary hash")
+    ),
+    responses(
+        (status = 200, description = "CBOR binary of the requested event", content_type = "application/cbor"),
+        (status = 400, description = "Invalid event hash format"),
+        (status = 404, description = "Event not found"),
+        (status = 503, description = "Database is unavailable")
+    )
+)]
 pub async fn handle_event_get(
-    State(state): State<AppState>,
+    Database(db): Database,
     Path(event_binary_hash_base64): Path<String>,
     headers: HeaderMap,
-) -> Response {
-    let event_binary_hash = match base64::Engine::decode(
+) -> Result<Response, ApiError> {
+    let event_binary_hash = base64::Engine::decode(
         &base64::engine::general_purpose::URL_SAFE_NO_PAD,
         &event_binary_hash_base64,
-    ) {
-        Ok(event_binary_hash) => event_binary_hash,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                [("Content-Type", "text/html; charset=utf-8")],
-                "400 Bad Request: Invalid ID format",
-            )
-                .into_response();
-        }
-    };
+    )
+    .map_err(|_| ApiError::BadRequest("Invalid ID format".to_string()))?;
 
-    let db = match crate::ensure_db(&state).await {
-        Some(db) => db,
-        None => {
-            return (
-                StatusCode::SERVICE_UNAVAILABLE,
-                [
-                    ("Content-Type", "text/html; charset=utf-8"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                "Database is unavailable",
-            )
-                .into_response();
-        }
-    };
-
-    match crate::db::get_event(&db, &event_binary_hash).await {
-        Err(e) => {
+    let event_binary = crate::db::get_event(&db, &event_binary_hash)
+        .await
+        .map_err(|e| {
             eprintln!("Failed to get event: {:?}", e);
-            (
-                StatusCode::SERVICE_UNAVAILABLE,
-                [
-                    ("Content-Type", "text/html; charset=utf-8"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                "Database is unavailable",
-            )
-                .into_response()
-        }
-        Ok(None) => (
-            StatusCode::NOT_FOUND,
-            [
-                ("Content-Type", "text/html; charset=utf-8"),
-                ("Access-Control-Allow-Origin", "*"),
-            ],
-            "404 Not Found",
+            ApiError::DatabaseUnavailable
+        })?
+        .ok_or(ApiError::NotFound)?;
+
+    if let Some(accept) = headers.get("accept")
+        && let Ok(accept_as_str) = accept.to_str()
+        && accept_as_str.contains("text/html")
+    {
+        return Ok((
+            StatusCode::OK,
+            [("Content-Type", "text/html; charset=utf-8")],
+            "todo",
         )
-            .into_response(),
-        Ok(Some(event_binary)) => {
-            if let Some(accept) = headers.get("accept")
-                && let Ok(accept_as_str) = accept.to_str()
-                && accept_as_str.contains("text/html")
-            {
-                return (
-                    StatusCode::OK,
-                    [
-                        ("Content-Type", "text/html; charset=utf-8"),
-                        ("Access-Control-Allow-Origin", "*"),
-                    ],
-                    "todo",
-                )
-                    .into_response();
-            }
-            (
-                StatusCode::OK,
-                [
-                    ("Content-Type", "application/cbor"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                event_binary,
-            )
-                .into_response()
-        }
+            .into_response());
     }
+
+    Ok((
+        StatusCode::OK,
+        [("Content-Type", "application/cbor")],
+        event_binary,
+    )
+        .into_response())
 }
 
+#[utoipa::path(
+    get,
+    path = "/events",
+    tag = "events",
+    params(EventsQuery),
+    responses(
+        (status = 200, description = "Events fetched successfully as CBOR", body = EventsResponse, content_type = "application/cbor"),
+        (status = 500, description = "Failed to serialize events"),
+        (status = 503, description = "Database is unavailable")
+    )
+)]
 pub async fn handle_events_get(
-    State(state): State<AppState>,
+    Database(db): Database,
     Query(query): Query<EventsQuery>,
-) -> Response {
-    let db = match crate::ensure_db(&state).await {
-        Some(db) => db,
-        None => {
-            return (
-                StatusCode::SERVICE_UNAVAILABLE,
-                [
-                    ("Content-Type", "text/html; charset=utf-8"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                "Database is unavailable",
-            )
-                .into_response();
-        }
+) -> Result<Response, ApiError> {
+    let events = crate::db::get_events(&db, query.event_type, query.limit, query.offset)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to get events: {:?}", e);
+            ApiError::DatabaseUnavailable
+        })?;
+
+    let response_data = definy_event::response::EventsResponse {
+        events,
+        next_cursor: None,
     };
 
-    match crate::db::get_events(&db, query.event_type, query.limit, query.offset).await {
-        Err(e) => {
-            eprintln!("Failed to get events: {:?}", e);
-            (
-                StatusCode::SERVICE_UNAVAILABLE,
-                [
-                    ("Content-Type", "text/html; charset=utf-8"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                "Database is unavailable",
-            )
-                .into_response()
-        }
-        Ok(events) => {
-            match serde_cbor::to_vec(&definy_event::response::EventsResponse {
-                events,
-                next_cursor: None,
-            }) {
-                Ok(cbor) => (
-                    StatusCode::OK,
-                    [
-                        ("Content-Type", "application/cbor"),
-                        ("Access-Control-Allow-Origin", "*"),
-                    ],
-                    cbor,
-                )
-                    .into_response(),
-                Err(e) => {
-                    eprintln!("Failed to serialize events: {:?}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        [
-                            ("Content-Type", "text/html; charset=utf-8"),
-                            ("Access-Control-Allow-Origin", "*"),
-                        ],
-                        "Internal Server Error",
-                    )
-                        .into_response()
-                }
-            }
-        }
-    }
+    let cbor = serde_cbor::to_vec(&response_data).map_err(|e| {
+        eprintln!("Failed to serialize events: {:?}", e);
+        ApiError::Internal("Failed to serialize events".to_string())
+    })?;
+
+    Ok((StatusCode::OK, [("Content-Type", "application/cbor")], cbor).into_response())
 }
 
+#[utoipa::path(
+    post,
+    path = "/events",
+    tag = "events",
+    request_body(
+        content = inline(Vec<u8>),
+        content_type = "application/cbor",
+        description = "Signed event serialized in CBOR format"
+    ),
+    responses(
+        (status = 200, description = "Event saved successfully", body = String, content_type = "text/plain"),
+        (status = 400, description = "Failed to parse or verify CBOR", body = String, content_type = "text/plain"),
+        (status = 503, description = "Database is unavailable", body = String, content_type = "text/plain")
+    )
+)]
 pub async fn handle_events_post(
-    State(state): State<AppState>,
+    Database(db): Database,
     ConnectInfo(address): ConnectInfo<SocketAddr>,
     body: Bytes,
-) -> Response {
-    let db = match crate::ensure_db(&state).await {
-        Some(db) => db,
-        None => {
-            return (
-                StatusCode::SERVICE_UNAVAILABLE,
-                [
-                    ("content-type", "text/plain; charset=utf-8"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                "Database is unavailable",
-            )
-                .into_response();
-        }
-    };
+) -> Result<Response, ApiError> {
+    let (signature, data) = definy_event::verify_and_deserialize(&body).map_err(|e| {
+        eprintln!("Failed to parse or verify CBOR: {:?}", e);
+        ApiError::BadRequest("Failed to parse or verify CBOR".to_string())
+    })?;
 
-    match definy_event::verify_and_deserialize(&body) {
-        Ok((signature, data)) => {
-            match crate::db::save_event(&data, &signature, &body, address, &db).await {
-                Ok(()) => (
-                    StatusCode::OK,
-                    [
-                        ("content-type", "text/plain; charset=utf-8"),
-                        ("Access-Control-Allow-Origin", "*"),
-                    ],
-                    "OK",
-                )
-                    .into_response(),
-                Err(e) => {
-                    eprintln!("Failed to save event: {:?}", e);
-                    (
-                        StatusCode::SERVICE_UNAVAILABLE,
-                        [
-                            ("content-type", "text/plain; charset=utf-8"),
-                            ("Access-Control-Allow-Origin", "*"),
-                        ],
-                        "Database is unavailable",
-                    )
-                        .into_response()
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("Failed to parse or verify CBOR: {:?}", e);
-            (
-                StatusCode::BAD_REQUEST,
-                [
-                    ("content-type", "text/plain; charset=utf-8"),
-                    ("Access-Control-Allow-Origin", "*"),
-                ],
-                "Failed to parse or verify CBOR",
-            )
-                .into_response()
-        }
-    }
+    let event_type = strum::IntoDiscriminant::discriminant(&data.content);
+    println!(
+        "Received POST /events: event_type={:?}, account_id={}",
+        event_type,
+        hex::encode(data.account_id.0.as_bytes())
+    );
+
+    crate::db::save_event(&data, &signature, &body, address, &db)
+        .await
+        .map_err(|e| {
+            eprintln!("Failed to save event to database: {:?}", e);
+            ApiError::Internal(format!("Failed to save event: {:?}", e))
+        })?;
+
+    println!("Successfully saved event: event_type={:?}", event_type);
+
+    Ok((
+        StatusCode::OK,
+        [("Content-Type", "text/plain; charset=utf-8")],
+        "OK",
+    )
+        .into_response())
 }

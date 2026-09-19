@@ -5,8 +5,8 @@ use crate::language::Language;
 
 use super::super::mutation::{
     add_list_item, add_record_item, path_to_key, remove_list_item, remove_record_item,
-    selector_prefix, set_boolean_value, set_let_variable_name, set_number_value,
-    set_record_item_key, set_string_value, target_expression_mut,
+    selector_prefix, set_boolean_value, set_function_parameter_name, set_let_variable_name,
+    set_number_value, set_record_item_key, set_string_value, target_expression_mut,
 };
 use super::super::types::EditorTarget;
 
@@ -22,7 +22,7 @@ pub(crate) fn number_input(path: Vec<PathStep>, target: EditorTarget, value: i64
             name: "{name}",
             r#type: "number",
             value: "{value}",
-            style: "padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 6rem; box-sizing: border-box;",
             oninput: move |evt: FormEvent| {
                 if let Ok(val) = evt.value().parse::<i64>() {
                     let mut state_sig = use_context::<Signal<AppState>>();
@@ -48,7 +48,7 @@ pub(crate) fn string_input(path: Vec<PathStep>, target: EditorTarget, value: &st
             name: "{name}",
             r#type: "text",
             value: "{value}",
-            style: "padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 100%; box-sizing: border-box;",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); flex: 1; min-width: 6rem; max-width: 16rem; box-sizing: border-box;",
             oninput: move |evt: FormEvent| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let mut next = state_sig.read().clone();
@@ -68,18 +68,18 @@ pub(crate) fn boolean_input(
 ) -> Element {
     let path_f = path.clone();
     let style_true = if value {
-        "padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--primary); color: #0e1720; font-weight: 600; cursor: pointer;"
+        "padding: 0.2rem 0.55rem; font-size: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--primary); color: #0e1720; font-weight: 600; cursor: pointer;"
     } else {
-        "padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;"
+        "padding: 0.2rem 0.55rem; font-size: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;"
     };
     let style_false = if !value {
-        "padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--primary); color: #0e1720; font-weight: 600; cursor: pointer;"
+        "padding: 0.2rem 0.55rem; font-size: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--primary); color: #0e1720; font-weight: 600; cursor: pointer;"
     } else {
-        "padding: 0.3rem 0.7rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;"
+        "padding: 0.2rem 0.55rem; font-size: 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;"
     };
 
     rsx! {
-        div { style: "display: flex; gap: 0.5rem;",
+        div { style: "display: flex; gap: 0.35rem;",
             button {
                 r#type: "button",
                 style: "{style_true}",
@@ -120,12 +120,40 @@ pub(crate) fn let_name_input(path: Vec<PathStep>, target: EditorTarget, value: &
             name: "{name}",
             r#type: "text",
             value: "{value}",
-            style: "padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 7.5rem; box-sizing: border-box;",
             oninput: move |evt: FormEvent| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let mut next = state_sig.read().clone();
                 let root_expression = target_expression_mut(&mut next, target);
                 set_let_variable_name(root_expression, path.as_slice(), &evt.value());
+                state_sig.set(next);
+            },
+        }
+    }
+}
+
+pub(crate) fn function_param_name_input(
+    path: Vec<PathStep>,
+    target: EditorTarget,
+    value: &str,
+) -> Element {
+    let name = format!(
+        "{}-expr-func-param-{}",
+        selector_prefix(target),
+        path_to_key(path.as_slice())
+    );
+
+    rsx! {
+        input {
+            name: "{name}",
+            r#type: "text",
+            value: "{value}",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 7.5rem; box-sizing: border-box;",
+            oninput: move |evt: FormEvent| {
+                let mut state_sig = use_context::<Signal<AppState>>();
+                let mut next = state_sig.read().clone();
+                let root_expression = target_expression_mut(&mut next, target);
+                set_function_parameter_name(root_expression, path.as_slice(), &evt.value());
                 state_sig.set(next);
             },
         }
@@ -150,7 +178,7 @@ pub(crate) fn record_item_key_input(
             name: "{name}",
             r#type: "text",
             value: "{value}",
-            style: "max-width: 16rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
+            style: "max-width: 12rem; padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
             oninput: move |evt: FormEvent| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let mut next = state_sig.read().clone();
@@ -234,7 +262,7 @@ pub(crate) fn remove_list_item_button(
     rsx! {
         button {
             r#type: "button",
-            style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--error); cursor: pointer;",
+            style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--error); cursor: pointer; flex-shrink: 0;",
             onclick: move |_| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let mut next = state_sig.read().clone();
@@ -242,7 +270,7 @@ pub(crate) fn remove_list_item_button(
                 remove_list_item(root_expression, path.as_slice(), item_index);
                 state_sig.set(next);
             },
-            "x"
+            "×"
         }
     }
 }

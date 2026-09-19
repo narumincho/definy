@@ -17,6 +17,27 @@ fn part_type_text(part_type: &definy_event::event::PartType) -> String {
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))
         }
+        definy_event::event::PartType::Function {
+            parameter,
+            return_type,
+        } => {
+            format!(
+                "{} -> {}",
+                part_type_text(parameter.as_ref()),
+                part_type_text(return_type.as_ref())
+            )
+        }
+        definy_event::event::PartType::Union(variants) => {
+            let var_texts = variants
+                .iter()
+                .map(|v| match &v.payload {
+                    Some(p) => format!("{}({})", v.tag, part_type_text(p.as_ref())),
+                    None => v.tag.to_string(),
+                })
+                .collect::<Vec<String>>()
+                .join(" | ");
+            format!("union<{}>", var_texts)
+        }
     }
 }
 

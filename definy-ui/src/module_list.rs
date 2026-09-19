@@ -16,13 +16,27 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                 h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Modules\", \"モジュール\", \"Moduloj\")}"
                 }
-                if state.current_key.is_some() && !state.module_definition_form.is_form_open {
+                if !state.module_definition_form.is_form_open {
                     button {
                         r#type: "button",
                         style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                         onclick: move |_| {
                             let mut state_sig = use_context::<Signal<AppState>>();
-                            state_sig.write().module_definition_form.is_form_open = true;
+                            if state_sig.read().current_key.is_none() {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let _ = web_sys::window()
+                                        .and_then(|w| w.document())
+                                        .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
+                                        .and_then(|el| {
+                                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el)
+                                                .ok()
+                                        })
+                                        .map(|dlg| dlg.show_modal());
+                                }
+                            } else {
+                                state_sig.write().module_definition_form.is_form_open = true;
+                            }
                         },
                         "{context.language.label(\"+ Create Module\", \"+ モジュールを作成\", \"+ Krei modulon\")}"
                     }
@@ -178,7 +192,7 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                         return;
                     }
                     let force_offline = state_val.force_offline;
-                    spawn(async move {
+                    let fut = async move {
                         crate::event_submit::submit_event(
                                 definy_event::event::EventContent::ModuleDefinition(definy_event::event::ModuleDefinitionEvent {
                                     module_name: module_name.into(),
@@ -191,10 +205,16 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                                 move |next, record| {
                                     if record.status == crate::local_event::LocalEventStatus::Sent {
                                         next.module_definition_form.result_message = None;
+                                        next.module_definition_form.is_form_open = false;
+                                        next.module_definition_form.module_name_input = String::new();
+                                        next.module_definition_form.module_description_input = String::new();
                                     } else {
                                         next.module_definition_form.result_message = Some(
                                             match record.status {
                                                 crate::local_event::LocalEventStatus::Queued => {
+                                                    next.module_definition_form.is_form_open = false;
+                                                    next.module_definition_form.module_name_input = String::new();
+                                                    next.module_definition_form.module_description_input = String::new();
                                                     language
                                                         .label(
                                                             "ModuleDefinition queued (offline)",
@@ -219,12 +239,11 @@ fn ModuleCreateForm(state: AppState, context: PageContext) -> Element {
                                 },
                             )
                             .await;
-                    });
-                    let mut write_state = state_sig.write();
-                    write_state.module_definition_form.is_form_open = false;
-                    write_state.module_definition_form.module_name_input = String::new();
-                    write_state.module_definition_form.module_description_input = String::new();
-                    write_state.module_definition_form.result_message = None;
+                    };
+                    #[cfg(target_arch = "wasm32")]
+                    wasm_bindgen_futures::spawn_local(fut);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    spawn(fut);
                 },
                 "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
             }

@@ -5,8 +5,10 @@ edition = "2024"
 
 [features]
 default = []
+utoipa = ["dep:utoipa"]
 
 [dependencies]
+utoipa = { version = "5.5", optional = true }
 chrono = { version = "0.4.45", default-features = false, features = ["alloc", "serde", "wasmbind", "now"] }
 serde = { version = "1", features = ["derive"] }
 serde_cbor = { version = "0.11.2", features = ["std", "tags"] }

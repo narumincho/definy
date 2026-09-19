@@ -43,6 +43,7 @@ pub fn expression_selector(
             name,
             current_value: current_val_str,
             options: options_vec,
+            compact: true,
             on_change: move |selected_value: String| {
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let constructor_default = selected_value
@@ -84,7 +85,7 @@ pub fn selector_options(
     if is_root {
         options.push((
             "expr:none".to_string(),
-            format!("{}\t\t", language.label("None", "なし", "Neniu")),
+            format!("{}\t\t", language.label("none", "none", "none")),
         ));
     }
 
@@ -98,88 +99,87 @@ pub fn selector_options(
 
     // Literals and generic constructors
     options.extend([
-        ("expr:number".to_string(), "Number\tLiteral\t".to_string()),
-        ("expr:string".to_string(), "String\tLiteral\t".to_string()),
-        ("expr:boolean".to_string(), "Boolean\tLiteral\t".to_string()),
-        ("expr:list".to_string(), "List\tLiteral\t".to_string()),
+        ("expr:number".to_string(), "number\tLiteral\t".to_string()),
+        ("expr:string".to_string(), "string\tLiteral\t".to_string()),
+        ("expr:boolean".to_string(), "boolean\tLiteral\t".to_string()),
+        ("expr:list".to_string(), "list\tLiteral\t".to_string()),
         (
             "expr:type_literal".to_string(),
-            "Record\tLiteral\t".to_string(),
+            "record\tLiteral\t".to_string(),
         ),
-        ("expr:add".to_string(), "Add (+)\tFunction\t".to_string()),
+        ("expr:add".to_string(), "add\tFunction\t".to_string()),
         (
             "expr:subtract".to_string(),
-            "Subtract (-)\tFunction\t".to_string(),
+            "subtract\tFunction\t".to_string(),
         ),
         (
             "expr:multiply".to_string(),
-            "Multiply (*)\tFunction\t".to_string(),
+            "multiply\tFunction\t".to_string(),
         ),
-        (
-            "expr:divide".to_string(),
-            "Divide (/)\tFunction\t".to_string(),
-        ),
+        ("expr:divide".to_string(), "divide\tFunction\t".to_string()),
         (
             "expr:remainder".to_string(),
-            "Remainder (%)\tFunction\t".to_string(),
+            "remainder\tFunction\t".to_string(),
         ),
-        (
-            "expr:equal".to_string(),
-            "Equal (==)\tFunction\t".to_string(),
-        ),
+        ("expr:equal".to_string(), "equal\tFunction\t".to_string()),
         (
             "expr:not_equal".to_string(),
-            "Not Equal (!=)\tFunction\t".to_string(),
+            "not_equal\tFunction\t".to_string(),
         ),
         (
             "expr:less_than".to_string(),
-            "Less Than (<)\tFunction\t".to_string(),
+            "less_than\tFunction\t".to_string(),
         ),
         (
             "expr:less_than_or_equal".to_string(),
-            "Less Than or Equal (<=)\tFunction\t".to_string(),
+            "less_than_or_equal\tFunction\t".to_string(),
         ),
         (
             "expr:greater_than".to_string(),
-            "Greater Than (>)\tFunction\t".to_string(),
+            "greater_than\tFunction\t".to_string(),
         ),
         (
             "expr:greater_than_or_equal".to_string(),
-            "Greater Than or Equal (>=)\tFunction\t".to_string(),
+            "greater_than_or_equal\tFunction\t".to_string(),
         ),
-        ("expr:not".to_string(), "Not (not)\tFunction\t".to_string()),
-        ("expr:and".to_string(), "And (and)\tFunction\t".to_string()),
-        ("expr:or".to_string(), "Or (or)\tFunction\t".to_string()),
+        ("expr:not".to_string(), "not\tFunction\t".to_string()),
+        ("expr:and".to_string(), "and\tFunction\t".to_string()),
+        ("expr:or".to_string(), "or\tFunction\t".to_string()),
         (
             "expr:string_concat".to_string(),
-            "String Concat (string_concat)\tFunction\t".to_string(),
+            "string_concat\tFunction\t".to_string(),
         ),
         (
             "expr:string_length".to_string(),
-            "String Length (string_length)\tFunction\t".to_string(),
+            "string_length\tFunction\t".to_string(),
         ),
         (
             "expr:string_slice".to_string(),
-            "String Slice (string_slice)\tFunction\t".to_string(),
+            "string_slice\tFunction\t".to_string(),
         ),
         (
             "expr:list_length".to_string(),
-            "List Length (list_length)\tFunction\t".to_string(),
+            "list_length\tFunction\t".to_string(),
         ),
         (
             "expr:list_concat".to_string(),
-            "List Concat (list_concat)\tFunction\t".to_string(),
+            "list_concat\tFunction\t".to_string(),
         ),
         (
             "expr:list_get".to_string(),
-            "List Get (list_get)\tFunction\t".to_string(),
+            "list_get\tFunction\t".to_string(),
         ),
         (
             "expr:list_append".to_string(),
-            "List Append (list_append)\tFunction\t".to_string(),
+            "list_append\tFunction\t".to_string(),
         ),
-        ("expr:if".to_string(), "If\tSyntax\t".to_string()),
-        ("expr:let".to_string(), "Let\tSyntax\t".to_string()),
+        ("expr:if".to_string(), "if\tSyntax\t".to_string()),
+        ("expr:let".to_string(), "let\tSyntax\t".to_string()),
+        (
+            "expr:function".to_string(),
+            "function\tSyntax\t".to_string(),
+        ),
+        ("expr:call".to_string(), "call\tSyntax\t".to_string()),
     ]);
 
     // Type constructors
@@ -390,6 +390,8 @@ pub(crate) fn current_selection_value(
                         "expr:number".to_string()
                     }
                     definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
+                    definy_event::event::CompilerBuiltin::Function => "expr:function".to_string(),
+                    definy_event::event::CompilerBuiltin::Call => "expr:call".to_string(),
                 })
         }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
@@ -404,6 +406,20 @@ pub(crate) fn current_selection_value(
             "expr:constructor:{}",
             constructor_expression.type_part_definition_event_hash
         ),
+        definy_event::event::Expression::Function(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Function)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:function".to_string())
+        }
+        definy_event::event::Expression::Call(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Call)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:call".to_string())
+        }
+        definy_event::event::Expression::TypeFunction(_) => "expr:type:function".to_string(),
+        definy_event::event::Expression::TypeUnion(_) => "expr:type:union".to_string(),
+        definy_event::event::Expression::Variant(_) => "expr:variant".to_string(),
+        definy_event::event::Expression::Match(_) => "expr:match".to_string(),
         definy_event::event::Expression::PartReference(part_ref) => {
             format!("ref:global:{}", part_ref.part_definition_event_hash)
         }
