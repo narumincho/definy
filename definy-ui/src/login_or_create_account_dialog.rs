@@ -88,7 +88,7 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
                     onclick: move |_| {
                         tab.set(TabState::CreateAccount);
                     },
-                    "{context.language.label(\"Sign Up\", \"サインアップ\", \"Registriĝi\")}"
+                    "{context.language.label(\"Sign Up\", \"アカウント作成\", \"Registriĝi\")}"
                 }
             }
             match tab() {
@@ -378,9 +378,9 @@ fn CreateAccountView(context: PageContext) -> Element {
                     disabled: requesting(),
                     style: "padding: 0.45rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                     if requesting() {
-                        "{context.language.label(\"Signing Up...\", \"サインアップ中...\", \"Registriĝante...\")}"
+                        "{context.language.label(\"Signing Up...\", \"アカウント作成中...\", \"Registriĝante...\")}"
                     } else {
-                        "{context.language.label(\"Sign Up\", \"サインアップ\", \"Registriĝi\")}"
+                        "{context.language.label(\"Sign Up\", \"アカウント作成\", \"Registriĝi\")}"
                     }
                 }
             }
