@@ -283,16 +283,7 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
         .is_some_and(|value| value.contains("text/html"));
 
     if accepts_html {
-        if let Some(redirect_url) = lang_redirect_url(&uri, &headers) {
-            return Redirect::temporary(&redirect_url).into_response();
-        }
-        let accept_language = headers
-            .get("accept-language")
-            .and_then(|value| value.to_str().ok());
-        let language_resolution =
-            definy_ui::language::resolve_language(uri.query(), accept_language);
-        let db = ensure_db(&state).await;
-        return handle_html(&uri, db.as_ref(), language_resolution.language).await;
+        return handle_html_request(&state, &uri, &headers).await;
     }
 
     (
@@ -301,6 +292,22 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
         "404 Not Found",
     )
         .into_response()
+}
+
+pub(crate) async fn handle_html_request(
+    state: &AppState,
+    uri: &Uri,
+    headers: &HeaderMap,
+) -> Response {
+    if let Some(redirect_url) = lang_redirect_url(uri, headers) {
+        return Redirect::temporary(&redirect_url).into_response();
+    }
+    let accept_language = headers
+        .get("accept-language")
+        .and_then(|value| value.to_str().ok());
+    let language_resolution = definy_ui::language::resolve_language(uri.query(), accept_language);
+    let db = ensure_db(state).await;
+    handle_html(uri, db.as_ref(), language_resolution.language).await
 }
 
 async fn handle_html(
@@ -474,5 +481,27 @@ mod tests {
         assert!(json.contains("/events"));
         assert!(json.contains("/events/{hash}"));
         assert!(json.contains("create_account"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_html_request_event_detail() {
+        let state = AppState {
+            db: Arc::new(RwLock::new(None)),
+        };
+        let uri = axum::http::Uri::from_static(
+            "/events/-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o?lang=ja",
+        );
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
+
+        let response = handle_html_request(&state, &uri, &headers).await;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
+        assert_ne!(body_str, "todo");
+        assert!(body_str.contains("<!DOCTYPE html>"));
+        assert!(body_str.contains("-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o"));
     }
 }

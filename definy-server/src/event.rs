@@ -1,13 +1,14 @@
 use std::net::SocketAddr;
 
 use axum::body::Bytes;
-use axum::extract::{ConnectInfo, Path, Query};
-use axum::http::{HeaderMap, StatusCode};
-use axum::response::{IntoResponse, Response};
+use axum::extract::{ConnectInfo, Path, Query, State};
+use axum::http::{HeaderMap, StatusCode, Uri};
+use axum::response::{IntoResponse, Redirect, Response};
 use definy_event::event::EventType;
 use definy_event::response::EventsResponse;
 use utoipa::{IntoParams, ToSchema};
 
+use crate::AppState;
 use crate::error::ApiError;
 use crate::extractor::Database;
 
@@ -37,10 +38,19 @@ pub struct EventsQuery {
     )
 )]
 pub async fn handle_event_get(
+    State(state): State<AppState>,
+    uri: Uri,
     Database(db): Database,
     Path(event_binary_hash_base64): Path<String>,
     headers: HeaderMap,
 ) -> Result<Response, ApiError> {
+    if let Some(accept) = headers.get("accept")
+        && let Ok(accept_as_str) = accept.to_str()
+        && accept_as_str.contains("text/html")
+    {
+        return Ok(crate::handle_html_request(&state, &uri, &headers).await);
+    }
+
     let event_binary_hash = base64::Engine::decode(
         &base64::engine::general_purpose::URL_SAFE_NO_PAD,
         &event_binary_hash_base64,
@@ -54,18 +64,6 @@ pub async fn handle_event_get(
             ApiError::DatabaseUnavailable
         })?
         .ok_or(ApiError::NotFound)?;
-
-    if let Some(accept) = headers.get("accept")
-        && let Ok(accept_as_str) = accept.to_str()
-        && accept_as_str.contains("text/html")
-    {
-        return Ok((
-            StatusCode::OK,
-            [("Content-Type", "text/html; charset=utf-8")],
-            "todo",
-        )
-            .into_response());
-    }
 
     Ok((
         StatusCode::OK,
@@ -87,9 +85,23 @@ pub async fn handle_event_get(
     )
 )]
 pub async fn handle_events_get(
+    uri: Uri,
+    headers: HeaderMap,
     Database(db): Database,
     Query(query): Query<EventsQuery>,
 ) -> Result<Response, ApiError> {
+    if let Some(accept) = headers.get("accept")
+        && let Ok(accept_as_str) = accept.to_str()
+        && accept_as_str.contains("text/html")
+    {
+        let mut home_uri = "/".to_string();
+        if let Some(query_str) = uri.query() {
+            home_uri.push('?');
+            home_uri.push_str(query_str);
+        }
+        return Ok(Redirect::temporary(&home_uri).into_response());
+    }
+
     let events = crate::db::get_events(&db, query.event_type, query.limit, query.offset)
         .await
         .map_err(|e| {
