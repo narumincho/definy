@@ -8,10 +8,8 @@ use crate::language::Language;
 use crate::part_projection::collect_part_snapshots;
 
 use super::super::diagnostics::constructor_default_value_from_type_part;
-use super::super::mutation::{
-    apply_selection, path_to_key, selector_prefix, target_expression_mut,
-};
-use super::super::types::{EditorTarget, ScopeVariable};
+use super::super::mutation::{apply_selection, path_to_key};
+use super::super::types::ScopeVariable;
 
 pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep]) -> bool {
     if allow_kind_change {
@@ -24,15 +22,10 @@ pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[Path
 pub fn expression_selector(
     _state: &AppState,
     path: Vec<PathStep>,
-    target: EditorTarget,
     current_value: &str,
     options: &[(String, String)],
 ) -> Element {
-    let name = format!(
-        "{}-expr-kind-{}",
-        selector_prefix(target),
-        path_to_key(path.as_slice())
-    );
+    let name = format!("expr-kind-{}", path_to_key(path.as_slice()));
 
     let path_clone = path.clone();
     let current_val_str = current_value.to_string();
@@ -45,7 +38,7 @@ pub fn expression_selector(
             options: options_vec,
             compact: true,
             on_change: move |selected_value: String| {
-                let mut state_sig = use_context::<Signal<AppState>>();
+                let state_sig = use_context::<Signal<AppState>>();
                 let constructor_default = selected_value
                     .strip_prefix("expr:constructor:")
                     .and_then(|value| EventHashId::from_str(value).ok())
@@ -58,16 +51,18 @@ pub fn expression_selector(
                             ),
                         )
                     });
-                let mut state_val = state_sig.read().clone();
-                let root_expression = target_expression_mut(&mut state_val, target);
+                let mut expr_sig = use_context::<
+                    Signal<Option<definy_event::event::Expression>>,
+                >();
+                let mut expr = expr_sig.read().clone();
                 apply_selection(
                     &state_sig.read(),
-                    root_expression,
+                    &mut expr,
                     path_clone.as_slice(),
                     selected_value.as_str(),
                     constructor_default,
                 );
-                state_sig.set(state_val);
+                expr_sig.set(expr);
             },
         }
     }

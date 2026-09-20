@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 
 use crate::app_state::{AppState, PathStep};
 
-use super::super::types::{EditorTarget, ExpressionEditorContext, ScopeVariable};
+use super::super::types::{ExpressionEditorContext, ScopeVariable};
 use super::inputs::{
     add_list_item_button, add_record_item_button, function_param_name_input, get_tabular_keys,
     let_name_input, record_item_key_input, remove_list_item_button, remove_record_item_button,
@@ -51,7 +51,7 @@ pub fn render_binary_inputs(
                                 left_path,
                                 context.scope_variables.clone(),
                                 context.structure_locked,
-                                context.allow_kind_change,
+                                allow_kind_change_for_nested_values(context.allow_kind_change, path),
                             ),
                     )
                 }
@@ -69,7 +69,7 @@ pub fn render_binary_inputs(
                                 right_path,
                                 context.scope_variables.clone(),
                                 context.structure_locked,
-                                context.allow_kind_change,
+                                allow_kind_change_for_nested_values(context.allow_kind_change, path),
                             ),
                     )
                 }
@@ -92,25 +92,11 @@ pub fn render_string_slice(
     end_path.push(PathStep::End);
     let language = context.language;
 
-    let has_nested = is_compound_expression(slice_expr.value.as_ref())
-        || is_compound_expression(slice_expr.start.as_ref())
-        || is_compound_expression(slice_expr.end.as_ref());
-    let container_style = if has_nested {
-        "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;"
-    } else {
-        "display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-start;"
-    };
-    let item_style = if has_nested {
-        "display: grid; gap: 0.15rem; width: 100%;"
-    } else {
-        "display: grid; gap: 0.15rem; flex: 1; min-width: 6rem;"
-    };
-
     rsx! {
-        div { style: "{container_style}",
-            div { style: "{item_style}",
+        div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"String\", \"文字列\", \"Ĉeno\")}"
+                    "{language.label(\"Target String\", \"対象文字列\", \"Cela ĉeno\")}"
                 }
                 {
                     render_expression_editor(
@@ -126,40 +112,42 @@ pub fn render_string_slice(
                     )
                 }
             }
-            div { style: "{item_style}",
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Start\", \"開始位置\", \"Komenco\")}"
+            div { style: "display: flex; gap: 0.4rem; flex-wrap: wrap;",
+                div { style: "display: grid; gap: 0.15rem; flex: 1; min-width: 6rem;",
+                    div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                        "{language.label(\"Start Index\", \"開始インデックス\", \"Komenca indico\")}"
+                    }
+                    {
+                        render_expression_editor(
+                            state,
+                            slice_expr.start.as_ref(),
+                            context
+                                .child(
+                                    start_path,
+                                    context.scope_variables.clone(),
+                                    context.structure_locked,
+                                    context.allow_kind_change,
+                                ),
+                        )
+                    }
                 }
-                {
-                    render_expression_editor(
-                        state,
-                        slice_expr.start.as_ref(),
-                        context
-                            .child(
-                                start_path,
-                                context.scope_variables.clone(),
-                                context.structure_locked,
-                                context.allow_kind_change,
-                            ),
-                    )
-                }
-            }
-            div { style: "{item_style}",
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"End\", \"終了位置\", \"Fino\")}"
-                }
-                {
-                    render_expression_editor(
-                        state,
-                        slice_expr.end.as_ref(),
-                        context
-                            .child(
-                                end_path,
-                                context.scope_variables.clone(),
-                                context.structure_locked,
-                                context.allow_kind_change,
-                            ),
-                    )
+                div { style: "display: grid; gap: 0.15rem; flex: 1; min-width: 6rem;",
+                    div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                        "{language.label(\"End Index\", \"終了インデックス\", \"Fina indico\")}"
+                    }
+                    {
+                        render_expression_editor(
+                            state,
+                            slice_expr.end.as_ref(),
+                            context
+                                .child(
+                                    end_path,
+                                    context.scope_variables.clone(),
+                                    context.structure_locked,
+                                    context.allow_kind_change,
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -173,27 +161,14 @@ pub fn render_list_get(
     get_expr: &definy_event::event::ListGetExpression,
 ) -> Element {
     let mut list_path = path.to_vec();
-    list_path.push(PathStep::Left);
-    let mut idx_path = path.to_vec();
-    idx_path.push(PathStep::Index);
+    list_path.push(PathStep::Condition);
+    let mut index_path = path.to_vec();
+    index_path.push(PathStep::Index);
     let language = context.language;
 
-    let has_nested = is_compound_expression(get_expr.list.as_ref())
-        || is_compound_expression(get_expr.index.as_ref());
-    let container_style = if has_nested {
-        "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;"
-    } else {
-        "display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-start;"
-    };
-    let item_style = if has_nested {
-        "display: grid; gap: 0.15rem; width: 100%;"
-    } else {
-        "display: grid; gap: 0.15rem; flex: 1; min-width: 7rem;"
-    };
-
     rsx! {
-        div { style: "{container_style}",
-            div { style: "{item_style}",
+        div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                     "{language.label(\"List\", \"リスト\", \"Listo\")}"
                 }
@@ -211,9 +186,9 @@ pub fn render_list_get(
                     )
                 }
             }
-            div { style: "{item_style}",
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Index\", \"インデックス\", \"Indekso\")}"
+                    "{language.label(\"Index\", \"インデックス\", \"Indico\")}"
                 }
                 {
                     render_expression_editor(
@@ -221,7 +196,7 @@ pub fn render_list_get(
                         get_expr.index.as_ref(),
                         context
                             .child(
-                                idx_path,
+                                index_path,
                                 context.scope_variables.clone(),
                                 context.structure_locked,
                                 context.allow_kind_change,
@@ -240,27 +215,14 @@ pub fn render_list_append(
     append_expr: &definy_event::event::ListAppendExpression,
 ) -> Element {
     let mut list_path = path.to_vec();
-    list_path.push(PathStep::Left);
+    list_path.push(PathStep::Condition);
     let mut item_path = path.to_vec();
     item_path.push(PathStep::Item);
     let language = context.language;
 
-    let has_nested = is_compound_expression(append_expr.list.as_ref())
-        || is_compound_expression(append_expr.item.as_ref());
-    let container_style = if has_nested {
-        "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;"
-    } else {
-        "display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-start;"
-    };
-    let item_style = if has_nested {
-        "display: grid; gap: 0.15rem; width: 100%;"
-    } else {
-        "display: grid; gap: 0.15rem; flex: 1; min-width: 7rem;"
-    };
-
     rsx! {
-        div { style: "{container_style}",
-            div { style: "{item_style}",
+        div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                     "{language.label(\"List\", \"リスト\", \"Listo\")}"
                 }
@@ -278,9 +240,9 @@ pub fn render_list_append(
                     )
                 }
             }
-            div { style: "{item_style}",
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Item\", \"項目\", \"Elemento\")}"
+                    "{language.label(\"Item to Append\", \"追加する要素\", \"Ero por aldoni\")}"
                 }
                 {
                     render_expression_editor(
@@ -306,31 +268,17 @@ pub fn render_if(
     path: &[PathStep],
     if_expression: &definy_event::event::IfExpression,
 ) -> Element {
-    let mut cond_path = path.to_vec();
-    cond_path.push(PathStep::Condition);
+    let mut condition_path = path.to_vec();
+    condition_path.push(PathStep::Condition);
     let mut then_path = path.to_vec();
     then_path.push(PathStep::Then);
     let mut else_path = path.to_vec();
     else_path.push(PathStep::Else);
     let language = context.language;
 
-    let has_nested = is_compound_expression(if_expression.condition.as_ref())
-        || is_compound_expression(if_expression.then_expr.as_ref())
-        || is_compound_expression(if_expression.else_expr.as_ref());
-    let container_style = if has_nested {
-        "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;"
-    } else {
-        "display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-start;"
-    };
-    let item_style = if has_nested {
-        "display: grid; gap: 0.15rem; width: 100%;"
-    } else {
-        "display: grid; gap: 0.15rem; flex: 1; min-width: 6.5rem;"
-    };
-
     rsx! {
-        div { style: "{container_style}",
-            div { style: "{item_style}",
+        div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                     "{language.label(\"Condition\", \"条件\", \"Kondiĉo\")}"
                 }
@@ -340,7 +288,7 @@ pub fn render_if(
                         if_expression.condition.as_ref(),
                         context
                             .child(
-                                cond_path,
+                                condition_path,
                                 context.scope_variables.clone(),
                                 context.structure_locked,
                                 context.allow_kind_change,
@@ -348,40 +296,42 @@ pub fn render_if(
                     )
                 }
             }
-            div { style: "{item_style}",
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Then\", \"なら\", \"Tiam\")}"
+            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                div { style: "display: grid; gap: 0.15rem; width: 100%;",
+                    div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                        "{language.label(\"Then\", \"真の場合\", \"Tiam\")}"
+                    }
+                    {
+                        render_expression_editor(
+                            state,
+                            if_expression.then_expr.as_ref(),
+                            context
+                                .child(
+                                    then_path,
+                                    context.scope_variables.clone(),
+                                    context.structure_locked,
+                                    context.allow_kind_change,
+                                ),
+                        )
+                    }
                 }
-                {
-                    render_expression_editor(
-                        state,
-                        if_expression.then_expr.as_ref(),
-                        context
-                            .child(
-                                then_path,
-                                context.scope_variables.clone(),
-                                context.structure_locked,
-                                context.allow_kind_change,
-                            ),
-                    )
-                }
-            }
-            div { style: "{item_style}",
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Else\", \"それ以外\", \"Alie\")}"
-                }
-                {
-                    render_expression_editor(
-                        state,
-                        if_expression.else_expr.as_ref(),
-                        context
-                            .child(
-                                else_path,
-                                context.scope_variables.clone(),
-                                context.structure_locked,
-                                context.allow_kind_change,
-                            ),
-                    )
+                div { style: "display: grid; gap: 0.15rem; width: 100%;",
+                    div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                        "{language.label(\"Else\", \"偽の場合\", \"Alie\")}"
+                    }
+                    {
+                        render_expression_editor(
+                            state,
+                            if_expression.else_expr.as_ref(),
+                            context
+                                .child(
+                                    else_path,
+                                    context.scope_variables.clone(),
+                                    context.structure_locked,
+                                    context.allow_kind_change,
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -392,7 +342,6 @@ pub fn render_let(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    target: EditorTarget,
     let_expression: &definy_event::event::LetExpression,
 ) -> Element {
     let mut value_path = path.to_vec();
@@ -416,7 +365,7 @@ pub fn render_let(
                     div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                         "{language.label(\"Let Name\", \"変数名\", \"Nomo\")}"
                     }
-                    {let_name_input(path.to_vec(), target, &var_name)}
+                    {let_name_input(path.to_vec(), &var_name)}
                 }
                 div { style: "display: grid; gap: 0.15rem; width: 100%;",
                     div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
@@ -442,7 +391,7 @@ pub fn render_let(
                         div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                             "{language.label(\"Let Name\", \"変数名\", \"Nomo\")}"
                         }
-                        {let_name_input(path.to_vec(), target, &var_name)}
+                        {let_name_input(path.to_vec(), &var_name)}
                     }
                     div { style: "display: grid; gap: 0.15rem; flex: 1; min-width: 8rem;",
                         div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
@@ -490,7 +439,6 @@ pub fn render_list_literal(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    target: EditorTarget,
     list_expression: &definy_event::event::ListLiteralExpression,
 ) -> Element {
     let language = context.language;
@@ -518,7 +466,7 @@ pub fn render_list_literal(
                             div {
                                 key: "row-{index}",
                                 style: "display: flex; align-items: center; justify-content: center; padding: 0.2rem 0.5rem;",
-                                {remove_list_item_button(path.to_vec(), index, target)}
+                                {remove_list_item_button(path.to_vec(), index)}
                             }
                             if let definy_event::event::Expression::TypeLiteral(record) = item {
                                 for (i, record_item) in record.items.iter().enumerate() {
@@ -551,7 +499,7 @@ pub fn render_list_literal(
                     }
                 }
             }
-            {add_list_item_button(language, path.to_vec(), target)}
+            {add_list_item_button(language, path.to_vec())}
         }
     } else {
         rsx! {
@@ -583,12 +531,12 @@ pub fn render_list_literal(
                                         )
                                     }
                                 }
-                                {remove_list_item_button(path.to_vec(), index, target)}
+                                {remove_list_item_button(path.to_vec(), index)}
                             }
                         }
                     }
                 }
-                {add_list_item_button(language, path.to_vec(), target)}
+                {add_list_item_button(language, path.to_vec())}
             }
         }
     }
@@ -598,7 +546,6 @@ pub fn render_type_literal(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    target: EditorTarget,
     record_expression: &definy_event::event::TypeLiteralExpression,
 ) -> Element {
     let language = context.language;
@@ -619,9 +566,9 @@ pub fn render_type_literal(
                                 key: "record-item-{index}",
                                 style: "display: grid; gap: 0.3rem; padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm);",
                                 div { style: "display: flex; gap: 0.4rem; align-items: center;",
-                                    {record_item_key_input(path.to_vec(), index, target, &key)}
+                                    {record_item_key_input(path.to_vec(), index, &key)}
                                     if is_not_first {
-                                        {remove_record_item_button(language, path.to_vec(), index, target)}
+                                        {remove_record_item_button(language, path.to_vec(), index)}
                                     }
                                 }
                                 {
@@ -641,7 +588,7 @@ pub fn render_type_literal(
                         }
                     }
                 }
-                {add_record_item_button(language, path.to_vec(), target)}
+                {add_record_item_button(language, path.to_vec())}
             }
         }
     }
@@ -651,7 +598,6 @@ pub fn render_function(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    target: EditorTarget,
     func_expression: &definy_event::event::FunctionExpression,
 ) -> Element {
     let mut body_path = path.to_vec();
@@ -671,7 +617,7 @@ pub fn render_function(
                     div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                         "{language.label(\"Parameter\", \"引数名\", \"Parametro\")}"
                     }
-                    {function_param_name_input(path.to_vec(), target, &param_name)}
+                    {function_param_name_input(path.to_vec(), &param_name)}
                 }
             }
             div { style: "display: grid; gap: 0.15rem; width: 100%;",
@@ -700,7 +646,6 @@ pub fn render_call(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    _target: EditorTarget,
     call_expression: &definy_event::event::CallExpression,
 ) -> Element {
     let mut func_path = path.to_vec();
@@ -755,7 +700,6 @@ pub fn render_type_function(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    _target: EditorTarget,
     type_func: &definy_event::event::TypeFunctionExpression,
 ) -> Element {
     let mut param_path = path.to_vec();

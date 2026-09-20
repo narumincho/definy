@@ -196,7 +196,7 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
                 }
                 {page_content}
             }
-            login_or_create_account_dialog::LoginOrCreateAccountDialog { state: state.clone(), context: context.clone() }
+            login_or_create_account_dialog::LoginOrCreateAccountDialog { context: context.clone() }
         }
     }
 }

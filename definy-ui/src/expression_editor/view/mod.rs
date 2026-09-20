@@ -35,7 +35,6 @@ pub fn render_expression_editor(
     context: ExpressionEditorContext,
 ) -> Element {
     let path = context.path.clone();
-    let target = context.target;
     let scope_variables = context.scope_variables.clone();
     let diagnostics = context.diagnostics;
     let structure_locked = context.structure_locked;
@@ -97,15 +96,7 @@ pub fn render_expression_editor(
                 }
             },
             if allow_kind_change && is_compound_expression(expression) {
-                {
-                    expression_selector(
-                        state,
-                        path.clone(),
-                        target,
-                        &current_selection,
-                        &selector_options,
-                    )
-                }
+                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
             }
             if let Some(msg) = warning_message {
                 div { style: "font-size: 0.75rem; color: var(--error);", "{msg}" }
@@ -116,17 +107,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {number_input(path.clone(), target, number_expression.value)}
+                                {number_input(path.clone(), number_expression.value)}
                             }
                         }
                     }
@@ -134,17 +117,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {string_input(path.clone(), target, string_expression.value.as_ref())}
+                                {string_input(path.clone(), string_expression.value.as_ref())}
                             }
                         }
                     }
@@ -153,15 +128,7 @@ pub fn render_expression_editor(
                     | definy_event::event::Expression::TypeBoolean => rsx! {
                         div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
                             div { style: "font-size: 0.75rem; color: var(--text-secondary);",
                                 "{language.label(\"Built-in types\", \"組み込み型\", \"Enkonstruitaj tipoj\")}"
@@ -191,7 +158,7 @@ pub fn render_expression_editor(
                         }
                     }
                     definy_event::event::Expression::ListLiteral(list_expression) => {
-                        render_list_literal(state, &context, &path, target, list_expression)
+                        render_list_literal(state, &context, &path, list_expression)
                     }
                     definy_event::event::Expression::Add(add_expression) => {
                         render_binary_inputs(
@@ -407,17 +374,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {boolean_input(language, path.clone(), target, boolean_expression.value)}
+                                {boolean_input(language, path.clone(), boolean_expression.value)}
                             }
                         }
                     }
@@ -425,10 +384,10 @@ pub fn render_expression_editor(
                         render_if(state, &context, &path, if_expression)
                     }
                     definy_event::event::Expression::Let(let_expression) => {
-                        render_let(state, &context, &path, target, let_expression)
+                        render_let(state, &context, &path, let_expression)
                     }
                     definy_event::event::Expression::TypeLiteral(record_expression) => {
-                        render_type_literal(state, &context, &path, target, record_expression)
+                        render_type_literal(state, &context, &path, record_expression)
                     }
                     definy_event::event::Expression::Constructor(constructor_expression) => {
                         let mut value_path = path.clone();
@@ -481,15 +440,7 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
                                 div { style: "display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; padding: 0.15rem 0.4rem; background: rgb(255 255 255 / 0.05); border-radius: var(--radius-sm);",
                                     div { style: "font-weight: 600;", "{part_name}" }
@@ -505,30 +456,14 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::Variable(_) => rsx! {
                         div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
                         }
                     },
                     definy_event::event::Expression::Compiler(_) => rsx! {
                         div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
                             div { style: "font-size: 0.75rem; color: var(--text-secondary);",
                                 "{language.label(\"Compiler Builtin\", \"コンパイラ組み込み\", \"Kompililo enkonstruita\")}"
@@ -539,51 +474,27 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {render_function(state, &context, &path, target, func_expression)}
+                                {render_function(state, &context, &path, func_expression)}
                             }
                         }
                     }
                     definy_event::event::Expression::Call(call_expression) => rsx! {
                         div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
-                            {render_call(state, &context, &path, target, call_expression)}
+                            {render_call(state, &context, &path, call_expression)}
                         }
                     },
                     definy_event::event::Expression::TypeFunction(type_func_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {render_type_function(state, &context, &path, target, type_func_expression)}
+                                {render_type_function(state, &context, &path, type_func_expression)}
                             }
                         }
                     }
@@ -591,17 +502,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {render_type_union(state, &context, &path, target, type_union_expression)}
+                                {render_type_union(state, &context, &path, type_union_expression)}
                             }
                         }
                     }
@@ -609,17 +512,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {render_variant(state, &context, &path, target, variant_expression)}
+                                {render_variant(state, &context, &path, variant_expression)}
                             }
                         }
                     }
@@ -627,17 +522,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {render_match(state, &context, &path, target, match_expression)}
+                                {render_match(state, &context, &path, match_expression)}
                             }
                         }
                     }

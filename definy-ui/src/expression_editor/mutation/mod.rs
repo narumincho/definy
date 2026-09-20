@@ -2,29 +2,11 @@ pub mod builder;
 pub mod values;
 pub mod variables;
 
-use super::types::EditorTarget;
-use crate::app_state::{AppState, PathStep};
+use crate::app_state::PathStep;
 
 pub use builder::*;
 pub use values::*;
 pub use variables::*;
-
-pub fn selector_prefix(target: EditorTarget) -> &'static str {
-    match target {
-        EditorTarget::PartDefinition => "part-definition",
-        EditorTarget::PartUpdate => "part-update",
-    }
-}
-
-pub fn target_expression_mut(
-    state: &mut AppState,
-    target: EditorTarget,
-) -> &mut Option<definy_event::event::Expression> {
-    match target {
-        EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
-        EditorTarget::PartUpdate => &mut state.part_update_form.expression_input,
-    }
-}
 
 pub fn path_to_key(path: &[PathStep]) -> String {
     if path.is_empty() {

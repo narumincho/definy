@@ -163,7 +163,6 @@ pub enum ConnectionStatus {
 pub struct AppState {
     pub connection_status: ConnectionStatus,
     pub is_db_connected: bool,
-    pub login_or_create_account_dialog_state: LoginOrCreateAccountDialogState,
     pub event_cache: HashMap<
         EventHashId,
         Result<
@@ -173,16 +172,9 @@ pub struct AppState {
     >,
     pub event_list_state: EventListState,
     pub current_key: Option<ed25519_dalek::SigningKey>,
-    pub part_definition_form: PartDefinitionFormState,
-    pub part_update_form: PartUpdateFormState,
-    pub module_definition_form: ModuleDefinitionFormState,
-    pub module_update_form: ModuleUpdateFormState,
-    pub event_detail_eval_result: Option<String>,
-    pub profile_name_input: String,
     pub force_offline: bool,
     pub local_event_queue: LocalEventQueueState,
     pub focused_path: Option<Vec<PathStep>>,
-    pub dropdown_search_query: String,
 }
 
 impl AppState {
@@ -206,42 +198,6 @@ pub struct EventListState {
     pub is_loading: bool,
     pub has_more: bool,
     pub filter_event_type: Option<definy_event::event::EventType>,
-}
-
-#[derive(Clone)]
-pub struct PartDefinitionFormState {
-    pub is_form_open: bool,
-    pub part_name_input: String,
-    pub part_type_input: Option<definy_event::event::PartType>,
-    pub part_description_input: String,
-    pub composing_expression: Option<definy_event::event::Expression>,
-    pub module_definition_event_hash: Option<EventHashId>,
-    pub eval_result: Option<String>,
-}
-
-#[derive(Clone)]
-pub struct PartUpdateFormState {
-    pub part_definition_event_hash: Option<EventHashId>,
-    pub part_name_input: String,
-    pub part_description_input: String,
-    pub expression_input: Option<definy_event::event::Expression>,
-    pub module_definition_event_hash: Option<EventHashId>,
-}
-
-#[derive(Clone)]
-pub struct ModuleDefinitionFormState {
-    pub is_form_open: bool,
-    pub module_name_input: String,
-    pub module_description_input: String,
-    pub result_message: Option<String>,
-}
-
-#[derive(Clone)]
-pub struct ModuleUpdateFormState {
-    pub module_definition_event_hash: Option<EventHashId>,
-    pub module_name_input: String,
-    pub module_description_input: String,
-    pub result_message: Option<String>,
 }
 
 #[derive(Clone)]
@@ -346,13 +302,6 @@ pub fn build_initial_state(
     AppState {
         connection_status,
         is_db_connected,
-        login_or_create_account_dialog_state: LoginOrCreateAccountDialogState {
-            state: CreatingAccountState::LogIn,
-            username: String::new(),
-            generated_key: None,
-            current_password: String::new(),
-            create_account_result_message: None,
-        },
         event_cache,
         event_list_state: EventListState {
             event_hashes,
@@ -363,36 +312,6 @@ pub fn build_initial_state(
             filter_event_type,
         },
         current_key,
-        part_definition_form: PartDefinitionFormState {
-            is_form_open: false,
-            part_name_input: String::new(),
-            part_type_input: None,
-            part_description_input: String::new(),
-            composing_expression: None,
-            module_definition_event_hash: None,
-            eval_result: None,
-        },
-        part_update_form: PartUpdateFormState {
-            part_definition_event_hash: None,
-            part_name_input: String::new(),
-            part_description_input: String::new(),
-            expression_input: None,
-            module_definition_event_hash: None,
-        },
-        module_definition_form: ModuleDefinitionFormState {
-            is_form_open: false,
-            module_name_input: String::new(),
-            module_description_input: String::new(),
-            result_message: None,
-        },
-        module_update_form: ModuleUpdateFormState {
-            module_definition_event_hash: None,
-            module_name_input: String::new(),
-            module_description_input: String::new(),
-            result_message: None,
-        },
-        event_detail_eval_result: None,
-        profile_name_input: String::new(),
         force_offline: false,
         local_event_queue: LocalEventQueueState {
             items: Vec::new(),
@@ -400,7 +319,6 @@ pub fn build_initial_state(
             last_error: None,
         },
         focused_path: None,
-        dropdown_search_query: String::new(),
     }
 }
 
@@ -491,31 +409,6 @@ where
             next
         }));
     }
-}
-
-#[derive(Clone)]
-pub struct LoginOrCreateAccountDialogState {
-    /// アカウント作成で生成した秘密鍵
-    pub generated_key: Option<ed25519_dalek::SigningKey>,
-    /// アカウント作成のユーザー名
-    pub username: String,
-    /// アカウント作成の送信結果メッセージ
-    pub create_account_result_message: Option<String>,
-
-    /// ログインまたはアカウント作成の状態
-    pub state: CreatingAccountState,
-
-    /// ログインの現在のパスワード
-    pub current_password: String,
-}
-
-#[derive(Clone, PartialEq)]
-pub enum CreatingAccountState {
-    LogIn,
-    CreateAccount,
-    CreateAccountRequesting,
-    Success,
-    Error,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

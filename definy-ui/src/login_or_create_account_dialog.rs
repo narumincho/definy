@@ -2,32 +2,20 @@ use dioxus::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
 
-use crate::{
-    LoginOrCreateAccountDialogState, PageContext,
-    app_state::{AppState, CreatingAccountState},
-    fetch,
-};
+use crate::{PageContext, app_state::AppState, fetch};
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TabState {
+    LogIn,
+    CreateAccount,
+}
 
 #[component]
-pub fn LoginOrCreateAccountDialog(state: AppState, context: PageContext) -> Element {
-    let dialog_title = match state.login_or_create_account_dialog_state.state {
-        CreatingAccountState::LogIn => context.language.label("Log In", "ログイン", "Ensaluti"),
-        CreatingAccountState::CreateAccount => {
-            context
-                .language
-                .label("Sign Up", "サインアップ", "Registriĝi")
-        }
-        _ => context.language.label("Account", "アカウント", "Konto"),
-    };
+pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
+    let mut tab = use_signal(|| TabState::LogIn);
 
-    let is_login = matches!(
-        state.login_or_create_account_dialog_state.state,
-        CreatingAccountState::LogIn
-    );
-    let is_signup = matches!(
-        state.login_or_create_account_dialog_state.state,
-        CreatingAccountState::CreateAccount
-    );
+    let is_login = tab() == TabState::LogIn;
+    let is_signup = tab() == TabState::CreateAccount;
 
     let login_bg = if is_login {
         "rgb(255 255 255 / 0.05)"
@@ -67,15 +55,19 @@ pub fn LoginOrCreateAccountDialog(state: AppState, context: PageContext) -> Elem
             id: "login-or-create-account-dialog",
             "closedby": "any",
             div { style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;",
-                h2 { style: "font-size: 1.25rem; margin: 0;", "{dialog_title}" }
+                h2 { style: "font-size: 1.25rem; margin: 0;",
+                    match tab() {
+                        TabState::LogIn => context.language.label("Log In", "ログイン", "Ensaluti"),
+                        TabState::CreateAccount => {
+                            context.language.label("Sign Up", "サインアップ", "Registriĝi")
+                        }
+                    }
+                }
                 button {
                     r#type: "button",
                     "commandfor": "login-or-create-account-dialog",
                     "command": "close",
                     style: "padding: 0.25rem; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 50%; background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer;",
-                    onclick: move |_| {
-                        dialog_close();
-                    },
                     "✕"
                 }
             }
@@ -86,15 +78,7 @@ pub fn LoginOrCreateAccountDialog(state: AppState, context: PageContext) -> Elem
                     r#type: "button",
                     style: "background: {login_bg}; color: {login_color}; border: none; box-shadow: {login_shadow}; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); cursor: pointer;",
                     onclick: move |_| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
-                        let mut next = state_sig.write();
-                        next.login_or_create_account_dialog_state = LoginOrCreateAccountDialogState {
-                            generated_key: None,
-                            state: CreatingAccountState::LogIn,
-                            username: String::new(),
-                            current_password: String::new(),
-                            create_account_result_message: None,
-                        };
+                        tab.set(TabState::LogIn);
                     },
                     "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                 }
@@ -102,28 +86,17 @@ pub fn LoginOrCreateAccountDialog(state: AppState, context: PageContext) -> Elem
                     r#type: "button",
                     style: "background: {signup_bg}; color: {signup_color}; border: none; box-shadow: {signup_shadow}; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); cursor: pointer;",
                     onclick: move |_| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
-                        let mut next = state_sig.write();
-                        next.login_or_create_account_dialog_state = LoginOrCreateAccountDialogState {
-                            generated_key: Some(generate_key()),
-                            state: CreatingAccountState::CreateAccount,
-                            username: String::new(),
-                            current_password: String::new(),
-                            create_account_result_message: None,
-                        };
+                        tab.set(TabState::CreateAccount);
                     },
                     "{context.language.label(\"Sign Up\", \"サインアップ\", \"Registriĝi\")}"
                 }
             }
-            match state.login_or_create_account_dialog_state.state {
-                CreatingAccountState::LogIn => rsx! {
+            match tab() {
+                TabState::LogIn => rsx! {
                     LoginView { context: context.clone() }
                 },
-                CreatingAccountState::CreateAccount
-                | CreatingAccountState::CreateAccountRequesting
-                | CreatingAccountState::Success
-                | CreatingAccountState::Error => rsx! {
-                    CreateAccountView { state: state.clone(), context: context.clone() }
+                TabState::CreateAccount => rsx! {
+                    CreateAccountView { context: context.clone() }
                 },
             }
         }
@@ -176,35 +149,22 @@ fn generate_key() -> ed25519_dalek::SigningKey {
 }
 
 #[component]
-fn CreateAccountView(state: AppState, context: PageContext) -> Element {
-    let dialog_state = state.login_or_create_account_dialog_state.clone();
+fn CreateAccountView(context: PageContext) -> Element {
     let language = context.language;
-    let requesting = dialog_state.state == CreatingAccountState::CreateAccountRequesting
-        || dialog_state.state == CreatingAccountState::Success;
-
-    let encoded_public_key = dialog_state
-        .generated_key
-        .as_ref()
-        .map(|key| {
-            base64::Engine::encode(
-                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                key.verifying_key().to_bytes(),
-            )
-        })
-        .unwrap_or_default();
-
-    let encoded_secret_key = dialog_state
-        .generated_key
-        .as_ref()
-        .map(|key| {
-            base64::Engine::encode(
-                &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                key.to_bytes(),
-            )
-        })
-        .unwrap_or_default();
-
+    let mut generated_key = use_signal(generate_key);
+    let mut requesting = use_signal(|| false);
+    let mut result_message = use_signal(|| None::<String>);
     let mut username_val = use_signal(String::new);
+
+    let key_val = generated_key();
+    let encoded_public_key = base64::Engine::encode(
+        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+        key_val.verifying_key().to_bytes(),
+    );
+    let encoded_secret_key = base64::Engine::encode(
+        &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+        key_val.to_bytes(),
+    );
 
     rsx! {
         form {
@@ -220,118 +180,113 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
 
                 let mut state_sig = use_context::<Signal<AppState>>();
                 let state_val = state_sig.read().clone();
-                let generated_key = state_val
-                    .login_or_create_account_dialog_state
-                    .generated_key
-                    .clone();
+                let key = generated_key();
                 let force_offline = state_val.force_offline;
-                if let Some(key) = generated_key {
-                    state_sig.write().login_or_create_account_dialog_state.state = CreatingAccountState::CreateAccountRequesting;
-                    state_sig
-                        .write()
-                        .login_or_create_account_dialog_state
-                        .create_account_result_message = None;
-                    spawn(async move {
-                        let event_binary = definy_event::sign_and_serialize(
-                                definy_event::event::Event {
-                                    account_id: definy_event::event::AccountId(
-                                        key.verifying_key(),
-                                    ),
-                                    time: chrono::Utc::now(),
-                                    content: definy_event::event::EventContent::CreateAccount(definy_event::event::CreateAccountEvent {
-                                        account_name: username.clone().into(),
-                                    }),
-                                },
-                                &key,
-                            )
-                            .unwrap();
-                        let event_hash = definy_event::EventHashId::from_bytes(&event_binary);
-                        let decoded_event = definy_event::verify_and_deserialize(
+                requesting.set(true);
+                result_message.set(None);
+                spawn(async move {
+                    let event_binary = definy_event::sign_and_serialize(
+                            definy_event::event::Event {
+                                account_id: definy_event::event::AccountId(key.verifying_key()),
+                                time: chrono::Utc::now(),
+                                content: definy_event::event::EventContent::CreateAccount(definy_event::event::CreateAccountEvent {
+                                    account_name: username.clone().into(),
+                                }),
+                            },
+                            &key,
+                        )
+                        .unwrap();
+                    let event_hash = definy_event::EventHashId::from_bytes(&event_binary);
+                    let decoded_event = definy_event::verify_and_deserialize(
+                        event_binary.as_slice(),
+                    );
+                    let result = fetch::post_event_with_queue(
                             event_binary.as_slice(),
-                        );
-                        let result = fetch::post_event_with_queue(
-                                event_binary.as_slice(),
-                                force_offline,
+                            force_offline,
+                        )
+                        .await;
+                    if let Ok(record) = result {
+                        let status = record.status.clone();
+                        let message = match status {
+                            crate::local_event::LocalEventStatus::Sent => {
+                                language
+                                    .label(
+                                        "Account created",
+                                        "アカウントを作成しました",
+                                        "Konto kreita",
+                                    )
+                                    .to_string()
+                            }
+                            crate::local_event::LocalEventStatus::Queued => {
+                                language
+                                    .label(
+                                        "Queued: network unavailable",
+                                        "キュー済み: ネットワーク未接続",
+                                        "En vico: reto nedisponebla",
+                                    )
+                                    .to_string()
+                            }
+                            crate::local_event::LocalEventStatus::Failed => {
+                                record
+                                    .last_error
+                                    .clone()
+                                    .unwrap_or_else(|| {
+                                        language
+                                            .label(
+                                                "Failed to send",
+                                                "送信に失敗しました",
+                                                "Sendado malsukcesis",
+                                            )
+                                            .to_string()
+                                    })
+                            }
+                        };
+                        let _ = crate::navigator_credential::credential_store(&username, &key)
+                            .await;
+                        let _ = crate::indexed_db::store_events(
+                                std::slice::from_ref(&event_binary),
                             )
                             .await;
-                        if let Ok(record) = result {
-                            let status = record.status.clone();
-                            let message = match status {
-                                crate::local_event::LocalEventStatus::Sent => {
-                                    language
-                                        .label(
-                                            "Account created",
-                                            "アカウントを作成しました",
-                                            "Konto kreita",
-                                        )
-                                        .to_string()
-                                }
-                                crate::local_event::LocalEventStatus::Queued => {
-                                    language
-                                        .label(
-                                            "Queued: network unavailable",
-                                            "キュー済み: ネットワーク未接続",
-                                            "En vico: reto nedisponebla",
-                                        )
-                                        .to_string()
-                                }
-                                crate::local_event::LocalEventStatus::Failed => {
-                                    record
-                                        .last_error
-                                        .clone()
-                                        .unwrap_or_else(|| {
-                                            language
-                                                .label(
-                                                    "Failed to send",
-                                                    "送信に失敗しました",
-                                                    "Sendado malsukcesis",
-                                                )
-                                                .to_string()
-                                        })
-                                }
-                            };
-                            let _ = crate::navigator_credential::credential_store(
-                                    &username,
-                                    &key,
-                                )
-                                .await;
-                            let _ = crate::indexed_db::store_events(
-                                    std::slice::from_ref(&event_binary),
-                                )
-                                .await;
-                            let fetched_events = if status
-                                == crate::local_event::LocalEventStatus::Sent
-                            {
-                                fetch::get_events(None, Some(20), Some(0)).await.ok()
-                            } else {
-                                None
-                            };
-                            let mut next = state_sig.read().clone();
-                            next.current_key = Some(key.clone());
-                            next.event_cache.insert(event_hash.clone(), decoded_event);
-                            if !next.event_list_state.event_hashes.contains(&event_hash) {
-                                next.event_list_state.event_hashes.insert(0, event_hash);
-                            }
-                            if let Some(events) = fetched_events {
-                                next.apply_latest_events(events, None);
-                            }
-                            crate::app_state::upsert_local_event_record(&mut next, record);
-                            next.login_or_create_account_dialog_state.state = match status {
-                                crate::local_event::LocalEventStatus::Sent => {
-                                    CreatingAccountState::Success
-                                }
-                                _ => CreatingAccountState::Error,
-                            };
-                            next
-                                .login_or_create_account_dialog_state
-                                .create_account_result_message = Some(message);
-                            state_sig.set(next);
-                            if status == crate::local_event::LocalEventStatus::Sent {
-                                dialog_close();
-                            }
+                        let fetched_events = if status
+                            == crate::local_event::LocalEventStatus::Sent
+                        {
+                            fetch::get_events(None, Some(20), Some(0)).await.ok()
+                        } else {
+                            None
+                        };
+                        let mut next = state_sig.read().clone();
+                        next.current_key = Some(key.clone());
+                        next.event_cache.insert(event_hash.clone(), decoded_event);
+                        if !next.event_list_state.event_hashes.contains(&event_hash) {
+                            next.event_list_state.event_hashes.insert(0, event_hash);
                         }
-                    });
-                }
+                        if let Some(events) = fetched_events {
+                            next.apply_latest_events(events, None);
+                        }
+                        crate::app_state::upsert_local_event_record(&mut next, record);
+                        state_sig.set(next);
+                        requesting.set(false);
+                        if status == crate::local_event::LocalEventStatus::Sent {
+                            dialog_close();
+                        } else {
+                            result_message.set(Some(message));
+                        }
+                    } else {
+                        requesting.set(false);
+                        result_message
+                            .set(
+                                Some(
+                                    language
+                                        .label(
+                                            "Failed to send",
+                                            "送信に失敗しました",
+                                            "Sendado malsukcesis",
+                                        )
+                                        .to_string(),
+                                ),
+                            );
+                    }
+                });
             },
             div { class: "form-group", style: "display: grid; gap: 0.4rem;",
                 label { "{context.language.label(\"Username\", \"ユーザー名\", \"Uzantnomo\")}" }
@@ -378,17 +333,17 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                         style: "padding: 0.4rem 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
                         onclick: {
                             #[cfg(target_arch = "wasm32")]
-                            let key_to_copy = dialog_state.generated_key.clone();
+                            let key_to_copy = key_val.clone();
                             move |_| {
                                 #[cfg(target_arch = "wasm32")]
-                                if let Some(window) = web_sys::window() && let Some(key) = &key_to_copy {
+                                if let Some(window) = web_sys::window() {
                                     let _ = window
                                         .navigator()
                                         .clipboard()
                                         .write_text(
                                             &base64::Engine::encode(
                                                 &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                                key.to_scalar_bytes(),
+                                                key_to_copy.to_scalar_bytes(),
                                             ),
                                         );
                                 }
@@ -398,13 +353,10 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                     }
                     button {
                         r#type: "button",
-                        disabled: requesting,
+                        disabled: requesting(),
                         style: "padding: 0.4rem 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
                         onclick: move |_| {
-                            let mut state_sig = use_context::<Signal<AppState>>();
-                            state_sig.write().login_or_create_account_dialog_state.generated_key = Some(
-                                generate_key(),
-                            );
+                            generated_key.set(generate_key());
                         },
                         "{context.language.label(\"Regen\", \"再生成\", \"Regeneri\")}"
                     }
@@ -423,30 +375,16 @@ fn CreateAccountView(state: AppState, context: PageContext) -> Element {
                 }
                 button {
                     r#type: "submit",
-                    disabled: requesting,
+                    disabled: requesting(),
                     style: "padding: 0.45rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
-                    match dialog_state.state {
-                        CreatingAccountState::LogIn => {
-                            context.language.label("Log In", "ログイン", "Ensaluti")
-                        }
-                        CreatingAccountState::CreateAccount => {
-                            context.language.label("Sign Up", "サインアップ", "Registriĝi")
-                        }
-                        CreatingAccountState::CreateAccountRequesting => {
-                            context
-                                .language
-                                .label("Signing Up...", "サインアップ中...", "Registriĝante...")
-                        }
-                        CreatingAccountState::Success => {
-                            context.language.label("Success", "成功", "Sukceso")
-                        }
-                        CreatingAccountState::Error => {
-                            context.language.label("Error", "エラー", "Eraro")
-                        }
+                    if requesting() {
+                        "{context.language.label(\"Signing Up...\", \"サインアップ中...\", \"Registriĝante...\")}"
+                    } else {
+                        "{context.language.label(\"Sign Up\", \"サインアップ\", \"Registriĝi\")}"
                     }
                 }
             }
-            if let Some(message) = &dialog_state.create_account_result_message {
+            if let Some(message) = result_message() {
                 div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{message}" }
             }
         }

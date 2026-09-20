@@ -8,16 +8,14 @@ use dioxus::prelude::*;
 use crate::app_state::AppState;
 use crate::page_context::PageContext;
 
-pub use diagnostics::{collect_type_diagnostics, expected_type_for_target};
+pub use diagnostics::{collect_type_diagnostics, part_type_to_expression_type};
 pub use mutation::{
     add_list_item, add_record_item, apply_selection, get_mut_expression_at_path,
-    next_local_variable_id, path_to_key, remove_list_item, remove_record_item, selector_prefix,
-    set_boolean_value, set_let_variable_name, set_number_value, set_record_item_key,
-    set_string_value, target_expression_mut,
+    next_local_variable_id, path_to_key, remove_list_item, remove_record_item, set_boolean_value,
+    set_let_variable_name, set_number_value, set_record_item_key, set_string_value,
 };
 pub use types::{
-    ConstructorValueShape, EditorTarget, ExpressionEditorContext, ExpressionType, ScopeVariable,
-    TypeDiagnostic,
+    ConstructorValueShape, ExpressionEditorContext, ExpressionType, ScopeVariable, TypeDiagnostic,
 };
 pub use view::render_expression_editor;
 
@@ -25,18 +23,16 @@ pub fn render_root_expression_editor(
     state: &AppState,
     page_context: &PageContext,
     expression: &Option<definy_event::event::Expression>,
-    target: EditorTarget,
+    expected_type: Option<ExpressionType>,
 ) -> Element {
     match expression {
         Some(expr) => {
-            let expected_type = expected_type_for_target(state, target);
             let diagnostics = collect_type_diagnostics(state, expr, expected_type);
             render_expression_editor(
                 state,
                 expr,
                 ExpressionEditorContext {
                     path: Vec::new(),
-                    target,
                     scope_variables: Vec::new(),
                     diagnostics: diagnostics.as_slice(),
                     structure_locked: false,
@@ -48,7 +44,6 @@ pub fn render_root_expression_editor(
         None => view::expression_selector(
             state,
             Vec::new(),
-            target,
             "expr:none",
             &view::selector_options(state, page_context.language, &[], true),
         ),

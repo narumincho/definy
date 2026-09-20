@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_editor::{EditorTarget, render_root_expression_editor};
+use crate::expression_editor::{part_type_to_expression_type, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
@@ -80,18 +80,21 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
         });
     });
 
+    let mut is_form_open = use_signal(|| false);
+    let eval_result = use_signal(|| None::<String>);
+
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
             div { style: "display: flex; justify-content: space-between; align-items: center;",
                 h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Parts\", \"パーツ\", \"Partoj\")}"
                 }
-                if !state.part_definition_form.is_form_open {
+                if !is_form_open() {
                     button {
                         r#type: "button",
                         style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                         onclick: move |_| {
-                            let mut state_sig = use_context::<Signal<AppState>>();
+                            let state_sig = use_context::<Signal<AppState>>();
                             if state_sig.read().current_key.is_none() {
                                 #[cfg(target_arch = "wasm32")]
                                 {
@@ -105,14 +108,14 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                         .map(|dlg| dlg.show_modal());
                                 }
                             } else {
-                                state_sig.write().part_definition_form.is_form_open = true;
+                                is_form_open.set(true);
                             }
                         },
                         "{context.language.label(\"+ Create Part\", \"+ パーツを作成\", \"+ Krei parton\")}"
                     }
                 }
             }
-            if state.current_key.is_none() && !state.part_definition_form.is_form_open {
+            if state.current_key.is_none() && !is_form_open() {
                 div { style: "padding: 0.5rem 0.8rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;",
                     span {
                         "{context.language.label(\"Log in or sign up to create and edit parts.\", \"パーツの作成や編集を行うにはログインまたはサインアップが必要です。\", \"Ensalutu aŭ registriĝu por krei kaj redakti partojn.\")}"
@@ -126,10 +129,15 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                     }
                 }
             }
-            if state.current_key.is_some() && state.part_definition_form.is_form_open {
-                PartDefinitionFormView { state: state.clone(), context: context.clone() }
+            if state.current_key.is_some() && is_form_open() {
+                PartDefinitionFormView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    is_form_open,
+                    eval_result,
+                }
             }
-            if let Some(result) = &state.part_definition_form.eval_result {
+            if let Some(result) = eval_result() {
                 div {
                     class: "event-detail-card",
                     style: "padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; background: rgb(124 192 216 / 0.1); border-color: var(--primary); word-break: break-word;",
@@ -230,8 +238,21 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
 }
 
 #[component]
-fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
+fn PartDefinitionFormView(
+    state: AppState,
+    context: PageContext,
+    mut is_form_open: Signal<bool>,
+    mut eval_result: Signal<Option<String>>,
+) -> Element {
     let language = context.language;
+    let mut part_name = use_signal(String::new);
+    let mut part_description = use_signal(String::new);
+    let part_type = use_signal(|| None::<definy_event::event::PartType>);
+    let module_hash = use_signal(|| None::<EventHashId>);
+    let mut composing_expression = use_signal(|| None::<definy_event::event::Expression>);
+    use_context_provider(|| composing_expression);
+
+    let expected_type = part_type.read().as_ref().map(part_type_to_expression_type);
 
     rsx! {
         div {
@@ -245,16 +266,23 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                     r#type: "button",
                     style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer;",
                     onclick: move |_| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
-                        state_sig.write().part_definition_form.is_form_open = false;
+                        is_form_open.set(false);
                     },
                     "{context.language.label(\"Cancel\", \"閉じる\", \"Fermi\")}"
                 }
             }
-            PartNameInput { state: state.clone() }
-            ModuleSelectionInput { state: state.clone(), context: context.clone() }
-            PartTypeInput { state: state.clone(), context: context.clone() }
-            PartDescriptionInput { state: state.clone() }
+            PartNameInput { part_name }
+            ModuleSelectionInput {
+                state: state.clone(),
+                context: context.clone(),
+                module_hash,
+            }
+            PartTypeInput {
+                state: state.clone(),
+                context: context.clone(),
+                part_type,
+            }
+            PartDescriptionInput { part_description }
             div { style: "color: var(--text-secondary); font-size: 0.82rem;",
                 {context.language.label("Expression", "式", "Esprimo")}
             }
@@ -262,28 +290,24 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                 render_root_expression_editor(
                     &state,
                     &context,
-                    &state.part_definition_form.composing_expression,
-                    EditorTarget::PartDefinition,
+                    &composing_expression.read(),
+                    expected_type,
                 )
             }
-            if let Some(result) = &state.part_definition_form.eval_result {
+            if let Some(result) = eval_result() {
                 div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
                     "{result}"
                 }
             }
             div { style: "display: flex; gap: 0.45rem;",
-                if state.part_definition_form.composing_expression.is_some() {
+                if composing_expression.read().is_some() {
                     button {
                         r#type: "button",
                         style: "padding: 0.35rem 0.75rem; background: rgb(255 255 255 / 0.06); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
                         onclick: move |_| {
-                            let mut state_sig = use_context::<Signal<AppState>>();
+                            let state_sig = use_context::<Signal<AppState>>();
                             let events_vec: Vec<_> = state_sig.read().events_with_hash();
-                            let result = if let Some(expr) = &state_sig
-                                .read()
-                                .part_definition_form
-                                .composing_expression
-                            {
+                            let result = if let Some(expr) = &*composing_expression.read() {
                                 match evaluate_expression(expr, &events_vec) {
                                     Ok(value) => {
                                         format!(
@@ -309,7 +333,7 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                     )
                                     .to_string()
                             };
-                            state_sig.write().part_definition_form.eval_result = Some(result);
+                            eval_result.set(Some(result));
                         },
                         "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
                     }
@@ -318,40 +342,34 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                     r#type: "button",
                     style: "padding: 0.35rem 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                     onclick: move |_| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
+                        let state_sig = use_context::<Signal<AppState>>();
                         let state_val = state_sig.read().clone();
                         let key = if let Some(key) = &state_val.current_key {
                             key.clone()
                         } else {
-                            state_sig.write().part_definition_form.eval_result = Some(
-                                language
-                                    .label(
-                                        "Error: log in to create parts",
-                                        "エラー: パーツを作成するにはログインしてください",
-                                        "Eraro: ensalutu por krei partojn",
-                                    )
-                                    .to_string(),
-                            );
+                            eval_result
+                                .set(
+                                    Some(
+                                        language
+                                            .label(
+                                                "Error: log in to create parts",
+                                                "エラー: パーツを作成するにはログインしてください",
+                                                "Eraro: ensalutu por krei partojn",
+                                            )
+                                            .to_string(),
+                                    ),
+                                );
                             return;
                         };
-                        let part_name = state_val
-                            .part_definition_form
-                            .part_name_input
-                            .trim()
-                            .to_string();
-                        let description = state_val.part_definition_form.part_description_input.clone();
-                        let part_type = state_val.part_definition_form.part_type_input.clone();
+                        let name_str = part_name().trim().to_string();
+                        let desc_str = part_description();
+                        let type_val = part_type();
                         let modules = collect_module_snapshots(&state_val);
-                        let module_definition_event_hash = state_val
-                            .part_definition_form
-                            .module_definition_event_hash
-                            .clone()
+                        let mod_hash_opt = module_hash()
                             .or_else(|| modules.first().map(|m| m.definition_event_hash.clone()));
-
-                        let (module_hash, auto_create_module_binary) = if let Some(hash) = module_definition_event_hash {
+                        let (final_module_hash, auto_create_module_binary) = if let Some(hash) = mod_hash_opt {
                             (hash, None)
                         } else {
-                            // If no modules exist yet, automatically create a default "main" module
                             let module_event = definy_event::event::Event {
                                 account_id: definy_event::event::AccountId(key.verifying_key()),
                                 time: chrono::Utc::now(),
@@ -371,28 +389,29 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                     (hash, Some(binary))
                                 }
                                 Err(err) => {
-                                    state_sig.write().part_definition_form.eval_result = Some(
-                                        format!("Failed to create module: {err:?}"),
-                                    );
+                                    eval_result.set(Some(format!("Failed to create module: {err:?}")));
                                     return;
                                 }
                             }
                         };
-                        if part_name.is_empty() {
-                            state_sig.write().part_definition_form.eval_result = Some(
-                                language
-                                    .label(
-                                        "Error: part name is required",
-                                        "エラー: パーツ名は必須です",
-                                        "Eraro: parto-nomo estas bezonata",
-                                    )
-                                    .to_string(),
-                            );
+                        if name_str.is_empty() {
+                            eval_result
+                                .set(
+                                    Some(
+                                        language
+                                            .label(
+                                                "Error: part name is required",
+                                                "エラー: パーツ名は必須です",
+                                                "Eraro: parto-nomo estas bezonata",
+                                            )
+                                            .to_string(),
+                                    ),
+                                );
                             return;
                         }
-                        let expression = state_val.part_definition_form.composing_expression.clone();
+                        let expr_val = composing_expression();
                         let force_offline = state_val.force_offline;
-                        let fut = async move {
+                        spawn(async move {
                             if let Some(module_binary) = auto_create_module_binary {
                                 let _res = crate::fetch::post_event_with_queue(
                                         &module_binary,
@@ -400,33 +419,37 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                     )
                                     .await;
                             }
-                            crate::event_submit::submit_event(
+                            let record_opt = crate::event_submit::submit_event(
                                     definy_event::event::EventContent::PartDefinition(definy_event::event::PartDefinitionEvent {
-                                        part_name: part_name.into(),
-                                        description: description.into(),
-                                        part_type,
-                                        expression,
-                                        module_definition_event_hash: module_hash,
+                                        part_name: name_str.into(),
+                                        description: desc_str.into(),
+                                        part_type: type_val,
+                                        expression: expr_val,
+                                        module_definition_event_hash: final_module_hash,
                                     }),
                                     key,
                                     force_offline,
                                     None,
                                     state_sig,
-                                    move |next, record| {
-                                        if record.status == crate::local_event::LocalEventStatus::Sent {
-                                            next.part_definition_form.eval_result = None;
-                                            next.part_definition_form.is_form_open = false;
-                                            next.part_definition_form.part_name_input = String::new();
-                                            next.part_definition_form.part_description_input = String::new();
-                                            next.part_definition_form.composing_expression = None;
-                                        } else {
-                                            next.part_definition_form.eval_result = Some(
+                                )
+                                .await;
+                            if let Some(record) = record_opt {
+                                if record.status == crate::local_event::LocalEventStatus::Sent {
+                                    eval_result.set(None);
+                                    is_form_open.set(false);
+                                    part_name.set(String::new());
+                                    part_description.set(String::new());
+                                    composing_expression.set(None);
+                                } else {
+                                    eval_result
+                                        .set(
+                                            Some(
                                                 match record.status {
                                                     crate::local_event::LocalEventStatus::Queued => {
-                                                        next.part_definition_form.is_form_open = false;
-                                                        next.part_definition_form.part_name_input = String::new();
-                                                        next.part_definition_form.part_description_input = String::new();
-                                                        next.part_definition_form.composing_expression = None;
+                                                        is_form_open.set(false);
+                                                        part_name.set(String::new());
+                                                        part_description.set(String::new());
+                                                        composing_expression.set(None);
                                                         language
                                                             .label(
                                                                 "PartDefinition queued (offline)",
@@ -446,14 +469,11 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
                                                     }
                                                     crate::local_event::LocalEventStatus::Sent => unreachable!(),
                                                 },
-                                            );
-                                        }
-                                    },
-                                )
-                                .await;
-                        };
-                        #[cfg(target_arch = "wasm32")] wasm_bindgen_futures::spawn_local(fut);
-                        #[cfg(not(target_arch = "wasm32"))] spawn(fut);
+                                            ),
+                                        );
+                                }
+                            }
+                        });
                     },
                     "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
                 }
@@ -463,40 +483,43 @@ fn PartDefinitionFormView(state: AppState, context: PageContext) -> Element {
 }
 
 #[component]
-fn PartNameInput(state: AppState) -> Element {
+fn PartNameInput(mut part_name: Signal<String>) -> Element {
     rsx! {
         input {
             name: "part-name",
             r#type: "text",
-            value: "{state.part_definition_form.part_name_input}",
+            value: "{part_name}",
             placeholder: "part name (e.g. a)",
             style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
             oninput: move |evt: FormEvent| {
-                let mut state_sig = use_context::<Signal<AppState>>();
-                state_sig.write().part_definition_form.part_name_input = evt.value();
+                part_name.set(evt.value());
             },
         }
     }
 }
 
 #[component]
-fn PartDescriptionInput(state: AppState) -> Element {
+fn PartDescriptionInput(mut part_description: Signal<String>) -> Element {
     rsx! {
         textarea {
             name: "part-description",
-            value: "{state.part_definition_form.part_description_input}",
+            value: "{part_description}",
             placeholder: "description (supports multiple lines)",
             style: "min-height: 6rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
             oninput: move |evt: FormEvent| {
-                let mut state_sig = use_context::<Signal<AppState>>();
-                state_sig.write().part_definition_form.part_description_input = evt.value();
+                part_description.set(evt.value());
             },
         }
     }
 }
 
 #[component]
-fn PartTypeInput(state: AppState, context: PageContext) -> Element {
+fn PartTypeInput(
+    state: AppState,
+    context: PageContext,
+    part_type: Signal<Option<definy_event::event::PartType>>,
+) -> Element {
+    let current = part_type();
     rsx! {
         div { style: "display: grid; gap: 0.35rem;",
             div { style: "font-size: 0.85rem; color: var(--text-secondary);",
@@ -505,7 +528,8 @@ fn PartTypeInput(state: AppState, context: PageContext) -> Element {
             RenderPartTypeEditor {
                 state: state.clone(),
                 context: context.clone(),
-                part_type: state.part_definition_form.part_type_input.clone(),
+                current_part_type: current,
+                root_part_type: part_type,
                 depth: 0,
             }
         }
@@ -513,7 +537,11 @@ fn PartTypeInput(state: AppState, context: PageContext) -> Element {
 }
 
 #[component]
-fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
+fn ModuleSelectionInput(
+    state: AppState,
+    context: PageContext,
+    mut module_hash: Signal<Option<EventHashId>>,
+) -> Element {
     let modules = collect_module_snapshots(&state);
     let options: Vec<(String, String)> = modules
         .iter()
@@ -525,10 +553,7 @@ fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
         })
         .collect();
 
-    let current_value = state
-        .part_definition_form
-        .module_definition_event_hash
-        .as_ref()
+    let current_value = module_hash()
         .map(|hash| hash.to_string())
         .unwrap_or_else(|| {
             modules
@@ -552,11 +577,7 @@ fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
                     current_value,
                     options,
                     on_change: move |val: String| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
-                        state_sig.write().part_definition_form.module_definition_event_hash = EventHashId::from_str(
-                                &val,
-                            )
-                            .ok();
+                        module_hash.set(EventHashId::from_str(&val).ok());
                     },
                 }
             }
@@ -568,11 +589,12 @@ fn ModuleSelectionInput(state: AppState, context: PageContext) -> Element {
 fn RenderPartTypeEditor(
     state: AppState,
     context: PageContext,
-    part_type: Option<definy_event::event::PartType>,
+    current_part_type: Option<definy_event::event::PartType>,
+    mut root_part_type: Signal<Option<definy_event::event::PartType>>,
     depth: usize,
 ) -> Element {
     let name = format!("part-definition-type-{}", depth);
-    let selected = current_part_type_selection(&state, &part_type);
+    let selected = current_part_type_selection(&state, &current_part_type);
 
     let mut options = Vec::new();
     if depth == 0 {
@@ -635,11 +657,12 @@ fn RenderPartTypeEditor(
             }),
     );
 
-    let item_type_opt = if let Some(definy_event::event::PartType::List(item_type)) = &part_type {
-        Some(item_type.as_ref().clone())
-    } else {
-        None
-    };
+    let item_type_opt =
+        if let Some(definy_event::event::PartType::List(item_type)) = &current_part_type {
+            Some(item_type.as_ref().clone())
+        } else {
+            None
+        };
 
     rsx! {
         div { style: "display: grid; gap: 0.45rem;",
@@ -647,12 +670,13 @@ fn RenderPartTypeEditor(
                 name,
                 current_value: selected,
                 options,
-                on_change: move |val: String| {
-                    let mut state_sig = use_context::<Signal<AppState>>();
-                    let state_val = state_sig.read().clone();
-                    let mut new_part_type = state_val.part_definition_form.part_type_input.clone();
-                    update_part_type_at_depth(&state_val, &mut new_part_type, depth, val.as_str());
-                    state_sig.write().part_definition_form.part_type_input = new_part_type;
+                on_change: {
+                    let state = state.clone();
+                    move |val: String| {
+                        let mut new_part_type = root_part_type();
+                        update_part_type_at_depth(&state, &mut new_part_type, depth, val.as_str());
+                        root_part_type.set(new_part_type);
+                    }
                 },
             }
             if let Some(item_type) = item_type_opt {
@@ -663,7 +687,8 @@ fn RenderPartTypeEditor(
                     RenderPartTypeEditor {
                         state: state.clone(),
                         context: context.clone(),
-                        part_type: Some(item_type),
+                        current_part_type: Some(item_type),
+                        root_part_type,
                         depth: depth + 1,
                     }
                 }

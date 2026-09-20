@@ -33,6 +33,8 @@ pub fn AccountDetailView(
 
     let page_shell_style = crate::layout::page_shell_style("1.2rem");
 
+    let mut profile_name_input = use_signal(String::new);
+
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
             a {
@@ -61,12 +63,11 @@ pub fn AccountDetailView(
                         input {
                             r#type: "text",
                             name: "profile-name",
-                            value: "{state.profile_name_input}",
+                            value: "{profile_name_input}",
                             placeholder: "{account_name}",
                             style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
                             oninput: move |evt: FormEvent| {
-                                let mut state_sig = use_context::<Signal<AppState>>();
-                                state_sig.write().profile_name_input = evt.value();
+                                profile_name_input.set(evt.value());
                             },
                         }
                         div { style: "display: flex; align-items: center; gap: 0.8rem; margin-top: 0.3rem;",
@@ -81,7 +82,7 @@ pub fn AccountDetailView(
                                     } else {
                                         return;
                                     };
-                                    let new_name = state_val.profile_name_input.trim().to_string();
+                                    let new_name = profile_name_input.read().trim().to_string();
                                     if new_name.is_empty() {
                                         return;
                                     }
@@ -89,7 +90,7 @@ pub fn AccountDetailView(
                                     let force_offline = state_val.force_offline;
 
                                     spawn(async move {
-                                        crate::event_submit::submit_event(
+                                        let _ = crate::event_submit::submit_event(
                                                 definy_event::event::EventContent::ChangeProfile(definy_event::event::ChangeProfileEvent {
                                                     account_name: new_name.into(),
                                                 }),
@@ -97,11 +98,9 @@ pub fn AccountDetailView(
                                                 force_offline,
                                                 filter,
                                                 state_sig,
-                                                |next, _| {
-                                                    next.profile_name_input = String::new();
-                                                },
                                             )
                                             .await;
+                                        profile_name_input.set(String::new());
                                     });
                                 },
                                 "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"

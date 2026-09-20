@@ -1,7 +1,6 @@
 use dioxus::prelude::*;
 
 use crate::app_state::{AppState, PathStep};
-use crate::expression_editor::EditorTarget;
 
 use super::super::types::{ExpressionEditorContext, ScopeVariable};
 use super::render_expression_editor;
@@ -10,7 +9,6 @@ pub fn render_type_union(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    _target: EditorTarget,
     type_union: &definy_event::event::TypeUnionExpression,
 ) -> Element {
     let language = context.language;
@@ -65,7 +63,6 @@ pub fn render_variant(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    _target: EditorTarget,
     variant_expr: &definy_event::event::VariantExpression,
 ) -> Element {
     let language = context.language;
@@ -110,7 +107,6 @@ pub fn render_match(
     state: &AppState,
     context: &ExpressionEditorContext,
     path: &[PathStep],
-    _target: EditorTarget,
     match_expr: &definy_event::event::MatchExpression,
 ) -> Element {
     let language = context.language;

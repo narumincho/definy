@@ -6,9 +6,9 @@ use std::collections::HashMap;
 use definy_event::EventHashId;
 
 use crate::app_state::AppState;
-use crate::part_projection::{PartSnapshot, collect_part_snapshots, find_part_snapshot};
+use crate::part_projection::{PartSnapshot, collect_part_snapshots};
 
-use super::types::{EditorTarget, ExpressionType, TypeDiagnostic};
+use super::types::{ExpressionType, TypeDiagnostic};
 
 pub use constructor::*;
 pub(crate) use type_check::*;
@@ -31,26 +31,6 @@ pub fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -
             return_type: Box::new(part_type_to_expression_type(return_type.as_ref())),
         },
         definy_event::event::PartType::Union(_) => ExpressionType::Union,
-    }
-}
-
-pub fn expected_type_for_target(state: &AppState, target: EditorTarget) -> Option<ExpressionType> {
-    match target {
-        EditorTarget::PartDefinition => state
-            .part_definition_form
-            .part_type_input
-            .as_ref()
-            .map(part_type_to_expression_type),
-        EditorTarget::PartUpdate => {
-            let hash = match &state.part_update_form.part_definition_event_hash {
-                Some(hash) => hash,
-                _ => return None,
-            };
-            find_part_snapshot(state, hash)
-                .and_then(|snapshot| snapshot.part_type)
-                .as_ref()
-                .map(part_type_to_expression_type)
-        }
     }
 }
 
