@@ -96,17 +96,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                         onclick: move |_| {
                             let state_sig = use_context::<Signal<AppState>>();
                             if state_sig.read().current_key.is_none() {
-                                #[cfg(target_arch = "wasm32")]
-                                {
-                                    let _ = web_sys::window()
-                                        .and_then(|w| w.document())
-                                        .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
-                                        .and_then(|el| {
-                                            wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el)
-                                                .ok()
-                                        })
-                                        .map(|dlg| dlg.show_modal());
-                                }
+                                crate::login_or_create_account_dialog::dialog_open();
                             } else {
                                 is_form_open.set(true);
                             }
@@ -124,6 +114,9 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                         r#type: "button",
                         "commandfor": "login-or-create-account-dialog",
                         "command": "show-modal",
+                        onclick: move |_| {
+                            crate::login_or_create_account_dialog::dialog_open();
+                        },
                         style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); cursor: pointer;",
                         "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }

@@ -33,6 +33,7 @@ pub fn render_to_html(
 <style>{css}</style>
 <script id="{ssr_id}" type="application/json">{ssr_initial_state_base64}</script>
 <script type="module" src="/wasm/definy_client.js?v={js_path}"></script>
+<script>document.addEventListener('click',function(e){{var b=e.target.closest('button[commandfor]');if(!b)return;var t=document.getElementById(b.getAttribute('commandfor'));if(!t)return;var c=b.getAttribute('command');if(c==='show-modal'&&t.showModal){{t.showModal();}}else if(c==='close'&&t.close){{t.close();}}}});</script>
 </head>
 <body>
 <div id="main">{body_html}</div>

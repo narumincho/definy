@@ -67,6 +67,9 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
                     r#type: "button",
                     "commandfor": "login-or-create-account-dialog",
                     "command": "close",
+                    onclick: move |_| {
+                        dialog_close();
+                    },
                     style: "padding: 0.25rem; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 50%; background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer;",
                     "✕"
                 }
@@ -391,7 +394,18 @@ fn CreateAccountView(context: PageContext) -> Element {
     }
 }
 
-fn dialog_close() {
+pub fn dialog_open() {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(dlg) = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
+        .and_then(|el| el.dyn_into::<web_sys::HtmlDialogElement>().ok())
+    {
+        let _ = dlg.show_modal();
+    }
+}
+
+pub fn dialog_close() {
     #[cfg(target_arch = "wasm32")]
     if let Some(dlg) = web_sys::window()
         .and_then(|w| w.document())
