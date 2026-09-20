@@ -357,6 +357,23 @@ textarea {
   box-shadow: 0 12px 22px rgb(14 165 233 / 0.27);
 }
 
+dialog {
+  background-color: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 1.8rem;
+  max-width: 440px;
+  width: 90%;
+  margin: auto;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
 .auth-tabs {
   border: 1px solid var(--border);
 }

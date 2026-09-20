@@ -109,9 +109,6 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                         r#type: "button",
                         "commandfor": "login-or-create-account-dialog",
                         "command": "show-modal",
-                        onclick: move |_| {
-                            crate::login_or_create_account_dialog::dialog_open();
-                        },
                         style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.88rem; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 8px rgb(124 192 216 / 0.22); transition: opacity 0.15s ease;",
                         "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }

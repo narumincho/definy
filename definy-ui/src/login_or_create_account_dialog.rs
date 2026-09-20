@@ -67,9 +67,6 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
                     r#type: "button",
                     "commandfor": "login-or-create-account-dialog",
                     "command": "close",
-                    onclick: move |_| {
-                        dialog_close();
-                    },
                     style: "padding: 0.25rem; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 50%; background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer;",
                     "✕"
                 }
