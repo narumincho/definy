@@ -20,7 +20,7 @@ pub fn render_type_union(
                 "{language.label(\"Union Variants\", \"直和型のバリアント一覧\", \"Unionaj variantoj\")}"
             }
             div { style: "display: flex; flex-direction: column; gap: 0.25rem; width: 100%;",
-                for (idx , variant) in type_union.variants.iter().enumerate() {
+                for (idx, variant) in type_union.variants.iter().enumerate() {
                     div {
                         key: "{idx}",
                         style: "display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem; background: var(--surface-secondary); border-radius: var(--radius-sm);",
@@ -141,7 +141,7 @@ pub fn render_match(
                 div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
                     "{language.label(\"Match Arms\", \"パターン分岐一覧\", \"Kongruaj branĉoj\")}"
                 }
-                for (idx , arm) in match_expr.arms.iter().enumerate() {
+                for (idx, arm) in match_expr.arms.iter().enumerate() {
                     {
                         let mut arm_scope = context.scope_variables.clone();
                         if let (Some(var_id), Some(var_name)) = (arm.variable_id, &arm.variable_name) {

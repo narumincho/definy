@@ -80,7 +80,7 @@ pub fn SearchableDropdown(
                     },
                 }
                 div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
-                    for (opt_val , opt_label) in filtered_options {
+                    for (opt_val, opt_label) in filtered_options {
                         {
                             let is_selected = opt_val == current_value;
                             let parts: Vec<&str> = opt_label.split('\t').collect();

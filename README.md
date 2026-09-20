@@ -60,10 +60,10 @@ curl -sSL https://dioxus.dev/install.sh | bash
 
 起動コマンド:
 ```sh
-dx serve --package definy-client
+dx serve --server
 ```
 
-※ `dx serve` を実行すると、バックエンドサーバー (Axum + SurrealDB + MCP + SSR) とフロントエンド (Wasm) の双方が自動起動し、`http://localhost:8080` でアクセスできます。コードを変更すると自動的に再ビルド・ホットリロードされます。
+※ `dx serve --server` を実行すると、バックエンドサーバー (Axum + SurrealDB + MCP + SSR) とフロントエンド (Wasm) の双方が自動起動し、`http://localhost:8080` でアクセスできます。コードを変更すると自動的に再ビルド・ホットリロードされます（`default-members` 設定により `--package definy-client` の指定は不要です）。
 
 ### 3. SurrealDB サーバー / Surreal Cloud に接続して起動する場合
 

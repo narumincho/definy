@@ -506,7 +506,7 @@ pub fn render_list_literal(
                         "{key}"
                     }
                 }
-                for (index , item) in list_expression.items.iter().enumerate() {
+                for (index, item) in list_expression.items.iter().enumerate() {
                     {
                         let mut item_path = path.to_vec();
                         item_path.push(PathStep::ListItemValue(index));
@@ -521,7 +521,7 @@ pub fn render_list_literal(
                                 {remove_list_item_button(path.to_vec(), index, target)}
                             }
                             if let definy_event::event::Expression::TypeLiteral(record) = item {
-                                for (i , record_item) in record.items.iter().enumerate() {
+                                for (i, record_item) in record.items.iter().enumerate() {
                                     {
                                         let mut value_path = item_path.clone();
                                         value_path.push(PathStep::RecordItemValue(i));
@@ -556,7 +556,7 @@ pub fn render_list_literal(
     } else {
         rsx! {
             div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
-                for (index , item) in list_expression.items.iter().enumerate() {
+                for (index, item) in list_expression.items.iter().enumerate() {
                     {
                         let mut item_path = path.to_vec();
                         item_path.push(PathStep::ListItemValue(index));
@@ -608,7 +608,7 @@ pub fn render_type_literal(
                 "{language.label(\"Record fields\", \"レコードフィールド\", \"Kampoj de rikordo\")}"
             }
             div { style: "display: grid; gap: 0.35rem;",
-                for (index , item) in record_expression.items.iter().enumerate() {
+                for (index, item) in record_expression.items.iter().enumerate() {
                     {
                         let mut item_path = path.to_vec();
                         item_path.push(PathStep::RecordItemValue(index));

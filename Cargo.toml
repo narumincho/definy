@@ -6,6 +6,7 @@ members = [
   "definy-server",
   "definy-ui"
 ]
+default-members = ["definy-client"]
 resolver = "3"
 
 [profile.release]

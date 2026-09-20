@@ -51,7 +51,7 @@ pub fn PartDetailView(
                         "{context.language.label(\"History\", \"履歴\", \"Historio\")}"
                     }
                     div { style: "display: grid; gap: 0.4rem;",
-                        for (event_hash , ev) in related_events {
+                        for (event_hash, ev) in related_events {
                             {
                                 let label = crate::event_presenter::event_kind_label(context.language, &ev);
                                 let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
