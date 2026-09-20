@@ -26,12 +26,6 @@ pub async fn credential_store(
         key.to_bytes(),
     );
 
-    if let Some(window) = web_sys::window()
-        && let Ok(Some(storage)) = window.local_storage()
-    {
-        let _ = storage.set_item(STORAGE_KEY, &password_str);
-    }
-
     // PasswordCredential might not be supported in all contexts (e.g. non-HTTPS / tests)
     // Check if the constructor exists before calling it
     if let Some(window) = web_sys::window() {
@@ -69,13 +63,6 @@ pub async fn credential_store(
 }
 
 pub fn credential_get_sync() -> Option<ed25519_dalek::SigningKey> {
-    if let Some(window) = web_sys::window()
-        && let Ok(Some(storage)) = window.local_storage()
-        && let Ok(Some(password_str)) = storage.get_item(STORAGE_KEY)
-        && let Some(signing_key) = parse_password(password_str)
-    {
-        return Some(signing_key);
-    }
     None
 }
 

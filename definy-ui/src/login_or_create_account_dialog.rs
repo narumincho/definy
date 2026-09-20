@@ -113,17 +113,10 @@ fn LoginView(context: PageContext) -> Element {
             style: "display: grid; gap: 1.5rem;",
             onsubmit: move |evt: FormEvent| {
                 evt.prevent_default();
-                let password = password_val().trim().to_string();
+                let password = password_val();
                 if let Some(signing_key) = crate::navigator_credential::parse_password(
-                    password.clone(),
+                    password,
                 ) {
-                    #[cfg(target_arch = "wasm32")]
-                    if let Some(window) = web_sys::window()
-                        && let Ok(Some(storage)) = window.local_storage()
-                    {
-                        let _ = storage.set_item("definy_current_key", &password);
-                    }
-
                     dialog_close();
                     error_msg.set(None);
                     let mut state_sig = use_context::<Signal<AppState>>();
