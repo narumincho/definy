@@ -623,6 +623,10 @@ fn RenderPartTypeEditor(
                 context.language.label("List", "リスト", "Listo")
             ),
         ),
+        (
+            "type".to_string(),
+            format!("{}\tType\t", context.language.label("Type", "型", "Tipo")),
+        ),
     ]);
 
     options.extend(

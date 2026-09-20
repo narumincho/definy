@@ -33,7 +33,9 @@ pub fn AccountDetailView(
 
     let page_shell_style = crate::layout::page_shell_style("1.2rem");
 
+    let language = context.language;
     let mut profile_name_input = use_signal(String::new);
+    let mut submit_result = use_signal(|| None::<String>);
 
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
@@ -80,17 +82,40 @@ pub fn AccountDetailView(
                                     let key = if let Some(key) = &state_val.current_key {
                                         key.clone()
                                     } else {
+                                        submit_result
+                                            .set(
+                                                Some(
+                                                    language
+                                                        .label(
+                                                            "Error: login required",
+                                                            "エラー: ログインが必要です",
+                                                            "Eraro: ensaluto necesas",
+                                                        )
+                                                        .to_string(),
+                                                ),
+                                            );
                                         return;
                                     };
                                     let new_name = profile_name_input.read().trim().to_string();
                                     if new_name.is_empty() {
+                                        submit_result
+                                            .set(
+                                                Some(
+                                                    language
+                                                        .label(
+                                                            "Error: account name is required",
+                                                            "エラー: アカウント名を入力してください",
+                                                            "Eraro: konta nomo estas bezonata",
+                                                        )
+                                                        .to_string(),
+                                                ),
+                                            );
                                         return;
                                     }
                                     let filter = state_val.event_list_state.filter_event_type;
                                     let force_offline = state_val.force_offline;
-
                                     spawn(async move {
-                                        let _ = crate::event_submit::submit_event(
+                                        let record_opt = crate::event_submit::submit_event(
                                                 definy_event::event::EventContent::ChangeProfile(definy_event::event::ChangeProfileEvent {
                                                     account_name: new_name.into(),
                                                 }),
@@ -101,9 +126,52 @@ pub fn AccountDetailView(
                                             )
                                             .await;
                                         profile_name_input.set(String::new());
+                                        if let Some(record) = record_opt {
+                                            submit_result
+                                                .set(
+                                                    Some(
+                                                        match record.status {
+                                                            crate::local_event::LocalEventStatus::Sent => {
+                                                                language
+                                                                    .label(
+                                                                        "Changes saved successfully",
+                                                                        "変更を保存しました",
+                                                                        "Ŝanĝoj konservitaj",
+                                                                    )
+                                                                    .to_string()
+                                                            }
+                                                            crate::local_event::LocalEventStatus::Queued => {
+                                                                language
+                                                                    .label(
+                                                                        "Changes queued (offline)",
+                                                                        "変更をキューに追加しました (オフライン)",
+                                                                        "Ŝanĝoj envicigitaj (senkonekte)",
+                                                                    )
+                                                                    .to_string()
+                                                            }
+                                                            crate::local_event::LocalEventStatus::Failed => {
+                                                                language
+                                                                    .label(
+                                                                        "Failed to save changes",
+                                                                        "変更の保存に失敗しました",
+                                                                        "Konservado de ŝanĝoj malsukcesis",
+                                                                    )
+                                                                    .to_string()
+                                                            }
+                                                        },
+                                                    ),
+                                                );
+                                        }
                                     });
                                 },
                                 "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
+                            }
+                        }
+                        if let Some(result) = submit_result() {
+                            div {
+                                class: "mono",
+                                style: "font-size: 0.85rem; word-break: break-word; background: rgb(124 192 216 / 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
+                                "{result}"
                             }
                         }
                     }

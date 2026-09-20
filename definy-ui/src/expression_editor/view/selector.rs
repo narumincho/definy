@@ -175,6 +175,32 @@ pub fn selector_options(
             "function\tSyntax\t".to_string(),
         ),
         ("expr:call".to_string(), "call\tSyntax\t".to_string()),
+        ("expr:variant".to_string(), "variant\tSyntax\t".to_string()),
+        ("expr:match".to_string(), "match\tSyntax\t".to_string()),
+        (
+            "expr:type:number".to_string(),
+            "Type: Number\tType\t".to_string(),
+        ),
+        (
+            "expr:type:string".to_string(),
+            "Type: String\tType\t".to_string(),
+        ),
+        (
+            "expr:type:boolean".to_string(),
+            "Type: Boolean\tType\t".to_string(),
+        ),
+        (
+            "expr:type:list".to_string(),
+            "Type: List\tType\t".to_string(),
+        ),
+        (
+            "expr:type:function".to_string(),
+            "Type: Function\tType\t".to_string(),
+        ),
+        (
+            "expr:type:union".to_string(),
+            "Type: Union\tType\t".to_string(),
+        ),
     ]);
 
     // Type constructors

@@ -363,7 +363,7 @@ fn CreateAccountView(context: PageContext) -> Element {
                                         .write_text(
                                             &base64::Engine::encode(
                                                 &base64::engine::general_purpose::URL_SAFE_NO_PAD,
-                                                key_to_copy.to_scalar_bytes(),
+                                                key_to_copy.to_bytes(),
                                             ),
                                         );
                                 }

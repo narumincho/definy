@@ -291,6 +291,42 @@ pub(crate) fn build_expression_from_selection(
             parameter: Box::new(definy_event::event::Expression::TypeNumber),
             return_type: Box::new(definy_event::event::Expression::TypeNumber),
         })
+    } else if selected_value == "expr:type:union" {
+        definy_event::event::Expression::TypeUnion(definy_event::event::TypeUnionExpression {
+            variants: vec![
+                definy_event::event::TypeUnionVariant {
+                    tag: "A".into(),
+                    payload_type: None,
+                },
+                definy_event::event::TypeUnionVariant {
+                    tag: "B".into(),
+                    payload_type: None,
+                },
+            ],
+        })
+    } else if selected_value == "expr:variant" {
+        definy_event::event::Expression::Variant(definy_event::event::VariantExpression {
+            tag: "A".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        })
+    } else if selected_value == "expr:match" {
+        definy_event::event::Expression::Match(definy_event::event::MatchExpression {
+            target: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+            arms: vec![definy_event::event::MatchArm {
+                tag: "A".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 0 },
+                )),
+            }],
+            default: Some(Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            ))),
+        })
     } else if let Some((type_part_definition_event_hash, default_value)) = constructor_default {
         definy_event::event::Expression::Constructor(definy_event::event::ConstructorExpression {
             type_part_definition_event_hash,

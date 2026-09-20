@@ -79,6 +79,55 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                         },
                         "{context.language.label(\"Refresh\", \"更新\", \"Refreŝigi\")}"
                     }
+                    if state
+                        .local_event_queue
+                        .items
+                        .iter()
+                        .any(|item| item.status != LocalEventStatus::Sent)
+                    {
+                        button {
+                            r#type: "button",
+                            style: "background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer;",
+                            onclick: move |_| {
+                                let mut state_sig = use_context::<Signal<AppState>>();
+                                let unsent_binaries: Vec<Vec<u8>> = state_sig
+                                    .read()
+                                    .local_event_queue
+                                    .items
+                                    .iter()
+                                    .filter(|item| item.status != LocalEventStatus::Sent)
+                                    .map(|item| item.event_binary.clone())
+                                    .collect();
+                                spawn(async move {
+                                    for binary in unsent_binaries {
+                                        let force_offline = state_sig.read().force_offline;
+                                        if let Ok(rec) = crate::fetch::post_event_with_queue(
+                                                &binary,
+                                                force_offline,
+                                            )
+                                            .await
+                                        {
+                                            let mut next = state_sig.read().clone();
+                                            if rec.status == crate::local_event::LocalEventStatus::Sent {
+                                                if let Ok(events) = crate::fetch::get_events(
+                                                        None,
+                                                        Some(20),
+                                                        Some(0),
+                                                    )
+                                                    .await
+                                                {
+                                                    next.apply_latest_events(events, None);
+                                                }
+                                            }
+                                            crate::app_state::upsert_local_event_record(&mut next, rec);
+                                            state_sig.set(next);
+                                        }
+                                    }
+                                });
+                            },
+                            "{context.language.label(\"Retry All\", \"すべて再試行\", \"Reprovi ĉiujn\")}"
+                        }
+                    }
                     button {
                         r#type: "button",
                         style: "background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
@@ -170,6 +219,42 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                     }
                                     if status != LocalEventStatus::Sent {
                                         div { style: "display: flex; gap: 0.4rem;",
+                                            button {
+                                                r#type: "button",
+                                                style: "background: var(--primary); color: #0e1720; border: none; padding: 0.3rem 0.6rem; border-radius: 0.45rem; font-weight: 600; cursor: pointer;",
+                                                onclick: {
+                                                    let binary_c = record.event_binary.clone();
+                                                    move |_| {
+                                                        let binary_c = binary_c.clone();
+                                                        let mut state_sig = use_context::<Signal<AppState>>();
+                                                        spawn(async move {
+                                                            let force_offline = state_sig.read().force_offline;
+                                                            if let Ok(rec) = crate::fetch::post_event_with_queue(
+                                                                    &binary_c,
+                                                                    force_offline,
+                                                                )
+                                                                .await
+                                                            {
+                                                                let mut next = state_sig.read().clone();
+                                                                if rec.status == crate::local_event::LocalEventStatus::Sent {
+                                                                    if let Ok(events) = crate::fetch::get_events(
+                                                                            None,
+                                                                            Some(20),
+                                                                            Some(0),
+                                                                        )
+                                                                        .await
+                                                                    {
+                                                                        next.apply_latest_events(events, None);
+                                                                    }
+                                                                }
+                                                                crate::app_state::upsert_local_event_record(&mut next, rec);
+                                                                state_sig.set(next);
+                                                            }
+                                                        });
+                                                    }
+                                                },
+                                                "{context.language.label(\"Retry\", \"再試行\", \"Reprovi\")}"
+                                            }
                                             button {
                                                 r#type: "button",
                                                 style: "background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.3rem 0.6rem; border-radius: 0.45rem; cursor: pointer;",
