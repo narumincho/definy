@@ -228,8 +228,7 @@ fn ModuleEditorCard(
                                     ),
                                 );
                             return;
-                        }
-                        let force_offline = state_val.force_offline;
+                        };
                         let name = module_name().trim().to_string();
                         let desc = module_description();
                         if name.is_empty() {

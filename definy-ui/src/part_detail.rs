@@ -201,8 +201,7 @@ fn PartEditorCard(
                         .map(expression_to_source)
                         .unwrap_or_else(|| {
                             context.language.label("(none)", "(なし)", "(neniu)").to_string()
-                        }
-                        }
+                        });
                     rsx! {
                         div {
                             class: "mono",
@@ -272,8 +271,7 @@ fn PartEditorCard(
                                     ),
                                 );
                             return;
-                        }
-                        let desc = part_description();
+                        };
                         let name = part_name().trim().to_string();
                         if name.is_empty() {
                             submit_result
