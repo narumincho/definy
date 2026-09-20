@@ -114,6 +114,8 @@ fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     if let Ok(custom) = std::env::var("DEFINY_PUBLIC_DIR") {
         paths.push(std::path::PathBuf::from(custom));
     }
+
+    // Direct relative paths from current directory
     paths.push(std::path::PathBuf::from("public"));
     paths.push(std::path::PathBuf::from(
         "target/dx/definy_client/release/web/public",
@@ -121,6 +123,47 @@ fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     paths.push(std::path::PathBuf::from(
         "target/dx/definy_client/debug/web/public",
     ));
+
+    // Also look from parent directory (if cwd is definy-server or definy-client)
+    paths.push(std::path::PathBuf::from("../public"));
+    paths.push(std::path::PathBuf::from(
+        "../target/dx/definy_client/release/web/public",
+    ));
+    paths.push(std::path::PathBuf::from(
+        "../target/dx/definy_client/debug/web/public",
+    ));
+
+    // Robust search: traverse up from current_dir to find workspace root (has Cargo.lock or workspace Cargo.toml)
+    if let Ok(mut current) = std::env::current_dir() {
+        loop {
+            let cargo_toml = current.join("Cargo.toml");
+            let is_workspace_root = cargo_toml.is_file()
+                && std::fs::read_to_string(&cargo_toml)
+                    .map(|c| c.contains("[workspace]"))
+                    .unwrap_or(false);
+
+            if is_workspace_root {
+                let target_debug = current.join("target/dx/definy_client/debug/web/public");
+                if target_debug.exists() && !paths.contains(&target_debug) {
+                    paths.push(target_debug);
+                }
+                let target_release = current.join("target/dx/definy_client/release/web/public");
+                if target_release.exists() && !paths.contains(&target_release) {
+                    paths.push(target_release);
+                }
+                let pub_dir = current.join("public");
+                if pub_dir.exists() && !paths.contains(&pub_dir) {
+                    paths.push(pub_dir);
+                }
+                break;
+            }
+
+            if !current.pop() {
+                break;
+            }
+        }
+    }
+
     paths
 }
 
@@ -503,5 +546,19 @@ mod tests {
         assert_ne!(body_str, "todo");
         assert!(body_str.contains("<!DOCTYPE html>"));
         assert!(body_str.contains("-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o"));
+    }
+
+    #[test]
+    fn test_resolve_client_js_and_wasm() {
+        let js = resolve_client_js();
+        assert!(
+            js.is_some(),
+            "definy_client.js should be found after dx build --fullstack"
+        );
+        let wasm = resolve_client_wasm();
+        assert!(
+            wasm.is_some(),
+            "definy_client_bg.wasm should be found after dx build --fullstack"
+        );
     }
 }

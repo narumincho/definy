@@ -106,19 +106,42 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
 #[component]
 fn LoginView(context: PageContext) -> Element {
     let mut password_val = use_signal(String::new);
+    let mut error_msg = use_signal(|| None::<String>);
 
     rsx! {
         form {
             style: "display: grid; gap: 1.5rem;",
             onsubmit: move |evt: FormEvent| {
                 evt.prevent_default();
-                let password = password_val();
+                let password = password_val().trim().to_string();
                 if let Some(signing_key) = crate::navigator_credential::parse_password(
-                    password,
+                    password.clone(),
                 ) {
+                    #[cfg(target_arch = "wasm32")]
+                    if let Some(window) = web_sys::window()
+                        && let Ok(Some(storage)) = window.local_storage()
+                    {
+                        let _ = storage.set_item("definy_current_key", &password);
+                    }
+
                     dialog_close();
+                    error_msg.set(None);
                     let mut state_sig = use_context::<Signal<AppState>>();
                     state_sig.write().current_key = Some(signing_key);
+                } else {
+                    error_msg
+                        .set(
+                            Some(
+                                context
+                                    .language
+                                    .label(
+                                        "Invalid secret key format.",
+                                        "秘密鍵の形式が無効です。",
+                                        "Nevalida sekreta ŝlosilformato.",
+                                    )
+                                    .to_string(),
+                            ),
+                        );
                 }
             },
             div { class: "form-group", style: "display: grid; gap: 0.4rem;",
@@ -131,8 +154,12 @@ fn LoginView(context: PageContext) -> Element {
                     style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
                     oninput: move |evt: FormEvent| {
                         password_val.set(evt.value());
+                        error_msg.set(None);
                     },
                 }
+            }
+            if let Some(msg) = error_msg() {
+                div { style: "color: #fca5a5; font-size: 0.82rem;", "{msg}" }
             }
             button {
                 r#type: "submit",
