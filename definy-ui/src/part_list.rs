@@ -132,7 +132,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                     .map(|dlg| dlg.show_modal());
                             }
                         },
-                        "{context.language.label(\"Log In / Sign Up\", \"ログイン / サインアップ\", \"Ensaluti / Registriĝi\")}"
+                        "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }
                 }
             }
