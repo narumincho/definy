@@ -122,18 +122,6 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                         "commandfor": "login-or-create-account-dialog",
                         "command": "show-modal",
                         style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); cursor: pointer;",
-                        onclick: move |_| {
-                            #[cfg(target_arch = "wasm32")]
-                            {
-                                let _ = web_sys::window()
-                                    .and_then(|w| w.document())
-                                    .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
-                                    .and_then(|el| {
-                                        wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok()
-                                    })
-                                    .map(|dlg| dlg.show_modal());
-                            }
-                        },
                         "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }
                 }

@@ -109,15 +109,6 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                         r#type: "button",
                         "commandfor": "login-or-create-account-dialog",
                         "command": "show-modal",
-                        onclick: move |_| {
-                            let _ = web_sys::window()
-                                .and_then(|w| w.document())
-                                .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
-                                .and_then(|el| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok()
-                                })
-                                .map(|dlg| dlg.show_modal());
-                        },
                         style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.88rem; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 8px rgb(124 192 216 / 0.22); transition: opacity 0.15s ease;",
                         "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }
