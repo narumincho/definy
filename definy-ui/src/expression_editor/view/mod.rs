@@ -49,14 +49,17 @@ pub fn render_expression_editor(
         .map(|diagnostic| diagnostic.message.as_str());
 
     let is_focused = state.focused_path.as_ref() == Some(&path);
-    let border_style = if is_focused {
-        "2px solid var(--accent)"
+    let (border_style, shadow_style) = if is_focused {
+        (
+            "2px solid var(--accent)",
+            "box-shadow: 0 0 0 3px var(--accent-glow), 0 2px 8px rgb(124 192 216 / 0.15);",
+        )
     } else if warning_message.is_some() {
-        "1px solid var(--error)"
+        ("1px solid var(--error)", "")
     } else if path.is_empty() {
-        "1px solid var(--border)"
+        ("1px solid var(--border)", "")
     } else {
-        "1px solid rgb(255 255 255 / 0.1)"
+        ("1px solid rgb(255 255 255 / 0.1)", "")
     };
     let card_padding = if path.is_empty() {
         "0.5rem 0.65rem"
@@ -84,7 +87,15 @@ pub fn render_expression_editor(
         div {
             class: "{card_class}",
             "data-path": "{path_str}",
-            style: "padding: {card_padding}; display: grid; gap: {card_gap}; border: {border_style}; background: {card_bg}; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box;",
+            style: "padding: {card_padding}; display: grid; gap: {card_gap}; border: {border_style}; {shadow_style} background: {card_bg}; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box; transition: border-color 0.15s ease, box-shadow 0.15s ease;",
+            onclick: {
+                let p = path.clone();
+                move |evt: MouseEvent| {
+                    evt.stop_propagation();
+                    let mut state_sig = use_context::<Signal<AppState>>();
+                    state_sig.write().focused_path = Some(p.clone());
+                }
+            },
             if allow_kind_change && is_compound_expression(expression) {
                 {
                     expression_selector(

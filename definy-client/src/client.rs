@@ -216,8 +216,9 @@ fn AppRoot() -> Element {
                         current_context.set(ctx.clone());
                         fetch_missing_events_async(&mut state_signal, &ctx).await;
                     }
-                    ClientMsg::Keydown(key) => {
-                        let next = keyboard_nav::handle_keydown(state_signal.read().clone(), key);
+                    ClientMsg::Keydown { key, shift } => {
+                        let next =
+                            keyboard_nav::handle_keydown(state_signal.read().clone(), &key, shift);
                         state_signal.set(next);
                     }
                 }
@@ -323,17 +324,14 @@ fn next_state_ensure_cache(state: &mut AppState) {
 enum ClientMsg {
     Navigate(String),
     PopState,
-    Keydown(String),
+    Keydown { key: String, shift: bool },
 }
 
 fn setup_keydown_listener(tx: futures_channel::mpsc::UnboundedSender<ClientMsg>) {
     let on_keydown =
         wasm_bindgen::closure::Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
-            let key_value = js_sys::Reflect::get(&event, &JsValue::from_str("key")).ok();
-            let key = match key_value {
-                Some(v) if v.is_string() => v.as_string().unwrap(),
-                _ => return,
-            };
+            let key = event.key();
+            let shift = event.shift_key();
 
             if let Some(window) = web_sys::window()
                 && let Some(document) = window.document()
@@ -341,11 +339,24 @@ fn setup_keydown_listener(tx: futures_channel::mpsc::UnboundedSender<ClientMsg>)
             {
                 let tag = active.tag_name().to_lowercase();
                 if tag == "input" || tag == "textarea" {
+                    if key == "Escape" {
+                        if let Ok(html_el) = active.dyn_into::<web_sys::HtmlElement>() {
+                            let _ = html_el.blur();
+                        }
+                        event.prevent_default();
+                    }
                     return;
                 }
             }
 
-            let _ = tx.unbounded_send(ClientMsg::Keydown(key));
+            if matches!(
+                key.as_str(),
+                "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"
+            ) {
+                event.prevent_default();
+            }
+
+            let _ = tx.unbounded_send(ClientMsg::Keydown { key, shift });
         }) as Box<dyn FnMut(web_sys::KeyboardEvent)>);
 
     if let Some(window) = web_sys::window() {

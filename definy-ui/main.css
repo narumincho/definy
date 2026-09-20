@@ -8,6 +8,8 @@
 
   --primary: #7cc0d8;
   --primary-content: #f1f6fb;
+  --accent: #7cc0d8;
+  --accent-glow: rgb(124 192 216 / 0.35);
 
   --error: #f28b82;
   --error-bg: rgb(242 139 130 / 0.12);
