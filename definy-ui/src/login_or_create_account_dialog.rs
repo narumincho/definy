@@ -62,11 +62,16 @@ pub fn LoginOrCreateAccountDialog(state: AppState, context: PageContext) -> Elem
     };
 
     rsx! {
-        dialog { class: "auth-dialog", id: "login-or-create-account-dialog",
+        dialog {
+            class: "auth-dialog",
+            id: "login-or-create-account-dialog",
+            "closedby": "any",
             div { style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;",
                 h2 { style: "font-size: 1.25rem; margin: 0;", "{dialog_title}" }
                 button {
                     r#type: "button",
+                    "commandfor": "login-or-create-account-dialog",
+                    "command": "close",
                     style: "padding: 0.25rem; min-width: 2rem; width: 2rem; height: 2rem; border-radius: 50%; background-color: transparent; border: none; color: var(--text-secondary); cursor: pointer;",
                     onclick: move |_| {
                         dialog_close();

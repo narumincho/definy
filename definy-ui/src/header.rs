@@ -107,6 +107,8 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 } else {
                     button {
                         r#type: "button",
+                        "commandfor": "login-or-create-account-dialog",
+                        "command": "show-modal",
                         onclick: move |_| {
                             let _ = web_sys::window()
                                 .and_then(|w| w.document())

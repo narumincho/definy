@@ -119,6 +119,8 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                     }
                     button {
                         r#type: "button",
+                        "commandfor": "login-or-create-account-dialog",
+                        "command": "show-modal",
                         style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); cursor: pointer;",
                         onclick: move |_| {
                             #[cfg(target_arch = "wasm32")]
