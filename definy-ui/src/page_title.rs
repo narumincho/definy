@@ -10,6 +10,7 @@ enum RouteId {
     PartList,
     ModuleList,
     LocalEventQueue,
+    TreeLayout,
     AccountDetail,
     PartDetail,
     ModuleDetail,
@@ -25,6 +26,7 @@ impl RouteId {
             Some(Location::PartList) => Self::PartList,
             Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::LocalEventQueue) => Self::LocalEventQueue,
+            Some(Location::TreeLayout) => Self::TreeLayout,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Module(_)) => Self::ModuleDetail,
@@ -50,6 +52,11 @@ impl RouteId {
                     .language
                     .label("local-events", "ローカルイベント", "lokaj-eventoj")
             }
+            Self::TreeLayout => {
+                context
+                    .language
+                    .label("tree-layout", "木構造レイアウト", "arba-aranĝo")
+            }
             Self::EventDetail => context.language.label("events", "イベント", "eventoj"),
             Self::NotFound => context.language.label("not-found", "未検出", "ne-trovita"),
         }
@@ -64,6 +71,7 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::PartList)
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
+        | Some(Location::TreeLayout)
         | None => route_id.title_prefix(context).to_string(),
         Some(Location::Account(account_id)) => {
             let account_name =

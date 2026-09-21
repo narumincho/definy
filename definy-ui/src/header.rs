@@ -48,6 +48,13 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
                 NavLink {
                     context: context.clone(),
+                    target: Location::TreeLayout,
+                    label: "Tree Layout",
+                    label_ja: "ツリー表示",
+                    label_eo: "Arba aranĝo",
+                }
+                NavLink {
+                    context: context.clone(),
                     target: Location::ModuleList,
                     label: "Modules",
                     label_ja: "モジュール",
@@ -133,6 +140,7 @@ fn NavLink(
                 Some(Location::PartList | Location::Part(_)),
                 Location::PartList
             )
+            | (Some(Location::TreeLayout), Location::TreeLayout)
             | (
                 Some(Location::ModuleList | Location::Module(_)),
                 Location::ModuleList

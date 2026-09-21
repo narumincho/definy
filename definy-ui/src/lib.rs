@@ -30,6 +30,8 @@ mod part_detail;
 mod part_list;
 pub mod part_projection;
 pub mod query;
+pub mod tree_layout;
+mod tree_layout_view;
 pub mod wasm_emitter;
 
 pub use app_state::*;
@@ -138,6 +140,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::LocalEventQueue) => {
             rsx! {
                 local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::TreeLayout) => {
+            rsx! {
+                tree_layout_view::TreeLayoutView { state: state.clone(), context: context.clone() }
             }
         }
         Some(Location::Module(hash)) => {

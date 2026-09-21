@@ -422,6 +422,7 @@ pub enum Location {
     Part(definy_event::EventHashId),
     Event(definy_event::EventHashId),
     Account(AccountId),
+    TreeLayout,
 }
 
 impl Location {
@@ -432,6 +433,7 @@ impl Location {
             Location::PartList => "/parts".to_string(),
             Location::ModuleList => "/modules".to_string(),
             Location::LocalEventQueue => "/local-events".to_string(),
+            Location::TreeLayout => "/tree-layout".to_string(),
             Location::Module(hash) => format!("/modules/{}", hash),
             Location::Part(hash) => format!("/parts/{}", hash),
             Location::Event(hash) => format!("/events/{}", hash),
@@ -447,6 +449,7 @@ impl Location {
             ["parts"] => Some(Location::PartList),
             ["modules"] => Some(Location::ModuleList),
             ["local-events"] => Some(Location::LocalEventQueue),
+            ["tree-layout"] => Some(Location::TreeLayout),
             ["modules", hash_str] => Some(Location::Module(EventHashId::from_str(hash_str).ok()?)),
             ["parts", hash_str] => Some(Location::Part(EventHashId::from_str(hash_str).ok()?)),
             ["events", hash_str] => Some(Location::Event(EventHashId::from_str(hash_str).ok()?)),
@@ -473,6 +476,8 @@ mod tests {
             Location::AccountList,
             Location::PartList,
             Location::ModuleList,
+            Location::LocalEventQueue,
+            Location::TreeLayout,
             Location::Module(
                 EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                     .ok()
