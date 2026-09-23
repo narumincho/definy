@@ -44,30 +44,7 @@ pub fn PartDetailView(
                     definition_event_hash: definition_event_hash.clone(),
                     snapshot: snapshot.clone(),
                 }
-                div {
-                    class: "event-detail-card",
-                    style: "display: grid; gap: 0.45rem; padding: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                    div { style: "font-weight: 600;",
-                        "{context.language.label(\"History\", \"履歴\", \"Historio\")}"
-                    }
-                    div { style: "display: grid; gap: 0.4rem;",
-                        for (event_hash, ev) in related_events {
-                            {
-                                let label = crate::event_presenter::event_kind_label(context.language, &ev);
-                                let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
-                                rsx! {
-                                    a {
-                                        key: "{event_hash}",
-                                        href: context.href_with_lang(Location::Event(event_hash)),
-                                        style: "display: grid; gap: 0.2rem; padding: 0.44rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-md); text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.02);",
-                                        div { "{label}" }
-                                        div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{time_str}" }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                PartHistoryCard { context: context.clone(), related_events }
             } else {
                 a {
                     href: context.href_with_lang(Location::PartList),
@@ -129,58 +106,231 @@ fn PartEditorCard(
 
     let is_logged_in = state.current_key.is_some();
 
+    let on_evaluate = move |_| {
+        let state_sig = use_context::<Signal<AppState>>();
+        let events_vec = state_sig.read().events_with_hash();
+        let result = if let Some(expr) = &*expression.read() {
+            match evaluate_expression(expr, &events_vec) {
+                Ok(value) => {
+                    format!(
+                        "{} {}",
+                        language.label("Result:", "結果:", "Rezulto:"),
+                        value,
+                    )
+                }
+                Err(error) => {
+                    format!(
+                        "{} {}",
+                        language.label("Error:", "エラー:", "Eraro:"),
+                        error,
+                    )
+                }
+            }
+        } else {
+            language
+                .label(
+                    "No expression to evaluate",
+                    "評価する式がありません",
+                    "Neniu esprimo por taksi",
+                )
+                .to_string()
+        };
+        eval_result.set(Some(result));
+    };
+
+    let on_save = {
+        let definition_event_hash = definition_event_hash.clone();
+        move |_| {
+            let state_sig = use_context::<Signal<AppState>>();
+            let state_val = state_sig.read().clone();
+            let key = if let Some(key) = &state_val.current_key {
+                key.clone()
+            } else {
+                submit_result.set(Some(
+                    language
+                        .label(
+                            "Error: login required",
+                            "エラー: ログインが必要です",
+                            "Eraro: ensaluto necesas",
+                        )
+                        .to_string(),
+                ));
+                return;
+            };
+            let name = part_name().trim().to_string();
+            if name.is_empty() {
+                submit_result.set(Some(
+                    language
+                        .label(
+                            "Error: part name is required",
+                            "エラー: パーツ名は必須です",
+                            "Eraro: parto-nomo estas bezonata",
+                        )
+                        .to_string(),
+                ));
+                return;
+            }
+            let desc = part_description();
+            let expr_val = expression();
+            let Some(mod_hash) = module_hash() else {
+                submit_result.set(Some(
+                    language
+                        .label(
+                            "Error: module is required",
+                            "エラー: モジュールを選択してください",
+                            "Eraro: modulo estas bezonata",
+                        )
+                        .to_string(),
+                ));
+                return;
+            };
+            let force_offline = state_val.force_offline;
+            let def_hash = definition_event_hash.clone();
+            spawn(async move {
+                let record_opt = crate::event_submit::submit_event(
+                    definy_event::event::EventContent::PartUpdate(
+                        definy_event::event::PartUpdateEvent {
+                            part_name: name.into(),
+                            part_description: desc.into(),
+                            part_definition_event_hash: def_hash,
+                            expression: expr_val,
+                            module_definition_event_hash: mod_hash,
+                        },
+                    ),
+                    key,
+                    force_offline,
+                    None,
+                    state_sig,
+                )
+                .await;
+                if let Some(record) = record_opt {
+                    submit_result.set(Some(match record.status {
+                        crate::local_event::LocalEventStatus::Sent => language
+                            .label(
+                                "Changes saved successfully",
+                                "変更を保存しました",
+                                "Ŝanĝoj konservitaj",
+                            )
+                            .to_string(),
+                        crate::local_event::LocalEventStatus::Queued => language
+                            .label(
+                                "Changes queued (offline)",
+                                "変更をキューに追加しました (オフライン)",
+                                "Ŝanĝoj envicigitaj (senkonekte)",
+                            )
+                            .to_string(),
+                        crate::local_event::LocalEventStatus::Failed => language
+                            .label(
+                                "Failed to save changes",
+                                "変更の保存に失敗しました",
+                                "Konservado de ŝanĝoj malsukcesis",
+                            )
+                            .to_string(),
+                    }));
+                }
+            });
+        }
+    };
+
     rsx! {
-        div {
-            class: "event-detail-card",
-            style: "display: grid; gap: 1rem; padding: 1.2rem 1.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div { style: "display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;",
-                h2 { style: "font-size: 1.4rem; font-weight: 600; margin: 0;", "{part_name}" }
-                div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{updated_at_label}" }
+        div { style: "display: grid; gap: 0.85rem;",
+            // 1. メタ情報＆アクションヘッダーカード
+            div {
+                class: "event-detail-card",
+                style: "display: grid; gap: 0.8rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                // 上部バー：タイトルとアクションボタン
+                div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; flex-wrap: wrap;",
+                    div { style: "display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;",
+                        h2 { style: "font-size: 1.35rem; font-weight: 700; margin: 0; color: var(--text);",
+                            "{part_name}"
+                        }
+                        span { style: "font-size: 0.76rem; color: var(--text-secondary); opacity: 0.8;",
+                            "{updated_at_label}"
+                        }
+                    }
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                        button {
+                            r#type: "button",
+                            style: "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;",
+                            onclick: on_evaluate,
+                            "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
+                        }
+                        button {
+                            r#type: "button",
+                            disabled: !is_logged_in,
+                            style: if is_logged_in { "padding: 0.4rem 1.1rem; font-size: 0.82rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; box-shadow: var(--shadow-sm);" } else { "padding: 0.4rem 1.1rem; font-size: 0.82rem; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: not-allowed; opacity: 0.5;" },
+                            onclick: on_save,
+                            "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
+                        }
+                    }
+                }
+                // 入力グリッド：パーツ名とモジュール（2カラム）
+                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;",
+                    div { style: "display: grid; gap: 0.3rem;",
+                        label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
+                            "{context.language.label(\"Part Name\", \"パーツ名\", \"Parto-nomo\")}"
+                        }
+                        input {
+                            r#type: "text",
+                            name: "part-update-name",
+                            value: "{part_name}",
+                            style: "padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.9rem;",
+                            oninput: move |evt: FormEvent| {
+                                part_name.set(evt.value());
+                            },
+                        }
+                    }
+                    div { style: "display: grid; gap: 0.3rem;",
+                        label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
+                            "{context.language.label(\"Module\", \"所属モジュール\", \"Modulo\")}"
+                        }
+                        crate::dropdown::SearchableDropdown {
+                            name: dropdown_name,
+                            current_value: current_module_value,
+                            options: module_options,
+                            on_change: move |val: String| {
+                                module_hash.set(EventHashId::from_str(&val).ok());
+                            },
+                        }
+                    }
+                }
+                // 説明文
+                div { style: "display: grid; gap: 0.3rem;",
+                    label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
+                        "{context.language.label(\"Description\", \"説明文\", \"Priskribo\")}"
+                    }
+                    textarea {
+                        name: "part-update-description",
+                        value: "{part_description}",
+                        placeholder: "{context.language.label(\"Enter part description...\", \"パーツの説明を入力...\", \"Enigu partan priskribon...\")}",
+                        style: "min-height: 3.2rem; padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.85rem; resize: vertical;",
+                        oninput: move |evt: FormEvent| {
+                            part_description.set(evt.value());
+                        },
+                    }
+                }
+                if !is_logged_in {
+                    div { style: "font-size: 0.78rem; color: var(--text-secondary); background: rgb(255 255 255 / 0.03); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
+                        "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por表保存i ŝanĝojn.\")}"
+                    }
+                }
+                if let Some(result) = submit_result() {
+                    div {
+                        class: "mono",
+                        style: "font-size: 0.82rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
+                        "{result}"
+                    }
+                }
             }
-            div { style: "display: grid; gap: 0.35rem;",
-                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
-                    "{context.language.label(\"Part Name\", \"パーツ名\", \"Parto-nomo\")}"
-                }
-                input {
-                    r#type: "text",
-                    name: "part-update-name",
-                    value: "{part_name}",
-                    style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
-                    oninput: move |evt: FormEvent| {
-                        part_name.set(evt.value());
-                    },
-                }
-            }
-            div { style: "display: grid; gap: 0.35rem;",
-                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
-                    "{context.language.label(\"Module\", \"所属モジュール\", \"Modulo\")}"
-                }
-                crate::dropdown::SearchableDropdown {
-                    name: dropdown_name,
-                    current_value: current_module_value,
-                    options: module_options,
-                    on_change: move |val: String| {
-                        module_hash.set(EventHashId::from_str(&val).ok());
-                    },
-                }
-            }
-            div { style: "display: grid; gap: 0.35rem;",
-                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
-                    "{context.language.label(\"Description\", \"説明文\", \"Priskribo\")}"
-                }
-                textarea {
-                    name: "part-update-description",
-                    value: "{part_description}",
-                    placeholder: "{context.language.label(\"Enter part description...\", \"パーツの説明を入力...\", \"Enigu partan priskribon...\")}",
-                    style: "min-height: 4.5rem; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.92rem; resize: vertical;",
-                    oninput: move |evt: FormEvent| {
-                        part_description.set(evt.value());
-                    },
-                }
-            }
-            div { style: "display: grid; gap: 0.5rem;",
-                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
-                    "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
+
+            // 2. 式エディタカード（メインワークスペース）
+            div {
+                class: "event-detail-card",
+                style: "display: grid; gap: 0.65rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                div { style: "display: flex; justify-content: space-between; align-items: center;",
+                    span { style: "font-size: 0.95rem; font-weight: 600; color: var(--text);",
+                        "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
+                    }
                 }
                 ExpressionTreeEditor { expression }
                 {
@@ -194,181 +344,65 @@ fn PartEditorCard(
                     rsx! {
                         div {
                             class: "mono",
-                            style: "font-size: 0.85rem; opacity: 0.85; background: rgb(0 0 0 / 0.2); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); overflow-x: auto;",
+                            style: "font-size: 0.8rem; color: #a5f3fc; background: rgb(0 0 0 / 0.22); border: 1px solid var(--border); padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); overflow-x: auto; white-space: nowrap;",
                             "{expr_str}"
                         }
                     }
                 }
-            }
-            div { style: "display: flex; align-items: center; gap: 0.8rem; margin-top: 0.3rem; flex-wrap: wrap;",
-                button {
-                    r#type: "button",
-                    style: "padding: 0.5rem 1.1rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;",
-                    onclick: move |_| {
-                        let state_sig = use_context::<Signal<AppState>>();
-                        let events_vec = state_sig.read().events_with_hash();
-                        let result = if let Some(expr) = &*expression.read() {
-                            match evaluate_expression(expr, &events_vec) {
-                                Ok(value) => {
-                                    format!(
-                                        "{} {}",
-                                        language.label("Result:", "結果:", "Rezulto:"),
-                                        value,
-                                    )
-                                }
-                                Err(error) => {
-                                    format!(
-                                        "{} {}",
-                                        language.label("Error:", "エラー:", "Eraro:"),
-                                        error,
-                                    )
-                                }
-                            }
-                        } else {
-                            language
-                                .label(
-                                    "No expression to evaluate",
-                                    "評価する式がありません",
-                                    "Neniu esprimo por taksi",
-                                )
-                                .to_string()
-                        };
-                        eval_result.set(Some(result));
-                    },
-                    "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
-                }
-                button {
-                    r#type: "button",
-                    disabled: !is_logged_in,
-                    style: if is_logged_in { "padding: 0.5rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;" } else { "padding: 0.5rem 1.2rem; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: not-allowed; opacity: 0.6;" },
-                    onclick: move |_| {
-                        let state_sig = use_context::<Signal<AppState>>();
-                        let state_val = state_sig.read().clone();
-                        let key = if let Some(key) = &state_val.current_key {
-                            key.clone()
-                        } else {
-                            submit_result
-                                .set(
-                                    Some(
-                                        language
-                                            .label(
-                                                "Error: login required",
-                                                "エラー: ログインが必要です",
-                                                "Eraro: ensaluto necesas",
-                                            )
-                                            .to_string(),
-                                    ),
-                                );
-                            return;
-                        };
-                        let name = part_name().trim().to_string();
-                        if name.is_empty() {
-                            submit_result
-                                .set(
-                                    Some(
-                                        language
-                                            .label(
-                                                "Error: part name is required",
-                                                "エラー: パーツ名は必須です",
-                                                "Eraro: parto-nomo estas bezonata",
-                                            )
-                                            .to_string(),
-                                    ),
-                                );
-                            return;
-                        }
-                        let desc = part_description();
-                        let expr_val = expression();
-                        let Some(mod_hash) = module_hash() else {
-                            submit_result
-                                .set(
-                                    Some(
-                                        language
-                                            .label(
-                                                "Error: module is required",
-                                                "エラー: モジュールを選択してください",
-                                                "Eraro: modulo estas bezonata",
-                                            )
-                                            .to_string(),
-                                    ),
-                                );
-                            return;
-                        };
-                        let force_offline = state_val.force_offline;
-                        let def_hash = definition_event_hash.clone();
-                        spawn(async move {
-                            let record_opt = crate::event_submit::submit_event(
-                                    definy_event::event::EventContent::PartUpdate(definy_event::event::PartUpdateEvent {
-                                        part_name: name.into(),
-                                        part_description: desc.into(),
-                                        part_definition_event_hash: def_hash,
-                                        expression: expr_val,
-                                        module_definition_event_hash: mod_hash,
-                                    }),
-                                    key,
-                                    force_offline,
-                                    None,
-                                    state_sig,
-                                )
-                                .await;
-                            if let Some(record) = record_opt {
-                                submit_result
-                                    .set(
-                                        Some(
-                                            match record.status {
-                                                crate::local_event::LocalEventStatus::Sent => {
-                                                    language
-                                                        .label(
-                                                            "Changes saved successfully",
-                                                            "変更を保存しました",
-                                                            "Ŝanĝoj konservitaj",
-                                                        )
-                                                        .to_string()
-                                                }
-                                                crate::local_event::LocalEventStatus::Queued => {
-                                                    language
-                                                        .label(
-                                                            "Changes queued (offline)",
-                                                            "変更をキューに追加しました (オフライン)",
-                                                            "Ŝanĝoj envicigitaj (senkonekte)",
-                                                        )
-                                                        .to_string()
-                                                }
-                                                crate::local_event::LocalEventStatus::Failed => {
-                                                    language
-                                                        .label(
-                                                            "Failed to save changes",
-                                                            "変更の保存に失敗しました",
-                                                            "Konservado de ŝanĝoj malsukcesis",
-                                                        )
-                                                        .to_string()
-                                                }
-                                            },
-                                        ),
-                                    );
-                            }
-                        });
-                    },
-                    "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
-                }
-                if !is_logged_in {
-                    span { style: "font-size: 0.84rem; color: var(--text-secondary);",
-                        "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por konservi ŝanĝojn.\")}"
+                if let Some(eval) = eval_result() {
+                    div {
+                        class: "mono",
+                        style: "font-size: 0.84rem; word-break: break-word; background: rgb(124 192 216 / 0.12); border: 1px solid var(--primary); color: var(--text); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);",
+                        "{eval}"
                     }
                 }
             }
-            if let Some(eval) = eval_result() {
-                div {
-                    class: "mono",
-                    style: "font-size: 0.88rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid rgb(124 192 216 / 0.3); color: var(--text); padding: 0.6rem 0.8rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
-                    "{eval}"
-                }
+        }
+    }
+}
+
+#[component]
+fn PartHistoryCard(
+    context: PageContext,
+    related_events: Vec<(EventHashId, definy_event::event::Event)>,
+) -> Element {
+    rsx! {
+        div {
+            class: "event-detail-card",
+            style: "display: grid; gap: 0.45rem; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+            div { style: "font-size: 0.9rem; font-weight: 600; color: var(--text);",
+                "{context.language.label(\"History\", \"履歴\", \"Historio\")}"
             }
-            if let Some(result) = submit_result() {
-                div {
-                    class: "mono",
-                    style: "font-size: 0.85rem; word-break: break-word; background: rgb(124 192 216 / 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
-                    "{result}"
+            div { style: "display: grid; gap: 0.35rem;",
+                for (event_hash, ev) in related_events {
+                    {
+                        let label = crate::event_presenter::event_kind_label(context.language, &ev);
+                        let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
+                        let hash_str = event_hash.to_string();
+                        rsx! {
+                            a {
+                                key: "{event_hash}",
+                                href: context.href_with_lang(Location::Event(event_hash)),
+                                class: "event-card",
+                                style: "display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.02); font-size: 0.8rem; flex-wrap: wrap;",
+                                div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                                    span {
+                                        class: "badge",
+                                        style: "font-size: 0.7rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-full); white-space: nowrap;",
+                                        "{label}"
+                                    }
+                                    span {
+                                        class: "mono",
+                                        style: "color: var(--text-secondary); opacity: 0.7; font-size: 0.74rem;",
+                                        "{hash_str}"
+                                    }
+                                }
+                                span { style: "font-size: 0.74rem; color: var(--text-secondary); opacity: 0.8; margin-left: auto;",
+                                    "{time_str}"
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

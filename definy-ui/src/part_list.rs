@@ -269,7 +269,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                             span { style: "color: var(--text-secondary); opacity: 0.6; margin-left: 0.1rem;",
                                                 ":"
                                             }
-                                            span { // 作成者 // 作成者 // 作成者  作成者
+                                            span {
                                                 class: "mono",
                                                 style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.08rem 0.4rem; border-radius: var(--radius-xs); white-space: nowrap;",
                                                 "{optional_part_type_text(&part.part_type)}"
