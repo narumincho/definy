@@ -377,21 +377,12 @@ fn layout_recursive(
     }
 
     // まず「すべて1行（インライン）に並べた場合の必要幅」を試算する
-    let mut inline_children_widths = Vec::with_capacity(node.children.len());
-    let mut total_inline_child_width = 0.0;
-    for child in &node.children {
-        let child_inline_w = estimate_inline_width(child, options);
-        inline_children_widths.push(child_inline_w);
-        total_inline_child_width += child_inline_w;
-    }
-
-    // 間隔 (gap: 6px) + 記号・括弧分のマージン
-    let gap = 6.0;
-    let gaps_total = gap * (node.children.len() as f32);
-    let total_inline_width = label_width + total_inline_child_width + gaps_total + 12.0;
+    let total_inline_width = estimate_inline_width(node, options);
 
     // 幅に収まり、かつ明示的な Block ではない場合は Inline
-    let can_fit_inline = total_inline_width <= available_width && node.kind != NodeKind::Block;
+    // ブラウザのレンダリング誤差やフォント差異による意図しないスクロールを防ぐため 4px の安全マージンを考慮
+    let can_fit_inline =
+        (total_inline_width <= available_width - 4.0) && node.kind != NodeKind::Block;
 
     if can_fit_inline {
         node.layout_mode = LayoutMode::Inline;
@@ -428,9 +419,10 @@ fn estimate_inline_width(node: &LayoutNode, options: &LayoutOptions) -> f32 {
     if node.children.is_empty() {
         return label_w.max(20.0);
     }
-    let mut sum = label_w + 12.0;
+    // 複合ノード: カプセルのパディング・ボーダー・マージン (約 16px) + ラベル幅 + 各子要素 (gap: 5px)
+    let mut sum = label_w + 16.0;
     for child in &node.children {
-        sum += estimate_inline_width(child, options) + 6.0;
+        sum += estimate_inline_width(child, options) + 5.0;
     }
     sum
 }

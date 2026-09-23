@@ -87,7 +87,7 @@ fn render_node(
     if is_multiline {
         // 複数行（Multiline）展開：ヘッダー行＋インデントされた各引数スロット
         let container_style = format!(
-            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.2rem 0; padding: 0.3rem 0.55rem 0.4rem 0.55rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;",
+            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;",
             capsule_bg, capsule_border
         );
 
@@ -110,11 +110,8 @@ fn render_node(
                     let mut hov = hovered_node_id;
                     hov.set(None);
                 },
-                // ヘッダー行（開き括弧 + 演算子/キーワードラベル）
-                div { style: "display: flex; align-items: center; gap: 0.25rem;",
-                    span { style: "color: var(--text-secondary); opacity: 0.6; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500;",
-                        "("
-                    }
+                // ヘッダー行（演算子/キーワードラベル）
+                div { style: "display: flex; align-items: center;",
                     div {
                         style: "{badge_style}",
                         title: "ID: {node.id} ({node.computed_width:.0}x{node.computed_height:.0}px)",
@@ -122,23 +119,19 @@ fn render_node(
                     }
                 }
                 // 各引数（独立した行としてインデント展開）
-                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.9rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.5rem; width: 100%; box-sizing: border-box;",
+                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
                     for child in &node.children {
                         div { style: "width: fit-content; max-width: 100%;",
                             {render_node(child, selected_node_id, hovered_node_id, depth + 1)}
                         }
                     }
                 }
-                // 閉じ括弧
-                span { style: "color: var(--text-secondary); opacity: 0.6; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500; margin-left: 0.1rem;",
-                    ")"
-                }
             }
         }
     } else {
-        // インライン（Inline）展開：括弧と薄いグループ枠で包むことで入れ子関係が一目瞭然！
+        // インライン（Inline）展開：薄いカプセル枠で囲むことで入れ子関係が一目瞭然（括弧テキストは不要）
         let container_style = format!(
-            "display: inline-flex; align-items: center; gap: 0.25rem; vertical-align: middle; margin: 0.1rem 0.15rem; padding: 0.1rem 0.32rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; white-space: nowrap;",
+            "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; white-space: nowrap;",
             capsule_bg, capsule_border
         );
 
@@ -161,9 +154,6 @@ fn render_node(
                     let mut hov = hovered_node_id;
                     hov.set(None);
                 },
-                span { style: "color: var(--text-secondary); opacity: 0.65; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500;",
-                    "("
-                }
                 div {
                     style: "{badge_style}",
                     title: "ID: {node.id} ({node.computed_width:.0}x{node.computed_height:.0}px)",
@@ -171,9 +161,6 @@ fn render_node(
                 }
                 for child in &node.children {
                     {render_node(child, selected_node_id, hovered_node_id, depth + 1)}
-                }
-                span { style: "color: var(--text-secondary); opacity: 0.65; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; font-weight: 500;",
-                    ")"
                 }
             }
         }

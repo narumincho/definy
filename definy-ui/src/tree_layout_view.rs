@@ -48,8 +48,10 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
     let expr = current_expression.unwrap_or_else(|| samples[0].expression.clone());
 
     // 自作レイアウトエンジンによる計算
+    // コンテナ内側の利用可能幅（左右 padding: 1.2rem * 2 ≈ 38.4px + border: 3px + 余裕）を差し引くことで意図しないスクロールを防止
+    let content_available_width = (container_width() - 44.0).max(100.0);
     let layout_options = LayoutOptions {
-        max_width: container_width(),
+        max_width: content_available_width,
         ..Default::default()
     };
     let root_layout_node = expression_to_layout_node(&expr, "root");
@@ -322,7 +324,9 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                         div {
                             "Computed Size: {layout_result.total_width:.1}px × {layout_result.total_height:.1}px"
                         }
-                        div { "Target Width Constraint: {container_width():.0}px" }
+                        div {
+                            "Target Width Constraint: {content_available_width:.0}px (Container: {container_width():.0}px)"
+                        }
                         div {
                             "Root Mode: "
                             span { style: "color: {root_mode_color}; font-weight: bold;",
