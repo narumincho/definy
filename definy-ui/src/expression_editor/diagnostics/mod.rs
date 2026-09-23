@@ -1,5 +1,6 @@
 pub mod constructor;
 pub mod type_check;
+pub mod type_check_binary;
 
 use std::collections::HashMap;
 
