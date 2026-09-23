@@ -4,11 +4,11 @@ use definy_event::EventHashId;
 use dioxus::prelude::*;
 
 use crate::app_state::AppState;
+use crate::expression_editor::{part_type_to_expression_type, render_root_expression_editor};
 use crate::expression_eval::evaluate_expression;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
-use crate::tree_layout::ExpressionTreeEditor;
 
 #[component]
 pub fn PartDefinitionFormView(
@@ -221,7 +221,15 @@ pub fn PartDefinitionFormView(
             div { style: "color: var(--text-secondary); font-size: 0.82rem;",
                 {context.language.label("Expression", "式", "Esprimo")}
             }
-            ExpressionTreeEditor { expression: composing_expression }
+            {
+                let expected_type = part_type.read().as_ref().map(part_type_to_expression_type);
+                render_root_expression_editor(
+                    &state,
+                    &context,
+                    &composing_expression.read(),
+                    expected_type,
+                )
+            }
             if let Some(result) = eval_result() {
                 div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
                     "{result}"

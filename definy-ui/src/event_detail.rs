@@ -65,11 +65,6 @@ fn RenderEventDetail(
                             "{crate::event_presenter::event_kind_label(context.language, &event)}"
                         }
                     }
-                    div {
-                        class: "badge",
-                        style: "font-size: 0.8rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);",
-                        "{crate::event_presenter::event_kind_label(context.language, &event)}"
-                    }
                 }
                 div { style: "display: grid; gap: 0.75rem;",
                     div { style: "display: grid; gap: 0.25rem;",
