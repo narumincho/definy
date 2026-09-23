@@ -33,7 +33,7 @@ pub fn AccountListView(state: AppState, context: PageContext) -> Element {
             } else {
                 div {
                     class: "event-list",
-                    style: "display: grid; gap: 0.75rem;",
+                    style: "display: grid; gap: 0.45rem;",
                     for row in rows {
                         {
                             let encoded = row.account_id.to_string();
@@ -59,21 +59,27 @@ pub fn AccountListView(state: AppState, context: PageContext) -> Element {
                                     key: "{encoded}",
                                     class: "event-card",
                                     href: context.href_with_lang(Location::Account(row.account_id)),
-                                    style: "display: grid; gap: 0.6rem; padding: 1rem 1.1rem; text-decoration: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                    div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                        div { style: "font-size: 1.05rem; font-weight: 600; color: var(--text);", "{name}" }
-                                        div {
-                                            class: "badge",
-                                            style: "font-size: 0.75rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.5rem; border-radius: var(--radius-full);",
-                                            "{ev_count} events"
+                                    style: "display: grid; gap: 0.35rem; padding: 0.55rem 0.8rem; text-decoration: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.45rem; font-size: 0.84rem;",
+                                        div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; min-width: 0;",
+                                            span { style: "font-size: 0.95rem; font-weight: 600; color: var(--text);",
+                                                "{name}"
+                                            }
+                                            span {
+                                                class: "badge",
+                                                style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-full);",
+                                                "{ev_count} events"
+                                            }
+                                        }
+                                        span { style: "font-size: 0.74rem; color: var(--text-secondary); opacity: 0.75; margin-left: auto;",
+                                            "{activity_label}"
                                         }
                                     }
                                     div {
                                         class: "mono",
-                                        style: "font-size: 0.78rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                                        style: "font-size: 0.74rem; color: var(--text-secondary); opacity: 0.65; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                                         "{encoded}"
                                     }
-                                    div { style: "font-size: 0.8rem; color: var(--text-secondary);", "{activity_label}" }
                                 }
                             }
                         }

@@ -171,52 +171,76 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                 .as_ref()
                                 .map(|m| m.module_name.as_str())
                                 .unwrap_or("module");
-                            let module_label = context
-                                .language
-                                .label("Module:", "モジュール:", "Modulo:");
                             rsx! {
                                 div {
                                     key: "{def_hash}",
                                     class: "event-card",
-                                    style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                    div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                        a {
-                                            href: context.href_with_lang(Location::Part(def_hash.clone())),
-                                            style: "font-size: 1rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                                            "{part.part_name}"
-                                        }
-                                        div { style: "font-size: 0.75rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.45rem; border-radius: var(--radius-full);",
-                                            "{optional_part_type_text(&part.part_type)}"
-                                        }
-                                    }
-                                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;",
-                                        span { style: "color: var(--text-secondary);", "{module_label}" }
-                                        a {
-                                            href: context.href_with_lang(Location::Module(part.module_definition_event_hash.clone())),
-                                            style: "color: var(--primary); text-decoration: none; font-weight: 500;",
-                                            "{module_name}"
-                                        }
-                                    }
-                                    div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
-                                    if !part.has_definition {
-                                        div { style: "font-size: 0.78rem; color: var(--error);",
-                                            "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
-                                        }
-                                    }
-                                    {
-                                        let desc = part.description_for(context.language);
-                                        if !desc.is_empty() {
-                                            rsx! {
-                                                div { style: "white-space: pre-wrap; font-size: 0.84rem; color: var(--text-secondary);",
-                                                    "{desc}"
+                                    style: "display: grid; gap: 0.35rem; padding: 0.55rem 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                                    // Row 1: モジュール名.パーツ名 : 型 作成者 最終更新日時
+                                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.45rem; font-size: 0.84rem;",
+                                        div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; min-width: 0;",
+                                            // モジュール名.パーツ名
+                                            span { style: "display: inline-flex; align-items: baseline; gap: 0.12rem;",
+                                                a {
+                                                    href: context.href_with_lang(Location::Module(part.module_definition_event_hash.clone())),
+                                                    style: "color: var(--text-secondary); font-weight: 500; text-decoration: none;",
+                                                    "{module_name}"
+                                                }
+                                                span { style: "color: var(--text-secondary); opacity: 0.5;", "." }
+                                                a {
+                                                    href: context.href_with_lang(Location::Part(def_hash.clone())),
+                                                    style: "font-weight: 600; font-size: 0.95rem; color: var(--text); text-decoration: none;",
+                                                    "{part.part_name}"
                                                 }
                                             }
-                                        } else {
-                                            rsx! {}
+                                            // : 型
+                                            span { style: "color: var(--text-secondary); opacity: 0.6; margin-left: 0.1rem;",
+                                                ":"
+                                            }
+                                            span { // 作成者 // 作成者
+                                                class: "mono",
+                                                style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.08rem 0.4rem; border-radius: var(--radius-xs); white-space: nowrap;",
+                                                "{optional_part_type_text(&part.part_type)}"
+                                            }
+                                            // 作成者
+                                            a {
+                                                href: context.href_with_lang(Location::Account(part.account_id.clone())),
+                                                style: "color: var(--text-secondary); font-size: 0.78rem; text-decoration: none; margin-left: 0.25rem;",
+                                                "{account_name}"
+                                            }
+                                        }
+                                        // 最終更新日時
+                                        span { style: "color: var(--text-secondary); font-size: 0.74rem; opacity: 0.75; white-space: nowrap; margin-left: auto;",
+                                            "{time_str}"
                                         }
                                     }
-                                    div { class: "mono", style: "font-size: 0.78rem; opacity: 0.8;", "{expr_str}" }
-                                    div { style: "font-size: 0.8rem; color: var(--primary);", "{account_name}" }
+                                    // Row 2: 内容
+                                    div { style: "display: grid; gap: 0.2rem;",
+                                        if !part.has_definition {
+                                            div { style: "font-size: 0.76rem; color: var(--error);",
+                                                "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
+                                            }
+                                        }
+                                        if part.expression.is_some() {
+                                            div {
+                                                class: "mono",
+                                                style: "font-size: 0.78rem; color: #a5f3fc; background: rgb(0 0 0 / 0.22); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 0.22rem 0.5rem; overflow-x: auto; white-space: nowrap; max-width: 100%;",
+                                                "{expr_str}"
+                                            }
+                                        }
+                                        {
+                                            let desc = part.description_for(context.language);
+                                            if !desc.is_empty() {
+                                                rsx! {
+                                                    div { style: "font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                                                        "{desc}"
+                                                    }
+                                                }
+                                            } else {
+                                                rsx! {}
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

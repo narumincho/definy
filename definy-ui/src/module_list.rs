@@ -84,34 +84,44 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                 div {
                                     key: "{def_hash}",
                                     class: "event-card",
-                                    style: "display: grid; gap: 0.35rem; padding: 0.65rem 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                                    div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                        a {
-                                            href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
-                                            style: "font-size: 1rem; font-weight: 600; color: var(--text);",
-                                            "{module.module_name}"
-                                        }
-                                        div { style: "font-size: 0.76rem; color: var(--text-secondary);", "{time_str}" }
-                                    }
-                                    if !module.has_definition {
-                                        div { style: "font-size: 0.82rem; color: var(--error);",
-                                            "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
-                                        }
-                                    }
-                                    {
-                                        let desc = module.description_for(context.language);
-                                        if !desc.is_empty() {
-                                            rsx! {
-                                                div { style: "white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);",
-                                                    "{desc}"
-                                                }
+                                    style: "display: grid; gap: 0.35rem; padding: 0.55rem 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                                    // Row 1: モジュール名 作成者 最終更新日時
+                                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.45rem; font-size: 0.84rem;",
+                                        div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; min-width: 0;",
+                                            a {
+                                                href: context.href_with_lang(crate::Location::Module(def_hash.clone())),
+                                                style: "font-weight: 600; font-size: 0.95rem; color: var(--text); text-decoration: none;",
+                                                "{module.module_name}"
                                             }
-                                        } else {
-                                            rsx! {}
+                                            a {
+                                                href: context.href_with_lang(crate::Location::Account(module.account_id.clone())),
+                                                style: "color: var(--text-secondary); font-size: 0.78rem; text-decoration: none; margin-left: 0.15rem;",
+                                                "{account_name}"
+                                            }
+                                        }
+                                        span { style: "color: var(--text-secondary); font-size: 0.74rem; opacity: 0.75; white-space: nowrap; margin-left: auto;",
+                                            "{time_str}"
                                         }
                                     }
-                                    div { style: "font-size: 0.84rem; color: var(--text-secondary);",
-                                        "{context.language.label(\"Author\", \"作成者\", \"Aŭtoro\")}: {account_name}"
+                                    // Row 2: 説明
+                                    div { style: "display: grid; gap: 0.2rem;",
+                                        if !module.has_definition {
+                                            div { style: "font-size: 0.76rem; color: var(--error);",
+                                                "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
+                                            }
+                                        }
+                                        {
+                                            let desc = module.description_for(context.language);
+                                            if !desc.is_empty() {
+                                                rsx! {
+                                                    div { style: "font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                                                        "{desc}"
+                                                    }
+                                                }
+                                            } else {
+                                                rsx! {}
+                                            }
+                                        }
                                     }
                                 }
                             }

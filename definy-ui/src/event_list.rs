@@ -158,7 +158,7 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                     }
                 },
             }
-            div { class: "event-list", style: "display: grid; gap: 1rem;",
+            div { class: "event-list", style: "display: grid; gap: 0.45rem;",
                 for hash in hashes {
                     if let Some(event_result) = state.event_cache.get(&hash) {
                         EventCard {
@@ -248,41 +248,41 @@ fn EventCard(
             rsx! {
                 div {
                     class: "event-card",
-                    style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.65rem;",
-                    // Header row
-                    div { style: "display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid rgb(255 255 255 / 0.05); gap: 0.8rem;",
-                        div { style: "display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem;",
+                    style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.55rem 0.8rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.3rem;",
+                    // Row 1: 作成者 日時 [イベント種別バッジ]
+                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.82rem;",
+                        div { style: "display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex-wrap: wrap;",
                             a {
                                 href: context.href_with_lang(crate::Location::Account(event.account_id.clone())),
                                 style: "font-weight: 600; color: var(--primary); text-decoration: none;",
                                 "{author_name}"
                             }
-                            div { style: "color: var(--text-secondary); font-size: 0.76rem;",
+                            span { style: "color: var(--text-secondary); font-size: 0.74rem;",
                                 "{time_str}"
                             }
                         }
                         div {
                             class: "badge",
-                            style: "font-size: 0.72rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.18rem 0.5rem; border-radius: var(--radius-full); white-space: nowrap;",
+                            style: "font-size: 0.7rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.45rem; border-radius: var(--radius-full); white-space: nowrap; flex-shrink: 0;",
                             "{event_type_badge}"
                         }
                     }
-                    // Body
+                    // Row 2: イベントの内容
                     EventContentView {
                         event: event.clone(),
                         context: context.clone(),
                         hash: hash.clone(),
                     }
-                    // Footer
-                    div { style: "display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; padding-top: 0.45rem; border-top: 1px solid rgb(255 255 255 / 0.04); font-size: 0.76rem;",
+                    // Row 3: イベントハッシュ 詳細リンク
+                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.74rem; padding-top: 0.15rem;",
                         div {
                             class: "mono",
-                            style: "color: var(--text-secondary); opacity: 0.7; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                            style: "color: var(--text-secondary); opacity: 0.65; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                             "{hash_str}"
                         }
                         a {
                             href: context.href_with_lang(crate::Location::Event(hash.clone())),
-                            style: "color: var(--primary); text-decoration: none; font-weight: 500;",
+                            style: "color: var(--primary); text-decoration: none; font-weight: 500; white-space: nowrap; flex-shrink: 0;",
                             "{context.language.label(\"Event detail →\", \"イベント詳細 →\", \"Eventaj detaloj →\")}"
                         }
                     }
@@ -301,11 +301,11 @@ fn EventCard(
             rsx! {
                 div {
                     class: "event-card",
-                    style: "padding: 0.85rem 1.1rem; border-left: 3px solid var(--error); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: 0.3rem;",
-                    div { style: "font-size: 0.85rem; font-weight: 600; color: var(--error);",
+                    style: "padding: 0.55rem 0.8rem; border-left: 3px solid var(--error); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: 0.2rem;",
+                    div { style: "font-size: 0.82rem; font-weight: 600; color: var(--error);",
                         "{invalid_label}"
                     }
-                    div { style: "font-size: 0.8rem; color: var(--text-secondary);",
+                    div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                         "{err_str}"
                     }
                 }
@@ -318,35 +318,35 @@ fn EventCard(
 fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> Element {
     match event.content {
         EventContent::CreateAccount(create_account_event) => rsx! {
-            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                div { style: "color: var(--text-secondary);",
+            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                span { style: "color: var(--text-secondary); font-size: 0.82rem;",
                     {
                         context
                             .language
-                            .label(
-                                "Created account:",
-                                "アカウントを作成しました:",
-                                "Kreis konton:",
-                            )
+                            .label("Created account:", "アカウントを作成:", "Kreis konton:")
                     }
                 }
-                div { style: "font-weight: 600;", "{create_account_event.account_name}" }
+                span { style: "font-weight: 600; color: var(--text);",
+                    "{create_account_event.account_name}"
+                }
             }
         },
         EventContent::ChangeProfile(change_profile_event) => rsx! {
-            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                div { style: "color: var(--text-secondary);",
+            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                span { style: "color: var(--text-secondary); font-size: 0.82rem;",
                     {
                         context
                             .language
                             .label(
                                 "Changed account name to:",
-                                "アカウント名を変更しました:",
+                                "アカウント名を変更:",
                                 "Ŝanĝis kontonomon al:",
                             )
                     }
                 }
-                div { style: "font-weight: 600;", "{change_profile_event.account_name}" }
+                span { style: "font-weight: 600; color: var(--text);",
+                    "{change_profile_event.account_name}"
+                }
             }
         },
         EventContent::PartDefinition(part_definition_event) => {
@@ -357,23 +357,23 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                 .to_display_string(context.language.to_code());
 
             rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                div { style: "display: grid; gap: 0.2rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
                         a {
                             href: context.href_with_lang(crate::Location::Part(hash.clone())),
-                            style: "font-size: 1.05rem; font-weight: 600; color: var(--text); text-decoration: none;",
+                            style: "font-size: 0.95rem; font-weight: 600; color: var(--text); text-decoration: none;",
                             "{part_name}"
                         }
                         if let Some(badge) = part_type_badge {
                             span {
                                 class: "badge mono",
-                                style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.45rem; border-radius: var(--radius-full);",
+                                style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.08rem 0.4rem; border-radius: var(--radius-full);",
                                 "{badge}"
                             }
                         }
                     }
                     if !desc.is_empty() {
-                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
+                        div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                             "{desc}"
                         }
                     }
@@ -385,24 +385,18 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
             let base_hash = part_update_event.part_definition_event_hash.clone();
 
             rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                        div { style: "color: var(--text-secondary);",
-                            {
-                                context
-                                    .language
-                                    .label(
-                                        "Updated part:",
-                                        "パーツを更新しました:",
-                                        "Ĝisdatigis parton:",
-                                    )
-                            }
+                div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                    span { style: "color: var(--text-secondary); font-size: 0.82rem;",
+                        {
+                            context
+                                .language
+                                .label("Updated part:", "パーツを更新:", "Ĝisdatigis parton:")
                         }
-                        a {
-                            href: context.href_with_lang(crate::Location::Part(base_hash)),
-                            style: "font-weight: 600; color: var(--text); text-decoration: none;",
-                            "{part_name}"
-                        }
+                    }
+                    a {
+                        href: context.href_with_lang(crate::Location::Part(base_hash)),
+                        style: "font-weight: 600; color: var(--text); text-decoration: none;",
+                        "{part_name}"
                     }
                 }
             }
@@ -414,14 +408,14 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                 .to_display_string(context.language.to_code());
 
             rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
+                div { style: "display: grid; gap: 0.2rem;",
                     a {
                         href: context.href_with_lang(crate::Location::Module(hash.clone())),
-                        style: "font-size: 1.05rem; font-weight: 600; color: var(--text); text-decoration: none;",
+                        style: "font-size: 0.95rem; font-weight: 600; color: var(--text); text-decoration: none;",
                         "{mod_name}"
                     }
                     if !desc.is_empty() {
-                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
+                        div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                             "{desc}"
                         }
                     }
@@ -436,15 +430,15 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                 .to_display_string(context.language.to_code());
 
             rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                        div { style: "color: var(--text-secondary);",
+                div { style: "display: grid; gap: 0.2rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                        span { style: "color: var(--text-secondary); font-size: 0.82rem;",
                             {
                                 context
                                     .language
                                     .label(
                                         "Updated module:",
-                                        "モジュールを更新しました:",
+                                        "モジュールを更新:",
                                         "Ĝisdatigis modulon:",
                                     )
                             }
@@ -456,7 +450,7 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                         }
                     }
                     if !desc.is_empty() {
-                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
+                        div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                             "{desc}"
                         }
                     }
