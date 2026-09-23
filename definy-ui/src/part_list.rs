@@ -82,10 +82,42 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
 
     let mut is_form_open = use_signal(|| false);
     let eval_result = use_signal(|| None::<String>);
+    let mut search_query = use_signal(String::new);
+
+    let query = search_query().trim().to_lowercase();
+    let filtered_snapshots: Vec<_> = snapshots
+        .into_iter()
+        .filter(|part| {
+            if query.is_empty() {
+                return true;
+            }
+            let module_snapshot = crate::module_projection::find_module_snapshot(
+                &state,
+                &part.module_definition_event_hash,
+            );
+            let module_name = module_snapshot
+                .as_ref()
+                .map(|m| m.module_name.as_str())
+                .unwrap_or("module");
+            let part_name_lower = part.part_name.to_lowercase();
+            let module_name_lower = module_name.to_lowercase();
+            let full_name = format!("{}.{}", module_name_lower, part_name_lower);
+            let type_str = optional_part_type_text(&part.part_type).to_lowercase();
+            let author_str =
+                crate::app_state::account_display_name(&account_name_map, &part.account_id)
+                    .to_lowercase();
+
+            part_name_lower.contains(&query)
+                || module_name_lower.contains(&query)
+                || full_name.contains(&query)
+                || type_str.contains(&query)
+                || author_str.contains(&query)
+        })
+        .collect();
 
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
-            div { style: "display: flex; justify-content: space-between; align-items: center;",
+            div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                 h2 { style: "font-size: 1.25rem; font-weight: 600; margin: 0;",
                     "{context.language.label(\"Parts\", \"パーツ\", \"Partoj\")}"
                 }
@@ -102,6 +134,29 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                             }
                         },
                         "{context.language.label(\"+ Create Part\", \"+ パーツを作成\", \"+ Krei parton\")}"
+                    }
+                }
+            }
+            // 検索入力バー
+            div { style: "position: relative; width: 100%; display: flex; align-items: center;",
+                span { style: "position: absolute; left: 0.7rem; color: var(--text-secondary); font-size: 0.82rem; pointer-events: none;",
+                    "🔍"
+                }
+                input {
+                    r#type: "text",
+                    placeholder: "{context.language.label(\"Search parts by name, module, type...\", \"パーツ名・モジュール名・型で検索...\", \"Serĉi partojn laŭ nomo, modulo, tipo...\")}",
+                    value: "{search_query()}",
+                    oninput: move |evt: FormEvent| {
+                        search_query.set(evt.value());
+                    },
+                    style: "width: 100%; padding: 0.4rem 2rem 0.4rem 2.1rem; font-size: 0.84rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);",
+                }
+                if !search_query().is_empty() {
+                    button {
+                        r#type: "button",
+                        style: "position: absolute; right: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.15rem 0.35rem; font-size: 0.75rem;",
+                        onclick: move |_| search_query.set(String::new()),
+                        "✕"
                     }
                 }
             }
@@ -134,20 +189,37 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                     "{result}"
                 }
             }
-            if snapshots.is_empty() {
-                div {
-                    class: "event-detail-card",
-                    style: "padding: 3rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary);",
-                    div { style: "font-size: 1.5rem; opacity: 0.5;", "🧩" }
-                    div { style: "font-size: 0.95rem; color: var(--text);",
-                        "{context.language.label(\"No parts yet\", \"まだパーツがありません\", \"Ankoraŭ neniuj partoj\")}"
+            if filtered_snapshots.is_empty() {
+                if !search_query().is_empty() {
+                    div {
+                        class: "event-detail-card",
+                        style: "padding: 2.2rem 1.5rem; text-align: center; display: grid; gap: 0.4rem; justify-items: center; color: var(--text-secondary);",
+                        div { style: "font-size: 1.4rem; opacity: 0.5;", "🔍" }
+                        div { style: "font-size: 0.9rem; color: var(--text);",
+                            "{context.language.label(\"No matching parts found\", \"一致するパーツが見つかりません\", \"Neniuj kongruaj partoj trovitaj\")}"
+                        }
+                        button {
+                            r#type: "button",
+                            style: "margin-top: 0.3rem; padding: 0.25rem 0.65rem; font-size: 0.78rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer;",
+                            onclick: move |_| search_query.set(String::new()),
+                            "{context.language.label(\"Clear search\", \"検索をクリア\", \"Vakigi serĉon\")}"
+                        }
+                    }
+                } else {
+                    div {
+                        class: "event-detail-card",
+                        style: "padding: 3rem 1.5rem; text-align: center; display: grid; gap: 0.5rem; justify-items: center; color: var(--text-secondary);",
+                        div { style: "font-size: 1.5rem; opacity: 0.5;", "🧩" }
+                        div { style: "font-size: 0.95rem; color: var(--text);",
+                            "{context.language.label(\"No parts yet\", \"まだパーツがありません\", \"Ankoraŭ neniuj partoj\")}"
+                        }
                     }
                 }
             } else {
                 div {
                     class: "event-list",
                     style: "display: grid; gap: 0.45rem;",
-                    for part in snapshots {
+                    for part in filtered_snapshots {
                         {
                             let account_name = crate::app_state::account_display_name(
 
@@ -197,7 +269,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                             span { style: "color: var(--text-secondary); opacity: 0.6; margin-left: 0.1rem;",
                                                 ":"
                                             }
-                                            span { // 作成者 // 作成者
+                                            span { // 作成者 // 作成者 // 作成者  作成者
                                                 class: "mono",
                                                 style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.08rem 0.4rem; border-radius: var(--radius-xs); white-space: nowrap;",
                                                 "{optional_part_type_text(&part.part_type)}"
