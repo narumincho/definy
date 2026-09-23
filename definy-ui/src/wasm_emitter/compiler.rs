@@ -28,7 +28,7 @@ impl<'a> CompileContext<'a> {
         self.static_data.extend_from_slice(bytes);
         self.current_static_offset += bytes.len() as u32;
         // Align to 8 bytes
-        while self.current_static_offset % 8 != 0 {
+        while !self.current_static_offset.is_multiple_of(8) {
             self.static_data.push(0);
             self.current_static_offset += 1;
         }
@@ -113,9 +113,7 @@ pub fn compile_expression_to_wasm(
     let mut function_section = Vec::new();
     encode_u32_leb128(&mut function_section, (1 + num_funcs) as u32);
     function_section.push(0); // function 0 is evaluate (type 0)
-    for _ in 0..num_funcs {
-        function_section.push(1); // function 1.. are compiled functions (type 1)
-    }
+    function_section.resize(function_section.len() + num_funcs, 1);
     emit_section(&mut module, FUNCTION_SECTION, &function_section);
 
     // 3. Table Section:
@@ -132,11 +130,7 @@ pub fn compile_expression_to_wasm(
 
     // 5. Global Section:
     // Global 0: mut i32 = HEAP_START_OFFSET (bump heap pointer)
-    let mut global_section = Vec::new();
-    global_section.push(1); // 1 global
-    global_section.push(I32); // type i32
-    global_section.push(1); // mutability: 1 (mutable)
-    global_section.push(I32_CONST);
+    let mut global_section = vec![1, I32, 1, I32_CONST];
     encode_i32_sleb128(&mut global_section, HEAP_START_OFFSET as i32);
     global_section.push(END);
     emit_section(&mut module, GLOBAL_SECTION, &global_section);
@@ -265,7 +259,7 @@ pub(crate) fn emit_expression(
             encode_mem_arg(out, 2, 4);
 
             // Update heap ptr: list_ptr + 8 + count * 4 (aligned to 8)
-            let total_size = ((8 + count * 4 + 7) / 8) * 8;
+            let total_size = (8 + count * 4).div_ceil(8) * 8;
             out.push(GLOBAL_GET);
             out.push(0);
             out.push(I32_CONST);
@@ -320,7 +314,7 @@ pub(crate) fn emit_expression(
             out.push(I32_STORE);
             encode_mem_arg(out, 2, 4);
 
-            let total_size = ((8 + count * 8 + 7) / 8) * 8;
+            let total_size = (8 + count * 8).div_ceil(8) * 8;
             out.push(GLOBAL_GET);
             out.push(0);
             out.push(I32_CONST);
@@ -616,6 +610,7 @@ pub(crate) fn emit_expression(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_binary_arithmetic(
     left: &Expression,
     right: &Expression,

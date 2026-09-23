@@ -14,6 +14,61 @@ struct EventHashRow {
     event_binary_hash: Vec<u8>,
 }
 
+#[allow(clippy::too_many_arguments)]
+fn builtin_part_event(
+    account_id: &definy_event::event::AccountId,
+    time: chrono::DateTime<chrono::Utc>,
+    offset_ms: i64,
+    module_hash: &definy_event::EventHashId,
+    name: &str,
+    part_type: Option<definy_event::event::PartType>,
+    desc_en: &str,
+    desc_ja: &str,
+    expression: Option<definy_event::event::Expression>,
+) -> definy_event::event::Event {
+    definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: time + chrono::Duration::milliseconds(offset_ms),
+        content: definy_event::event::EventContent::PartDefinition(
+            definy_event::event::PartDefinitionEvent {
+                part_name: name.into(),
+                part_type,
+                description: definy_event::event::Description::localized(vec![
+                    ("en", desc_en),
+                    ("ja", desc_ja),
+                ]),
+                expression,
+                module_definition_event_hash: module_hash.clone(),
+            },
+        ),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn builtin_compiler_part(
+    account_id: &definy_event::event::AccountId,
+    time: chrono::DateTime<chrono::Utc>,
+    offset_ms: i64,
+    module_hash: &definy_event::EventHashId,
+    name: &str,
+    part_type: Option<definy_event::event::PartType>,
+    desc_en: &str,
+    desc_ja: &str,
+    builtin: definy_event::event::CompilerBuiltin,
+) -> definy_event::event::Event {
+    builtin_part_event(
+        account_id,
+        time,
+        offset_ms,
+        module_hash,
+        name,
+        part_type,
+        desc_en,
+        desc_ja,
+        Some(definy_event::event::Expression::Compiler(builtin)),
+    )
+}
+
 pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error> {
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
     let verifying_key = signing_key.verifying_key();
@@ -75,553 +130,418 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             ),
         },
         core_module_event,
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(2),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "let".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in let binding"),
-                        ("ja", "ローカル変数を定義する組み込み構文 (let)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Let,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(3),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "plus".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in addition"),
-                        ("ja", "数値の加算を行う組み込み関数 (+)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Plus,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(4),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "number-literal".into(),
-                    part_type: Some(definy_event::event::PartType::Number),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in number literal"),
-                        ("ja", "数値リテラル"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::NumberLiteral,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(5),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "if".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in conditional expression"),
-                        ("ja", "条件分岐を行う組み込み構文 (if)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::If,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(6),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "number".into(),
-                    part_type: Some(definy_event::event::PartType::Type),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Built-in 64-bit integer type"),
-                        ("ja", "組み込み 64ビット符号付き整数型"),
-                    ]),
-                    expression: None,
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(7),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "string".into(),
-                    part_type: Some(definy_event::event::PartType::Type),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Built-in UTF-8 string type"),
-                        ("ja", "組み込み UTF-8 文字列型"),
-                    ]),
-                    expression: None,
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(8),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "boolean".into(),
-                    part_type: Some(definy_event::event::PartType::Type),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Built-in boolean type"),
-                        ("ja", "組み込み真偽値型"),
-                    ]),
-                    expression: None,
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(9),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "list".into(),
-                    part_type: Some(definy_event::event::PartType::Type),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Built-in list type constructor"),
-                        ("ja", "組み込みリスト型コンストラクタ"),
-                    ]),
-                    expression: None,
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(10),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "equal".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in equality comparison"),
-                        ("ja", "値が等しいかを判定する組み込み関数 (==)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Equal,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(11),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "minus".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in subtraction"),
-                        ("ja", "数値の減算を行う組み込み関数 (-)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Minus,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(12),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "multiply".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in multiplication"),
-                        ("ja", "数値の乗算を行う組み込み関数 (*)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Multiply,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(13),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "divide".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in division"),
-                        ("ja", "数値の除算を行う組み込み関数 (/)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Divide,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(14),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "remainder".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in remainder"),
-                        ("ja", "数値の剰余を求める組み込み関数 (%)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Remainder,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(15),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "less-than".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in less than comparison"),
-                        ("ja", "左辺が右辺より小さいかを判定する組み込み関数 (<)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::LessThan,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(16),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "less-than-or-equal".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in less than or equal comparison"),
-                        ("ja", "左辺が右辺以下かを判定する組み込み関数 (<=)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::LessThanOrEqual,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(17),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "greater-than".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in greater than comparison"),
-                        ("ja", "左辺が右辺より大きいかを判定する組み込み関数 (>)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::GreaterThan,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(18),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "greater-than-or-equal".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in greater than or equal comparison"),
-                        ("ja", "左辺が右辺以上かを判定する組み込み関数 (>=)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(19),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "not-equal".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in not equal comparison"),
-                        ("ja", "値が等しくないかを判定する組み込み関数 (!=)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::NotEqual,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(20),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "not".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in boolean negation"),
-                        ("ja", "真偽値の否定を行う組み込み関数 (not)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Not,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(21),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "and".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in boolean and"),
-                        ("ja", "真偽値の論理積を行う組み込み関数 (and)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::And,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(22),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "or".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in boolean or"),
-                        ("ja", "真偽値の論理和を行う組み込み関数 (or)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Or,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(23),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "string-concat".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in string concatenation"),
-                        ("ja", "文字列の結合を行う組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::StringConcat,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(24),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "string-length".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in string length"),
-                        ("ja", "文字列の文字数を取得する組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::StringLength,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(25),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "string-slice".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in string slice"),
-                        ("ja", "文字列の部分文字列を取得する組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::StringSlice,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(26),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "list-length".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in list length"),
-                        ("ja", "リストの要素数を取得する組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListLength,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(27),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "list-concat".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in list concatenation"),
-                        ("ja", "2つのリストを結合する組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListConcat,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(28),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "list-get".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in list element retrieval"),
-                        ("ja", "リストの指定位置の要素を取得する組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListGet,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(29),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "list-append".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Compiler built-in list append"),
-                        ("ja", "リストの末尾に要素を追加する組み込み関数"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListAppend,
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            2,
+            &core_module_hash,
+            "let",
+            None,
+            "Compiler built-in let binding",
+            "ローカル変数を定義する組み込み構文 (let)",
+            definy_event::event::CompilerBuiltin::Let,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            3,
+            &core_module_hash,
+            "plus",
+            None,
+            "Compiler built-in addition",
+            "数値の加算を行う組み込み関数 (+)",
+            definy_event::event::CompilerBuiltin::Plus,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            4,
+            &core_module_hash,
+            "number-literal",
+            Some(definy_event::event::PartType::Number),
+            "Compiler built-in number literal",
+            "数値リテラル",
+            definy_event::event::CompilerBuiltin::NumberLiteral,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            5,
+            &core_module_hash,
+            "if",
+            None,
+            "Compiler built-in conditional expression",
+            "条件分岐を行う組み込み構文 (if)",
+            definy_event::event::CompilerBuiltin::If,
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            6,
+            &core_module_hash,
+            "number",
+            Some(definy_event::event::PartType::Type),
+            "Built-in 64-bit integer type",
+            "組み込み 64ビット符号付き整数型",
+            None,
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            7,
+            &core_module_hash,
+            "string",
+            Some(definy_event::event::PartType::Type),
+            "Built-in UTF-8 string type",
+            "組み込み UTF-8 文字列型",
+            None,
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            8,
+            &core_module_hash,
+            "boolean",
+            Some(definy_event::event::PartType::Type),
+            "Built-in boolean type",
+            "組み込み真偽値型",
+            None,
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            9,
+            &core_module_hash,
+            "list",
+            Some(definy_event::event::PartType::Type),
+            "Built-in list type constructor",
+            "組み込みリスト型コンストラクタ",
+            None,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            10,
+            &core_module_hash,
+            "equal",
+            None,
+            "Compiler built-in equality comparison",
+            "値が等しいかを判定する組み込み関数 (==)",
+            definy_event::event::CompilerBuiltin::Equal,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            11,
+            &core_module_hash,
+            "minus",
+            None,
+            "Compiler built-in subtraction",
+            "数値の減算を行う組み込み関数 (-)",
+            definy_event::event::CompilerBuiltin::Minus,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            12,
+            &core_module_hash,
+            "multiply",
+            None,
+            "Compiler built-in multiplication",
+            "数値の乗算を行う組み込み関数 (*)",
+            definy_event::event::CompilerBuiltin::Multiply,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            13,
+            &core_module_hash,
+            "divide",
+            None,
+            "Compiler built-in division",
+            "数値の除算を行う組み込み関数 (/)",
+            definy_event::event::CompilerBuiltin::Divide,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            14,
+            &core_module_hash,
+            "remainder",
+            None,
+            "Compiler built-in remainder",
+            "数値の剰余を求める組み込み関数 (%)",
+            definy_event::event::CompilerBuiltin::Remainder,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            15,
+            &core_module_hash,
+            "less-than",
+            None,
+            "Compiler built-in less than comparison",
+            "左辺が右辺より小さいかを判定する組み込み関数 (<)",
+            definy_event::event::CompilerBuiltin::LessThan,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            16,
+            &core_module_hash,
+            "less-than-or-equal",
+            None,
+            "Compiler built-in less than or equal comparison",
+            "左辺が右辺以下かを判定する組み込み関数 (<=)",
+            definy_event::event::CompilerBuiltin::LessThanOrEqual,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            17,
+            &core_module_hash,
+            "greater-than",
+            None,
+            "Compiler built-in greater than comparison",
+            "左辺が右辺より大きいかを判定する組み込み関数 (>)",
+            definy_event::event::CompilerBuiltin::GreaterThan,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            18,
+            &core_module_hash,
+            "greater-than-or-equal",
+            None,
+            "Compiler built-in greater than or equal comparison",
+            "左辺が右辺以上かを判定する組み込み関数 (>=)",
+            definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            19,
+            &core_module_hash,
+            "not-equal",
+            None,
+            "Compiler built-in not equal comparison",
+            "値が等しくないかを判定する組み込み関数 (!=)",
+            definy_event::event::CompilerBuiltin::NotEqual,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            20,
+            &core_module_hash,
+            "not",
+            None,
+            "Compiler built-in boolean negation",
+            "真偽値の否定を行う組み込み関数 (not)",
+            definy_event::event::CompilerBuiltin::Not,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            21,
+            &core_module_hash,
+            "and",
+            None,
+            "Compiler built-in boolean and",
+            "真偽値の論理積を行う組み込み関数 (and)",
+            definy_event::event::CompilerBuiltin::And,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            22,
+            &core_module_hash,
+            "or",
+            None,
+            "Compiler built-in boolean or",
+            "真偽値の論理和を行う組み込み関数 (or)",
+            definy_event::event::CompilerBuiltin::Or,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            23,
+            &core_module_hash,
+            "string-concat",
+            None,
+            "Compiler built-in string concatenation",
+            "文字列の結合を行う組み込み関数",
+            definy_event::event::CompilerBuiltin::StringConcat,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            24,
+            &core_module_hash,
+            "string-length",
+            None,
+            "Compiler built-in string length",
+            "文字列の文字数を取得する組み込み関数",
+            definy_event::event::CompilerBuiltin::StringLength,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            25,
+            &core_module_hash,
+            "string-slice",
+            None,
+            "Compiler built-in string slice",
+            "文字列の部分文字列を取得する組み込み関数",
+            definy_event::event::CompilerBuiltin::StringSlice,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            26,
+            &core_module_hash,
+            "list-length",
+            None,
+            "Compiler built-in list length",
+            "リストの要素数を取得する組み込み関数",
+            definy_event::event::CompilerBuiltin::ListLength,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            27,
+            &core_module_hash,
+            "list-concat",
+            None,
+            "Compiler built-in list concatenation",
+            "2つのリストを結合する組み込み関数",
+            definy_event::event::CompilerBuiltin::ListConcat,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            28,
+            &core_module_hash,
+            "list-get",
+            None,
+            "Compiler built-in list element retrieval",
+            "リストの指定位置の要素を取得する組み込み関数",
+            definy_event::event::CompilerBuiltin::ListGet,
+        ),
+        builtin_compiler_part(
+            &account_id,
+            first_commit_time,
+            29,
+            &core_module_hash,
+            "list-append",
+            None,
+            "Compiler built-in list append",
+            "リストの末尾に要素を追加する組み込み関数",
+            definy_event::event::CompilerBuiltin::ListAppend,
+        ),
         sample_module_event,
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(31),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "triangle-area".into(),
-                    part_type: Some(definy_event::event::PartType::Number),
-                    description: definy_event::event::Description::localized(vec![
-                        (
-                            "en",
-                            "Calculate the area of a triangle (base 10, height 5)",
-                        ),
-                        (
-                            "ja",
-                            "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)",
-                        ),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Let(
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            31,
+            &sample_module_hash,
+            "triangle-area",
+            Some(definy_event::event::PartType::Number),
+            "Calculate the area of a triangle (base 10, height 5)",
+            "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)",
+            Some(definy_event::event::Expression::Let(
+                definy_event::event::LetExpression {
+                    variable_id: 1,
+                    variable_name: "base".into(),
+                    value: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 10 },
+                    )),
+                    body: Box::new(definy_event::event::Expression::Let(
                         definy_event::event::LetExpression {
-                            variable_id: 1,
-                            variable_name: "base".into(),
+                            variable_id: 2,
+                            variable_name: "height".into(),
                             value: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 10 },
+                                definy_event::event::NumberExpression { value: 5 },
                             )),
-                            body: Box::new(definy_event::event::Expression::Let(
-                                definy_event::event::LetExpression {
-                                    variable_id: 2,
-                                    variable_name: "height".into(),
-                                    value: Box::new(definy_event::event::Expression::Number(
-                                        definy_event::event::NumberExpression { value: 5 },
-                                    )),
-                                    body: Box::new(definy_event::event::Expression::Divide(
-                                        definy_event::event::DivideExpression {
+                            body: Box::new(definy_event::event::Expression::Divide(
+                                definy_event::event::DivideExpression {
+                                    left: Box::new(definy_event::event::Expression::Multiply(
+                                        definy_event::event::MultiplyExpression {
                                             left: Box::new(
-                                                definy_event::event::Expression::Multiply(
-                                                    definy_event::event::MultiplyExpression {
-                                                        left: Box::new(
-                                                            definy_event::event::Expression::Variable(
-                                                                definy_event::event::VariableExpression {
-                                                                    variable_id: 1,
-                                                                },
-                                                            ),
-                                                        ),
-                                                        right: Box::new(
-                                                            definy_event::event::Expression::Variable(
-                                                                definy_event::event::VariableExpression {
-                                                                    variable_id: 2,
-                                                                },
-                                                            ),
-                                                        ),
+                                                definy_event::event::Expression::Variable(
+                                                    definy_event::event::VariableExpression {
+                                                        variable_id: 1,
+                                                    },
+                                                ),
+                                            ),
+                                            right: Box::new(
+                                                definy_event::event::Expression::Variable(
+                                                    definy_event::event::VariableExpression {
+                                                        variable_id: 2,
+                                                    },
+                                                ),
+                                            ),
+                                        },
+                                    )),
+                                    right: Box::new(definy_event::event::Expression::Number(
+                                        definy_event::event::NumberExpression { value: 2 },
+                                    )),
+                                },
+                            )),
+                        },
+                    )),
+                },
+            )),
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            32,
+            &sample_module_hash,
+            "greet",
+            Some(definy_event::event::PartType::String),
+            "Greeting message using string concatenation",
+            "文字列結合を使った挨拶メッセージの生成サンプル",
+            Some(definy_event::event::Expression::StringConcat(
+                definy_event::event::StringConcatExpression {
+                    left: Box::new(definy_event::event::Expression::String(
+                        definy_event::event::StringExpression {
+                            value: "Hello, ".into(),
+                        },
+                    )),
+                    right: Box::new(definy_event::event::Expression::String(
+                        definy_event::event::StringExpression {
+                            value: "definy!".into(),
+                        },
+                    )),
+                },
+            )),
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            33,
+            &sample_module_hash,
+            "is-even-sample",
+            Some(definy_event::event::PartType::String),
+            "Check if a number is even using conditional expression",
+            "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)",
+            Some(definy_event::event::Expression::Let(
+                definy_event::event::LetExpression {
+                    variable_id: 1,
+                    variable_name: "n".into(),
+                    value: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 4 },
+                    )),
+                    body: Box::new(definy_event::event::Expression::If(
+                        definy_event::event::IfExpression {
+                            condition: Box::new(definy_event::event::Expression::Equal(
+                                definy_event::event::EqualExpression {
+                                    left: Box::new(definy_event::event::Expression::Remainder(
+                                        definy_event::event::RemainderExpression {
+                                            left: Box::new(
+                                                definy_event::event::Expression::Variable(
+                                                    definy_event::event::VariableExpression {
+                                                        variable_id: 1,
                                                     },
                                                 ),
                                             ),
@@ -634,251 +554,134 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                                             ),
                                         },
                                     )),
-                                },
-                            )),
-                        },
-                    )),
-                    module_definition_event_hash: sample_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(32),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "greet".into(),
-                    part_type: Some(definy_event::event::PartType::String),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Greeting message using string concatenation"),
-                        ("ja", "文字列結合を使った挨拶メッセージの生成サンプル"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::StringConcat(
-                        definy_event::event::StringConcatExpression {
-                            left: Box::new(definy_event::event::Expression::String(
-                                definy_event::event::StringExpression {
-                                    value: "Hello, ".into(),
-                                },
-                            )),
-                            right: Box::new(definy_event::event::Expression::String(
-                                definy_event::event::StringExpression {
-                                    value: "definy!".into(),
-                                },
-                            )),
-                        },
-                    )),
-                    module_definition_event_hash: sample_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(33),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "is-even-sample".into(),
-                    part_type: Some(definy_event::event::PartType::String),
-                    description: definy_event::event::Description::localized(vec![
-                        (
-                            "en",
-                            "Check if a number is even using conditional expression",
-                        ),
-                        (
-                            "ja",
-                            "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)",
-                        ),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Let(
-                        definy_event::event::LetExpression {
-                            variable_id: 1,
-                            variable_name: "n".into(),
-                            value: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 4 },
-                            )),
-                            body: Box::new(definy_event::event::Expression::If(
-                                definy_event::event::IfExpression {
-                                    condition: Box::new(definy_event::event::Expression::Equal(
-                                        definy_event::event::EqualExpression {
-                                            left: Box::new(
-                                                definy_event::event::Expression::Remainder(
-                                                    definy_event::event::RemainderExpression {
-                                                        left: Box::new(
-                                                            definy_event::event::Expression::Variable(
-                                                                definy_event::event::VariableExpression {
-                                                                    variable_id: 1,
-                                                                },
-                                                            ),
-                                                        ),
-                                                        right: Box::new(
-                                                            definy_event::event::Expression::Number(
-                                                                definy_event::event::NumberExpression {
-                                                                    value: 2,
-                                                                },
-                                                            ),
-                                                        ),
-                                                    },
-                                                ),
-                                            ),
-                                            right: Box::new(
-                                                definy_event::event::Expression::Number(
-                                                    definy_event::event::NumberExpression {
-                                                        value: 0,
-                                                    },
-                                                ),
-                                            ),
-                                        },
-                                    )),
-                                    then_expr: Box::new(definy_event::event::Expression::String(
-                                        definy_event::event::StringExpression {
-                                            value: "even".into(),
-                                        },
-                                    )),
-                                    else_expr: Box::new(definy_event::event::Expression::String(
-                                        definy_event::event::StringExpression {
-                                            value: "odd".into(),
-                                        },
-                                    )),
-                                },
-                            )),
-                        },
-                    )),
-                    module_definition_event_hash: sample_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(34),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "prime-numbers".into(),
-                    part_type: Some(definy_event::event::PartType::List(Box::new(
-                        definy_event::event::PartType::Number,
-                    ))),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "List literal containing prime numbers"),
-                        ("ja", "素数のリストリテラルサンプル [2, 3, 5, 7, 11]"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::ListLiteral(
-                        definy_event::event::ListLiteralExpression {
-                            items: vec![
-                                definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 2 },
-                                ),
-                                definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 3 },
-                                ),
-                                definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 5 },
-                                ),
-                                definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 7 },
-                                ),
-                                definy_event::event::Expression::Number(
-                                    definy_event::event::NumberExpression { value: 11 },
-                                ),
-                            ],
-                        },
-                    )),
-                    module_definition_event_hash: sample_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(35),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "option-number".into(),
-                    part_type: Some(definy_event::event::PartType::Type),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Option type for numbers (none or some(number))"),
-                        ("ja", "数値用の Option 型 (none または some(number))"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::TypeUnion(
-                        definy_event::event::TypeUnionExpression {
-                            variants: vec![
-                                definy_event::event::TypeUnionVariant {
-                                    tag: "none".into(),
-                                    payload_type: None,
-                                },
-                                definy_event::event::TypeUnionVariant {
-                                    tag: "some".into(),
-                                    payload_type: Some(Box::new(
-                                        definy_event::event::Expression::TypeNumber,
-                                    )),
-                                },
-                            ],
-                        },
-                    )),
-                    module_definition_event_hash: core_module_hash.clone(),
-                },
-            ),
-        },
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time + chrono::Duration::milliseconds(36),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "match-option-sample".into(),
-                    part_type: Some(definy_event::event::PartType::Number),
-                    description: definy_event::event::Description::localized(vec![
-                        ("en", "Pattern match sample: unwrap some(100) and add 23"),
-                        ("ja", "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)"),
-                    ]),
-                    expression: Some(definy_event::event::Expression::Match(
-                        definy_event::event::MatchExpression {
-                            target: Box::new(definy_event::event::Expression::Variant(
-                                definy_event::event::VariantExpression {
-                                    tag: "some".into(),
-                                    payload: Some(Box::new(
-                                        definy_event::event::Expression::Number(
-                                            definy_event::event::NumberExpression { value: 100 },
-                                        ),
-                                    )),
-                                    type_part_definition_event_hash: None,
-                                },
-                            )),
-                            arms: vec![
-                                definy_event::event::MatchArm {
-                                    tag: "some".into(),
-                                    variable_id: Some(1),
-                                    variable_name: Some("val".into()),
-                                    body: Box::new(definy_event::event::Expression::Add(
-                                        definy_event::event::AddExpression {
-                                            left: Box::new(
-                                                definy_event::event::Expression::Variable(
-                                                    definy_event::event::VariableExpression {
-                                                        variable_id: 1,
-                                                    },
-                                                ),
-                                            ),
-                                            right: Box::new(
-                                                definy_event::event::Expression::Number(
-                                                    definy_event::event::NumberExpression {
-                                                        value: 23,
-                                                    },
-                                                ),
-                                            ),
-                                        },
-                                    )),
-                                },
-                                definy_event::event::MatchArm {
-                                    tag: "none".into(),
-                                    variable_id: None,
-                                    variable_name: None,
-                                    body: Box::new(definy_event::event::Expression::Number(
+                                    right: Box::new(definy_event::event::Expression::Number(
                                         definy_event::event::NumberExpression { value: 0 },
                                     )),
                                 },
-                            ],
-                            default: None,
+                            )),
+                            then_expr: Box::new(definy_event::event::Expression::String(
+                                definy_event::event::StringExpression {
+                                    value: "even".into(),
+                                },
+                            )),
+                            else_expr: Box::new(definy_event::event::Expression::String(
+                                definy_event::event::StringExpression {
+                                    value: "odd".into(),
+                                },
+                            )),
                         },
                     )),
-                    module_definition_event_hash: sample_module_hash.clone(),
                 },
-            ),
-        },
+            )),
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            34,
+            &sample_module_hash,
+            "prime-numbers",
+            Some(definy_event::event::PartType::List(Box::new(
+                definy_event::event::PartType::Number,
+            ))),
+            "List literal containing prime numbers",
+            "素数のリストリテラルサンプル [2, 3, 5, 7, 11]",
+            Some(definy_event::event::Expression::ListLiteral(
+                definy_event::event::ListLiteralExpression {
+                    items: vec![
+                        definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 2 },
+                        ),
+                        definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 3 },
+                        ),
+                        definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 5 },
+                        ),
+                        definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 7 },
+                        ),
+                        definy_event::event::Expression::Number(
+                            definy_event::event::NumberExpression { value: 11 },
+                        ),
+                    ],
+                },
+            )),
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            35,
+            &core_module_hash,
+            "option-number",
+            Some(definy_event::event::PartType::Type),
+            "Option type for numbers (none or some(number))",
+            "数値用の Option 型 (none または some(number))",
+            Some(definy_event::event::Expression::TypeUnion(
+                definy_event::event::TypeUnionExpression {
+                    variants: vec![
+                        definy_event::event::TypeUnionVariant {
+                            tag: "none".into(),
+                            payload_type: None,
+                        },
+                        definy_event::event::TypeUnionVariant {
+                            tag: "some".into(),
+                            payload_type: Some(Box::new(
+                                definy_event::event::Expression::TypeNumber,
+                            )),
+                        },
+                    ],
+                },
+            )),
+        ),
+        builtin_part_event(
+            &account_id,
+            first_commit_time,
+            36,
+            &sample_module_hash,
+            "match-option-sample",
+            Some(definy_event::event::PartType::Number),
+            "Pattern match sample: unwrap some(100) and add 23",
+            "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)",
+            Some(definy_event::event::Expression::Match(
+                definy_event::event::MatchExpression {
+                    target: Box::new(definy_event::event::Expression::Variant(
+                        definy_event::event::VariantExpression {
+                            tag: "some".into(),
+                            payload: Some(Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 100 },
+                            ))),
+                            type_part_definition_event_hash: None,
+                        },
+                    )),
+                    arms: vec![
+                        definy_event::event::MatchArm {
+                            tag: "some".into(),
+                            variable_id: Some(1),
+                            variable_name: Some("val".into()),
+                            body: Box::new(definy_event::event::Expression::Add(
+                                definy_event::event::AddExpression {
+                                    left: Box::new(definy_event::event::Expression::Variable(
+                                        definy_event::event::VariableExpression { variable_id: 1 },
+                                    )),
+                                    right: Box::new(definy_event::event::Expression::Number(
+                                        definy_event::event::NumberExpression { value: 23 },
+                                    )),
+                                },
+                            )),
+                        },
+                        definy_event::event::MatchArm {
+                            tag: "none".into(),
+                            variable_id: None,
+                            variable_name: None,
+                            body: Box::new(definy_event::event::Expression::Number(
+                                definy_event::event::NumberExpression { value: 0 },
+                            )),
+                        },
+                    ],
+                    default: None,
+                },
+            )),
+        ),
     ];
 
     // Prepare serialized binaries and expected hashes for all valid built-in events

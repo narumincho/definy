@@ -186,6 +186,43 @@ pub struct UnionVariantType {
     pub payload: Option<Box<PartType>>,
 }
 
+impl std::fmt::Display for PartType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PartType::Number => write!(f, "number"),
+            PartType::String => write!(f, "string"),
+            PartType::Boolean => write!(f, "boolean"),
+            PartType::Type => write!(f, "type"),
+            PartType::TypePart(hash) => write!(f, "type-part({hash})"),
+            PartType::List(item) => write!(f, "list<{item}>"),
+            PartType::Function {
+                parameter,
+                return_type,
+            } => write!(f, "{parameter} -> {return_type}"),
+            PartType::Union(variants) => {
+                let var_texts = variants
+                    .iter()
+                    .map(|v| match &v.payload {
+                        Some(p) => format!("{}({p})", v.tag),
+                        None => v.tag.to_string(),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" | ");
+                write!(f, "union<{var_texts}>")
+            }
+        }
+    }
+}
+
+impl PartType {
+    #[must_use]
+    pub fn optional_to_string(opt: &Option<Self>) -> String {
+        opt.as_ref()
+            .map(|t| t.to_string())
+            .unwrap_or_else(|| "none".to_string())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Expression {
     Number(NumberExpression),
@@ -555,4 +592,46 @@ pub enum AccountIdFromStrError {
     DecodeError(base64::DecodeError),
     InvalidBytes(ed25519_dalek::SignatureError),
     InvalidByteSize(<[u8; 32] as TryFrom<Vec<u8>>>::Error),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_part_type_display() {
+        assert_eq!(PartType::Number.to_string(), "number");
+        assert_eq!(PartType::String.to_string(), "string");
+        assert_eq!(PartType::Boolean.to_string(), "boolean");
+        assert_eq!(PartType::Type.to_string(), "type");
+        assert_eq!(
+            PartType::List(Box::new(PartType::Number)).to_string(),
+            "list<number>"
+        );
+        assert_eq!(
+            PartType::Function {
+                parameter: Box::new(PartType::Number),
+                return_type: Box::new(PartType::String),
+            }
+            .to_string(),
+            "number -> string"
+        );
+        let union_type = PartType::Union(vec![
+            UnionVariantType {
+                tag: "none".into(),
+                payload: None,
+            },
+            UnionVariantType {
+                tag: "some".into(),
+                payload: Some(Box::new(PartType::Number)),
+            },
+        ]);
+        assert_eq!(union_type.to_string(), "union<none | some(number)>");
+
+        assert_eq!(PartType::optional_to_string(&None), "none");
+        assert_eq!(
+            PartType::optional_to_string(&Some(PartType::Number)),
+            "number"
+        );
+    }
 }

@@ -26,6 +26,7 @@ pub mod navigator_credential;
 mod not_found;
 pub mod page_context;
 mod page_title;
+mod part_create_form;
 mod part_detail;
 mod part_list;
 pub mod part_projection;

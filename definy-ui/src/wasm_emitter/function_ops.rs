@@ -208,7 +208,7 @@ pub(crate) fn emit_function(
         out.push(LOCAL_SET);
         encode_u32_leb128(out, env_ptr_local);
 
-        let env_size = ((captured.len() * 4 + 7) / 8) * 8;
+        let env_size = (captured.len() * 4).div_ceil(8) * 8;
         out.push(GLOBAL_GET);
         out.push(0);
         out.push(I32_CONST);

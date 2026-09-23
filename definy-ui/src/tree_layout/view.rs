@@ -34,10 +34,10 @@ pub fn TreeLayoutRenderer(
         on_change_string,
         on_change_boolean,
     };
-    render_node(&node, ctx, 0)
+    render_node(&node, ctx)
 }
 
-fn render_node(node: &LayoutNode, ctx: RenderContext, depth: usize) -> Element {
+fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     let node_id = node.id.clone();
     let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node_id);
     let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node_id);
@@ -65,10 +65,10 @@ fn render_node(node: &LayoutNode, ctx: RenderContext, depth: usize) -> Element {
                     autofocus: true,
                     onclick: move |evt: MouseEvent| evt.stop_propagation(),
                     oninput: move |evt: FormEvent| {
-                        if let Ok(n) = evt.value().parse::<i64>() {
-                            if let Some(cb) = ctx.on_change_number {
-                                cb.call((p.clone(), n));
-                            }
+                        if let Ok(n) = evt.value().parse::<i64>()
+                            && let Some(cb) = ctx.on_change_number
+                        {
+                            cb.call((p.clone(), n));
                         }
                     },
                 }
@@ -109,10 +109,10 @@ fn render_node(node: &LayoutNode, ctx: RenderContext, depth: usize) -> Element {
                     if let Some(cb) = ctx.on_select_node {
                         cb.call((id_for_click.clone(), path_for_click.clone()));
                     }
-                    if ctx.editable && is_boolean {
-                        if let Some(cb) = ctx.on_change_boolean {
-                            cb.call((path_for_click.clone(), !is_bool_true));
-                        }
+                    if ctx.editable && is_boolean
+                        && let Some(cb) = ctx.on_change_boolean
+                    {
+                        cb.call((path_for_click.clone(), !is_bool_true));
                     }
                 },
                 onmouseenter: move |evt: MouseEvent| {
@@ -199,7 +199,7 @@ fn render_node(node: &LayoutNode, ctx: RenderContext, depth: usize) -> Element {
                 div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
                     for child in &node.children {
                         div { style: "width: fit-content; max-width: 100%;",
-                            {render_node(child, ctx, depth + 1)}
+                            {render_node(child, ctx)}
                         }
                     }
                 }
@@ -240,7 +240,7 @@ fn render_node(node: &LayoutNode, ctx: RenderContext, depth: usize) -> Element {
                     "{node.label}"
                 }
                 for child in &node.children {
-                    {render_node(child, ctx, depth + 1)}
+                    {render_node(child, ctx)}
                 }
             }
         }
@@ -313,7 +313,7 @@ fn render_table_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                             div {
                                 key: "cell-{row_idx}-{col_idx}",
                                 style: "width: {col_widths.get(col_idx).copied().unwrap_or(80.0)}px; min-width: {col_widths.get(col_idx).copied().unwrap_or(80.0)}px; padding: 0 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
-                                {render_node(cell, ctx, 1)}
+                                {render_node(cell, ctx)}
                             }
                         }
                     }

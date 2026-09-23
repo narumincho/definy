@@ -108,16 +108,15 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                             .await
                                         {
                                             let mut next = state_sig.read().clone();
-                                            if rec.status == crate::local_event::LocalEventStatus::Sent {
-                                                if let Ok(events) = crate::fetch::get_events(
+                                            if rec.status == crate::local_event::LocalEventStatus::Sent
+                                                && let Ok(events) = crate::fetch::get_events(
                                                         None,
                                                         Some(20),
                                                         Some(0),
                                                     )
                                                     .await
-                                                {
-                                                    next.apply_latest_events(events, None);
-                                                }
+                                            {
+                                                next.apply_latest_events(events, None);
                                             }
                                             crate::app_state::upsert_local_event_record(&mut next, rec);
                                             state_sig.set(next);
@@ -236,16 +235,15 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                                                 .await
                                                             {
                                                                 let mut next = state_sig.read().clone();
-                                                                if rec.status == crate::local_event::LocalEventStatus::Sent {
-                                                                    if let Ok(events) = crate::fetch::get_events(
+                                                                if rec.status == crate::local_event::LocalEventStatus::Sent
+                                                                    && let Ok(events) = crate::fetch::get_events(
                                                                             None,
                                                                             Some(20),
                                                                             Some(0),
                                                                         )
                                                                         .await
-                                                                    {
-                                                                        next.apply_latest_events(events, None);
-                                                                    }
+                                                                {
+                                                                    next.apply_latest_events(events, None);
                                                                 }
                                                                 crate::app_state::upsert_local_event_record(&mut next, rec);
                                                                 state_sig.set(next);

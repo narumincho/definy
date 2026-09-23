@@ -7,47 +7,6 @@ use crate::app_state::AppState;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::page_context::PageContext;
 
-fn part_type_text(part_type: &definy_event::event::PartType) -> String {
-    match part_type {
-        definy_event::event::PartType::Number => "number".to_string(),
-        definy_event::event::PartType::String => "string".to_string(),
-        definy_event::event::PartType::Boolean => "boolean".to_string(),
-        definy_event::event::PartType::Type => "type".to_string(),
-        definy_event::event::PartType::TypePart(hash) => format!("type-part({})", hash),
-        definy_event::event::PartType::List(item_type) => {
-            format!("list<{}>", part_type_text(item_type.as_ref()))
-        }
-        definy_event::event::PartType::Function {
-            parameter,
-            return_type,
-        } => {
-            format!(
-                "{} -> {}",
-                part_type_text(parameter.as_ref()),
-                part_type_text(return_type.as_ref())
-            )
-        }
-        definy_event::event::PartType::Union(variants) => {
-            let var_texts = variants
-                .iter()
-                .map(|v| match &v.payload {
-                    Some(p) => format!("{}({})", v.tag, part_type_text(p.as_ref())),
-                    None => v.tag.to_string(),
-                })
-                .collect::<Vec<String>>()
-                .join(" | ");
-            format!("union<{}>", var_texts)
-        }
-    }
-}
-
-fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) -> String {
-    part_type
-        .as_ref()
-        .map(part_type_text)
-        .unwrap_or_else(|| "none".to_string())
-}
-
 #[component]
 pub fn EventDetailView(state: AppState, context: PageContext, target_hash: EventHashId) -> Element {
     let account_name_map = state.account_name_map();
@@ -223,7 +182,7 @@ fn RenderDetailContent(
                             div {
                                 class: "badge",
                                 style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.5rem; border-radius: var(--radius-full);",
-                                "{optional_part_type_text(&part_definition_event.part_type)}"
+                                "{definy_event::event::PartType::optional_to_string(&part_definition_event.part_type)}"
                             }
                         }
                         a {

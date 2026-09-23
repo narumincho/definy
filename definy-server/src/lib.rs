@@ -44,7 +44,7 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
         Err(_) => std::env::var("IP")
             .ok()
             .and_then(|ip| ip.parse().ok())
-            .unwrap_or_else(|| std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)),
+            .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)),
     };
 
     let addr = SocketAddr::from((ip, port));

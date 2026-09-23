@@ -280,10 +280,10 @@ async fn tool_list_parts(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     let filtered = parts
         .into_iter()
         .filter(|p| {
-            if let Some(nf) = name_filter {
-                if !p.part_name.to_lowercase().contains(&nf.to_lowercase()) {
-                    return false;
-                }
+            if let Some(nf) = name_filter
+                && !p.part_name.to_lowercase().contains(&nf.to_lowercase())
+            {
+                return false;
             }
             if let Some(mf) = module_filter {
                 let mod_match = modules.iter().any(|m| {
@@ -547,10 +547,7 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     };
 
     let part_type: Option<PartType> = match args.get("part_type") {
-        Some(v) if !v.is_null() => match serde_json::from_value(v.clone()) {
-            Ok(pt) => Some(pt),
-            Err(_) => None,
-        },
+        Some(v) if !v.is_null() => serde_json::from_value(v.clone()).ok(),
         _ => None,
     };
 
@@ -623,13 +620,13 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     };
 
     let name = args.get("name").and_then(|v| v.as_str()).map(String::from);
-    if let Some(ref n) = name {
-        if !definy_event::naming::is_valid_name(n) {
-            return ToolCallResult::error(format!(
-                "Invalid part name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-part')",
-                n
-            ));
-        }
+    if let Some(ref n) = name
+        && !definy_event::naming::is_valid_name(n)
+    {
+        return ToolCallResult::error(format!(
+            "Invalid part name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-part')",
+            n
+        ));
     }
     let desc = args
         .get("description")

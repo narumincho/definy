@@ -5,42 +5,6 @@ use dioxus::prelude::*;
 use crate::app_state::AppState;
 use crate::page_context::PageContext;
 
-fn part_type_text(part_type: &definy_event::event::PartType) -> String {
-    match part_type {
-        definy_event::event::PartType::Number => "number".to_string(),
-        definy_event::event::PartType::String => "string".to_string(),
-        definy_event::event::PartType::Boolean => "boolean".to_string(),
-        definy_event::event::PartType::Type => "type".to_string(),
-        definy_event::event::PartType::TypePart(hash) => {
-            format!("type-part({})", hash)
-        }
-        definy_event::event::PartType::List(item_type) => {
-            format!("list<{}>", part_type_text(item_type.as_ref()))
-        }
-        definy_event::event::PartType::Function {
-            parameter,
-            return_type,
-        } => {
-            format!(
-                "{} -> {}",
-                part_type_text(parameter.as_ref()),
-                part_type_text(return_type.as_ref())
-            )
-        }
-        definy_event::event::PartType::Union(variants) => {
-            let var_texts = variants
-                .iter()
-                .map(|v| match &v.payload {
-                    Some(p) => format!("{}({})", v.tag, part_type_text(p.as_ref())),
-                    None => v.tag.to_string(),
-                })
-                .collect::<Vec<String>>()
-                .join(" | ");
-            format!("union<{}>", var_texts)
-        }
-    }
-}
-
 #[component]
 pub fn EventListView(state: AppState, context: PageContext) -> Element {
     let filter_options = vec![
@@ -351,7 +315,10 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
         },
         EventContent::PartDefinition(part_definition_event) => {
             let part_name = part_definition_event.part_name.to_string();
-            let part_type_badge = part_definition_event.part_type.as_ref().map(part_type_text);
+            let part_type_badge = part_definition_event
+                .part_type
+                .as_ref()
+                .map(ToString::to_string);
             let desc = part_definition_event
                 .description
                 .to_display_string(context.language.to_code());

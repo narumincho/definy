@@ -15,18 +15,18 @@ use inputs::*;
 pub use selector::*;
 
 pub fn is_compound_expression(expr: &definy_event::event::Expression) -> bool {
-    match expr {
+    !matches!(
+        expr,
         definy_event::event::Expression::Number(_)
-        | definy_event::event::Expression::String(_)
-        | definy_event::event::Expression::Boolean(_)
-        | definy_event::event::Expression::Variable(_)
-        | definy_event::event::Expression::PartReference(_)
-        | definy_event::event::Expression::TypeNumber
-        | definy_event::event::Expression::TypeString
-        | definy_event::event::Expression::TypeBoolean
-        | definy_event::event::Expression::Compiler(_) => false,
-        _ => true,
-    }
+            | definy_event::event::Expression::String(_)
+            | definy_event::event::Expression::Boolean(_)
+            | definy_event::event::Expression::Variable(_)
+            | definy_event::event::Expression::PartReference(_)
+            | definy_event::event::Expression::TypeNumber
+            | definy_event::event::Expression::TypeString
+            | definy_event::event::Expression::TypeBoolean
+            | definy_event::event::Expression::Compiler(_)
+    )
 }
 
 pub fn render_expression_editor(
@@ -435,7 +435,7 @@ pub fn render_expression_editor(
                         let part_type = part
                             .as_ref()
                             .and_then(|p| p.part_type.as_ref())
-                            .map(crate::part_list::part_type_text)
+                            .map(ToString::to_string)
                             .unwrap_or_else(|| "Part".to_string());
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",

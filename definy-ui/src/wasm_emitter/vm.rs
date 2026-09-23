@@ -162,21 +162,21 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
             }
         } else if section_id == CODE_SECTION {
             let mut c_pos = pos;
-            let (func_count, count_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+            let (func_count, count_bytes) = read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
             c_pos += count_bytes;
 
             for _ in 0..func_count {
-                let (body_size, b_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                let (body_size, b_bytes) = read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
                 c_pos += b_bytes;
                 let body_end = c_pos + body_size as usize;
 
                 let (num_local_groups, g_bytes) =
-                    read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                    read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
                 c_pos += g_bytes;
                 let mut total_locals = 0;
                 for _ in 0..num_local_groups {
                     let (count, count_bytes) =
-                        read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                        read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
                     c_pos += count_bytes;
                     c_pos += 1; // type
                     total_locals += count as usize;
@@ -203,7 +203,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
         memory[data_offset..data_offset + initial_data.len()].copy_from_slice(&initial_data);
     }
 
-    let mut globals = vec![HEAP_START_OFFSET as i32];
+    let mut globals = [HEAP_START_OFFSET as i32];
 
     let mut current_func_idx = 0;
     let mut locals = vec![StackVal::I32(0); functions[0].num_locals];

@@ -223,7 +223,7 @@ pub fn selector_options(
         let type_text = snapshot
             .part_type
             .as_ref()
-            .map(crate::part_list::part_type_text)
+            .map(ToString::to_string)
             .unwrap_or_else(|| "Part".to_string());
         (
             format!("ref:global:{}", snapshot.definition_event_hash),
