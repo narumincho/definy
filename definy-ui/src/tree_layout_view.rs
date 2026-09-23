@@ -352,7 +352,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                                 "{width_bounded_text}"
                             }
                         }
-                        div { style: "width: {container_width():.0}px; max-width: 100%; border: 1.5px dashed var(--primary); border-radius: var(--radius-md); padding: 1rem 1.2rem; background: var(--surface); box-shadow: var(--shadow-md); transition: width 0.1s ease; box-sizing: border-box; overflow-x: auto;",
+                        div { style: "width: {container_width():.0}px; max-width: 100%; border: 1.5px dashed var(--primary); border-radius: var(--radius-md); padding: 1rem 1.2rem; background: var(--surface); box-shadow: var(--shadow-md); transition: width 0.1s ease; box-sizing: border-box; overflow-x: auto; display: flex; flex-direction: column; align-items: flex-start;",
                             TreeLayoutRenderer {
                                 node: layout_result.root.clone(),
                                 selected_node_id,

@@ -39,32 +39,46 @@ pub fn expression_to_layout_node(expr: &Expression, id_prefix: &str) -> LayoutNo
             format!("[builtin: {:?}]", builtin),
             NodeKind::Keyword,
         ),
-        Expression::Add(add) => create_binary_op_node(id_prefix, "+", &add.left, &add.right),
-        Expression::Subtract(sub) => create_binary_op_node(id_prefix, "-", &sub.left, &sub.right),
-        Expression::Multiply(mul) => create_binary_op_node(id_prefix, "*", &mul.left, &mul.right),
-        Expression::Divide(div) => create_binary_op_node(id_prefix, "/", &div.left, &div.right),
-        Expression::Remainder(rem) => create_binary_op_node(id_prefix, "%", &rem.left, &rem.right),
-        Expression::Equal(eq) => create_binary_op_node(id_prefix, "==", &eq.left, &eq.right),
-        Expression::NotEqual(ne) => create_binary_op_node(id_prefix, "!=", &ne.left, &ne.right),
-        Expression::LessThan(lt) => create_binary_op_node(id_prefix, "<", &lt.left, &lt.right),
+        Expression::Add(add) => create_binary_op_node(id_prefix, "plus", &add.left, &add.right),
+        Expression::Subtract(sub) => {
+            create_binary_op_node(id_prefix, "minus", &sub.left, &sub.right)
+        }
+        Expression::Multiply(mul) => {
+            create_binary_op_node(id_prefix, "multiply", &mul.left, &mul.right)
+        }
+        Expression::Divide(div) => {
+            create_binary_op_node(id_prefix, "divide", &div.left, &div.right)
+        }
+        Expression::Remainder(rem) => {
+            create_binary_op_node(id_prefix, "remainder", &rem.left, &rem.right)
+        }
+        Expression::Equal(eq) => create_binary_op_node(id_prefix, "equal", &eq.left, &eq.right),
+        Expression::NotEqual(ne) => {
+            create_binary_op_node(id_prefix, "not_equal", &ne.left, &ne.right)
+        }
+        Expression::LessThan(lt) => {
+            create_binary_op_node(id_prefix, "less_than", &lt.left, &lt.right)
+        }
         Expression::LessThanOrEqual(le) => {
-            create_binary_op_node(id_prefix, "<=", &le.left, &le.right)
+            create_binary_op_node(id_prefix, "less_than_or_equal", &le.left, &le.right)
         }
-        Expression::GreaterThan(gt) => create_binary_op_node(id_prefix, ">", &gt.left, &gt.right),
+        Expression::GreaterThan(gt) => {
+            create_binary_op_node(id_prefix, "greater_than", &gt.left, &gt.right)
+        }
         Expression::GreaterThanOrEqual(ge) => {
-            create_binary_op_node(id_prefix, ">=", &ge.left, &ge.right)
+            create_binary_op_node(id_prefix, "greater_than_or_equal", &ge.left, &ge.right)
         }
-        Expression::And(and) => create_binary_op_node(id_prefix, "&&", &and.left, &and.right),
-        Expression::Or(or) => create_binary_op_node(id_prefix, "||", &or.left, &or.right),
+        Expression::And(and) => create_binary_op_node(id_prefix, "and", &and.left, &and.right),
+        Expression::Or(or) => create_binary_op_node(id_prefix, "or", &or.left, &or.right),
         Expression::StringConcat(concat) => {
-            create_binary_op_node(id_prefix, "++", &concat.left, &concat.right)
+            create_binary_op_node(id_prefix, "string_concat", &concat.left, &concat.right)
         }
         Expression::ListConcat(concat) => {
-            create_binary_op_node(id_prefix, "concat", &concat.left, &concat.right)
+            create_binary_op_node(id_prefix, "list_concat", &concat.left, &concat.right)
         }
         Expression::Not(not_expr) => {
             let child = expression_to_layout_node(&not_expr.value, &format!("{}.val", id_prefix));
-            LayoutNode::new(id_prefix, "!", NodeKind::Operator).with_children(vec![child])
+            LayoutNode::new(id_prefix, "not", NodeKind::Operator).with_children(vec![child])
         }
         Expression::StringLength(len_expr) => {
             let child = expression_to_layout_node(&len_expr.value, &format!("{}.val", id_prefix));
@@ -194,7 +208,7 @@ pub fn expression_to_layout_node(expr: &Expression, id_prefix: &str) -> LayoutNo
                 expression_to_layout_node(&type_func.parameter, &format!("{}.param", id_prefix));
             let ret_node =
                 expression_to_layout_node(&type_func.return_type, &format!("{}.ret", id_prefix));
-            LayoutNode::new(id_prefix, "->", NodeKind::Operator)
+            LayoutNode::new(id_prefix, "type_function", NodeKind::Operator)
                 .with_children(vec![param_node, ret_node])
         }
         Expression::TypeUnion(union_expr) => {
@@ -259,37 +273,46 @@ fn try_build_table_node(
     if list_expr.items.is_empty() {
         return None;
     }
-    // 最初の要素が TypeLiteral か？
-    let first_record = match list_expr.items.first()? {
-        Expression::TypeLiteral(rec) => rec,
-        _ => return None,
-    };
-    if first_record.items.is_empty() {
+
+    // 全ての要素が TypeLiteral であることを確認し、出現するすべてのキー（ユニオン）を収集
+    let mut all_keys = Vec::new();
+    for item in &list_expr.items {
+        let rec = match item {
+            Expression::TypeLiteral(r) => r,
+            _ => return None,
+        };
+        for field in &rec.items {
+            let key = field.key.to_string();
+            if !all_keys.contains(&key) {
+                all_keys.push(key);
+            }
+        }
+    }
+    if all_keys.is_empty() {
         return None;
     }
-    let headers: Vec<String> = first_record
-        .items
-        .iter()
-        .map(|item| item.key.to_string())
-        .collect();
 
-    // 他の全要素も同じキー構成か確認
+    let headers = all_keys;
     let mut rows = Vec::new();
     for (row_idx, item) in list_expr.items.iter().enumerate() {
         let rec = match item {
             Expression::TypeLiteral(r) => r,
             _ => return None,
         };
-        if rec.items.len() != headers.len() {
-            return None;
-        }
         let mut row_cells = Vec::new();
         for (col_idx, key) in headers.iter().enumerate() {
-            let field = rec.items.iter().find(|f| f.key.as_ref() == key)?;
-            let cell_node = expression_to_layout_node(
-                &field.value,
-                &format!("{}.r{}.c{}", id_prefix, row_idx, col_idx),
-            );
+            let cell_node = if let Some(field) = rec.items.iter().find(|f| f.key.as_ref() == key) {
+                expression_to_layout_node(
+                    &field.value,
+                    &format!("{}.r{}.c{}", id_prefix, row_idx, col_idx),
+                )
+            } else {
+                LayoutNode::new(
+                    format!("{}.r{}.c{}.none", id_prefix, row_idx, col_idx),
+                    "-",
+                    NodeKind::Delimiter,
+                )
+            };
             row_cells.push(cell_node);
         }
         let row_node = LayoutNode::new(
@@ -568,6 +591,46 @@ mod tests {
         assert_eq!(node.kind, NodeKind::Table);
         assert_eq!(node.table_headers, vec!["a", "b"]);
 
+        let options = LayoutOptions::default();
+        let res = compute_layout(&node, &options);
+        assert_eq!(res.root.columns_width.len(), 2);
+    }
+
+    #[test]
+    fn test_spreadsheet_table_reordered_keys() {
+        // [{ a: 1, b: 2 }, { b: 4, a: 3 }] (キー順序が逆)
+        let expr = Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                Expression::TypeLiteral(TypeLiteralExpression {
+                    items: vec![
+                        TypeLiteralItemExpression {
+                            key: "a".into(),
+                            value: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                        },
+                        TypeLiteralItemExpression {
+                            key: "b".into(),
+                            value: Box::new(Expression::Number(NumberExpression { value: 2 })),
+                        },
+                    ],
+                }),
+                Expression::TypeLiteral(TypeLiteralExpression {
+                    items: vec![
+                        TypeLiteralItemExpression {
+                            key: "b".into(),
+                            value: Box::new(Expression::Number(NumberExpression { value: 4 })),
+                        },
+                        TypeLiteralItemExpression {
+                            key: "a".into(),
+                            value: Box::new(Expression::Number(NumberExpression { value: 3 })),
+                        },
+                    ],
+                }),
+            ],
+        });
+
+        let node = expression_to_layout_node(&expr, "root");
+        assert_eq!(node.kind, NodeKind::Table);
+        assert_eq!(node.table_headers, vec!["a", "b"]);
         let options = LayoutOptions::default();
         let res = compute_layout(&node, &options);
         assert_eq!(res.root.columns_width.len(), 2);

@@ -14,8 +14,8 @@ pub fn all_samples() -> Vec<LayoutSample> {
     vec![
         LayoutSample {
             id: "simple_arithmetic",
-            title_ja: "1. 単純な足し算 (1 + 2)",
-            title_en: "1. Simple Addition (1 + 2)",
+            title_ja: "1. 単純な足し算 (plus 1 2)",
+            title_en: "1. Simple Addition (plus 1 2)",
             description_ja: "最小構成の2項演算。インラインでコンパクトに収まります。",
             description_en: "Minimal binary operation. Compactly fits inline.",
             expression: Expression::Add(AddExpression {
@@ -25,10 +25,10 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "nested_arithmetic",
-            title_ja: "2. ネストした四則演算 ((1 + 2) * (30 + 400) + 5)",
-            title_en: "2. Nested Arithmetic ((1 + 2) * (30 + 400) + 5)",
-            description_ja: "幅が広い場合はインライン、幅を狭めると演算子ごとに改行・インデントされます。",
-            description_en: "Inline when wide, wraps with indentation when narrow.",
+            title_ja: "2. ネストした四則演算 (plus (multiply (plus 1 2) (plus 30 400)) 5)",
+            title_en: "2. Nested Arithmetic (plus (multiply (plus 1 2) (plus 30 400)) 5)",
+            description_ja: "幅が広い場合はインライン括弧表示、幅を狭めると演算子ごとに改行・インデントされます。",
+            description_en: "Inline with parentheses when wide, wraps with indentation when narrow.",
             expression: Expression::Add(AddExpression {
                 left: Box::new(Expression::Multiply(MultiplyExpression {
                     left: Box::new(Expression::Add(AddExpression {
@@ -45,8 +45,8 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "if_expression",
-            title_ja: "3. 条件分岐 (if-then-else)",
-            title_en: "3. Conditional (if-then-else)",
+            title_ja: "3. 条件分岐 (if (greater_than x 10) ...)",
+            title_en: "3. Conditional (if (greater_than x 10) ...)",
             description_ja: "条件式、真の場合、偽の場合を構造的に展開表示します。",
             description_en: "Structural display of condition, then, and else branches.",
             expression: Expression::If(IfExpression {
@@ -64,8 +64,8 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "let_binding",
-            title_ja: "4. 変数定義 (let a = 100 in let b = 200 in a + b)",
-            title_en: "4. Variable Binding (let a = 100 in let b = 200 in a + b)",
+            title_ja: "4. 変数定義 (let a = 100 in let b = 200 in plus a b)",
+            title_en: "4. Variable Binding (let a = 100 in let b = 200 in plus a b)",
             description_ja: "スコープと変数束縛の階層をインデント付きブロックで表現します。",
             description_en: "Scope and variable binding hierarchy with indentation.",
             expression: Expression::Let(LetExpression {
@@ -87,8 +87,8 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "function_and_call",
-            title_ja: "5. 関数定義と呼び出し ((fn x -> x * 2) 21)",
-            title_en: "5. Function Definition and Call ((fn x -> x * 2) 21)",
+            title_ja: "5. 関数定義と呼び出し ((fn x -> multiply x 2) 21)",
+            title_en: "5. Function Definition and Call ((fn x -> multiply x 2) 21)",
             description_ja: "無名関数と実引数の適用関係を表示します。",
             description_en: "Shows lambda abstraction and argument application.",
             expression: Expression::Call(CallExpression {
@@ -180,8 +180,8 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "long_string_concat",
-            title_ja: "7. 長い文字列連結 (折り返しテスト)",
-            title_en: "7. Long String Concat (Wrap Test)",
+            title_ja: "7. 長い文字列連結 (string_concat)",
+            title_en: "7. Long String Concat (string_concat)",
             description_ja: "横に非常に長い式。コンテナ幅を縮めるとどのように折り返されるか検証できます。",
             description_en: "Very wide expression. Test how it wraps when container width shrinks.",
             expression: Expression::StringConcat(StringConcatExpression {
