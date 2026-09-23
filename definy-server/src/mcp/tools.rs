@@ -17,7 +17,7 @@ use serde_json::{Value, json};
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 
-use super::protocol::{Tool, ToolCallResult};
+use super::protocol::ToolCallResult;
 use crate::db::{get_event, get_events, save_event};
 
 pub const AI_AGENT_KEY_SEED: [u8; 32] = *b"definy-mcp-ai-agent-key-2026\0\0\0\0";
@@ -46,182 +46,7 @@ pub async fn build_ui_app_state(db: &Surreal<Any>) -> Result<UiAppState, String>
     ))
 }
 
-pub fn all_tools() -> Vec<Tool> {
-    vec![
-        Tool {
-            name: "list_modules".to_string(),
-            description: "List all modules defined in definy with their name, hash, and description.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {}
-            }),
-        },
-        Tool {
-            name: "list_parts".to_string(),
-            description: "List all parts defined in definy. Supports filtering by module or name.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "module": {
-                        "type": "string",
-                        "description": "Optional module name or module hash to filter by"
-                    },
-                    "name_filter": {
-                        "type": "string",
-                        "description": "Optional substring to search within part names"
-                    }
-                }
-            }),
-        },
-        Tool {
-            name: "get_part".to_string(),
-            description: "Get detailed information about a part, including its AST expression, source code representation, and evaluated value.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "identifier": {
-                        "type": "string",
-                        "description": "Part name or definition event hash (base64 or hex)"
-                    }
-                },
-                "required": ["identifier"]
-            }),
-        },
-        Tool {
-            name: "eval_expression".to_string(),
-            description: "Evaluate a definy expression AST directly. Returns the source code string representation and evaluated runtime Value.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "expression": {
-                        "type": "object",
-                        "description": "Definy AST Expression in JSON format"
-                    }
-                },
-                "required": ["expression"]
-            }),
-        },
-        Tool {
-            name: "eval_part".to_string(),
-            description: "Evaluate the expression of a specified part and return its evaluated value and source code.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "identifier": {
-                        "type": "string",
-                        "description": "Part name or definition event hash"
-                    }
-                },
-                "required": ["identifier"]
-            }),
-        },
-        Tool {
-            name: "create_module".to_string(),
-            description: "Create a new module in definy signed with the AI agent key.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the new module"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Description of the module"
-                    }
-                },
-                "required": ["name", "description"]
-            }),
-        },
-        Tool {
-            name: "create_part".to_string(),
-            description: "Create a new part (function, constant, type, etc.) in definy signed with the AI agent key.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "module": {
-                        "type": "string",
-                        "description": "Module name or module event hash where this part belongs"
-                    },
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the new part"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Description of the new part"
-                    },
-                    "part_type": {
-                        "description": "Optional part type (e.g. \"Number\", \"String\", \"Boolean\", or type AST object)",
-                        "type": ["string", "object", "null"]
-                    },
-                    "expression": {
-                        "type": "object",
-                        "description": "Definy AST Expression in JSON format"
-                    }
-                },
-                "required": ["module", "name", "description", "expression"]
-            }),
-        },
-        Tool {
-            name: "update_part".to_string(),
-            description: "Update an existing part in definy signed with the AI agent key.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "part_identifier": {
-                        "type": "string",
-                        "description": "Part name or definition event hash of the part to update"
-                    },
-                    "name": {
-                        "type": "string",
-                        "description": "Optional new name for the part"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Optional new description for the part"
-                    },
-                    "expression": {
-                        "type": "object",
-                        "description": "Optional new definy AST Expression"
-                    }
-                },
-                "required": ["part_identifier"]
-            }),
-        },
-        Tool {
-            name: "list_events".to_string(),
-            description: "List recent raw events from the definy event store.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of events to return (default: 20)"
-                    },
-                    "offset": {
-                        "type": "integer",
-                        "description": "Offset for pagination (default: 0)"
-                    }
-                }
-            }),
-        },
-        Tool {
-            name: "get_event".to_string(),
-            description: "Get the full JSON representation of an event by its hash.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "hash": {
-                        "type": "string",
-                        "description": "Event hash (URL-safe base64 or hex)"
-                    }
-                },
-                "required": ["hash"]
-            }),
-        },
-    ]
-}
+pub use super::tool_definitions::all_tools;
 
 pub async fn handle_tool_call(
     name: &str,
@@ -470,6 +295,30 @@ async fn tool_eval_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
+async fn sign_and_save_ai_event(
+    content: EventContent,
+    db: &Surreal<Any>,
+) -> Result<EventHashId, String> {
+    let (signing_key, account_id) = get_signing_key_and_account();
+    let event = Event {
+        account_id,
+        time: chrono::Utc::now(),
+        content,
+    };
+    let binary = definy_event::sign_and_serialize(event.clone(), &signing_key)
+        .map_err(|e| format!("Failed to sign event: {:?}", e))?;
+    let hash = EventHashId::from_bytes(&binary);
+    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+    let (sig, _) = definy_event::verify_and_deserialize(&binary)
+        .map_err(|e| format!("Failed to verify event immediately after signing: {:?}", e))?;
+
+    save_event(&event, &sig, &binary, dummy_addr, db)
+        .await
+        .map_err(|e| format!("Failed to save event to DB: {:?}", e))?;
+
+    Ok(hash)
+}
+
 async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     let name = match args.get("name").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
@@ -486,29 +335,15 @@ async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         None => return ToolCallResult::error("Missing 'description' argument"),
     };
 
-    let (signing_key, account_id) = get_signing_key_and_account();
-    let event = Event {
-        account_id,
-        time: chrono::Utc::now(),
-        content: EventContent::ModuleDefinition(ModuleDefinitionEvent {
-            module_name: name.clone().into(),
-            description: Description::Plain(desc.into()),
-        }),
-    };
+    let content = EventContent::ModuleDefinition(ModuleDefinitionEvent {
+        module_name: name.clone().into(),
+        description: Description::Plain(desc.into()),
+    });
 
-    let binary = match definy_event::sign_and_serialize(event.clone(), &signing_key) {
-        Ok(b) => b,
-        Err(e) => return ToolCallResult::error(format!("Failed to sign event: {:?}", e)),
+    let hash = match sign_and_save_ai_event(content, db).await {
+        Ok(h) => h,
+        Err(e) => return ToolCallResult::error(e),
     };
-    let hash = EventHashId::from_bytes(&binary);
-    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let sig = definy_event::verify_and_deserialize(&binary)
-        .map(|(s, _)| s)
-        .unwrap();
-
-    if let Err(e) = save_event(&event, &sig, &binary, dummy_addr, db).await {
-        return ToolCallResult::error(format!("Failed to save event to DB: {:?}", e));
-    }
 
     let res = json!({
         "status": "created",
@@ -569,32 +404,18 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         }
     };
 
-    let (signing_key, account_id) = get_signing_key_and_account();
-    let event = Event {
-        account_id,
-        time: chrono::Utc::now(),
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: name.clone().into(),
-            description: Description::Plain(desc.into()),
-            module_definition_event_hash: module_hash,
-            part_type,
-            expression: Some(expression),
-        }),
-    };
+    let content = EventContent::PartDefinition(PartDefinitionEvent {
+        part_name: name.clone().into(),
+        description: Description::Plain(desc.into()),
+        module_definition_event_hash: module_hash,
+        part_type,
+        expression: Some(expression),
+    });
 
-    let binary = match definy_event::sign_and_serialize(event.clone(), &signing_key) {
-        Ok(b) => b,
-        Err(e) => return ToolCallResult::error(format!("Failed to sign event: {:?}", e)),
+    let hash = match sign_and_save_ai_event(content, db).await {
+        Ok(h) => h,
+        Err(e) => return ToolCallResult::error(e),
     };
-    let hash = EventHashId::from_bytes(&binary);
-    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let sig = definy_event::verify_and_deserialize(&binary)
-        .map(|(s, _)| s)
-        .unwrap();
-
-    if let Err(e) = save_event(&event, &sig, &binary, dummy_addr, db).await {
-        return ToolCallResult::error(format!("Failed to save event to DB: {:?}", e));
-    }
 
     let res = json!({
         "status": "created",
@@ -650,32 +471,18 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         part.expression.clone()
     };
 
-    let (signing_key, account_id) = get_signing_key_and_account();
-    let event = Event {
-        account_id,
-        time: chrono::Utc::now(),
-        content: EventContent::PartUpdate(PartUpdateEvent {
-            part_definition_event_hash: part.definition_event_hash.clone(),
-            part_name,
-            part_description,
-            expression: final_expression,
-            module_definition_event_hash: part.module_definition_event_hash.clone(),
-        }),
-    };
+    let content = EventContent::PartUpdate(PartUpdateEvent {
+        part_definition_event_hash: part.definition_event_hash.clone(),
+        part_name,
+        part_description,
+        expression: final_expression,
+        module_definition_event_hash: part.module_definition_event_hash.clone(),
+    });
 
-    let binary = match definy_event::sign_and_serialize(event.clone(), &signing_key) {
-        Ok(b) => b,
-        Err(e) => return ToolCallResult::error(format!("Failed to sign event: {:?}", e)),
+    let hash = match sign_and_save_ai_event(content, db).await {
+        Ok(h) => h,
+        Err(e) => return ToolCallResult::error(e),
     };
-    let hash = EventHashId::from_bytes(&binary);
-    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let sig = definy_event::verify_and_deserialize(&binary)
-        .map(|(s, _)| s)
-        .unwrap();
-
-    if let Err(e) = save_event(&event, &sig, &binary, dummy_addr, db).await {
-        return ToolCallResult::error(format!("Failed to save event to DB: {:?}", e));
-    }
 
     let res = json!({
         "status": "updated",

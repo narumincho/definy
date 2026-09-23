@@ -482,23 +482,27 @@ fn update_part_type_at_depth(
     selected: &str,
 ) {
     if depth == 0 {
-        *part_type = next_part_type_from_selected(state, selected, part_type);
+        *part_type = if selected == "none" {
+            None
+        } else {
+            Some(resolve_part_type(state, selected, part_type.as_ref()))
+        };
         return;
     }
 
-    match part_type {
-        Some(definy_event::event::PartType::List(item_type)) => {
-            update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
-        }
+    let list_inner = match part_type {
+        Some(definy_event::event::PartType::List(inner)) => inner,
         _ => {
             *part_type = Some(definy_event::event::PartType::List(Box::new(
                 definy_event::event::PartType::Number,
             )));
-            if let Some(definy_event::event::PartType::List(item_type)) = part_type {
-                update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
+            match part_type {
+                Some(definy_event::event::PartType::List(inner)) => inner,
+                _ => unreachable!(),
             }
         }
-    }
+    };
+    update_part_type_nested(state, list_inner.as_mut(), depth - 1, selected);
 }
 
 fn update_part_type_nested(
@@ -508,75 +512,29 @@ fn update_part_type_nested(
     selected: &str,
 ) {
     if depth == 0 {
-        *part_type = next_nested_part_type_from_selected(state, selected, part_type);
+        *part_type = resolve_part_type(state, selected, Some(part_type));
         return;
     }
 
-    match part_type {
-        definy_event::event::PartType::List(item_type) => {
-            update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
-        }
+    let list_inner = match part_type {
+        definy_event::event::PartType::List(inner) => inner,
         _ => {
             *part_type = definy_event::event::PartType::List(Box::new(
                 definy_event::event::PartType::Number,
             ));
-            if let definy_event::event::PartType::List(item_type) = part_type {
-                update_part_type_nested(state, item_type.as_mut(), depth - 1, selected);
+            match part_type {
+                definy_event::event::PartType::List(inner) => inner,
+                _ => unreachable!(),
             }
         }
-    }
+    };
+    update_part_type_nested(state, list_inner.as_mut(), depth - 1, selected);
 }
 
-fn next_part_type_from_selected(
+fn resolve_part_type(
     state: &AppState,
     selected: &str,
-    current: &Option<definy_event::event::PartType>,
-) -> Option<definy_event::event::PartType> {
-    if selected == "none" {
-        return None;
-    }
-    if let Some(encoded) = selected.strip_prefix("type_part:")
-        && let Ok(hash) = EventHashId::from_str(encoded)
-    {
-        if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash) {
-            return match snapshot.part_name.as_str() {
-                "number" | "Number" => Some(definy_event::event::PartType::Number),
-                "string" | "String" => Some(definy_event::event::PartType::String),
-                "boolean" | "Boolean" => Some(definy_event::event::PartType::Boolean),
-                "type" | "Type" => Some(definy_event::event::PartType::Type),
-                "list" | "List" => match current {
-                    Some(definy_event::event::PartType::List(item_type)) => Some(
-                        definy_event::event::PartType::List(Box::new(item_type.as_ref().clone())),
-                    ),
-                    _ => Some(definy_event::event::PartType::List(Box::new(
-                        definy_event::event::PartType::Number,
-                    ))),
-                },
-                _ => Some(definy_event::event::PartType::TypePart(hash)),
-            };
-        }
-        return Some(definy_event::event::PartType::TypePart(hash));
-    }
-    match selected {
-        "string" => Some(definy_event::event::PartType::String),
-        "boolean" => Some(definy_event::event::PartType::Boolean),
-        "type" => Some(definy_event::event::PartType::Type),
-        "list" => match current {
-            Some(definy_event::event::PartType::List(item_type)) => Some(
-                definy_event::event::PartType::List(Box::new(item_type.as_ref().clone())),
-            ),
-            _ => Some(definy_event::event::PartType::List(Box::new(
-                definy_event::event::PartType::Number,
-            ))),
-        },
-        _ => Some(definy_event::event::PartType::Number),
-    }
-}
-
-fn next_nested_part_type_from_selected(
-    state: &AppState,
-    selected: &str,
-    current: &definy_event::event::PartType,
+    current: Option<&definy_event::event::PartType>,
 ) -> definy_event::event::PartType {
     if let Some(encoded) = selected.strip_prefix("type_part:")
         && let Ok(hash) = EventHashId::from_str(encoded)
@@ -587,14 +545,13 @@ fn next_nested_part_type_from_selected(
                 "string" | "String" => definy_event::event::PartType::String,
                 "boolean" | "Boolean" => definy_event::event::PartType::Boolean,
                 "type" | "Type" => definy_event::event::PartType::Type,
-                "list" | "List" => match current {
-                    definy_event::event::PartType::List(item_type) => {
-                        definy_event::event::PartType::List(Box::new(item_type.as_ref().clone()))
-                    }
-                    _ => definy_event::event::PartType::List(Box::new(
-                        definy_event::event::PartType::Number,
-                    )),
-                },
+                "list" | "List" => {
+                    let sub = match current {
+                        Some(definy_event::event::PartType::List(sub)) => sub.as_ref().clone(),
+                        _ => definy_event::event::PartType::Number,
+                    };
+                    definy_event::event::PartType::List(Box::new(sub))
+                }
                 _ => definy_event::event::PartType::TypePart(hash),
             };
         }
@@ -604,14 +561,13 @@ fn next_nested_part_type_from_selected(
         "string" => definy_event::event::PartType::String,
         "boolean" => definy_event::event::PartType::Boolean,
         "type" => definy_event::event::PartType::Type,
-        "list" => match current {
-            definy_event::event::PartType::List(item_type) => {
-                definy_event::event::PartType::List(Box::new(item_type.as_ref().clone()))
-            }
-            _ => {
-                definy_event::event::PartType::List(Box::new(definy_event::event::PartType::Number))
-            }
-        },
+        "list" => {
+            let sub = match current {
+                Some(definy_event::event::PartType::List(sub)) => sub.as_ref().clone(),
+                _ => definy_event::event::PartType::Number,
+            };
+            definy_event::event::PartType::List(Box::new(sub))
+        }
         _ => definy_event::event::PartType::Number,
     }
 }

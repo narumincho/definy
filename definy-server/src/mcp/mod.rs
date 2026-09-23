@@ -1,6 +1,7 @@
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
+pub mod tool_definitions;
 pub mod tools;
 
 use std::collections::HashMap;

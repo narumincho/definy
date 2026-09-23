@@ -7,6 +7,151 @@ use crate::app_state::{AppState, PathStep};
 use super::get_mut_expression_at_path;
 use super::variables::next_local_variable_id;
 
+use definy_event::event::*;
+
+fn num(value: i64) -> Box<Expression> {
+    Box::new(Expression::Number(NumberExpression { value }))
+}
+
+fn bool_expr(value: bool) -> Box<Expression> {
+    Box::new(Expression::Boolean(BooleanExpression { value }))
+}
+
+fn str_expr(value: &str) -> Box<Expression> {
+    Box::new(Expression::String(StringExpression {
+        value: value.into(),
+    }))
+}
+
+fn empty_list() -> Box<Expression> {
+    Box::new(Expression::ListLiteral(ListLiteralExpression {
+        items: Vec::new(),
+    }))
+}
+
+fn var_expr(variable_id: i64) -> Box<Expression> {
+    Box::new(Expression::Variable(VariableExpression { variable_id }))
+}
+
+pub(crate) fn default_expression_for_compiler_builtin(
+    builtin: CompilerBuiltin,
+    next_variable_id: i64,
+) -> Expression {
+    match builtin {
+        CompilerBuiltin::Plus => Expression::Add(AddExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::Minus => Expression::Subtract(SubtractExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::Multiply => Expression::Multiply(MultiplyExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::Divide => Expression::Divide(DivideExpression {
+            left: num(0),
+            right: num(1),
+        }),
+        CompilerBuiltin::Remainder => Expression::Remainder(RemainderExpression {
+            left: num(0),
+            right: num(1),
+        }),
+        CompilerBuiltin::Equal => Expression::Equal(EqualExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::NotEqual => Expression::NotEqual(NotEqualExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::LessThan => Expression::LessThan(LessThanExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::LessThanOrEqual => {
+            Expression::LessThanOrEqual(LessThanOrEqualExpression {
+                left: num(0),
+                right: num(0),
+            })
+        }
+        CompilerBuiltin::GreaterThan => Expression::GreaterThan(GreaterThanExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::GreaterThanOrEqual => {
+            Expression::GreaterThanOrEqual(GreaterThanOrEqualExpression {
+                left: num(0),
+                right: num(0),
+            })
+        }
+        CompilerBuiltin::Not => Expression::Not(NotExpression {
+            value: bool_expr(false),
+        }),
+        CompilerBuiltin::And => Expression::And(AndExpression {
+            left: bool_expr(true),
+            right: bool_expr(true),
+        }),
+        CompilerBuiltin::Or => Expression::Or(OrExpression {
+            left: bool_expr(false),
+            right: bool_expr(false),
+        }),
+        CompilerBuiltin::StringConcat => Expression::StringConcat(StringConcatExpression {
+            left: str_expr(""),
+            right: str_expr(""),
+        }),
+        CompilerBuiltin::StringLength => Expression::StringLength(StringLengthExpression {
+            value: str_expr(""),
+        }),
+        CompilerBuiltin::StringSlice => Expression::StringSlice(StringSliceExpression {
+            value: str_expr(""),
+            start: num(0),
+            end: num(0),
+        }),
+        CompilerBuiltin::ListLength => Expression::ListLength(ListLengthExpression {
+            value: empty_list(),
+        }),
+        CompilerBuiltin::ListConcat => Expression::ListConcat(ListConcatExpression {
+            left: empty_list(),
+            right: empty_list(),
+        }),
+        CompilerBuiltin::ListGet => Expression::ListGet(ListGetExpression {
+            list: empty_list(),
+            index: num(0),
+        }),
+        CompilerBuiltin::ListAppend => Expression::ListAppend(ListAppendExpression {
+            list: empty_list(),
+            item: num(0),
+        }),
+        CompilerBuiltin::NumberLiteral => Expression::Number(NumberExpression { value: 0 }),
+        CompilerBuiltin::If => Expression::If(IfExpression {
+            condition: bool_expr(false),
+            then_expr: num(0),
+            else_expr: num(0),
+        }),
+        CompilerBuiltin::Let => Expression::Let(LetExpression {
+            variable_id: next_variable_id,
+            variable_name: "x".into(),
+            value: num(0),
+            body: var_expr(next_variable_id),
+        }),
+        CompilerBuiltin::Function => Expression::Function(FunctionExpression {
+            parameter_id: next_variable_id,
+            parameter_name: "x".into(),
+            body: var_expr(next_variable_id),
+        }),
+        CompilerBuiltin::Call => Expression::Call(CallExpression {
+            function: Box::new(Expression::Function(FunctionExpression {
+                parameter_id: next_variable_id,
+                parameter_name: "x".into(),
+                body: var_expr(next_variable_id),
+            })),
+            argument: num(0),
+        }),
+    }
+}
+
 pub(crate) fn build_expression_from_selection(
     state: &AppState,
     selected_value: &str,
@@ -14,632 +159,118 @@ pub(crate) fn build_expression_from_selection(
     constructor_default: Option<(EventHashId, definy_event::event::Expression)>,
     current_expr: &definy_event::event::Expression,
 ) -> definy_event::event::Expression {
-    if selected_value == "expr:number" {
-        definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 0 })
-    } else if selected_value == "expr:string" {
-        definy_event::event::Expression::String(definy_event::event::StringExpression {
-            value: "".into(),
-        })
-    } else if selected_value == "expr:type:number" {
-        definy_event::event::Expression::TypeNumber
-    } else if selected_value == "expr:type:string" {
-        definy_event::event::Expression::TypeString
-    } else if selected_value == "expr:type:boolean" {
-        definy_event::event::Expression::TypeBoolean
-    } else if selected_value == "expr:type:list" {
-        definy_event::event::Expression::TypeList(definy_event::event::TypeListExpression {
-            item_type: Box::new(definy_event::event::Expression::TypeString),
-        })
-    } else if selected_value == "expr:list" {
-        definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
-            items: vec![definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )],
-        })
-    } else if selected_value == "expr:boolean" {
-        definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
-            value: false,
-        })
-    } else if selected_value == "expr:add" {
-        definy_event::event::Expression::Add(definy_event::event::AddExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:subtract" || selected_value == "expr:minus" {
-        definy_event::event::Expression::Subtract(definy_event::event::SubtractExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:multiply" {
-        definy_event::event::Expression::Multiply(definy_event::event::MultiplyExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:divide" {
-        definy_event::event::Expression::Divide(definy_event::event::DivideExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 1 },
-            )),
-        })
-    } else if selected_value == "expr:remainder" {
-        definy_event::event::Expression::Remainder(definy_event::event::RemainderExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 1 },
-            )),
-        })
-    } else if selected_value == "expr:equal" {
-        definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:not_equal" {
-        definy_event::event::Expression::NotEqual(definy_event::event::NotEqualExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:less_than" {
-        definy_event::event::Expression::LessThan(definy_event::event::LessThanExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:less_than_or_equal" {
-        definy_event::event::Expression::LessThanOrEqual(
-            definy_event::event::LessThanOrEqualExpression {
-                left: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-                right: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-            },
-        )
-    } else if selected_value == "expr:greater_than" {
-        definy_event::event::Expression::GreaterThan(definy_event::event::GreaterThanExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:greater_than_or_equal" {
-        definy_event::event::Expression::GreaterThanOrEqual(
-            definy_event::event::GreaterThanOrEqualExpression {
-                left: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-                right: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
-            },
-        )
-    } else if selected_value == "expr:not" {
-        definy_event::event::Expression::Not(definy_event::event::NotExpression {
-            value: Box::new(definy_event::event::Expression::Boolean(
-                definy_event::event::BooleanExpression { value: false },
-            )),
-        })
-    } else if selected_value == "expr:and" {
-        definy_event::event::Expression::And(definy_event::event::AndExpression {
-            left: Box::new(definy_event::event::Expression::Boolean(
-                definy_event::event::BooleanExpression { value: true },
-            )),
-            right: Box::new(definy_event::event::Expression::Boolean(
-                definy_event::event::BooleanExpression { value: true },
-            )),
-        })
-    } else if selected_value == "expr:or" {
-        definy_event::event::Expression::Or(definy_event::event::OrExpression {
-            left: Box::new(definy_event::event::Expression::Boolean(
-                definy_event::event::BooleanExpression { value: false },
-            )),
-            right: Box::new(definy_event::event::Expression::Boolean(
-                definy_event::event::BooleanExpression { value: false },
-            )),
-        })
-    } else if selected_value == "expr:string_concat" {
-        definy_event::event::Expression::StringConcat(definy_event::event::StringConcatExpression {
-            left: Box::new(definy_event::event::Expression::String(
-                definy_event::event::StringExpression { value: "".into() },
-            )),
-            right: Box::new(definy_event::event::Expression::String(
-                definy_event::event::StringExpression { value: "".into() },
-            )),
-        })
-    } else if selected_value == "expr:string_length" {
-        definy_event::event::Expression::StringLength(definy_event::event::StringLengthExpression {
-            value: Box::new(definy_event::event::Expression::String(
-                definy_event::event::StringExpression { value: "".into() },
-            )),
-        })
-    } else if selected_value == "expr:string_slice" {
-        definy_event::event::Expression::StringSlice(definy_event::event::StringSliceExpression {
-            value: Box::new(definy_event::event::Expression::String(
-                definy_event::event::StringExpression { value: "".into() },
-            )),
-            start: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            end: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:list_length" {
-        definy_event::event::Expression::ListLength(definy_event::event::ListLengthExpression {
-            value: Box::new(definy_event::event::Expression::ListLiteral(
-                definy_event::event::ListLiteralExpression { items: Vec::new() },
-            )),
-        })
-    } else if selected_value == "expr:list_concat" {
-        definy_event::event::Expression::ListConcat(definy_event::event::ListConcatExpression {
-            left: Box::new(definy_event::event::Expression::ListLiteral(
-                definy_event::event::ListLiteralExpression { items: Vec::new() },
-            )),
-            right: Box::new(definy_event::event::Expression::ListLiteral(
-                definy_event::event::ListLiteralExpression { items: Vec::new() },
-            )),
-        })
-    } else if selected_value == "expr:list_get" {
-        definy_event::event::Expression::ListGet(definy_event::event::ListGetExpression {
-            list: Box::new(definy_event::event::Expression::ListLiteral(
-                definy_event::event::ListLiteralExpression { items: Vec::new() },
-            )),
-            index: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:list_append" {
-        definy_event::event::Expression::ListAppend(definy_event::event::ListAppendExpression {
-            list: Box::new(definy_event::event::Expression::ListLiteral(
-                definy_event::event::ListLiteralExpression { items: Vec::new() },
-            )),
-            item: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:if" {
-        definy_event::event::Expression::If(definy_event::event::IfExpression {
-            condition: Box::new(definy_event::event::Expression::Boolean(
-                definy_event::event::BooleanExpression { value: false },
-            )),
-            then_expr: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            else_expr: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:let" {
-        definy_event::event::Expression::Let(definy_event::event::LetExpression {
-            variable_id: next_variable_id,
-            variable_name: "x".into(),
-            value: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            body: Box::new(definy_event::event::Expression::Variable(
-                definy_event::event::VariableExpression {
-                    variable_id: next_variable_id,
-                },
-            )),
-        })
-    } else if selected_value == "expr:type_literal" {
-        definy_event::event::Expression::TypeLiteral(definy_event::event::TypeLiteralExpression {
-            items: vec![definy_event::event::TypeLiteralItemExpression {
+    let builtin_opt = match selected_value {
+        "expr:number" => Some(CompilerBuiltin::NumberLiteral),
+        "expr:add" => Some(CompilerBuiltin::Plus),
+        "expr:subtract" | "expr:minus" => Some(CompilerBuiltin::Minus),
+        "expr:multiply" => Some(CompilerBuiltin::Multiply),
+        "expr:divide" => Some(CompilerBuiltin::Divide),
+        "expr:remainder" => Some(CompilerBuiltin::Remainder),
+        "expr:equal" => Some(CompilerBuiltin::Equal),
+        "expr:not_equal" => Some(CompilerBuiltin::NotEqual),
+        "expr:less_than" => Some(CompilerBuiltin::LessThan),
+        "expr:less_than_or_equal" => Some(CompilerBuiltin::LessThanOrEqual),
+        "expr:greater_than" => Some(CompilerBuiltin::GreaterThan),
+        "expr:greater_than_or_equal" => Some(CompilerBuiltin::GreaterThanOrEqual),
+        "expr:not" => Some(CompilerBuiltin::Not),
+        "expr:and" => Some(CompilerBuiltin::And),
+        "expr:or" => Some(CompilerBuiltin::Or),
+        "expr:string_concat" => Some(CompilerBuiltin::StringConcat),
+        "expr:string_length" => Some(CompilerBuiltin::StringLength),
+        "expr:string_slice" => Some(CompilerBuiltin::StringSlice),
+        "expr:list_length" => Some(CompilerBuiltin::ListLength),
+        "expr:list_concat" => Some(CompilerBuiltin::ListConcat),
+        "expr:list_get" => Some(CompilerBuiltin::ListGet),
+        "expr:list_append" => Some(CompilerBuiltin::ListAppend),
+        "expr:if" => Some(CompilerBuiltin::If),
+        "expr:let" => Some(CompilerBuiltin::Let),
+        "expr:function" => Some(CompilerBuiltin::Function),
+        "expr:call" => Some(CompilerBuiltin::Call),
+        _ => None,
+    };
+
+    if let Some(builtin) = builtin_opt {
+        return default_expression_for_compiler_builtin(builtin, next_variable_id);
+    }
+
+    match selected_value {
+        "expr:string" => Expression::String(StringExpression { value: "".into() }),
+        "expr:boolean" => Expression::Boolean(BooleanExpression { value: false }),
+        "expr:list" => Expression::ListLiteral(ListLiteralExpression {
+            items: vec![Expression::Number(NumberExpression { value: 0 })],
+        }),
+        "expr:type:number" => Expression::TypeNumber,
+        "expr:type:string" => Expression::TypeString,
+        "expr:type:boolean" => Expression::TypeBoolean,
+        "expr:type:list" => Expression::TypeList(TypeListExpression {
+            item_type: Box::new(Expression::TypeString),
+        }),
+        "expr:type_literal" => Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![TypeLiteralItemExpression {
                 key: "key".into(),
-                value: Box::new(definy_event::event::Expression::TypeString),
+                value: Box::new(Expression::TypeString),
             }],
-        })
-    } else if selected_value == "expr:function" {
-        definy_event::event::Expression::Function(definy_event::event::FunctionExpression {
-            parameter_id: next_variable_id,
-            parameter_name: "x".into(),
-            body: Box::new(definy_event::event::Expression::Variable(
-                definy_event::event::VariableExpression {
-                    variable_id: next_variable_id,
-                },
-            )),
-        })
-    } else if selected_value == "expr:call" {
-        definy_event::event::Expression::Call(definy_event::event::CallExpression {
-            function: Box::new(definy_event::event::Expression::Function(
-                definy_event::event::FunctionExpression {
-                    parameter_id: next_variable_id,
-                    parameter_name: "x".into(),
-                    body: Box::new(definy_event::event::Expression::Variable(
-                        definy_event::event::VariableExpression {
-                            variable_id: next_variable_id,
-                        },
-                    )),
-                },
-            )),
-            argument: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-        })
-    } else if selected_value == "expr:type:function" {
-        definy_event::event::Expression::TypeFunction(definy_event::event::TypeFunctionExpression {
-            parameter: Box::new(definy_event::event::Expression::TypeNumber),
-            return_type: Box::new(definy_event::event::Expression::TypeNumber),
-        })
-    } else if selected_value == "expr:type:union" {
-        definy_event::event::Expression::TypeUnion(definy_event::event::TypeUnionExpression {
+        }),
+        "expr:type:function" => Expression::TypeFunction(TypeFunctionExpression {
+            parameter: Box::new(Expression::TypeNumber),
+            return_type: Box::new(Expression::TypeNumber),
+        }),
+        "expr:type:union" => Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
-                definy_event::event::TypeUnionVariant {
+                TypeUnionVariant {
                     tag: "A".into(),
                     payload_type: None,
                 },
-                definy_event::event::TypeUnionVariant {
+                TypeUnionVariant {
                     tag: "B".into(),
                     payload_type: None,
                 },
             ],
-        })
-    } else if selected_value == "expr:variant" {
-        definy_event::event::Expression::Variant(definy_event::event::VariantExpression {
+        }),
+        "expr:variant" => Expression::Variant(VariantExpression {
             tag: "A".into(),
             payload: None,
             type_part_definition_event_hash: None,
-        })
-    } else if selected_value == "expr:match" {
-        definy_event::event::Expression::Match(definy_event::event::MatchExpression {
-            target: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            )),
-            arms: vec![definy_event::event::MatchArm {
+        }),
+        "expr:match" => Expression::Match(MatchExpression {
+            target: num(0),
+            arms: vec![MatchArm {
                 tag: "A".into(),
                 variable_id: None,
                 variable_name: None,
-                body: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 0 },
-                )),
+                body: num(0),
             }],
-            default: Some(Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 0 },
-            ))),
-        })
-    } else if let Some((type_part_definition_event_hash, default_value)) = constructor_default {
-        definy_event::event::Expression::Constructor(definy_event::event::ConstructorExpression {
-            type_part_definition_event_hash,
-            value: Box::new(default_value),
-        })
-    } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
-        if let Ok(hash) = EventHashId::from_str(encoded) {
-            if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash) {
-                match snapshot.expression.as_ref() {
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Plus,
-                    )) => {
-                        definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        })
+            default: Some(num(0)),
+        }),
+        _ => {
+            if let Some((type_part_definition_event_hash, default_value)) = constructor_default {
+                Expression::Constructor(ConstructorExpression {
+                    type_part_definition_event_hash,
+                    value: Box::new(default_value),
+                })
+            } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
+                if let Ok(hash) = EventHashId::from_str(encoded) {
+                    if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash)
+                        && let Some(Expression::Compiler(builtin)) = snapshot.expression.as_ref()
+                    {
+                        return default_expression_for_compiler_builtin(*builtin, next_variable_id);
                     }
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Minus,
-                    )) => definy_event::event::Expression::Subtract(
-                        definy_event::event::SubtractExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Multiply,
-                    )) => definy_event::event::Expression::Multiply(
-                        definy_event::event::MultiplyExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Divide,
-                    )) => definy_event::event::Expression::Divide(
-                        definy_event::event::DivideExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 1 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Remainder,
-                    )) => definy_event::event::Expression::Remainder(
-                        definy_event::event::RemainderExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 1 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::LessThan,
-                    )) => definy_event::event::Expression::LessThan(
-                        definy_event::event::LessThanExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::LessThanOrEqual,
-                    )) => definy_event::event::Expression::LessThanOrEqual(
-                        definy_event::event::LessThanOrEqualExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::GreaterThan,
-                    )) => definy_event::event::Expression::GreaterThan(
-                        definy_event::event::GreaterThanExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
-                    )) => definy_event::event::Expression::GreaterThanOrEqual(
-                        definy_event::event::GreaterThanOrEqualExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::NotEqual,
-                    )) => definy_event::event::Expression::NotEqual(
-                        definy_event::event::NotEqualExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Not,
-                    )) => {
-                        definy_event::event::Expression::Not(definy_event::event::NotExpression {
-                            value: Box::new(definy_event::event::Expression::Boolean(
-                                definy_event::event::BooleanExpression { value: false },
-                            )),
-                        })
-                    }
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::And,
-                    )) => {
-                        definy_event::event::Expression::And(definy_event::event::AndExpression {
-                            left: Box::new(definy_event::event::Expression::Boolean(
-                                definy_event::event::BooleanExpression { value: true },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Boolean(
-                                definy_event::event::BooleanExpression { value: true },
-                            )),
-                        })
-                    }
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Or,
-                    )) => definy_event::event::Expression::Or(definy_event::event::OrExpression {
-                        left: Box::new(definy_event::event::Expression::Boolean(
-                            definy_event::event::BooleanExpression { value: false },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Boolean(
-                            definy_event::event::BooleanExpression { value: false },
-                        )),
-                    }),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Let,
-                    )) => {
-                        definy_event::event::Expression::Let(definy_event::event::LetExpression {
-                            variable_id: next_variable_id,
-                            variable_name: "x".into(),
-                            value: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            body: Box::new(definy_event::event::Expression::Variable(
-                                definy_event::event::VariableExpression {
-                                    variable_id: next_variable_id,
-                                },
-                            )),
-                        })
-                    }
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::NumberLiteral,
-                    )) => definy_event::event::Expression::Number(
-                        definy_event::event::NumberExpression { value: 0 },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::If,
-                    )) => definy_event::event::Expression::If(definy_event::event::IfExpression {
-                        condition: Box::new(definy_event::event::Expression::Boolean(
-                            definy_event::event::BooleanExpression { value: false },
-                        )),
-                        then_expr: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                        else_expr: Box::new(definy_event::event::Expression::Number(
-                            definy_event::event::NumberExpression { value: 0 },
-                        )),
-                    }),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::Equal,
-                    )) => definy_event::event::Expression::Equal(
-                        definy_event::event::EqualExpression {
-                            left: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            right: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::StringConcat,
-                    )) => definy_event::event::Expression::StringConcat(
-                        definy_event::event::StringConcatExpression {
-                            left: Box::new(definy_event::event::Expression::String(
-                                definy_event::event::StringExpression { value: "".into() },
-                            )),
-                            right: Box::new(definy_event::event::Expression::String(
-                                definy_event::event::StringExpression { value: "".into() },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::StringLength,
-                    )) => definy_event::event::Expression::StringLength(
-                        definy_event::event::StringLengthExpression {
-                            value: Box::new(definy_event::event::Expression::String(
-                                definy_event::event::StringExpression { value: "".into() },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::StringSlice,
-                    )) => definy_event::event::Expression::StringSlice(
-                        definy_event::event::StringSliceExpression {
-                            value: Box::new(definy_event::event::Expression::String(
-                                definy_event::event::StringExpression { value: "".into() },
-                            )),
-                            start: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                            end: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListLength,
-                    )) => definy_event::event::Expression::ListLength(
-                        definy_event::event::ListLengthExpression {
-                            value: Box::new(definy_event::event::Expression::ListLiteral(
-                                definy_event::event::ListLiteralExpression { items: Vec::new() },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListConcat,
-                    )) => definy_event::event::Expression::ListConcat(
-                        definy_event::event::ListConcatExpression {
-                            left: Box::new(definy_event::event::Expression::ListLiteral(
-                                definy_event::event::ListLiteralExpression { items: Vec::new() },
-                            )),
-                            right: Box::new(definy_event::event::Expression::ListLiteral(
-                                definy_event::event::ListLiteralExpression { items: Vec::new() },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListGet,
-                    )) => definy_event::event::Expression::ListGet(
-                        definy_event::event::ListGetExpression {
-                            list: Box::new(definy_event::event::Expression::ListLiteral(
-                                definy_event::event::ListLiteralExpression { items: Vec::new() },
-                            )),
-                            index: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    Some(definy_event::event::Expression::Compiler(
-                        definy_event::event::CompilerBuiltin::ListAppend,
-                    )) => definy_event::event::Expression::ListAppend(
-                        definy_event::event::ListAppendExpression {
-                            list: Box::new(definy_event::event::Expression::ListLiteral(
-                                definy_event::event::ListLiteralExpression { items: Vec::new() },
-                            )),
-                            item: Box::new(definy_event::event::Expression::Number(
-                                definy_event::event::NumberExpression { value: 0 },
-                            )),
-                        },
-                    ),
-                    _ => definy_event::event::Expression::PartReference(
-                        definy_event::event::PartReferenceExpression {
-                            part_definition_event_hash: hash,
-                        },
-                    ),
+                    Expression::PartReference(PartReferenceExpression {
+                        part_definition_event_hash: hash,
+                    })
+                } else {
+                    current_expr.clone()
+                }
+            } else if let Some(local_id_str) = selected_value.strip_prefix("ref:local:") {
+                if let Ok(variable_id) = local_id_str.parse::<i64>() {
+                    Expression::Variable(VariableExpression { variable_id })
+                } else {
+                    current_expr.clone()
                 }
             } else {
-                definy_event::event::Expression::PartReference(
-                    definy_event::event::PartReferenceExpression {
-                        part_definition_event_hash: hash,
-                    },
-                )
+                current_expr.clone()
             }
-        } else {
-            current_expr.clone()
         }
-    } else if let Some(local_id_str) = selected_value.strip_prefix("ref:local:") {
-        if let Ok(variable_id) = local_id_str.parse::<i64>() {
-            definy_event::event::Expression::Variable(definy_event::event::VariableExpression {
-                variable_id,
-            })
-        } else {
-            current_expr.clone()
-        }
-    } else {
-        current_expr.clone()
     }
 }
 
