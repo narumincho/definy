@@ -5,11 +5,11 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_editor::{part_type_to_expression_type, render_root_expression_editor};
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
+use crate::tree_layout::ExpressionTreeViewer;
 
 #[component]
 pub fn PartDetailView(
@@ -128,10 +128,6 @@ fn PartEditorCard(
     );
 
     let is_logged_in = state.current_key.is_some();
-    let expected_type = snapshot
-        .part_type
-        .as_ref()
-        .map(part_type_to_expression_type);
 
     rsx! {
         div {
@@ -186,14 +182,7 @@ fn PartEditorCard(
                 div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
                     "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
                 }
-                {
-                    render_root_expression_editor(
-                        &state,
-                        &context,
-                        &expression.read(),
-                        expected_type,
-                    )
-                }
+                ExpressionTreeViewer { expression: expression.read().clone() }
                 {
                     let expr_str = expression
                         .read()

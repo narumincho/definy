@@ -1,19 +1,11 @@
 use dioxus::prelude::*;
 
 use crate::app_state::AppState;
-use crate::expression_editor::render_root_expression_editor;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 use crate::tree_layout::{
     LayoutOptions, TreeLayoutRenderer, all_samples, compute_layout, expression_to_layout_node,
 };
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum ViewMode {
-    Split,
-    NewEngineOnly,
-    OldUiOnly,
-}
 
 #[component]
 pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
@@ -22,7 +14,6 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
 
     let mut selected_sample_id = use_signal(|| "nested_arithmetic".to_string());
     let mut container_width = use_signal(|| 580.0f32);
-    let mut view_mode = use_signal(|| ViewMode::Split);
     let mut show_debug = use_signal(|| false);
     let selected_node_id = use_signal(|| None::<String>);
     let hovered_node_id = use_signal(|| None::<String>);
@@ -89,29 +80,14 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
         "-- または作成済みパーツから選択 --",
         "-- Aŭ elektu el partoj --",
     );
-    let view_mode_text = language.label("View Mode:", "表示モード:", "Reĝimo:");
     let debug_btn_text = language.label("Debug Info", "デバッグ情報", "Sencimiga info");
     let new_engine_title = language.label(
-        "New Dynamic Layout Engine (Custom)",
-        "新レイアウトエンジン (自作)",
-        "Nova Dinamika Aranĝo",
-    );
-    let old_ui_title = language.label(
-        "Current Card-Based UI (For Comparison)",
-        "現行のカード式UI (比較対象)",
-        "Aktuala Karta UI",
+        "Dynamic Tree Layout Engine",
+        "木構造レイアウトエンジン",
+        "Dinamika Arba Aranĝo",
     );
     let width_bounded_text =
         language.label("Width bounded box", "幅制限付きコンテナ", "Larĝo-limigita");
-    let nested_cards_text = language.label(
-        "Recursive nested cards",
-        "再帰的な入れ子カード",
-        "Rikursaj kartoj",
-    );
-
-    let split_label = language.label("Split (Compare)", "比較 (Split)", "Kompari");
-    let new_only_label = language.label("New Engine Only", "新レイアウトのみ", "Nova nura");
-    let old_only_label = language.label("Current UI Only", "現行UIのみ", "Malnova nura");
 
     let debug_btn_bg = if show_debug() {
         "rgb(124 192 216 / 0.2)"
@@ -273,34 +249,8 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                     }
                 }
 
-                // 表示モード & デバッグトグル
-                div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 0.6rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.4rem;",
-                        div { style: "font-size: 0.8rem; color: var(--text-secondary); margin-right: 0.3rem;",
-                            "{view_mode_text}"
-                        }
-                        for (mode, label) in [
-                            (ViewMode::Split, split_label),
-                            (ViewMode::NewEngineOnly, new_only_label),
-                            (ViewMode::OldUiOnly, old_only_label),
-                        ]
-                        {
-                            {
-                                let is_active = view_mode() == mode;
-                                let bg = if is_active { "var(--primary)" } else { "rgb(255 255 255 / 0.05)" };
-                                let fg = if is_active { "#0e1720" } else { "var(--text)" };
-                                rsx! {
-                                    button {
-                                        key: "{label}",
-                                        r#type: "button",
-                                        style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 500; border-radius: var(--radius-sm); border: 1px solid var(--border); background: {bg}; color: {fg}; cursor: pointer;",
-                                        onclick: move |_| view_mode.set(mode),
-                                        "{label}"
-                                    }
-                                }
-                            }
-                        }
-                    }
+                // デバッグトグル
+                div { style: "display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid var(--border); padding-top: 0.6rem;",
                     button {
                         r#type: "button",
                         style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: {debug_btn_bg}; cursor: pointer;",
@@ -342,45 +292,22 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                 }
             }
 
-            // プレビュー表示エリア
-            div { style: "display: grid; gap: 1.2rem;",
-                // 新レイアウトエンジン表示
-                if view_mode() == ViewMode::Split || view_mode() == ViewMode::NewEngineOnly {
-                    div { style: "display: grid; gap: 0.4rem;",
-                        div { style: "display: flex; justify-content: space-between; align-items: center;",
-                            div { style: "font-weight: 600; font-size: 0.95rem; color: #86efac; display: flex; align-items: center; gap: 0.4rem;",
-                                span { "✨" }
-                                "{new_engine_title}"
-                            }
-                            div { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                                "{width_bounded_text}"
-                            }
-                        }
-                        div { style: "width: {container_width():.0}px; max-width: 100%; border: 1.5px dashed var(--primary); border-radius: var(--radius-md); padding: 1rem 1.2rem; background: var(--surface); box-shadow: var(--shadow-md); transition: width 0.1s ease; box-sizing: border-box; overflow-x: auto; display: flex; flex-direction: column; align-items: flex-start;",
-                            TreeLayoutRenderer {
-                                node: layout_result.root.clone(),
-                                selected_node_id,
-                                hovered_node_id,
-                            }
-                        }
+            // プレビュー表示エリア（新レイアウトエンジン）
+            div { style: "display: grid; gap: 0.4rem;",
+                div { style: "display: flex; justify-content: space-between; align-items: center;",
+                    div { style: "font-weight: 600; font-size: 0.95rem; color: #86efac; display: flex; align-items: center; gap: 0.4rem;",
+                        span { "✨" }
+                        "{new_engine_title}"
+                    }
+                    div { style: "font-size: 0.75rem; color: var(--text-secondary);",
+                        "{width_bounded_text}"
                     }
                 }
-
-                // 現行UI表示（比較用）
-                if view_mode() == ViewMode::Split || view_mode() == ViewMode::OldUiOnly {
-                    div { style: "display: grid; gap: 0.4rem;",
-                        div { style: "display: flex; justify-content: space-between; align-items: center;",
-                            div { style: "font-weight: 600; font-size: 0.95rem; color: #fca5a5; display: flex; align-items: center; gap: 0.4rem;",
-                                span { "⚠️" }
-                                "{old_ui_title}"
-                            }
-                            div { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                                "{nested_cards_text}"
-                            }
-                        }
-                        div { style: "width: {container_width():.0}px; max-width: 100%; border: 1.5px dashed rgb(239 68 68 / 0.5); border-radius: var(--radius-md); padding: 1rem 1.2rem; background: rgb(0 0 0 / 0.15); box-sizing: border-box; overflow-x: auto;",
-                            {render_root_expression_editor(&state, &context, &Some(expr.clone()), None)}
-                        }
+                div { style: "width: {container_width():.0}px; max-width: 100%; border: 1.5px dashed var(--primary); border-radius: var(--radius-md); padding: 1rem 1.2rem; background: var(--surface); box-shadow: var(--shadow-md); transition: width 0.1s ease; box-sizing: border-box; overflow-x: auto; display: flex; flex-direction: column; align-items: flex-start;",
+                    TreeLayoutRenderer {
+                        node: layout_result.root.clone(),
+                        selected_node_id,
+                        hovered_node_id,
                     }
                 }
             }
