@@ -9,7 +9,7 @@ use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
-use crate::tree_layout::ExpressionTreeViewer;
+use crate::tree_layout::ExpressionTreeEditor;
 
 #[component]
 pub fn PartDetailView(
@@ -182,7 +182,7 @@ fn PartEditorCard(
                 div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
                     "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
                 }
-                ExpressionTreeViewer { expression: expression.read().clone() }
+                ExpressionTreeEditor { expression }
                 {
                     let expr_str = expression
                         .read()

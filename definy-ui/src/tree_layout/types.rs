@@ -44,6 +44,7 @@ pub enum NodeKind {
 #[derive(Debug, Clone, PartialEq)]
 pub struct LayoutNode {
     pub id: String,
+    pub path: Vec<crate::app_state::PathStep>,
     pub label: String,
     pub kind: NodeKind,
     pub children: Vec<LayoutNode>,
@@ -60,6 +61,7 @@ impl LayoutNode {
     pub fn new(id: impl Into<String>, label: impl Into<String>, kind: NodeKind) -> Self {
         Self {
             id: id.into(),
+            path: Vec::new(),
             label: label.into(),
             kind,
             children: Vec::new(),
@@ -69,6 +71,11 @@ impl LayoutNode {
             columns_width: Vec::new(),
             table_headers: Vec::new(),
         }
+    }
+
+    pub fn with_path(mut self, path: Vec<crate::app_state::PathStep>) -> Self {
+        self.path = path;
+        self
     }
 
     pub fn with_children(mut self, children: Vec<LayoutNode>) -> Self {

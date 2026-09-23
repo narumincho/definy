@@ -4,7 +4,7 @@ use crate::app_state::AppState;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 use crate::tree_layout::{
-    LayoutOptions, TreeLayoutRenderer, all_samples, compute_layout, expression_to_layout_node,
+    ExpressionTreeEditor, LayoutOptions, all_samples, compute_layout, expression_to_layout_node,
 };
 
 #[component]
@@ -16,7 +16,6 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
     let mut container_width = use_signal(|| 580.0f32);
     let mut show_debug = use_signal(|| false);
     let selected_node_id = use_signal(|| None::<String>);
-    let hovered_node_id = use_signal(|| None::<String>);
     let mut custom_part_hash = use_signal(|| None::<String>);
 
     let parts = collect_part_snapshots(&state);
@@ -36,7 +35,12 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
             .or_else(|| samples.first().map(|s| s.expression.clone()))
     };
 
-    let expr = current_expression.unwrap_or_else(|| samples[0].expression.clone());
+    let mut current_expr_sig = use_signal(|| current_expression.clone());
+    use_effect(move || {
+        current_expr_sig.set(current_expression.clone());
+    });
+
+    let expr = current_expr_sig().unwrap_or_else(|| samples[0].expression.clone());
 
     // 自作レイアウトエンジンによる計算
     // コンテナ内側の利用可能幅（左右 padding: 1.2rem * 2 ≈ 38.4px + border: 3px + 余裕）を差し引くことで意図しないスクロールを防止
@@ -304,10 +308,9 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                     }
                 }
                 div { style: "width: {container_width():.0}px; max-width: 100%; border: 1.5px dashed var(--primary); border-radius: var(--radius-md); padding: 1rem 1.2rem; background: var(--surface); box-shadow: var(--shadow-md); transition: width 0.1s ease; box-sizing: border-box; overflow-x: auto; display: flex; flex-direction: column; align-items: flex-start;",
-                    TreeLayoutRenderer {
-                        node: layout_result.root.clone(),
-                        selected_node_id,
-                        hovered_node_id,
+                    ExpressionTreeEditor {
+                        expression: current_expr_sig,
+                        max_width: container_width(),
                     }
                 }
             }

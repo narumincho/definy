@@ -9,7 +9,7 @@ use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
-use crate::tree_layout::ExpressionTreeViewer;
+use crate::tree_layout::ExpressionTreeEditor;
 
 pub(crate) fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
@@ -274,7 +274,7 @@ fn PartDefinitionFormView(
             div { style: "color: var(--text-secondary); font-size: 0.82rem;",
                 {context.language.label("Expression", "式", "Esprimo")}
             }
-            ExpressionTreeViewer { expression: composing_expression.read().clone() }
+            ExpressionTreeEditor { expression: composing_expression }
             if let Some(result) = eval_result() {
                 div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
                     "{result}"
