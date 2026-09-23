@@ -184,6 +184,7 @@ fn ModuleEditorCard(
                     r#type: "text",
                     name: "module-update-name",
                     value: "{module_name}",
+                    placeholder: "my-module",
                     style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
                     oninput: move |evt: FormEvent| {
                         module_name.set(evt.value());
@@ -240,6 +241,21 @@ fn ModuleEditorCard(
                                                 "Error: module name is required",
                                                 "エラー: モジュール名は必須です",
                                                 "Eraro: modulo-nomo estas bezonata",
+                                            )
+                                            .to_string(),
+                                    ),
+                                );
+                            return;
+                        }
+                        if !definy_event::naming::is_valid_name(&name) {
+                            result_message
+                                .set(
+                                    Some(
+                                        language
+                                            .label(
+                                                "Error: module name must be lowercase alphanumeric with hyphens (e.g. my-module)",
+                                                "エラー: モジュール名はアルファベット小文字・ハイフン区切りで入力してください (例: my-module)",
+                                                "Eraro: modulo-nomo devas esti minusklaj literoj disigitaj per streketoj (ekz. my-module)",
                                             )
                                             .to_string(),
                                     ),

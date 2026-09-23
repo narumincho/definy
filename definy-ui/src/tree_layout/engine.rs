@@ -86,24 +86,24 @@ pub fn expression_to_layout_node_with_path(
             create_binary_op_node(id_prefix, "equal", &eq.left, &eq.right, current_path)
         }
         Expression::NotEqual(ne) => {
-            create_binary_op_node(id_prefix, "not_equal", &ne.left, &ne.right, current_path)
+            create_binary_op_node(id_prefix, "not-equal", &ne.left, &ne.right, current_path)
         }
         Expression::LessThan(lt) => {
-            create_binary_op_node(id_prefix, "less_than", &lt.left, &lt.right, current_path)
+            create_binary_op_node(id_prefix, "less-than", &lt.left, &lt.right, current_path)
         }
         Expression::LessThanOrEqual(le) => create_binary_op_node(
             id_prefix,
-            "less_than_or_equal",
+            "less-than-or-equal",
             &le.left,
             &le.right,
             current_path,
         ),
         Expression::GreaterThan(gt) => {
-            create_binary_op_node(id_prefix, "greater_than", &gt.left, &gt.right, current_path)
+            create_binary_op_node(id_prefix, "greater-than", &gt.left, &gt.right, current_path)
         }
         Expression::GreaterThanOrEqual(ge) => create_binary_op_node(
             id_prefix,
-            "greater_than_or_equal",
+            "greater-than-or-equal",
             &ge.left,
             &ge.right,
             current_path,
@@ -116,14 +116,14 @@ pub fn expression_to_layout_node_with_path(
         }
         Expression::StringConcat(concat) => create_binary_op_node(
             id_prefix,
-            "string_concat",
+            "string-concat",
             &concat.left,
             &concat.right,
             current_path,
         ),
         Expression::ListConcat(concat) => create_binary_op_node(
             id_prefix,
-            "list_concat",
+            "list-concat",
             &concat.left,
             &concat.right,
             current_path,

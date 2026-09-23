@@ -92,21 +92,21 @@ pub fn ExpressionTreeEditor(
     let current_kind_label = selected_expr_info
         .as_ref()
         .map(|sub| match sub {
-            definy_event::event::Expression::Number(n) => format!("Number ({})", n.value),
-            definy_event::event::Expression::String(s) => format!("String (\"{}\")", s.value),
-            definy_event::event::Expression::Boolean(b) => format!("Boolean ({})", b.value),
+            definy_event::event::Expression::Number(n) => format!("number ({})", n.value),
+            definy_event::event::Expression::String(s) => format!("string (\"{}\")", s.value),
+            definy_event::event::Expression::Boolean(b) => format!("boolean ({})", b.value),
             definy_event::event::Expression::Add(_) => "plus".to_string(),
             definy_event::event::Expression::Subtract(_) => "minus".to_string(),
             definy_event::event::Expression::Multiply(_) => "multiply".to_string(),
             definy_event::event::Expression::Divide(_) => "divide".to_string(),
             definy_event::event::Expression::Remainder(_) => "remainder".to_string(),
             definy_event::event::Expression::Equal(_) => "equal".to_string(),
-            definy_event::event::Expression::NotEqual(_) => "not_equal".to_string(),
-            definy_event::event::Expression::LessThan(_) => "less_than".to_string(),
-            definy_event::event::Expression::LessThanOrEqual(_) => "less_than_or_equal".to_string(),
-            definy_event::event::Expression::GreaterThan(_) => "greater_than".to_string(),
+            definy_event::event::Expression::NotEqual(_) => "not-equal".to_string(),
+            definy_event::event::Expression::LessThan(_) => "less-than".to_string(),
+            definy_event::event::Expression::LessThanOrEqual(_) => "less-than-or-equal".to_string(),
+            definy_event::event::Expression::GreaterThan(_) => "greater-than".to_string(),
             definy_event::event::Expression::GreaterThanOrEqual(_) => {
-                "greater_than_or_equal".to_string()
+                "greater-than-or-equal".to_string()
             }
             definy_event::event::Expression::And(_) => "and".to_string(),
             definy_event::event::Expression::Or(_) => "or".to_string(),
@@ -174,22 +174,22 @@ pub fn ExpressionTreeEditor(
                                 option { value: "expr:divide", "divide (/)" }
                                 option { value: "expr:remainder", "remainder (%)" }
                                 option { value: "expr:equal", "equal (==)" }
-                                option { value: "expr:not_equal", "not_equal (!=)" }
-                                option { value: "expr:less_than", "less_than (<)" }
-                                option { value: "expr:less_than_or_equal", "less_than_or_equal (<=)" }
-                                option { value: "expr:greater_than", "greater_than (>)" }
-                                option { value: "expr:greater_than_or_equal", "greater_than_or_equal (>=)" }
+                                option { value: "expr:not_equal", "not-equal (!=)" }
+                                option { value: "expr:less_than", "less-than (<)" }
+                                option { value: "expr:less_than_or_equal", "less-than-or-equal (<=)" }
+                                option { value: "expr:greater_than", "greater-than (>)" }
+                                option { value: "expr:greater_than_or_equal", "greater-than-or-equal (>=)" }
                                 option { value: "expr:and", "and (&&)" }
                                 option { value: "expr:or", "or (||)" }
                                 option { value: "expr:not", "not (!)" }
                             }
                             optgroup { label: "リテラル・構文",
-                                option { value: "expr:number", "Number (数値)" }
-                                option { value: "expr:string", "String (文字列)" }
-                                option { value: "expr:boolean", "Boolean (真偽値)" }
-                                option { value: "expr:list", "List (配列)" }
-                                option { value: "expr:if", "If (条件分岐)" }
-                                option { value: "expr:let", "Let (変数束縛)" }
+                                option { value: "expr:number", "number (数値)" }
+                                option { value: "expr:string", "string (文字列)" }
+                                option { value: "expr:boolean", "boolean (真偽値)" }
+                                option { value: "expr:list", "list (配列)" }
+                                option { value: "expr:if", "if (条件分岐)" }
+                                option { value: "expr:let", "let (変数束縛)" }
                             }
                         }
                     }

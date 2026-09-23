@@ -3,6 +3,7 @@ use crate::event::Event;
 pub mod cbor_datetime_tag1;
 pub mod event;
 mod event_hash_id;
+pub mod naming;
 pub mod response;
 
 pub use event_hash_id::EventHashId;

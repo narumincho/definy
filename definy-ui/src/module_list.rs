@@ -143,6 +143,11 @@ fn ModuleCreateForm(
     let language = context.language;
     let mut module_name = use_signal(String::new);
     let mut module_description = use_signal(String::new);
+    let name_placeholder = context.language.label(
+        "module name (e.g. my-module)",
+        "モジュール名 (例: my-module)",
+        "modula nomo (ekz. my-module)",
+    );
 
     rsx! {
         div {
@@ -165,7 +170,7 @@ fn ModuleCreateForm(
                 name: "module-name",
                 r#type: "text",
                 value: "{module_name}",
-                placeholder: "{context.language.label(\"module name\", \"モジュール名\", \"modula nomo\")}",
+                placeholder: "{name_placeholder}",
                 style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
                 oninput: move |evt: FormEvent| {
                     module_name.set(evt.value());
@@ -202,6 +207,21 @@ fn ModuleCreateForm(
                                             "Error: module name is required",
                                             "エラー: モジュール名は必須です",
                                             "Eraro: modulo-nomo estas bezonata",
+                                        )
+                                        .to_string(),
+                                ),
+                            );
+                        return;
+                    }
+                    if !definy_event::naming::is_valid_name(&name_str) {
+                        result_message
+                            .set(
+                                Some(
+                                    language
+                                        .label(
+                                            "Error: module name must be lowercase alphanumeric with hyphens (e.g. my-module)",
+                                            "エラー: モジュール名はアルファベット小文字・ハイフン区切りで入力してください (例: my-module)",
+                                            "Eraro: modulo-nomo devas esti minusklaj literoj disigitaj per streketoj (ekz. my-module)",
                                         )
                                         .to_string(),
                                 ),

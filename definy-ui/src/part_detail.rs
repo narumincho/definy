@@ -170,6 +170,18 @@ fn PartEditorCard(
                 ));
                 return;
             }
+            if !definy_event::naming::is_valid_name(&name) {
+                submit_result.set(Some(
+                    language
+                        .label(
+                            "Error: part name must be lowercase alphanumeric with hyphens (e.g. my-part)",
+                            "エラー: パーツ名はアルファベット小文字・ハイフン区切りで入力してください (例: my-part)",
+                            "Eraro: parto-nomo devas esti minusklaj literoj disigitaj per streketoj (ekz. my-part)",
+                        )
+                        .to_string(),
+                ));
+                return;
+            }
             let desc = part_description();
             let expr_val = expression();
             let Some(mod_hash) = module_hash() else {
@@ -274,6 +286,7 @@ fn PartEditorCard(
                             r#type: "text",
                             name: "part-update-name",
                             value: "{part_name}",
+                            placeholder: "my-part",
                             style: "padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.9rem;",
                             oninput: move |evt: FormEvent| {
                                 part_name.set(evt.value());

@@ -319,17 +319,17 @@ async fn tool_list_parts(args: Value, db: &Surreal<Any>) -> ToolCallResult {
 
 fn crate_part_type_summary(pt: PartType) -> Value {
     match pt {
-        PartType::Number => json!("Number"),
-        PartType::String => json!("String"),
-        PartType::Boolean => json!("Boolean"),
-        PartType::Type => json!("Type"),
-        PartType::TypePart(h) => json!({ "TypePart": h.to_string() }),
-        PartType::List(sub) => json!({ "List": crate_part_type_summary(*sub) }),
+        PartType::Number => json!("number"),
+        PartType::String => json!("string"),
+        PartType::Boolean => json!("boolean"),
+        PartType::Type => json!("type"),
+        PartType::TypePart(h) => json!({ "type-part": h.to_string() }),
+        PartType::List(sub) => json!({ "list": crate_part_type_summary(*sub) }),
         PartType::Function {
             parameter,
             return_type,
         } => json!({
-            "Function": {
+            "function": {
                 "parameter": crate_part_type_summary(*parameter),
                 "return": crate_part_type_summary(*return_type)
             }
@@ -475,6 +475,12 @@ async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'name' argument"),
     };
+    if !definy_event::naming::is_valid_name(&name) {
+        return ToolCallResult::error(format!(
+            "Invalid module name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-module')",
+            name
+        ));
+    }
     let desc = match args.get("description").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'description' argument"),
@@ -521,6 +527,12 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'name' argument"),
     };
+    if !definy_event::naming::is_valid_name(&name) {
+        return ToolCallResult::error(format!(
+            "Invalid part name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-part')",
+            name
+        ));
+    }
     let desc = match args.get("description").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'description' argument"),
@@ -611,6 +623,14 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     };
 
     let name = args.get("name").and_then(|v| v.as_str()).map(String::from);
+    if let Some(ref n) = name {
+        if !definy_event::naming::is_valid_name(n) {
+            return ToolCallResult::error(format!(
+                "Invalid part name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-part')",
+                n
+            ));
+        }
+    }
     let desc = args
         .get("description")
         .and_then(|v| v.as_str())

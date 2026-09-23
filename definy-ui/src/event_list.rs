@@ -7,12 +7,12 @@ use crate::page_context::PageContext;
 
 fn part_type_text(part_type: &definy_event::event::PartType) -> String {
     match part_type {
-        definy_event::event::PartType::Number => "Number".to_string(),
-        definy_event::event::PartType::String => "String".to_string(),
-        definy_event::event::PartType::Boolean => "Boolean".to_string(),
-        definy_event::event::PartType::Type => "Type".to_string(),
+        definy_event::event::PartType::Number => "number".to_string(),
+        definy_event::event::PartType::String => "string".to_string(),
+        definy_event::event::PartType::Boolean => "boolean".to_string(),
+        definy_event::event::PartType::Type => "type".to_string(),
         definy_event::event::PartType::TypePart(hash) => {
-            format!("TypePart({})", hash)
+            format!("type-part({})", hash)
         }
         definy_event::event::PartType::List(item_type) => {
             format!("list<{}>", part_type_text(item_type.as_ref()))

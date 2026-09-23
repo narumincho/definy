@@ -116,7 +116,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(4),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "number literal".into(),
+                    part_name: "number-literal".into(),
                     part_type: Some(definy_event::event::PartType::Number),
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in number literal"),
@@ -152,7 +152,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(6),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "Number".into(),
+                    part_name: "number".into(),
                     part_type: Some(definy_event::event::PartType::Type),
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Built-in 64-bit integer type"),
@@ -168,7 +168,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(7),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "String".into(),
+                    part_name: "string".into(),
                     part_type: Some(definy_event::event::PartType::Type),
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Built-in UTF-8 string type"),
@@ -184,7 +184,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(8),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "Boolean".into(),
+                    part_name: "boolean".into(),
                     part_type: Some(definy_event::event::PartType::Type),
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Built-in boolean type"),
@@ -200,7 +200,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(9),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "List".into(),
+                    part_name: "list".into(),
                     part_type: Some(definy_event::event::PartType::Type),
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Built-in list type constructor"),
@@ -216,7 +216,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(10),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "Equal".into(),
+                    part_name: "equal".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in equality comparison"),
@@ -306,7 +306,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(15),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "less than".into(),
+                    part_name: "less-than".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in less than comparison"),
@@ -324,7 +324,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(16),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "less than or equal".into(),
+                    part_name: "less-than-or-equal".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in less than or equal comparison"),
@@ -342,7 +342,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(17),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "greater than".into(),
+                    part_name: "greater-than".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in greater than comparison"),
@@ -360,7 +360,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(18),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "greater than or equal".into(),
+                    part_name: "greater-than-or-equal".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in greater than or equal comparison"),
@@ -378,7 +378,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(19),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "not equal".into(),
+                    part_name: "not-equal".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in not equal comparison"),
@@ -450,7 +450,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(23),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "string concat".into(),
+                    part_name: "string-concat".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in string concatenation"),
@@ -468,7 +468,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(24),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "string length".into(),
+                    part_name: "string-length".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in string length"),
@@ -486,7 +486,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(25),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "string slice".into(),
+                    part_name: "string-slice".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in string slice"),
@@ -504,7 +504,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(26),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "list length".into(),
+                    part_name: "list-length".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in list length"),
@@ -522,7 +522,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(27),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "list concat".into(),
+                    part_name: "list-concat".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in list concatenation"),
@@ -540,7 +540,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(28),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "list get".into(),
+                    part_name: "list-get".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in list element retrieval"),
@@ -558,7 +558,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(29),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "list append".into(),
+                    part_name: "list-append".into(),
                     part_type: None,
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Compiler built-in list append"),
@@ -577,7 +577,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(31),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "triangle_area".into(),
+                    part_name: "triangle-area".into(),
                     part_type: Some(definy_event::event::PartType::Number),
                     description: definy_event::event::Description::localized(vec![
                         (
@@ -676,7 +676,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(33),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "is_even_sample".into(),
+                    part_name: "is-even-sample".into(),
                     part_type: Some(definy_event::event::PartType::String),
                     description: definy_event::event::Description::localized(vec![
                         (
@@ -751,7 +751,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(34),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "prime_numbers".into(),
+                    part_name: "prime-numbers".into(),
                     part_type: Some(definy_event::event::PartType::List(Box::new(
                         definy_event::event::PartType::Number,
                     ))),
@@ -789,11 +789,11 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(35),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "OptionNumber".into(),
+                    part_name: "option-number".into(),
                     part_type: Some(definy_event::event::PartType::Type),
                     description: definy_event::event::Description::localized(vec![
-                        ("en", "Option type for numbers (none or some(Number))"),
-                        ("ja", "数値用の Option 型 (none または some(Number))"),
+                        ("en", "Option type for numbers (none or some(number))"),
+                        ("ja", "数値用の Option 型 (none または some(number))"),
                     ]),
                     expression: Some(definy_event::event::Expression::TypeUnion(
                         definy_event::event::TypeUnionExpression {
@@ -820,7 +820,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             time: first_commit_time + chrono::Duration::milliseconds(36),
             content: definy_event::event::EventContent::PartDefinition(
                 definy_event::event::PartDefinitionEvent {
-                    part_name: "match_option_sample".into(),
+                    part_name: "match-option-sample".into(),
                     part_type: Some(definy_event::event::PartType::Number),
                     description: definy_event::event::Description::localized(vec![
                         ("en", "Pattern match sample: unwrap some(100) and add 23"),
