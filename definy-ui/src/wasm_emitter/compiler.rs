@@ -10,6 +10,7 @@ pub(crate) struct CompileContext<'a> {
     current_static_offset: u32,
     visited_parts: Vec<definy_event::EventHashId>,
     pub(crate) pending_functions: Vec<PendingFunction>,
+    pub(crate) part_functions: HashMap<definy_event::EventHashId, u32>,
 }
 
 impl<'a> CompileContext<'a> {
@@ -20,6 +21,7 @@ impl<'a> CompileContext<'a> {
             current_static_offset: 1024,
             visited_parts: Vec::new(),
             pending_functions: Vec::new(),
+            part_functions: HashMap::new(),
         }
     }
 
@@ -542,13 +544,9 @@ pub(crate) fn emit_expression(
         Expression::PartReference(PartReferenceExpression {
             part_definition_event_hash,
         }) => {
-            if ctx.visited_parts.contains(part_definition_event_hash) {
-                return Err(
-                    "Circular reference detected while compiling PartReference to Wasm".into(),
-                );
-            }
-            if ctx.visited_parts.len() > 100 {
-                return Err("Maximum part reference recursion depth exceeded".into());
+            if let Some(&table_idx) = ctx.part_functions.get(part_definition_event_hash) {
+                super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
+                return Ok(());
             }
 
             let mut latest_expression = None;
@@ -574,11 +572,34 @@ pub(crate) fn emit_expression(
             }
 
             if let Some(target_expr) = latest_expression {
-                ctx.visited_parts.push(part_definition_event_hash.clone());
-                let empty_env = HashMap::new();
-                let res = emit_expression(target_expr, out, &empty_env, next_local_idx, ctx);
-                ctx.visited_parts.pop();
-                res?;
+                if let Expression::Function(f) = target_expr {
+                    let table_idx = ctx.pending_functions.len() as u32;
+                    ctx.part_functions
+                        .insert(part_definition_event_hash.clone(), table_idx);
+                    ctx.pending_functions
+                        .push(super::function_ops::PendingFunction {
+                            captured_vars: Vec::new(),
+                            parameter_id: f.parameter_id,
+                            body: (*f.body).clone(),
+                        });
+                    super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
+                } else {
+                    if ctx.visited_parts.contains(part_definition_event_hash) {
+                        return Err(
+                            "Circular reference detected while compiling PartReference to Wasm"
+                                .into(),
+                        );
+                    }
+                    if ctx.visited_parts.len() > 100 {
+                        return Err("Maximum part reference recursion depth exceeded".into());
+                    }
+
+                    ctx.visited_parts.push(part_definition_event_hash.clone());
+                    let empty_env = HashMap::new();
+                    let res = emit_expression(target_expr, out, &empty_env, next_local_idx, ctx);
+                    ctx.visited_parts.pop();
+                    res?;
+                }
             } else {
                 return Err(format!(
                     "Part not found or has no expression: {}",

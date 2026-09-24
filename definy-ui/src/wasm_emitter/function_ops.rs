@@ -236,6 +236,17 @@ pub(crate) fn emit_function(
         encode_u32_leb128(out, env_ptr_local);
     }
 
+    emit_closure_allocation(table_idx, env_ptr_local, out, next_local_idx);
+
+    Ok(())
+}
+
+pub(crate) fn emit_closure_allocation(
+    table_idx: u32,
+    env_ptr_local: u32,
+    out: &mut Vec<u8>,
+    next_local_idx: &mut u32,
+) {
     // Allocate closure on heap: Tag 5 (u8), table_idx (u32 at +4), env_ptr (u32 at +8)
     let closure_ptr_local = *next_local_idx;
     *next_local_idx += 1;
@@ -280,8 +291,21 @@ pub(crate) fn emit_function(
     // Return closure_ptr
     out.push(LOCAL_GET);
     encode_u32_leb128(out, closure_ptr_local);
+}
 
-    Ok(())
+pub(crate) fn emit_closure_with_zero_env(
+    table_idx: u32,
+    out: &mut Vec<u8>,
+    next_local_idx: &mut u32,
+) {
+    let env_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 0);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, env_ptr_local);
+
+    emit_closure_allocation(table_idx, env_ptr_local, out, next_local_idx);
 }
 
 pub(crate) fn emit_call(

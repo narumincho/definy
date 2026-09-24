@@ -83,6 +83,7 @@ struct CallFrame {
     func_idx: usize,
     ip: usize,
     locals: Vec<StackVal>,
+    control_stack: Vec<ControlFrame>,
 }
 
 pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
@@ -549,6 +550,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                     func_idx: current_func_idx,
                     ip,
                     locals,
+                    control_stack: std::mem::take(&mut control_stack),
                 });
 
                 current_func_idx = target_func_idx;
@@ -556,15 +558,17 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 ip = 0;
             }
             END => {
-                control_stack.pop();
                 if ip >= instructions.len() {
                     if let Some(frame) = call_stack.pop() {
                         current_func_idx = frame.func_idx;
                         ip = frame.ip;
                         locals = frame.locals;
+                        control_stack = frame.control_stack;
                     } else {
                         break;
                     }
+                } else {
+                    control_stack.pop();
                 }
             }
             _ => {
