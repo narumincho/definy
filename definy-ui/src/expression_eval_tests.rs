@@ -668,3 +668,36 @@ fn test_match_expression_default_arm() {
         crate::expression_eval::Value::Number(42)
     );
 }
+
+#[test]
+fn test_record_get_evaluation_and_source() {
+    use definy_event::event::*;
+
+    let record = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "score".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 95 })),
+            },
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "alice".into(),
+                })),
+            },
+        ],
+    });
+
+    let get_score = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(record),
+        key: "score".into(),
+    });
+
+    assert_eq!(
+        expression_to_source(&get_score),
+        "{score: 95, name: \"alice\"}.score"
+    );
+
+    let val = evaluate_expression(&get_score, &[]).unwrap();
+    assert_eq!(val, crate::expression_eval::Value::Number(95));
+}

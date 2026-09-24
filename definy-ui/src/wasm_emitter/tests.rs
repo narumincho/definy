@@ -295,3 +295,75 @@ fn test_compile_and_execute_part_reference_function() {
     let val = execute_wasm(&wasm).unwrap();
     assert_eq!(val, Value::Number(42));
 }
+
+#[test]
+fn test_compile_and_execute_record_get() {
+    let record_expr = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "a".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+            },
+            TypeLiteralItemExpression {
+                key: "b".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "hello".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "c".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 42 })),
+            },
+        ],
+    });
+
+    let get_c = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(record_expr.clone()),
+        key: "c".into(),
+    });
+    let wasm = compile_expression_to_wasm(&get_c, &[]).unwrap();
+    let val = execute_wasm(&wasm).unwrap();
+    assert_eq!(val, Value::Number(42));
+
+    let get_b = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(record_expr),
+        key: "b".into(),
+    });
+    let wasm = compile_expression_to_wasm(&get_b, &[]).unwrap();
+    let val = execute_wasm(&wasm).unwrap();
+    assert_eq!(val, Value::String("hello".into()));
+}
+
+#[test]
+fn test_compile_and_execute_record_get_with_variable() {
+    let expr = Expression::Let(LetExpression {
+        variable_id: 1,
+        variable_name: "r".into(),
+        value: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "x".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 99 })),
+                },
+                TypeLiteralItemExpression {
+                    key: "y".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                },
+            ],
+        })),
+        body: Box::new(Expression::Add(AddExpression {
+            left: Box::new(Expression::RecordGet(RecordGetExpression {
+                record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                key: "x".into(),
+            })),
+            right: Box::new(Expression::RecordGet(RecordGetExpression {
+                record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                key: "y".into(),
+            })),
+        })),
+    });
+
+    let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
+    let val = execute_wasm(&wasm).unwrap();
+    assert_eq!(val, Value::Number(100));
+}

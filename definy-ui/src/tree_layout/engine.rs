@@ -193,6 +193,20 @@ pub fn expression_to_layout_node_with_path(
                 .with_path(p)
                 .with_children(vec![list, index])
         }
+        Expression::RecordGet(get_expr) => {
+            let record = expression_to_layout_node_with_path(
+                &get_expr.record,
+                &format!("{}.record", id_prefix),
+                &child_path(current_path, PathStep::Record),
+            );
+            LayoutNode::new(
+                id_prefix,
+                format!(".{}", get_expr.key),
+                NodeKind::Identifier,
+            )
+            .with_path(p)
+            .with_children(vec![record])
+        }
         Expression::ListAppend(append_expr) => {
             let list = expression_to_layout_node_with_path(
                 &append_expr.list,

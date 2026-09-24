@@ -376,6 +376,9 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::ListGet(get_expr) => {
                         render_list_get(state, &context, &path, get_expr)
                     }
+                    definy_event::event::Expression::RecordGet(get_expr) => {
+                        render_record_get(state, &context, &path, get_expr)
+                    }
                     definy_event::event::Expression::ListAppend(append_expr) => {
                         render_list_append(state, &context, &path, append_expr)
                     }

@@ -211,6 +211,15 @@ pub(crate) fn build_expression_from_selection(
                 value: Box::new(Expression::TypeString),
             }],
         }),
+        "expr:record_get" => Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![TypeLiteralItemExpression {
+                    key: "field".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 0 })),
+                }],
+            })),
+            key: "field".into(),
+        }),
         "expr:type:function" => Expression::TypeFunction(TypeFunctionExpression {
             parameter: Box::new(Expression::TypeNumber),
             return_type: Box::new(Expression::TypeNumber),

@@ -234,7 +234,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 let frame = control_stack[target_pos].clone();
                 match frame {
                     ControlFrame::Block { end_ip } | ControlFrame::If { end_ip } => {
-                        ip = end_ip;
+                        ip = end_ip + 1;
                         control_stack.truncate(target_pos);
                     }
                     ControlFrame::Loop { loop_ip } => {
@@ -252,7 +252,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                     let frame = control_stack[target_pos].clone();
                     match frame {
                         ControlFrame::Block { end_ip } | ControlFrame::If { end_ip } => {
-                            ip = end_ip;
+                            ip = end_ip + 1;
                             control_stack.truncate(target_pos);
                         }
                         ControlFrame::Loop { loop_ip } => {
@@ -517,9 +517,9 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 }
             }
             ELSE => {
-                // If we hit ELSE during then execution, skip to matching END
+                // If we hit ELSE during then execution, skip past matching END
                 if let Some(ControlFrame::If { end_ip }) = control_stack.pop() {
-                    ip = end_ip;
+                    ip = end_ip + 1;
                 }
             }
             CALL_INDIRECT => {

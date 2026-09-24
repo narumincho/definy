@@ -23,6 +23,9 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                 .map(|item| max_local_variable_id(item.value.as_ref()))
                 .max()
                 .unwrap_or(0),
+            definy_event::event::Expression::RecordGet(get_expr) => {
+                max_local_variable_id(get_expr.record.as_ref())
+            }
             definy_event::event::Expression::Add(add_expression) => {
                 max_local_variable_id(add_expression.left.as_ref())
                     .max(max_local_variable_id(add_expression.right.as_ref()))

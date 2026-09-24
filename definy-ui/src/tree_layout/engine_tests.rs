@@ -144,3 +144,15 @@ fn test_expression_to_layout_node_paths() {
     assert_eq!(node.children[0].path, vec![PathStep::Left]);
     assert_eq!(node.children[1].path, vec![PathStep::Right]);
 }
+
+#[test]
+fn test_record_get_layout_node() {
+    let expr = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Number(NumberExpression { value: 123 })),
+        key: "field_a".into(),
+    });
+    let node = expression_to_layout_node(&expr, "root");
+    assert_eq!(node.label, ".field_a");
+    assert_eq!(node.children.len(), 1);
+    assert_eq!(node.children[0].path, vec![PathStep::Record]);
+}

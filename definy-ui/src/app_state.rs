@@ -36,6 +36,7 @@ pub enum PathStep {
     MatchArmBody(usize),
     MatchDefault,
     TypeUnionVariant(usize),
+    Record,
 }
 
 impl std::fmt::Display for PathStep {
@@ -66,6 +67,7 @@ impl std::fmt::Display for PathStep {
             PathStep::MatchArmBody(index) => return write!(f, "MatchArmBody({})", index),
             PathStep::MatchDefault => "MatchDefault",
             PathStep::TypeUnionVariant(index) => return write!(f, "TypeUnionVariant({})", index),
+            PathStep::Record => "Record",
         };
         write!(f, "{}", s)
     }
@@ -129,6 +131,8 @@ impl PathStep {
                 .parse()
                 .ok()
                 .map(PathStep::TypeUnionVariant)
+        } else if s == "Record" {
+            Some(PathStep::Record)
         } else {
             None
         }

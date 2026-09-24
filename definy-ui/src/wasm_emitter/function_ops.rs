@@ -148,6 +148,9 @@ pub(crate) fn collect_free_variables(
                 collect_free_variables(&item.value, bound, free);
             }
         }
+        Expression::RecordGet(rg) => {
+            collect_free_variables(&rg.record, bound, free);
+        }
         Expression::Constructor(c) => {
             collect_free_variables(&c.value, bound, free);
         }

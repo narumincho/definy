@@ -260,6 +260,7 @@ pub enum Expression {
     Variable(VariableExpression),
     #[serde(alias = "RecordLiteral")]
     TypeLiteral(TypeLiteralExpression),
+    RecordGet(RecordGetExpression),
     Constructor(ConstructorExpression),
     Function(FunctionExpression),
     Call(CallExpression),
@@ -484,6 +485,13 @@ pub struct TypeLiteralExpression {
 pub struct TypeLiteralItemExpression {
     pub key: Box<str>,
     pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RecordGetExpression {
+    pub record: Box<Expression>,
+    #[serde(alias = "field_name")]
+    pub key: Box<str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

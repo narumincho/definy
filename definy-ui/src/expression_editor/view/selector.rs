@@ -106,6 +106,10 @@ pub fn selector_options(
             "expr:type_literal".to_string(),
             "record\tLiteral\t".to_string(),
         ),
+        (
+            "expr:record_get".to_string(),
+            "record_get\tProperty\t".to_string(),
+        ),
         ("expr:add".to_string(), "add\tFunction\t".to_string()),
         (
             "expr:subtract".to_string(),
@@ -601,6 +605,7 @@ pub(crate) fn current_selection_value(
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
+        definy_event::event::Expression::RecordGet(_) => "expr:record_get".to_string(),
         definy_event::event::Expression::TypeNumber => "expr:type:number".to_string(),
         definy_event::event::Expression::TypeString => "expr:type:string".to_string(),
         definy_event::event::Expression::TypeBoolean => "expr:type:boolean".to_string(),

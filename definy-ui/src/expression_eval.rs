@@ -453,6 +453,10 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     .join(", ");
                 format!("{{{}}}", items)
             }
+            definy_event::event::Expression::RecordGet(record_get) => {
+                let inner = render(record_get.record.as_ref(), true, scope);
+                format!("{}.{}", inner, record_get.key)
+            }
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 let source = format!(
                     "constructor {} {}",

@@ -39,6 +39,7 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::MatchArmBody(index) => format!("MAB{}", index),
             PathStep::MatchDefault => "MD".to_string(),
             PathStep::TypeUnionVariant(index) => format!("TUV{}", index),
+            PathStep::Record => "REC".to_string(),
         })
         .collect::<Vec<String>>()
         .join("-")
@@ -231,6 +232,12 @@ pub fn get_mut_expression_at_path<'a>(
                 } else {
                     None
                 }
+            }
+            _ => None,
+        },
+        definy_event::event::Expression::RecordGet(get_expr) => match path[0] {
+            PathStep::Record | PathStep::Left => {
+                get_mut_expression_at_path(get_expr.record.as_mut(), &path[1..])
             }
             _ => None,
         },

@@ -351,6 +351,9 @@ pub(crate) fn emit_expression(
             out.push(LOCAL_GET);
             encode_u32_leb128(out, record_ptr_local);
         }
+        Expression::RecordGet(rg) => {
+            super::record_ops::emit_record_get(rg, out, env, next_local_idx, ctx)?;
+        }
         Expression::Constructor(ConstructorExpression { value, .. }) => {
             emit_expression(value, out, env, next_local_idx, ctx)?;
         }
@@ -787,6 +790,7 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
                 .map(|item| count_locals(item.value.as_ref()))
                 .sum::<u32>()
         }
+        Expression::RecordGet(r) => 12 + count_locals(&r.record),
         Expression::Constructor(c) => count_locals(c.value.as_ref()),
         Expression::Variant(v) => {
             4 + v

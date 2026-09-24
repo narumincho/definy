@@ -5,7 +5,8 @@ use crate::app_state::{AppState, PathStep};
 use super::super::types::{ExpressionEditorContext, ScopeVariable};
 use super::inputs::{
     add_list_item_button, add_record_item_button, function_param_name_input, get_tabular_keys,
-    let_name_input, record_item_key_input, remove_list_item_button, remove_record_item_button,
+    let_name_input, record_get_key_input, record_item_key_input, remove_list_item_button,
+    remove_record_item_button,
 };
 use super::is_compound_expression;
 use super::render_expression_editor;
@@ -197,6 +198,46 @@ pub fn render_list_get(
                         context
                             .child(
                                 index_path,
+                                context.scope_variables.clone(),
+                                context.structure_locked,
+                                context.allow_kind_change,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+pub fn render_record_get(
+    state: &AppState,
+    context: &ExpressionEditorContext,
+    path: &[PathStep],
+    get_expr: &definy_event::event::RecordGetExpression,
+) -> Element {
+    let mut record_path = path.to_vec();
+    record_path.push(PathStep::Record);
+    let language = context.language;
+
+    rsx! {
+        div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                    "{language.label(\"Field name\", \"フィールド名\", \"Kampnomo\")}:"
+                }
+                {record_get_key_input(path.to_vec(), &get_expr.key)}
+            }
+            div { style: "display: grid; gap: 0.15rem; width: 100%;",
+                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                    "{language.label(\"Record\", \"レコード\", \"Rikordo\")}"
+                }
+                {
+                    render_expression_editor(
+                        state,
+                        get_expr.record.as_ref(),
+                        context
+                            .child(
+                                record_path,
                                 context.scope_variables.clone(),
                                 context.structure_locked,
                                 context.allow_kind_change,

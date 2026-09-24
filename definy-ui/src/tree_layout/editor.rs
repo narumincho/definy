@@ -115,6 +115,7 @@ pub fn ExpressionTreeEditor(
             definy_event::event::Expression::Let(_) => "let".to_string(),
             definy_event::event::Expression::ListLiteral(_) => "list".to_string(),
             definy_event::event::Expression::TypeLiteral(_) => "record".to_string(),
+            definy_event::event::Expression::RecordGet(_) => "record_get".to_string(),
             _ => "expression".to_string(),
         })
         .unwrap_or_default();

@@ -153,6 +153,49 @@ fn check_expression_type_with_context(
                 ExpressionType::Record
             }
         }
+        definy_event::event::Expression::RecordGet(get_expr) => {
+            let mut record_path = path.to_vec();
+            record_path.push(PathStep::Record);
+            let record_type = ctx.check(get_expr.record.as_ref(), &record_path, None);
+
+            if let definy_event::event::Expression::TypeLiteral(record) = get_expr.record.as_ref() {
+                if let Some((idx, item)) = record
+                    .items
+                    .iter()
+                    .enumerate()
+                    .find(|(_, i)| i.key == get_expr.key)
+                {
+                    let mut item_path = record_path;
+                    item_path.push(PathStep::RecordItemValue(idx));
+                    return ctx.check(item.value.as_ref(), &item_path, expected_type);
+                }
+            }
+
+            if let ExpressionType::TypePart(part_hash) = &record_type {
+                if let Some(snapshot) = ctx.part_snapshot_map.get(part_hash) {
+                    if let Some(definy_event::event::Expression::TypeLiteral(record)) =
+                        &snapshot.expression
+                    {
+                        if let Some(item) = record.items.iter().find(|i| i.key == get_expr.key) {
+                            return match item.value.as_ref() {
+                                definy_event::event::Expression::TypeNumber => {
+                                    ExpressionType::Number
+                                }
+                                definy_event::event::Expression::TypeString => {
+                                    ExpressionType::String
+                                }
+                                definy_event::event::Expression::TypeBoolean => {
+                                    ExpressionType::Boolean
+                                }
+                                _ => expected_type.clone().unwrap_or(ExpressionType::Unknown),
+                            };
+                        }
+                    }
+                }
+            }
+
+            expected_type.clone().unwrap_or(ExpressionType::Unknown)
+        }
         definy_event::event::Expression::Add(add_expression) => {
             check_binary_arithmetic(&add_expression.left, &add_expression.right, path, ctx)
         }
