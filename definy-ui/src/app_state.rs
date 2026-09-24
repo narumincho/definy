@@ -9,7 +9,7 @@ pub type DecodedEvent = Result<
 >;
 pub type EventWithHash = (EventHashId, DecodedEvent);
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum PathStep {
     Left,
     Right,
@@ -181,6 +181,32 @@ impl AppState {
     pub fn set_connection_status(&mut self, status: ConnectionStatus) {
         self.connection_status = status;
         self.is_db_connected = status == ConnectionStatus::Connected;
+    }
+}
+
+impl Default for AppState {
+    fn default() -> Self {
+        Self {
+            connection_status: ConnectionStatus::Connected,
+            is_db_connected: false,
+            event_cache: std::collections::HashMap::new(),
+            event_list_state: EventListState {
+                event_hashes: Vec::new(),
+                current_offset: 0,
+                page_size: 20,
+                is_loading: false,
+                has_more: false,
+                filter_event_type: None,
+            },
+            focused_path: None,
+            current_key: None,
+            force_offline: false,
+            local_event_queue: LocalEventQueueState {
+                items: Vec::new(),
+                is_loading: false,
+                last_error: None,
+            },
+        }
     }
 }
 

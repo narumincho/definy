@@ -41,7 +41,15 @@ pub fn render_expression_editor(
     let allow_kind_change = context.allow_kind_change;
     let language = context.language;
     let current_selection = current_selection_value(state, expression);
-    let selector_options = selector_options(state, language, &scope_variables, path.is_empty());
+    let expected_type = context.expected_types.get(&path);
+    let selector_options = selector_options(
+        state,
+        language,
+        &scope_variables,
+        path.is_empty(),
+        expected_type,
+        context.variable_types,
+    );
     let warning_message = diagnostics
         .iter()
         .find(|diagnostic| diagnostic.path == path)

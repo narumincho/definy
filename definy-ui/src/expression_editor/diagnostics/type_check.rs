@@ -19,9 +19,29 @@ pub(crate) struct TypeCheckContext<'a> {
     pub part_type_map: &'a HashMap<EventHashId, ExpressionType>,
     pub part_snapshot_map: &'a HashMap<EventHashId, PartSnapshot>,
     pub diagnostics: &'a mut Vec<TypeDiagnostic>,
+    pub expected_types: &'a mut HashMap<Vec<PathStep>, ExpressionType>,
+    pub variable_types: &'a mut HashMap<i64, ExpressionType>,
 }
 
 impl<'a> TypeCheckContext<'a> {
+    pub fn new(
+        env: &'a HashMap<i64, ExpressionType>,
+        part_type_map: &'a HashMap<EventHashId, ExpressionType>,
+        part_snapshot_map: &'a HashMap<EventHashId, PartSnapshot>,
+        diagnostics: &'a mut Vec<TypeDiagnostic>,
+        expected_types: &'a mut HashMap<Vec<PathStep>, ExpressionType>,
+        variable_types: &'a mut HashMap<i64, ExpressionType>,
+    ) -> Self {
+        Self {
+            env,
+            part_type_map,
+            part_snapshot_map,
+            diagnostics,
+            expected_types,
+            variable_types,
+        }
+    }
+
     pub fn push_mismatch(
         &mut self,
         path: &[PathStep],
@@ -60,30 +80,15 @@ pub(crate) fn push_type_mismatch_diagnostic(
     });
 }
 
-pub(crate) fn check_expression_type(
-    expression: &definy_event::event::Expression,
-    path: &[PathStep],
-    expected_type: Option<ExpressionType>,
-    env: &HashMap<i64, ExpressionType>,
-    part_type_map: &HashMap<EventHashId, ExpressionType>,
-    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
-    diagnostics: &mut Vec<TypeDiagnostic>,
-) -> ExpressionType {
-    let mut ctx = TypeCheckContext {
-        env,
-        part_type_map,
-        part_snapshot_map,
-        diagnostics,
-    };
-    ctx.check(expression, path, expected_type)
-}
-
 fn check_expression_type_with_context(
     expression: &definy_event::event::Expression,
     path: &[PathStep],
     expected_type: Option<ExpressionType>,
     ctx: &mut TypeCheckContext<'_>,
 ) -> ExpressionType {
+    if let Some(expected) = &expected_type {
+        ctx.expected_types.insert(path.to_vec(), expected.clone());
+    }
     let actual_type = match expression {
         definy_event::event::Expression::Number(_) => ExpressionType::Number,
         definy_event::event::Expression::String(_) => ExpressionType::String,
@@ -366,7 +371,9 @@ fn check_expression_type_with_context(
             let value_type = ctx.check(let_expression.value.as_ref(), &value_path, None);
 
             let mut body_env = ctx.env.clone();
-            body_env.insert(let_expression.variable_id, value_type);
+            body_env.insert(let_expression.variable_id, value_type.clone());
+            ctx.variable_types
+                .insert(let_expression.variable_id, value_type);
             let mut body_path = path.to_vec();
             body_path.push(PathStep::LetBody);
 
@@ -375,6 +382,8 @@ fn check_expression_type_with_context(
                 part_type_map: ctx.part_type_map,
                 part_snapshot_map: ctx.part_snapshot_map,
                 diagnostics: ctx.diagnostics,
+                expected_types: ctx.expected_types,
+                variable_types: ctx.variable_types,
             };
             child_ctx.check(
                 let_expression.body.as_ref(),
@@ -425,12 +434,16 @@ fn check_expression_type_with_context(
                     }
                 } else {
                     let mut dummy_diag = Vec::new();
+                    let mut dummy_expected = HashMap::new();
+                    let mut dummy_vars = HashMap::new();
                     let actual_value_type = {
                         let mut sub_ctx = TypeCheckContext {
                             env: ctx.env,
                             part_type_map: ctx.part_type_map,
                             part_snapshot_map: ctx.part_snapshot_map,
                             diagnostics: &mut dummy_diag,
+                            expected_types: &mut dummy_expected,
+                            variable_types: &mut dummy_vars,
                         };
                         sub_ctx.check(constructor_expression.value.as_ref(), &value_path, None)
                     };
@@ -460,6 +473,8 @@ fn check_expression_type_with_context(
 
             let mut body_env = ctx.env.clone();
             body_env.insert(func_expression.parameter_id, param_type.clone());
+            ctx.variable_types
+                .insert(func_expression.parameter_id, param_type.clone());
 
             let mut body_path = path.to_vec();
             body_path.push(PathStep::FunctionBody);
@@ -470,6 +485,8 @@ fn check_expression_type_with_context(
                     part_type_map: ctx.part_type_map,
                     part_snapshot_map: ctx.part_snapshot_map,
                     diagnostics: ctx.diagnostics,
+                    expected_types: ctx.expected_types,
+                    variable_types: ctx.variable_types,
                 };
                 child_ctx.check(
                     func_expression.body.as_ref(),
@@ -560,6 +577,7 @@ fn check_expression_type_with_context(
                 let mut arm_env = ctx.env.clone();
                 if let Some(var_id) = arm.variable_id {
                     arm_env.insert(var_id, ExpressionType::Unknown);
+                    ctx.variable_types.insert(var_id, ExpressionType::Unknown);
                 }
                 let mut arm_path = path.to_vec();
                 arm_path.push(PathStep::MatchArmBody(idx));
@@ -569,6 +587,8 @@ fn check_expression_type_with_context(
                         part_type_map: ctx.part_type_map,
                         part_snapshot_map: ctx.part_snapshot_map,
                         diagnostics: ctx.diagnostics,
+                        expected_types: ctx.expected_types,
+                        variable_types: ctx.variable_types,
                     };
                     child_ctx.check(arm.body.as_ref(), &arm_path, None)
                 };

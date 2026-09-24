@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
 use definy_event::EventHashId;
@@ -9,7 +10,7 @@ use crate::part_projection::collect_part_snapshots;
 
 use super::super::diagnostics::constructor_default_value_from_type_part;
 use super::super::mutation::{apply_selection, path_to_key};
-use super::super::types::ScopeVariable;
+use super::super::types::{ExpressionType, ScopeVariable};
 
 pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep]) -> bool {
     if allow_kind_change {
@@ -37,6 +38,7 @@ pub fn expression_selector(
             current_value: current_val_str,
             options: options_vec,
             compact: true,
+            show_arrow: false,
             on_change: move |selected_value: String| {
                 let state_sig = use_context::<Signal<AppState>>();
                 let constructor_default = selected_value
@@ -73,6 +75,8 @@ pub fn selector_options(
     language: Language,
     scope_variables: &[ScopeVariable],
     is_root: bool,
+    expected_type: Option<&ExpressionType>,
+    variable_types: &HashMap<i64, ExpressionType>,
 ) -> Vec<(String, String)> {
     let snapshots = collect_part_snapshots(state);
     let mut options = Vec::new();
@@ -218,6 +222,19 @@ pub fn selector_options(
         }
     }));
 
+    // Part type map for fast lookup
+    let part_type_map: HashMap<EventHashId, ExpressionType> = snapshots
+        .iter()
+        .filter_map(|snapshot| {
+            snapshot.part_type.as_ref().map(|part_type| {
+                (
+                    snapshot.definition_event_hash.clone(),
+                    super::super::diagnostics::part_type_to_expression_type(part_type),
+                )
+            })
+        })
+        .collect();
+
     // Global Parts
     options.extend(snapshots.into_iter().map(|snapshot| {
         let type_text = snapshot
@@ -234,7 +251,150 @@ pub fn selector_options(
         )
     }));
 
+    if let Some(expected) = expected_type {
+        options.sort_by_key(|(val, _)| {
+            let opt_type = classify_option_type(val, &part_type_map, variable_types);
+            option_match_rank(val, opt_type.as_ref(), Some(expected))
+        });
+    }
+
     options
+}
+
+fn classify_option_type(
+    opt_val: &str,
+    part_type_map: &HashMap<EventHashId, ExpressionType>,
+    variable_types: &HashMap<i64, ExpressionType>,
+) -> Option<ExpressionType> {
+    if opt_val == "expr:number" {
+        return Some(ExpressionType::Number);
+    }
+    if opt_val == "expr:string" {
+        return Some(ExpressionType::String);
+    }
+    if opt_val == "expr:boolean" {
+        return Some(ExpressionType::Boolean);
+    }
+    if opt_val == "expr:list" {
+        return Some(ExpressionType::List(Box::new(ExpressionType::Unknown)));
+    }
+    if opt_val == "expr:type_literal" {
+        return Some(ExpressionType::Record);
+    }
+    if matches!(
+        opt_val,
+        "expr:add"
+            | "expr:subtract"
+            | "expr:multiply"
+            | "expr:divide"
+            | "expr:remainder"
+            | "expr:string_length"
+            | "expr:list_length"
+    ) {
+        return Some(ExpressionType::Number);
+    }
+    if matches!(
+        opt_val,
+        "expr:equal"
+            | "expr:not_equal"
+            | "expr:less_than"
+            | "expr:less_than_or_equal"
+            | "expr:greater_than"
+            | "expr:greater_than_or_equal"
+            | "expr:not"
+            | "expr:and"
+            | "expr:or"
+    ) {
+        return Some(ExpressionType::Boolean);
+    }
+    if matches!(opt_val, "expr:string_concat" | "expr:string_slice") {
+        return Some(ExpressionType::String);
+    }
+    if matches!(opt_val, "expr:list_concat" | "expr:list_append") {
+        return Some(ExpressionType::List(Box::new(ExpressionType::Unknown)));
+    }
+    if opt_val.starts_with("expr:type:") {
+        return Some(ExpressionType::Type);
+    }
+    if opt_val == "expr:function" {
+        return Some(ExpressionType::Function {
+            parameter: Box::new(ExpressionType::Unknown),
+            return_type: Box::new(ExpressionType::Unknown),
+        });
+    }
+    if opt_val == "expr:variant" {
+        return Some(ExpressionType::Union);
+    }
+    if let Some(hash_str) = opt_val.strip_prefix("expr:constructor:") {
+        return EventHashId::from_str(hash_str)
+            .ok()
+            .map(ExpressionType::TypePart);
+    }
+    if let Some(hash_str) = opt_val.strip_prefix("ref:global:") {
+        return EventHashId::from_str(hash_str)
+            .ok()
+            .and_then(|hash| part_type_map.get(&hash).cloned());
+    }
+    if let Some(var_id_str) = opt_val.strip_prefix("ref:local:") {
+        return var_id_str
+            .parse::<i64>()
+            .ok()
+            .and_then(|var_id| variable_types.get(&var_id).cloned());
+    }
+    None
+}
+
+fn option_match_rank(
+    opt_val: &str,
+    opt_type: Option<&ExpressionType>,
+    expected: Option<&ExpressionType>,
+) -> u8 {
+    let Some(expected) = expected else {
+        return 0;
+    };
+    if expected == &ExpressionType::Unknown {
+        return 0;
+    }
+
+    if opt_val == "expr:none" {
+        return 3;
+    }
+
+    if opt_val == "expr:type_literal" && expected == &ExpressionType::Type {
+        return 0;
+    }
+
+    if let Some(actual) = opt_type {
+        if actual == &ExpressionType::Unknown {
+            return 2;
+        }
+        let is_match = match (expected, actual) {
+            (ExpressionType::Number, ExpressionType::Number) => true,
+            (ExpressionType::String, ExpressionType::String) => true,
+            (ExpressionType::Boolean, ExpressionType::Boolean) => true,
+            (ExpressionType::Type, ExpressionType::Type) => true,
+            (ExpressionType::TypePart(h1), ExpressionType::TypePart(h2)) => h1 == h2,
+            (ExpressionType::List(_), ExpressionType::List(_)) => true,
+            (ExpressionType::Record, ExpressionType::Record) => true,
+            (ExpressionType::Union, ExpressionType::Union) => true,
+            (ExpressionType::Function { .. }, ExpressionType::Function { .. }) => true,
+            _ => false,
+        };
+        if is_match {
+            return 0;
+        } else {
+            return 2;
+        }
+    }
+
+    if matches!(
+        opt_val,
+        "expr:if" | "expr:let" | "expr:call" | "expr:match" | "expr:list_get"
+    ) {
+        return 1;
+    }
+
+    2
 }
 
 pub(crate) fn current_selection_value(
@@ -461,4 +621,84 @@ pub(crate) fn find_builtin_part_hash(
             _ => false,
         })
         .map(|snapshot| snapshot.definition_event_hash)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_selector_options_sorted_for_number() {
+        let state = AppState::default();
+        let options = selector_options(
+            &state,
+            Language::English,
+            &[],
+            false,
+            Some(&ExpressionType::Number),
+            &HashMap::new(),
+        );
+
+        // First options should be Number compatible (number literal, arithmetic, etc.)
+        let first_three_keys: Vec<&str> = options.iter().take(3).map(|(k, _)| k.as_str()).collect();
+        assert!(
+            first_three_keys.contains(&"expr:number"),
+            "Expected 'expr:number' near top when expecting Number, got: {:?}",
+            first_three_keys
+        );
+        assert!(
+            first_three_keys.contains(&"expr:add"),
+            "Expected 'expr:add' near top when expecting Number, got: {:?}",
+            first_three_keys
+        );
+    }
+
+    #[test]
+    fn test_selector_options_sorted_for_boolean() {
+        let state = AppState::default();
+        let options = selector_options(
+            &state,
+            Language::English,
+            &[],
+            false,
+            Some(&ExpressionType::Boolean),
+            &HashMap::new(),
+        );
+
+        // First options should be Boolean compatible
+        let first_three_keys: Vec<&str> = options.iter().take(3).map(|(k, _)| k.as_str()).collect();
+        assert!(
+            first_three_keys.contains(&"expr:boolean"),
+            "Expected 'expr:boolean' near top when expecting Boolean, got: {:?}",
+            first_three_keys
+        );
+        assert!(
+            first_three_keys.contains(&"expr:equal"),
+            "Expected 'expr:equal' near top when expecting Boolean, got: {:?}",
+            first_three_keys
+        );
+    }
+
+    #[test]
+    fn test_selector_options_sorted_for_type() {
+        let state = AppState::default();
+        let options = selector_options(
+            &state,
+            Language::English,
+            &[],
+            false,
+            Some(&ExpressionType::Type),
+            &HashMap::new(),
+        );
+
+        // First options should be Type compatible
+        let first_keys: Vec<&str> = options.iter().take(4).map(|(k, _)| k.as_str()).collect();
+        assert!(
+            first_keys.contains(&"expr:type_literal")
+                || first_keys.iter().any(|k| k.starts_with("expr:type:")),
+            "Expected type options near top when expecting Type, got: {:?}",
+            first_keys
+        );
+    }
 }

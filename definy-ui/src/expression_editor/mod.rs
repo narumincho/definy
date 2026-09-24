@@ -8,7 +8,9 @@ use dioxus::prelude::*;
 use crate::app_state::AppState;
 use crate::page_context::PageContext;
 
-pub use diagnostics::{collect_type_diagnostics, part_type_to_expression_type};
+pub use diagnostics::{
+    analyze_expression_types, collect_type_diagnostics, part_type_to_expression_type,
+};
 pub use mutation::{
     add_list_item, add_record_item, apply_selection, get_mut_expression_at_path,
     next_local_variable_id, path_to_key, remove_list_item, remove_record_item, set_boolean_value,
@@ -27,26 +29,38 @@ pub fn render_root_expression_editor(
 ) -> Element {
     match expression {
         Some(expr) => {
-            let diagnostics = collect_type_diagnostics(state, expr, expected_type);
+            let analysis = analyze_expression_types(state, expr, expected_type);
             render_expression_editor(
                 state,
                 expr,
                 ExpressionEditorContext {
                     path: Vec::new(),
                     scope_variables: Vec::new(),
-                    diagnostics: diagnostics.as_slice(),
+                    diagnostics: analysis.diagnostics.as_slice(),
+                    expected_types: &analysis.expected_types,
+                    variable_types: &analysis.variable_types,
                     structure_locked: false,
                     allow_kind_change: true,
                     language: page_context.language,
                 },
             )
         }
-        None => view::expression_selector(
-            state,
-            Vec::new(),
-            "expr:none",
-            &view::selector_options(state, page_context.language, &[], true),
-        ),
+        None => {
+            let empty_vars = std::collections::HashMap::new();
+            view::expression_selector(
+                state,
+                Vec::new(),
+                "expr:none",
+                &view::selector_options(
+                    state,
+                    page_context.language,
+                    &[],
+                    true,
+                    expected_type.as_ref(),
+                    &empty_vars,
+                ),
+            )
+        }
     }
 }
 
