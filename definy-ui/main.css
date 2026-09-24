@@ -599,6 +599,32 @@ textarea {
     padding-left: 0.9rem;
     padding-right: 0.9rem;
   }
+/* SearchableDropdown Styles */
+.dropdown-item-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: 0.35rem;
+  margin-right: 0.45rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.dropdown-item-link:hover {
+  color: var(--primary) !important;
+  background: rgba(56, 189, 248, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+  transform: scale(1.08);
 }
 
 @media (prefers-reduced-motion: reduce) {

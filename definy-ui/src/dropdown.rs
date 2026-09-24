@@ -233,48 +233,83 @@ pub fn SearchableDropdown(
                                 "var(--text-secondary)"
                             };
 
+                            let part_detail_url = resolve_part_detail_url(opt_val, &parts);
+                            let display_meta = if parts.len() > 1 {
+                                let meta_parts: Vec<&str> = parts
+                                    .iter()
+                                    .skip(1)
+                                    .filter(|p| !p.is_empty() && !is_hash_str(p))
+                                    .copied()
+                                    .collect();
+                                if meta_parts.is_empty() {
+                                    None
+                                } else {
+                                    Some(meta_parts.join(" · "))
+                                }
+                            } else {
+                                None
+                            };
+
                             rsx! {
-                                button {
+                                div {
                                     key: "{opt_val}",
-                                    id: "{item_id}",
-                                    r#type: "button",
-                                    style: "width: 100%; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; border-bottom: 1px solid rgb(255 255 255 / 0.04); cursor: pointer; background: {bg}; color: {color}; transition: background 0.08s ease;",
-                                    "popovertarget": "{panel_id}",
-                                    "popovertargetaction": "hide",
+                                    style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; transition: background 0.08s ease;",
                                     onmouseenter: move |_| {
                                         highlighted_index.set(Some(idx));
                                     },
-                                    onclick: {
-                                        let opt_val_clone = opt_val_clone.clone();
-                                        move |_| {
-                                            search_query.set(String::new());
-                                            highlighted_index.set(None);
-                                            on_change.call(opt_val_clone.clone());
-                                        }
-                                    },
-                                    div { style: "display: flex; align-items: center; gap: 0.4rem; overflow: hidden;",
-                                        if is_selected {
-                                            span { style: "font-size: 0.75rem; color: var(--accent); flex-shrink: 0;",
-                                                "✓"
+                                    button {
+                                        id: "{item_id}",
+                                        r#type: "button",
+                                        style: "flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; background: transparent; cursor: pointer; color: {color}; font-family: inherit;",
+                                        "popovertarget": "{panel_id}",
+                                        "popovertargetaction": "hide",
+                                        onclick: {
+                                            let opt_val_clone = opt_val_clone.clone();
+                                            move |_| {
+                                                search_query.set(String::new());
+                                                highlighted_index.set(None);
+                                                on_change.call(opt_val_clone.clone());
                                             }
-                                        } else {
-                                            span { style: "display: inline-block; width: 0.75rem; flex-shrink: 0;" }
-                                        }
-                                        if parts.len() > 1 {
-                                            div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
-                                                "{parts[0]}"
+                                        },
+                                        div { style: "display: flex; align-items: center; gap: 0.4rem; overflow: hidden; min-width: 0;",
+                                            if is_selected {
+                                                span { style: "font-size: 0.75rem; color: var(--accent); flex-shrink: 0;",
+                                                    "✓"
+                                                }
+                                            } else {
+                                                span { style: "display: inline-block; width: 0.75rem; flex-shrink: 0;" }
                                             }
-                                        } else {
                                             div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
-                                                "{opt_label}"
+                                                if parts.len() > 1 {
+                                                    "{parts[0]}"
+                                                } else {
+                                                    "{opt_label}"
+                                                }
+                                            }
+                                        }
+                                        if let Some(ref meta) = display_meta {
+                                            div {
+                                                class: "mono",
+                                                style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 0; white-space: nowrap; text-align: right;",
+                                                "{meta}"
                                             }
                                         }
                                     }
-                                    if parts.len() > 1 {
-                                        div {
-                                            class: "mono",
-                                            style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 0; white-space: nowrap; text-align: right;",
-                                            "{parts[1..].join(\" · \")}"
+                                    if let Some(detail_url) = part_detail_url {
+                                        a {
+                                            href: "{detail_url}",
+                                            class: "dropdown-item-link",
+                                            title: "パーツ詳細画面を開く",
+                                            "popovertarget": "{panel_id}",
+                                            "popovertargetaction": "hide",
+                                            onclick: {
+                                                let panel_id_clone = panel_id.clone();
+                                                move |evt: MouseEvent| {
+                                                    evt.stop_propagation();
+                                                    dom_hide_popover(&panel_id_clone);
+                                                }
+                                            },
+                                            "↗"
                                         }
                                     }
                                 }
@@ -293,4 +328,36 @@ fn dropdown_panel_id(name: &str) -> String {
 
 fn anchor_name_id(name: &str) -> String {
     format!("--dropdown-{}", name)
+}
+
+fn is_hash_str(s: &str) -> bool {
+    s.len() >= 40
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+fn resolve_part_detail_url(opt_val: &str, parts: &[&str]) -> Option<String> {
+    let hash = opt_val
+        .strip_prefix("ref:global:")
+        .or_else(|| opt_val.strip_prefix("expr:constructor:"))
+        .or_else(|| parts.iter().copied().find(|p| is_hash_str(p)))?;
+
+    let query = {
+        #[cfg(target_arch = "wasm32")]
+        {
+            web_sys::window()
+                .and_then(|w| w.location().search().ok())
+                .unwrap_or_default()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            String::new()
+        }
+    };
+
+    if !query.is_empty() {
+        Some(format!("/parts/{}{}", hash, query))
+    } else {
+        Some(format!("/parts/{}", hash))
+    }
 }
