@@ -59,50 +59,6 @@ pub fn render_type_union(
     }
 }
 
-pub fn render_variant(
-    state: &AppState,
-    context: &ExpressionEditorContext,
-    path: &[PathStep],
-    variant_expr: &definy_event::event::VariantExpression,
-) -> Element {
-    let language = context.language;
-    let mut payload_path = path.to_vec();
-    payload_path.push(PathStep::VariantPayload);
-
-    rsx! {
-        div { style: "display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; width: 100%;",
-            span { style: "font-weight: 600; font-size: 0.85rem; padding: 0.15rem 0.4rem; background: var(--accent-subtle); color: var(--accent); border-radius: var(--radius-sm);",
-                "{variant_expr.tag}"
-            }
-            if let Some(payload) = &variant_expr.payload {
-                div { style: "display: flex; align-items: center; gap: 0.25rem; flex: 1;",
-                    span { style: "color: var(--text-secondary);", "(" }
-                    div { style: "flex: 1;",
-                        {
-                            render_expression_editor(
-                                state,
-                                payload.as_ref(),
-                                context
-                                    .child(
-                                        payload_path,
-                                        context.scope_variables.clone(),
-                                        context.structure_locked,
-                                        context.allow_kind_change,
-                                    ),
-                            )
-                        }
-                    }
-                    span { style: "color: var(--text-secondary);", ")" }
-                }
-            } else {
-                span { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                    "{language.label(\"Unit (no payload)\", \"ペイロードなし\", \"Sen utilŝarĝo\")}"
-                }
-            }
-        }
-    }
-}
-
 pub fn render_match(
     state: &AppState,
     context: &ExpressionEditorContext,

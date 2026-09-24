@@ -192,9 +192,9 @@ pub fn SearchableDropdown(
                                 }
                                 Key::Enter => {
                                     evt.prevent_default();
-                                    if let Some((opt_val, _)) =
-                                        effective_highlighted_index.and_then(|idx| filtered_options.get(idx))
-                                    {
+                                    let selected_opt = effective_highlighted_index
+                                        .and_then(|idx| filtered_options.get(idx));
+                                    if let Some((opt_val, _)) = selected_opt {
                                         let val = opt_val.clone();
                                         search_query.set(String::new());
                                         highlighted_index.set(None);

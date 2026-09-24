@@ -26,6 +26,7 @@ pub fn is_compound_expression(expr: &definy_event::event::Expression) -> bool {
             | definy_event::event::Expression::TypeString
             | definy_event::event::Expression::TypeBoolean
             | definy_event::event::Expression::Compiler(_)
+            | definy_event::event::Expression::Variant(_)
     )
 }
 
@@ -481,27 +482,18 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::Function(func_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
-                                }
                                 {render_function(state, &context, &path, func_expression)}
                             }
                         }
                     }
                     definy_event::event::Expression::Call(call_expression) => rsx! {
                         div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                            if allow_kind_change {
-                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
-                            }
                             {render_call(state, &context, &path, call_expression)}
                         }
                     },
                     definy_event::event::Expression::TypeFunction(type_func_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
-                                }
                                 {render_type_function(state, &context, &path, type_func_expression)}
                             }
                         }
@@ -509,29 +501,49 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::TypeUnion(type_union_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
-                                }
                                 {render_type_union(state, &context, &path, type_union_expression)}
                             }
                         }
                     }
                     definy_event::event::Expression::Variant(variant_expression) => {
                         rsx! {
-                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                            div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; width: 100%;",
                                 if allow_kind_change {
                                     {expression_selector(state, path.clone(), &current_selection, &selector_options)}
+                                } else {
+                                    span { style: "font-weight: 600; font-size: 0.85rem; padding: 0.15rem 0.4rem; background: var(--accent-subtle); color: var(--accent); border-radius: var(--radius-sm);",
+                                        "{variant_expression.tag}"
+                                    }
                                 }
-                                {render_variant(state, &context, &path, variant_expression)}
+                                if let Some(payload) = &variant_expression.payload {
+                                    div { style: "display: flex; align-items: center; gap: 0.25rem; flex: 1; min-width: 0;",
+                                        span { style: "color: var(--text-secondary); font-weight: 600;", "(" }
+                                        div { style: "flex: 1;",
+                                            {
+                                                let mut payload_path = path.clone();
+                                                payload_path.push(crate::app_state::PathStep::VariantPayload);
+                                                render_expression_editor(
+                                                    state,
+                                                    payload.as_ref(),
+                                                    context
+                                                        .child(
+                                                            payload_path,
+                                                            context.scope_variables.clone(),
+                                                            context.structure_locked,
+                                                            context.allow_kind_change,
+                                                        ),
+                                                )
+                                            }
+                                        }
+                                        span { style: "color: var(--text-secondary); font-weight: 600;", ")" }
+                                    }
+                                }
                             }
                         }
                     }
                     definy_event::event::Expression::Match(match_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
-                                }
                                 {render_match(state, &context, &path, match_expression)}
                             }
                         }

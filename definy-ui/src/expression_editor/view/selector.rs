@@ -179,7 +179,6 @@ pub fn selector_options(
             "function\tSyntax\t".to_string(),
         ),
         ("expr:call".to_string(), "call\tSyntax\t".to_string()),
-        ("expr:variant".to_string(), "variant\tSyntax\t".to_string()),
         ("expr:match".to_string(), "match\tSyntax\t".to_string()),
         (
             "expr:type:number".to_string(),
@@ -221,6 +220,34 @@ pub fn selector_options(
             None
         }
     }));
+
+    // Variants (from TypeUnion definitions and default none/some)
+    let mut seen_variant_tags = std::collections::HashSet::new();
+    for snapshot in &snapshots {
+        if let Some(definy_event::event::Expression::TypeUnion(type_union)) = &snapshot.expression {
+            for v in &type_union.variants {
+                let tag = v.tag.as_ref();
+                if seen_variant_tags.insert(tag.to_string()) {
+                    options.push((
+                        format!("expr:variant:{}", tag),
+                        format!("{}\tVariant\t{}", tag, snapshot.part_name),
+                    ));
+                }
+            }
+        }
+    }
+    if seen_variant_tags.insert("none".to_string()) {
+        options.push((
+            "expr:variant:none".to_string(),
+            "none\tVariant\t".to_string(),
+        ));
+    }
+    if seen_variant_tags.insert("some".to_string()) {
+        options.push((
+            "expr:variant:some".to_string(),
+            "some\tVariant\t".to_string(),
+        ));
+    }
 
     // Part type map for fast lookup
     let part_type_map: HashMap<EventHashId, ExpressionType> = snapshots
@@ -322,7 +349,7 @@ fn classify_option_type(
             return_type: Box::new(ExpressionType::Unknown),
         });
     }
-    if opt_val == "expr:variant" {
+    if opt_val.starts_with("expr:variant:") || opt_val == "expr:variant" {
         return Some(ExpressionType::Union);
     }
     if let Some(hash_str) = opt_val.strip_prefix("expr:constructor:") {
@@ -599,7 +626,9 @@ pub(crate) fn current_selection_value(
         }
         definy_event::event::Expression::TypeFunction(_) => "expr:type:function".to_string(),
         definy_event::event::Expression::TypeUnion(_) => "expr:type:union".to_string(),
-        definy_event::event::Expression::Variant(_) => "expr:variant".to_string(),
+        definy_event::event::Expression::Variant(variant_expr) => {
+            format!("expr:variant:{}", variant_expr.tag)
+        }
         definy_event::event::Expression::Match(_) => "expr:match".to_string(),
         definy_event::event::Expression::PartReference(part_ref) => {
             format!("ref:global:{}", part_ref.part_definition_event_hash)

@@ -228,8 +228,8 @@ pub(crate) fn build_expression_from_selection(
             ],
         }),
         "expr:variant" => Expression::Variant(VariantExpression {
-            tag: "A".into(),
-            payload: None,
+            tag: "some".into(),
+            payload: Some(num(0)),
             type_part_definition_event_hash: None,
         }),
         "expr:match" => Expression::Match(MatchExpression {
@@ -242,6 +242,50 @@ pub(crate) fn build_expression_from_selection(
             }],
             default: Some(num(0)),
         }),
+        _ if selected_value.starts_with("expr:variant:") => {
+            let tag = selected_value
+                .strip_prefix("expr:variant:")
+                .unwrap_or("some");
+            let snapshots = crate::part_projection::collect_part_snapshots(state);
+            let type_variant = snapshots.iter().find_map(|snapshot| {
+                if let Some(Expression::TypeUnion(union_expr)) = &snapshot.expression {
+                    union_expr
+                        .variants
+                        .iter()
+                        .find(|v| v.tag.as_ref() == tag)
+                        .map(|v| (snapshot.definition_event_hash.clone(), v))
+                } else {
+                    None
+                }
+            });
+
+            let (type_hash, payload_type_opt) = match type_variant {
+                Some((hash, v)) => (Some(hash), v.payload_type.as_ref().map(|b| b.as_ref())),
+                None => (None, None),
+            };
+
+            let payload = if tag == "none" {
+                None
+            } else if let Expression::Variant(existing_var) = current_expr {
+                if existing_var.tag.as_ref() == tag && existing_var.payload.is_some() {
+                    existing_var.payload.clone()
+                } else if tag == "some" || payload_type_opt.is_some() {
+                    existing_var.payload.clone().or_else(|| Some(num(0)))
+                } else {
+                    None
+                }
+            } else if tag == "some" || payload_type_opt.is_some() {
+                Some(num(0))
+            } else {
+                None
+            };
+
+            Expression::Variant(VariantExpression {
+                tag: tag.into(),
+                payload,
+                type_part_definition_event_hash: type_hash,
+            })
+        }
         _ => {
             if let Some((type_part_definition_event_hash, default_value)) = constructor_default {
                 Expression::Constructor(ConstructorExpression {
