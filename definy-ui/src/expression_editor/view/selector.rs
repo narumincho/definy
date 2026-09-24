@@ -206,80 +206,75 @@ pub fn selector_options(
         ),
     ]);
 
-    // Type constructors
-    options.extend(snapshots.iter().filter_map(|snapshot| {
-        if snapshot.part_type == Some(definy_event::event::PartType::Type) {
-            Some((
-                format!("expr:constructor:{}", snapshot.definition_event_hash),
-                format!(
-                    "{}\tConstructor\t{}",
-                    snapshot.part_name, snapshot.definition_event_hash
-                ),
-            ))
-        } else {
-            None
-        }
-    }));
-
-    // Variants (from TypeUnion definitions and default none/some)
+    // Single pass over snapshots for constructors, variants, part_type_map, and global parts
+    let mut part_type_map = HashMap::new();
     let mut seen_variant_tags = std::collections::HashSet::new();
+    let mut variant_options = Vec::new();
+    let mut constructor_options = Vec::new();
+    let mut global_part_options = Vec::new();
+
     for snapshot in &snapshots {
+        if let Some(part_type) = &snapshot.part_type {
+            part_type_map.insert(
+                snapshot.definition_event_hash.clone(),
+                super::super::diagnostics::part_type_to_expression_type(part_type),
+            );
+            if *part_type == definy_event::event::PartType::Type {
+                constructor_options.push((
+                    format!("expr:constructor:{}", snapshot.definition_event_hash),
+                    format!(
+                        "{}\tConstructor\t{}",
+                        snapshot.part_name, snapshot.definition_event_hash
+                    ),
+                ));
+            }
+        }
+
         if let Some(definy_event::event::Expression::TypeUnion(type_union)) = &snapshot.expression {
             for v in &type_union.variants {
                 let tag = v.tag.as_ref();
                 if seen_variant_tags.insert(tag.to_string()) {
-                    options.push((
+                    variant_options.push((
                         format!("expr:variant:{}", tag),
                         format!("{}\tVariant\t{}", tag, snapshot.part_name),
                     ));
                 }
             }
         }
-    }
-    if seen_variant_tags.insert("none".to_string()) {
-        options.push((
-            "expr:variant:none".to_string(),
-            "none\tVariant\t".to_string(),
-        ));
-    }
-    if seen_variant_tags.insert("some".to_string()) {
-        options.push((
-            "expr:variant:some".to_string(),
-            "some\tVariant\t".to_string(),
-        ));
-    }
 
-    // Part type map for fast lookup
-    let part_type_map: HashMap<EventHashId, ExpressionType> = snapshots
-        .iter()
-        .filter_map(|snapshot| {
-            snapshot.part_type.as_ref().map(|part_type| {
-                (
-                    snapshot.definition_event_hash.clone(),
-                    super::super::diagnostics::part_type_to_expression_type(part_type),
-                )
-            })
-        })
-        .collect();
-
-    // Global Parts
-    options.extend(snapshots.into_iter().map(|snapshot| {
         let type_text = snapshot
             .part_type
             .as_ref()
             .map(ToString::to_string)
             .unwrap_or_else(|| "Part".to_string());
-        (
+        global_part_options.push((
             format!("ref:global:{}", snapshot.definition_event_hash),
             format!(
                 "{}\t{}\t{}",
                 snapshot.part_name, type_text, snapshot.definition_event_hash
             ),
-        )
-    }));
+        ));
+    }
+
+    if seen_variant_tags.insert("none".to_string()) {
+        variant_options.push((
+            "expr:variant:none".to_string(),
+            "none\tVariant\t".to_string(),
+        ));
+    }
+    if seen_variant_tags.insert("some".to_string()) {
+        variant_options.push((
+            "expr:variant:some".to_string(),
+            "some\tVariant\t".to_string(),
+        ));
+    }
+
+    options.extend(constructor_options);
+    options.extend(variant_options);
+    options.extend(global_part_options);
 
     if let Some(expected) = expected_type {
-        options.sort_by_key(|(val, _)| {
+        options.sort_by_cached_key(|(val, _)| {
             let opt_type = classify_option_type(val, &part_type_map, variable_types);
             option_match_rank(val, opt_type.as_ref(), Some(expected))
         });
@@ -728,6 +723,55 @@ mod tests {
                 || first_keys.iter().any(|k| k.starts_with("expr:type:")),
             "Expected type options near top when expecting Type, got: {:?}",
             first_keys
+        );
+    }
+
+    #[test]
+    fn test_selector_options_sorted_for_union() {
+        let state = AppState::default();
+        let options = selector_options(
+            &state,
+            Language::English,
+            &[],
+            false,
+            Some(&ExpressionType::Union),
+            &HashMap::new(),
+        );
+
+        // First options should be Union compatible (e.g. expr:variant:some, expr:variant:none)
+        let first_keys: Vec<&str> = options.iter().take(3).map(|(k, _)| k.as_str()).collect();
+        assert!(
+            first_keys.iter().any(|k| k.starts_with("expr:variant:")),
+            "Expected variant options near top when expecting Union, got: {:?}",
+            first_keys
+        );
+    }
+
+    #[test]
+    fn test_current_selection_value_for_variant() {
+        let state = AppState::default();
+        let some_expr =
+            definy_event::event::Expression::Variant(definy_event::event::VariantExpression {
+                tag: "some".into(),
+                payload: Some(Box::new(definy_event::event::Expression::Number(
+                    definy_event::event::NumberExpression { value: 42 },
+                ))),
+                type_part_definition_event_hash: None,
+            });
+        assert_eq!(
+            current_selection_value(&state, &some_expr),
+            "expr:variant:some"
+        );
+
+        let none_expr =
+            definy_event::event::Expression::Variant(definy_event::event::VariantExpression {
+                tag: "none".into(),
+                payload: None,
+                type_part_definition_event_hash: None,
+            });
+        assert_eq!(
+            current_selection_value(&state, &none_expr),
+            "expr:variant:none"
         );
     }
 }

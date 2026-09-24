@@ -570,7 +570,11 @@ fn check_expression_type_with_context(
         definy_event::event::Expression::Match(match_expression) => {
             let mut target_path = path.to_vec();
             target_path.push(PathStep::MatchTarget);
-            ctx.check(match_expression.target.as_ref(), &target_path, None);
+            ctx.check(
+                match_expression.target.as_ref(),
+                &target_path,
+                Some(ExpressionType::Union),
+            );
 
             let mut result_type = ExpressionType::Unknown;
             for (idx, arm) in match_expression.arms.iter().enumerate() {
