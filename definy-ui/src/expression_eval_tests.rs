@@ -701,3 +701,161 @@ fn test_record_get_evaluation_and_source() {
     let val = evaluate_expression(&get_score, &[]).unwrap();
     assert_eq!(val, crate::expression_eval::Value::Number(95));
 }
+
+#[test]
+fn test_evaluate_self_hosting_eval_ast_all_operations() {
+    use definy_event::EventHashId;
+    use definy_event::event::*;
+
+    let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
+    let dummy_account = AccountId(dummy_key);
+    let expr_hash = EventHashId::from_bytes(&[201u8; 32]);
+    let eval_hash = EventHashId::from_bytes(&[202u8; 32]);
+
+    fn rec_call(eval_hash: &EventHashId, var_id: i64, key: &str) -> Expression {
+        Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression {
+                part_definition_event_hash: eval_hash.clone(),
+            })),
+            argument: Box::new(Expression::RecordGet(RecordGetExpression {
+                record: Box::new(Expression::Variable(VariableExpression {
+                    variable_id: var_id,
+                })),
+                key: key.into(),
+            })),
+        })
+    }
+
+    let eval_event = Event {
+        account_id: dummy_account,
+        time: chrono::DateTime::UNIX_EPOCH,
+        content: EventContent::PartDefinition(PartDefinitionEvent {
+            part_name: "eval_ast".into(),
+            part_type: Some(PartType::Function {
+                parameter: Box::new(PartType::TypePart(expr_hash.clone())),
+                return_type: Box::new(PartType::Number),
+            }),
+            description: Description::Plain("eval AST all arithmetic ops".into()),
+            expression: Some(Expression::Function(FunctionExpression {
+                parameter_id: 1, // e
+                parameter_name: "e".into(),
+                body: Box::new(Expression::Match(MatchExpression {
+                    target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                    arms: vec![
+                        MatchArm {
+                            tag: "number".into(),
+                            variable_id: Some(10), // n
+                            variable_name: Some("n".into()),
+                            body: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 10,
+                            })),
+                        },
+                        MatchArm {
+                            tag: "add".into(),
+                            variable_id: Some(20), // bin
+                            variable_name: Some("bin".into()),
+                            body: Box::new(Expression::Add(AddExpression {
+                                left: Box::new(rec_call(&eval_hash, 20, "left")),
+                                right: Box::new(rec_call(&eval_hash, 20, "right")),
+                            })),
+                        },
+                        MatchArm {
+                            tag: "subtract".into(),
+                            variable_id: Some(30), // bin
+                            variable_name: Some("bin".into()),
+                            body: Box::new(Expression::Subtract(SubtractExpression {
+                                left: Box::new(rec_call(&eval_hash, 30, "left")),
+                                right: Box::new(rec_call(&eval_hash, 30, "right")),
+                            })),
+                        },
+                        MatchArm {
+                            tag: "multiply".into(),
+                            variable_id: Some(40), // bin
+                            variable_name: Some("bin".into()),
+                            body: Box::new(Expression::Multiply(MultiplyExpression {
+                                left: Box::new(rec_call(&eval_hash, 40, "left")),
+                                right: Box::new(rec_call(&eval_hash, 40, "right")),
+                            })),
+                        },
+                        MatchArm {
+                            tag: "divide".into(),
+                            variable_id: Some(50), // bin
+                            variable_name: Some("bin".into()),
+                            body: Box::new(Expression::Divide(DivideExpression {
+                                left: Box::new(rec_call(&eval_hash, 50, "left")),
+                                right: Box::new(rec_call(&eval_hash, 50, "right")),
+                            })),
+                        },
+                        MatchArm {
+                            tag: "remainder".into(),
+                            variable_id: Some(60), // bin
+                            variable_name: Some("bin".into()),
+                            body: Box::new(Expression::Remainder(RemainderExpression {
+                                left: Box::new(rec_call(&eval_hash, 60, "left")),
+                                right: Box::new(rec_call(&eval_hash, 60, "right")),
+                            })),
+                        },
+                    ],
+                    default: Some(Box::new(Expression::Number(NumberExpression { value: 0 }))),
+                })),
+            })),
+            module_definition_event_hash: EventHashId::from_bytes(&[0u8; 32]),
+        }),
+    };
+
+    let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    let events: Vec<crate::app_state::EventWithHash> =
+        vec![(eval_hash.clone(), Ok((dummy_sig, eval_event)))];
+
+    // Build AST: ((100 - (10 * 3)) + (50 / 2)) + (17 % 5)
+    // 10 * 3 = 30
+    // 100 - 30 = 70
+    // 50 / 2 = 25
+    // 70 + 25 = 95
+    // 17 % 5 = 2
+    // 95 + 2 = 97
+    let ast_num = |val: i64| {
+        Expression::Variant(VariantExpression {
+            tag: "number".into(),
+            payload: Some(Box::new(Expression::Number(NumberExpression {
+                value: val,
+            }))),
+            type_part_definition_event_hash: Some(expr_hash.clone()),
+        })
+    };
+    let ast_binary = |tag: &str, left: Expression, right: Expression| {
+        Expression::Variant(VariantExpression {
+            tag: tag.into(),
+            payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "left".into(),
+                        value: Box::new(left),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "right".into(),
+                        value: Box::new(right),
+                    },
+                ],
+            }))),
+            type_part_definition_event_hash: Some(expr_hash.clone()),
+        })
+    };
+
+    let mul = ast_binary("multiply", ast_num(10), ast_num(3));
+    let sub = ast_binary("subtract", ast_num(100), mul);
+    let div = ast_binary("divide", ast_num(50), ast_num(2));
+    let rem = ast_binary("remainder", ast_num(17), ast_num(5));
+    let add1 = ast_binary("add", sub, div);
+    let add2 = ast_binary("add", add1, rem);
+
+    let eval_call = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression {
+            part_definition_event_hash: eval_hash,
+        })),
+        argument: Box::new(add2),
+    });
+
+    let val = evaluate_expression(&eval_call, &events).unwrap();
+    assert_eq!(val, crate::expression_eval::Value::Number(97));
+}

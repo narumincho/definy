@@ -692,8 +692,39 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             &core_module_hash,
             &signing_key,
         )?;
+    let expr_def_binary = definy_event::sign_and_serialize(expr_def_event.clone(), &signing_key)
+        .map_err(|e| anyhow::anyhow!("Failed to serialize expr def event: {:?}", e))?;
+    let expr_type_part_hash = definy_event::EventHashId::from_bytes(&expr_def_binary);
+
     events.push(expr_def_event);
     events.push(expr_update_event);
+
+    // eval-ast function part (Self-hosting evaluator)
+    let (eval_ast_def_event, eval_ast_update_event) =
+        crate::builtin_expression_type::create_eval_ast_part_events(
+            &account_id,
+            first_commit_time,
+            &core_module_hash,
+            &expr_type_part_hash,
+            &signing_key,
+        )?;
+    let eval_ast_def_binary =
+        definy_event::sign_and_serialize(eval_ast_def_event.clone(), &signing_key)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize eval-ast def event: {:?}", e))?;
+    let eval_ast_part_hash = definy_event::EventHashId::from_bytes(&eval_ast_def_binary);
+
+    events.push(eval_ast_def_event);
+    events.push(eval_ast_update_event);
+
+    // sample-ast-calc part (Sample evaluation using eval-ast)
+    let sample_ast_calc_event = crate::builtin_expression_type::create_sample_ast_calc_part_event(
+        &account_id,
+        first_commit_time,
+        &sample_module_hash,
+        &expr_type_part_hash,
+        &eval_ast_part_hash,
+    );
+    events.push(sample_ast_calc_event);
 
     // Prepare serialized binaries and expected hashes for all valid built-in events
     let mut valid_hashes = HashSet::new();
