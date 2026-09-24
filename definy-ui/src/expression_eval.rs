@@ -68,6 +68,15 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 definy_event::event::CompilerBuiltin::Remainder => {
                     "[compiler remainder]".to_string()
                 }
+                definy_event::event::CompilerBuiltin::BitAnd => "[compiler bit and]".to_string(),
+                definy_event::event::CompilerBuiltin::BitOr => "[compiler bit or]".to_string(),
+                definy_event::event::CompilerBuiltin::BitXor => "[compiler bit xor]".to_string(),
+                definy_event::event::CompilerBuiltin::ShiftLeft => {
+                    "[compiler shift left]".to_string()
+                }
+                definy_event::event::CompilerBuiltin::ShiftRight => {
+                    "[compiler shift right]".to_string()
+                }
                 definy_event::event::CompilerBuiltin::LessThan => {
                     "[compiler less than]".to_string()
                 }
@@ -190,6 +199,66 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "% {} {}",
                     render(rem_expression.left.as_ref(), true, scope),
                     render(rem_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::BitAnd(bit_and_expression) => {
+                let source = format!(
+                    "& {} {}",
+                    render(bit_and_expression.left.as_ref(), true, scope),
+                    render(bit_and_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::BitOr(bit_or_expression) => {
+                let source = format!(
+                    "| {} {}",
+                    render(bit_or_expression.left.as_ref(), true, scope),
+                    render(bit_or_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::BitXor(bit_xor_expression) => {
+                let source = format!(
+                    "^ {} {}",
+                    render(bit_xor_expression.left.as_ref(), true, scope),
+                    render(bit_xor_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::ShiftLeft(shift_left_expression) => {
+                let source = format!(
+                    "<< {} {}",
+                    render(shift_left_expression.left.as_ref(), true, scope),
+                    render(shift_left_expression.right.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::ShiftRight(shift_right_expression) => {
+                let source = format!(
+                    ">> {} {}",
+                    render(shift_right_expression.left.as_ref(), true, scope),
+                    render(shift_right_expression.right.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)

@@ -353,6 +353,37 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 }
                 stack.push(StackVal::I64(a.wrapping_rem(b)));
             }
+            I64_AND => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a & b));
+            }
+            I64_OR => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a | b));
+            }
+            I64_XOR => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a ^ b));
+            }
+            I64_SHL => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a.wrapping_shl((b as u64 % 64) as u32)));
+            }
+            I64_SHR_U => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                let res = (a as u64).wrapping_shr((b as u64 % 64) as u32) as i64;
+                stack.push(StackVal::I64(res));
+            }
+            I64_SHR_S => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a.wrapping_shr((b as u64 % 64) as u32)));
+            }
             I32_EQ => {
                 let b = pop_i32(&mut stack)?;
                 let a = pop_i32(&mut stack)?;

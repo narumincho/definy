@@ -124,6 +124,23 @@ pub fn selector_options(
             "expr:remainder".to_string(),
             "remainder\tFunction\t".to_string(),
         ),
+        (
+            "expr:bit_and".to_string(),
+            "bit_and\tFunction\t".to_string(),
+        ),
+        ("expr:bit_or".to_string(), "bit_or\tFunction\t".to_string()),
+        (
+            "expr:bit_xor".to_string(),
+            "bit_xor\tFunction\t".to_string(),
+        ),
+        (
+            "expr:shift_left".to_string(),
+            "shift_left\tFunction\t".to_string(),
+        ),
+        (
+            "expr:shift_right".to_string(),
+            "shift_right\tFunction\t".to_string(),
+        ),
         ("expr:equal".to_string(), "equal\tFunction\t".to_string()),
         (
             "expr:not_equal".to_string(),
@@ -314,6 +331,11 @@ fn classify_option_type(
             | "expr:multiply"
             | "expr:divide"
             | "expr:remainder"
+            | "expr:bit_and"
+            | "expr:bit_or"
+            | "expr:bit_xor"
+            | "expr:shift_left"
+            | "expr:shift_right"
             | "expr:string_length"
             | "expr:list_length"
     ) {
@@ -458,6 +480,31 @@ pub(crate) fn current_selection_value(
                 .map(|h| format!("ref:global:{}", h))
                 .unwrap_or_else(|| "expr:remainder".to_string())
         }
+        definy_event::event::Expression::BitAnd(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::BitAnd)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:bit_and".to_string())
+        }
+        definy_event::event::Expression::BitOr(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::BitOr)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:bit_or".to_string())
+        }
+        definy_event::event::Expression::BitXor(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::BitXor)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:bit_xor".to_string())
+        }
+        definy_event::event::Expression::ShiftLeft(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ShiftLeft)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:shift_left".to_string())
+        }
+        definy_event::event::Expression::ShiftRight(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ShiftRight)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:shift_right".to_string())
+        }
         definy_event::event::Expression::If(_) => {
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::If)
                 .map(|h| format!("ref:global:{}", h))
@@ -559,6 +606,15 @@ pub(crate) fn current_selection_value(
                     definy_event::event::CompilerBuiltin::Multiply => "expr:multiply".to_string(),
                     definy_event::event::CompilerBuiltin::Divide => "expr:divide".to_string(),
                     definy_event::event::CompilerBuiltin::Remainder => "expr:remainder".to_string(),
+                    definy_event::event::CompilerBuiltin::BitAnd => "expr:bit_and".to_string(),
+                    definy_event::event::CompilerBuiltin::BitOr => "expr:bit_or".to_string(),
+                    definy_event::event::CompilerBuiltin::BitXor => "expr:bit_xor".to_string(),
+                    definy_event::event::CompilerBuiltin::ShiftLeft => {
+                        "expr:shift_left".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::ShiftRight => {
+                        "expr:shift_right".to_string()
+                    }
                     definy_event::event::CompilerBuiltin::Equal => "expr:equal".to_string(),
                     definy_event::event::CompilerBuiltin::NotEqual => "expr:not_equal".to_string(),
                     definy_event::event::CompilerBuiltin::LessThan => "expr:less_than".to_string(),

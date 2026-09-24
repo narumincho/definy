@@ -82,6 +82,37 @@ pub fn expression_to_layout_node_with_path(
         Expression::Remainder(rem) => {
             create_binary_op_node(id_prefix, "remainder", &rem.left, &rem.right, current_path)
         }
+        Expression::BitAnd(bit_and) => create_binary_op_node(
+            id_prefix,
+            "bit-and",
+            &bit_and.left,
+            &bit_and.right,
+            current_path,
+        ),
+        Expression::BitOr(bit_or) => create_binary_op_node(
+            id_prefix,
+            "bit-or",
+            &bit_or.left,
+            &bit_or.right,
+            current_path,
+        ),
+        Expression::BitXor(bit_xor) => create_binary_op_node(
+            id_prefix,
+            "bit-xor",
+            &bit_xor.left,
+            &bit_xor.right,
+            current_path,
+        ),
+        Expression::ShiftLeft(shl) => {
+            create_binary_op_node(id_prefix, "shift-left", &shl.left, &shl.right, current_path)
+        }
+        Expression::ShiftRight(shr) => create_binary_op_node(
+            id_prefix,
+            "shift-right",
+            &shr.left,
+            &shr.right,
+            current_path,
+        ),
         Expression::Equal(eq) => {
             create_binary_op_node(id_prefix, "equal", &eq.left, &eq.right, current_path)
         }

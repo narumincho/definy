@@ -17,6 +17,66 @@ fn test_compile_and_execute_arithmetic() {
 }
 
 #[test]
+fn test_compile_and_execute_bitwise_operations() {
+    // 13 & 11 = 9
+    let and_expr = Expression::BitAnd(BitAndExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 13 })),
+        right: Box::new(Expression::Number(NumberExpression { value: 11 })),
+    });
+    let wasm = compile_expression_to_wasm(&and_expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(9));
+
+    // 12 | 3 = 15
+    let or_expr = Expression::BitOr(BitOrExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 12 })),
+        right: Box::new(Expression::Number(NumberExpression { value: 3 })),
+    });
+    let wasm = compile_expression_to_wasm(&or_expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(15));
+
+    // 12 ^ 10 = 6
+    let xor_expr = Expression::BitXor(BitXorExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 12 })),
+        right: Box::new(Expression::Number(NumberExpression { value: 10 })),
+    });
+    let wasm = compile_expression_to_wasm(&xor_expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(6));
+
+    // 1 << 4 = 16
+    let shl_expr = Expression::ShiftLeft(ShiftLeftExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 1 })),
+        right: Box::new(Expression::Number(NumberExpression { value: 4 })),
+    });
+    let wasm = compile_expression_to_wasm(&shl_expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(16));
+
+    // 64 >> 2 = 16
+    let shr_expr = Expression::ShiftRight(ShiftRightExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 64 })),
+        right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+    });
+    let wasm = compile_expression_to_wasm(&shr_expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(16));
+
+    // Combined: ((1 << 5) | (13 & 11)) ^ 3 = (32 | 9) ^ 3 = 41 ^ 3 = 42
+    let combined_expr = Expression::BitXor(BitXorExpression {
+        left: Box::new(Expression::BitOr(BitOrExpression {
+            left: Box::new(Expression::ShiftLeft(ShiftLeftExpression {
+                left: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                right: Box::new(Expression::Number(NumberExpression { value: 5 })),
+            })),
+            right: Box::new(Expression::BitAnd(BitAndExpression {
+                left: Box::new(Expression::Number(NumberExpression { value: 13 })),
+                right: Box::new(Expression::Number(NumberExpression { value: 11 })),
+            })),
+        })),
+        right: Box::new(Expression::Number(NumberExpression { value: 3 })),
+    });
+    let wasm = compile_expression_to_wasm(&combined_expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(42));
+}
+
+#[test]
 fn test_compile_and_execute_comparisons_and_if() {
     let expr = Expression::If(IfExpression {
         condition: Box::new(Expression::LessThan(LessThanExpression {

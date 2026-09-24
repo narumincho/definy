@@ -304,8 +304,8 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 1 CreateAccount + 2 ModuleDefinition + 37 PartDefinition + 2 PartUpdate = 42 events
-        assert_eq!(events.len(), 42);
+        // 1 CreateAccount + 2 ModuleDefinition + 38 PartDefinition + 3 PartUpdate = 44 events
+        assert_eq!(events.len(), 44);
 
         let mut part_names = Vec::new();
         let mut module_names = Vec::new();
@@ -339,6 +339,7 @@ mod tests {
         assert!(part_names.contains(&"string".to_string()));
         assert!(part_names.contains(&"boolean".to_string()));
         assert!(part_names.contains(&"expression".to_string()));
+        assert!(part_names.contains(&"value".to_string()));
         assert!(part_names.contains(&"eval-ast".to_string()));
         assert!(part_names.contains(&"sample-ast-calc".to_string()));
         assert!(part_names.contains(&"list".to_string()));
@@ -373,16 +374,16 @@ mod tests {
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 42);
+        assert_eq!(events_after.len(), 44);
     }
 
     #[tokio::test]
     async fn test_cleanup_outdated_builtin_events() {
         let db = init_db().await.unwrap();
 
-        // Check initially 42 events
+        // Check initially 44 events
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events.len(), 42);
+        assert_eq!(events.len(), 44);
 
         // Insert an outdated/unexpected event created by the definy system account
         let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
@@ -412,9 +413,9 @@ mod tests {
             .await
             .unwrap();
 
-        // Verify that there are now 43 events
+        // Verify that there are now 45 events
         let events_with_outdated = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_with_outdated.len(), 43);
+        assert_eq!(events_with_outdated.len(), 45);
 
         // Also insert a user event (not definy system account) to verify user data is NEVER deleted
         let user_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
@@ -434,16 +435,16 @@ mod tests {
             .await
             .unwrap();
 
-        // Total 44 events
+        // Total 46 events
         let events_total = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_total.len(), 44);
+        assert_eq!(events_total.len(), 46);
 
         // Run migrate_builtin_data - it should delete the outdated builtin part, but keep normal_user event!
         migrate_builtin_data(&db).await.unwrap();
 
         let events_cleaned = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 42 built-in events + 1 user event = 43 events (outdated builtin deleted)
-        assert_eq!(events_cleaned.len(), 43);
+        // 44 built-in events + 1 user event = 45 events (outdated builtin deleted)
+        assert_eq!(events_cleaned.len(), 45);
 
         let user_event_hash = sha2::Sha256::digest(&user_binary);
         assert!(get_event(&db, &user_event_hash).await.unwrap().is_some());

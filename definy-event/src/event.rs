@@ -252,6 +252,11 @@ pub enum Expression {
     Multiply(MultiplyExpression),
     Divide(DivideExpression),
     Remainder(RemainderExpression),
+    BitAnd(BitAndExpression),
+    BitOr(BitOrExpression),
+    BitXor(BitXorExpression),
+    ShiftLeft(ShiftLeftExpression),
+    ShiftRight(ShiftRightExpression),
     LessThan(LessThanExpression),
     LessThanOrEqual(LessThanOrEqualExpression),
     GreaterThan(GreaterThanExpression),
@@ -315,6 +320,11 @@ pub enum CompilerBuiltin {
     If,
     Function,
     Call,
+    BitAnd,
+    BitOr,
+    BitXor,
+    ShiftLeft,
+    ShiftRight,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -343,6 +353,36 @@ pub struct DivideExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RemainderExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BitAndExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BitOrExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BitXorExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ShiftLeftExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ShiftRightExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }

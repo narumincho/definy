@@ -419,6 +419,57 @@ pub(crate) fn emit_expression(
                 "remainder by zero",
             )?;
         }
+        Expression::BitAnd(BitAndExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_AND,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "bit and",
+            )?;
+        }
+        Expression::BitOr(BitOrExpression { left, right }) => {
+            emit_binary_arithmetic(left, right, I64_OR, out, env, next_local_idx, ctx, "bit or")?;
+        }
+        Expression::BitXor(BitXorExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_XOR,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "bit xor",
+            )?;
+        }
+        Expression::ShiftLeft(ShiftLeftExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SHL,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "shift left",
+            )?;
+        }
+        Expression::ShiftRight(ShiftRightExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SHR_U,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "shift right",
+            )?;
+        }
         Expression::Equal(EqualExpression { left, right }) => {
             emit_binary_comparison(left, right, I64_EQ, out, env, next_local_idx, ctx)?;
         }
@@ -762,6 +813,11 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::Multiply(m) => 4 + count_locals(&m.left) + count_locals(&m.right),
         Expression::Divide(d) => 4 + count_locals(&d.left) + count_locals(&d.right),
         Expression::Remainder(r) => 4 + count_locals(&r.left) + count_locals(&r.right),
+        Expression::BitAnd(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::BitOr(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::BitXor(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::ShiftLeft(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
+        Expression::ShiftRight(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
         Expression::Equal(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
         Expression::NotEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
         Expression::LessThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),

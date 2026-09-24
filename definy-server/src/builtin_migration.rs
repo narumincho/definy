@@ -699,6 +699,16 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     events.push(expr_def_event);
     events.push(expr_update_event);
 
+    // Value Type (Self-describing runtime value)
+    let (val_def_event, val_update_event) = crate::builtin_value_type::create_value_type_events(
+        &account_id,
+        first_commit_time,
+        &core_module_hash,
+        &signing_key,
+    )?;
+    events.push(val_def_event);
+    events.push(val_update_event);
+
     // eval-ast function part (Self-hosting evaluator)
     let (eval_ast_def_event, eval_ast_update_event) =
         crate::builtin_expression_type::create_eval_ast_part_events(

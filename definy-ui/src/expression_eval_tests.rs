@@ -99,6 +99,81 @@ fn evaluate_division_and_remainder() {
 }
 
 #[test]
+fn evaluate_bitwise_operations() {
+    let and_expr = definy_event::event::Expression::BitAnd(definy_event::event::BitAndExpression {
+        left: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 14 },
+        )),
+        right: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 11 },
+        )),
+    });
+    assert_eq!(
+        evaluate_expression(&and_expr, &[]),
+        Ok(crate::expression_eval::Value::Number(10))
+    );
+    assert_eq!(expression_to_source(&and_expr), "& 14 11");
+
+    let or_expr = definy_event::event::Expression::BitOr(definy_event::event::BitOrExpression {
+        left: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 12 },
+        )),
+        right: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 3 },
+        )),
+    });
+    assert_eq!(
+        evaluate_expression(&or_expr, &[]),
+        Ok(crate::expression_eval::Value::Number(15))
+    );
+    assert_eq!(expression_to_source(&or_expr), "| 12 3");
+
+    let xor_expr = definy_event::event::Expression::BitXor(definy_event::event::BitXorExpression {
+        left: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 12 },
+        )),
+        right: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 10 },
+        )),
+    });
+    assert_eq!(
+        evaluate_expression(&xor_expr, &[]),
+        Ok(crate::expression_eval::Value::Number(6))
+    );
+    assert_eq!(expression_to_source(&xor_expr), "^ 12 10");
+
+    let shl_expr =
+        definy_event::event::Expression::ShiftLeft(definy_event::event::ShiftLeftExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 2 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 3 },
+            )),
+        });
+    assert_eq!(
+        evaluate_expression(&shl_expr, &[]),
+        Ok(crate::expression_eval::Value::Number(16))
+    );
+    assert_eq!(expression_to_source(&shl_expr), "<< 2 3");
+
+    let shr_expr =
+        definy_event::event::Expression::ShiftRight(definy_event::event::ShiftRightExpression {
+            left: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 32 },
+            )),
+            right: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 2 },
+            )),
+        });
+    assert_eq!(
+        evaluate_expression(&shr_expr, &[]),
+        Ok(crate::expression_eval::Value::Number(8))
+    );
+    assert_eq!(expression_to_source(&shr_expr), ">> 32 2");
+}
+
+#[test]
 fn evaluate_comparisons() {
     let lt_expr =
         definy_event::event::Expression::LessThan(definy_event::event::LessThanExpression {

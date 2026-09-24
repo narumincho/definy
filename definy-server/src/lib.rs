@@ -1,5 +1,6 @@
 mod builtin_expression_type;
 mod builtin_migration;
+mod builtin_value_type;
 mod db;
 mod error;
 mod event;

@@ -194,6 +194,37 @@ fn check_expression_type_with_context(
         definy_event::event::Expression::Remainder(rem_expression) => {
             check_binary_arithmetic(&rem_expression.left, &rem_expression.right, path, ctx)
         }
+        definy_event::event::Expression::BitAnd(bit_and_expression) => check_binary_arithmetic(
+            &bit_and_expression.left,
+            &bit_and_expression.right,
+            path,
+            ctx,
+        ),
+        definy_event::event::Expression::BitOr(bit_or_expression) => {
+            check_binary_arithmetic(&bit_or_expression.left, &bit_or_expression.right, path, ctx)
+        }
+        definy_event::event::Expression::BitXor(bit_xor_expression) => check_binary_arithmetic(
+            &bit_xor_expression.left,
+            &bit_xor_expression.right,
+            path,
+            ctx,
+        ),
+        definy_event::event::Expression::ShiftLeft(shift_left_expression) => {
+            check_binary_arithmetic(
+                &shift_left_expression.left,
+                &shift_left_expression.right,
+                path,
+                ctx,
+            )
+        }
+        definy_event::event::Expression::ShiftRight(shift_right_expression) => {
+            check_binary_arithmetic(
+                &shift_right_expression.left,
+                &shift_right_expression.right,
+                path,
+                ctx,
+            )
+        }
         definy_event::event::Expression::LessThan(lt_expression) => {
             check_binary_comparison_numbers(&lt_expression.left, &lt_expression.right, path, ctx)
         }

@@ -214,6 +214,51 @@ pub fn render_expression_editor(
                             &rem_expression.right,
                         )
                     }
+                    definy_event::event::Expression::BitAnd(bit_and_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &bit_and_expression.left,
+                            &bit_and_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::BitOr(bit_or_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &bit_or_expression.left,
+                            &bit_or_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::BitXor(bit_xor_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &bit_xor_expression.left,
+                            &bit_xor_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::ShiftLeft(shift_left_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &shift_left_expression.left,
+                            &shift_left_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::ShiftRight(shift_right_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &shift_right_expression.left,
+                            &shift_right_expression.right,
+                        )
+                    }
                     definy_event::event::Expression::Equal(equal_expression) => {
                         render_binary_inputs(
                             state,

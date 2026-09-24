@@ -58,6 +58,26 @@ pub(crate) fn default_expression_for_compiler_builtin(
             left: num(0),
             right: num(1),
         }),
+        CompilerBuiltin::BitAnd => Expression::BitAnd(BitAndExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::BitOr => Expression::BitOr(BitOrExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::BitXor => Expression::BitXor(BitXorExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::ShiftLeft => Expression::ShiftLeft(ShiftLeftExpression {
+            left: num(0),
+            right: num(0),
+        }),
+        CompilerBuiltin::ShiftRight => Expression::ShiftRight(ShiftRightExpression {
+            left: num(0),
+            right: num(0),
+        }),
         CompilerBuiltin::Equal => Expression::Equal(EqualExpression {
             left: num(0),
             right: num(0),
@@ -166,6 +186,11 @@ pub(crate) fn build_expression_from_selection(
         "expr:multiply" => Some(CompilerBuiltin::Multiply),
         "expr:divide" => Some(CompilerBuiltin::Divide),
         "expr:remainder" => Some(CompilerBuiltin::Remainder),
+        "expr:bit_and" => Some(CompilerBuiltin::BitAnd),
+        "expr:bit_or" => Some(CompilerBuiltin::BitOr),
+        "expr:bit_xor" => Some(CompilerBuiltin::BitXor),
+        "expr:shift_left" => Some(CompilerBuiltin::ShiftLeft),
+        "expr:shift_right" => Some(CompilerBuiltin::ShiftRight),
         "expr:equal" => Some(CompilerBuiltin::Equal),
         "expr:not_equal" => Some(CompilerBuiltin::NotEqual),
         "expr:less_than" => Some(CompilerBuiltin::LessThan),
