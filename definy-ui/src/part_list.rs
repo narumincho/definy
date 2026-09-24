@@ -200,41 +200,39 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                 .as_ref()
                                 .map(|m| m.module_name.as_str())
                                 .unwrap_or("module");
+                            let type_str = PartType::optional_to_string(&part.part_type);
+                            let type_badge_cls = crate::event_list::part_type_badge_class(&type_str);
                             rsx! {
                                 div {
                                     key: "{def_hash}",
                                     class: "event-card",
-                                    style: "display: grid; gap: 0.35rem; padding: 0.55rem 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                                    style: "display: grid; gap: 0.45rem;",
                                     // Row 1: モジュール名.パーツ名 : 型 作成者 最終更新日時
-                                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.45rem; font-size: 0.84rem;",
-                                        div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; min-width: 0;",
+                                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-size: 0.86rem;",
+                                        div { style: "display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0;",
                                             // モジュール名.パーツ名
-                                            span { style: "display: inline-flex; align-items: baseline; gap: 0.12rem;",
+                                            span { style: "display: inline-flex; align-items: baseline; gap: 0.15rem;",
                                                 a {
                                                     href: context.href_with_lang(Location::Module(part.module_definition_event_hash.clone())),
-                                                    style: "color: var(--text-secondary); font-weight: 500; text-decoration: none;",
+                                                    style: "color: var(--primary); font-weight: 500; text-decoration: none;",
                                                     "{module_name}"
                                                 }
-                                                span { style: "color: var(--text-secondary); opacity: 0.5;", "." }
+                                                span { style: "color: var(--text-muted); opacity: 0.6;", "." }
                                                 a {
                                                     href: context.href_with_lang(Location::Part(def_hash.clone())),
-                                                    style: "font-weight: 600; font-size: 0.95rem; color: var(--text); text-decoration: none;",
+                                                    style: "font-weight: 700; font-size: 1rem; color: var(--text-primary); text-decoration: none;",
                                                     "{part.part_name}"
                                                 }
                                             }
                                             // : 型
-                                            span { style: "color: var(--text-secondary); opacity: 0.6; margin-left: 0.1rem;",
-                                                ":"
-                                            }
                                             span {
-                                                class: "mono",
-                                                style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.08rem 0.4rem; border-radius: var(--radius-xs); white-space: nowrap;",
-                                                "{PartType::optional_to_string(&part.part_type)}"
+                                                class: "{type_badge_cls}",
+                                                "{type_str}"
                                             }
                                             // 作成者
                                             a {
                                                 href: context.href_with_lang(Location::Account(part.account_id.clone())),
-                                                style: "color: var(--text-secondary); font-size: 0.78rem; text-decoration: none; margin-left: 0.25rem;",
+                                                style: "color: var(--text-muted); font-size: 0.78rem; text-decoration: none; margin-left: 0.25rem;",
                                                 "{account_name}"
                                             }
                                         }
@@ -253,7 +251,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                         if part.expression.is_some() {
                                             div {
                                                 class: "mono",
-                                                style: "font-size: 0.78rem; color: #a5f3fc; background: rgb(0 0 0 / 0.22); border: 1px solid var(--border); border-radius: var(--radius-xs); padding: 0.22rem 0.5rem; overflow-x: auto; white-space: nowrap; max-width: 100%;",
+                                                style: "font-size: 0.78rem; color: #7dd3fc; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 0.35rem 0.65rem; overflow-x: auto; white-space: nowrap; max-width: 100%;",
                                                 "{expr_str}"
                                             }
                                         }

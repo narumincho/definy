@@ -51,14 +51,12 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
     rsx! {
         header {
             class: "app-header",
-            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.2rem; background: rgb(16 22 27 / 0.8); backdrop-filter: var(--glass-blur); left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; border-bottom: 1px solid var(--border); box-sizing: border-box;",
-            div { style: "display: flex; align-items: center; gap: 1rem;",
+            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.4rem; left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; box-sizing: border-box;",
+            div { style: "display: flex; align-items: center; gap: 0.8rem;",
                 a {
                     href: context.href_with_lang(Location::Home),
-                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.3rem;",
-                    h1 { style: "font-size: 1.45rem; font-weight: 700; color: var(--primary); letter-spacing: -0.03em; margin: 0;",
-                        "definy"
-                    }
+                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.5rem;",
+                    h1 { class: "logo-text", "definy" }
                 }
                 NavLink {
                     context: context.clone(),
@@ -110,7 +108,7 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
             }
             div { style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
-                div { style: "font-size: 0.86rem; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                div { style: "font-size: 0.84rem; font-weight: 500; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.01em;",
                     "{title_text}"
                 }
             }
@@ -134,9 +132,10 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                         rsx! {
                             button {
                                 r#type: "button",
+                                class: "btn-secondary",
                                 "popovertarget": "header-popover",
                                 "popovertargetaction": "show",
-                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; background: rgb(255 255 255 / 0.06); color: var(--text); border: 1px solid var(--border); padding: 0.38rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
+                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
                                 "{account_name}"
                             }
                         }
@@ -144,9 +143,9 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 } else {
                     button {
                         r#type: "button",
+                        class: "btn-primary",
                         "commandfor": "login-or-create-account-dialog",
                         "command": "show-modal",
-                        style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.88rem; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 8px rgb(124 192 216 / 0.22); transition: opacity 0.15s ease;",
                         "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }
                 }
@@ -268,14 +267,14 @@ fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
             // 接続ステータスドット＆ラベル
             button {
                 r#type: "button",
-                style: "display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.55rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.74rem; color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease;",
+                style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.65rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;",
                 title: "{tooltip}",
                 onclick: move |_| {
                     let mut dispatch = use_context::<Signal<AppState>>();
                     let cur = dispatch.read().force_offline;
                     dispatch.write().force_offline = !cur;
                 },
-                span { style: "display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {dot_color}; box-shadow: 0 0 6px {dot_color}; flex-shrink: 0;" }
+                span { style: "display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {dot_color}; box-shadow: 0 0 8px {dot_color}; flex-shrink: 0; animation: pulse-glow 2s infinite ease-in-out;" }
                 span { style: "white-space: nowrap;", "{status_text}" }
             }
             // 未送信ローカルイベントがある場合のチップ表示

@@ -254,34 +254,39 @@ fn PartEditorCard(
             // 1. メタ情報＆アクションヘッダーカード
             div {
                 class: "event-detail-card",
-                style: "display: grid; gap: 0.8rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                style: "display: grid; gap: 1rem; padding: 1.25rem 1.4rem;",
                 // 上部バー：タイトルとアクションボタン
                 div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; flex-wrap: wrap;",
                     div { style: "display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;",
-                        h2 { style: "font-size: 1.35rem; font-weight: 700; margin: 0; color: var(--text);",
+                        h2 { style: "font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--text-primary);",
                             "{part_name}"
                         }
-                        span { style: "font-size: 0.76rem; color: var(--text-secondary); opacity: 0.8;",
+                        span { style: "font-size: 0.76rem; color: var(--text-muted);",
                             "{updated_at_label}"
                         }
                     }
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                    div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                         button {
                             r#type: "button",
-                            style: if show_wasm_inspector() { "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.18); border: 1px solid var(--primary); border-radius: var(--radius-sm); color: var(--primary); font-weight: 600; cursor: pointer;" } else { "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;" },
+                            class: "btn-secondary",
+                            style: if show_wasm_inspector() { "background: rgba(56, 189, 248, 0.16); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);" } else { "" },
                             onclick: move |_| show_wasm_inspector.toggle(),
-                            "{context.language.label(\"Wasm Inspector\", \"Wasm インスペクタ\", \"Wasm-inspektilo\")}"
+                            span { style: "font-size: 0.9em;", "🔍" }
+                            span {
+                                "{context.language.label(\"Wasm Inspector\", \"Wasm インスペクタ\", \"Wasm-inspektilo\")}"
+                            }
                         }
                         button {
                             r#type: "button",
-                            style: "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;",
+                            class: "btn-secondary",
                             onclick: on_evaluate,
-                            "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
+                            span { style: "font-size: 0.9em;", "▶" }
+                            span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
                         }
                         button {
                             r#type: "button",
+                            class: if is_logged_in { "btn-primary" } else { "btn-secondary" },
                             disabled: !is_logged_in,
-                            style: if is_logged_in { "padding: 0.4rem 1.1rem; font-size: 0.82rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; box-shadow: var(--shadow-sm);" } else { "padding: 0.4rem 1.1rem; font-size: 0.82rem; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: not-allowed; opacity: 0.5;" },
                             onclick: on_save,
                             "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
                         }
@@ -350,9 +355,9 @@ fn PartEditorCard(
             // 2. 式エディタカード（メインワークスペース）
             div {
                 class: "event-detail-card",
-                style: "display: grid; gap: 0.65rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+                style: "display: grid; gap: 0.85rem; padding: 1.25rem 1.4rem;",
                 div { style: "display: flex; justify-content: space-between; align-items: center;",
-                    span { style: "font-size: 0.95rem; font-weight: 600; color: var(--text);",
+                    span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
                         "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
                     }
                 }
@@ -375,17 +380,29 @@ fn PartEditorCard(
                     rsx! {
                         div {
                             class: "mono",
-                            style: "font-size: 0.8rem; color: #a5f3fc; background: rgb(0 0 0 / 0.22); border: 1px solid var(--border); padding: 0.35rem 0.6rem; border-radius: var(--radius-sm); overflow-x: auto; white-space: nowrap;",
+                            style: "font-size: 0.82rem; color: #7dd3fc; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); overflow-x: auto; white-space: nowrap;",
                             "{expr_str}"
                         }
                     }
                 }
-                if let Some(eval) = eval_result() {
-                    div {
-                        class: "mono",
-                        style: "font-size: 0.84rem; word-break: break-word; background: rgb(124 192 216 / 0.12); border: 1px solid var(--primary); color: var(--text); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);",
-                        "{eval}"
-                    }
+                {
+                    eval_result()
+                        .map(|eval| {
+                            let is_error = eval.starts_with("Error")
+                                || eval.starts_with("エラー");
+                            let (bg, border, text_color) = if is_error {
+                                ("var(--error-bg)", "var(--error)", "#fca5a5")
+                            } else {
+                                ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
+                            };
+                            rsx! {
+                                div {
+                                    class: "mono",
+                                    style: "font-size: 0.86rem; word-break: break-word; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);",
+                                    "{eval}"
+                                }
+                            }
+                        })
                 }
             }
 

@@ -296,16 +296,14 @@ pub fn WasmInspectorCard(
 
     rsx! {
         div {
-            class: "wasm-inspector-card",
-            style: "display: grid; gap: 0.75rem; padding: 1rem 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+            class: "event-detail-card",
+            style: "display: grid; gap: 0.9rem; padding: 1.25rem 1.4rem;",
             div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.8rem; flex-wrap: wrap;",
-                div { style: "display: flex; align-items: baseline; gap: 0.6rem;",
-                    span { style: "font-size: 0.95rem; font-weight: 600; color: var(--text);",
+                div { style: "display: flex; align-items: baseline; gap: 0.65rem;",
+                    span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
                         "{language.label(\"WebAssembly Binary Structure\", \"WebAssembly バイナリ構造\", \"Strukturo de WebAssembly-binaro\")}"
                     }
-                    span {
-                        class: "badge mono",
-                        style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.45rem; border-radius: var(--radius-full);",
+                    span { class: "badge badge-func mono",
                         "{inspection.total_bytes} bytes (v{inspection.version})"
                     }
                 }
@@ -313,7 +311,8 @@ pub fn WasmInspectorCard(
                     a {
                         href: "{inspection.download_data_url}",
                         download: "{download_filename}",
-                        style: "display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.38rem 0.8rem; font-size: 0.8rem; font-weight: 600; background: var(--primary); color: #0e1720; text-decoration: none; border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); transition: opacity 0.15s ease;",
+                        class: "btn-primary",
+                        style: "font-size: 0.8rem; padding: 0.38rem 0.85rem;",
                         span { "⬇" }
                         span {
                             "{language.label(\"Download .wasm\", \".wasm をダウンロード\", \"Elŝuti .wasm\")}"
@@ -323,16 +322,16 @@ pub fn WasmInspectorCard(
             }
 
             // View toggle (Sections / Hex Dump)
-            div { style: "display: flex; gap: 0.35rem; border-bottom: 1px solid var(--border); padding-bottom: 0.4rem;",
+            div { style: "display: inline-flex; background: rgba(0, 0, 0, 0.35); padding: 0.2rem; border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content;",
                 button {
                     r#type: "button",
-                    style: if view_mode() == 0 { "padding: 0.25rem 0.65rem; font-size: 0.78rem; font-weight: 600; background: rgb(124 192 216 / 0.15); color: var(--primary); border: 1px solid var(--primary); border-radius: var(--radius-xs); cursor: pointer;" } else { "padding: 0.25rem 0.65rem; font-size: 0.78rem; background: transparent; color: var(--text-secondary); border: 1px solid transparent; border-radius: var(--radius-xs); cursor: pointer;" },
+                    style: if view_mode() == 0 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: #041421; border-radius: var(--radius-xs); box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
                     onclick: move |_| view_mode.set(0),
                     "{language.label(\"Sections\", \"セクション一覧\", \"Sekcioj\")}"
                 }
                 button {
                     r#type: "button",
-                    style: if view_mode() == 1 { "padding: 0.25rem 0.65rem; font-size: 0.78rem; font-weight: 600; background: rgb(124 192 216 / 0.15); color: var(--primary); border: 1px solid var(--primary); border-radius: var(--radius-xs); cursor: pointer;" } else { "padding: 0.25rem 0.65rem; font-size: 0.78rem; background: transparent; color: var(--text-secondary); border: 1px solid transparent; border-radius: var(--radius-xs); cursor: pointer;" },
+                    style: if view_mode() == 1 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: #041421; border-radius: var(--radius-xs); box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
                     onclick: move |_| view_mode.set(1),
                     "{language.label(\"Hex Dump\", \"16進ダンプ\", \"Deksesuma rubejo\")}"
                 }
@@ -340,22 +339,24 @@ pub fn WasmInspectorCard(
 
             if view_mode() == 0 {
                 // Sections view
-                div { style: "display: grid; gap: 0.35rem; font-size: 0.8rem;",
+                div { style: "display: grid; gap: 0.45rem; font-size: 0.82rem;",
                     for sec in &inspection.sections {
                         div {
                             key: "{sec.offset}",
-                            style: "display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.4rem 0.65rem; background: rgb(0 0 0 / 0.18); border: 1px solid var(--border); border-radius: var(--radius-xs); flex-wrap: wrap;",
-                            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                            style: "display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0.8rem; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; transition: all 0.15s ease;",
+                            div { style: "display: flex; align-items: center; gap: 0.65rem;",
                                 span {
-                                    class: "mono",
-                                    style: "font-weight: 700; color: #38bdf8; min-width: 4.8rem;",
-                                    "[{sec.name}]"
+                                    class: "{section_badge_class(sec.id)}",
+                                    style: "font-weight: 700; min-width: 4.8rem; justify-content: center;",
+                                    "{sec.name}"
                                 }
-                                span { style: "color: var(--text);", "{sec.summary}" }
+                                span { style: "color: var(--text); font-weight: 500;",
+                                    "{sec.summary}"
+                                }
                             }
                             div {
                                 class: "mono",
-                                style: "font-size: 0.74rem; color: var(--text-secondary); margin-left: auto;",
+                                style: "font-size: 0.74rem; color: var(--text-muted); margin-left: auto;",
                                 "{sec.size} B (offset: 0x{sec.offset:02x})"
                             }
                         }
@@ -365,11 +366,25 @@ pub fn WasmInspectorCard(
                 // Hex dump view
                 pre {
                     class: "mono",
-                    style: "margin: 0; padding: 0.6rem 0.8rem; background: rgb(0 0 0 / 0.35); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.75rem; color: #a5f3fc; overflow-x: auto; line-height: 1.45;",
+                    style: "margin: 0; padding: 0.75rem 1rem; background: rgba(4, 8, 15, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); font-size: 0.76rem; color: #7dd3fc; overflow-x: auto; line-height: 1.55; box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);",
                     "{inspection.hex_dump}"
                 }
             }
         }
+    }
+}
+
+fn section_badge_class(section_id: u8) -> &'static str {
+    match section_id {
+        1 => "badge badge-type mono",
+        3 => "badge badge-func mono",
+        4 => "badge badge-boolean mono",
+        5 => "badge badge-string mono",
+        7 => "badge badge-number mono",
+        9 => "badge badge-func mono",
+        10 => "badge badge-number mono",
+        11 => "badge badge-string mono",
+        _ => "badge badge-type mono",
     }
 }
 

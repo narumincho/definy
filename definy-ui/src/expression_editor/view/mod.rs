@@ -59,30 +59,29 @@ pub fn render_expression_editor(
     let is_focused = state.focused_path.as_ref() == Some(&path);
     let (border_style, shadow_style) = if is_focused {
         (
-            "2px solid var(--accent)",
-            "box-shadow: 0 0 0 3px var(--accent-glow), 0 2px 8px rgb(124 192 216 / 0.15);",
+            "1px solid var(--primary)",
+            "box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), 0 4px 16px rgba(56, 189, 248, 0.15);",
         )
     } else if warning_message.is_some() {
-        ("1px solid var(--error)", "")
+        (
+            "1px solid var(--error)",
+            "box-shadow: 0 0 8px rgba(251, 113, 133, 0.2);",
+        )
     } else if path.is_empty() {
-        ("1px solid var(--border)", "")
+        ("1px solid var(--border)", "box-shadow: var(--shadow-sm);")
     } else {
-        ("1px solid rgb(255 255 255 / 0.1)", "")
+        ("1px solid rgba(255, 255, 255, 0.07)", "")
     };
     let card_padding = if path.is_empty() {
-        "0.5rem 0.65rem"
+        "0.6rem 0.75rem"
     } else {
-        "0.3rem 0.45rem"
+        "0.35rem 0.55rem"
     };
-    let card_gap = if path.is_empty() {
-        "0.35rem"
-    } else {
-        "0.25rem"
-    };
+    let card_gap = if path.is_empty() { "0.4rem" } else { "0.3rem" };
     let card_bg = if path.is_empty() {
-        "var(--surface)"
+        "rgba(14, 21, 33, 0.65)"
     } else {
-        "rgb(255 255 255 / 0.02)"
+        "rgba(255, 255, 255, 0.025)"
     };
     let card_class = if path.is_empty() {
         "event-detail-card"
@@ -95,7 +94,7 @@ pub fn render_expression_editor(
         div {
             class: "{card_class}",
             "data-path": "{path_str}",
-            style: "padding: {card_padding}; display: grid; gap: {card_gap}; border: {border_style}; {shadow_style} background: {card_bg}; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box; transition: border-color 0.15s ease, box-shadow 0.15s ease;",
+            style: "padding: {card_padding}; display: grid; gap: {card_gap}; border: {border_style}; {shadow_style} background: {card_bg}; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);",
             onclick: {
                 let p = path.clone();
                 move |evt: MouseEvent| {
