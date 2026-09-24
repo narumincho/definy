@@ -73,6 +73,7 @@ fn PartEditorCard(
     let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
     let mut eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
+    let mut show_wasm_inspector = use_signal(|| false);
     use_context_provider(|| expression);
 
     let hash_as_base64 = definition_event_hash.to_string();
@@ -267,6 +268,12 @@ fn PartEditorCard(
                     div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
                         button {
                             r#type: "button",
+                            style: if show_wasm_inspector() { "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.18); border: 1px solid var(--primary); border-radius: var(--radius-sm); color: var(--primary); font-weight: 600; cursor: pointer;" } else { "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;" },
+                            onclick: move |_| show_wasm_inspector.toggle(),
+                            "{context.language.label(\"Wasm Inspector\", \"Wasm インスペクタ\", \"Wasm-inspektilo\")}"
+                        }
+                        button {
+                            r#type: "button",
                             style: "padding: 0.4rem 0.85rem; font-size: 0.82rem; background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-weight: 600; cursor: pointer; transition: background 0.15s ease;",
                             onclick: on_evaluate,
                             "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
@@ -378,6 +385,44 @@ fn PartEditorCard(
                         class: "mono",
                         style: "font-size: 0.84rem; word-break: break-word; background: rgb(124 192 216 / 0.12); border: 1px solid var(--primary); color: var(--text); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm);",
                         "{eval}"
+                    }
+                }
+            }
+
+            if show_wasm_inspector() {
+                {
+                    if let Some(expr) = &*expression.read() {
+                        let events_vec = state.events_with_hash();
+                        match crate::wasm_emitter::compile_expression_to_wasm(expr, &events_vec) {
+                            Ok(wasm_bytes) => {
+                                rsx! {
+                                    crate::wasm_inspector::WasmInspectorCard { language, part_name: part_name(), wasm_bytes }
+                                }
+                            }
+                            Err(err) => {
+                                let err_msg = format!(
+                                    "{}: {}",
+                                    language
+                                        .label(
+                                            "Failed to compile to WebAssembly",
+                                            "WebAssembly へのコンパイルに失敗しました",
+                                            "Kompilado al WebAssembly malsukcesis",
+                                        ),
+                                    err,
+                                );
+                                rsx! {
+                                    div { style: "padding: 0.8rem; background: rgb(239 68 68 / 0.1); border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fca5a5; font-size: 0.85rem;",
+                                        "{err_msg}"
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        rsx! {
+                            div { style: "padding: 0.8rem; color: var(--text-secondary); font-size: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);",
+                                "{language.label(\"No expression to compile to WebAssembly.\", \"WebAssembly にコンパイルする式がありません。\", \"Neniu esprimo por kompili al WebAssembly.\")}"
+                            }
+                        }
                     }
                 }
             }

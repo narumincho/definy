@@ -34,6 +34,7 @@ pub mod query;
 pub mod tree_layout;
 mod tree_layout_view;
 pub mod wasm_emitter;
+pub mod wasm_inspector;
 
 pub use app_state::*;
 pub use event_filter::*;
