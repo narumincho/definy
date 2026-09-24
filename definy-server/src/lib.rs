@@ -1,3 +1,4 @@
+mod builtin_expression_type;
 mod builtin_migration;
 mod db;
 mod error;

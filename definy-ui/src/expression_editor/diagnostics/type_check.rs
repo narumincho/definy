@@ -172,25 +172,10 @@ fn check_expression_type_with_context(
             }
 
             if let ExpressionType::TypePart(part_hash) = &record_type {
-                if let Some(snapshot) = ctx.part_snapshot_map.get(part_hash) {
-                    if let Some(definy_event::event::Expression::TypeLiteral(record)) =
-                        &snapshot.expression
-                    {
-                        if let Some(item) = record.items.iter().find(|i| i.key == get_expr.key) {
-                            return match item.value.as_ref() {
-                                definy_event::event::Expression::TypeNumber => {
-                                    ExpressionType::Number
-                                }
-                                definy_event::event::Expression::TypeString => {
-                                    ExpressionType::String
-                                }
-                                definy_event::event::Expression::TypeBoolean => {
-                                    ExpressionType::Boolean
-                                }
-                                _ => expected_type.clone().unwrap_or(ExpressionType::Unknown),
-                            };
-                        }
-                    }
+                if let Some(field_type) =
+                    find_record_field_type(ctx.part_snapshot_map, part_hash, &get_expr.key)
+                {
+                    return field_type;
                 }
             }
 
@@ -603,28 +588,62 @@ fn check_expression_type_with_context(
             ExpressionType::Type
         }
         definy_event::event::Expression::Variant(variant_expression) => {
-            if let Some(payload) = &variant_expression.payload {
-                let mut payload_path = path.to_vec();
-                payload_path.push(PathStep::VariantPayload);
-                ctx.check(payload.as_ref(), &payload_path, None);
+            let target_hash = variant_expression
+                .type_part_definition_event_hash
+                .as_ref()
+                .or_else(|| match &expected_type {
+                    Some(ExpressionType::TypePart(hash)) => Some(hash),
+                    _ => None,
+                });
+
+            if let Some(hash) = target_hash {
+                let expected_payload = find_union_variant_payload_type(
+                    ctx.part_snapshot_map,
+                    hash,
+                    &variant_expression.tag,
+                )
+                .flatten();
+
+                if let Some(payload) = &variant_expression.payload {
+                    let mut payload_path = path.to_vec();
+                    payload_path.push(PathStep::VariantPayload);
+                    ctx.check(payload.as_ref(), &payload_path, expected_payload);
+                }
+                ExpressionType::TypePart(hash.clone())
+            } else {
+                if let Some(payload) = &variant_expression.payload {
+                    let mut payload_path = path.to_vec();
+                    payload_path.push(PathStep::VariantPayload);
+                    ctx.check(payload.as_ref(), &payload_path, None);
+                }
+                ExpressionType::Union
             }
-            ExpressionType::Union
         }
         definy_event::event::Expression::Match(match_expression) => {
             let mut target_path = path.to_vec();
             target_path.push(PathStep::MatchTarget);
-            ctx.check(
-                match_expression.target.as_ref(),
-                &target_path,
-                Some(ExpressionType::Union),
-            );
+            let target_type = ctx.check(match_expression.target.as_ref(), &target_path, None);
+            match &target_type {
+                ExpressionType::Union | ExpressionType::TypePart(_) | ExpressionType::Unknown => {}
+                actual => {
+                    ctx.push_mismatch(&target_path, &ExpressionType::Union, actual);
+                }
+            }
 
             let mut result_type = ExpressionType::Unknown;
             for (idx, arm) in match_expression.arms.iter().enumerate() {
                 let mut arm_env = ctx.env.clone();
                 if let Some(var_id) = arm.variable_id {
-                    arm_env.insert(var_id, ExpressionType::Unknown);
-                    ctx.variable_types.insert(var_id, ExpressionType::Unknown);
+                    let var_type = match &target_type {
+                        ExpressionType::TypePart(hash) => {
+                            find_union_variant_payload_type(ctx.part_snapshot_map, hash, &arm.tag)
+                                .flatten()
+                                .unwrap_or(ExpressionType::Unknown)
+                        }
+                        _ => ExpressionType::Unknown,
+                    };
+                    arm_env.insert(var_id, var_type.clone());
+                    ctx.variable_types.insert(var_id, var_type);
                 }
                 let mut arm_path = path.to_vec();
                 arm_path.push(PathStep::MatchArmBody(idx));
@@ -637,7 +656,7 @@ fn check_expression_type_with_context(
                         expected_types: ctx.expected_types,
                         variable_types: ctx.variable_types,
                     };
-                    child_ctx.check(arm.body.as_ref(), &arm_path, None)
+                    child_ctx.check(arm.body.as_ref(), &arm_path, expected_type.clone())
                 };
                 if result_type == ExpressionType::Unknown {
                     result_type = arm_type;
@@ -646,7 +665,8 @@ fn check_expression_type_with_context(
             if let Some(default_expr) = &match_expression.default {
                 let mut default_path = path.to_vec();
                 default_path.push(PathStep::MatchDefault);
-                let default_type = ctx.check(default_expr.as_ref(), &default_path, None);
+                let default_type =
+                    ctx.check(default_expr.as_ref(), &default_path, expected_type.clone());
                 if result_type == ExpressionType::Unknown {
                     result_type = default_type;
                 }
@@ -661,4 +681,93 @@ fn check_expression_type_with_context(
     }
 
     actual_type
+}
+
+pub(crate) fn type_expression_to_expression_type(
+    expr: &definy_event::event::Expression,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+) -> ExpressionType {
+    match expr {
+        definy_event::event::Expression::TypeNumber => ExpressionType::Number,
+        definy_event::event::Expression::TypeString => ExpressionType::String,
+        definy_event::event::Expression::TypeBoolean => ExpressionType::Boolean,
+        definy_event::event::Expression::TypeList(list) => ExpressionType::List(Box::new(
+            type_expression_to_expression_type(list.item_type.as_ref(), part_snapshot_map),
+        )),
+        definy_event::event::Expression::TypeLiteral(_) => ExpressionType::Record,
+        definy_event::event::Expression::PartReference(part_ref) => {
+            ExpressionType::TypePart(part_ref.part_definition_event_hash.clone())
+        }
+        definy_event::event::Expression::TypeFunction(func) => ExpressionType::Function {
+            parameter: Box::new(type_expression_to_expression_type(
+                func.parameter.as_ref(),
+                part_snapshot_map,
+            )),
+            return_type: Box::new(type_expression_to_expression_type(
+                func.return_type.as_ref(),
+                part_snapshot_map,
+            )),
+        },
+        definy_event::event::Expression::TypeUnion(_) => ExpressionType::Union,
+        _ => ExpressionType::Unknown,
+    }
+}
+
+pub(crate) fn find_union_variant_payload_type(
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    type_part_hash: &EventHashId,
+    tag: &str,
+) -> Option<Option<ExpressionType>> {
+    let snapshot = part_snapshot_map.get(type_part_hash)?;
+    if let Some(definy_event::event::Expression::TypeUnion(union_expr)) = &snapshot.expression {
+        for variant in &union_expr.variants {
+            if variant.tag.as_ref() == tag {
+                return Some(
+                    variant
+                        .payload_type
+                        .as_ref()
+                        .map(|p| type_expression_to_expression_type(p.as_ref(), part_snapshot_map)),
+                );
+            }
+        }
+    }
+    if let Some(definy_event::event::PartType::Union(variants)) = &snapshot.part_type {
+        for variant in variants {
+            if variant.tag.as_ref() == tag {
+                return Some(
+                    variant
+                        .payload
+                        .as_ref()
+                        .map(|p| super::part_type_to_expression_type(p.as_ref())),
+                );
+            }
+        }
+    }
+    None
+}
+
+pub(crate) fn find_record_field_type(
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    type_part_hash: &EventHashId,
+    field_name: &str,
+) -> Option<ExpressionType> {
+    let snapshot = part_snapshot_map.get(type_part_hash)?;
+    if let Some(definy_event::event::Expression::TypeLiteral(record)) = &snapshot.expression {
+        for item in &record.items {
+            if item.key.as_ref() == field_name {
+                return Some(type_expression_to_expression_type(
+                    item.value.as_ref(),
+                    part_snapshot_map,
+                ));
+            }
+        }
+    }
+    if let Some(definy_event::event::PartType::Record(fields)) = &snapshot.part_type {
+        for field in fields {
+            if field.key.as_ref() == field_name {
+                return Some(super::part_type_to_expression_type(field.value.as_ref()));
+            }
+        }
+    }
+    None
 }

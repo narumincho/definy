@@ -177,7 +177,14 @@ pub enum PartType {
         parameter: Box<PartType>,
         return_type: Box<PartType>,
     },
+    Record(Vec<RecordFieldType>),
     Union(Vec<UnionVariantType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecordFieldType {
+    pub key: Box<str>,
+    pub value: Box<PartType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -199,6 +206,14 @@ impl std::fmt::Display for PartType {
                 parameter,
                 return_type,
             } => write!(f, "{parameter} -> {return_type}"),
+            PartType::Record(fields) => {
+                let field_texts = fields
+                    .iter()
+                    .map(|f| format!("{}: {}", f.key, f.value))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "{{{field_texts}}}")
+            }
             PartType::Union(variants) => {
                 let var_texts = variants
                     .iter()
@@ -624,6 +639,18 @@ mod tests {
             .to_string(),
             "number -> string"
         );
+        let record_type = PartType::Record(vec![
+            RecordFieldType {
+                key: "name".into(),
+                value: Box::new(PartType::String),
+            },
+            RecordFieldType {
+                key: "age".into(),
+                value: Box::new(PartType::Number),
+            },
+        ]);
+        assert_eq!(record_type.to_string(), "{name: string, age: number}");
+
         let union_type = PartType::Union(vec![
             UnionVariantType {
                 tag: "none".into(),

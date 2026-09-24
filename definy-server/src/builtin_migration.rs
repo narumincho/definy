@@ -119,7 +119,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             .map_err(|e| anyhow::anyhow!("Failed to serialize sample module event: {:?}", e))?;
     let sample_module_hash = definy_event::EventHashId::from_bytes(&sample_module_binary);
 
-    let events = vec![
+    let mut events = vec![
         definy_event::event::Event {
             account_id: account_id.clone(),
             time: first_commit_time,
@@ -683,6 +683,17 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             )),
         ),
     ];
+
+    // Expression AST Type (Self-describing AST)
+    let (expr_def_event, expr_update_event) =
+        crate::builtin_expression_type::create_expression_ast_type_events(
+            &account_id,
+            first_commit_time,
+            &core_module_hash,
+            &signing_key,
+        )?;
+    events.push(expr_def_event);
+    events.push(expr_update_event);
 
     // Prepare serialized binaries and expected hashes for all valid built-in events
     let mut valid_hashes = HashSet::new();

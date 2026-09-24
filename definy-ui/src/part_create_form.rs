@@ -617,6 +617,7 @@ fn current_part_type_selection(
         Some(definy_event::event::PartType::Function { .. }) => {
             find_type_part("function", "Function").unwrap_or_else(|| "function".to_string())
         }
+        Some(definy_event::event::PartType::Record(_)) => "record".to_string(),
         Some(definy_event::event::PartType::Union(_)) => "union".to_string(),
     }
 }

@@ -159,6 +159,14 @@ fn crate_part_type_summary(pt: PartType) -> Value {
                 "return": crate_part_type_summary(*return_type)
             }
         }),
+        PartType::Record(fields) => {
+            let fields_json: serde_json::Value = fields
+                .into_iter()
+                .map(|f| (f.key.to_string(), crate_part_type_summary(*f.value)))
+                .collect::<serde_json::Map<String, serde_json::Value>>()
+                .into();
+            json!({ "record": fields_json })
+        }
         PartType::Union(variants) => {
             let vars = variants
                 .into_iter()
