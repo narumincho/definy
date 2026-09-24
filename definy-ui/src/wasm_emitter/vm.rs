@@ -559,6 +559,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
             }
             END => {
                 if ip >= instructions.len() {
+                    // Function body terminator END: return to the caller frame and restore its control stack
                     if let Some(frame) = call_stack.pop() {
                         current_func_idx = frame.func_idx;
                         ip = frame.ip;
@@ -568,6 +569,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                         break;
                     }
                 } else {
+                    // Intra-function block/loop/if terminator END
                     control_stack.pop();
                 }
             }

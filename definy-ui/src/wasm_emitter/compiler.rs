@@ -549,29 +549,9 @@ pub(crate) fn emit_expression(
                 return Ok(());
             }
 
-            let mut latest_expression = None;
-            for (event_hash, event_result) in ctx.events.iter().rev() {
-                if let Ok((_, event)) = event_result {
-                    match &event.content {
-                        definy_event::event::EventContent::PartDefinition(part_definition)
-                            if part_definition_event_hash == event_hash =>
-                        {
-                            latest_expression = part_definition.expression.as_ref();
-                            break;
-                        }
-                        definy_event::event::EventContent::PartUpdate(part_update)
-                            if part_update.part_definition_event_hash
-                                == *part_definition_event_hash =>
-                        {
-                            latest_expression = part_update.expression.as_ref();
-                            break;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-
-            if let Some(target_expr) = latest_expression {
+            if let Some(target_expr) =
+                find_latest_part_expression(ctx.events, part_definition_event_hash)
+            {
                 if let Expression::Function(f) = target_expr {
                     let table_idx = ctx.pending_functions.len() as u32;
                     ctx.part_functions
@@ -835,4 +815,28 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
         _ => 2,
     }
+}
+
+fn find_latest_part_expression<'a>(
+    events: &'a [crate::app_state::EventWithHash],
+    target_part_hash: &definy_event::EventHashId,
+) -> Option<&'a Expression> {
+    for (event_hash, event_result) in events.iter().rev() {
+        if let Ok((_, event)) = event_result {
+            match &event.content {
+                definy_event::event::EventContent::PartDefinition(part_definition)
+                    if target_part_hash == event_hash =>
+                {
+                    return part_definition.expression.as_ref();
+                }
+                definy_event::event::EventContent::PartUpdate(part_update)
+                    if part_update.part_definition_event_hash == *target_part_hash =>
+                {
+                    return part_update.expression.as_ref();
+                }
+                _ => {}
+            }
+        }
+    }
+    None
 }

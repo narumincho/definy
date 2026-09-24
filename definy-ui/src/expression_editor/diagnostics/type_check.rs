@@ -158,25 +158,23 @@ fn check_expression_type_with_context(
             record_path.push(PathStep::Record);
             let record_type = ctx.check(get_expr.record.as_ref(), &record_path, None);
 
-            if let definy_event::event::Expression::TypeLiteral(record) = get_expr.record.as_ref() {
-                if let Some((idx, item)) = record
+            if let definy_event::event::Expression::TypeLiteral(record) = get_expr.record.as_ref()
+                && let Some((idx, item)) = record
                     .items
                     .iter()
                     .enumerate()
                     .find(|(_, i)| i.key == get_expr.key)
-                {
-                    let mut item_path = record_path;
-                    item_path.push(PathStep::RecordItemValue(idx));
-                    return ctx.check(item.value.as_ref(), &item_path, expected_type);
-                }
+            {
+                let mut item_path = record_path;
+                item_path.push(PathStep::RecordItemValue(idx));
+                return ctx.check(item.value.as_ref(), &item_path, expected_type);
             }
 
-            if let ExpressionType::TypePart(part_hash) = &record_type {
-                if let Some(field_type) =
+            if let ExpressionType::TypePart(part_hash) = &record_type
+                && let Some(field_type) =
                     find_record_field_type(ctx.part_snapshot_map, part_hash, &get_expr.key)
-                {
-                    return field_type;
-                }
+            {
+                return field_type;
             }
 
             expected_type.clone().unwrap_or(ExpressionType::Unknown)
@@ -591,7 +589,7 @@ fn check_expression_type_with_context(
             let target_hash = variant_expression
                 .type_part_definition_event_hash
                 .as_ref()
-                .or_else(|| match &expected_type {
+                .or(match &expected_type {
                     Some(ExpressionType::TypePart(hash)) => Some(hash),
                     _ => None,
                 });
@@ -685,14 +683,14 @@ fn check_expression_type_with_context(
 
 pub(crate) fn type_expression_to_expression_type(
     expr: &definy_event::event::Expression,
-    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    _part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
 ) -> ExpressionType {
     match expr {
         definy_event::event::Expression::TypeNumber => ExpressionType::Number,
         definy_event::event::Expression::TypeString => ExpressionType::String,
         definy_event::event::Expression::TypeBoolean => ExpressionType::Boolean,
         definy_event::event::Expression::TypeList(list) => ExpressionType::List(Box::new(
-            type_expression_to_expression_type(list.item_type.as_ref(), part_snapshot_map),
+            type_expression_to_expression_type(list.item_type.as_ref(), _part_snapshot_map),
         )),
         definy_event::event::Expression::TypeLiteral(_) => ExpressionType::Record,
         definy_event::event::Expression::PartReference(part_ref) => {
@@ -701,11 +699,11 @@ pub(crate) fn type_expression_to_expression_type(
         definy_event::event::Expression::TypeFunction(func) => ExpressionType::Function {
             parameter: Box::new(type_expression_to_expression_type(
                 func.parameter.as_ref(),
-                part_snapshot_map,
+                _part_snapshot_map,
             )),
             return_type: Box::new(type_expression_to_expression_type(
                 func.return_type.as_ref(),
-                part_snapshot_map,
+                _part_snapshot_map,
             )),
         },
         definy_event::event::Expression::TypeUnion(_) => ExpressionType::Union,
