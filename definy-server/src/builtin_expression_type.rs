@@ -61,6 +61,7 @@ pub fn create_expression_ast_type_events(
                 ("ja", "Definy の AST 式型 (メタデータ・ASTの自己表現)"),
             ]),
             part_definition_event_hash: expr_def_hash.clone(),
+            part_type: Some(PartType::Type),
             expression: Some(Expression::TypeUnion(TypeUnionExpression {
                 variants: vec![
                     TypeUnionVariant {
@@ -353,6 +354,10 @@ pub fn create_eval_ast_part_events(
                 ),
             ]),
             part_definition_event_hash: eval_ast_def_hash.clone(),
+            part_type: Some(PartType::Function {
+                parameter: Box::new(PartType::TypePart(expr_type_part_hash.clone())),
+                return_type: Box::new(PartType::Number),
+            }),
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1, // e
                 parameter_name: "e".into(),

@@ -471,8 +471,21 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         None => None,
     };
 
+    let part_type: Option<Option<PartType>> = match args.get("part_type") {
+        Some(v) if !v.is_null() => match serde_json::from_value(v.clone()) {
+            Ok(pt) => Some(Some(pt)),
+            Err(e) => return ToolCallResult::error(format!("Invalid PartType: {:?}", e)),
+        },
+        Some(_) => Some(None),
+        None => None,
+    };
+
     let part_name: Box<str> = name.unwrap_or_else(|| part.part_name.clone()).into();
     let part_description: Description = desc.unwrap_or_else(|| part.part_description.clone());
+    let final_part_type = match part_type {
+        Some(pt) => pt,
+        None => part.part_type.clone(),
+    };
     let final_expression: Option<Expression> = if let Some(opt) = expression {
         opt
     } else {
@@ -483,6 +496,7 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         part_definition_event_hash: part.definition_event_hash.clone(),
         part_name,
         part_description,
+        part_type: final_part_type,
         expression: final_expression,
         module_definition_event_hash: part.module_definition_event_hash.clone(),
     });

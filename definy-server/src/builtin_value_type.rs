@@ -43,6 +43,7 @@ pub fn create_value_type_events(
                 ("ja", "Definy のランタイム値型 (値の自己表現)"),
             ]),
             part_definition_event_hash: val_def_hash.clone(),
+            part_type: Some(PartType::Type),
             expression: Some(Expression::TypeUnion(TypeUnionExpression {
                 variants: vec![
                     TypeUnionVariant {

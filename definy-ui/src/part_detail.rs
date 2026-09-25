@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_editor::{part_type_to_expression_type, render_root_expression_editor};
+use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
@@ -69,12 +69,17 @@ fn PartEditorCard(
     let language = context.language;
     let mut part_name = use_signal(|| snapshot.part_name.clone());
     let mut part_description = use_signal(|| snapshot.description_for(language));
+    let mut part_type_expr = use_signal(|| {
+        snapshot
+            .part_type
+            .as_ref()
+            .map(definy_event::event::PartType::to_expression)
+    });
     let expression = use_signal(|| snapshot.expression.clone());
     let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
     let mut eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
-    use_context_provider(|| expression);
 
     let hash_as_base64 = definition_event_hash.to_string();
     let dropdown_name = format!("part-update-module-{}", hash_as_base64);
@@ -106,8 +111,10 @@ fn PartEditorCard(
     );
 
     let is_logged_in = state.current_key.is_some();
-    let expected_type = snapshot
-        .part_type
+    let expected_type = part_type_expr
+        .read()
+        .as_ref()
+        .and_then(definy_event::event::PartType::from_expression)
         .as_ref()
         .map(part_type_to_expression_type);
 
@@ -188,6 +195,10 @@ fn PartEditorCard(
                 return;
             }
             let desc = part_description();
+            let type_val = part_type_expr
+                .read()
+                .as_ref()
+                .and_then(definy_event::event::PartType::from_expression);
             let expr_val = expression();
             let Some(mod_hash) = module_hash() else {
                 submit_result.set(Some(
@@ -210,6 +221,7 @@ fn PartEditorCard(
                             part_name: name.into(),
                             part_description: desc.into(),
                             part_definition_event_hash: def_hash,
+                            part_type: type_val,
                             expression: expr_val,
                             module_definition_event_hash: mod_hash,
                         },
@@ -352,7 +364,33 @@ fn PartEditorCard(
                 }
             }
 
-            // 2. 式エディタカード（メインワークスペース）
+            // 2. パーツ型エディタカード
+            div {
+                class: "event-detail-card",
+                style: "display: grid; gap: 0.85rem; padding: 1.25rem 1.4rem;",
+                div { style: "display: flex; justify-content: space-between; align-items: center;",
+                    span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
+                        "{context.language.label(\"Part Type\", \"パーツ型\", \"Parto-tipo\")}"
+                    }
+                    if part_type_expr.read().is_some() {
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary",
+                            style: "padding: 0.2rem 0.55rem; font-size: 0.76rem;",
+                            onclick: move |_| part_type_expr.set(None),
+                            "{context.language.label(\"Clear (no type)\", \"クリア (型指定なし)\", \"Forigi (sen tipo)\")}"
+                        }
+                    }
+                }
+                crate::expression_editor::ExpressionEditorContainer {
+                    state: state.clone(),
+                    context: context.clone(),
+                    expression: part_type_expr,
+                    expected_type: Some(crate::expression_editor::ExpressionType::Type),
+                }
+            }
+
+            // 3. 式エディタカード（メインワークスペース）
             div {
                 class: "event-detail-card",
                 style: "display: grid; gap: 0.85rem; padding: 1.25rem 1.4rem;",
@@ -361,13 +399,11 @@ fn PartEditorCard(
                         "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
                     }
                 }
-                {
-                    render_root_expression_editor(
-                        &state,
-                        &context,
-                        &expression.read(),
-                        expected_type,
-                    )
+                crate::expression_editor::ExpressionEditorContainer {
+                    state: state.clone(),
+                    context: context.clone(),
+                    expression,
+                    expected_type,
                 }
                 {
                     let expr_str = expression

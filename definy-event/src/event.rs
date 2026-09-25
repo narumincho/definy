@@ -146,6 +146,8 @@ pub struct PartUpdateEvent {
     pub part_description: Description,
     pub part_definition_event_hash: EventHashId,
     #[serde(default)]
+    pub part_type: Option<PartType>,
+    #[serde(default)]
     pub expression: Option<Expression>,
     pub module_definition_event_hash: EventHashId,
 }
@@ -235,6 +237,95 @@ impl PartType {
         opt.as_ref()
             .map(|t| t.to_string())
             .unwrap_or_else(|| "none".to_string())
+    }
+
+    pub fn to_expression(&self) -> Expression {
+        match self {
+            PartType::Number => Expression::TypeNumber,
+            PartType::String => Expression::TypeString,
+            PartType::Boolean => Expression::TypeBoolean,
+            PartType::Type => Expression::TypeNumber,
+            PartType::TypePart(hash) => Expression::PartReference(PartReferenceExpression {
+                part_definition_event_hash: hash.clone(),
+            }),
+            PartType::List(item) => Expression::TypeList(TypeListExpression {
+                item_type: Box::new(item.to_expression()),
+            }),
+            PartType::Function {
+                parameter,
+                return_type,
+            } => Expression::TypeFunction(TypeFunctionExpression {
+                parameter: Box::new(parameter.to_expression()),
+                return_type: Box::new(return_type.to_expression()),
+            }),
+            PartType::Record(fields) => Expression::TypeLiteral(TypeLiteralExpression {
+                items: fields
+                    .iter()
+                    .map(|f| TypeLiteralItemExpression {
+                        key: f.key.clone(),
+                        value: Box::new(f.value.to_expression()),
+                    })
+                    .collect(),
+            }),
+            PartType::Union(variants) => Expression::TypeUnion(TypeUnionExpression {
+                variants: variants
+                    .iter()
+                    .map(|v| TypeUnionVariant {
+                        tag: v.tag.clone(),
+                        payload_type: v.payload.as_ref().map(|p| Box::new(p.to_expression())),
+                    })
+                    .collect(),
+            }),
+        }
+    }
+
+    pub fn from_expression(expr: &Expression) -> Option<PartType> {
+        match expr {
+            Expression::TypeNumber => Some(PartType::Number),
+            Expression::TypeString => Some(PartType::String),
+            Expression::TypeBoolean => Some(PartType::Boolean),
+            Expression::TypeList(list_expr) => {
+                let item = Self::from_expression(&list_expr.item_type)?;
+                Some(PartType::List(Box::new(item)))
+            }
+            Expression::TypeFunction(func_expr) => {
+                let parameter = Self::from_expression(&func_expr.parameter)?;
+                let return_type = Self::from_expression(&func_expr.return_type)?;
+                Some(PartType::Function {
+                    parameter: Box::new(parameter),
+                    return_type: Box::new(return_type),
+                })
+            }
+            Expression::TypeLiteral(record_expr) => {
+                let mut fields = Vec::with_capacity(record_expr.items.len());
+                for item in &record_expr.items {
+                    let val_type = Self::from_expression(&item.value)?;
+                    fields.push(RecordFieldType {
+                        key: item.key.clone(),
+                        value: Box::new(val_type),
+                    });
+                }
+                Some(PartType::Record(fields))
+            }
+            Expression::TypeUnion(union_expr) => {
+                let mut variants = Vec::with_capacity(union_expr.variants.len());
+                for v in &union_expr.variants {
+                    let payload = match &v.payload_type {
+                        Some(p) => Some(Box::new(Self::from_expression(p)?)),
+                        None => None,
+                    };
+                    variants.push(UnionVariantType {
+                        tag: v.tag.clone(),
+                        payload,
+                    });
+                }
+                Some(PartType::Union(variants))
+            }
+            Expression::PartReference(part_ref) => Some(PartType::TypePart(
+                part_ref.part_definition_event_hash.clone(),
+            )),
+            _ => None,
+        }
     }
 }
 
@@ -708,5 +799,45 @@ mod tests {
             PartType::optional_to_string(&Some(PartType::Number)),
             "number"
         );
+    }
+
+    #[test]
+    fn test_part_type_expression_roundtrip() {
+        let types = vec![
+            PartType::Number,
+            PartType::String,
+            PartType::Boolean,
+            PartType::List(Box::new(PartType::Number)),
+            PartType::Function {
+                parameter: Box::new(PartType::String),
+                return_type: Box::new(PartType::Boolean),
+            },
+            PartType::Record(vec![
+                RecordFieldType {
+                    key: "x".into(),
+                    value: Box::new(PartType::Number),
+                },
+                RecordFieldType {
+                    key: "y".into(),
+                    value: Box::new(PartType::String),
+                },
+            ]),
+            PartType::Union(vec![
+                UnionVariantType {
+                    tag: "none".into(),
+                    payload: None,
+                },
+                UnionVariantType {
+                    tag: "some".into(),
+                    payload: Some(Box::new(PartType::Number)),
+                },
+            ]),
+        ];
+
+        for pt in types {
+            let expr = pt.to_expression();
+            let recovered = PartType::from_expression(&expr).expect("should convert back");
+            assert_eq!(pt, recovered);
+        }
     }
 }

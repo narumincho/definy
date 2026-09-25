@@ -79,6 +79,9 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                 entry.account_id = event.account_id.clone();
                 entry.part_name = part_update.part_name.to_string();
                 entry.part_description = part_update.part_description.clone();
+                if part_update.part_type.is_some() {
+                    entry.part_type = part_update.part_type.clone();
+                }
                 entry.expression = part_update.expression.clone();
                 entry.module_definition_event_hash =
                     part_update.module_definition_event_hash.clone();

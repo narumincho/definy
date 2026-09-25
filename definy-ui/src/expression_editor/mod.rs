@@ -64,6 +64,20 @@ pub fn render_root_expression_editor(
     }
 }
 
+#[component]
+pub fn ExpressionEditorContainer(
+    state: AppState,
+    context: PageContext,
+    expression: Signal<Option<definy_event::event::Expression>>,
+    expected_type: Option<ExpressionType>,
+) -> Element {
+    use_context_provider(|| expression);
+    let expr_val = expression.read().clone();
+    rsx! {
+        {render_root_expression_editor(&state, &context, &expr_val, expected_type)}
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::mutation::{

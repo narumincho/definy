@@ -241,15 +241,10 @@ pub fn SearchableDropdown(
                                     .filter(|p| !p.is_empty() && !is_hash_str(p))
                                     .copied()
                                     .collect();
-                                if meta_parts.is_empty() {
-                                    None
-                                } else {
-                                    Some(meta_parts.join(" · "))
-                                }
+                                if meta_parts.is_empty() { None } else { Some(meta_parts.join(" · ")) }
                             } else {
                                 None
                             };
-
                             rsx! {
                                 div {
                                     key: "{opt_val}",

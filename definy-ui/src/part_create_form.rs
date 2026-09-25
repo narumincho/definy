@@ -4,11 +4,10 @@ use definy_event::EventHashId;
 use dioxus::prelude::*;
 
 use crate::app_state::AppState;
-use crate::expression_editor::{part_type_to_expression_type, render_root_expression_editor};
+use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::evaluate_expression;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
-use crate::part_projection::collect_part_snapshots;
 
 #[component]
 pub fn PartDefinitionFormView(
@@ -20,10 +19,9 @@ pub fn PartDefinitionFormView(
     let language = context.language;
     let mut part_name = use_signal(String::new);
     let mut part_description = use_signal(String::new);
-    let part_type = use_signal(|| None::<definy_event::event::PartType>);
+    let mut part_type_expr = use_signal(|| None::<definy_event::event::Expression>);
     let module_hash = use_signal(|| None::<EventHashId>);
     let mut composing_expression = use_signal(|| None::<definy_event::event::Expression>);
-    use_context_provider(|| composing_expression);
 
     let on_evaluate = move |_| {
         let state_sig = use_context::<Signal<AppState>>();
@@ -76,7 +74,10 @@ pub fn PartDefinitionFormView(
         };
         let name_str = part_name().trim().to_string();
         let desc_str = part_description();
-        let type_val = part_type();
+        let type_val = part_type_expr
+            .read()
+            .as_ref()
+            .and_then(definy_event::event::PartType::from_expression);
         let modules = collect_module_snapshots(&state_val);
         let mod_hash_opt =
             module_hash().or_else(|| modules.first().map(|m| m.definition_event_hash.clone()));
@@ -159,6 +160,7 @@ pub fn PartDefinitionFormView(
                     is_form_open.set(false);
                     part_name.set(String::new());
                     part_description.set(String::new());
+                    part_type_expr.set(None);
                     composing_expression.set(None);
                 } else {
                     eval_result.set(Some(match record.status {
@@ -166,6 +168,7 @@ pub fn PartDefinitionFormView(
                             is_form_open.set(false);
                             part_name.set(String::new());
                             part_description.set(String::new());
+                            part_type_expr.set(None);
                             composing_expression.set(None);
                             language
                                 .label(
@@ -215,20 +218,27 @@ pub fn PartDefinitionFormView(
             PartTypeInput {
                 state: state.clone(),
                 context: context.clone(),
-                part_type,
+                part_type_expr,
             }
             PartDescriptionInput { part_description }
-            div { style: "color: var(--text-secondary); font-size: 0.82rem;",
+            div { style: "color: var(--text-secondary); font-size: 0.82rem; font-weight: 500;",
                 {context.language.label("Expression", "式", "Esprimo")}
             }
             {
-                let expected_type = part_type.read().as_ref().map(part_type_to_expression_type);
-                render_root_expression_editor(
-                    &state,
-                    &context,
-                    &composing_expression.read(),
-                    expected_type,
-                )
+                let expected_type = part_type_expr
+                    .read()
+                    .as_ref()
+                    .and_then(definy_event::event::PartType::from_expression)
+                    .as_ref()
+                    .map(part_type_to_expression_type);
+                rsx! {
+                    crate::expression_editor::ExpressionEditorContainer {
+                        state: state.clone(),
+                        context: context.clone(),
+                        expression: composing_expression,
+                        expected_type,
+                    }
+                }
             }
             if let Some(result) = eval_result() {
                 div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
@@ -290,20 +300,28 @@ fn PartDescriptionInput(mut part_description: Signal<String>) -> Element {
 fn PartTypeInput(
     state: AppState,
     context: PageContext,
-    part_type: Signal<Option<definy_event::event::PartType>>,
+    mut part_type_expr: Signal<Option<definy_event::event::Expression>>,
 ) -> Element {
-    let current = part_type();
     rsx! {
         div { style: "display: grid; gap: 0.35rem;",
-            div { style: "font-size: 0.85rem; color: var(--text-secondary);",
-                "{context.language.label(\"Part Type\", \"パーツ型\", \"Parto-tipo\")}"
+            div { style: "display: flex; justify-content: space-between; align-items: center;",
+                span { style: "font-size: 0.85rem; color: var(--text-secondary);",
+                    "{context.language.label(\"Part Type\", \"パーツ型\", \"Parto-tipo\")}"
+                }
+                if part_type_expr.read().is_some() {
+                    button {
+                        r#type: "button",
+                        style: "background: none; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer;",
+                        onclick: move |_| part_type_expr.set(None),
+                        "{context.language.label(\"Clear (no type)\", \"クリア (型指定なし)\", \"Forigi (sen tipo)\")}"
+                    }
+                }
             }
-            RenderPartTypeEditor {
+            crate::expression_editor::ExpressionEditorContainer {
                 state: state.clone(),
                 context: context.clone(),
-                current_part_type: current,
-                root_part_type: part_type,
-                depth: 0,
+                expression: part_type_expr,
+                expected_type: Some(crate::expression_editor::ExpressionType::Type),
             }
         }
     }
@@ -355,269 +373,5 @@ fn ModuleSelectionInput(
                 }
             }
         }
-    }
-}
-
-#[component]
-fn RenderPartTypeEditor(
-    state: AppState,
-    context: PageContext,
-    current_part_type: Option<definy_event::event::PartType>,
-    mut root_part_type: Signal<Option<definy_event::event::PartType>>,
-    depth: usize,
-) -> Element {
-    let name = format!("part-definition-type-{}", depth);
-    let selected = current_part_type_selection(&state, &current_part_type);
-
-    let mut options = Vec::new();
-    if depth == 0 {
-        options.push((
-            "none".to_string(),
-            format!("{}\t\t", context.language.label("None", "なし", "Neniu")),
-        ));
-    }
-
-    options.extend([
-        (
-            "number".to_string(),
-            format!(
-                "{}\tType\t",
-                context.language.label("Number", "数値", "Nombro")
-            ),
-        ),
-        (
-            "string".to_string(),
-            format!(
-                "{}\tType\t",
-                context.language.label("String", "文字列", "Ĉeno")
-            ),
-        ),
-        (
-            "boolean".to_string(),
-            format!(
-                "{}\tType\t",
-                context.language.label("Boolean", "真偽値", "Bulea")
-            ),
-        ),
-        (
-            "list".to_string(),
-            format!(
-                "{}\tType\t",
-                context.language.label("List", "リスト", "Listo")
-            ),
-        ),
-        (
-            "type".to_string(),
-            format!("{}\tType\t", context.language.label("Type", "型", "Tipo")),
-        ),
-    ]);
-
-    options.extend(
-        collect_part_snapshots(&state)
-            .into_iter()
-            .filter(|snapshot| snapshot.part_type == Some(definy_event::event::PartType::Type))
-            .filter(|snapshot| {
-                !matches!(
-                    snapshot.part_name.as_str(),
-                    "number"
-                        | "string"
-                        | "boolean"
-                        | "list"
-                        | "type"
-                        | "Number"
-                        | "String"
-                        | "Boolean"
-                        | "List"
-                        | "Type"
-                )
-            })
-            .map(|snapshot| {
-                let value = format!("type_part:{}", snapshot.definition_event_hash);
-                (
-                    value,
-                    format!(
-                        "{}\tType\t{}",
-                        snapshot.part_name, snapshot.definition_event_hash
-                    ),
-                )
-            }),
-    );
-
-    let item_type_opt =
-        if let Some(definy_event::event::PartType::List(item_type)) = &current_part_type {
-            Some(item_type.as_ref().clone())
-        } else {
-            None
-        };
-
-    rsx! {
-        div { style: "display: grid; gap: 0.45rem;",
-            crate::dropdown::SearchableDropdown {
-                name,
-                current_value: selected,
-                options,
-                on_change: {
-                    let state = state.clone();
-                    move |val: String| {
-                        let mut new_part_type = root_part_type();
-                        update_part_type_at_depth(&state, &mut new_part_type, depth, val.as_str());
-                        root_part_type.set(new_part_type);
-                    }
-                },
-            }
-            if let Some(item_type) = item_type_opt {
-                div { style: "padding-left: 1rem; border-left: 2px solid var(--border);",
-                    div { style: "font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.25rem;",
-                        "{context.language.label(\"Item Type\", \"要素型\", \"Ero-tipo\")}"
-                    }
-                    RenderPartTypeEditor {
-                        state: state.clone(),
-                        context: context.clone(),
-                        current_part_type: Some(item_type),
-                        root_part_type,
-                        depth: depth + 1,
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn update_part_type_at_depth(
-    state: &AppState,
-    part_type: &mut Option<definy_event::event::PartType>,
-    depth: usize,
-    selected: &str,
-) {
-    if depth == 0 {
-        *part_type = if selected == "none" {
-            None
-        } else {
-            Some(resolve_part_type(state, selected, part_type.as_ref()))
-        };
-        return;
-    }
-
-    let list_inner = match part_type {
-        Some(definy_event::event::PartType::List(inner)) => inner,
-        _ => {
-            *part_type = Some(definy_event::event::PartType::List(Box::new(
-                definy_event::event::PartType::Number,
-            )));
-            match part_type {
-                Some(definy_event::event::PartType::List(inner)) => inner,
-                _ => unreachable!(),
-            }
-        }
-    };
-    update_part_type_nested(state, list_inner.as_mut(), depth - 1, selected);
-}
-
-fn update_part_type_nested(
-    state: &AppState,
-    part_type: &mut definy_event::event::PartType,
-    depth: usize,
-    selected: &str,
-) {
-    if depth == 0 {
-        *part_type = resolve_part_type(state, selected, Some(part_type));
-        return;
-    }
-
-    let list_inner = match part_type {
-        definy_event::event::PartType::List(inner) => inner,
-        _ => {
-            *part_type = definy_event::event::PartType::List(Box::new(
-                definy_event::event::PartType::Number,
-            ));
-            match part_type {
-                definy_event::event::PartType::List(inner) => inner,
-                _ => unreachable!(),
-            }
-        }
-    };
-    update_part_type_nested(state, list_inner.as_mut(), depth - 1, selected);
-}
-
-fn resolve_part_type(
-    state: &AppState,
-    selected: &str,
-    current: Option<&definy_event::event::PartType>,
-) -> definy_event::event::PartType {
-    if let Some(encoded) = selected.strip_prefix("type_part:")
-        && let Ok(hash) = EventHashId::from_str(encoded)
-    {
-        if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash) {
-            return match snapshot.part_name.as_str() {
-                "number" | "Number" => definy_event::event::PartType::Number,
-                "string" | "String" => definy_event::event::PartType::String,
-                "boolean" | "Boolean" => definy_event::event::PartType::Boolean,
-                "type" | "Type" => definy_event::event::PartType::Type,
-                "list" | "List" => {
-                    let sub = match current {
-                        Some(definy_event::event::PartType::List(sub)) => sub.as_ref().clone(),
-                        _ => definy_event::event::PartType::Number,
-                    };
-                    definy_event::event::PartType::List(Box::new(sub))
-                }
-                _ => definy_event::event::PartType::TypePart(hash),
-            };
-        }
-        return definy_event::event::PartType::TypePart(hash);
-    }
-    match selected {
-        "string" => definy_event::event::PartType::String,
-        "boolean" => definy_event::event::PartType::Boolean,
-        "type" => definy_event::event::PartType::Type,
-        "list" => {
-            let sub = match current {
-                Some(definy_event::event::PartType::List(sub)) => sub.as_ref().clone(),
-                _ => definy_event::event::PartType::Number,
-            };
-            definy_event::event::PartType::List(Box::new(sub))
-        }
-        _ => definy_event::event::PartType::Number,
-    }
-}
-
-fn current_part_type_selection(
-    state: &AppState,
-    part_type: &Option<definy_event::event::PartType>,
-) -> String {
-    let find_type_part = |name: &str, alt_name: &str| {
-        collect_part_snapshots(state)
-            .into_iter()
-            .find(|s| {
-                (s.part_name == name || s.part_name == alt_name)
-                    && s.part_type == Some(definy_event::event::PartType::Type)
-            })
-            .map(|s| format!("type_part:{}", s.definition_event_hash))
-    };
-
-    match part_type {
-        None => "none".to_string(),
-        Some(definy_event::event::PartType::Number) => {
-            find_type_part("number", "Number").unwrap_or_else(|| "number".to_string())
-        }
-        Some(definy_event::event::PartType::String) => {
-            find_type_part("string", "String").unwrap_or_else(|| "string".to_string())
-        }
-        Some(definy_event::event::PartType::Boolean) => {
-            find_type_part("boolean", "Boolean").unwrap_or_else(|| "boolean".to_string())
-        }
-        Some(definy_event::event::PartType::Type) => {
-            find_type_part("type", "Type").unwrap_or_else(|| "type".to_string())
-        }
-        Some(definy_event::event::PartType::TypePart(hash)) => {
-            format!("type_part:{}", hash)
-        }
-        Some(definy_event::event::PartType::List(_)) => {
-            find_type_part("list", "List").unwrap_or_else(|| "list".to_string())
-        }
-        Some(definy_event::event::PartType::Function { .. }) => {
-            find_type_part("function", "Function").unwrap_or_else(|| "function".to_string())
-        }
-        Some(definy_event::event::PartType::Record(_)) => "record".to_string(),
-        Some(definy_event::event::PartType::Union(_)) => "union".to_string(),
     }
 }
