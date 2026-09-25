@@ -138,9 +138,6 @@ pub fn render_expression_editor(
                             if allow_kind_change {
                                 {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
-                            div { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                                "{language.label(\"Built-in types\", \"組み込み型\", \"Enkonstruitaj tipoj\")}"
-                            }
                         }
                     },
                     definy_event::event::Expression::TypeList(type_list_expression) => {

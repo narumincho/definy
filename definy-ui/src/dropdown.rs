@@ -295,12 +295,9 @@ pub fn SearchableDropdown(
                                             href: "{detail_url}",
                                             class: "dropdown-item-link",
                                             title: "パーツ詳細画面を開く",
-                                            "popovertarget": "{panel_id}",
-                                            "popovertargetaction": "hide",
                                             onclick: {
                                                 let panel_id_clone = panel_id.clone();
-                                                move |evt: MouseEvent| {
-                                                    evt.stop_propagation();
+                                                move |_| {
                                                     dom_hide_popover(&panel_id_clone);
                                                 }
                                             },

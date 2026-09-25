@@ -96,136 +96,107 @@ pub fn selector_options(
         )
     }));
 
-    // Literals and generic constructors
-    options.extend([
-        ("expr:number".to_string(), "number\tLiteral\t".to_string()),
-        ("expr:string".to_string(), "string\tLiteral\t".to_string()),
-        ("expr:boolean".to_string(), "boolean\tLiteral\t".to_string()),
-        ("expr:list".to_string(), "list\tLiteral\t".to_string()),
-        (
-            "expr:type_literal".to_string(),
-            "record\tLiteral\t".to_string(),
-        ),
-        (
-            "expr:record_get".to_string(),
-            "record_get\tProperty\t".to_string(),
-        ),
-        ("expr:add".to_string(), "add\tFunction\t".to_string()),
-        (
-            "expr:subtract".to_string(),
-            "subtract\tFunction\t".to_string(),
-        ),
-        (
-            "expr:multiply".to_string(),
-            "multiply\tFunction\t".to_string(),
-        ),
-        ("expr:divide".to_string(), "divide\tFunction\t".to_string()),
-        (
-            "expr:remainder".to_string(),
-            "remainder\tFunction\t".to_string(),
-        ),
-        (
-            "expr:bit_and".to_string(),
-            "bit_and\tFunction\t".to_string(),
-        ),
-        ("expr:bit_or".to_string(), "bit_or\tFunction\t".to_string()),
-        (
-            "expr:bit_xor".to_string(),
-            "bit_xor\tFunction\t".to_string(),
-        ),
-        (
-            "expr:shift_left".to_string(),
-            "shift_left\tFunction\t".to_string(),
-        ),
-        (
-            "expr:shift_right".to_string(),
-            "shift_right\tFunction\t".to_string(),
-        ),
-        ("expr:equal".to_string(), "equal\tFunction\t".to_string()),
-        (
-            "expr:not_equal".to_string(),
-            "not_equal\tFunction\t".to_string(),
-        ),
-        (
-            "expr:less_than".to_string(),
-            "less_than\tFunction\t".to_string(),
-        ),
-        (
-            "expr:less_than_or_equal".to_string(),
-            "less_than_or_equal\tFunction\t".to_string(),
-        ),
-        (
-            "expr:greater_than".to_string(),
-            "greater_than\tFunction\t".to_string(),
-        ),
-        (
-            "expr:greater_than_or_equal".to_string(),
-            "greater_than_or_equal\tFunction\t".to_string(),
-        ),
-        ("expr:not".to_string(), "not\tFunction\t".to_string()),
-        ("expr:and".to_string(), "and\tFunction\t".to_string()),
-        ("expr:or".to_string(), "or\tFunction\t".to_string()),
-        (
-            "expr:string_concat".to_string(),
-            "string_concat\tFunction\t".to_string(),
-        ),
-        (
-            "expr:string_length".to_string(),
-            "string_length\tFunction\t".to_string(),
-        ),
-        (
-            "expr:string_slice".to_string(),
-            "string_slice\tFunction\t".to_string(),
-        ),
-        (
-            "expr:list_length".to_string(),
-            "list_length\tFunction\t".to_string(),
-        ),
-        (
-            "expr:list_concat".to_string(),
-            "list_concat\tFunction\t".to_string(),
-        ),
-        (
-            "expr:list_get".to_string(),
-            "list_get\tFunction\t".to_string(),
-        ),
-        (
-            "expr:list_append".to_string(),
-            "list_append\tFunction\t".to_string(),
-        ),
-        ("expr:if".to_string(), "if\tSyntax\t".to_string()),
-        ("expr:let".to_string(), "let\tSyntax\t".to_string()),
-        (
-            "expr:function".to_string(),
-            "function\tSyntax\t".to_string(),
-        ),
-        ("expr:call".to_string(), "call\tSyntax\t".to_string()),
-        ("expr:match".to_string(), "match\tSyntax\t".to_string()),
-        (
-            "expr:type:number".to_string(),
-            "Type: Number\tType\t".to_string(),
-        ),
-        (
-            "expr:type:string".to_string(),
-            "Type: String\tType\t".to_string(),
-        ),
-        (
-            "expr:type:boolean".to_string(),
-            "Type: Boolean\tType\t".to_string(),
-        ),
-        (
-            "expr:type:list".to_string(),
-            "Type: List\tType\t".to_string(),
-        ),
-        (
-            "expr:type:function".to_string(),
-            "Type: Function\tType\t".to_string(),
-        ),
-        (
-            "expr:type:union".to_string(),
-            "Type: Union\tType\t".to_string(),
-        ),
-    ]);
+    // Fallback options when snapshots are empty (e.g. uninitialized state, offline, unit tests)
+    if snapshots.is_empty() {
+        options.extend([
+            ("expr:number".to_string(), "number\tLiteral\t".to_string()),
+            ("expr:string".to_string(), "string\tLiteral\t".to_string()),
+            ("expr:boolean".to_string(), "boolean\tLiteral\t".to_string()),
+            ("expr:list".to_string(), "list\tLiteral\t".to_string()),
+            ("expr:equal".to_string(), "equal\tFunction\t".to_string()),
+            (
+                "expr:not_equal".to_string(),
+                "not_equal\tFunction\t".to_string(),
+            ),
+            (
+                "expr:less_than".to_string(),
+                "less_than\tFunction\t".to_string(),
+            ),
+            (
+                "expr:less_than_or_equal".to_string(),
+                "less_than_or_equal\tFunction\t".to_string(),
+            ),
+            (
+                "expr:greater_than".to_string(),
+                "greater_than\tFunction\t".to_string(),
+            ),
+            (
+                "expr:greater_than_or_equal".to_string(),
+                "greater_than_or_equal\tFunction\t".to_string(),
+            ),
+            ("expr:not".to_string(), "not\tFunction\t".to_string()),
+            ("expr:and".to_string(), "and\tFunction\t".to_string()),
+            ("expr:or".to_string(), "or\tFunction\t".to_string()),
+            ("expr:add".to_string(), "add\tFunction\t".to_string()),
+            (
+                "expr:subtract".to_string(),
+                "subtract\tFunction\t".to_string(),
+            ),
+            (
+                "expr:multiply".to_string(),
+                "multiply\tFunction\t".to_string(),
+            ),
+            ("expr:divide".to_string(), "divide\tFunction\t".to_string()),
+            (
+                "expr:remainder".to_string(),
+                "remainder\tFunction\t".to_string(),
+            ),
+            (
+                "expr:bit_and".to_string(),
+                "bit_and\tFunction\t".to_string(),
+            ),
+            ("expr:bit_or".to_string(), "bit_or\tFunction\t".to_string()),
+            (
+                "expr:bit_xor".to_string(),
+                "bit_xor\tFunction\t".to_string(),
+            ),
+            (
+                "expr:shift_left".to_string(),
+                "shift_left\tFunction\t".to_string(),
+            ),
+            (
+                "expr:shift_right".to_string(),
+                "shift_right\tFunction\t".to_string(),
+            ),
+            (
+                "expr:string_concat".to_string(),
+                "string_concat\tFunction\t".to_string(),
+            ),
+            (
+                "expr:string_length".to_string(),
+                "string_length\tFunction\t".to_string(),
+            ),
+            (
+                "expr:string_slice".to_string(),
+                "string_slice\tFunction\t".to_string(),
+            ),
+            (
+                "expr:list_length".to_string(),
+                "list_length\tFunction\t".to_string(),
+            ),
+            (
+                "expr:list_concat".to_string(),
+                "list_concat\tFunction\t".to_string(),
+            ),
+            (
+                "expr:list_get".to_string(),
+                "list_get\tFunction\t".to_string(),
+            ),
+            (
+                "expr:list_append".to_string(),
+                "list_append\tFunction\t".to_string(),
+            ),
+            ("expr:if".to_string(), "if\tSyntax\t".to_string()),
+            ("expr:let".to_string(), "let\tSyntax\t".to_string()),
+            ("expr:type:number".to_string(), "number\ttype\t".to_string()),
+            ("expr:type:string".to_string(), "string\ttype\t".to_string()),
+            (
+                "expr:type:boolean".to_string(),
+                "boolean\ttype\t".to_string(),
+            ),
+            ("expr:type:list".to_string(), "list\ttype\t".to_string()),
+        ]);
+    }
 
     // Single pass over snapshots for constructors, variants, part_type_map, and global parts
     let mut part_type_map = HashMap::new();
@@ -240,7 +211,7 @@ pub fn selector_options(
                 snapshot.definition_event_hash.clone(),
                 super::super::diagnostics::part_type_to_expression_type(part_type),
             );
-            if *part_type == definy_event::event::PartType::Type {
+            if *part_type == definy_event::event::PartType::Type && snapshot.expression.is_some() {
                 constructor_options.push((
                     format!("expr:constructor:{}", snapshot.definition_event_hash),
                     format!(
@@ -248,6 +219,47 @@ pub fn selector_options(
                         snapshot.part_name, snapshot.definition_event_hash
                     ),
                 ));
+            }
+        } else if let Some(definy_event::event::Expression::Compiler(builtin)) =
+            &snapshot.expression
+        {
+            let expr_type = match builtin {
+                definy_event::event::CompilerBuiltin::NumberLiteral
+                | definy_event::event::CompilerBuiltin::Plus
+                | definy_event::event::CompilerBuiltin::Minus
+                | definy_event::event::CompilerBuiltin::Multiply
+                | definy_event::event::CompilerBuiltin::Divide
+                | definy_event::event::CompilerBuiltin::Remainder
+                | definy_event::event::CompilerBuiltin::BitAnd
+                | definy_event::event::CompilerBuiltin::BitOr
+                | definy_event::event::CompilerBuiltin::BitXor
+                | definy_event::event::CompilerBuiltin::ShiftLeft
+                | definy_event::event::CompilerBuiltin::ShiftRight
+                | definy_event::event::CompilerBuiltin::StringLength
+                | definy_event::event::CompilerBuiltin::ListLength => Some(ExpressionType::Number),
+
+                definy_event::event::CompilerBuiltin::Equal
+                | definy_event::event::CompilerBuiltin::NotEqual
+                | definy_event::event::CompilerBuiltin::LessThan
+                | definy_event::event::CompilerBuiltin::LessThanOrEqual
+                | definy_event::event::CompilerBuiltin::GreaterThan
+                | definy_event::event::CompilerBuiltin::GreaterThanOrEqual
+                | definy_event::event::CompilerBuiltin::Not
+                | definy_event::event::CompilerBuiltin::And
+                | definy_event::event::CompilerBuiltin::Or => Some(ExpressionType::Boolean),
+
+                definy_event::event::CompilerBuiltin::StringConcat
+                | definy_event::event::CompilerBuiltin::StringSlice => Some(ExpressionType::String),
+
+                definy_event::event::CompilerBuiltin::ListConcat
+                | definy_event::event::CompilerBuiltin::ListAppend => {
+                    Some(ExpressionType::List(Box::new(ExpressionType::Unknown)))
+                }
+
+                _ => None,
+            };
+            if let Some(t) = expr_type {
+                part_type_map.insert(snapshot.definition_event_hash.clone(), t);
             }
         }
 
@@ -290,9 +302,35 @@ pub fn selector_options(
         ));
     }
 
+    options.extend(global_part_options);
     options.extend(constructor_options);
     options.extend(variant_options);
-    options.extend(global_part_options);
+
+    // Generic syntax constructors not backed by a snapshot part
+    options.extend([
+        ("expr:string".to_string(), "string\tLiteral\t".to_string()),
+        ("expr:boolean".to_string(), "boolean\tLiteral\t".to_string()),
+        ("expr:list".to_string(), "list\tLiteral\t".to_string()),
+        (
+            "expr:type_literal".to_string(),
+            "record\ttype\t".to_string(),
+        ),
+        (
+            "expr:record_get".to_string(),
+            "record_get\tProperty\t".to_string(),
+        ),
+        (
+            "expr:function".to_string(),
+            "function\tSyntax\t".to_string(),
+        ),
+        ("expr:call".to_string(), "call\tSyntax\t".to_string()),
+        ("expr:match".to_string(), "match\tSyntax\t".to_string()),
+        (
+            "expr:type:function".to_string(),
+            "function\ttype\t".to_string(),
+        ),
+        ("expr:type:union".to_string(), "union\ttype\t".to_string()),
+    ]);
 
     if let Some(expected) = expected_type {
         options.sort_by_cached_key(|(val, _)| {
@@ -662,10 +700,26 @@ pub(crate) fn current_selection_value(
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
         definy_event::event::Expression::RecordGet(_) => "expr:record_get".to_string(),
-        definy_event::event::Expression::TypeNumber => "expr:type:number".to_string(),
-        definy_event::event::Expression::TypeString => "expr:type:string".to_string(),
-        definy_event::event::Expression::TypeBoolean => "expr:type:boolean".to_string(),
-        definy_event::event::Expression::TypeList(_) => "expr:type:list".to_string(),
+        definy_event::event::Expression::TypeNumber => {
+            find_part_hash_by_name(state, "number", Some(definy_event::event::PartType::Type))
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:type:number".to_string())
+        }
+        definy_event::event::Expression::TypeString => {
+            find_part_hash_by_name(state, "string", Some(definy_event::event::PartType::Type))
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:type:string".to_string())
+        }
+        definy_event::event::Expression::TypeBoolean => {
+            find_part_hash_by_name(state, "boolean", Some(definy_event::event::PartType::Type))
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:type:boolean".to_string())
+        }
+        definy_event::event::Expression::TypeList(_) => {
+            find_part_hash_by_name(state, "list", Some(definy_event::event::PartType::Type))
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:type:list".to_string())
+        }
         definy_event::event::Expression::Constructor(constructor_expression) => format!(
             "expr:constructor:{}",
             constructor_expression.type_part_definition_event_hash
@@ -704,6 +758,19 @@ pub(crate) fn find_builtin_part_hash(
         .find(|snapshot| match snapshot.expression.as_ref() {
             Some(definy_event::event::Expression::Compiler(builtin)) => *builtin == target,
             _ => false,
+        })
+        .map(|snapshot| snapshot.definition_event_hash)
+}
+
+pub(crate) fn find_part_hash_by_name(
+    state: &AppState,
+    name: &str,
+    part_type: Option<definy_event::event::PartType>,
+) -> Option<EventHashId> {
+    collect_part_snapshots(state)
+        .into_iter()
+        .find(|snapshot| {
+            snapshot.part_name == name && (part_type.is_none() || snapshot.part_type == part_type)
         })
         .map(|snapshot| snapshot.definition_event_hash)
 }
@@ -834,5 +901,120 @@ mod tests {
             current_selection_value(&state, &none_expr),
             "expr:variant:none"
         );
+    }
+
+    #[test]
+    fn test_selector_options_with_snapshots_has_part_links() {
+        use definy_event::event::{
+            AccountId, Description, Event, EventContent, PartDefinitionEvent, PartType,
+        };
+
+        let mut state = AppState::default();
+        let signing_key = ed25519_dalek::SigningKey::from_bytes(&[1u8; 32]);
+        let account_id = AccountId(signing_key.verifying_key());
+        let dummy_module = EventHashId::from_bytes(&[2u8; 32]);
+
+        // 1. Part for "number" (Type)
+        let number_part_event = Event {
+            account_id: account_id.clone(),
+            time: chrono::DateTime::UNIX_EPOCH,
+            content: EventContent::PartDefinition(PartDefinitionEvent {
+                part_name: "number".into(),
+                part_type: Some(PartType::Type),
+                description: Description::localized(vec![("en", "number type")]),
+                expression: None,
+                module_definition_event_hash: dummy_module.clone(),
+            }),
+        };
+        let number_bytes =
+            definy_event::sign_and_serialize(number_part_event, &signing_key).unwrap();
+        let number_hash = EventHashId::from_bytes(&number_bytes);
+        state.event_cache.insert(
+            number_hash.clone(),
+            definy_event::verify_and_deserialize(&number_bytes),
+        );
+
+        // 2. Part for "number-literal" (Number)
+        let num_lit_event = Event {
+            account_id: account_id.clone(),
+            time: chrono::DateTime::UNIX_EPOCH,
+            content: EventContent::PartDefinition(PartDefinitionEvent {
+                part_name: "number-literal".into(),
+                part_type: Some(PartType::Number),
+                description: Description::localized(vec![("en", "number literal")]),
+                expression: Some(definy_event::event::Expression::Compiler(
+                    definy_event::event::CompilerBuiltin::NumberLiteral,
+                )),
+                module_definition_event_hash: dummy_module,
+            }),
+        };
+        let num_lit_bytes = definy_event::sign_and_serialize(num_lit_event, &signing_key).unwrap();
+        let num_lit_hash = EventHashId::from_bytes(&num_lit_bytes);
+        state.event_cache.insert(
+            num_lit_hash.clone(),
+            definy_event::verify_and_deserialize(&num_lit_bytes),
+        );
+
+        // When expecting Type: "number" part should be at the top
+        let type_options = selector_options(
+            &state,
+            Language::English,
+            &[],
+            false,
+            Some(&ExpressionType::Type),
+            &HashMap::new(),
+        );
+        let number_part_key = format!("ref:global:{}", number_hash);
+        let top_keys_type: Vec<&str> = type_options
+            .iter()
+            .take(2)
+            .map(|(k, _)| k.as_str())
+            .collect();
+        assert!(
+            top_keys_type.contains(&number_part_key.as_str()),
+            "Expected 'number' part at top when expecting Type, got: {:?}",
+            top_keys_type
+        );
+
+        // When expecting Number: "number-literal" should be at the top, "number" part should be lower
+        let number_options = selector_options(
+            &state,
+            Language::English,
+            &[],
+            false,
+            Some(&ExpressionType::Number),
+            &HashMap::new(),
+        );
+        let num_lit_key = format!("ref:global:{}", num_lit_hash);
+        let top_keys_num: Vec<&str> = number_options
+            .iter()
+            .take(2)
+            .map(|(k, _)| k.as_str())
+            .collect();
+        assert!(
+            top_keys_num.contains(&num_lit_key.as_str()),
+            "Expected 'number-literal' at top when expecting Number, got: {:?}",
+            top_keys_num
+        );
+        assert!(
+            !top_keys_num.contains(&number_part_key.as_str()),
+            "'number' type part should not be at top when expecting Number"
+        );
+
+        // current_selection_value for Expression::TypeNumber should match the part hash
+        assert_eq!(
+            current_selection_value(&state, &definy_event::event::Expression::TypeNumber),
+            number_part_key
+        );
+
+        // Label for number part should have name "number" and type "type"
+        let (_, number_label) = type_options
+            .iter()
+            .find(|(k, _)| k == &number_part_key)
+            .unwrap();
+        let label_parts: Vec<&str> = number_label.split('\t').collect();
+        assert_eq!(label_parts[0], "number");
+        assert_eq!(label_parts[1], "type");
+        assert_eq!(label_parts[2], number_hash.to_string());
     }
 }

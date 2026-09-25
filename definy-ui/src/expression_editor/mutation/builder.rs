@@ -287,9 +287,26 @@ pub(crate) fn build_expression_from_selection(
             } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
                 if let Ok(hash) = EventHashId::from_str(encoded) {
                     if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash)
-                        && let Some(Expression::Compiler(builtin)) = snapshot.expression.as_ref()
                     {
-                        return default_expression_for_compiler_builtin(*builtin, next_variable_id);
+                        if let Some(Expression::Compiler(builtin)) = snapshot.expression.as_ref() {
+                            return default_expression_for_compiler_builtin(
+                                *builtin,
+                                next_variable_id,
+                            );
+                        }
+                        if snapshot.part_type == Some(definy_event::event::PartType::Type) {
+                            match snapshot.part_name.as_str() {
+                                "number" => return Expression::TypeNumber,
+                                "string" => return Expression::TypeString,
+                                "boolean" => return Expression::TypeBoolean,
+                                "list" => {
+                                    return Expression::TypeList(TypeListExpression {
+                                        item_type: Box::new(Expression::TypeString),
+                                    });
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                     Expression::PartReference(PartReferenceExpression {
                         part_definition_event_hash: hash,
