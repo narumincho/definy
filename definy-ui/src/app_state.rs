@@ -73,69 +73,68 @@ impl std::fmt::Display for PathStep {
     }
 }
 
+impl std::str::FromStr for PathStep {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if let Some(inner) = s
+            .strip_prefix("ListItemValue(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner.parse().map(PathStep::ListItemValue).map_err(|_| ());
+        }
+        if let Some(inner) = s
+            .strip_prefix("RecordItemValue(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner.parse().map(PathStep::RecordItemValue).map_err(|_| ());
+        }
+        if let Some(inner) = s
+            .strip_prefix("MatchArmBody(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner.parse().map(PathStep::MatchArmBody).map_err(|_| ());
+        }
+        if let Some(inner) = s
+            .strip_prefix("TypeUnionVariant(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner
+                .parse()
+                .map(PathStep::TypeUnionVariant)
+                .map_err(|_| ());
+        }
+        match s {
+            "Left" => Ok(PathStep::Left),
+            "Right" => Ok(PathStep::Right),
+            "Condition" => Ok(PathStep::Condition),
+            "Then" => Ok(PathStep::Then),
+            "Else" => Ok(PathStep::Else),
+            "LetValue" => Ok(PathStep::LetValue),
+            "LetBody" => Ok(PathStep::LetBody),
+            "ConstructorValue" => Ok(PathStep::ConstructorValue),
+            "TypeListItem" => Ok(PathStep::TypeListItem),
+            "Start" => Ok(PathStep::Start),
+            "End" => Ok(PathStep::End),
+            "Index" => Ok(PathStep::Index),
+            "Item" => Ok(PathStep::Item),
+            "FunctionBody" => Ok(PathStep::FunctionBody),
+            "CallFunction" => Ok(PathStep::CallFunction),
+            "CallArgument" => Ok(PathStep::CallArgument),
+            "TypeFunctionParameter" => Ok(PathStep::TypeFunctionParameter),
+            "TypeFunctionReturn" => Ok(PathStep::TypeFunctionReturn),
+            "VariantPayload" => Ok(PathStep::VariantPayload),
+            "MatchTarget" => Ok(PathStep::MatchTarget),
+            "MatchDefault" => Ok(PathStep::MatchDefault),
+            "Record" => Ok(PathStep::Record),
+            _ => Err(()),
+        }
+    }
+}
+
 impl PathStep {
     pub fn from_string(s: &str) -> Option<Self> {
-        if s == "Left" {
-            Some(PathStep::Left)
-        } else if s == "Right" {
-            Some(PathStep::Right)
-        } else if s == "Condition" {
-            Some(PathStep::Condition)
-        } else if s == "Then" {
-            Some(PathStep::Then)
-        } else if s == "Else" {
-            Some(PathStep::Else)
-        } else if s == "LetValue" {
-            Some(PathStep::LetValue)
-        } else if s == "LetBody" {
-            Some(PathStep::LetBody)
-        } else if s.starts_with("ListItemValue(") && s.ends_with(")") {
-            s[14..s.len() - 1].parse().ok().map(PathStep::ListItemValue)
-        } else if s.starts_with("RecordItemValue(") && s.ends_with(")") {
-            s[16..s.len() - 1]
-                .parse()
-                .ok()
-                .map(PathStep::RecordItemValue)
-        } else if s == "ConstructorValue" {
-            Some(PathStep::ConstructorValue)
-        } else if s == "TypeListItem" {
-            Some(PathStep::TypeListItem)
-        } else if s == "Start" {
-            Some(PathStep::Start)
-        } else if s == "End" {
-            Some(PathStep::End)
-        } else if s == "Index" {
-            Some(PathStep::Index)
-        } else if s == "Item" {
-            Some(PathStep::Item)
-        } else if s == "FunctionBody" {
-            Some(PathStep::FunctionBody)
-        } else if s == "CallFunction" {
-            Some(PathStep::CallFunction)
-        } else if s == "CallArgument" {
-            Some(PathStep::CallArgument)
-        } else if s == "TypeFunctionParameter" {
-            Some(PathStep::TypeFunctionParameter)
-        } else if s == "TypeFunctionReturn" {
-            Some(PathStep::TypeFunctionReturn)
-        } else if s == "VariantPayload" {
-            Some(PathStep::VariantPayload)
-        } else if s == "MatchTarget" {
-            Some(PathStep::MatchTarget)
-        } else if s.starts_with("MatchArmBody(") && s.ends_with(")") {
-            s[13..s.len() - 1].parse().ok().map(PathStep::MatchArmBody)
-        } else if s == "MatchDefault" {
-            Some(PathStep::MatchDefault)
-        } else if s.starts_with("TypeUnionVariant(") && s.ends_with(")") {
-            s[17..s.len() - 1]
-                .parse()
-                .ok()
-                .map(PathStep::TypeUnionVariant)
-        } else if s == "Record" {
-            Some(PathStep::Record)
-        } else {
-            None
-        }
+        s.parse().ok()
     }
 }
 
@@ -539,5 +538,49 @@ mod tests {
     fn invalid_route_returns_none() {
         assert_eq!(Location::from_url("/unknown"), None);
         assert_eq!(Location::from_url("/accounts/invalid"), None);
+    }
+
+    #[test]
+    fn path_step_round_trip() {
+        use super::PathStep;
+        let cases = vec![
+            PathStep::Left,
+            PathStep::Right,
+            PathStep::Condition,
+            PathStep::Then,
+            PathStep::Else,
+            PathStep::LetValue,
+            PathStep::LetBody,
+            PathStep::ListItemValue(0),
+            PathStep::ListItemValue(42),
+            PathStep::RecordItemValue(0),
+            PathStep::RecordItemValue(99),
+            PathStep::ConstructorValue,
+            PathStep::TypeListItem,
+            PathStep::Start,
+            PathStep::End,
+            PathStep::Index,
+            PathStep::Item,
+            PathStep::FunctionBody,
+            PathStep::CallFunction,
+            PathStep::CallArgument,
+            PathStep::TypeFunctionParameter,
+            PathStep::TypeFunctionReturn,
+            PathStep::VariantPayload,
+            PathStep::MatchTarget,
+            PathStep::MatchArmBody(3),
+            PathStep::MatchDefault,
+            PathStep::TypeUnionVariant(7),
+            PathStep::Record,
+        ];
+        for step in cases {
+            let serialized = step.to_string();
+            let parsed: Result<PathStep, ()> = serialized.parse();
+            assert_eq!(parsed, Ok(step.clone()));
+            assert_eq!(PathStep::from_string(&serialized), Some(step));
+        }
+        assert_eq!(PathStep::from_string("Unknown"), None);
+        assert_eq!(PathStep::from_string("ListItemValue(abc)"), None);
+        assert_eq!(PathStep::from_string("ListItemValue("), None);
     }
 }

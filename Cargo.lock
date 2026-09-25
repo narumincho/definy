@@ -1006,7 +1006,7 @@ dependencies = [
  "futures-util",
  "getrandom 0.2.17",
  "js-sys",
- "serde_cbor 0.11.2",
+ "serde_cbor",
  "sha2 0.10.9",
  "tokio",
  "wasm-bindgen",
@@ -1024,7 +1024,7 @@ dependencies = [
  "ed25519-dalek",
  "rand_core 0.6.4",
  "serde",
- "serde_cbor 0.11.2",
+ "serde_cbor",
  "sha2 0.10.9",
  "strum",
  "strum_macros",
@@ -1051,7 +1051,7 @@ dependencies = [
  "hyper-util",
  "rand 0.8.8",
  "serde",
- "serde_cbor 0.10.2",
+ "serde_cbor",
  "serde_json",
  "serde_urlencoded",
  "sha2 0.10.9",
@@ -1085,7 +1085,7 @@ dependencies = [
  "js-sys",
  "rand_core 0.6.4",
  "serde",
- "serde_cbor 0.11.2",
+ "serde_cbor",
  "serde_json",
  "serde_urlencoded",
  "sha2 0.10.9",
@@ -4709,17 +4709,6 @@ dependencies = [
  "js-sys",
  "serde",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "serde_cbor"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7081ed758ec726a6ed8ee7e92f5d3f6e6f8c3901b1f972e3a4a2f2599fad14f"
-dependencies = [
- "byteorder",
- "half 1.8.3",
- "serde",
 ]
 
 [[package]]

@@ -241,11 +241,7 @@ pub async fn handle_mcp_post(
 
     if let Ok(req) = serde_json::from_value::<JsonRpcRequest>(payload.clone()) {
         if let Some(resp) = dispatch_request(req, db.as_ref()).await {
-            return (
-                StatusCode::OK,
-                axum::Json(serde_json::to_value(resp).unwrap()),
-            )
-                .into_response();
+            return (StatusCode::OK, axum::Json(resp)).into_response();
         } else {
             return StatusCode::NO_CONTENT.into_response();
         }
@@ -258,23 +254,16 @@ pub async fn handle_mcp_post(
                 responses.push(resp);
             }
         }
-        return (
-            StatusCode::OK,
-            axum::Json(serde_json::to_value(responses).unwrap()),
-        )
-            .into_response();
+        return (StatusCode::OK, axum::Json(responses)).into_response();
     }
 
     (
         StatusCode::BAD_REQUEST,
-        axum::Json(
-            serde_json::to_value(JsonRpcResponse::error(
-                None,
-                -32700,
-                "Invalid JSON-RPC request",
-            ))
-            .unwrap(),
-        ),
+        axum::Json(JsonRpcResponse::error(
+            None,
+            -32700,
+            "Invalid JSON-RPC request",
+        )),
     )
         .into_response()
 }

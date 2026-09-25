@@ -1,24 +1,243 @@
 use std::str::FromStr;
 
 use super::{evaluate_expression, expression_to_source};
+use definy_event::event::*;
+
+// --- AST Builder Helpers for Tests ---
+
+fn num(value: i64) -> Expression {
+    Expression::Number(NumberExpression { value })
+}
+
+fn bool_lit(value: bool) -> Expression {
+    Expression::Boolean(BooleanExpression { value })
+}
+
+fn str_lit(value: &str) -> Expression {
+    Expression::String(StringExpression {
+        value: value.into(),
+    })
+}
+
+fn var_ref(variable_id: i64) -> Expression {
+    Expression::Variable(VariableExpression { variable_id })
+}
+
+fn add(left: Expression, right: Expression) -> Expression {
+    Expression::Add(AddExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn sub(left: Expression, right: Expression) -> Expression {
+    Expression::Subtract(SubtractExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn mul(left: Expression, right: Expression) -> Expression {
+    Expression::Multiply(MultiplyExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn div(left: Expression, right: Expression) -> Expression {
+    Expression::Divide(DivideExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn rem(left: Expression, right: Expression) -> Expression {
+    Expression::Remainder(RemainderExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn bit_and(left: Expression, right: Expression) -> Expression {
+    Expression::BitAnd(BitAndExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn bit_or(left: Expression, right: Expression) -> Expression {
+    Expression::BitOr(BitOrExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn bit_xor(left: Expression, right: Expression) -> Expression {
+    Expression::BitXor(BitXorExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn shl(left: Expression, right: Expression) -> Expression {
+    Expression::ShiftLeft(ShiftLeftExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn shr(left: Expression, right: Expression) -> Expression {
+    Expression::ShiftRight(ShiftRightExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn lt(left: Expression, right: Expression) -> Expression {
+    Expression::LessThan(LessThanExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn ge(left: Expression, right: Expression) -> Expression {
+    Expression::GreaterThanOrEqual(GreaterThanOrEqualExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn not_equal(left: Expression, right: Expression) -> Expression {
+    Expression::NotEqual(NotEqualExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn equal_op(left: Expression, right: Expression) -> Expression {
+    Expression::Equal(EqualExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn not_op(value: Expression) -> Expression {
+    Expression::Not(NotExpression {
+        value: Box::new(value),
+    })
+}
+
+fn and_op(left: Expression, right: Expression) -> Expression {
+    Expression::And(AndExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn or_op(left: Expression, right: Expression) -> Expression {
+    Expression::Or(OrExpression {
+        left: Box::new(left),
+        right: Box::new(right),
+    })
+}
+
+fn if_op(condition: Expression, then_expr: Expression, else_expr: Expression) -> Expression {
+    Expression::If(IfExpression {
+        condition: Box::new(condition),
+        then_expr: Box::new(then_expr),
+        else_expr: Box::new(else_expr),
+    })
+}
+
+fn let_bind(
+    variable_id: i64,
+    variable_name: &str,
+    value: Expression,
+    body: Expression,
+) -> Expression {
+    Expression::Let(LetExpression {
+        variable_id,
+        variable_name: variable_name.into(),
+        value: Box::new(value),
+        body: Box::new(body),
+    })
+}
+
+fn list_lit(items: Vec<Expression>) -> Expression {
+    Expression::ListLiteral(ListLiteralExpression { items })
+}
+
+fn record_lit(items: Vec<(&str, Expression)>) -> Expression {
+    Expression::TypeLiteral(TypeLiteralExpression {
+        items: items
+            .into_iter()
+            .map(|(key, value)| TypeLiteralItemExpression {
+                key: key.into(),
+                value: Box::new(value),
+            })
+            .collect(),
+    })
+}
+
+fn record_get(record: Expression, key: &str) -> Expression {
+    Expression::RecordGet(RecordGetExpression {
+        record: Box::new(record),
+        key: key.into(),
+    })
+}
+
+fn variant_unit(tag: &str) -> Expression {
+    Expression::Variant(VariantExpression {
+        tag: tag.into(),
+        payload: None,
+        type_part_definition_event_hash: None,
+    })
+}
+
+fn variant_val(tag: &str, payload: Expression) -> Expression {
+    Expression::Variant(VariantExpression {
+        tag: tag.into(),
+        payload: Some(Box::new(payload)),
+        type_part_definition_event_hash: None,
+    })
+}
+
+fn match_arm_unit(tag: &str, body: Expression) -> MatchArm {
+    MatchArm {
+        tag: tag.into(),
+        variable_id: None,
+        variable_name: None,
+        body: Box::new(body),
+    }
+}
+
+fn match_arm_payload(
+    tag: &str,
+    variable_id: i64,
+    variable_name: &str,
+    body: Expression,
+) -> MatchArm {
+    MatchArm {
+        tag: tag.into(),
+        variable_id: Some(variable_id),
+        variable_name: Some(variable_name.into()),
+        body: Box::new(body),
+    }
+}
+
+fn match_op(target: Expression, arms: Vec<MatchArm>, default: Option<Expression>) -> Expression {
+    Expression::Match(MatchExpression {
+        target: Box::new(target),
+        arms,
+        default: default.map(Box::new),
+    })
+}
+
+// --- Tests ---
 
 #[test]
 fn evaluate_expression_works() {
-    let expression = definy_event::event::Expression::Add(definy_event::event::AddExpression {
-        left: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 1 },
-        )),
-        right: Box::new(definy_event::event::Expression::Add(
-            definy_event::event::AddExpression {
-                left: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 2 },
-                )),
-                right: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 4 },
-                )),
-            },
-        )),
-    });
+    let expression = add(num(1), add(num(2), num(4)));
     assert_eq!(
         evaluate_expression(&expression, &[]),
         Ok(crate::expression_eval::Value::Number(7))
@@ -28,37 +247,20 @@ fn evaluate_expression_works() {
 
 #[test]
 fn nested_examples() {
-    let expression1 =
-        definy_event::event::Expression::Number(definy_event::event::NumberExpression { value: 1 });
+    let expression1 = num(1);
     assert_eq!(
         evaluate_expression(&expression1, &[]),
         Ok(crate::expression_eval::Value::Number(1))
     );
 
-    let expression2 =
-        definy_event::event::Expression::Subtract(definy_event::event::SubtractExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 10 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 3 },
-            )),
-        });
+    let expression2 = sub(num(10), num(3));
     assert_eq!(
         evaluate_expression(&expression2, &[]),
         Ok(crate::expression_eval::Value::Number(7))
     );
     assert_eq!(expression_to_source(&expression2), "- 10 3");
 
-    let expression3 =
-        definy_event::event::Expression::Multiply(definy_event::event::MultiplyExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 6 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 7 },
-            )),
-        });
+    let expression3 = mul(num(6), num(7));
     assert_eq!(
         evaluate_expression(&expression3, &[]),
         Ok(crate::expression_eval::Value::Number(42))
@@ -68,29 +270,14 @@ fn nested_examples() {
 
 #[test]
 fn evaluate_division_and_remainder() {
-    let div_expr = definy_event::event::Expression::Divide(definy_event::event::DivideExpression {
-        left: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 20 },
-        )),
-        right: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 4 },
-        )),
-    });
+    let div_expr = div(num(20), num(4));
     assert_eq!(
         evaluate_expression(&div_expr, &[]),
         Ok(crate::expression_eval::Value::Number(5))
     );
     assert_eq!(expression_to_source(&div_expr), "/ 20 4");
 
-    let rem_expr =
-        definy_event::event::Expression::Remainder(definy_event::event::RemainderExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 17 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 5 },
-            )),
-        });
+    let rem_expr = rem(num(17), num(5));
     assert_eq!(
         evaluate_expression(&rem_expr, &[]),
         Ok(crate::expression_eval::Value::Number(2))
@@ -100,72 +287,35 @@ fn evaluate_division_and_remainder() {
 
 #[test]
 fn evaluate_bitwise_operations() {
-    let and_expr = definy_event::event::Expression::BitAnd(definy_event::event::BitAndExpression {
-        left: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 14 },
-        )),
-        right: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 11 },
-        )),
-    });
+    let and_expr = bit_and(num(14), num(11));
     assert_eq!(
         evaluate_expression(&and_expr, &[]),
         Ok(crate::expression_eval::Value::Number(10))
     );
     assert_eq!(expression_to_source(&and_expr), "& 14 11");
 
-    let or_expr = definy_event::event::Expression::BitOr(definy_event::event::BitOrExpression {
-        left: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 12 },
-        )),
-        right: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 3 },
-        )),
-    });
+    let or_expr = bit_or(num(12), num(3));
     assert_eq!(
         evaluate_expression(&or_expr, &[]),
         Ok(crate::expression_eval::Value::Number(15))
     );
     assert_eq!(expression_to_source(&or_expr), "| 12 3");
 
-    let xor_expr = definy_event::event::Expression::BitXor(definy_event::event::BitXorExpression {
-        left: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 12 },
-        )),
-        right: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 10 },
-        )),
-    });
+    let xor_expr = bit_xor(num(12), num(10));
     assert_eq!(
         evaluate_expression(&xor_expr, &[]),
         Ok(crate::expression_eval::Value::Number(6))
     );
     assert_eq!(expression_to_source(&xor_expr), "^ 12 10");
 
-    let shl_expr =
-        definy_event::event::Expression::ShiftLeft(definy_event::event::ShiftLeftExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 2 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 3 },
-            )),
-        });
+    let shl_expr = shl(num(2), num(3));
     assert_eq!(
         evaluate_expression(&shl_expr, &[]),
         Ok(crate::expression_eval::Value::Number(16))
     );
     assert_eq!(expression_to_source(&shl_expr), "<< 2 3");
 
-    let shr_expr =
-        definy_event::event::Expression::ShiftRight(definy_event::event::ShiftRightExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 32 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 2 },
-            )),
-        });
+    let shr_expr = shr(num(32), num(2));
     assert_eq!(
         evaluate_expression(&shr_expr, &[]),
         Ok(crate::expression_eval::Value::Number(8))
@@ -175,46 +325,21 @@ fn evaluate_bitwise_operations() {
 
 #[test]
 fn evaluate_comparisons() {
-    let lt_expr =
-        definy_event::event::Expression::LessThan(definy_event::event::LessThanExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 3 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 5 },
-            )),
-        });
+    let lt_expr = lt(num(3), num(5));
     assert_eq!(
         evaluate_expression(&lt_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
     );
     assert_eq!(expression_to_source(&lt_expr), "< 3 5");
 
-    let ge_expr = definy_event::event::Expression::GreaterThanOrEqual(
-        definy_event::event::GreaterThanOrEqualExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 5 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 5 },
-            )),
-        },
-    );
+    let ge_expr = ge(num(5), num(5));
     assert_eq!(
         evaluate_expression(&ge_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
     );
     assert_eq!(expression_to_source(&ge_expr), ">= 5 5");
 
-    let ne_expr =
-        definy_event::event::Expression::NotEqual(definy_event::event::NotEqualExpression {
-            left: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 3 },
-            )),
-            right: Box::new(definy_event::event::Expression::Number(
-                definy_event::event::NumberExpression { value: 5 },
-            )),
-        });
+    let ne_expr = not_equal(num(3), num(5));
     assert_eq!(
         evaluate_expression(&ne_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
@@ -224,39 +349,21 @@ fn evaluate_comparisons() {
 
 #[test]
 fn evaluate_boolean_logic() {
-    let not_expr = definy_event::event::Expression::Not(definy_event::event::NotExpression {
-        value: Box::new(definy_event::event::Expression::Boolean(
-            definy_event::event::BooleanExpression { value: false },
-        )),
-    });
+    let not_expr = not_op(bool_lit(false));
     assert_eq!(
         evaluate_expression(&not_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
     );
     assert_eq!(expression_to_source(&not_expr), "not False");
 
-    let and_expr = definy_event::event::Expression::And(definy_event::event::AndExpression {
-        left: Box::new(definy_event::event::Expression::Boolean(
-            definy_event::event::BooleanExpression { value: true },
-        )),
-        right: Box::new(definy_event::event::Expression::Boolean(
-            definy_event::event::BooleanExpression { value: false },
-        )),
-    });
+    let and_expr = and_op(bool_lit(true), bool_lit(false));
     assert_eq!(
         evaluate_expression(&and_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(false))
     );
     assert_eq!(expression_to_source(&and_expr), "and True False");
 
-    let or_expr = definy_event::event::Expression::Or(definy_event::event::OrExpression {
-        left: Box::new(definy_event::event::Expression::Boolean(
-            definy_event::event::BooleanExpression { value: true },
-        )),
-        right: Box::new(definy_event::event::Expression::Boolean(
-            definy_event::event::BooleanExpression { value: false },
-        )),
-    });
+    let or_expr = or_op(bool_lit(true), bool_lit(false));
     assert_eq!(
         evaluate_expression(&or_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
@@ -266,27 +373,14 @@ fn evaluate_boolean_logic() {
 
 #[test]
 fn evaluate_boolean_and_if() {
-    let bool_expr =
-        definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
-            value: true,
-        });
+    let bool_expr = bool_lit(true);
     assert_eq!(
         evaluate_expression(&bool_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
     );
     assert_eq!(expression_to_source(&bool_expr), "True");
 
-    let if_expr = definy_event::event::Expression::If(definy_event::event::IfExpression {
-        condition: Box::new(definy_event::event::Expression::Boolean(
-            definy_event::event::BooleanExpression { value: false },
-        )),
-        then_expr: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 10 },
-        )),
-        else_expr: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 20 },
-        )),
-    });
+    let if_expr = if_op(bool_lit(false), num(10), num(20));
     assert_eq!(
         evaluate_expression(&if_expr, &[]),
         Ok(crate::expression_eval::Value::Number(20))
@@ -296,10 +390,7 @@ fn evaluate_boolean_and_if() {
 
 #[test]
 fn evaluate_string_literal() {
-    let string_expr =
-        definy_event::event::Expression::String(definy_event::event::StringExpression {
-            value: "hello".into(),
-        });
+    let string_expr = str_lit("hello");
     assert_eq!(
         evaluate_expression(&string_expr, &[]),
         Ok(crate::expression_eval::Value::String("hello".to_string()))
@@ -309,17 +400,7 @@ fn evaluate_string_literal() {
 
 #[test]
 fn evaluate_list_literal() {
-    let list_expr =
-        definy_event::event::Expression::ListLiteral(definy_event::event::ListLiteralExpression {
-            items: vec![
-                definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                    value: 1,
-                }),
-                definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                    value: 2,
-                }),
-            ],
-        });
+    let list_expr = list_lit(vec![num(1), num(2)]);
     assert_eq!(
         evaluate_expression(&list_expr, &[]),
         Ok(crate::expression_eval::Value::List(vec![
@@ -332,14 +413,7 @@ fn evaluate_list_literal() {
 
 #[test]
 fn evaluate_equal() {
-    let equal_expr = definy_event::event::Expression::Equal(definy_event::event::EqualExpression {
-        left: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 5 },
-        )),
-        right: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 5 },
-        )),
-    });
+    let equal_expr = equal_op(num(5), num(5));
     assert_eq!(
         evaluate_expression(&equal_expr, &[]),
         Ok(crate::expression_eval::Value::Bool(true))
@@ -349,31 +423,13 @@ fn evaluate_equal() {
 
 #[test]
 fn evaluate_record_literal() {
-    let record_expr =
-        definy_event::event::Expression::TypeLiteral(definy_event::event::TypeLiteralExpression {
-            items: vec![
-                definy_event::event::TypeLiteralItemExpression {
-                    key: "name".into(),
-                    value: Box::new(definy_event::event::Expression::String(
-                        definy_event::event::StringExpression {
-                            value: "narumi".into(),
-                        },
-                    )),
-                },
-                definy_event::event::TypeLiteralItemExpression {
-                    key: "age".into(),
-                    value: Box::new(definy_event::event::Expression::Number(
-                        definy_event::event::NumberExpression { value: 3 },
-                    )),
-                },
-            ],
-        });
+    let record_expr = record_lit(vec![("name", str_lit("narumi")), ("age", num(3))]);
     assert_eq!(
         evaluate_expression(&record_expr, &[]),
         Ok(crate::expression_eval::Value::Record(vec![
             (
                 "name".to_string(),
-                crate::expression_eval::Value::String("narumi".to_string())
+                crate::expression_eval::Value::String("narumi".to_string()),
             ),
             ("age".to_string(), crate::expression_eval::Value::Number(3)),
         ]))
@@ -387,32 +443,12 @@ fn evaluate_record_literal() {
 #[test]
 fn evaluate_let_bindings() {
     // let x = 10 in (let y = 20 in x + y)
-    let let_expr = definy_event::event::Expression::Let(definy_event::event::LetExpression {
-        variable_id: 1,
-        variable_name: "x".into(),
-        value: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 10 },
-        )),
-        body: Box::new(definy_event::event::Expression::Let(
-            definy_event::event::LetExpression {
-                variable_id: 2,
-                variable_name: "y".into(),
-                value: Box::new(definy_event::event::Expression::Number(
-                    definy_event::event::NumberExpression { value: 20 },
-                )),
-                body: Box::new(definy_event::event::Expression::Add(
-                    definy_event::event::AddExpression {
-                        left: Box::new(definy_event::event::Expression::Variable(
-                            definy_event::event::VariableExpression { variable_id: 1 },
-                        )),
-                        right: Box::new(definy_event::event::Expression::Variable(
-                            definy_event::event::VariableExpression { variable_id: 2 },
-                        )),
-                    },
-                )),
-            },
-        )),
-    });
+    let let_expr = let_bind(
+        1,
+        "x",
+        num(10),
+        let_bind(2, "y", num(20), add(var_ref(1), var_ref(2))),
+    );
 
     assert_eq!(
         evaluate_expression(&let_expr, &[]),
@@ -424,10 +460,7 @@ fn evaluate_let_bindings() {
 fn evaluate_part_reference_by_definition_hash() {
     let definition_hash =
         definy_event::EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").unwrap();
-    let part_expression =
-        definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-            value: 99,
-        });
+    let part_expression = num(99);
     let events = vec![(
         definition_hash.clone(),
         Ok((
@@ -509,16 +542,10 @@ fn test_compiler_builtins() {
 
 #[test]
 fn test_string_and_list_evaluation() {
-    use definy_event::event::*;
-
     // string concat
     let concat = Expression::StringConcat(StringConcatExpression {
-        left: Box::new(Expression::String(StringExpression {
-            value: "foo".into(),
-        })),
-        right: Box::new(Expression::String(StringExpression {
-            value: "bar".into(),
-        })),
+        left: Box::new(str_lit("foo")),
+        right: Box::new(str_lit("bar")),
     });
     assert_eq!(
         evaluate_expression(&concat, &[]).unwrap(),
@@ -531,9 +558,7 @@ fn test_string_and_list_evaluation() {
 
     // string length
     let len = Expression::StringLength(StringLengthExpression {
-        value: Box::new(Expression::String(StringExpression {
-            value: "hello".into(),
-        })),
+        value: Box::new(str_lit("hello")),
     });
     assert_eq!(
         evaluate_expression(&len, &[]).unwrap(),
@@ -542,11 +567,9 @@ fn test_string_and_list_evaluation() {
 
     // string slice
     let slice = Expression::StringSlice(StringSliceExpression {
-        value: Box::new(Expression::String(StringExpression {
-            value: "abcdef".into(),
-        })),
-        start: Box::new(Expression::Number(NumberExpression { value: 2 })),
-        end: Box::new(Expression::Number(NumberExpression { value: 5 })),
+        value: Box::new(str_lit("abcdef")),
+        start: Box::new(num(2)),
+        end: Box::new(num(5)),
     });
     assert_eq!(
         evaluate_expression(&slice, &[]).unwrap(),
@@ -554,14 +577,9 @@ fn test_string_and_list_evaluation() {
     );
 
     // list operations
-    let list_lit = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![
-            Expression::Number(NumberExpression { value: 100 }),
-            Expression::Number(NumberExpression { value: 200 }),
-        ],
-    });
+    let list_lit_expr = list_lit(vec![num(100), num(200)]);
     let list_len = Expression::ListLength(ListLengthExpression {
-        value: Box::new(list_lit.clone()),
+        value: Box::new(list_lit_expr.clone()),
     });
     assert_eq!(
         evaluate_expression(&list_len, &[]).unwrap(),
@@ -569,8 +587,8 @@ fn test_string_and_list_evaluation() {
     );
 
     let list_get = Expression::ListGet(ListGetExpression {
-        list: Box::new(list_lit.clone()),
-        index: Box::new(Expression::Number(NumberExpression { value: 1 })),
+        list: Box::new(list_lit_expr.clone()),
+        index: Box::new(num(1)),
     });
     assert_eq!(
         evaluate_expression(&list_get, &[]).unwrap(),
@@ -578,8 +596,8 @@ fn test_string_and_list_evaluation() {
     );
 
     let list_append = Expression::ListAppend(ListAppendExpression {
-        list: Box::new(list_lit.clone()),
-        item: Box::new(Expression::Number(NumberExpression { value: 300 })),
+        list: Box::new(list_lit_expr),
+        item: Box::new(num(300)),
     });
     assert_eq!(
         evaluate_expression(&list_append, &[]).unwrap(),
@@ -593,14 +611,8 @@ fn test_string_and_list_evaluation() {
 
 #[test]
 fn test_variant_unit_and_with_payload() {
-    use definy_event::event::*;
-
     // Unit variant
-    let none_var = Expression::Variant(VariantExpression {
-        tag: "none".into(),
-        payload: None,
-        type_part_definition_event_hash: None,
-    });
+    let none_var = variant_unit("none");
     assert_eq!(
         evaluate_expression(&none_var, &[]).unwrap(),
         crate::expression_eval::Value::Variant {
@@ -611,11 +623,7 @@ fn test_variant_unit_and_with_payload() {
     assert_eq!(expression_to_source(&none_var), "none");
 
     // Variant with number payload
-    let some_var = Expression::Variant(VariantExpression {
-        tag: "some".into(),
-        payload: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
-        type_part_definition_event_hash: None,
-    });
+    let some_var = variant_val("some", num(42));
     assert_eq!(
         evaluate_expression(&some_var, &[]).unwrap(),
         crate::expression_eval::Value::Variant {
@@ -628,37 +636,18 @@ fn test_variant_unit_and_with_payload() {
 
 #[test]
 fn test_match_expression_with_payload() {
-    use definy_event::event::*;
-
     // match some(42) {
     //   some(val) => val + 10,
     //   none => 0
     // }
-    let match_expr = Expression::Match(MatchExpression {
-        target: Box::new(Expression::Variant(VariantExpression {
-            tag: "some".into(),
-            payload: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
-            type_part_definition_event_hash: None,
-        })),
-        arms: vec![
-            MatchArm {
-                tag: "some".into(),
-                variable_id: Some(1),
-                variable_name: Some("val".into()),
-                body: Box::new(Expression::Add(AddExpression {
-                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                    right: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                })),
-            },
-            MatchArm {
-                tag: "none".into(),
-                variable_id: None,
-                variable_name: None,
-                body: Box::new(Expression::Number(NumberExpression { value: 0 })),
-            },
+    let match_expr = match_op(
+        variant_val("some", num(42)),
+        vec![
+            match_arm_payload("some", 1, "val", add(var_ref(1), num(10))),
+            match_arm_unit("none", num(0)),
         ],
-        default: None,
-    });
+        None,
+    );
 
     assert_eq!(
         evaluate_expression(&match_expr, &[]).unwrap(),
@@ -668,37 +657,18 @@ fn test_match_expression_with_payload() {
 
 #[test]
 fn test_match_expression_branching_to_other_arm() {
-    use definy_event::event::*;
-
     // match none {
     //   some(val) => val + 10,
     //   none => 999
     // }
-    let match_expr = Expression::Match(MatchExpression {
-        target: Box::new(Expression::Variant(VariantExpression {
-            tag: "none".into(),
-            payload: None,
-            type_part_definition_event_hash: None,
-        })),
-        arms: vec![
-            MatchArm {
-                tag: "some".into(),
-                variable_id: Some(1),
-                variable_name: Some("val".into()),
-                body: Box::new(Expression::Add(AddExpression {
-                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                    right: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                })),
-            },
-            MatchArm {
-                tag: "none".into(),
-                variable_id: None,
-                variable_name: None,
-                body: Box::new(Expression::Number(NumberExpression { value: 999 })),
-            },
+    let match_expr = match_op(
+        variant_unit("none"),
+        vec![
+            match_arm_payload("some", 1, "val", add(var_ref(1), num(10))),
+            match_arm_unit("none", num(999)),
         ],
-        default: None,
-    });
+        None,
+    );
 
     assert_eq!(
         evaluate_expression(&match_expr, &[]).unwrap(),
@@ -708,35 +678,19 @@ fn test_match_expression_branching_to_other_arm() {
 
 #[test]
 fn test_match_expression_default_arm() {
-    use definy_event::event::*;
-
     // match other {
     //   first => 1,
     //   second => 2,
     //   _ => 42
     // }
-    let match_expr = Expression::Match(MatchExpression {
-        target: Box::new(Expression::Variant(VariantExpression {
-            tag: "third".into(),
-            payload: None,
-            type_part_definition_event_hash: None,
-        })),
-        arms: vec![
-            MatchArm {
-                tag: "first".into(),
-                variable_id: None,
-                variable_name: None,
-                body: Box::new(Expression::Number(NumberExpression { value: 1 })),
-            },
-            MatchArm {
-                tag: "second".into(),
-                variable_id: None,
-                variable_name: None,
-                body: Box::new(Expression::Number(NumberExpression { value: 2 })),
-            },
+    let match_expr = match_op(
+        variant_unit("third"),
+        vec![
+            match_arm_unit("first", num(1)),
+            match_arm_unit("second", num(2)),
         ],
-        default: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
-    });
+        Some(num(42)),
+    );
 
     assert_eq!(
         evaluate_expression(&match_expr, &[]).unwrap(),
@@ -746,27 +700,8 @@ fn test_match_expression_default_arm() {
 
 #[test]
 fn test_record_get_evaluation_and_source() {
-    use definy_event::event::*;
-
-    let record = Expression::TypeLiteral(TypeLiteralExpression {
-        items: vec![
-            TypeLiteralItemExpression {
-                key: "score".into(),
-                value: Box::new(Expression::Number(NumberExpression { value: 95 })),
-            },
-            TypeLiteralItemExpression {
-                key: "name".into(),
-                value: Box::new(Expression::String(StringExpression {
-                    value: "alice".into(),
-                })),
-            },
-        ],
-    });
-
-    let get_score = Expression::RecordGet(RecordGetExpression {
-        record: Box::new(record),
-        key: "score".into(),
-    });
+    let record = record_lit(vec![("score", num(95)), ("name", str_lit("alice"))]);
+    let get_score = record_get(record, "score");
 
     assert_eq!(
         expression_to_source(&get_score),
@@ -780,7 +715,6 @@ fn test_record_get_evaluation_and_source() {
 #[test]
 fn test_evaluate_self_hosting_eval_ast_all_operations() {
     use definy_event::EventHashId;
-    use definy_event::event::*;
 
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
@@ -792,12 +726,7 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
             function: Box::new(Expression::PartReference(PartReferenceExpression {
                 part_definition_event_hash: eval_hash.clone(),
             })),
-            argument: Box::new(Expression::RecordGet(RecordGetExpression {
-                record: Box::new(Expression::Variable(VariableExpression {
-                    variable_id: var_id,
-                })),
-                key: key.into(),
-            })),
+            argument: Box::new(record_get(var_ref(var_id), key)),
         })
     }
 
@@ -814,65 +743,58 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1, // e
                 parameter_name: "e".into(),
-                body: Box::new(Expression::Match(MatchExpression {
-                    target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                    arms: vec![
-                        MatchArm {
-                            tag: "number".into(),
-                            variable_id: Some(10), // n
-                            variable_name: Some("n".into()),
-                            body: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 10,
-                            })),
-                        },
-                        MatchArm {
-                            tag: "add".into(),
-                            variable_id: Some(20), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Add(AddExpression {
-                                left: Box::new(rec_call(&eval_hash, 20, "left")),
-                                right: Box::new(rec_call(&eval_hash, 20, "right")),
-                            })),
-                        },
-                        MatchArm {
-                            tag: "subtract".into(),
-                            variable_id: Some(30), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Subtract(SubtractExpression {
-                                left: Box::new(rec_call(&eval_hash, 30, "left")),
-                                right: Box::new(rec_call(&eval_hash, 30, "right")),
-                            })),
-                        },
-                        MatchArm {
-                            tag: "multiply".into(),
-                            variable_id: Some(40), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Multiply(MultiplyExpression {
-                                left: Box::new(rec_call(&eval_hash, 40, "left")),
-                                right: Box::new(rec_call(&eval_hash, 40, "right")),
-                            })),
-                        },
-                        MatchArm {
-                            tag: "divide".into(),
-                            variable_id: Some(50), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Divide(DivideExpression {
-                                left: Box::new(rec_call(&eval_hash, 50, "left")),
-                                right: Box::new(rec_call(&eval_hash, 50, "right")),
-                            })),
-                        },
-                        MatchArm {
-                            tag: "remainder".into(),
-                            variable_id: Some(60), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Remainder(RemainderExpression {
-                                left: Box::new(rec_call(&eval_hash, 60, "left")),
-                                right: Box::new(rec_call(&eval_hash, 60, "right")),
-                            })),
-                        },
+                body: Box::new(match_op(
+                    var_ref(1),
+                    vec![
+                        match_arm_payload("number", 10, "n", var_ref(10)),
+                        match_arm_payload(
+                            "add",
+                            20,
+                            "bin",
+                            add(
+                                rec_call(&eval_hash, 20, "left"),
+                                rec_call(&eval_hash, 20, "right"),
+                            ),
+                        ),
+                        match_arm_payload(
+                            "subtract",
+                            30,
+                            "bin",
+                            sub(
+                                rec_call(&eval_hash, 30, "left"),
+                                rec_call(&eval_hash, 30, "right"),
+                            ),
+                        ),
+                        match_arm_payload(
+                            "multiply",
+                            40,
+                            "bin",
+                            mul(
+                                rec_call(&eval_hash, 40, "left"),
+                                rec_call(&eval_hash, 40, "right"),
+                            ),
+                        ),
+                        match_arm_payload(
+                            "divide",
+                            50,
+                            "bin",
+                            div(
+                                rec_call(&eval_hash, 50, "left"),
+                                rec_call(&eval_hash, 50, "right"),
+                            ),
+                        ),
+                        match_arm_payload(
+                            "remainder",
+                            60,
+                            "bin",
+                            rem(
+                                rec_call(&eval_hash, 60, "left"),
+                                rec_call(&eval_hash, 60, "right"),
+                            ),
+                        ),
                     ],
-                    default: Some(Box::new(Expression::Number(NumberExpression { value: 0 }))),
-                })),
+                    Some(num(0)),
+                )),
             })),
             module_definition_event_hash: EventHashId::from_bytes(&[0u8; 32]),
         }),
@@ -892,37 +814,24 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
     let ast_num = |val: i64| {
         Expression::Variant(VariantExpression {
             tag: "number".into(),
-            payload: Some(Box::new(Expression::Number(NumberExpression {
-                value: val,
-            }))),
+            payload: Some(Box::new(num(val))),
             type_part_definition_event_hash: Some(expr_hash.clone()),
         })
     };
     let ast_binary = |tag: &str, left: Expression, right: Expression| {
         Expression::Variant(VariantExpression {
             tag: tag.into(),
-            payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
-                items: vec![
-                    TypeLiteralItemExpression {
-                        key: "left".into(),
-                        value: Box::new(left),
-                    },
-                    TypeLiteralItemExpression {
-                        key: "right".into(),
-                        value: Box::new(right),
-                    },
-                ],
-            }))),
+            payload: Some(Box::new(record_lit(vec![("left", left), ("right", right)]))),
             type_part_definition_event_hash: Some(expr_hash.clone()),
         })
     };
 
-    let mul = ast_binary("multiply", ast_num(10), ast_num(3));
-    let sub = ast_binary("subtract", ast_num(100), mul);
-    let div = ast_binary("divide", ast_num(50), ast_num(2));
-    let rem = ast_binary("remainder", ast_num(17), ast_num(5));
-    let add1 = ast_binary("add", sub, div);
-    let add2 = ast_binary("add", add1, rem);
+    let mul_e = ast_binary("multiply", ast_num(10), ast_num(3));
+    let sub_e = ast_binary("subtract", ast_num(100), mul_e);
+    let div_e = ast_binary("divide", ast_num(50), ast_num(2));
+    let rem_e = ast_binary("remainder", ast_num(17), ast_num(5));
+    let add1 = ast_binary("add", sub_e, div_e);
+    let add2 = ast_binary("add", add1, rem_e);
 
     let eval_call = Expression::Call(CallExpression {
         function: Box::new(Expression::PartReference(PartReferenceExpression {

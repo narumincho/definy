@@ -9,11 +9,44 @@ members = [
 default-members = ["definy-client"]
 resolver = "3"
 
+[workspace.dependencies]
+# Internal workspace crates
+definy-client = { path = "definy-client" }
+definy-event = { path = "definy-event" }
+definy-server = { path = "definy-server" }
+definy-ui = { path = "definy-ui" }
+
+# External crates
+anyhow = "1.0.104"
+base64 = "0.22.1"
+chrono = { version = "0.4.45", default-features = false }
+dioxus = { version = "0.7.10", default-features = false }
+dioxus-fullstack = "0.7.10"
+dioxus-ssr = "0.7.10"
+dioxus-web = "0.7.10"
+ed25519-dalek = "2.2"
+getrandom = "0.2"
+http-body-util = "0.1.5"
+hyper = "1.11"
+hyper-util = "0.1.20"
+js-sys = "0.3.105"
+rand_core = "0.6.4"
+serde = "1.0.229"
+serde_cbor = "0.11.2"
+serde_json = "1.0.151"
+serde_urlencoded = "0.7.1"
+sha2 = "0.10.9"
+strum = "0.27.2"
+strum_macros = "0.27.2"
+tokio = "1.53"
+utoipa = "5.5"
+wasm-bindgen = "0.2.128"
+wasm-bindgen-futures = "0.4.78"
+web-sys = "0.3.105"
+
 [profile.release]
 opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
-
- 
