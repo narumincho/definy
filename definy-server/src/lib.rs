@@ -496,21 +496,33 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         event::handle_events_get,
         event::handle_event_get,
         event::handle_events_post,
+        connect_rpc::handle_get_events,
+        connect_rpc::handle_get_event,
+        connect_rpc::handle_submit_event,
     ),
     components(
         schemas(
             event::EventsQuery,
             definy_event::event::EventType,
             definy_event::response::EventsResponse,
+            definy_event::rpc::EventItem,
+            definy_event::rpc::GetEventsRequest,
+            definy_event::rpc::GetEventsResponse,
+            definy_event::rpc::GetEventRequest,
+            definy_event::rpc::GetEventResponse,
+            definy_event::rpc::SubmitEventRequest,
+            definy_event::rpc::SubmitEventResponse,
+            definy_event::rpc::ConnectError,
         )
     ),
     tags(
-        (name = "events", description = "Definy event management API")
+        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API"),
+        (name = "events", description = "Legacy Definy event management REST API")
     ),
     info(
         title = "definy API",
         version = "0.1.0",
-        description = "OpenAPI documentation for definy server"
+        description = "OpenAPI documentation for definy server (Connect-RPC & REST)"
     )
 )]
 pub struct ApiDoc;
@@ -529,6 +541,9 @@ mod tests {
         assert!(json.contains("definy API"));
         assert!(json.contains("/events"));
         assert!(json.contains("/events/{hash}"));
+        assert!(json.contains("/definy.v1.EventService/GetEvents"));
+        assert!(json.contains("/definy.v1.EventService/GetEvent"));
+        assert!(json.contains("/definy.v1.EventService/SubmitEvent"));
         assert!(json.contains("create_account"));
     }
 

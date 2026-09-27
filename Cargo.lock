@@ -1082,6 +1082,7 @@ dependencies = [
  "dioxus",
  "dioxus-ssr",
  "ed25519-dalek",
+ "hex",
  "http-body-util",
  "hyper",
  "hyper-util",

@@ -58,11 +58,16 @@ fn RenderEventDetail(
             div {
                 class: "event-detail-card",
                 style: "display: grid; gap: 1rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                div { style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;",
+                div { style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;",
                     div { style: "display: flex; align-items: center; gap: 0.75rem;",
                         div { style: "font-size: 1.25rem; font-weight: 600;",
                             "{crate::event_presenter::event_kind_label(context.language, &event)}"
                         }
+                    }
+                    a {
+                        href: context.href_with_lang(Location::ApiExplorer(Some(hash.clone()))),
+                        style: "text-decoration: none; padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--primary); display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 500;",
+                        "🔬 {context.language.label(\"Inspect RPC & CBOR\", \"RPC & CBOR を検査\", \"Inspekti RPC & CBOR\")}"
                     }
                 }
                 div { style: "display: grid; gap: 0.75rem;",

@@ -147,6 +147,35 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
                             }
                         }
 
+                        // Connect-RPC & CBOR Explorer カード
+                        a {
+                            href: context.href_with_lang(Location::ApiExplorer(None)),
+                            class: "event-detail-card",
+                            style: "display: flex; flex-direction: column; gap: 0.5rem; padding: 1.1rem 1.2rem; text-decoration: none; color: inherit; transition: transform 0.15s ease, border-color 0.15s ease; border-radius: var(--radius-md);",
+                            div { style: "display: flex; align-items: center; justify-content: space-between;",
+                                div { style: "display: flex; align-items: center; gap: 0.6rem;",
+                                    span { style: "font-size: 1.35rem;", "🔬" }
+                                    span { style: "font-size: 1rem; font-weight: 600; color: var(--text-primary);",
+                                        "Connect-RPC & CBOR"
+                                    }
+                                }
+                                span { style: "font-size: 0.85rem; color: var(--primary);",
+                                    "→"
+                                }
+                            }
+                            div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;",
+                                {
+                                    context
+                                        .language
+                                        .label(
+                                            "Inspect Connect-RPC calls, decode Deterministic CBOR event binaries, AST, and proofs.",
+                                            "Connect-RPC 呼び出しと Deterministic CBOR イベントバイナリのデコード・AST・暗号検証を行えます。",
+                                            "Inspektu Connect-RPC vokojn kaj malkodu determinajn CBOR-eventojn kaj AST.",
+                                        )
+                                }
+                            }
+                        }
+
                         // Swagger UI / API カード
                         a {
                             href: "{crate::fetch::api_base_url()}/swagger-ui/",

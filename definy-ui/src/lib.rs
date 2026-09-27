@@ -31,6 +31,7 @@ mod part_detail;
 mod part_list;
 pub mod part_projection;
 pub mod query;
+mod rpc_explorer;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
@@ -153,6 +154,15 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::Settings) => {
             rsx! {
                 settings::SettingsView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::ApiExplorer(target_hash)) => {
+            rsx! {
+                rpc_explorer::RpcExplorerView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    initial_target_hash: target_hash.clone(),
+                }
             }
         }
         Some(Location::Module(hash)) => {

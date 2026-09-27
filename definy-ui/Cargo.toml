@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 dioxus = { workspace = true, features = ["macro", "hooks", "signals", "html"] }
 base64 = { workspace = true }
+hex = { workspace = true }
 ed25519-dalek = { workspace = true, features = ["rand_core"] }
 definy-event = { workspace = true }
 web-sys = { workspace = true, features = [

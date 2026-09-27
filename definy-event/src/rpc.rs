@@ -52,6 +52,7 @@ use crate::event::EventContent;
 /// Contains the deterministic CBOR binary of the signed event, along with indexed fields.
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct EventItem {
     /// URL-safe base64 encoded event hash (EventHashId)
     #[prost(string, tag = "1")]
@@ -61,6 +62,7 @@ pub struct EventItem {
     /// Raw signed event binary (Deterministic CBOR)
     #[prost(bytes = "vec", tag = "2")]
     #[serde(with = "base64_bytes", alias = "signed_event_bytes")]
+    #[cfg_attr(feature = "utoipa", schema(value_type = String, format = Byte, example = "oWZhYXV0aG9y..."))]
     pub signed_event_bytes: Vec<u8>,
 
     /// Account ID of the author
@@ -104,6 +106,7 @@ impl EventItem {
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct GetEventsRequest {
     #[prost(string, optional, tag = "1")]
     #[serde(default, skip_serializing_if = "Option::is_none", alias = "event_type")]
@@ -120,6 +123,7 @@ pub struct GetEventsRequest {
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct GetEventsResponse {
     #[prost(message, repeated, tag = "1")]
     #[serde(default)]
@@ -128,6 +132,7 @@ pub struct GetEventsResponse {
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct GetEventRequest {
     #[prost(string, tag = "1")]
     #[serde(default, alias = "event_hash")]
@@ -136,6 +141,7 @@ pub struct GetEventRequest {
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct GetEventResponse {
     #[prost(message, optional, tag = "1")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -144,15 +150,18 @@ pub struct GetEventResponse {
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct SubmitEventRequest {
     /// Raw signed event binary (Deterministic CBOR containing Ed25519 signature + Tagged CBOR payload)
     #[prost(bytes = "vec", tag = "1")]
     #[serde(with = "base64_bytes", alias = "signed_event_bytes")]
+    #[cfg_attr(feature = "utoipa", schema(value_type = String, format = Byte, example = "oWZhYXV0aG9y..."))]
     pub signed_event_bytes: Vec<u8>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct SubmitEventResponse {
     #[prost(string, tag = "1")]
     #[serde(default, alias = "event_hash")]
@@ -165,6 +174,7 @@ pub struct SubmitEventResponse {
 
 /// Connect-RPC standard error format
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct ConnectError {
     pub code: String,
     pub message: String,

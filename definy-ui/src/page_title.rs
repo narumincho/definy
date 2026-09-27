@@ -16,6 +16,7 @@ enum RouteId {
     PartDetail,
     ModuleDetail,
     EventDetail,
+    ApiExplorer,
     NotFound,
 }
 
@@ -29,6 +30,7 @@ impl RouteId {
             Some(Location::LocalEventQueue) => Self::LocalEventQueue,
             Some(Location::TreeLayout) => Self::TreeLayout,
             Some(Location::Settings) => Self::Settings,
+            Some(Location::ApiExplorer(_)) => Self::ApiExplorer,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Module(_)) => Self::ModuleDetail,
@@ -50,6 +52,11 @@ impl RouteId {
                 context.language.label("Modules", "モジュール", "Moduloj")
             }
             Self::Settings => context.language.label("Settings", "設定", "Agordoj"),
+            Self::ApiExplorer => context.language.label(
+                "Connect-RPC Explorer",
+                "Connect-RPC エクスプローラー",
+                "Connect-RPC Esplorilo",
+            ),
             Self::LocalEventQueue => {
                 context
                     .language
@@ -76,6 +83,7 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::LocalEventQueue)
         | Some(Location::TreeLayout)
         | Some(Location::Settings)
+        | Some(Location::ApiExplorer(_))
         | None => route_id.title_prefix(context).to_string(),
         Some(Location::Account(account_id)) => {
             let account_name =

@@ -108,6 +108,21 @@ fn error_to_response(err: ConnectError) -> Response {
         .into_response()
 }
 
+#[utoipa::path(
+    post,
+    path = "/definy.v1.EventService/GetEvents",
+    tag = "connect-rpc",
+    request_body(
+        content = GetEventsRequest,
+        content_type = "application/json",
+        description = "Connect-RPC GetEvents request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC GetEvents response", body = GetEventsResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable", body = ConnectError, content_type = "application/json")
+    )
+)]
 pub async fn handle_get_events(
     Database(db): Database,
     headers: HeaderMap,
@@ -151,6 +166,22 @@ pub async fn handle_get_events(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/definy.v1.EventService/GetEvent",
+    tag = "connect-rpc",
+    request_body(
+        content = GetEventRequest,
+        content_type = "application/json",
+        description = "Connect-RPC GetEvent request payload with event_hash"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC GetEvent response", body = GetEventResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 404, description = "Event Not Found", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable", body = ConnectError, content_type = "application/json")
+    )
+)]
 pub async fn handle_get_event(Database(db): Database, headers: HeaderMap, body: Bytes) -> Response {
     let codec = ContentCodec::from_headers(&headers);
     let req: GetEventRequest = match decode_request(codec, &body) {
@@ -197,6 +228,21 @@ pub async fn handle_get_event(Database(db): Database, headers: HeaderMap, body: 
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/definy.v1.EventService/SubmitEvent",
+    tag = "connect-rpc",
+    request_body(
+        content = SubmitEventRequest,
+        content_type = "application/json",
+        description = "Connect-RPC SubmitEvent request with signed_event_bytes (Deterministic CBOR base64)"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC SubmitEvent response", body = SubmitEventResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable", body = ConnectError, content_type = "application/json")
+    )
+)]
 pub async fn handle_submit_event(
     Database(db): Database,
     ConnectInfo(address): ConnectInfo<SocketAddr>,

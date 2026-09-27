@@ -83,7 +83,18 @@ message SubmitEventResponse {
   - 取得した各イベントの Deterministic CBOR バイナリをブラウザ内 IndexedDB にキャッシュ。
   - オフライン時やキューイング送信（Local Event）ともシームレスに統合。
 
-## 4. 開発ノウハウ & 注意点
+## 4. Swagger UI & Connect-RPC / CBOR Explorer
+
+- **Swagger UI (`/swagger-ui`)**:
+  - Connect-RPC の各メソッド（`/definy.v1.EventService/GetEvents`, `GetEvent`, `SubmitEvent`）は OpenAPI (utoipa) スキーマに登録されており、Swagger UI 上で対話的にテスト可能です。
+- **CBOR in gRPC / Connect-RPC の UI 表現**:
+  - 汎用の gRPC / Connect UI ツール（Buf Studio, grpc-ui, Postman, Swagger UI 等）は、Protobuf 定義のレベルで `bytes`（Base64）を表示するに留まり、そのバイト列に内包された RFC 8949 Deterministic CBOR や definy 固有の AST、ContentHash、Ed25519 署名を自動パース・検証するツールは存在しません。
+- **definy 自作 Explorer (`/api` / `/api/{event_hash}`)**:
+  - definy-ui に専用の「Connect-RPC & CBOR Explorer」を内蔵。
+  - Connect-RPC メソッドの直接実行、あるいは任意の Base64/Hex CBOR バイナリの貼り付けに対応。
+  - レスポンス内の Deterministic CBOR をクライアント側で即座にデコード・Ed25519 署名検証し、イベント構造（ModuleCommit, Account, Parts, AST 式構造, ContentHash）および Hex/Base64 バイナリダンプをグラフィカルに可視化・検査できます。
+
+## 5. 開発ノウハウ & 注意点
 
 - **`dx fmt` の挙動**:
   - Dioxus CLI の `dx fmt` において、マクロ内の複数引数を持つ関数呼び出しやブロックにおいて、引数リストが重複出力される既知の不具合があります。
