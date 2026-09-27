@@ -1022,9 +1022,11 @@ dependencies = [
  "base64",
  "chrono",
  "ed25519-dalek",
+ "prost 0.13.5",
  "rand_core 0.6.4",
  "serde",
  "serde_cbor",
+ "serde_json",
  "sha2 0.10.9",
  "strum",
  "strum_macros",
@@ -1049,6 +1051,7 @@ dependencies = [
  "http-body-util",
  "hyper",
  "hyper-util",
+ "prost 0.13.5",
  "rand 0.8.8",
  "serde",
  "serde_cbor",
@@ -1083,6 +1086,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "js-sys",
+ "prost 0.13.5",
  "rand_core 0.6.4",
  "serde",
  "serde_cbor",
@@ -3822,12 +3826,35 @@ dependencies = [
 
 [[package]]
 name = "prost"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2796faa41db3ec313a31f7624d9286acf277b52de526150b7e69f3debf891ee5"
+dependencies = [
+ "bytes",
+ "prost-derive 0.13.5",
+]
+
+[[package]]
+name = "prost"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "528ac67416ff8646872a3c02cad9cc4ee5dc9f9540c9b10771855c95cb2e5ae1"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.14.4",
+]
+
+[[package]]
+name = "prost-derive"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
+dependencies = [
+ "anyhow",
+ "itertools 0.14.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
 ]
 
 [[package]]
@@ -3849,7 +3876,7 @@ version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f94967dc7688f3054c7fac87473ffae4cc4c3904800e2d9f5b857246d8963b0a"
 dependencies = [
- "prost",
+ "prost 0.14.4",
 ]
 
 [[package]]
@@ -5265,7 +5292,7 @@ dependencies = [
  "flatbuffers",
  "futures",
  "geo",
- "prost",
+ "prost 0.14.4",
  "prost-types",
  "rust_decimal",
  "semver",
@@ -5751,7 +5778,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50849f68853be452acf590cde0b146665b8d507b3b8af17261df47e02c209ea0"
 dependencies = [
  "bytes",
- "prost",
+ "prost 0.14.4",
  "tonic",
 ]
 

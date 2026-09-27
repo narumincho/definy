@@ -1,6 +1,7 @@
 mod builtin_expression_type;
 mod builtin_migration;
 mod builtin_value_type;
+mod connect_rpc;
 mod db;
 mod error;
 mod event;
@@ -62,6 +63,8 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
             axum::http::header::CONTENT_TYPE,
             axum::http::header::AUTHORIZATION,
             axum::http::header::ACCEPT,
+            axum::http::HeaderName::from_static("connect-protocol-version"),
+            axum::http::HeaderName::from_static("connect-timeout-ms"),
         ])
         .max_age(std::time::Duration::from_secs(86400));
 
@@ -75,6 +78,7 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
             get(event::handle_events_get).post(event::handle_events_post),
         )
         .route("/events/{hash}", get(event::handle_event_get))
+        .merge(connect_rpc::router())
         .merge(mcp::router(mcp_session_manager))
         .fallback(handle_fallback)
         .layer(cors)

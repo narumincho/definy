@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package definy.v1;
+
+// EventService provides Connect-RPC APIs for definy events.
+service EventService {
+  // GetEvents retrieves a paginated list of events, optionally filtered by event type.
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
+
+  // GetEvent retrieves a single event by its URL-safe base64 hash.
+  rpc GetEvent(GetEventRequest) returns (GetEventResponse);
+
+  // SubmitEvent submits a signed event to the server.
+  rpc SubmitEvent(SubmitEventRequest) returns (SubmitEventResponse);
+}
+
+message EventItem {
+  // URL-safe base64 encoded event hash (EventHashId)
+  string event_hash = 1;
+  // Raw signed event binary (Deterministic CBOR)
+  bytes signed_event_bytes = 2;
+  // Account ID of the author
+  string account_id = 3;
+  // Event type name (e.g. "create_account", "change_profile", "module_commit")
+  string event_type = 4;
+  // Timestamp in RFC 3339 format
+  string created_at_rfc3339 = 5;
+}
+
+message GetEventsRequest {
+  optional string event_type = 1;
+  optional uint64 limit = 2;
+  optional uint64 offset = 3;
+}
+
+message GetEventsResponse {
+  repeated EventItem events = 1;
+}
+
+message GetEventRequest {
+  string event_hash = 1;
+}
+
+message GetEventResponse {
+  optional EventItem event = 1;
+}
+
+message SubmitEventRequest {
+  // Raw signed event binary (Deterministic CBOR containing Ed25519 signature + Tagged CBOR payload)
+  bytes signed_event_bytes = 1;
+}
+
+message SubmitEventResponse {
+  string event_hash = 1;
+  string status = 2;
+}

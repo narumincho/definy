@@ -69,31 +69,42 @@ pub fn api_base_url() -> String {
     "".to_string()
 }
 
-pub async fn get_events_raw(
-    event_type: Option<definy_event::event::EventType>,
-    limit: Option<usize>,
-    offset: Option<usize>,
-) -> Result<Vec<u8>, FetchError> {
+use definy_event::rpc::{
+    CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, ConnectError, GetEventRequest,
+    GetEventResponse, GetEventsRequest, GetEventsResponse, PATH_GET_EVENT, PATH_GET_EVENTS,
+    PATH_SUBMIT_EVENT, SubmitEventRequest, SubmitEventResponse,
+};
+
+async fn connect_rpc_post<Req: serde::Serialize, Res: serde::de::DeserializeOwned>(
+    path: &str,
+    req: &Req,
+) -> Result<Res, FetchError> {
     let base = api_base_url();
-    let mut url = format!("{}/events", base);
-    let mut params = Vec::new();
-    if let Some(event_type) = event_type {
-        params.push(format!("event_type={}", event_type));
-    }
-    if let Some(limit) = limit {
-        params.push(format!("limit={}", limit));
-    }
-    if let Some(offset) = offset {
-        params.push(format!("offset={}", offset));
-    }
-    if !params.is_empty() {
-        url.push('?');
-        url.push_str(&params.join("&"));
-    }
+    let url = format!("{}{}", base, path);
     let window = web_sys::window().ok_or_else(|| FetchError::Other("no window".to_string()))?;
-    let response_raw = match wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url)).await
+
+    let headers = web_sys::Headers::new().map_err(|e| FetchError::Other(js_error_to_string(e)))?;
+    headers
+        .set("Content-Type", "application/json")
+        .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
+    headers
+        .set(CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION)
+        .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
+
+    let json_body = serde_json::to_string(req)
+        .map_err(|e| FetchError::Other(format!("serialize request error: {e}")))?;
+
+    let request_init = web_sys::RequestInit::new();
+    request_init.set_method("POST");
+    request_init.set_headers(&headers);
+    request_init.set_body(&wasm_bindgen::JsValue::from_str(&json_body));
+
+    let response_raw = match wasm_bindgen_futures::JsFuture::from(
+        window.fetch_with_str_and_init(&url, &request_init),
+    )
+    .await
     {
-        Ok(val) => val,
+        Ok(v) => v,
         Err(err) => {
             let msg = js_error_to_string(err);
             return Err(FetchError::ServerDisconnected(msg));
@@ -110,22 +121,30 @@ pub async fn get_events_raw(
     }
 
     if !response.ok() {
-        return Err(FetchError::HttpError(response.status()));
+        let status = response.status();
+        let text_promise = response.text().ok();
+        if let Some(tp) = text_promise
+            && let Ok(text_val) = wasm_bindgen_futures::JsFuture::from(tp).await
+            && let Some(txt) = text_val.as_string()
+            && let Ok(connect_err) = serde_json::from_str::<ConnectError>(&txt)
+        {
+            return Err(FetchError::Other(format!(
+                "{}: {}",
+                connect_err.code, connect_err.message
+            )));
+        }
+        return Err(FetchError::HttpError(status));
     }
 
-    let array_buffer_promise = response
-        .array_buffer()
+    let text_promise = response
+        .text()
         .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
-    let response_body: js_sys::ArrayBuffer =
-        match wasm_bindgen_futures::JsFuture::from(array_buffer_promise).await {
-            Ok(val) => match wasm_bindgen::JsCast::dyn_into(val) {
-                Ok(ab) => ab,
-                Err(_) => return Err(FetchError::Other("failed to cast ArrayBuffer".to_string())),
-            },
-            Err(e) => return Err(FetchError::Other(js_error_to_string(e))),
-        };
-    let response_body_bytes = js_sys::Uint8Array::new(&response_body).to_vec();
-    Ok(response_body_bytes)
+    let text_value = wasm_bindgen_futures::JsFuture::from(text_promise)
+        .await
+        .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
+    let text = text_value.as_string().unwrap_or_default();
+
+    serde_json::from_str::<Res>(&text).map_err(|e| FetchError::DeserializeError(e.to_string()))
 }
 
 pub async fn get_events(
@@ -142,13 +161,19 @@ pub async fn get_events(
     )>,
     FetchError,
 > {
-    let response_body_bytes = get_events_raw(event_type, limit, offset).await?;
+    let req = GetEventsRequest {
+        event_type: event_type.map(|t| t.to_string()),
+        limit: limit.map(|l| l as u64),
+        offset: offset.map(|o| o as u64),
+    };
 
-    let value =
-        serde_cbor::from_slice::<definy_event::response::EventsResponse>(&response_body_bytes)
-            .map_err(|e| FetchError::DeserializeError(e.to_string()))?;
+    let res: GetEventsResponse = connect_rpc_post(PATH_GET_EVENTS, &req).await?;
 
-    let event_pairs = value.events.into_iter().collect::<Vec<Vec<u8>>>();
+    let event_pairs = res
+        .events
+        .into_iter()
+        .map(|item| item.signed_event_bytes)
+        .collect::<Vec<Vec<u8>>>();
 
     if let Err(error) = crate::indexed_db::store_events(&event_pairs).await {
         web_sys::console::warn_1(&error);
@@ -177,82 +202,45 @@ pub async fn get_event(
     )>,
     FetchError,
 > {
-    let base = api_base_url();
-    let url = format!("{}/events/{}", base, hash);
-    let window = web_sys::window().ok_or_else(|| FetchError::Other("no window".to_string()))?;
-    let response_raw = match wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(&url)).await
-    {
-        Ok(v) => v,
-        Err(e) => return Err(FetchError::ServerDisconnected(js_error_to_string(e))),
+    let req = GetEventRequest {
+        event_hash: hash.to_string(),
     };
 
-    let response: web_sys::Response = match wasm_bindgen::JsCast::dyn_into(response_raw) {
+    let res: GetEventResponse = match connect_rpc_post(PATH_GET_EVENT, &req).await {
         Ok(r) => r,
-        Err(_) => return Err(FetchError::Other("failed to cast Response".to_string())),
+        Err(FetchError::HttpError(404)) => return Ok(None),
+        Err(FetchError::Other(msg)) if msg.starts_with("not_found:") => return Ok(None),
+        Err(e) => return Err(e),
     };
 
-    if response.status() == 404 {
-        return Ok(None);
-    }
-    if response.status() == 503 {
-        return Err(FetchError::DatabaseUnavailable);
-    }
-    if !response.ok() {
-        return Err(FetchError::HttpError(response.status()));
-    }
+    if let Some(item) = res.event {
+        let bytes = item.signed_event_bytes;
+        if let Err(error) = crate::indexed_db::store_events(std::slice::from_ref(&bytes)).await {
+            web_sys::console::warn_1(&error);
+        }
 
-    let array_buffer_promise = response
-        .array_buffer()
-        .map_err(|e| FetchError::Other(js_error_to_string(e)))?;
-    let response_body: js_sys::ArrayBuffer =
-        match wasm_bindgen_futures::JsFuture::from(array_buffer_promise).await {
-            Ok(v) => match wasm_bindgen::JsCast::dyn_into(v) {
-                Ok(ab) => ab,
-                Err(_) => return Err(FetchError::Other("failed to cast ArrayBuffer".to_string())),
-            },
-            Err(e) => return Err(FetchError::Other(js_error_to_string(e))),
-        };
-    let bytes = js_sys::Uint8Array::new(&response_body).to_vec();
-
-    if let Err(error) = crate::indexed_db::store_events(std::slice::from_ref(&bytes)).await {
-        web_sys::console::warn_1(&error);
+        let decoded = definy_event::verify_and_deserialize(&bytes);
+        let hash_id = EventHashId::from_bytes(&bytes);
+        Ok(Some((hash_id, decoded)))
+    } else {
+        Ok(None)
     }
-
-    let decoded = definy_event::verify_and_deserialize(&bytes);
-    let hash_id = EventHashId::from_bytes(&bytes);
-    Ok(Some((hash_id, decoded)))
 }
 
 pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
-    let headers = web_sys::Headers::new().map_err(js_error_to_anyhow)?;
-    headers
-        .set("Content-Type", "application/cbor")
-        .map_err(js_error_to_anyhow)?;
-    let request_init = web_sys::RequestInit::new();
-    request_init.set_method("POST");
-    request_init.set_headers(&headers);
-    request_init.set_body(&js_sys::Uint8Array::from(signated_event));
-    let window = web_sys::window().ok_or_else(|| anyhow::anyhow!("no window"))?;
-    let base = api_base_url();
-    let url = format!("{}/events", base);
-    let response_raw = match wasm_bindgen_futures::JsFuture::from(
-        window.fetch_with_str_and_init(&url, &request_init),
-    )
-    .await
-    {
-        Ok(val) => val,
-        Err(err) => {
-            web_sys::console::error_1(&format!("fetch POST {} failed: {:?}", url, err).into());
-            return Err(js_error_to_anyhow(err));
-        }
+    let req = SubmitEventRequest {
+        signed_event_bytes: signated_event.to_vec(),
     };
 
-    let response: web_sys::Response =
-        wasm_bindgen::JsCast::dyn_into(response_raw).map_err(js_error_to_anyhow)?;
-    web_sys::console::log_1(
-        &format!("fetch POST {} returned status: {}", url, response.status()).into(),
-    );
-    Ok(response.status())
+    let res: Result<SubmitEventResponse, FetchError> =
+        connect_rpc_post(PATH_SUBMIT_EVENT, &req).await;
+
+    match res {
+        Ok(_) => Ok(200),
+        Err(FetchError::HttpError(status)) => Ok(status),
+        Err(FetchError::DatabaseUnavailable) => Ok(503),
+        Err(err) => Err(anyhow::anyhow!(err.to_string())),
+    }
 }
 
 pub async fn post_event_with_queue(

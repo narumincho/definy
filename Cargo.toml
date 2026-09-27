@@ -43,6 +43,7 @@ utoipa = "5.5"
 wasm-bindgen = "0.2.128"
 wasm-bindgen-futures = "0.4.78"
 web-sys = "0.3.105"
+prost = "0.13"
 
 [profile.release]
 opt-level = "z"

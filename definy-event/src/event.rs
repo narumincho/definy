@@ -14,7 +14,13 @@ pub struct Event {
 #[strum_discriminants(name(EventType))]
 #[strum_discriminants(serde(rename_all = "snake_case"))]
 #[strum_discriminants(strum(serialize_all = "snake_case"))]
-#[strum_discriminants(derive(Serialize, Deserialize, strum_macros::Display, strum::VariantNames))]
+#[strum_discriminants(derive(
+    Serialize,
+    Deserialize,
+    strum_macros::Display,
+    strum_macros::EnumString,
+    strum::VariantNames
+))]
 #[cfg_attr(feature = "utoipa", strum_discriminants(derive(utoipa::ToSchema)))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
