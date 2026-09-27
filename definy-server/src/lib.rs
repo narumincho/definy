@@ -4,7 +4,6 @@ mod builtin_value_type;
 mod connect_rpc;
 mod db;
 mod error;
-mod event;
 mod extractor;
 mod html;
 pub mod mcp;
@@ -16,7 +15,6 @@ use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
-use axum::routing::get;
 use base64::Engine;
 use sha2::Digest;
 use surrealdb::Surreal;
@@ -73,11 +71,6 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
             "/api-docs/openapi.json",
             <ApiDoc as utoipa::OpenApi>::openapi(),
         ))
-        .route(
-            "/events",
-            get(event::handle_events_get).post(event::handle_events_post),
-        )
-        .route("/events/{hash}", get(event::handle_event_get))
         .merge(connect_rpc::router())
         .merge(mcp::router(mcp_session_manager))
         .fallback(handle_fallback)
@@ -493,18 +486,12 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
 #[derive(utoipa::OpenApi)]
 #[openapi(
     paths(
-        event::handle_events_get,
-        event::handle_event_get,
-        event::handle_events_post,
         connect_rpc::handle_get_events,
         connect_rpc::handle_get_event,
         connect_rpc::handle_submit_event,
     ),
     components(
         schemas(
-            event::EventsQuery,
-            definy_event::event::EventType,
-            definy_event::response::EventsResponse,
             definy_event::rpc::EventItem,
             definy_event::rpc::GetEventsRequest,
             definy_event::rpc::GetEventsResponse,
@@ -516,13 +503,12 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         )
     ),
     tags(
-        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API"),
-        (name = "events", description = "Legacy Definy event management REST API")
+        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API")
     ),
     info(
         title = "definy API",
         version = "0.1.0",
-        description = "OpenAPI documentation for definy server (Connect-RPC & REST)"
+        description = "OpenAPI documentation for definy server (Connect-RPC)"
     )
 )]
 pub struct ApiDoc;
@@ -539,12 +525,11 @@ mod tests {
             .to_pretty_json()
             .expect("Failed to serialize OpenAPI spec to JSON");
         assert!(json.contains("definy API"));
-        assert!(json.contains("/events"));
-        assert!(json.contains("/events/{hash}"));
+        assert!(!json.contains("\"/events\""));
+        assert!(!json.contains("\"/events/{hash}\""));
         assert!(json.contains("/definy.v1.EventService/GetEvents"));
         assert!(json.contains("/definy.v1.EventService/GetEvent"));
         assert!(json.contains("/definy.v1.EventService/SubmitEvent"));
-        assert!(json.contains("create_account"));
     }
 
     #[tokio::test]

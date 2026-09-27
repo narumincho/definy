@@ -9,6 +9,7 @@ definy では、クライアントとサーバー間のデータ通信プロト�
   - プロトコル仕様: Connect-RPC (`Connect-Protocol-Version: 1`)。
   - フォーマット: `application/json`（ブラウザからのフェッチやデバッグ・開発ツール用）および `application/proto`（バイナリ Protobuf）の両方をサポート。
   - エラーフォーマット: Connect-RPC 標準エラー（`{"code": "<code_str>", "message": "<message_str>"}`）。
+  - ※旧来の REST API（`/events`, `/events/{hash}`）は完全に削除され、通信は Connect-RPC に一本化されました。
 
 - **データ保証レイヤー（Deterministic CBOR & Ed25519）**:
   - 各イベント（アカウント作成、モジュールコミットなど）は、CBOR の Deterministic Encoding（RFC 8949: 辞書キーのバイト長順・辞書順ソート、浮動小数点正規化など）により一意なバイト列にシリアライズされます。

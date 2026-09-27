@@ -662,15 +662,12 @@ fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
         }
     }
 
-    if trimmed == "events" {
-        let body = serde_cbor::to_vec(&definy_event::response::EventsResponse {
-            events: Box::new([]),
-            next_cursor: None,
-        })
-        .expect("failed to serialize events response");
+    if trimmed == "definy.v1.EventService/GetEvents" {
+        let body = serde_json::to_vec(&definy_event::rpc::GetEventsResponse { events: vec![] })
+            .expect("failed to serialize events response");
         Response::builder()
             .status(200)
-            .header("Content-Type", "application/cbor")
+            .header("Content-Type", "application/json")
             .body(Full::new(Bytes::from(body)))
             .expect("failed to build events response")
     } else {
