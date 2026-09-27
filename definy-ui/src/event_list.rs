@@ -429,6 +429,36 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                 }
             }
         }
+        EventContent::ModuleCommit(module_commit_event) => {
+            let msg = &module_commit_event.message;
+            let parts_count = module_commit_event.parts.len();
+            rsx! {
+                div { style: "display: grid; gap: 0.2rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                        span { style: "color: var(--text-secondary); font-size: 0.82rem;",
+                            {
+                                context
+                                    .language
+                                    .label(
+                                        "Committed module:",
+                                        "モジュールをコミット:",
+                                        "Enmetis modulon:",
+                                    )
+                            }
+                        }
+                        span { style: "font-weight: 600; color: var(--text);", "{msg}" }
+                    }
+                    div { style: "font-size: 0.8rem; color: var(--text-secondary);",
+                        "{parts_count} "
+                        {
+                            context
+                                .language
+                                .label("parts included", "個のパーツを含む", "partoj inkluzivitaj")
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -475,6 +505,13 @@ fn event_type_badge_info(content: &EventContent, context: &PageContext) -> (Stri
                 .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
                 .to_string(),
             "badge badge-number",
+        ),
+        EventContent::ModuleCommit(_) => (
+            context
+                .language
+                .label("Module Commit", "モジュールコミット", "Modula enmeto")
+                .to_string(),
+            "badge badge-primary",
         ),
     }
 }

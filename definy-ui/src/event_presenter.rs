@@ -96,6 +96,18 @@ pub fn event_summary_text(language: Language, event: &Event) -> String {
                 )
             }
         }
+        EventContent::ModuleCommit(module_commit_event) => {
+            format!(
+                "{} {} ({} parts)",
+                language.label(
+                    "Module committed:",
+                    "モジュールコミット:",
+                    "Modulo enmetita:"
+                ),
+                module_commit_event.message,
+                module_commit_event.parts.len()
+            )
+        }
     }
 }
 
@@ -131,6 +143,13 @@ pub fn event_kind_label(language: Language, event: &Event) -> String {
                 "{} {}",
                 language.label("ModuleUpdate:", "モジュール更新:", "Modulo-ĝisdatigo:"),
                 module_update.module_name
+            )
+        }
+        EventContent::ModuleCommit(module_commit) => {
+            format!(
+                "{} {}",
+                language.label("ModuleCommit:", "モジュールコミット:", "Modulo-enmeto:"),
+                module_commit.message
             )
         }
     }

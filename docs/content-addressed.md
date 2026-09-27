@@ -65,9 +65,37 @@ graph TD
 
 ---
 
-## 4. 移行ロードマップ
+## 4. モジュールコミットによる複数パーツの一括送信 (ModuleCommitEvent)
 
-- **フェーズ 1**: `ContentHash` 型と、純粋な `Expression` / `PartType` からハッシュを計算する関数の実装 (`definy-event`)。
-- **フェーズ 2**: `PartReferenceExpression` および `PartType::TypePart` で `ContentHash` をサポート。
-- **フェーズ 3**: モジュール（Tree）による「パーツ名 ↔ ContentHash」の辞書管理とプロジェクションの対応。
-- **フェーズ 4**: UI 上での依存関係固定表示・差分検出および「依存アップデート」機能の実装。
+従来はパーツを 1 つ作成・更新するたびに `PartDefinitionEvent` や `PartUpdateEvent` を個別に送信していた。
+これを Git のコミットモデルに移行し、**`ModuleCommitEvent`** によってモジュール内の複数のパーツ定義（Tree）を 1 つの署名付きイベントとして一度に送信・公開する。
+
+```rust
+pub struct ModuleCommitEvent {
+    pub module_definition_event_hash: EventHashId,
+    pub parent_commit_hash: Option<EventHashId>,
+    pub message: Box<str>,
+    pub parts: Vec<ModulePartEntry>,
+}
+
+pub struct ModulePartEntry {
+    pub name: Box<str>,
+    pub part_type: Option<PartType>,
+    pub description: Description,
+    pub expression: Option<Expression>,
+}
+```
+
+- **アトミック性**: 関連する複数パーツ（例: 基本関数とそれを呼び出すメイン処理）が不可分に 1 回でコミット・確定される。
+- **1回の一括署名・送信**: パーツが何個あっても、コミットイベント 1 個分の署名と通信だけで完了する。
+- **履歴追跡**: `parent_commit_hash` により、Git のコミットグラフと同様にプロジェクト全体の変更履歴を線形またはブランチとして辿ることができる。
+
+---
+
+## 5. 移行ロードマップ
+
+- **フェーズ 1**: `ContentHash` 型と、純粋な `Expression` / `PartType` からハッシュを計算する関数の実装 (`definy-event`)。(完了)
+- **フェーズ 2**: `PartReferenceExpression` での `ContentHash` 依存バージョン固定・解決・UI アップグレードの実装。(完了)
+- **フェーズ 3**: `ModuleCommitEvent`（複数パーツ一括送信・Tree 型コミット）の定義とプロジェクション・評価器の対応。(進行中)
+- **フェーズ 4**: UI 上でのステージング・一括コミット送信画面の統合。
+

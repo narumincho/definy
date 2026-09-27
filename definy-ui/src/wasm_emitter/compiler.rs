@@ -807,6 +807,17 @@ pub fn resolve_part_expression<'a>(
                             }
                         }
                     }
+                    definy_event::event::EventContent::ModuleCommit(module_commit) => {
+                        for part in &module_commit.parts {
+                            if let Some(expr) = part.expression.as_ref() {
+                                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                                    if &ch == desired_hash {
+                                        return Some(expr);
+                                    }
+                                }
+                            }
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -832,6 +843,21 @@ fn find_latest_part_expression<'a>(
                     if part_update.part_definition_event_hash == *target_part_hash =>
                 {
                     return part_update.expression.as_ref();
+                }
+                definy_event::event::EventContent::ModuleCommit(module_commit) => {
+                    for part in &module_commit.parts {
+                        let mut hasher = <sha2::Sha256 as sha2::Digest>::new();
+                        sha2::Digest::update(
+                            &mut hasher,
+                            module_commit.module_definition_event_hash.as_bytes(),
+                        );
+                        sha2::Digest::update(&mut hasher, b":part:");
+                        sha2::Digest::update(&mut hasher, part.name.as_bytes());
+                        let h: [u8; 32] = sha2::Digest::finalize(hasher).into();
+                        if &definy_event::EventHashId::from_bytes(&h) == target_part_hash {
+                            return part.expression.as_ref();
+                        }
+                    }
                 }
                 _ => {}
             }

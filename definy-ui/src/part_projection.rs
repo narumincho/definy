@@ -99,6 +99,63 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                     part_update.module_definition_event_hash.clone();
                 entry.updated_at = event.time;
             }
+            EventContent::ModuleCommit(module_commit) => {
+                for part in &module_commit.parts {
+                    let def_hash = map
+                        .values()
+                        .find(|s| {
+                            s.module_definition_event_hash
+                                == module_commit.module_definition_event_hash
+                                && s.part_name == part.name.as_ref()
+                        })
+                        .map(|s| s.definition_event_hash.clone())
+                        .unwrap_or_else(|| {
+                            let mut hasher = <sha2::Sha256 as sha2::Digest>::new();
+                            sha2::Digest::update(
+                                &mut hasher,
+                                module_commit.module_definition_event_hash.as_bytes(),
+                            );
+                            sha2::Digest::update(&mut hasher, b":part:");
+                            sha2::Digest::update(&mut hasher, part.name.as_bytes());
+                            let h: [u8; 32] = sha2::Digest::finalize(hasher).into();
+                            EventHashId::from_bytes(&h)
+                        });
+
+                    let content_hash = part
+                        .expression
+                        .as_ref()
+                        .and_then(|e| ContentHash::from_expression(e).ok());
+
+                    let entry = map.entry(def_hash.clone()).or_insert_with(|| PartSnapshot {
+                        definition_event_hash: def_hash.clone(),
+                        latest_event_hash: event_hash.clone(),
+                        account_id: event.account_id.clone(),
+                        part_name: part.name.to_string(),
+                        part_type: part.part_type.clone(),
+                        part_description: part.description.clone(),
+                        content_hash: content_hash.clone(),
+                        expression: part.expression.clone(),
+                        module_definition_event_hash: module_commit
+                            .module_definition_event_hash
+                            .clone(),
+                        updated_at: event.time,
+                        has_definition: true,
+                    });
+                    entry.latest_event_hash = event_hash.clone();
+                    entry.account_id = event.account_id.clone();
+                    entry.part_name = part.name.to_string();
+                    entry.part_description = part.description.clone();
+                    if part.part_type.is_some() {
+                        entry.part_type = part.part_type.clone();
+                    }
+                    entry.expression = part.expression.clone();
+                    entry.content_hash = content_hash;
+                    entry.module_definition_event_hash =
+                        module_commit.module_definition_event_hash.clone();
+                    entry.updated_at = event.time;
+                    entry.has_definition = true;
+                }
+            }
             _ => {}
         }
     }

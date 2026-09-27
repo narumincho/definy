@@ -23,6 +23,7 @@ pub enum EventContent {
     PartUpdate(PartUpdateEvent),
     ModuleDefinition(ModuleDefinitionEvent),
     ModuleUpdate(ModuleUpdateEvent),
+    ModuleCommit(ModuleCommitEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -164,6 +165,27 @@ pub struct ModuleUpdateEvent {
     pub module_name: Box<str>,
     pub module_description: Description,
     pub module_definition_event_hash: EventHashId,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModuleCommitEvent {
+    pub module_definition_event_hash: EventHashId,
+    #[serde(default)]
+    pub parent_commit_hash: Option<EventHashId>,
+    #[serde(default)]
+    pub message: Box<str>,
+    pub parts: Vec<ModulePartEntry>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModulePartEntry {
+    pub name: Box<str>,
+    #[serde(default)]
+    pub part_type: Option<PartType>,
+    #[serde(default)]
+    pub description: Description,
+    #[serde(default)]
+    pub expression: Option<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

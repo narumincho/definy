@@ -912,3 +912,98 @@ fn test_part_reference_content_hash_version_locking() {
         Ok(crate::expression_eval::Value::Number(1004))
     );
 }
+
+#[test]
+fn test_module_commit_batch_parts_projection_and_eval() {
+    let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0; 32]).unwrap();
+    let dummy_account = AccountId(dummy_key);
+    let mod_hash = definy_event::EventHashId::from_bytes(&[50u8; 32]);
+    let commit_hash = definy_event::EventHashId::from_bytes(&[51u8; 32]);
+    let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+
+    // add_ten: x -> x + 10
+    let add_ten_expr = Expression::Function(FunctionExpression {
+        parameter_id: 1,
+        parameter_name: "x".into(),
+        body: Box::new(Expression::Add(AddExpression {
+            left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            right: Box::new(Expression::Number(NumberExpression { value: 10 })),
+        })),
+    });
+    let add_ten_content_hash = definy_event::ContentHash::from_expression(&add_ten_expr).unwrap();
+
+    // ModuleCommitEvent で add_ten と forty_two パーツを一度にコミット
+    let commit_event = Event {
+        account_id: dummy_account,
+        time: chrono::DateTime::UNIX_EPOCH,
+        content: EventContent::ModuleCommit(ModuleCommitEvent {
+            module_definition_event_hash: mod_hash.clone(),
+            parent_commit_hash: None,
+            message: "Initial commit with math functions".into(),
+            parts: vec![
+                ModulePartEntry {
+                    name: "add_ten".into(),
+                    part_type: Some(PartType::Function {
+                        parameter: Box::new(PartType::Number),
+                        return_type: Box::new(PartType::Number),
+                    }),
+                    description: Description::Plain("adds 10 to input".into()),
+                    expression: Some(add_ten_expr.clone()),
+                },
+                ModulePartEntry {
+                    name: "forty_two".into(),
+                    part_type: Some(PartType::Number),
+                    description: Description::Plain("the answer".into()),
+                    expression: Some(Expression::Number(NumberExpression { value: 42 })),
+                },
+            ],
+        }),
+    };
+
+    let events: Vec<crate::app_state::EventWithHash> =
+        vec![(commit_hash.clone(), Ok((dummy_sig, commit_event)))];
+
+    // 1. プロジェクションのテスト: 2つのパーツが同時にスナップショット化されていること
+    let mut state = crate::app_state::AppState::default();
+    for (h, res) in &events {
+        let decoded = res
+            .as_ref()
+            .map(|(_, e)| (dummy_sig, e.clone()))
+            .map_err(|_| definy_event::VerifyAndDeserializeError::DecodeError);
+        state.event_cache.insert(h.clone(), decoded);
+    }
+    let snapshots = crate::part_projection::collect_part_snapshots(&state);
+    assert_eq!(snapshots.len(), 2);
+    let s_add_ten = snapshots.iter().find(|s| s.part_name == "add_ten").unwrap();
+    let s_forty_two = snapshots
+        .iter()
+        .find(|s| s.part_name == "forty_two")
+        .unwrap();
+
+    assert_eq!(s_add_ten.content_hash, Some(add_ten_content_hash.clone()));
+    assert_eq!(
+        s_forty_two.content_hash,
+        Some(
+            definy_event::ContentHash::from_expression(&Expression::Number(NumberExpression {
+                value: 42
+            }))
+            .unwrap()
+        )
+    );
+
+    // 2. 評価器のテスト: add_ten を ContentHash で呼び出して 32 + 10 = 42
+    let call_expr = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(
+            PartReferenceExpression::with_content_hash(
+                s_add_ten.definition_event_hash.clone(),
+                add_ten_content_hash,
+            ),
+        )),
+        argument: Box::new(Expression::Number(NumberExpression { value: 32 })),
+    });
+
+    assert_eq!(
+        evaluate_expression(&call_expr, &events),
+        Ok(crate::expression_eval::Value::Number(42))
+    );
+}

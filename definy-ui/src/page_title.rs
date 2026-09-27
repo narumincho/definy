@@ -151,6 +151,17 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
                                 module_update.module_name
                             )
                         }
+                        definy_event::event::EventContent::ModuleCommit(module_commit) => {
+                            format!(
+                                "{}/{}",
+                                context.language.label(
+                                    "module-commit",
+                                    "モジュールコミット",
+                                    "modulo-enmeto"
+                                ),
+                                module_commit.message
+                            )
+                        }
                     };
                     Some(label)
                 })

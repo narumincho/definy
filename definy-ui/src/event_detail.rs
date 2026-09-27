@@ -361,6 +361,53 @@ fn RenderDetailContent(
                 }
             }
         }
+        EventContent::ModuleCommit(module_commit_event) => {
+            let open_detail_label = context.language.label(
+                "Open module detail →",
+                "モジュール詳細を開く →",
+                "Malfermi modulajn detalojn →",
+            );
+            let parts_label = context.language.label(
+                "Committed parts:",
+                "コミットされたパーツ:",
+                "Enmetitaj partoj:",
+            );
+            let parts_count = module_commit_event.parts.len();
+            rsx! {
+                div { style: "display: flex; flex-direction: column; gap: 0.8rem;",
+                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;",
+                        div { style: "font-size: 1.1rem; font-weight: 700;",
+                            "{module_commit_event.message}"
+                        }
+                        a {
+                            href: context
+                                .href_with_lang(
+                                    Location::Module(module_commit_event.module_definition_event_hash.clone()),
+                                ),
+                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                            "{open_detail_label}"
+                        }
+                    }
+                    div { style: "font-size: 0.85rem; color: var(--text-secondary);",
+                        "{parts_label} {parts_count}"
+                    }
+                    div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+                        for part in &module_commit_event.parts {
+                            div { style: "display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; background: rgb(255 255 255 / 0.04); border-radius: var(--radius-sm); font-size: 0.85rem;",
+                                div { style: "font-weight: 600;", "{part.name}" }
+                                if let Some(pt) = &part.part_type {
+                                    div {
+                                        class: "badge",
+                                        style: "font-size: 0.7rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.05rem 0.3rem; border-radius: var(--radius-full);",
+                                        "{pt}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
