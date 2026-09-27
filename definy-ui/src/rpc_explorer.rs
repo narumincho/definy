@@ -269,6 +269,9 @@ pub fn RpcExplorerView(
                     }
                 }
 
+                // API アーキテクチャとシーケンス図セクション
+                crate::rpc_architecture::RpcArchitectureSection { context: context.clone() }
+
                 // Tab navigation
                 div { style: "display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; overflow-x: auto;",
                     button {

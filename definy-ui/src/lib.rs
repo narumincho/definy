@@ -31,6 +31,7 @@ mod part_detail;
 mod part_list;
 pub mod part_projection;
 pub mod query;
+mod rpc_architecture;
 mod rpc_explorer;
 mod settings;
 pub mod tree_layout;
