@@ -27,7 +27,6 @@ fn create_test_snapshot(
         expression,
         module_definition_event_hash: EventHashId::from_bytes(&[0; 32]),
         updated_at: chrono::Utc::now(),
-        has_definition: true,
     }
 }
 

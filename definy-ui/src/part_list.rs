@@ -243,11 +243,6 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                     }
                                     // Row 2: 内容
                                     div { style: "display: grid; gap: 0.2rem;",
-                                        if !part.has_definition {
-                                            div { style: "font-size: 0.76rem; color: var(--error);",
-                                                "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
-                                            }
-                                        }
                                         if part.expression.is_some() {
                                             div {
                                                 class: "mono",

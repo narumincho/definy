@@ -17,7 +17,6 @@ pub struct PartSnapshot {
     pub content_hash: Option<ContentHash>,
     pub module_definition_event_hash: EventHashId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub has_definition: bool,
 }
 
 impl PartSnapshot {
@@ -61,7 +60,6 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                     expression: part.expression.clone(),
                     module_definition_event_hash: module_id.clone(),
                     updated_at: event.time,
-                    has_definition: true,
                 });
                 entry.latest_event_hash = event_hash.clone();
                 entry.account_id = event.account_id.clone();
@@ -74,7 +72,6 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                 entry.content_hash = content_hash;
                 entry.module_definition_event_hash = module_id.clone();
                 entry.updated_at = event.time;
-                entry.has_definition = true;
             }
         }
     }

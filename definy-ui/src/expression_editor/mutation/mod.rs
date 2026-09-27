@@ -324,12 +324,10 @@ pub fn upgrade_part_reference_content_hash(
     path: &[PathStep],
     new_content_hash: Option<definy_event::ContentHash>,
 ) {
-    if let Some(target_expr) = expression
+    if let Some(definy_event::event::Expression::PartReference(ref_expr)) = expression
         .as_mut()
         .and_then(|expr| get_mut_expression_at_path(expr, path))
     {
-        if let definy_event::event::Expression::PartReference(ref_expr) = target_expr {
-            ref_expr.content_hash = new_content_hash;
-        }
+        ref_expr.content_hash = new_content_hash;
     }
 }

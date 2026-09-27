@@ -781,55 +781,34 @@ pub fn resolve_part_expression<'a>(
     target_part_hash: &definy_event::EventHashId,
     target_content_hash: Option<&definy_event::ContentHash>,
 ) -> Option<&'a Expression> {
-    if let Some(desired_hash) = target_content_hash {
-        for (_event_hash, event_result) in events.iter().rev() {
-            if let Ok((_, event)) = event_result {
-                if let definy_event::event::EventContent::ModuleCommit(module_commit) =
-                    &event.content
-                {
-                    let module_id = definy_event::event::derive_module_id(
-                        &event.account_id,
-                        &module_commit.module_name,
-                    );
-                    for part in &module_commit.parts {
-                        let part_id =
-                            definy_event::event::derive_module_part_id(&module_id, &part.name);
-                        if &part_id == target_part_hash {
-                            if let Some(expr) = part.expression.as_ref() {
-                                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
-                                    if &ch == desired_hash {
-                                        return Some(expr);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    find_latest_part_expression(events, target_part_hash)
-}
-
-fn find_latest_part_expression<'a>(
-    events: &'a [crate::app_state::EventWithHash],
-    target_part_hash: &definy_event::EventHashId,
-) -> Option<&'a Expression> {
     for (_event_hash, event_result) in events.iter().rev() {
-        if let Ok((_, event)) = event_result {
-            if let definy_event::event::EventContent::ModuleCommit(module_commit) = &event.content {
-                let module_id = definy_event::event::derive_module_id(
-                    &event.account_id,
-                    &module_commit.module_name,
-                );
-                for part in &module_commit.parts {
-                    let part_id =
-                        definy_event::event::derive_module_part_id(&module_id, &part.name);
-                    if &part_id == target_part_hash {
-                        return part.expression.as_ref();
+        let Ok((_, event)) = event_result else {
+            continue;
+        };
+        let definy_event::event::EventContent::ModuleCommit(module_commit) = &event.content else {
+            continue;
+        };
+        let module_id =
+            definy_event::event::derive_module_id(&event.account_id, &module_commit.module_name);
+        for part in &module_commit.parts {
+            let part_id = definy_event::event::derive_module_part_id(&module_id, &part.name);
+            if &part_id != target_part_hash {
+                continue;
+            }
+            let Some(expr) = part.expression.as_ref() else {
+                continue;
+            };
+            match target_content_hash {
+                Some(desired_hash) => {
+                    if definy_event::ContentHash::from_expression(expr)
+                        .ok()
+                        .as_ref()
+                        == Some(desired_hash)
+                    {
+                        return Some(expr);
                     }
                 }
+                None => return Some(expr),
             }
         }
     }

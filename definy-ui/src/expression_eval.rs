@@ -645,5 +645,13 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
 }
 
 #[cfg(test)]
+#[path = "expression_eval_test_helpers.rs"]
+pub mod expression_eval_test_helpers;
+
+#[cfg(test)]
 #[path = "expression_eval_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "expression_eval_advanced_tests.rs"]
+mod advanced_tests;

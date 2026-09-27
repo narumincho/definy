@@ -105,11 +105,6 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                                     }
                                     // Row 2: 説明
                                     div { style: "display: grid; gap: 0.2rem;",
-                                        if !module.has_definition {
-                                            div { style: "font-size: 0.76rem; color: var(--error);",
-                                                "{context.language.label(\"definition event missing\", \"定義イベントが見つかりません\", \"difina evento mankas\")}"
-                                            }
-                                        }
                                         {
                                             let desc = module.description_for(context.language);
                                             if !desc.is_empty() {

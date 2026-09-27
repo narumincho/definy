@@ -13,7 +13,6 @@ pub struct ModuleSnapshot {
     pub module_name: String,
     pub module_description: definy_event::event::Description,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub has_definition: bool,
 }
 
 impl ModuleSnapshot {
@@ -49,7 +48,6 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
                     module_name: module_commit.module_name.to_string(),
                     module_description: module_commit.module_description.clone(),
                     updated_at: event.time,
-                    has_definition: true,
                 });
             entry.latest_event_hash = event_hash.clone();
             entry.account_id = event.account_id.clone();
