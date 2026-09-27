@@ -15,6 +15,7 @@ pub use mutation::{
     add_list_item, add_record_item, apply_selection, get_mut_expression_at_path,
     next_local_variable_id, path_to_key, remove_list_item, remove_record_item, set_boolean_value,
     set_let_variable_name, set_number_value, set_record_item_key, set_string_value,
+    upgrade_part_reference_content_hash,
 };
 pub use types::{
     ConstructorValueShape, ExpressionEditorContext, ExpressionType, ScopeVariable, TypeDiagnostic,

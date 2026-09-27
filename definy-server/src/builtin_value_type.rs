@@ -29,9 +29,7 @@ pub fn create_value_type_events(
         .map_err(|e| anyhow::anyhow!("Failed to serialize value def event: {:?}", e))?;
     let val_def_hash = EventHashId::from_bytes(&val_def_binary);
 
-    let val_ref = Expression::PartReference(PartReferenceExpression {
-        part_definition_event_hash: val_def_hash.clone(),
-    });
+    let val_ref = Expression::PartReference(PartReferenceExpression::new(val_def_hash.clone()));
 
     let val_update_event = Event {
         account_id: account_id.clone(),

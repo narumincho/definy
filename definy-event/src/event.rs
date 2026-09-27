@@ -247,6 +247,7 @@ impl PartType {
             PartType::Type => Expression::TypeNumber,
             PartType::TypePart(hash) => Expression::PartReference(PartReferenceExpression {
                 part_definition_event_hash: hash.clone(),
+                content_hash: None,
             }),
             PartType::List(item) => Expression::TypeList(TypeListExpression {
                 item_type: Box::new(item.to_expression()),
@@ -589,6 +590,27 @@ pub struct TypeListExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartReferenceExpression {
     pub part_definition_event_hash: EventHashId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<crate::ContentHash>,
+}
+
+impl PartReferenceExpression {
+    pub fn new(part_definition_event_hash: EventHashId) -> Self {
+        Self {
+            part_definition_event_hash,
+            content_hash: None,
+        }
+    }
+
+    pub fn with_content_hash(
+        part_definition_event_hash: EventHashId,
+        content_hash: crate::ContentHash,
+    ) -> Self {
+        Self {
+            part_definition_event_hash,
+            content_hash: Some(content_hash),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

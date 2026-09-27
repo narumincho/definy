@@ -21,6 +21,9 @@ fn create_test_snapshot(
         part_name: name.to_string(),
         part_type,
         part_description: Description::Plain("test".into()),
+        content_hash: expression
+            .as_ref()
+            .and_then(|e| definy_event::ContentHash::from_expression(e).ok()),
         expression,
         module_definition_event_hash: EventHashId::from_bytes(&[0; 32]),
         updated_at: chrono::Utc::now(),
@@ -31,9 +34,7 @@ fn create_test_snapshot(
 #[test]
 fn test_recursive_type_variant_type_inference_and_matching() {
     let expr_hash = EventHashId::from_bytes(&[1; 32]);
-    let expr_ref = Expression::PartReference(PartReferenceExpression {
-        part_definition_event_hash: expr_hash.clone(),
-    });
+    let expr_ref = Expression::PartReference(PartReferenceExpression::new(expr_hash.clone()));
 
     let type_part_expr = Expression::TypeUnion(TypeUnionExpression {
         variants: vec![
@@ -201,9 +202,7 @@ fn test_recursive_type_variant_type_inference_and_matching() {
 #[test]
 fn test_recursive_type_cycle_detection_in_constructor() {
     let expr_hash = EventHashId::from_bytes(&[2; 32]);
-    let expr_ref = Expression::PartReference(PartReferenceExpression {
-        part_definition_event_hash: expr_hash.clone(),
-    });
+    let expr_ref = Expression::PartReference(PartReferenceExpression::new(expr_hash.clone()));
 
     // A recursive record: Node { next: Node, val: Number }
     let type_part_expr = Expression::TypeLiteral(TypeLiteralExpression {

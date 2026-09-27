@@ -345,9 +345,9 @@ fn test_compile_and_execute_part_reference_function() {
         vec![(part_def_hash.clone(), Ok((dummy_sig, part_event)))];
 
     let expr = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression {
-            part_definition_event_hash: part_def_hash,
-        })),
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            part_def_hash,
+        ))),
         argument: Box::new(Expression::Number(NumberExpression { value: 21 })),
     });
 
@@ -458,9 +458,7 @@ fn test_compile_and_execute_recursive_function_part() {
                         left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                         right: Box::new(Expression::Call(CallExpression {
                             function: Box::new(Expression::PartReference(
-                                PartReferenceExpression {
-                                    part_definition_event_hash: fact_hash.clone(),
-                                },
+                                PartReferenceExpression::new(fact_hash.clone()),
                             )),
                             argument: Box::new(Expression::Subtract(SubtractExpression {
                                 left: Box::new(Expression::Variable(VariableExpression {
@@ -482,9 +480,9 @@ fn test_compile_and_execute_recursive_function_part() {
 
     // Call factorial(5) -> 120
     let call_fact = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression {
-            part_definition_event_hash: fact_hash,
-        })),
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            fact_hash,
+        ))),
         argument: Box::new(Expression::Number(NumberExpression { value: 5 })),
     });
 
@@ -537,9 +535,7 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                             body: Box::new(Expression::Add(AddExpression {
                                 left: Box::new(Expression::Call(CallExpression {
                                     function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression {
-                                            part_definition_event_hash: eval_hash.clone(),
-                                        },
+                                        PartReferenceExpression::new(eval_hash.clone()),
                                     )),
                                     argument: Box::new(Expression::RecordGet(
                                         RecordGetExpression {
@@ -552,9 +548,7 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                                 })),
                                 right: Box::new(Expression::Call(CallExpression {
                                     function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression {
-                                            part_definition_event_hash: eval_hash.clone(),
-                                        },
+                                        PartReferenceExpression::new(eval_hash.clone()),
                                     )),
                                     argument: Box::new(Expression::RecordGet(
                                         RecordGetExpression {
@@ -574,9 +568,7 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                             body: Box::new(Expression::Multiply(MultiplyExpression {
                                 left: Box::new(Expression::Call(CallExpression {
                                     function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression {
-                                            part_definition_event_hash: eval_hash.clone(),
-                                        },
+                                        PartReferenceExpression::new(eval_hash.clone()),
                                     )),
                                     argument: Box::new(Expression::RecordGet(
                                         RecordGetExpression {
@@ -589,9 +581,7 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                                 })),
                                 right: Box::new(Expression::Call(CallExpression {
                                     function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression {
-                                            part_definition_event_hash: eval_hash.clone(),
-                                        },
+                                        PartReferenceExpression::new(eval_hash.clone()),
                                     )),
                                     argument: Box::new(Expression::RecordGet(
                                         RecordGetExpression {
@@ -666,9 +656,9 @@ fn test_compile_and_execute_definy_eval_ast_function() {
     });
 
     let eval_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression {
-            part_definition_event_hash: eval_hash,
-        })),
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            eval_hash,
+        ))),
         argument: Box::new(ast_expr),
     });
 

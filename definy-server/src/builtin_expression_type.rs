@@ -32,9 +32,7 @@ pub fn create_expression_ast_type_events(
         .map_err(|e| anyhow::anyhow!("Failed to serialize expression def event: {:?}", e))?;
     let expr_def_hash = EventHashId::from_bytes(&expr_def_binary);
 
-    let expr_ref = Expression::PartReference(PartReferenceExpression {
-        part_definition_event_hash: expr_def_hash.clone(),
-    });
+    let expr_ref = Expression::PartReference(PartReferenceExpression::new(expr_def_hash.clone()));
 
     let binary_op_payload = |left_name: &str, right_name: &str| {
         Expression::TypeLiteral(TypeLiteralExpression {
@@ -326,9 +324,9 @@ pub fn create_eval_ast_part_events(
 
     fn recursive_call(eval_ast_hash: &EventHashId, var_id: i64, key: &str) -> Expression {
         Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression {
-                part_definition_event_hash: eval_ast_hash.clone(),
-            })),
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                eval_ast_hash.clone(),
+            ))),
             argument: Box::new(Expression::RecordGet(RecordGetExpression {
                 record: Box::new(Expression::Variable(VariableExpression {
                     variable_id: var_id,
@@ -487,9 +485,9 @@ pub fn create_sample_ast_calc_part_event(
                 ),
             ]),
             expression: Some(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression {
-                    part_definition_event_hash: eval_ast_part_hash.clone(),
-                })),
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    eval_ast_part_hash.clone(),
+                ))),
                 argument: Box::new(add),
             })),
             module_definition_event_hash: sample_module_hash.clone(),

@@ -485,9 +485,7 @@ fn evaluate_part_reference_by_definition_hash() {
     )];
 
     let reference = definy_event::event::Expression::PartReference(
-        definy_event::event::PartReferenceExpression {
-            part_definition_event_hash: definition_hash.clone(),
-        },
+        definy_event::event::PartReferenceExpression::new(definition_hash.clone()),
     );
 
     assert_eq!(
@@ -723,9 +721,9 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
 
     fn rec_call(eval_hash: &EventHashId, var_id: i64, key: &str) -> Expression {
         Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression {
-                part_definition_event_hash: eval_hash.clone(),
-            })),
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                eval_hash.clone(),
+            ))),
             argument: Box::new(record_get(var_ref(var_id), key)),
         })
     }
@@ -834,12 +832,83 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
     let add2 = ast_binary("add", add1, rem_e);
 
     let eval_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression {
-            part_definition_event_hash: eval_hash,
-        })),
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            eval_hash,
+        ))),
         argument: Box::new(add2),
     });
 
     let val = evaluate_expression(&eval_call, &events).unwrap();
     assert_eq!(val, crate::expression_eval::Value::Number(97));
+}
+
+#[test]
+fn test_part_reference_content_hash_version_locking() {
+    let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0; 32]).unwrap();
+    let dummy_account = AccountId(dummy_key);
+    let part_a_hash = definy_event::EventHashId::from_bytes(&[101u8; 32]);
+    let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+
+    // 1. パーツ A の初期定義: 10 (v1)
+    let expr_v1 = Expression::Number(NumberExpression { value: 10 });
+    let content_hash_v1 = definy_event::ContentHash::from_expression(&expr_v1).unwrap();
+
+    let def_a_event = Event {
+        account_id: dummy_account.clone(),
+        time: chrono::DateTime::UNIX_EPOCH,
+        content: EventContent::PartDefinition(PartDefinitionEvent {
+            part_name: "a".into(),
+            part_type: Some(PartType::Number),
+            description: Description::Plain("part a v1".into()),
+            expression: Some(expr_v1),
+            module_definition_event_hash: definy_event::EventHashId::from_bytes(&[0u8; 32]),
+        }),
+    };
+
+    // 2. パーツ A の更新: 999 (v2)
+    let expr_v2 = Expression::Number(NumberExpression { value: 999 });
+    let update_a_hash = definy_event::EventHashId::from_bytes(&[102u8; 32]);
+    let update_a_event = Event {
+        account_id: dummy_account,
+        time: chrono::DateTime::UNIX_EPOCH + chrono::Duration::seconds(10),
+        content: EventContent::PartUpdate(PartUpdateEvent {
+            part_name: "a".into(),
+            part_description: Description::Plain("part a v2".into()),
+            part_definition_event_hash: part_a_hash.clone(),
+            part_type: Some(PartType::Number),
+            expression: Some(expr_v2),
+            module_definition_event_hash: definy_event::EventHashId::from_bytes(&[0u8; 32]),
+        }),
+    };
+
+    let events: Vec<crate::app_state::EventWithHash> = vec![
+        (part_a_hash.clone(), Ok((dummy_sig, def_a_event))),
+        (update_a_hash, Ok((dummy_sig, update_a_event))),
+    ];
+
+    // 3. パターン1: content_hash で v1 を固定ロックした参照: A (locked v1) + 5 -> 10 + 5 = 15
+    let locked_ref = Expression::Add(AddExpression {
+        left: Box::new(Expression::PartReference(
+            PartReferenceExpression::with_content_hash(part_a_hash.clone(), content_hash_v1),
+        )),
+        right: Box::new(Expression::Number(NumberExpression { value: 5 })),
+    });
+
+    assert_eq!(
+        evaluate_expression(&locked_ref, &events),
+        Ok(crate::expression_eval::Value::Number(15))
+    );
+
+    // 4. パターン2: content_hash が None (最新追跡): A (latest v2) + 5 -> 999 + 5 = 1004
+    let unlocked_ref = Expression::Add(AddExpression {
+        left: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            part_a_hash,
+        ))),
+        right: Box::new(Expression::Number(NumberExpression { value: 5 })),
+    });
+
+    assert_eq!(
+        evaluate_expression(&unlocked_ref, &events),
+        Ok(crate::expression_eval::Value::Number(1004))
+    );
 }

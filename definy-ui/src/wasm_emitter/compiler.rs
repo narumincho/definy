@@ -8,9 +8,10 @@ pub(crate) struct CompileContext<'a> {
     events: &'a [crate::app_state::EventWithHash],
     static_data: Vec<u8>,
     current_static_offset: u32,
-    visited_parts: Vec<definy_event::EventHashId>,
+    visited_parts: Vec<(definy_event::EventHashId, Option<definy_event::ContentHash>)>,
     pub(crate) pending_functions: Vec<PendingFunction>,
-    pub(crate) part_functions: HashMap<definy_event::EventHashId, u32>,
+    pub(crate) part_functions:
+        HashMap<(definy_event::EventHashId, Option<definy_event::ContentHash>), u32>,
 }
 
 impl<'a> CompileContext<'a> {
@@ -493,19 +494,22 @@ pub(crate) fn emit_expression(
         }
         Expression::PartReference(PartReferenceExpression {
             part_definition_event_hash,
+            content_hash,
         }) => {
-            if let Some(&table_idx) = ctx.part_functions.get(part_definition_event_hash) {
+            let part_key = (part_definition_event_hash.clone(), content_hash.clone());
+            if let Some(&table_idx) = ctx.part_functions.get(&part_key) {
                 super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
                 return Ok(());
             }
 
-            if let Some(target_expr) =
-                find_latest_part_expression(ctx.events, part_definition_event_hash)
-            {
+            if let Some(target_expr) = resolve_part_expression(
+                ctx.events,
+                part_definition_event_hash,
+                content_hash.as_ref(),
+            ) {
                 if let Expression::Function(f) = target_expr {
                     let table_idx = ctx.pending_functions.len() as u32;
-                    ctx.part_functions
-                        .insert(part_definition_event_hash.clone(), table_idx);
+                    ctx.part_functions.insert(part_key, table_idx);
                     ctx.pending_functions
                         .push(super::function_ops::PendingFunction {
                             captured_vars: Vec::new(),
@@ -514,7 +518,7 @@ pub(crate) fn emit_expression(
                         });
                     super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
                 } else {
-                    if ctx.visited_parts.contains(part_definition_event_hash) {
+                    if ctx.visited_parts.contains(&part_key) {
                         return Err(
                             "Circular reference detected while compiling PartReference to Wasm"
                                 .into(),
@@ -524,7 +528,7 @@ pub(crate) fn emit_expression(
                         return Err("Maximum part reference recursion depth exceeded".into());
                     }
 
-                    ctx.visited_parts.push(part_definition_event_hash.clone());
+                    ctx.visited_parts.push(part_key);
                     let empty_env = HashMap::new();
                     let res = emit_expression(target_expr, out, &empty_env, next_local_idx, ctx);
                     ctx.visited_parts.pop();
@@ -770,6 +774,46 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
         _ => 2,
     }
+}
+
+pub fn resolve_part_expression<'a>(
+    events: &'a [crate::app_state::EventWithHash],
+    target_part_hash: &definy_event::EventHashId,
+    target_content_hash: Option<&definy_event::ContentHash>,
+) -> Option<&'a Expression> {
+    if let Some(desired_hash) = target_content_hash {
+        for (event_hash, event_result) in events.iter().rev() {
+            if let Ok((_, event)) = event_result {
+                match &event.content {
+                    definy_event::event::EventContent::PartDefinition(part_definition)
+                        if target_part_hash == event_hash =>
+                    {
+                        if let Some(expr) = part_definition.expression.as_ref() {
+                            if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                                if &ch == desired_hash {
+                                    return Some(expr);
+                                }
+                            }
+                        }
+                    }
+                    definy_event::event::EventContent::PartUpdate(part_update)
+                        if part_update.part_definition_event_hash == *target_part_hash =>
+                    {
+                        if let Some(expr) = part_update.expression.as_ref() {
+                            if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                                if &ch == desired_hash {
+                                    return Some(expr);
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    find_latest_part_expression(events, target_part_hash)
 }
 
 fn find_latest_part_expression<'a>(

@@ -286,8 +286,8 @@ pub(crate) fn build_expression_from_selection(
                 })
             } else if let Some(encoded) = selected_value.strip_prefix("ref:global:") {
                 if let Ok(hash) = EventHashId::from_str(encoded) {
-                    if let Some(snapshot) = crate::part_projection::find_part_snapshot(state, &hash)
-                    {
+                    let snapshot_opt = crate::part_projection::find_part_snapshot(state, &hash);
+                    if let Some(snapshot) = snapshot_opt.as_ref() {
                         if let Some(Expression::Compiler(builtin)) = snapshot.expression.as_ref() {
                             return default_expression_for_compiler_builtin(
                                 *builtin,
@@ -308,8 +308,10 @@ pub(crate) fn build_expression_from_selection(
                             }
                         }
                     }
+                    let content_hash = snapshot_opt.and_then(|s| s.content_hash);
                     Expression::PartReference(PartReferenceExpression {
                         part_definition_event_hash: hash,
+                        content_hash,
                     })
                 } else {
                     current_expr.clone()

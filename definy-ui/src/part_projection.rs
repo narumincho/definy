@@ -1,5 +1,5 @@
 use definy_event::{
-    EventHashId,
+    ContentHash, EventHashId,
     event::{AccountId, Event, EventContent, Expression},
 };
 
@@ -14,6 +14,7 @@ pub struct PartSnapshot {
     pub part_type: Option<definy_event::event::PartType>,
     pub part_description: definy_event::event::Description,
     pub expression: Option<Expression>,
+    pub content_hash: Option<ContentHash>,
     pub module_definition_event_hash: EventHashId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
     pub has_definition: bool,
@@ -49,6 +50,10 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         part_name: part_definition.part_name.to_string(),
                         part_type: part_definition.part_type.clone(),
                         part_description: part_definition.description.clone(),
+                        content_hash: part_definition
+                            .expression
+                            .as_ref()
+                            .and_then(|e| ContentHash::from_expression(e).ok()),
                         expression: part_definition.expression.clone(),
                         module_definition_event_hash: part_definition
                             .module_definition_event_hash
@@ -68,6 +73,10 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                         part_name: String::new(),
                         part_type: None,
                         part_description: definy_event::event::Description::default(),
+                        content_hash: part_update
+                            .expression
+                            .as_ref()
+                            .and_then(|e| ContentHash::from_expression(e).ok()),
                         expression: part_update.expression.clone(),
                         module_definition_event_hash: part_update
                             .module_definition_event_hash
@@ -81,6 +90,9 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
                 entry.part_description = part_update.part_description.clone();
                 if part_update.part_type.is_some() {
                     entry.part_type = part_update.part_type.clone();
+                }
+                if let Some(expr) = part_update.expression.as_ref() {
+                    entry.content_hash = ContentHash::from_expression(expr).ok();
                 }
                 entry.expression = part_update.expression.clone();
                 entry.module_definition_event_hash =

@@ -490,6 +490,20 @@ pub fn render_expression_editor(
                             .and_then(|p| p.part_type.as_ref())
                             .map(ToString::to_string)
                             .unwrap_or_else(|| "Part".to_string());
+                        let current_hash = part_reference_expression.content_hash.as_ref();
+                        let latest_hash = part.as_ref().and_then(|p| p.content_hash.as_ref());
+                        let has_update = current_hash.is_some()
+                            && latest_hash.is_some()
+                            && current_hash != latest_hash;
+                        let hash_display = current_hash
+                            .map(|h| {
+                                let s = h.to_string();
+                                if s.len() > 7 {
+                                    format!("#{}", &s[..7])
+                                } else {
+                                    format!("#{}", s)
+                                }
+                            });
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
@@ -501,6 +515,36 @@ pub fn render_expression_editor(
                                         class: "badge",
                                         style: "font-size: 0.68rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.05rem 0.3rem; border-radius: var(--radius-full);",
                                         "{part_type}"
+                                    }
+                                    if let Some(h_text) = hash_display {
+                                        div {
+                                            style: "font-size: 0.68rem; font-family: var(--font-mono); color: var(--text-secondary); background: rgb(255 255 255 / 0.07); padding: 0.05rem 0.25rem; border-radius: var(--radius-xs);",
+                                            title: "固定されたコンテンツハッシュ (Locked Version)",
+                                            "{h_text}"
+                                        }
+                                    }
+                                    if has_update {
+                                        button {
+                                            style: "cursor: pointer; border: none; font-size: 0.68rem; background: #e06c75; color: #fff; padding: 0.08rem 0.35rem; border-radius: var(--radius-xs); font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "最新バージョンに更新 (Upgrade to latest)",
+                                            onclick: {
+                                                let target_path = path.clone();
+                                                let target_hash = latest_hash.cloned();
+                                                move |_| {
+                                                    let mut expr_signal = use_context::<
+                                                        Signal<Option<definy_event::event::Expression>>,
+                                                    >();
+                                                    let mut current_opt = expr_signal.read().clone();
+                                                    crate::expression_editor::mutation::upgrade_part_reference_content_hash(
+                                                        &mut current_opt,
+                                                        &target_path,
+                                                        target_hash.clone(),
+                                                    );
+                                                    expr_signal.set(current_opt);
+                                                }
+                                            },
+                                            "↑ Upgrade"
+                                        }
                                     }
                                 }
                             }
