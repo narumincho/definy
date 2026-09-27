@@ -77,3 +77,30 @@ pub fn resolve_module_name(
 ) -> Option<String> {
     find_module_snapshot(state, definition_event_hash).map(|m| m.module_name)
 }
+
+pub fn collect_related_module_events(
+    state: &AppState,
+    module_definition_event_hash: &EventHashId,
+) -> Vec<(EventHashId, Event)> {
+    let mut sorted_events = state
+        .event_cache
+        .iter()
+        .filter_map(|(hash, event_result)| {
+            let (_, event) = event_result.as_ref().ok()?;
+            Some((hash.clone(), event.clone()))
+        })
+        .collect::<Vec<(EventHashId, Event)>>();
+    sorted_events.sort_by_key(|(_, event)| event.time);
+
+    let mut related = Vec::new();
+    for (event_hash, event) in sorted_events {
+        if let EventContent::ModuleCommit(module_commit) = &event.content {
+            let module_id = derive_module_id(&event.account_id, &module_commit.module_name);
+            if &module_id == module_definition_event_hash {
+                related.push((event_hash, event));
+            }
+        }
+    }
+    related.reverse();
+    related
+}

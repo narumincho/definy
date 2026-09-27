@@ -44,7 +44,12 @@ pub fn PartDetailView(
                     definition_event_hash: definition_event_hash.clone(),
                     snapshot: snapshot.clone(),
                 }
-                PartHistoryCard { context: context.clone(), related_events }
+                PartHistoryCard {
+                    state: state.clone(),
+                    context: context.clone(),
+                    part_name: snapshot.part_name.clone(),
+                    related_events,
+                }
             } else {
                 a {
                     href: context.href_with_lang(Location::PartList),
@@ -77,6 +82,7 @@ fn PartEditorCard(
     });
     let expression = use_signal(|| snapshot.expression.clone());
     let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
+    let mut commit_message = use_signal(String::new);
     let mut eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
@@ -242,6 +248,12 @@ fn PartEditorCard(
                 expression: expr_val,
             });
 
+            let commit_msg = commit_message().trim().to_string();
+            let final_message = if commit_msg.is_empty() {
+                format!("Update part '{}'", name)
+            } else {
+                commit_msg
+            };
             let force_offline = state_val.force_offline;
             spawn(async move {
                 let record_opt = crate::event_submit::submit_event(
@@ -250,7 +262,7 @@ fn PartEditorCard(
                             module_name: m.module_name.into(),
                             module_description: m.module_description,
                             parent_commit_hash: Some(m.latest_event_hash),
-                            message: format!("Update part '{}'", name).into(),
+                            message: final_message.into(),
                             parts,
                         },
                     ),
@@ -300,6 +312,25 @@ fn PartEditorCard(
                     div { style: "display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;",
                         h2 { style: "font-size: 1.4rem; font-weight: 700; margin: 0; color: var(--text-primary);",
                             "{part_name}"
+                        }
+                        if let Some(ref ch) = snapshot.content_hash {
+                            {
+                                let hash_str = ch.to_string();
+                                let short_h = if hash_str.len() > 10 {
+                                    format!("#{}", &hash_str[..10])
+                                } else {
+                                    format!("#{}", hash_str)
+                                };
+                                rsx! {
+                                    span {
+                                        class: "mono",
+                                        style: "font-size: 0.76rem; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.15rem 0.5rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.25rem;",
+                                        title: "ContentHash: {hash_str}",
+                                        span { "📌" }
+                                        span { "{short_h}" }
+                                    }
+                                }
+                            }
                         }
                         span { style: "font-size: 0.76rem; color: var(--text-muted);",
                             "{updated_at_label}"
@@ -375,6 +406,32 @@ fn PartEditorCard(
                         style: "min-height: 3.2rem; padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.85rem; resize: vertical;",
                         oninput: move |evt: FormEvent| {
                             part_description.set(evt.value());
+                        },
+                    }
+                }
+                // コミットメッセージ
+                div { style: "display: grid; gap: 0.3rem;",
+                    label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
+                        {
+                            context
+                                .language
+                                .label("Commit Message", "コミットメッセージ", "Enmeta mesaĝo")
+                        }
+                    }
+                    input {
+                        r#type: "text",
+                        name: "part-update-commit-message",
+                        value: "{commit_message}",
+                        placeholder: context
+                            .language
+                            .label(
+                                "e.g. Update part expression or type",
+                                "例: パーツの式や型を更新",
+                                "ekz. Ĝisdatigi partan esprimon aŭ tipon",
+                            ),
+                        style: "padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.9rem;",
+                        oninput: move |evt: FormEvent| {
+                            commit_message.set(evt.value());
                         },
                     }
                 }
@@ -511,44 +568,165 @@ fn PartEditorCard(
     }
 }
 
+fn resolve_part_commit_info(
+    language: crate::language::Language,
+    part_name: &str,
+    ev: &definy_event::event::Event,
+) -> (
+    String,
+    Option<EventHashId>,
+    Option<definy_event::ContentHash>,
+) {
+    match &ev.content {
+        definy_event::event::EventContent::ModuleCommit(mc) => {
+            let msg = if mc.message.trim().is_empty() {
+                language
+                    .label(
+                        "Commit (no message)",
+                        "コミット (メッセージなし)",
+                        "Enmeto (sen mesaĝo)",
+                    )
+                    .to_string()
+            } else {
+                mc.message.to_string()
+            };
+            let p_hash = mc.parent_commit_hash.clone();
+            let p_entry = mc.parts.iter().find(|p| p.name.as_ref() == part_name);
+            let ch = p_entry
+                .and_then(|p| p.expression.as_ref())
+                .and_then(|e| definy_event::ContentHash::from_expression(e).ok());
+            (msg, p_hash, ch)
+        }
+        _ => (
+            crate::event_presenter::event_kind_label(language, ev).to_string(),
+            None,
+            None,
+        ),
+    }
+}
+
 #[component]
 fn PartHistoryCard(
+    state: AppState,
     context: PageContext,
+    part_name: String,
     related_events: Vec<(EventHashId, definy_event::event::Event)>,
 ) -> Element {
+    let account_name_map = state.account_name_map();
+    let language = context.language;
+
     rsx! {
         div {
             class: "event-detail-card",
-            style: "display: grid; gap: 0.45rem; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
-            div { style: "font-size: 0.9rem; font-weight: 600; color: var(--text);",
-                "{context.language.label(\"History\", \"履歴\", \"Historio\")}"
+            style: "display: grid; gap: 0.75rem; padding: 1.1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);",
+            div { style: "display: flex; align-items: center; justify-content: space-between;",
+                div { style: "font-size: 0.95rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.4rem;",
+                    span { "📜" }
+                    span {
+                        "{language.label(\"Version & Commit History\", \"バージョン・コミット履歴\", \"Versia kaj enmeta historio\")}"
+                    }
+                }
+                span { style: "font-size: 0.75rem; color: var(--text-secondary);",
+                    "{related_events.len()} {language.label(\"commits\", \"コミット\", \"enmetoj\")}"
+                }
             }
-            div { style: "display: grid; gap: 0.35rem;",
-                for (event_hash, ev) in related_events {
-                    {
-                        let label = crate::event_presenter::event_kind_label(context.language, &ev);
-                        let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
-                        let hash_str = event_hash.to_string();
-                        rsx! {
-                            a {
-                                key: "{event_hash}",
-                                href: context.href_with_lang(Location::Event(event_hash)),
-                                class: "event-card",
-                                style: "display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.45rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.02); font-size: 0.8rem; flex-wrap: wrap;",
-                                div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                                    span {
-                                        class: "badge",
-                                        style: "font-size: 0.7rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-full); white-space: nowrap;",
-                                        "{label}"
-                                    }
-                                    span {
-                                        class: "mono",
-                                        style: "color: var(--text-secondary); opacity: 0.7; font-size: 0.74rem;",
-                                        "{hash_str}"
-                                    }
+            if related_events.is_empty() {
+                div { style: "color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem 0;",
+                    "{language.label(\"No history found.\", \"履歴はありません。\", \"Neniu historio trovita.\")}"
+                }
+            } else {
+                div { style: "display: grid; gap: 0.6rem;",
+                    for (index, (event_hash, ev)) in related_events.iter().enumerate() {
+                        {
+                            let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
+                            let hash_str = event_hash.to_string();
+                            let short_event_hash = if hash_str.len() > 7 {
+                                format!("#{}", &hash_str[..7])
+                            } else {
+                                format!("#{}", hash_str)
+                            };
+                            let author_name = crate::app_state::account_display_name(
+                                &account_name_map,
+                                &ev.account_id,
+                            );
+                            let (commit_message, parent_hash, part_content_hash) =
+                                resolve_part_commit_info(language, &part_name, ev);
+                            let is_latest = index == 0;
+                            let ch_display = part_content_hash.as_ref().map(|h| {
+                                let s = h.to_string();
+                                if s.len() > 7 {
+                                    format!("#{}", &s[..7])
+                                } else {
+                                    format!("#{}", s)
                                 }
-                                span { style: "font-size: 0.74rem; color: var(--text-secondary); opacity: 0.8; margin-left: auto;",
-                                    "{time_str}"
+                            });
+                            let ch_full_title = format!(
+                                "ContentHash: {}",
+                                part_content_hash.as_ref().map(ToString::to_string).unwrap_or_default(),
+                            );
+                            let parent_short = parent_hash
+                                .as_ref()
+                                .map(|p| {
+                                    let s = p.to_string();
+                                    if s.len() > 7 { format!("#{}", &s[..7]) } else { format!("#{}", s) }
+                                });
+                            let parent_title = parent_hash.as_ref().map(ToString::to_string);
+                            rsx! {
+                                div {
+                                    key: "{event_hash}",
+                                    style: "display: grid; gap: 0.45rem; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgb(255 255 255 / 0.02);",
+                                    div { style: "display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap;",
+                                        div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
+                                            if is_latest {
+                                                span {
+                                                    class: "badge",
+                                                    style: "font-size: 0.68rem; font-weight: 600; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.05rem 0.4rem; border-radius: var(--radius-full);",
+                                                    "HEAD"
+                                                }
+                                            }
+                                            span { style: "font-size: 0.88rem; font-weight: 600; color: var(--text);",
+                                                "{commit_message}"
+                                            }
+                                        }
+                                        div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.76rem; color: var(--text-secondary);",
+                                            span { "👤 {author_name}" }
+                                            span { "•" }
+                                            span { "{time_str}" }
+                                        }
+                                    }
+                                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;",
+                                        a {
+                                            href: context.href_with_lang(Location::Event(event_hash.clone())),
+                                            class: "mono",
+                                            style: "color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(124 192 216 / 0.08); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                                            title: "{event_hash}",
+                                            span { "Commit:" }
+                                            span { "{short_event_hash}" }
+                                        }
+                                        if let Some(ch_str) = ch_display {
+                                            div {
+                                                class: "mono",
+                                                style: "color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.45rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.25rem;",
+                                                title: "{ch_full_title}",
+                                                span { "📌 Part Hash:" }
+                                                span { "{ch_str}" }
+                                            }
+                                        }
+                                        if let (Some(p_hash), Some(p_short)) = (parent_hash, parent_short) {
+                                            a {
+                                                href: context.href_with_lang(Location::Event(p_hash)),
+                                                class: "mono",
+                                                style: "color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(255 255 255 / 0.04); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                                                title: parent_title.as_deref().unwrap_or_default(),
+                                                span { "Parent:" }
+                                                span { "{p_short}" }
+                                            }
+                                        } else {
+                                            span { style: "color: #a78bfa; font-size: 0.72rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
+                                                "🌱 Initial Commit"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

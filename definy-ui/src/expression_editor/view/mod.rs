@@ -504,6 +504,15 @@ pub fn render_expression_editor(
                                     format!("#{}", s)
                                 }
                             });
+                        let latest_short_hash = latest_hash
+                            .map(|h| {
+                                let s = h.to_string();
+                                if s.len() > 7 {
+                                    format!("#{}", &s[..7])
+                                } else {
+                                    format!("#{}", s)
+                                }
+                            });
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
@@ -518,15 +527,73 @@ pub fn render_expression_editor(
                                     }
                                     if let Some(h_text) = hash_display {
                                         div {
-                                            style: "font-size: 0.68rem; font-family: var(--font-mono); color: var(--text-secondary); background: rgb(255 255 255 / 0.07); padding: 0.05rem 0.25rem; border-radius: var(--radius-xs);",
-                                            title: "固定されたコンテンツハッシュ (Locked Version)",
-                                            "{h_text}"
+                                            style: "font-size: 0.68rem; font-family: var(--font-mono); color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); padding: 0.05rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "固定されたコンテンツハッシュ (Pinned ContentHash)",
+                                            span { "📌" }
+                                            span { "{h_text}" }
+                                        }
+                                        button {
+                                            r#type: "button",
+                                            style: "cursor: pointer; border: 1px solid var(--border); font-size: 0.68rem; background: rgba(255, 255, 255, 0.06); color: var(--text-secondary); padding: 0.08rem 0.35rem; border-radius: var(--radius-xs); font-weight: 500;",
+                                            title: "最新バージョンを追跡 (Switch to tracking latest)",
+                                            onclick: {
+                                                let target_path = path.clone();
+                                                move |_| {
+                                                    let mut expr_signal = use_context::<
+                                                        Signal<Option<definy_event::event::Expression>>,
+                                                    >();
+                                                    let mut current_opt = expr_signal.read().clone();
+                                                    crate::expression_editor::mutation::upgrade_part_reference_content_hash(
+                                                        &mut current_opt,
+                                                        &target_path,
+                                                        None,
+                                                    );
+                                                    expr_signal.set(current_opt);
+                                                }
+                                            },
+                                            "🔄 Unpin"
+                                        }
+                                    } else {
+                                        div {
+                                            style: "font-size: 0.68rem; font-family: var(--font-mono); color: #34d399; background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.28); padding: 0.05rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "最新バージョンを常に追跡中 (Tracking latest version)",
+                                            span { "🔄" }
+                                            span { "latest" }
+                                        }
+                                        if let (Some(target_hash), Some(short_hash)) = (
+                                            latest_hash.cloned(),
+                                            latest_short_hash,
+                                        )
+                                        {
+                                            button {
+                                                r#type: "button",
+                                                style: "cursor: pointer; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; padding: 0.08rem 0.35rem; border-radius: var(--radius-xs); font-weight: 500;",
+                                                title: "現在のバージョンで固定 (Pin to current version)",
+                                                onclick: {
+                                                    let target_path = path.clone();
+                                                    let h = target_hash.clone();
+                                                    move |_| {
+                                                        let mut expr_signal = use_context::<
+                                                            Signal<Option<definy_event::event::Expression>>,
+                                                        >();
+                                                        let mut current_opt = expr_signal.read().clone();
+                                                        crate::expression_editor::mutation::upgrade_part_reference_content_hash(
+                                                            &mut current_opt,
+                                                            &target_path,
+                                                            Some(h.clone()),
+                                                        );
+                                                        expr_signal.set(current_opt);
+                                                    }
+                                                },
+                                                "📌 Pin ({short_hash})"
+                                            }
                                         }
                                     }
                                     if has_update {
                                         button {
-                                            style: "cursor: pointer; border: none; font-size: 0.68rem; background: #e06c75; color: #fff; padding: 0.08rem 0.35rem; border-radius: var(--radius-xs); font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem;",
-                                            title: "最新バージョンに更新 (Upgrade to latest)",
+                                            r#type: "button",
+                                            style: "cursor: pointer; border: none; font-size: 0.68rem; background: #e06c75; color: #fff; padding: 0.08rem 0.4rem; border-radius: var(--radius-xs); font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "最新バージョンに更新 (Upgrade to latest version)",
                                             onclick: {
                                                 let target_path = path.clone();
                                                 let target_hash = latest_hash.cloned();

@@ -150,48 +150,116 @@ fn RenderDetailContent(
                 "Enmetitaj partoj:",
             );
             let parts_count = module_commit_event.parts.len();
+            let commit_message = if module_commit_event.message.trim().is_empty() {
+                context.language.label(
+                    "(no commit message)",
+                    "(コミットメッセージなし)",
+                    "(sen enmeta mesaĝo)",
+                )
+            } else {
+                &module_commit_event.message
+            };
+            let parent_commit_hash = module_commit_event.parent_commit_hash.clone();
+            let parent_short = parent_commit_hash.as_ref().map(|p| {
+                let s = p.to_string();
+                if s.len() > 7 {
+                    format!("#{}", &s[..7])
+                } else {
+                    format!("#{}", s)
+                }
+            });
+            let parent_title = parent_commit_hash.as_ref().map(ToString::to_string);
+
             rsx! {
                 div { style: "display: flex; flex-direction: column; gap: 0.8rem;",
                     div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;",
-                        div { style: "display: flex; align-items: baseline; gap: 0.6rem;",
+                        div { style: "display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;",
                             div { style: "font-size: 1.15rem; font-weight: 700;",
                                 "{module_commit_event.module_name}"
                             }
                             div { style: "font-size: 0.95rem; color: var(--text-secondary);",
-                                "{module_commit_event.message}"
+                                "{commit_message}"
                             }
                         }
                         a {
-                            href: context.href_with_lang(Location::Module(module_id)),
+                            href: context.href_with_lang(Location::Module(module_id.clone())),
                             style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
                             "{open_detail_label}"
                         }
                     }
-                    div { style: "font-size: 0.86rem; color: var(--text-secondary); font-weight: 600;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                        if let (Some(p_hash), Some(p_short)) = (parent_commit_hash, parent_short) {
+                            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;",
+                                span { style: "color: var(--text-secondary);",
+                                    {context.language.label("Parent commit:", "親コミット:", "Gepatra enmeto:")}
+                                }
+                                a {
+                                    href: context.href_with_lang(Location::Event(p_hash)),
+                                    class: "mono",
+                                    style: "color: var(--primary); text-decoration: none; background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                                    title: parent_title.as_deref().unwrap_or_default(),
+                                    "{p_short}"
+                                }
+                            }
+                        } else {
+                            span { style: "color: #a78bfa; font-size: 0.75rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.15rem 0.45rem; border-radius: var(--radius-xs);",
+                                "🌱 Initial Commit (root)"
+                            }
+                        }
+                    }
+                    div { style: "font-size: 0.86rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.3rem;",
                         "{parts_label} ({parts_count})"
                     }
                     div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
                         for part in &module_commit_event.parts {
-                            div {
-                                key: "{part.name}",
-                                style: "display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.7rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border);",
-                                div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                                    span { style: "font-weight: 600; font-size: 0.9rem;",
-                                        "{part.name}"
-                                    }
-                                    if let Some(pt) = &part.part_type {
-                                        span {
-                                            class: "badge badge-type mono",
-                                            style: "font-size: 0.72rem;",
-                                            "{pt}"
-                                        }
-                                    }
-                                }
-                                if let Some(expr) = &part.expression {
+                            {
+                                let part_id = definy_event::event::derive_module_part_id(&module_id, &part.name);
+                                let content_hash = part
+                                    .expression
+                                    .as_ref()
+                                    .and_then(|e| definy_event::ContentHash::from_expression(e).ok());
+                                let (ch_str, short_ch) = if let Some(ch) = &content_hash {
+                                    let s = ch.to_string();
+                                    let short = if s.len() > 7 {
+                                        format!("#{}", &s[..7])
+                                    } else {
+                                        format!("#{}", s)
+                                    };
+                                    (Some(s), Some(short))
+                                } else {
+                                    (None, None)
+                                };
+                                let expr_source = part.expression.as_ref().map(expression_to_source);
+                                rsx! {
                                     div {
-                                        class: "mono",
-                                        style: "font-size: 0.8rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
-                                        "{expression_to_source(expr)}"
+                                        key: "{part.name}",
+                                        style: "display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border); gap: 0.6rem; flex-wrap: wrap;",
+                                        div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                                            a {
+                                                href: context.href_with_lang(Location::Part(part_id)),
+                                                style: "font-weight: 600; font-size: 0.9rem; color: var(--primary); text-decoration: none;",
+                                                "{part.name}"
+                                            }
+                                            if let Some(pt) = &part.part_type {
+                                                span { class: "badge badge-type mono", style: "font-size: 0.72rem;", "{pt}" }
+                                            }
+                                            if let (Some(full_ch), Some(short_ch)) = (ch_str, short_ch) {
+                                                span {
+                                                    class: "mono",
+                                                    style: "font-size: 0.72rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                                    title: "ContentHash: {full_ch}",
+                                                    span { "📌" }
+                                                    span { "{short_ch}" }
+                                                }
+                                            }
+                                        }
+                                        if let Some(expr_str) = expr_source {
+                                            div {
+                                                class: "mono",
+                                                style: "font-size: 0.8rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                                                "{expr_str}"
+                                            }
+                                        }
                                     }
                                 }
                             }
