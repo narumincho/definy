@@ -52,10 +52,12 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
         header {
             class: "app-header",
             style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.4rem; left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; box-sizing: border-box;",
-            div { style: "display: flex; align-items: center; gap: 0.8rem;",
+            div {
+                class: "app-nav",
+                style: "display: flex; align-items: center; gap: 0.4rem; overflow-x: auto; scrollbar-width: none;",
                 a {
                     href: context.href_with_lang(Location::Home),
-                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.5rem;",
+                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.4rem; flex-shrink: 0;",
                     h1 { class: "logo-text", "definy" }
                 }
                 NavLink {
@@ -74,25 +76,10 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
                 NavLink {
                     context: context.clone(),
-                    target: Location::TreeLayout,
-                    label: "Tree Layout",
-                    label_ja: "ツリー表示",
-                    label_eo: "Arba aranĝo",
-                }
-                NavLink {
-                    context: context.clone(),
                     target: Location::ModuleList,
                     label: "Modules",
                     label_ja: "モジュール",
                     label_eo: "Moduloj",
-                }
-                NavLink {
-                    context: context.clone(),
-                    target: Location::LocalEventQueue,
-                    label: "Local Events",
-                    label_ja: "ローカルイベント",
-                    label_eo: "Lokaj eventoj",
-                    badge: local_events_badge,
                 }
                 NavLink {
                     context: context.clone(),
@@ -101,18 +88,23 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                     label_ja: "アカウント",
                     label_eo: "Kontoj",
                 }
-                a {
-                    class: "nav-link",
-                    href: "{crate::fetch::api_base_url()}/swagger-ui/",
-                    "API"
+                NavLink {
+                    context: context.clone(),
+                    target: Location::Settings,
+                    label: "Settings",
+                    label_ja: "設定",
+                    label_eo: "Agordoj",
+                    badge: local_events_badge,
                 }
             }
-            div { style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
+            div {
+                class: "header-title-container",
+                style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
                 div { style: "font-size: 0.84rem; font-weight: 500; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.01em;",
                     "{title_text}"
                 }
             }
-            div { style: "display: flex; align-items: center; gap: 0.65rem;",
+            div { style: "display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0;",
                 ConnectionStatusIndicator { state: state.clone(), context: context.clone() }
                 LanguageDropdown { state: state.clone(), context: context.clone() }
                 if let Some(secret_key) = current_key_opt {
@@ -170,15 +162,17 @@ fn NavLink(
                 Some(Location::PartList | Location::Part(_)),
                 Location::PartList
             )
-            | (Some(Location::TreeLayout), Location::TreeLayout)
             | (
                 Some(Location::ModuleList | Location::Module(_)),
                 Location::ModuleList
             )
-            | (Some(Location::LocalEventQueue), Location::LocalEventQueue)
             | (
                 Some(Location::AccountList | Location::Account(_)),
                 Location::AccountList
+            )
+            | (
+                Some(Location::Settings | Location::TreeLayout | Location::LocalEventQueue),
+                Location::Settings
             )
     );
 

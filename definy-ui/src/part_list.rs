@@ -22,7 +22,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
             let mut state_sig = use_context::<Signal<AppState>>();
             if collect_module_snapshots(&state_sig.read()).is_empty() {
                 if let Ok(events) = crate::fetch::get_events(
-                    Some(definy_event::event::EventType::ModuleDefinition),
+                    Some(definy_event::event::EventType::ModuleCommit),
                     Some(100),
                     Some(0),
                 )

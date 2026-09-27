@@ -596,8 +596,29 @@ textarea {
   }
 
   .app-header {
-    padding-left: 0.9rem;
-    padding-right: 0.9rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .header-title-container {
+    display: none !important;
+  }
+
+  .app-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    max-width: 65vw;
+  }
+
+  .app-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-link {
+    font-size: 0.82rem;
+    padding: 0.28rem 0.55rem;
   }
 /* SearchableDropdown Styles */
 .dropdown-item-link {

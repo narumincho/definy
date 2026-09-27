@@ -11,6 +11,7 @@ enum RouteId {
     ModuleList,
     LocalEventQueue,
     TreeLayout,
+    Settings,
     AccountDetail,
     PartDetail,
     ModuleDetail,
@@ -27,6 +28,7 @@ impl RouteId {
             Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::LocalEventQueue) => Self::LocalEventQueue,
             Some(Location::TreeLayout) => Self::TreeLayout,
+            Some(Location::Settings) => Self::Settings,
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Module(_)) => Self::ModuleDetail,
@@ -37,28 +39,29 @@ impl RouteId {
 
     fn title_prefix(self, context: &PageContext) -> &'static str {
         match self {
-            Self::Home => context.language.label("home", "ホーム", "hejmo"),
+            Self::Home => context.language.label("Home", "ホーム", "Hejmo"),
             Self::AccountList | Self::AccountDetail => {
-                context.language.label("accounts", "アカウント", "kontoj")
+                context.language.label("Accounts", "アカウント", "Kontoj")
             }
             Self::PartList | Self::PartDetail => {
-                context.language.label("parts", "パーツ", "partoj")
+                context.language.label("Parts", "パーツ", "Partoj")
             }
             Self::ModuleList | Self::ModuleDetail => {
-                context.language.label("modules", "モジュール", "moduloj")
+                context.language.label("Modules", "モジュール", "Moduloj")
             }
+            Self::Settings => context.language.label("Settings", "設定", "Agordoj"),
             Self::LocalEventQueue => {
                 context
                     .language
-                    .label("local-events", "ローカルイベント", "lokaj-eventoj")
+                    .label("Local Events", "ローカルイベント", "Lokaj eventoj")
             }
             Self::TreeLayout => {
                 context
                     .language
-                    .label("tree-layout", "木構造レイアウト", "arba-aranĝo")
+                    .label("Tree Layout", "木構造レイアウト", "Arba aranĝo")
             }
-            Self::EventDetail => context.language.label("events", "イベント", "eventoj"),
-            Self::NotFound => context.language.label("not-found", "未検出", "ne-trovita"),
+            Self::EventDetail => context.language.label("Events", "イベント", "Eventoj"),
+            Self::NotFound => context.language.label("Not Found", "未検出", "Ne trovita"),
         }
     }
 }
@@ -72,6 +75,7 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
         | Some(Location::TreeLayout)
+        | Some(Location::Settings)
         | None => route_id.title_prefix(context).to_string(),
         Some(Location::Account(account_id)) => {
             let account_name =

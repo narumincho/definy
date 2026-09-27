@@ -166,7 +166,7 @@ fn AppRoot() -> Element {
             }
 
             if let Ok(modules) = definy_ui::fetch::get_events(
-                Some(definy_event::event::EventType::ModuleDefinition),
+                Some(definy_event::event::EventType::ModuleCommit),
                 Some(100),
                 Some(0),
             )

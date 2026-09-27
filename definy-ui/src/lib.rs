@@ -31,6 +31,7 @@ mod part_detail;
 mod part_list;
 pub mod part_projection;
 pub mod query;
+mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
 pub mod wasm_emitter;
@@ -147,6 +148,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::TreeLayout) => {
             rsx! {
                 tree_layout_view::TreeLayoutView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::Settings) => {
+            rsx! {
+                settings::SettingsView { state: state.clone(), context: context.clone() }
             }
         }
         Some(Location::Module(hash)) => {

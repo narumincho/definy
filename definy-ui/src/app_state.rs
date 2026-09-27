@@ -449,6 +449,7 @@ pub enum Location {
     Event(definy_event::EventHashId),
     Account(AccountId),
     TreeLayout,
+    Settings,
 }
 
 impl Location {
@@ -460,6 +461,7 @@ impl Location {
             Location::ModuleList => "/modules".to_string(),
             Location::LocalEventQueue => "/local-events".to_string(),
             Location::TreeLayout => "/tree-layout".to_string(),
+            Location::Settings => "/settings".to_string(),
             Location::Module(hash) => format!("/modules/{}", hash),
             Location::Part(hash) => format!("/parts/{}", hash),
             Location::Event(hash) => format!("/events/{}", hash),
@@ -476,6 +478,7 @@ impl Location {
             ["modules"] => Some(Location::ModuleList),
             ["local-events"] => Some(Location::LocalEventQueue),
             ["tree-layout"] => Some(Location::TreeLayout),
+            ["settings"] => Some(Location::Settings),
             ["modules", hash_str] => Some(Location::Module(EventHashId::from_str(hash_str).ok()?)),
             ["parts", hash_str] => Some(Location::Part(EventHashId::from_str(hash_str).ok()?)),
             ["events", hash_str] => Some(Location::Event(EventHashId::from_str(hash_str).ok()?)),
@@ -504,6 +507,7 @@ mod tests {
             Location::ModuleList,
             Location::LocalEventQueue,
             Location::TreeLayout,
+            Location::Settings,
             Location::Module(
                 EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                     .ok()

@@ -240,22 +240,124 @@ pub fn PartDefinitionFormView(
                 part_type_expr,
             }
             PartDescriptionInput { part_description }
-            div { style: "color: var(--text-secondary); font-size: 0.82rem; font-weight: 500;",
-                {context.language.label("Expression", "式", "Esprimo")}
-            }
-            {
-                let expected_type = part_type_expr
-                    .read()
-                    .as_ref()
-                    .and_then(definy_event::event::PartType::from_expression)
-                    .as_ref()
-                    .map(part_type_to_expression_type);
-                rsx! {
-                    crate::expression_editor::ExpressionEditorContainer {
-                        state: state.clone(),
-                        context: context.clone(),
-                        expression: composing_expression,
-                        expected_type,
+            div { style: "display: grid; gap: 0.4rem; padding-top: 0.2rem;",
+                div { style: "display: flex; justify-content: space-between; align-items: center;",
+                    span { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);",
+                        {
+                            context
+                                .language
+                                .label(
+                                    "Expression (Initial Value)",
+                                    "式 (初期値)",
+                                    "Esprimo (Komenca Valoro)",
+                                )
+                        }
+                    }
+                    if composing_expression.read().is_some() {
+                        button {
+                            r#type: "button",
+                            style: "background: none; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer;",
+                            onclick: move |_| composing_expression.set(None),
+                            {
+                                context
+                                    .language
+                                    .label(
+                                        "Clear (no expression)",
+                                        "クリア (式なし)",
+                                        "Forigi (sen esprimo)",
+                                    )
+                            }
+                        }
+                    }
+                }
+                if composing_expression.read().is_none() {
+                    div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.2rem;",
+                        span { style: "font-size: 0.74rem; color: var(--text-muted);",
+                            {context.language.label("Templates:", "テンプレート:", "Ŝablonoj:")}
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary",
+                            style: "padding: 0.18rem 0.5rem; font-size: 0.75rem;",
+                            onclick: move |_| {
+                                composing_expression
+                                    .set(
+                                        Some(
+                                            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                                                value: 0,
+                                            }),
+                                        ),
+                                    )
+                            },
+                            "0 (Number)"
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary",
+                            style: "padding: 0.18rem 0.5rem; font-size: 0.75rem;",
+                            onclick: move |_| {
+                                composing_expression
+                                    .set(
+                                        Some(
+                                            definy_event::event::Expression::String(definy_event::event::StringExpression {
+                                                value: "".into(),
+                                            }),
+                                        ),
+                                    )
+                            },
+                            "\"\" (String)"
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary",
+                            style: "padding: 0.18rem 0.5rem; font-size: 0.75rem;",
+                            onclick: move |_| {
+                                composing_expression
+                                    .set(
+                                        Some(
+                                            definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
+                                                value: true,
+                                            }),
+                                        ),
+                                    )
+                            },
+                            "true (Bool)"
+                        }
+                    }
+                }
+                {
+                    let expected_type = part_type_expr
+                        .read()
+                        .as_ref()
+                        .and_then(definy_event::event::PartType::from_expression)
+                        .as_ref()
+                        .map(part_type_to_expression_type);
+                    rsx! {
+                        crate::expression_editor::ExpressionEditorContainer {
+                            state: state.clone(),
+                            context: context.clone(),
+                            expression: composing_expression,
+                            expected_type,
+                        }
+                    }
+                }
+                {
+                    let expr_str = composing_expression
+                        .read()
+                        .as_ref()
+                        .map(crate::expression_eval::expression_to_source)
+                        .unwrap_or_else(|| {
+                            context
+                                .language
+                                .label("(no expression)", "(式なし)", "(neniu esprimo)")
+                                .to_string()
+                        });
+                    rsx! {
+                        div {
+                            class: "mono",
+                            style: "font-size: 0.78rem; color: #7dd3fc; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); overflow-x: auto; white-space: nowrap;",
+                            "{expr_str}"
+                        }
                     }
                 }
             }
