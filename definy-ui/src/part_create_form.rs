@@ -79,35 +79,49 @@ pub fn PartDefinitionFormView(
             .as_ref()
             .and_then(definy_event::event::PartType::from_expression);
         let modules = collect_module_snapshots(&state_val);
-        let mod_hash_opt =
-            module_hash().or_else(|| modules.first().map(|m| m.definition_event_hash.clone()));
-        let (final_module_hash, auto_create_module_binary) = if let Some(hash) = mod_hash_opt {
-            (hash, None)
+        let selected_module = module_hash()
+            .and_then(|h| {
+                modules
+                    .iter()
+                    .find(|m| m.definition_event_hash == h)
+                    .cloned()
+            })
+            .or_else(|| modules.first().cloned());
+
+        let (module_name, module_desc, parent_commit, mut parts) = if let Some(m) = selected_module
+        {
+            let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
+            let parts_list: Vec<definy_event::event::ModulePartEntry> = existing_parts
+                .into_iter()
+                .filter(|p| {
+                    p.module_definition_event_hash == m.definition_event_hash
+                        && p.part_name != name_str
+                })
+                .map(|p| definy_event::event::ModulePartEntry {
+                    name: p.part_name.into(),
+                    part_type: p.part_type,
+                    description: p.part_description,
+                    expression: p.expression,
+                })
+                .collect();
+            (
+                m.module_name,
+                m.module_description,
+                Some(m.latest_event_hash),
+                parts_list,
+            )
         } else {
-            let module_event = definy_event::event::Event {
-                account_id: definy_event::event::AccountId(key.verifying_key()),
-                time: chrono::Utc::now(),
-                content: definy_event::event::EventContent::ModuleDefinition(
-                    definy_event::event::ModuleDefinitionEvent {
-                        module_name: "main".into(),
-                        description: definy_event::event::Description::localized(vec![
-                            ("en", "Default main module"),
-                            ("ja", "デフォルトのメインモジュール"),
-                        ]),
-                    },
-                ),
-            };
-            match definy_event::sign_and_serialize(module_event, &key) {
-                Ok(binary) => {
-                    let hash = EventHashId::from_bytes(&binary);
-                    (hash, Some(binary))
-                }
-                Err(err) => {
-                    eval_result.set(Some(format!("Failed to create module: {err:?}")));
-                    return;
-                }
-            }
+            (
+                "main".to_string(),
+                definy_event::event::Description::localized(vec![
+                    ("en", "Default main module"),
+                    ("ja", "デフォルトのメインモジュール"),
+                ]),
+                None,
+                vec![],
+            )
         };
+
         if name_str.is_empty() {
             eval_result.set(Some(
                 language
@@ -132,20 +146,25 @@ pub fn PartDefinitionFormView(
             ));
             return;
         }
+
         let expr_val = composing_expression();
+        parts.push(definy_event::event::ModulePartEntry {
+            name: name_str.clone().into(),
+            part_type: type_val,
+            description: desc_str.into(),
+            expression: expr_val,
+        });
+
         let force_offline = state_val.force_offline;
         spawn(async move {
-            if let Some(module_binary) = auto_create_module_binary {
-                let _res = crate::fetch::post_event_with_queue(&module_binary, force_offline).await;
-            }
             let record_opt = crate::event_submit::submit_event(
-                definy_event::event::EventContent::PartDefinition(
-                    definy_event::event::PartDefinitionEvent {
-                        part_name: name_str.into(),
-                        description: desc_str.into(),
-                        part_type: type_val,
-                        expression: expr_val,
-                        module_definition_event_hash: final_module_hash,
+                definy_event::event::EventContent::ModuleCommit(
+                    definy_event::event::ModuleCommitEvent {
+                        module_name: module_name.into(),
+                        module_description: module_desc,
+                        parent_commit_hash: parent_commit,
+                        message: format!("Add part '{}'", name_str).into(),
+                        parts,
                     },
                 ),
                 key,

@@ -14,59 +14,38 @@ struct EventHashRow {
     event_binary_hash: Vec<u8>,
 }
 
-#[allow(clippy::too_many_arguments)]
-fn builtin_part_event(
-    account_id: &definy_event::event::AccountId,
-    time: chrono::DateTime<chrono::Utc>,
-    offset_ms: i64,
-    module_hash: &definy_event::EventHashId,
-    name: &str,
-    part_type: Option<definy_event::event::PartType>,
-    desc_en: &str,
-    desc_ja: &str,
-    expression: Option<definy_event::event::Expression>,
-) -> definy_event::event::Event {
-    definy_event::event::Event {
-        account_id: account_id.clone(),
-        time: time + chrono::Duration::milliseconds(offset_ms),
-        content: definy_event::event::EventContent::PartDefinition(
-            definy_event::event::PartDefinitionEvent {
-                part_name: name.into(),
-                part_type,
-                description: definy_event::event::Description::localized(vec![
-                    ("en", desc_en),
-                    ("ja", desc_ja),
-                ]),
-                expression,
-                module_definition_event_hash: module_hash.clone(),
-            },
-        ),
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn builtin_compiler_part(
-    account_id: &definy_event::event::AccountId,
-    time: chrono::DateTime<chrono::Utc>,
-    offset_ms: i64,
-    module_hash: &definy_event::EventHashId,
+fn compiler_part_entry(
     name: &str,
     part_type: Option<definy_event::event::PartType>,
     desc_en: &str,
     desc_ja: &str,
     builtin: definy_event::event::CompilerBuiltin,
-) -> definy_event::event::Event {
-    builtin_part_event(
-        account_id,
-        time,
-        offset_ms,
-        module_hash,
-        name,
+) -> definy_event::event::ModulePartEntry {
+    definy_event::event::ModulePartEntry {
+        name: name.into(),
         part_type,
-        desc_en,
-        desc_ja,
-        Some(definy_event::event::Expression::Compiler(builtin)),
-    )
+        description: definy_event::event::Description::localized(vec![
+            ("en", desc_en),
+            ("ja", desc_ja),
+        ]),
+        expression: Some(definy_event::event::Expression::Compiler(builtin)),
+    }
+}
+
+fn type_part_entry(
+    name: &str,
+    desc_en: &str,
+    desc_ja: &str,
+) -> definy_event::event::ModulePartEntry {
+    definy_event::event::ModulePartEntry {
+        name: name.into(),
+        part_type: Some(definy_event::event::PartType::Type),
+        description: definy_event::event::Description::localized(vec![
+            ("en", desc_en),
+            ("ja", desc_ja),
+        ]),
+        expression: None,
+    }
 }
 
 pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error> {
@@ -77,378 +56,269 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     // Repository first commit timestamp: 2019-01-31T13:36:01+09:00 (2019-01-31T04:36:01Z)
     let first_commit_time = chrono::DateTime::from_timestamp(1548909361, 0).unwrap();
 
-    let core_module_event = definy_event::event::Event {
-        account_id: account_id.clone(),
-        time: first_commit_time + chrono::Duration::milliseconds(1),
-        content: definy_event::event::EventContent::ModuleDefinition(
-            definy_event::event::ModuleDefinitionEvent {
-                module_name: "core".into(),
-                description: definy_event::event::Description::localized(vec![
-                    ("en", "Core built-in module for definy"),
-                    ("ja", "definy のコア組み込みモジュール"),
-                ]),
-            },
-        ),
-    };
-    let core_module_binary =
-        definy_event::sign_and_serialize(core_module_event.clone(), &signing_key)
-            .map_err(|e| anyhow::anyhow!("Failed to serialize core module event: {:?}", e))?;
-    let core_module_hash = definy_event::EventHashId::from_bytes(&core_module_binary);
+    let core_module_id = definy_event::event::derive_module_id(&account_id, "core");
 
-    let sample_module_event = definy_event::event::Event {
-        account_id: account_id.clone(),
-        time: first_commit_time + chrono::Duration::milliseconds(30),
-        content: definy_event::event::EventContent::ModuleDefinition(
-            definy_event::event::ModuleDefinitionEvent {
-                module_name: "sample".into(),
-                description: definy_event::event::Description::localized(vec![
-                    (
-                        "en",
-                        "Sample programs showcasing definy expressions and computations",
-                    ),
-                    (
-                        "ja",
-                        "definy の計算式や機能を体験できるサンプルプログラム集",
-                    ),
-                ]),
-            },
-        ),
-    };
-    let sample_module_binary =
-        definy_event::sign_and_serialize(sample_module_event.clone(), &signing_key)
-            .map_err(|e| anyhow::anyhow!("Failed to serialize sample module event: {:?}", e))?;
-    let sample_module_hash = definy_event::EventHashId::from_bytes(&sample_module_binary);
-
-    let mut events = vec![
-        definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: first_commit_time,
-            content: definy_event::event::EventContent::CreateAccount(
-                definy_event::event::CreateAccountEvent {
-                    account_name: "definy".into(),
-                },
-            ),
-        },
-        core_module_event,
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            2,
-            &core_module_hash,
+    let mut core_parts = vec![
+        compiler_part_entry(
             "let",
             None,
             "Compiler built-in let binding",
             "ローカル変数を定義する組み込み構文 (let)",
             definy_event::event::CompilerBuiltin::Let,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            3,
-            &core_module_hash,
+        compiler_part_entry(
             "plus",
             None,
             "Compiler built-in addition",
             "数値の加算を行う組み込み関数 (+)",
             definy_event::event::CompilerBuiltin::Plus,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            4,
-            &core_module_hash,
+        compiler_part_entry(
             "number-literal",
             Some(definy_event::event::PartType::Number),
             "Compiler built-in number literal",
             "数値リテラル",
             definy_event::event::CompilerBuiltin::NumberLiteral,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            5,
-            &core_module_hash,
+        compiler_part_entry(
             "if",
             None,
             "Compiler built-in conditional expression",
             "条件分岐を行う組み込み構文 (if)",
             definy_event::event::CompilerBuiltin::If,
         ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            6,
-            &core_module_hash,
+        type_part_entry(
             "number",
-            Some(definy_event::event::PartType::Type),
             "Built-in 64-bit integer type",
             "組み込み 64ビット符号付き整数型",
-            None,
         ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            7,
-            &core_module_hash,
+        type_part_entry(
             "string",
-            Some(definy_event::event::PartType::Type),
             "Built-in UTF-8 string type",
             "組み込み UTF-8 文字列型",
-            None,
         ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            8,
-            &core_module_hash,
-            "boolean",
-            Some(definy_event::event::PartType::Type),
-            "Built-in boolean type",
-            "組み込み真偽値型",
-            None,
-        ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            9,
-            &core_module_hash,
+        type_part_entry("boolean", "Built-in boolean type", "組み込み真偽値型"),
+        type_part_entry(
             "list",
-            Some(definy_event::event::PartType::Type),
             "Built-in list type constructor",
             "組み込みリスト型コンストラクタ",
-            None,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            10,
-            &core_module_hash,
+        compiler_part_entry(
             "equal",
             None,
             "Compiler built-in equality comparison",
             "値が等しいかを判定する組み込み関数 (==)",
             definy_event::event::CompilerBuiltin::Equal,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            11,
-            &core_module_hash,
+        compiler_part_entry(
             "minus",
             None,
             "Compiler built-in subtraction",
             "数値の減算を行う組み込み関数 (-)",
             definy_event::event::CompilerBuiltin::Minus,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            12,
-            &core_module_hash,
+        compiler_part_entry(
             "multiply",
             None,
             "Compiler built-in multiplication",
             "数値の乗算を行う組み込み関数 (*)",
             definy_event::event::CompilerBuiltin::Multiply,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            13,
-            &core_module_hash,
+        compiler_part_entry(
             "divide",
             None,
             "Compiler built-in division",
             "数値の除算を行う組み込み関数 (/)",
             definy_event::event::CompilerBuiltin::Divide,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            14,
-            &core_module_hash,
+        compiler_part_entry(
             "remainder",
             None,
             "Compiler built-in remainder",
             "数値の剰余を求める組み込み関数 (%)",
             definy_event::event::CompilerBuiltin::Remainder,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            15,
-            &core_module_hash,
+        compiler_part_entry(
             "less-than",
             None,
             "Compiler built-in less than comparison",
             "左辺が右辺より小さいかを判定する組み込み関数 (<)",
             definy_event::event::CompilerBuiltin::LessThan,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            16,
-            &core_module_hash,
+        compiler_part_entry(
             "less-than-or-equal",
             None,
             "Compiler built-in less than or equal comparison",
             "左辺が右辺以下かを判定する組み込み関数 (<=)",
             definy_event::event::CompilerBuiltin::LessThanOrEqual,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            17,
-            &core_module_hash,
+        compiler_part_entry(
             "greater-than",
             None,
             "Compiler built-in greater than comparison",
             "左辺が右辺より大きいかを判定する組み込み関数 (>)",
             definy_event::event::CompilerBuiltin::GreaterThan,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            18,
-            &core_module_hash,
+        compiler_part_entry(
             "greater-than-or-equal",
             None,
             "Compiler built-in greater than or equal comparison",
             "左辺が右辺以上かを判定する組み込み関数 (>=)",
             definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            19,
-            &core_module_hash,
+        compiler_part_entry(
             "not-equal",
             None,
             "Compiler built-in not equal comparison",
             "値が等しくないかを判定する組み込み関数 (!=)",
             definy_event::event::CompilerBuiltin::NotEqual,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            20,
-            &core_module_hash,
+        compiler_part_entry(
             "not",
             None,
             "Compiler built-in boolean negation",
             "真偽値の否定を行う組み込み関数 (not)",
             definy_event::event::CompilerBuiltin::Not,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            21,
-            &core_module_hash,
+        compiler_part_entry(
             "and",
             None,
             "Compiler built-in boolean and",
             "真偽値の論理積を行う組み込み関数 (and)",
             definy_event::event::CompilerBuiltin::And,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            22,
-            &core_module_hash,
+        compiler_part_entry(
             "or",
             None,
             "Compiler built-in boolean or",
             "真偽値の論理和を行う組み込み関数 (or)",
             definy_event::event::CompilerBuiltin::Or,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            23,
-            &core_module_hash,
+        compiler_part_entry(
             "string-concat",
             None,
             "Compiler built-in string concatenation",
             "文字列の結合を行う組み込み関数",
             definy_event::event::CompilerBuiltin::StringConcat,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            24,
-            &core_module_hash,
+        compiler_part_entry(
             "string-length",
             None,
             "Compiler built-in string length",
             "文字列の文字数を取得する組み込み関数",
             definy_event::event::CompilerBuiltin::StringLength,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            25,
-            &core_module_hash,
+        compiler_part_entry(
             "string-slice",
             None,
             "Compiler built-in string slice",
             "文字列の部分文字列を取得する組み込み関数",
             definy_event::event::CompilerBuiltin::StringSlice,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            26,
-            &core_module_hash,
+        compiler_part_entry(
             "list-length",
             None,
             "Compiler built-in list length",
             "リストの要素数を取得する組み込み関数",
             definy_event::event::CompilerBuiltin::ListLength,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            27,
-            &core_module_hash,
+        compiler_part_entry(
             "list-concat",
             None,
             "Compiler built-in list concatenation",
             "2つのリストを結合する組み込み関数",
             definy_event::event::CompilerBuiltin::ListConcat,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            28,
-            &core_module_hash,
+        compiler_part_entry(
             "list-get",
             None,
-            "Compiler built-in list element retrieval",
-            "リストの指定位置の要素を取得する組み込み関数",
+            "Compiler built-in list item access by index",
+            "リストのインデックス参照 (list-get)",
             definy_event::event::CompilerBuiltin::ListGet,
         ),
-        builtin_compiler_part(
-            &account_id,
-            first_commit_time,
-            29,
-            &core_module_hash,
+        compiler_part_entry(
             "list-append",
             None,
-            "Compiler built-in list append",
-            "リストの末尾に要素を追加する組み込み関数",
+            "Compiler built-in list append item",
+            "リストの末尾に要素を追加 (list-append)",
             definy_event::event::CompilerBuiltin::ListAppend,
         ),
-        sample_module_event,
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            31,
-            &sample_module_hash,
-            "triangle-area",
-            Some(definy_event::event::PartType::Number),
-            "Calculate the area of a triangle (base 10, height 5)",
-            "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)",
-            Some(definy_event::event::Expression::Let(
+        compiler_part_entry(
+            "bit-and",
+            None,
+            "Compiler built-in bitwise AND",
+            "ビット積を行う組み込み関数 (&)",
+            definy_event::event::CompilerBuiltin::BitAnd,
+        ),
+        compiler_part_entry(
+            "bit-or",
+            None,
+            "Compiler built-in bitwise OR",
+            "ビット和を行う組み込み関数 (|)",
+            definy_event::event::CompilerBuiltin::BitOr,
+        ),
+        compiler_part_entry(
+            "bit-xor",
+            None,
+            "Compiler built-in bitwise XOR",
+            "排他的ビット和を行う組み込み関数 (^)",
+            definy_event::event::CompilerBuiltin::BitXor,
+        ),
+        compiler_part_entry(
+            "shift-left",
+            None,
+            "Compiler built-in left shift",
+            "左シフトを行う組み込み関数 (<<)",
+            definy_event::event::CompilerBuiltin::ShiftLeft,
+        ),
+        compiler_part_entry(
+            "shift-right",
+            None,
+            "Compiler built-in right shift",
+            "右シフトを行う組み込み関数 (>>)",
+            definy_event::event::CompilerBuiltin::ShiftRight,
+        ),
+    ];
+
+    core_parts.push(crate::builtin_expression_type::create_expression_ast_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_value_type::create_value_type_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_expression_type::create_eval_ast_part(
+        &core_module_id,
+    ));
+
+    let core_module_commit = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(1),
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_event::event::ModuleCommitEvent {
+                module_name: "core".into(),
+                module_description: definy_event::event::Description::localized(vec![
+                    ("en", "Core built-in module for definy"),
+                    ("ja", "definy のコア組み込みモジュール"),
+                ]),
+                parent_commit_hash: None,
+                message: "Initial commit for core module".into(),
+                parts: core_parts,
+            },
+        ),
+    };
+
+    let sample_parts = vec![
+        definy_event::event::ModulePartEntry {
+            name: "triangle-area".into(),
+            part_type: Some(definy_event::event::PartType::Number),
+            description: definy_event::event::Description::localized(vec![
+                ("en", "Calculate the area of a triangle (base 10, height 5)"),
+                (
+                    "ja",
+                    "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)",
+                ),
+            ]),
+            expression: Some(definy_event::event::Expression::Let(
                 definy_event::event::LetExpression {
                     variable_id: 1,
                     variable_name: "base".into(),
@@ -491,17 +361,15 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     )),
                 },
             )),
-        ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            32,
-            &sample_module_hash,
-            "greet",
-            Some(definy_event::event::PartType::String),
-            "Greeting message using string concatenation",
-            "文字列結合を使った挨拶メッセージの生成サンプル",
-            Some(definy_event::event::Expression::StringConcat(
+        },
+        definy_event::event::ModulePartEntry {
+            name: "greet".into(),
+            part_type: Some(definy_event::event::PartType::String),
+            description: definy_event::event::Description::localized(vec![
+                ("en", "Greeting message using string concatenation"),
+                ("ja", "文字列結合を使った挨拶メッセージの生成サンプル"),
+            ]),
+            expression: Some(definy_event::event::Expression::StringConcat(
                 definy_event::event::StringConcatExpression {
                     left: Box::new(definy_event::event::Expression::String(
                         definy_event::event::StringExpression {
@@ -515,17 +383,18 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     )),
                 },
             )),
-        ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            33,
-            &sample_module_hash,
-            "is-even-sample",
-            Some(definy_event::event::PartType::String),
-            "Check if a number is even using conditional expression",
-            "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)",
-            Some(definy_event::event::Expression::Let(
+        },
+        definy_event::event::ModulePartEntry {
+            name: "is-even-sample".into(),
+            part_type: Some(definy_event::event::PartType::String),
+            description: definy_event::event::Description::localized(vec![
+                (
+                    "en",
+                    "Check if a number is even using conditional expression",
+                ),
+                ("ja", "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)"),
+            ]),
+            expression: Some(definy_event::event::Expression::Let(
                 definy_event::event::LetExpression {
                     variable_id: 1,
                     variable_name: "n".into(),
@@ -573,19 +442,17 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     )),
                 },
             )),
-        ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            34,
-            &sample_module_hash,
-            "prime-numbers",
-            Some(definy_event::event::PartType::List(Box::new(
+        },
+        definy_event::event::ModulePartEntry {
+            name: "prime-numbers".into(),
+            part_type: Some(definy_event::event::PartType::List(Box::new(
                 definy_event::event::PartType::Number,
             ))),
-            "List literal containing prime numbers",
-            "素数のリストリテラルサンプル [2, 3, 5, 7, 11]",
-            Some(definy_event::event::Expression::ListLiteral(
+            description: definy_event::event::Description::localized(vec![
+                ("en", "List literal containing prime numbers"),
+                ("ja", "素数のリストリテラルサンプル [2, 3, 5, 7, 11]"),
+            ]),
+            expression: Some(definy_event::event::Expression::ListLiteral(
                 definy_event::event::ListLiteralExpression {
                     items: vec![
                         definy_event::event::Expression::Number(
@@ -606,17 +473,15 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     ],
                 },
             )),
-        ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            35,
-            &core_module_hash,
-            "option-number",
-            Some(definy_event::event::PartType::Type),
-            "Option type for numbers (none or some(number))",
-            "数値用の Option 型 (none または some(number))",
-            Some(definy_event::event::Expression::TypeUnion(
+        },
+        definy_event::event::ModulePartEntry {
+            name: "option-number".into(),
+            part_type: Some(definy_event::event::PartType::Type),
+            description: definy_event::event::Description::localized(vec![
+                ("en", "Option type for numbers (none or some(number))"),
+                ("ja", "数値用の Option 型 (none または some(number))"),
+            ]),
+            expression: Some(definy_event::event::Expression::TypeUnion(
                 definy_event::event::TypeUnionExpression {
                     variants: vec![
                         definy_event::event::TypeUnionVariant {
@@ -632,17 +497,18 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     ],
                 },
             )),
-        ),
-        builtin_part_event(
-            &account_id,
-            first_commit_time,
-            36,
-            &sample_module_hash,
-            "match-option-sample",
-            Some(definy_event::event::PartType::Number),
-            "Pattern match sample: unwrap some(100) and add 23",
-            "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)",
-            Some(definy_event::event::Expression::Match(
+        },
+        definy_event::event::ModulePartEntry {
+            name: "match-option-sample".into(),
+            part_type: Some(definy_event::event::PartType::Number),
+            description: definy_event::event::Description::localized(vec![
+                ("en", "Pattern match sample: unwrap some(100) and add 23"),
+                (
+                    "ja",
+                    "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)",
+                ),
+            ]),
+            expression: Some(definy_event::event::Expression::Match(
                 definy_event::event::MatchExpression {
                     target: Box::new(definy_event::event::Expression::Variant(
                         definy_event::event::VariantExpression {
@@ -681,60 +547,46 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     default: None,
                 },
             )),
-        ),
+        },
+        crate::builtin_expression_type::create_sample_ast_calc_part(&core_module_id),
     ];
 
-    // Expression AST Type (Self-describing AST)
-    let (expr_def_event, expr_update_event) =
-        crate::builtin_expression_type::create_expression_ast_type_events(
-            &account_id,
-            first_commit_time,
-            &core_module_hash,
-            &signing_key,
-        )?;
-    let expr_def_binary = definy_event::sign_and_serialize(expr_def_event.clone(), &signing_key)
-        .map_err(|e| anyhow::anyhow!("Failed to serialize expr def event: {:?}", e))?;
-    let expr_type_part_hash = definy_event::EventHashId::from_bytes(&expr_def_binary);
+    let sample_module_commit = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(30),
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_event::event::ModuleCommitEvent {
+                module_name: "sample".into(),
+                module_description: definy_event::event::Description::localized(vec![
+                    (
+                        "en",
+                        "Sample programs showcasing definy expressions and computations",
+                    ),
+                    (
+                        "ja",
+                        "definy の計算式や機能を体験できるサンプルプログラム集",
+                    ),
+                ]),
+                parent_commit_hash: None,
+                message: "Initial commit for sample module".into(),
+                parts: sample_parts,
+            },
+        ),
+    };
 
-    events.push(expr_def_event);
-    events.push(expr_update_event);
-
-    // Value Type (Self-describing runtime value)
-    let (val_def_event, val_update_event) = crate::builtin_value_type::create_value_type_events(
-        &account_id,
-        first_commit_time,
-        &core_module_hash,
-        &signing_key,
-    )?;
-    events.push(val_def_event);
-    events.push(val_update_event);
-
-    // eval-ast function part (Self-hosting evaluator)
-    let (eval_ast_def_event, eval_ast_update_event) =
-        crate::builtin_expression_type::create_eval_ast_part_events(
-            &account_id,
-            first_commit_time,
-            &core_module_hash,
-            &expr_type_part_hash,
-            &signing_key,
-        )?;
-    let eval_ast_def_binary =
-        definy_event::sign_and_serialize(eval_ast_def_event.clone(), &signing_key)
-            .map_err(|e| anyhow::anyhow!("Failed to serialize eval-ast def event: {:?}", e))?;
-    let eval_ast_part_hash = definy_event::EventHashId::from_bytes(&eval_ast_def_binary);
-
-    events.push(eval_ast_def_event);
-    events.push(eval_ast_update_event);
-
-    // sample-ast-calc part (Sample evaluation using eval-ast)
-    let sample_ast_calc_event = crate::builtin_expression_type::create_sample_ast_calc_part_event(
-        &account_id,
-        first_commit_time,
-        &sample_module_hash,
-        &expr_type_part_hash,
-        &eval_ast_part_hash,
-    );
-    events.push(sample_ast_calc_event);
+    let events = vec![
+        definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: first_commit_time,
+            content: definy_event::event::EventContent::CreateAccount(
+                definy_event::event::CreateAccountEvent {
+                    account_name: "definy".into(),
+                },
+            ),
+        },
+        core_module_commit,
+        sample_module_commit,
+    ];
 
     // Prepare serialized binaries and expected hashes for all valid built-in events
     let mut valid_hashes = HashSet::new();

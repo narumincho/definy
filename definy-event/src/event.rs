@@ -19,10 +19,6 @@ pub struct Event {
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
-    PartDefinition(PartDefinitionEvent),
-    PartUpdate(PartUpdateEvent),
-    ModuleDefinition(ModuleDefinitionEvent),
-    ModuleUpdate(ModuleUpdateEvent),
     ModuleCommit(ModuleCommitEvent),
 }
 
@@ -129,52 +125,41 @@ impl std::fmt::Display for Description {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PartDefinitionEvent {
-    pub part_name: Box<str>,
-    #[serde(default)]
-    pub part_type: Option<PartType>,
-    #[serde(default)]
-    pub description: Description,
-    #[serde(default)]
-    pub expression: Option<Expression>,
-    pub module_definition_event_hash: EventHashId,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PartUpdateEvent {
-    pub part_name: Box<str>,
-    pub part_description: Description,
-    pub part_definition_event_hash: EventHashId,
-    #[serde(default)]
-    pub part_type: Option<PartType>,
-    #[serde(default)]
-    pub expression: Option<Expression>,
-    pub module_definition_event_hash: EventHashId,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ModuleDefinitionEvent {
-    pub module_name: Box<str>,
-    #[serde(default)]
-    pub description: Description,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ModuleUpdateEvent {
-    pub module_name: Box<str>,
-    pub module_description: Description,
-    pub module_definition_event_hash: EventHashId,
-}
-
+/// モジュールのコミット（スナップショット）イベント。
+/// 初回コミット (`parent_commit_hash == None`) ではモジュールの作成を兼ね、そのコミットハッシュがモジュールIDとなります。
+/// 2回目以降のコミット (`parent_commit_hash == Some(...)`) では、モジュールの更新を表します。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ModuleCommitEvent {
-    pub module_definition_event_hash: EventHashId,
+    pub module_name: Box<str>,
+    #[serde(default)]
+    pub module_description: Description,
     #[serde(default)]
     pub parent_commit_hash: Option<EventHashId>,
     #[serde(default)]
     pub message: Box<str>,
     pub parts: Vec<ModulePartEntry>,
+}
+
+/// アカウントとモジュール名から決定論的な Module ID を導出します。
+pub fn derive_module_id(account_id: &AccountId, module_name: &str) -> EventHashId {
+    use sha2::Digest;
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(b"definy:module:");
+    hasher.update(account_id.0.as_bytes());
+    hasher.update(b":");
+    hasher.update(module_name.as_bytes());
+    EventHashId::from_bytes(&hasher.finalize())
+}
+
+/// モジュール内の各パーツの決定論的パーツ ID を導出します。
+/// 同一モジュール内において、パーツ名から一意かつ不変な ID を生成します。
+pub fn derive_module_part_id(module_id: &EventHashId, part_name: &str) -> EventHashId {
+    use sha2::Digest;
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(module_id.as_bytes());
+    hasher.update(b":part:");
+    hasher.update(part_name.as_bytes());
+    EventHashId::from_bytes(&hasher.finalize())
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

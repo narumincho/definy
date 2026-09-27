@@ -107,58 +107,15 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
                             .language
                             .label("change-profile", "プロフィール変更", "profil-ŝanĝo")
                             .to_string(),
-                        definy_event::event::EventContent::PartDefinition(part_definition) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "part-definition",
-                                    "パーツ定義",
-                                    "parto-difino"
-                                ),
-                                part_definition.part_name
-                            )
-                        }
-                        definy_event::event::EventContent::PartUpdate(part_update) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "part-update",
-                                    "パーツ更新",
-                                    "parto-ĝisdatigo"
-                                ),
-                                part_update.part_name
-                            )
-                        }
-                        definy_event::event::EventContent::ModuleDefinition(module_definition) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "module-definition",
-                                    "モジュール定義",
-                                    "modulo-difino"
-                                ),
-                                module_definition.module_name
-                            )
-                        }
-                        definy_event::event::EventContent::ModuleUpdate(module_update) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "module-update",
-                                    "モジュール更新",
-                                    "modulo-ĝisdatigo"
-                                ),
-                                module_update.module_name
-                            )
-                        }
                         definy_event::event::EventContent::ModuleCommit(module_commit) => {
                             format!(
-                                "{}/{}",
+                                "{}/{}: {}",
                                 context.language.label(
                                     "module-commit",
                                     "モジュールコミット",
                                     "modulo-enmeto"
                                 ),
+                                module_commit.module_name,
                                 module_commit.message
                             )
                         }
@@ -176,32 +133,5 @@ pub fn document_title_text(state: &AppState, context: &PageContext) -> String {
 }
 
 fn resolve_part_name(state: &AppState, definition_event_hash: &EventHashId) -> Option<String> {
-    let mut events = state
-        .event_cache
-        .iter()
-        .filter_map(|(hash, event_result)| {
-            let (_, event) = event_result.as_ref().ok()?;
-            Some((hash.clone(), event))
-        })
-        .collect::<Vec<(EventHashId, &definy_event::event::Event)>>();
-    events.sort_by_key(|(_, event)| event.time);
-
-    let mut name = None::<String>;
-    for (hash, event) in events {
-        match &event.content {
-            definy_event::event::EventContent::PartDefinition(part_definition)
-                if &hash == definition_event_hash =>
-            {
-                name = Some(part_definition.part_name.to_string());
-            }
-            definy_event::event::EventContent::PartUpdate(part_update)
-                if &part_update.part_definition_event_hash == definition_event_hash
-                    && name.is_some() =>
-            {
-                name = Some(part_update.part_name.to_string());
-            }
-            _ => {}
-        }
-    }
-    name
+    crate::part_projection::find_part_snapshot(state, definition_event_hash).map(|p| p.part_name)
 }

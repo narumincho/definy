@@ -458,26 +458,33 @@ fn evaluate_let_bindings() {
 
 #[test]
 fn evaluate_part_reference_by_definition_hash() {
-    let definition_hash =
-        definy_event::EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").unwrap();
+    let account_id =
+        definy_event::event::AccountId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            .unwrap();
+    let mod_id = definy_event::event::derive_module_id(&account_id, "legacy-mod");
+    let part_hash = definy_event::event::derive_module_part_id(&mod_id, "legacy-name");
     let part_expression = num(99);
+    let commit_hash =
+        definy_event::EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA").unwrap();
     let events = vec![(
-        definition_hash.clone(),
+        commit_hash,
         Ok((
             ed25519_dalek::Signature::from_bytes(&[0u8; 64]),
             definy_event::event::Event {
-                account_id: definy_event::event::AccountId::from_str(
-                    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-                )
-                .unwrap(),
+                account_id,
                 time: chrono::DateTime::UNIX_EPOCH,
-                content: definy_event::event::EventContent::PartDefinition(
-                    definy_event::event::PartDefinitionEvent {
-                        part_name: "legacy-name".into(),
-                        part_type: Some(definy_event::event::PartType::Number),
-                        description: "".into(),
-                        expression: Some(part_expression),
-                        module_definition_event_hash: definition_hash.clone(),
+                content: definy_event::event::EventContent::ModuleCommit(
+                    definy_event::event::ModuleCommitEvent {
+                        module_name: "legacy-mod".into(),
+                        module_description: "".into(),
+                        parent_commit_hash: None,
+                        message: "initial commit".into(),
+                        parts: vec![definy_event::event::ModulePartEntry {
+                            name: "legacy-name".into(),
+                            part_type: Some(definy_event::event::PartType::Number),
+                            description: "".into(),
+                            expression: Some(part_expression),
+                        }],
                     },
                 ),
             },
@@ -485,17 +492,14 @@ fn evaluate_part_reference_by_definition_hash() {
     )];
 
     let reference = definy_event::event::Expression::PartReference(
-        definy_event::event::PartReferenceExpression::new(definition_hash.clone()),
+        definy_event::event::PartReferenceExpression::new(part_hash.clone()),
     );
 
     assert_eq!(
         evaluate_expression(&reference, &events),
         Ok(crate::expression_eval::Value::Number(99))
     );
-    assert_eq!(
-        expression_to_source(&reference),
-        definition_hash.to_string()
-    );
+    assert_eq!(expression_to_source(&reference), part_hash.to_string());
 }
 
 #[test]
@@ -716,8 +720,9 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
 
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
-    let expr_hash = EventHashId::from_bytes(&[201u8; 32]);
-    let eval_hash = EventHashId::from_bytes(&[202u8; 32]);
+    let mod_id = definy_event::event::derive_module_id(&dummy_account, "core");
+    let expr_hash = definy_event::event::derive_module_part_id(&mod_id, "expression");
+    let eval_hash = definy_event::event::derive_module_part_id(&mod_id, "eval_ast");
 
     fn rec_call(eval_hash: &EventHashId, var_id: i64, key: &str) -> Expression {
         Expression::Call(CallExpression {
@@ -731,76 +736,82 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
     let eval_event = Event {
         account_id: dummy_account,
         time: chrono::DateTime::UNIX_EPOCH,
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: "eval_ast".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::TypePart(expr_hash.clone())),
-                return_type: Box::new(PartType::Number),
-            }),
-            description: Description::Plain("eval AST all arithmetic ops".into()),
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1, // e
-                parameter_name: "e".into(),
-                body: Box::new(match_op(
-                    var_ref(1),
-                    vec![
-                        match_arm_payload("number", 10, "n", var_ref(10)),
-                        match_arm_payload(
-                            "add",
-                            20,
-                            "bin",
-                            add(
-                                rec_call(&eval_hash, 20, "left"),
-                                rec_call(&eval_hash, 20, "right"),
+        content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+            module_name: "core".into(),
+            module_description: "".into(),
+            parent_commit_hash: None,
+            message: "Add eval_ast".into(),
+            parts: vec![definy_event::event::ModulePartEntry {
+                name: "eval_ast".into(),
+                part_type: Some(PartType::Function {
+                    parameter: Box::new(PartType::TypePart(expr_hash.clone())),
+                    return_type: Box::new(PartType::Number),
+                }),
+                description: Description::Plain("eval AST all arithmetic ops".into()),
+                expression: Some(Expression::Function(FunctionExpression {
+                    parameter_id: 1, // e
+                    parameter_name: "e".into(),
+                    body: Box::new(match_op(
+                        var_ref(1),
+                        vec![
+                            match_arm_payload("number", 10, "n", var_ref(10)),
+                            match_arm_payload(
+                                "add",
+                                20,
+                                "bin",
+                                add(
+                                    rec_call(&eval_hash, 20, "left"),
+                                    rec_call(&eval_hash, 20, "right"),
+                                ),
                             ),
-                        ),
-                        match_arm_payload(
-                            "subtract",
-                            30,
-                            "bin",
-                            sub(
-                                rec_call(&eval_hash, 30, "left"),
-                                rec_call(&eval_hash, 30, "right"),
+                            match_arm_payload(
+                                "subtract",
+                                30,
+                                "bin",
+                                sub(
+                                    rec_call(&eval_hash, 30, "left"),
+                                    rec_call(&eval_hash, 30, "right"),
+                                ),
                             ),
-                        ),
-                        match_arm_payload(
-                            "multiply",
-                            40,
-                            "bin",
-                            mul(
-                                rec_call(&eval_hash, 40, "left"),
-                                rec_call(&eval_hash, 40, "right"),
+                            match_arm_payload(
+                                "multiply",
+                                40,
+                                "bin",
+                                mul(
+                                    rec_call(&eval_hash, 40, "left"),
+                                    rec_call(&eval_hash, 40, "right"),
+                                ),
                             ),
-                        ),
-                        match_arm_payload(
-                            "divide",
-                            50,
-                            "bin",
-                            div(
-                                rec_call(&eval_hash, 50, "left"),
-                                rec_call(&eval_hash, 50, "right"),
+                            match_arm_payload(
+                                "divide",
+                                50,
+                                "bin",
+                                div(
+                                    rec_call(&eval_hash, 50, "left"),
+                                    rec_call(&eval_hash, 50, "right"),
+                                ),
                             ),
-                        ),
-                        match_arm_payload(
-                            "remainder",
-                            60,
-                            "bin",
-                            rem(
-                                rec_call(&eval_hash, 60, "left"),
-                                rec_call(&eval_hash, 60, "right"),
+                            match_arm_payload(
+                                "remainder",
+                                60,
+                                "bin",
+                                rem(
+                                    rec_call(&eval_hash, 60, "left"),
+                                    rec_call(&eval_hash, 60, "right"),
+                                ),
                             ),
-                        ),
-                    ],
-                    Some(num(0)),
-                )),
-            })),
-            module_definition_event_hash: EventHashId::from_bytes(&[0u8; 32]),
+                        ],
+                        Some(num(0)),
+                    )),
+                })),
+            }],
         }),
     };
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    let commit_hash = EventHashId::from_bytes(&[203u8; 32]);
     let events: Vec<crate::app_state::EventWithHash> =
-        vec![(eval_hash.clone(), Ok((dummy_sig, eval_event)))];
+        vec![(commit_hash, Ok((dummy_sig, eval_event)))];
 
     // Build AST: ((100 - (10 * 3)) + (50 / 2)) + (17 % 5)
     // 10 * 3 = 30
@@ -846,44 +857,54 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
 fn test_part_reference_content_hash_version_locking() {
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
-    let part_a_hash = definy_event::EventHashId::from_bytes(&[101u8; 32]);
+    let mod_id = definy_event::event::derive_module_id(&dummy_account, "math");
+    let part_a_hash = definy_event::event::derive_module_part_id(&mod_id, "a");
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
 
     // 1. パーツ A の初期定義: 10 (v1)
     let expr_v1 = Expression::Number(NumberExpression { value: 10 });
     let content_hash_v1 = definy_event::ContentHash::from_expression(&expr_v1).unwrap();
-
-    let def_a_event = Event {
+    let commit_1_hash = definy_event::EventHashId::from_bytes(&[101u8; 32]);
+    let commit_1_event = Event {
         account_id: dummy_account.clone(),
         time: chrono::DateTime::UNIX_EPOCH,
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: "a".into(),
-            part_type: Some(PartType::Number),
-            description: Description::Plain("part a v1".into()),
-            expression: Some(expr_v1),
-            module_definition_event_hash: definy_event::EventHashId::from_bytes(&[0u8; 32]),
+        content: EventContent::ModuleCommit(ModuleCommitEvent {
+            module_name: "math".into(),
+            module_description: "".into(),
+            parent_commit_hash: None,
+            message: "v1".into(),
+            parts: vec![ModulePartEntry {
+                name: "a".into(),
+                part_type: Some(PartType::Number),
+                description: Description::Plain("part a v1".into()),
+                expression: Some(expr_v1),
+            }],
         }),
     };
 
     // 2. パーツ A の更新: 999 (v2)
     let expr_v2 = Expression::Number(NumberExpression { value: 999 });
-    let update_a_hash = definy_event::EventHashId::from_bytes(&[102u8; 32]);
-    let update_a_event = Event {
+    let commit_2_hash = definy_event::EventHashId::from_bytes(&[102u8; 32]);
+    let commit_2_event = Event {
         account_id: dummy_account,
         time: chrono::DateTime::UNIX_EPOCH + chrono::Duration::seconds(10),
-        content: EventContent::PartUpdate(PartUpdateEvent {
-            part_name: "a".into(),
-            part_description: Description::Plain("part a v2".into()),
-            part_definition_event_hash: part_a_hash.clone(),
-            part_type: Some(PartType::Number),
-            expression: Some(expr_v2),
-            module_definition_event_hash: definy_event::EventHashId::from_bytes(&[0u8; 32]),
+        content: EventContent::ModuleCommit(ModuleCommitEvent {
+            module_name: "math".into(),
+            module_description: "".into(),
+            parent_commit_hash: Some(commit_1_hash.clone()),
+            message: "v2".into(),
+            parts: vec![ModulePartEntry {
+                name: "a".into(),
+                part_type: Some(PartType::Number),
+                description: Description::Plain("part a v2".into()),
+                expression: Some(expr_v2),
+            }],
         }),
     };
 
     let events: Vec<crate::app_state::EventWithHash> = vec![
-        (part_a_hash.clone(), Ok((dummy_sig, def_a_event))),
-        (update_a_hash, Ok((dummy_sig, update_a_event))),
+        (commit_1_hash, Ok((dummy_sig, commit_1_event))),
+        (commit_2_hash, Ok((dummy_sig, commit_2_event))),
     ];
 
     // 3. パターン1: content_hash で v1 を固定ロックした参照: A (locked v1) + 5 -> 10 + 5 = 15
@@ -917,7 +938,6 @@ fn test_part_reference_content_hash_version_locking() {
 fn test_module_commit_batch_parts_projection_and_eval() {
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
-    let mod_hash = definy_event::EventHashId::from_bytes(&[50u8; 32]);
     let commit_hash = definy_event::EventHashId::from_bytes(&[51u8; 32]);
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
 
@@ -937,7 +957,8 @@ fn test_module_commit_batch_parts_projection_and_eval() {
         account_id: dummy_account,
         time: chrono::DateTime::UNIX_EPOCH,
         content: EventContent::ModuleCommit(ModuleCommitEvent {
-            module_definition_event_hash: mod_hash.clone(),
+            module_name: "math".into(),
+            module_description: "".into(),
             parent_commit_hash: None,
             message: "Initial commit with math functions".into(),
             parts: vec![

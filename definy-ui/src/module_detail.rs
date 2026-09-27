@@ -264,12 +264,26 @@ fn ModuleEditorCard(
                         }
                         let force_offline = state_val.force_offline;
                         let def_hash = definition_event_hash.clone();
+                        let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
+                        let parts: Vec<definy_event::event::ModulePartEntry> = existing_parts
+                            .into_iter()
+                            .filter(|p| p.module_definition_event_hash == def_hash)
+                            .map(|p| definy_event::event::ModulePartEntry {
+                                name: p.part_name.into(),
+                                part_type: p.part_type,
+                                description: p.part_description,
+                                expression: p.expression,
+                            })
+                            .collect();
+                        let latest_commit = Some(module_snapshot.latest_event_hash.clone());
                         spawn(async move {
                             let record_opt = crate::event_submit::submit_event(
-                                    definy_event::event::EventContent::ModuleUpdate(definy_event::event::ModuleUpdateEvent {
+                                    definy_event::event::EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
                                         module_name: name.into(),
                                         module_description: desc.into(),
-                                        module_definition_event_hash: def_hash,
+                                        parent_commit_hash: latest_commit,
+                                        message: "Update module info".into(),
+                                        parts,
                                     }),
                                     key,
                                     force_offline,

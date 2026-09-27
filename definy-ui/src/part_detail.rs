@@ -212,18 +212,46 @@ fn PartEditorCard(
                 ));
                 return;
             };
+            let module_snapshot =
+                crate::module_projection::find_module_snapshot(&state_val, &mod_hash);
+            let Some(m) = module_snapshot else {
+                submit_result.set(Some("Module not found".to_string()));
+                return;
+            };
+
+            let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
+            let target_id = definition_event_hash.clone();
+            let mut parts: Vec<definy_event::event::ModulePartEntry> = existing_parts
+                .into_iter()
+                .filter(|p| {
+                    p.module_definition_event_hash == m.definition_event_hash
+                        && p.definition_event_hash != target_id
+                })
+                .map(|p| definy_event::event::ModulePartEntry {
+                    name: p.part_name.into(),
+                    part_type: p.part_type,
+                    description: p.part_description,
+                    expression: p.expression,
+                })
+                .collect();
+
+            parts.push(definy_event::event::ModulePartEntry {
+                name: name.clone().into(),
+                part_type: type_val,
+                description: desc.into(),
+                expression: expr_val,
+            });
+
             let force_offline = state_val.force_offline;
-            let def_hash = definition_event_hash.clone();
             spawn(async move {
                 let record_opt = crate::event_submit::submit_event(
-                    definy_event::event::EventContent::PartUpdate(
-                        definy_event::event::PartUpdateEvent {
-                            part_name: name.into(),
-                            part_description: desc.into(),
-                            part_definition_event_hash: def_hash,
-                            part_type: type_val,
-                            expression: expr_val,
-                            module_definition_event_hash: mod_hash,
+                    definy_event::event::EventContent::ModuleCommit(
+                        definy_event::event::ModuleCommitEvent {
+                            module_name: m.module_name.into(),
+                            module_description: m.module_description,
+                            parent_commit_hash: Some(m.latest_event_hash),
+                            message: format!("Update part '{}'", name).into(),
+                            parts,
                         },
                     ),
                     key,

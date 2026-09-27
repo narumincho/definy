@@ -297,15 +297,7 @@ fn next_state_ensure_cache(state: &mut AppState) {
         .values()
         .filter_map(|ev| match ev {
             Ok((_, event)) => match &event.content {
-                definy_event::event::EventContent::PartDefinition(p) => {
-                    Some(p.module_definition_event_hash.clone())
-                }
-                definy_event::event::EventContent::PartUpdate(u) => {
-                    Some(u.part_definition_event_hash.clone())
-                }
-                definy_event::event::EventContent::ModuleUpdate(u) => {
-                    Some(u.module_definition_event_hash.clone())
-                }
+                definy_event::event::EventContent::ModuleCommit(c) => c.parent_commit_hash.clone(),
                 _ => None,
             },
             _ => None,

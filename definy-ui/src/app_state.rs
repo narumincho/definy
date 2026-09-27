@@ -253,10 +253,6 @@ impl AppState {
                         .entry(event.account_id.clone())
                         .or_insert_with(|| change_profile_event.account_name.clone());
                 }
-                definy_event::event::EventContent::PartDefinition(_) => {}
-                definy_event::event::EventContent::PartUpdate(_) => {}
-                definy_event::event::EventContent::ModuleDefinition(_) => {}
-                definy_event::event::EventContent::ModuleUpdate(_) => {}
                 definy_event::event::EventContent::ModuleCommit(_) => {}
             }
         }

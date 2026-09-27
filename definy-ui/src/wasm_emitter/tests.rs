@@ -316,33 +316,40 @@ fn test_compile_and_execute_part_reference_function() {
     // Expression: Call(PartReference(double), 21) -> 42
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
-    let part_def_hash = EventHashId::from_bytes(&[42u8; 32]);
+    let mod_id = definy_event::event::derive_module_id(&dummy_account, "math");
+    let part_def_hash = definy_event::event::derive_module_part_id(&mod_id, "double");
 
     let part_event = Event {
         account_id: dummy_account,
         time: chrono::DateTime::UNIX_EPOCH,
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: "double".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Number),
-            }),
-            description: Description::Plain("".into()),
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "x".into(),
-                body: Box::new(Expression::Multiply(MultiplyExpression {
-                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                    right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+        content: EventContent::ModuleCommit(ModuleCommitEvent {
+            module_name: "math".into(),
+            module_description: "".into(),
+            parent_commit_hash: None,
+            message: "Add double".into(),
+            parts: vec![ModulePartEntry {
+                name: "double".into(),
+                part_type: Some(PartType::Function {
+                    parameter: Box::new(PartType::Number),
+                    return_type: Box::new(PartType::Number),
+                }),
+                description: Description::Plain("".into()),
+                expression: Some(Expression::Function(FunctionExpression {
+                    parameter_id: 1,
+                    parameter_name: "x".into(),
+                    body: Box::new(Expression::Multiply(MultiplyExpression {
+                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                        right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+                    })),
                 })),
-            })),
-            module_definition_event_hash: EventHashId::from_bytes(&[0u8; 32]),
+            }],
         }),
     };
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    let commit_hash = EventHashId::from_bytes(&[42u8; 32]);
     let events: Vec<crate::app_state::EventWithHash> =
-        vec![(part_def_hash.clone(), Ok((dummy_sig, part_event)))];
+        vec![(commit_hash, Ok((dummy_sig, part_event)))];
 
     let expr = Expression::Call(CallExpression {
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
@@ -432,51 +439,66 @@ fn test_compile_and_execute_record_get_with_variable() {
 fn test_compile_and_execute_recursive_function_part() {
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
-    let fact_hash = EventHashId::from_bytes(&[99u8; 32]);
+    let mod_id = definy_event::event::derive_module_id(&dummy_account, "math");
+    let fact_hash = definy_event::event::derive_module_part_id(&mod_id, "factorial");
 
     // factorial: n -> if n <= 1 then 1 else n * factorial(n - 1)
     let fact_event = Event {
         account_id: dummy_account,
         time: chrono::DateTime::UNIX_EPOCH,
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: "factorial".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Number),
-            }),
-            description: Description::Plain("factorial function".into()),
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "n".into(),
-                body: Box::new(Expression::If(IfExpression {
-                    condition: Box::new(Expression::LessThanOrEqual(LessThanOrEqualExpression {
-                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                    })),
-                    then_expr: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                    else_expr: Box::new(Expression::Multiply(MultiplyExpression {
-                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                        right: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::PartReference(
-                                PartReferenceExpression::new(fact_hash.clone()),
-                            )),
-                            argument: Box::new(Expression::Subtract(SubtractExpression {
+        content: EventContent::ModuleCommit(ModuleCommitEvent {
+            module_name: "math".into(),
+            module_description: "".into(),
+            parent_commit_hash: None,
+            message: "Add factorial".into(),
+            parts: vec![ModulePartEntry {
+                name: "factorial".into(),
+                part_type: Some(PartType::Function {
+                    parameter: Box::new(PartType::Number),
+                    return_type: Box::new(PartType::Number),
+                }),
+                description: Description::Plain("factorial function".into()),
+                expression: Some(Expression::Function(FunctionExpression {
+                    parameter_id: 1,
+                    parameter_name: "n".into(),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::LessThanOrEqual(
+                            LessThanOrEqualExpression {
                                 left: Box::new(Expression::Variable(VariableExpression {
                                     variable_id: 1,
                                 })),
                                 right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                            },
+                        )),
+                        then_expr: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                        else_expr: Box::new(Expression::Multiply(MultiplyExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 1,
+                            })),
+                            right: Box::new(Expression::Call(CallExpression {
+                                function: Box::new(Expression::PartReference(
+                                    PartReferenceExpression::new(fact_hash.clone()),
+                                )),
+                                argument: Box::new(Expression::Subtract(SubtractExpression {
+                                    left: Box::new(Expression::Variable(VariableExpression {
+                                        variable_id: 1,
+                                    })),
+                                    right: Box::new(Expression::Number(NumberExpression {
+                                        value: 1,
+                                    })),
+                                })),
                             })),
                         })),
                     })),
                 })),
-            })),
-            module_definition_event_hash: EventHashId::from_bytes(&[0u8; 32]),
+            }],
         }),
     };
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    let commit_hash = EventHashId::from_bytes(&[99u8; 32]);
     let events: Vec<crate::app_state::EventWithHash> =
-        vec![(fact_hash.clone(), Ok((dummy_sig, fact_event)))];
+        vec![(commit_hash, Ok((dummy_sig, fact_event)))];
 
     // Call factorial(5) -> 120
     let call_fact = Expression::Call(CallExpression {
@@ -495,8 +517,9 @@ fn test_compile_and_execute_recursive_function_part() {
 fn test_compile_and_execute_definy_eval_ast_function() {
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
-    let expr_hash = EventHashId::from_bytes(&[101u8; 32]);
-    let eval_hash = EventHashId::from_bytes(&[102u8; 32]);
+    let mod_id = definy_event::event::derive_module_id(&dummy_account, "core");
+    let expr_hash = definy_event::event::derive_module_part_id(&mod_id, "expression");
+    let eval_hash = definy_event::event::derive_module_part_id(&mod_id, "eval_ast");
 
     // eval_ast: fn e -> match e {
     //      number => n,
@@ -507,104 +530,112 @@ fn test_compile_and_execute_definy_eval_ast_function() {
     let eval_event = Event {
         account_id: dummy_account,
         time: chrono::DateTime::UNIX_EPOCH,
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: "eval_ast".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::TypePart(expr_hash.clone())),
-                return_type: Box::new(PartType::Number),
-            }),
-            description: Description::Plain("eval AST".into()),
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1, // e
-                parameter_name: "e".into(),
-                body: Box::new(Expression::Match(MatchExpression {
-                    target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                    arms: vec![
-                        MatchArm {
-                            tag: "number".into(),
-                            variable_id: Some(10), // n
-                            variable_name: Some("n".into()),
-                            body: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 10,
-                            })),
-                        },
-                        MatchArm {
-                            tag: "add".into(),
-                            variable_id: Some(20), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Add(AddExpression {
-                                left: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression::new(eval_hash.clone()),
-                                    )),
-                                    argument: Box::new(Expression::RecordGet(
-                                        RecordGetExpression {
-                                            record: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 20 },
-                                            )),
-                                            key: "left".into(),
-                                        },
-                                    )),
+        content: EventContent::ModuleCommit(ModuleCommitEvent {
+            module_name: "core".into(),
+            module_description: "".into(),
+            parent_commit_hash: None,
+            message: "Add eval_ast".into(),
+            parts: vec![ModulePartEntry {
+                name: "eval_ast".into(),
+                part_type: Some(PartType::Function {
+                    parameter: Box::new(PartType::TypePart(expr_hash.clone())),
+                    return_type: Box::new(PartType::Number),
+                }),
+                description: Description::Plain("eval AST".into()),
+                expression: Some(Expression::Function(FunctionExpression {
+                    parameter_id: 1, // e
+                    parameter_name: "e".into(),
+                    body: Box::new(Expression::Match(MatchExpression {
+                        target: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 1,
+                        })),
+                        arms: vec![
+                            MatchArm {
+                                tag: "number".into(),
+                                variable_id: Some(10), // n
+                                variable_name: Some("n".into()),
+                                body: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 10,
                                 })),
-                                right: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression::new(eval_hash.clone()),
-                                    )),
-                                    argument: Box::new(Expression::RecordGet(
-                                        RecordGetExpression {
-                                            record: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 20 },
-                                            )),
-                                            key: "right".into(),
-                                        },
-                                    )),
+                            },
+                            MatchArm {
+                                tag: "add".into(),
+                                variable_id: Some(20), // bin
+                                variable_name: Some("bin".into()),
+                                body: Box::new(Expression::Add(AddExpression {
+                                    left: Box::new(Expression::Call(CallExpression {
+                                        function: Box::new(Expression::PartReference(
+                                            PartReferenceExpression::new(eval_hash.clone()),
+                                        )),
+                                        argument: Box::new(Expression::RecordGet(
+                                            RecordGetExpression {
+                                                record: Box::new(Expression::Variable(
+                                                    VariableExpression { variable_id: 20 },
+                                                )),
+                                                key: "left".into(),
+                                            },
+                                        )),
+                                    })),
+                                    right: Box::new(Expression::Call(CallExpression {
+                                        function: Box::new(Expression::PartReference(
+                                            PartReferenceExpression::new(eval_hash.clone()),
+                                        )),
+                                        argument: Box::new(Expression::RecordGet(
+                                            RecordGetExpression {
+                                                record: Box::new(Expression::Variable(
+                                                    VariableExpression { variable_id: 20 },
+                                                )),
+                                                key: "right".into(),
+                                            },
+                                        )),
+                                    })),
                                 })),
-                            })),
-                        },
-                        MatchArm {
-                            tag: "multiply".into(),
-                            variable_id: Some(30), // bin
-                            variable_name: Some("bin".into()),
-                            body: Box::new(Expression::Multiply(MultiplyExpression {
-                                left: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression::new(eval_hash.clone()),
-                                    )),
-                                    argument: Box::new(Expression::RecordGet(
-                                        RecordGetExpression {
-                                            record: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 30 },
-                                            )),
-                                            key: "left".into(),
-                                        },
-                                    )),
+                            },
+                            MatchArm {
+                                tag: "multiply".into(),
+                                variable_id: Some(30), // bin
+                                variable_name: Some("bin".into()),
+                                body: Box::new(Expression::Multiply(MultiplyExpression {
+                                    left: Box::new(Expression::Call(CallExpression {
+                                        function: Box::new(Expression::PartReference(
+                                            PartReferenceExpression::new(eval_hash.clone()),
+                                        )),
+                                        argument: Box::new(Expression::RecordGet(
+                                            RecordGetExpression {
+                                                record: Box::new(Expression::Variable(
+                                                    VariableExpression { variable_id: 30 },
+                                                )),
+                                                key: "left".into(),
+                                            },
+                                        )),
+                                    })),
+                                    right: Box::new(Expression::Call(CallExpression {
+                                        function: Box::new(Expression::PartReference(
+                                            PartReferenceExpression::new(eval_hash.clone()),
+                                        )),
+                                        argument: Box::new(Expression::RecordGet(
+                                            RecordGetExpression {
+                                                record: Box::new(Expression::Variable(
+                                                    VariableExpression { variable_id: 30 },
+                                                )),
+                                                key: "right".into(),
+                                            },
+                                        )),
+                                    })),
                                 })),
-                                right: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression::new(eval_hash.clone()),
-                                    )),
-                                    argument: Box::new(Expression::RecordGet(
-                                        RecordGetExpression {
-                                            record: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 30 },
-                                            )),
-                                            key: "right".into(),
-                                        },
-                                    )),
-                                })),
-                            })),
-                        },
-                    ],
-                    default: Some(Box::new(Expression::Number(NumberExpression { value: 0 }))),
+                            },
+                        ],
+                        default: Some(Box::new(Expression::Number(NumberExpression { value: 0 }))),
+                    })),
                 })),
-            })),
-            module_definition_event_hash: EventHashId::from_bytes(&[0u8; 32]),
+            }],
         }),
     };
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    let commit_hash = EventHashId::from_bytes(&[103u8; 32]);
     let events: Vec<crate::app_state::EventWithHash> =
-        vec![(eval_hash.clone(), Ok((dummy_sig, eval_event)))];
+        vec![(commit_hash, Ok((dummy_sig, eval_event)))];
 
     // Build AST: (10 + (3 * 4))
     let num_10 = Expression::Variant(VariantExpression {

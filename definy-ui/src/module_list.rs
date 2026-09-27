@@ -231,9 +231,12 @@ fn ModuleCreateForm(
                     let force_offline = state_val.force_offline;
                     spawn(async move {
                         let record_opt = crate::event_submit::submit_event(
-                                definy_event::event::EventContent::ModuleDefinition(definy_event::event::ModuleDefinitionEvent {
+                                definy_event::event::EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
                                     module_name: name_str.into(),
-                                    description: desc_str.into(),
+                                    module_description: desc_str.into(),
+                                    parent_commit_hash: None,
+                                    message: "Initial commit".into(),
+                                    parts: vec![],
                                 }),
                                 key,
                                 force_offline,

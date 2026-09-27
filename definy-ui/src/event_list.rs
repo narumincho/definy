@@ -30,31 +30,10 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                 .to_string(),
         ),
         (
-            "part_definition".to_string(),
+            "module_commit".to_string(),
             context
                 .language
-                .label("Part Definition", "パーツ定義", "Parto-difino")
-                .to_string(),
-        ),
-        (
-            "part_update".to_string(),
-            context
-                .language
-                .label("Part Update", "パーツ更新", "Parto-ĝisdatigo")
-                .to_string(),
-        ),
-        (
-            "module_definition".to_string(),
-            context
-                .language
-                .label("Module Definition", "モジュール定義", "Modulo-difino")
-                .to_string(),
-        ),
-        (
-            "module_update".to_string(),
-            context
-                .language
-                .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
+                .label("Module Commit", "モジュールコミット", "Modulo-enmeto")
                 .to_string(),
         ),
     ];
@@ -103,10 +82,7 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                         let event_type = match _val.as_str() {
                             "create_account" => Some(EventType::CreateAccount),
                             "change_profile" => Some(EventType::ChangeProfile),
-                            "part_definition" => Some(EventType::PartDefinition),
-                            "part_update" => Some(EventType::PartUpdate),
-                            "module_definition" => Some(EventType::ModuleDefinition),
-                            "module_update" => Some(EventType::ModuleUpdate),
+                            "module_commit" => Some(EventType::ModuleCommit),
                             _ => None,
                         };
                         #[cfg(target_arch = "wasm32")]
@@ -315,120 +291,7 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
                 }
             }
         },
-        EventContent::PartDefinition(part_definition_event) => {
-            let part_name = part_definition_event.part_name.to_string();
-            let part_type_badge = part_definition_event
-                .part_type
-                .as_ref()
-                .map(ToString::to_string);
-            let desc = part_definition_event
-                .description
-                .to_display_string(context.language.to_code());
 
-            rsx! {
-                div { style: "display: grid; gap: 0.2rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
-                        a {
-                            href: context.href_with_lang(crate::Location::Part(hash.clone())),
-                            style: "font-size: 0.95rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                            "{part_name}"
-                        }
-                        {
-                            part_type_badge
-                                .as_ref()
-                                .map(|badge| {
-                                    let badge_cls = part_type_badge_class(badge);
-                                    rsx! {
-                                        span { class: "{badge_cls}", "{badge}" }
-                                    }
-                                })
-                        }
-                    }
-                    if !desc.is_empty() {
-                        div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
-                            "{desc}"
-                        }
-                    }
-                }
-            }
-        }
-        EventContent::PartUpdate(part_update_event) => {
-            let part_name = part_update_event.part_name.to_string();
-            let base_hash = part_update_event.part_definition_event_hash.clone();
-
-            rsx! {
-                div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
-                    span { style: "color: var(--text-secondary); font-size: 0.82rem;",
-                        {
-                            context
-                                .language
-                                .label("Updated part:", "パーツを更新:", "Ĝisdatigis parton:")
-                        }
-                    }
-                    a {
-                        href: context.href_with_lang(crate::Location::Part(base_hash)),
-                        style: "font-weight: 600; color: var(--text); text-decoration: none;",
-                        "{part_name}"
-                    }
-                }
-            }
-        }
-        EventContent::ModuleDefinition(module_definition_event) => {
-            let mod_name = module_definition_event.module_name.to_string();
-            let desc = module_definition_event
-                .description
-                .to_display_string(context.language.to_code());
-
-            rsx! {
-                div { style: "display: grid; gap: 0.2rem;",
-                    a {
-                        href: context.href_with_lang(crate::Location::Module(hash.clone())),
-                        style: "font-size: 0.95rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                        "{mod_name}"
-                    }
-                    if !desc.is_empty() {
-                        div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
-                            "{desc}"
-                        }
-                    }
-                }
-            }
-        }
-        EventContent::ModuleUpdate(module_update_event) => {
-            let mod_name = module_update_event.module_name.to_string();
-            let base_hash = module_update_event.module_definition_event_hash.clone();
-            let desc = module_update_event
-                .module_description
-                .to_display_string(context.language.to_code());
-
-            rsx! {
-                div { style: "display: grid; gap: 0.2rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
-                        span { style: "color: var(--text-secondary); font-size: 0.82rem;",
-                            {
-                                context
-                                    .language
-                                    .label(
-                                        "Updated module:",
-                                        "モジュールを更新:",
-                                        "Ĝisdatigis modulon:",
-                                    )
-                            }
-                        }
-                        a {
-                            href: context.href_with_lang(crate::Location::Module(base_hash)),
-                            style: "font-weight: 600; color: var(--text); text-decoration: none;",
-                            "{mod_name}"
-                        }
-                    }
-                    if !desc.is_empty() {
-                        div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
-                            "{desc}"
-                        }
-                    }
-                }
-            }
-        }
         EventContent::ModuleCommit(module_commit_event) => {
             let msg = &module_commit_event.message;
             let parts_count = module_commit_event.parts.len();
@@ -477,34 +340,6 @@ fn event_type_badge_info(content: &EventContent, context: &PageContext) -> (Stri
                 .label("Change Profile", "プロフィール変更", "Ŝanĝi profilon")
                 .to_string(),
             "badge badge-string",
-        ),
-        EventContent::PartDefinition(_) => (
-            context
-                .language
-                .label("Part Definition", "パーツ定義", "Parto-difino")
-                .to_string(),
-            "badge badge-type",
-        ),
-        EventContent::PartUpdate(_) => (
-            context
-                .language
-                .label("Part Update", "パーツ更新", "Parto-ĝisdatigo")
-                .to_string(),
-            "badge badge-func",
-        ),
-        EventContent::ModuleDefinition(_) => (
-            context
-                .language
-                .label("Module Definition", "モジュール定義", "Modulo-difino")
-                .to_string(),
-            "badge badge-number",
-        ),
-        EventContent::ModuleUpdate(_) => (
-            context
-                .language
-                .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
-                .to_string(),
-            "badge badge-number",
         ),
         EventContent::ModuleCommit(_) => (
             context

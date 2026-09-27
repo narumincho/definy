@@ -4,8 +4,8 @@ use std::str::FromStr;
 use definy_event::{
     EventHashId,
     event::{
-        AccountId, Description, Event, EventContent, Expression, ModuleDefinitionEvent,
-        PartDefinitionEvent, PartType, PartUpdateEvent,
+        AccountId, Description, Event, EventContent, Expression, ModuleCommitEvent,
+        ModulePartEntry, PartType, derive_module_id, derive_module_part_id,
     },
 };
 use definy_ui::AppState as UiAppState;
@@ -343,9 +343,12 @@ async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         None => return ToolCallResult::error("Missing 'description' argument"),
     };
 
-    let content = EventContent::ModuleDefinition(ModuleDefinitionEvent {
+    let content = EventContent::ModuleCommit(ModuleCommitEvent {
         module_name: name.clone().into(),
-        description: Description::Plain(desc.into()),
+        module_description: Description::Plain(desc.into()),
+        parent_commit_hash: None,
+        message: "Initial commit".into(),
+        parts: vec![],
     });
 
     let hash = match sign_and_save_ai_event(content, db).await {
@@ -353,9 +356,13 @@ async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Err(e) => return ToolCallResult::error(e),
     };
 
+    let (_, account_id) = get_signing_key_and_account();
+    let module_id = derive_module_id(&account_id, &name);
+
     let res = json!({
         "status": "created",
-        "module_hash": hash.to_string(),
+        "module_id": module_id.to_string(),
+        "commit_hash": hash.to_string(),
         "module_name": name
     });
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
@@ -399,25 +406,41 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Err(e) => return ToolCallResult::error(e),
     };
     let modules = collect_module_snapshots(&state);
-    let module_hash = match modules.iter().find(|m| {
+    let module = match modules.iter().find(|m| {
         m.module_name == module_ident || m.definition_event_hash.to_string() == module_ident
     }) {
-        Some(m) => m.definition_event_hash.clone(),
-        None => {
-            if let Ok(h) = EventHashId::from_str(module_ident) {
-                h
-            } else {
-                return ToolCallResult::error(format!("Module '{}' not found", module_ident));
-            }
-        }
+        Some(m) => m.clone(),
+        None => return ToolCallResult::error(format!("Module '{}' not found", module_ident)),
     };
 
-    let content = EventContent::PartDefinition(PartDefinitionEvent {
-        part_name: name.clone().into(),
-        description: Description::Plain(desc.into()),
-        module_definition_event_hash: module_hash,
+    // 既存パーツ一覧を取得し、新パーツを追加
+    let existing_parts = collect_part_snapshots(&state);
+    let mut parts: Vec<ModulePartEntry> = existing_parts
+        .into_iter()
+        .filter(|p| {
+            p.module_definition_event_hash == module.definition_event_hash && p.part_name != name
+        })
+        .map(|p| ModulePartEntry {
+            name: p.part_name.into(),
+            part_type: p.part_type,
+            description: p.part_description,
+            expression: p.expression,
+        })
+        .collect();
+
+    parts.push(ModulePartEntry {
+        name: name.clone().into(),
         part_type,
+        description: Description::Plain(desc.into()),
         expression: Some(expression),
+    });
+
+    let content = EventContent::ModuleCommit(ModuleCommitEvent {
+        module_name: module.module_name.clone().into(),
+        module_description: module.module_description.clone(),
+        parent_commit_hash: Some(module.latest_event_hash.clone()),
+        message: format!("Add part '{}'", name).into(),
+        parts,
     });
 
     let hash = match sign_and_save_ai_event(content, db).await {
@@ -425,9 +448,12 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Err(e) => return ToolCallResult::error(e),
     };
 
+    let part_id = derive_module_part_id(&module.definition_event_hash, &name);
+
     let res = json!({
         "status": "created",
-        "part_definition_hash": hash.to_string(),
+        "part_id": part_id.to_string(),
+        "commit_hash": hash.to_string(),
         "part_name": name
     });
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
@@ -446,6 +472,14 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     let part = match find_part(&state, part_ident) {
         Some(p) => p,
         None => return ToolCallResult::error(format!("Part '{}' not found", part_ident)),
+    };
+
+    let module = match definy_ui::module_projection::find_module_snapshot(
+        &state,
+        &part.module_definition_event_hash,
+    ) {
+        Some(m) => m,
+        None => return ToolCallResult::error("Module for part not found"),
     };
 
     let name = args.get("name").and_then(|v| v.as_str()).map(String::from);
@@ -480,25 +514,47 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         None => None,
     };
 
-    let part_name: Box<str> = name.unwrap_or_else(|| part.part_name.clone()).into();
-    let part_description: Description = desc.unwrap_or_else(|| part.part_description.clone());
-    let final_part_type = match part_type {
+    let target_name = part.part_name.clone();
+    let new_name = name.unwrap_or_else(|| target_name.clone());
+    let final_desc = desc.unwrap_or_else(|| part.part_description.clone());
+    let final_type = match part_type {
         Some(pt) => pt,
         None => part.part_type.clone(),
     };
-    let final_expression: Option<Expression> = if let Some(opt) = expression {
+    let final_expr = if let Some(opt) = expression {
         opt
     } else {
         part.expression.clone()
     };
 
-    let content = EventContent::PartUpdate(PartUpdateEvent {
-        part_definition_event_hash: part.definition_event_hash.clone(),
-        part_name,
-        part_description,
-        part_type: final_part_type,
-        expression: final_expression,
-        module_definition_event_hash: part.module_definition_event_hash.clone(),
+    let existing_parts = collect_part_snapshots(&state);
+    let mut parts: Vec<ModulePartEntry> = existing_parts
+        .into_iter()
+        .filter(|p| {
+            p.module_definition_event_hash == module.definition_event_hash
+                && p.part_name != target_name
+        })
+        .map(|p| ModulePartEntry {
+            name: p.part_name.into(),
+            part_type: p.part_type,
+            description: p.part_description,
+            expression: p.expression,
+        })
+        .collect();
+
+    parts.push(ModulePartEntry {
+        name: new_name.clone().into(),
+        part_type: final_type,
+        description: final_desc,
+        expression: final_expr,
+    });
+
+    let content = EventContent::ModuleCommit(ModuleCommitEvent {
+        module_name: module.module_name.clone().into(),
+        module_description: module.module_description.clone(),
+        parent_commit_hash: Some(module.latest_event_hash.clone()),
+        message: format!("Update part '{}'", new_name).into(),
+        parts,
     });
 
     let hash = match sign_and_save_ai_event(content, db).await {
@@ -508,8 +564,8 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
 
     let res = json!({
         "status": "updated",
-        "update_event_hash": hash.to_string(),
-        "part_definition_hash": part.definition_event_hash.to_string()
+        "commit_hash": hash.to_string(),
+        "part_id": part.definition_event_hash.to_string()
     });
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }

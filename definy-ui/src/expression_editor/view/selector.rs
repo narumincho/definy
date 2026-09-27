@@ -906,54 +906,50 @@ mod tests {
     #[test]
     fn test_selector_options_with_snapshots_has_part_links() {
         use definy_event::event::{
-            AccountId, Description, Event, EventContent, PartDefinitionEvent, PartType,
+            AccountId, Description, Event, EventContent, ModuleCommitEvent, ModulePartEntry,
+            PartType,
         };
 
         let mut state = AppState::default();
         let signing_key = ed25519_dalek::SigningKey::from_bytes(&[1u8; 32]);
         let account_id = AccountId(signing_key.verifying_key());
-        let dummy_module = EventHashId::from_bytes(&[2u8; 32]);
 
-        // 1. Part for "number" (Type)
-        let number_part_event = Event {
+        let commit_event = Event {
             account_id: account_id.clone(),
             time: chrono::DateTime::UNIX_EPOCH,
-            content: EventContent::PartDefinition(PartDefinitionEvent {
-                part_name: "number".into(),
-                part_type: Some(PartType::Type),
-                description: Description::localized(vec![("en", "number type")]),
-                expression: None,
-                module_definition_event_hash: dummy_module.clone(),
+            content: EventContent::ModuleCommit(ModuleCommitEvent {
+                module_name: "core".into(),
+                module_description: Description::localized(vec![("en", "core module")]),
+                parent_commit_hash: None,
+                message: "Initial commit".into(),
+                parts: vec![
+                    ModulePartEntry {
+                        name: "number".into(),
+                        part_type: Some(PartType::Type),
+                        description: Description::localized(vec![("en", "number type")]),
+                        expression: None,
+                    },
+                    ModulePartEntry {
+                        name: "number-literal".into(),
+                        part_type: Some(PartType::Number),
+                        description: Description::localized(vec![("en", "number literal")]),
+                        expression: Some(definy_event::event::Expression::Compiler(
+                            definy_event::event::CompilerBuiltin::NumberLiteral,
+                        )),
+                    },
+                ],
             }),
         };
-        let number_bytes =
-            definy_event::sign_and_serialize(number_part_event, &signing_key).unwrap();
-        let number_hash = EventHashId::from_bytes(&number_bytes);
+        let commit_bytes = definy_event::sign_and_serialize(commit_event, &signing_key).unwrap();
+        let commit_hash = EventHashId::from_bytes(&commit_bytes);
         state.event_cache.insert(
-            number_hash.clone(),
-            definy_event::verify_and_deserialize(&number_bytes),
+            commit_hash.clone(),
+            definy_event::verify_and_deserialize(&commit_bytes),
         );
 
-        // 2. Part for "number-literal" (Number)
-        let num_lit_event = Event {
-            account_id: account_id.clone(),
-            time: chrono::DateTime::UNIX_EPOCH,
-            content: EventContent::PartDefinition(PartDefinitionEvent {
-                part_name: "number-literal".into(),
-                part_type: Some(PartType::Number),
-                description: Description::localized(vec![("en", "number literal")]),
-                expression: Some(definy_event::event::Expression::Compiler(
-                    definy_event::event::CompilerBuiltin::NumberLiteral,
-                )),
-                module_definition_event_hash: dummy_module,
-            }),
-        };
-        let num_lit_bytes = definy_event::sign_and_serialize(num_lit_event, &signing_key).unwrap();
-        let num_lit_hash = EventHashId::from_bytes(&num_lit_bytes);
-        state.event_cache.insert(
-            num_lit_hash.clone(),
-            definy_event::verify_and_deserialize(&num_lit_bytes),
-        );
+        let mod_id = definy_event::event::derive_module_id(&account_id, "core");
+        let number_hash = definy_event::event::derive_module_part_id(&mod_id, "number");
+        let num_lit_hash = definy_event::event::derive_module_part_id(&mod_id, "number-literal");
 
         // When expecting Type: "number" part should be at the top
         let type_options = selector_options(

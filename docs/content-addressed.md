@@ -134,10 +134,32 @@ definy では、Git のディレクトリ（Tree）構造と同様に **「モ�
 
 ---
 
-## 7. 移行ロードマップ
+## 7. イベントモデルの整理（ModuleCommitEventへの一本化）
+
+イベントソーシングにおけるイベント種別を以下の3種類に一本化しました：
+
+1. **`CreateAccount`**: アカウント作成イベント
+2. **`ChangeProfile`**: プロフィール変更イベント
+3. **`ModuleCommit`**: モジュールのコミットイベント（複数パーツの一括作成・更新・削除・メッセージ）
+
+### 廃止されたイベント
+- `ModuleDefinition` / `ModuleUpdate`: モジュールのメタデータや変更はすべて `ModuleCommit` の親コミットチェーンとモジュール情報で管理。
+- `PartDefinition` / `PartUpdate`: 単一パーツごとの逐次イベントを廃止し、`ModuleCommit` 内の `parts: Vec<ModulePartEntry>` として一括コミット。
+
+### 決定論的 ID 生成
+コミット前にパーツ間の相互参照（再帰・相互再帰）を可能にするため、以下の決定論的ハッシュ関数を用いて一意な識別子を導出します：
+- `derive_module_id(account_id, module_name)`: アカウントIDとモジュール名から一意な `EventHashId` を導出
+- `derive_module_part_id(module_id, part_name)`: モジュールIDとパーツ名からモジュール内パーツの一意な `EventHashId` を導出
+
+これにより、循環依存（鶏と卵の問題）を完全に解消し、Git のリポジトリ/ファイルパスモデルと同様の直感的で安全な構造を実現しました。
+
+---
+
+## 8. 移行ロードマップ
 
 - **フェーズ 1**: `ContentHash` 型と、純粋な `Expression` / `PartType` からハッシュを計算する関数の実装 (`definy-event`)。(完了)
 - **フェーズ 2**: `PartReferenceExpression` での `ContentHash` 依存バージョン固定・解決・UI アップグレードの実装。(完了)
-- **フェーズ 3**: `ModuleCommitEvent`（複数パーツ一括送信・Tree 型コミット）の定義とプロジェクション・評価器の対応。(完了)
-- **フェーズ 4**: UI 上でのステージング・一括コミット送信画面の統合。
+- **フェーズ 3**: `ModuleCommitEvent` へのイベント一本化、決定論的 ID 導出、プロジェクション・評価器・DB マイグレーションの全面対応。(完了)
+- **フェーズ 4**: UI 上でのステージング・コミット履歴グラフの更なる拡充。
+
 
