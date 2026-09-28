@@ -97,6 +97,13 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
                 NavLink {
                     context: context.clone(),
+                    target: Location::About,
+                    label: "About",
+                    label_ja: "About",
+                    label_eo: "Pri",
+                }
+                NavLink {
+                    context: context.clone(),
                     target: Location::Settings,
                     label: "Settings",
                     label_ja: "設定",
@@ -178,6 +185,7 @@ fn NavLink(
                 Location::AccountList
             )
             | (Some(Location::ApiExplorer(_)), Location::ApiExplorer(_))
+            | (Some(Location::About), Location::About)
             | (
                 Some(Location::Settings | Location::TreeLayout | Location::LocalEventQueue),
                 Location::Settings

@@ -1,3 +1,4 @@
+mod about;
 mod account_detail;
 mod account_list;
 pub mod app_state;
@@ -155,6 +156,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::Settings) => {
             rsx! {
                 settings::SettingsView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::About) => {
+            rsx! {
+                about::AboutView { context: context.clone() }
             }
         }
         Some(Location::ApiExplorer(target_hash)) => {

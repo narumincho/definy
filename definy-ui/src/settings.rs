@@ -147,6 +147,35 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
                             }
                         }
 
+                        // definy についてカード
+                        a {
+                            href: context.href_with_lang(Location::About),
+                            class: "event-detail-card",
+                            style: "display: flex; flex-direction: column; gap: 0.5rem; padding: 1.1rem 1.2rem; text-decoration: none; color: inherit; transition: transform 0.15s ease, border-color 0.15s ease; border-radius: var(--radius-md);",
+                            div { style: "display: flex; align-items: center; justify-content: space-between;",
+                                div { style: "display: flex; align-items: center; gap: 0.6rem;",
+                                    span { style: "font-size: 1.35rem;", "✦" }
+                                    span { style: "font-size: 1rem; font-weight: 600; color: var(--text-primary);",
+                                        { context.language.label("About definy", "definy について", "Pri definy") }
+                                    }
+                                }
+                                span { style: "font-size: 0.85rem; color: var(--primary);",
+                                    "→"
+                                }
+                            }
+                            div { style: "font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;",
+                                {
+                                    context
+                                        .language
+                                        .label(
+                                            "Philosophy, Content-Addressed architecture, structured editing, and language features of definy.",
+                                            "definy の設計思想、コンテンツアドレスによる依存固定、構造化編集、言語機能の解説。",
+                                            "Filozofio, enhav-adresita arkitekturo, kaj lingvaj trajtoj de definy.",
+                                        )
+                                }
+                            }
+                        }
+
                         // Connect-RPC & CBOR Explorer カード
                         a {
                             href: context.href_with_lang(Location::ApiExplorer(None)),

@@ -451,6 +451,7 @@ pub enum Location {
     TreeLayout,
     Settings,
     ApiExplorer(Option<definy_event::EventHashId>),
+    About,
 }
 
 impl Location {
@@ -463,6 +464,7 @@ impl Location {
             Location::LocalEventQueue => "/local-events".to_string(),
             Location::TreeLayout => "/tree-layout".to_string(),
             Location::Settings => "/settings".to_string(),
+            Location::About => "/about".to_string(),
             Location::ApiExplorer(None) => "/api".to_string(),
             Location::ApiExplorer(Some(hash)) => format!("/api/{}", hash),
             Location::Module(hash) => format!("/modules/{}", hash),
@@ -482,6 +484,7 @@ impl Location {
             ["local-events"] => Some(Location::LocalEventQueue),
             ["tree-layout"] => Some(Location::TreeLayout),
             ["settings"] => Some(Location::Settings),
+            ["about"] => Some(Location::About),
             ["api"] => Some(Location::ApiExplorer(None)),
             ["api", hash_str] => Some(Location::ApiExplorer(Some(
                 EventHashId::from_str(hash_str).ok()?,
@@ -515,6 +518,7 @@ mod tests {
             Location::LocalEventQueue,
             Location::TreeLayout,
             Location::Settings,
+            Location::About,
             Location::ApiExplorer(None),
             Location::ApiExplorer(Some(
                 EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
