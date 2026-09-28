@@ -286,6 +286,15 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_value_type::create_value_type_part(
         &core_module_id,
     ));
+    core_parts.push(crate::builtin_type_ast::create_type_ast_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_ast::create_part_definition_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_ast::create_module_definition_part(
+        &core_module_id,
+    ));
     core_parts.push(crate::builtin_expression_type::create_eval_ast_part(
         &core_module_id,
     ));
@@ -574,6 +583,30 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         ),
     };
 
+    let std_parts = crate::builtin_std_functions::create_std_module_parts();
+    let std_module_commit = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(15),
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_event::event::ModuleCommitEvent {
+                module_name: "std".into(),
+                module_description: definy_event::event::Description::localized(vec![
+                    (
+                        "en",
+                        "Definy standard utility functions (pure math, logic, list operations)",
+                    ),
+                    (
+                        "ja",
+                        "definy の標準ユーティリティ関数群 (数学・論理・リスト操作)",
+                    ),
+                ]),
+                parent_commit_hash: None,
+                message: "Initial commit for std module".into(),
+                parts: std_parts,
+            },
+        ),
+    };
+
     let events = vec![
         definy_event::event::Event {
             account_id: account_id.clone(),
@@ -585,6 +618,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
             ),
         },
         core_module_commit,
+        std_module_commit,
         sample_module_commit,
     ];
 

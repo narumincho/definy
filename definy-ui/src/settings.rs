@@ -156,7 +156,7 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
                                 div { style: "display: flex; align-items: center; gap: 0.6rem;",
                                     span { style: "font-size: 1.35rem;", "✦" }
                                     span { style: "font-size: 1rem; font-weight: 600; color: var(--text-primary);",
-                                        { context.language.label("About definy", "definy について", "Pri definy") }
+                                        {context.language.label("About definy", "definy について", "Pri definy")}
                                     }
                                 }
                                 span { style: "font-size: 0.85rem; color: var(--primary);",

@@ -304,8 +304,8 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 1 CreateAccount + 2 ModuleCommit (core, sample) = 3 events
-        assert_eq!(events.len(), 3);
+        // 1 CreateAccount + 3 ModuleCommit (core, sample, std) = 4 events
+        assert_eq!(events.len(), 4);
 
         let mut part_names = Vec::new();
         let mut module_names = Vec::new();
@@ -329,6 +329,7 @@ mod tests {
 
         assert!(module_names.contains(&"core".to_string()));
         assert!(module_names.contains(&"sample".to_string()));
+        assert!(module_names.contains(&"std".to_string()));
         assert!(part_names.contains(&"let".to_string()));
         assert!(part_names.contains(&"plus".to_string()));
         assert!(part_names.contains(&"number-literal".to_string()));
@@ -353,6 +354,16 @@ mod tests {
         assert!(part_names.contains(&"not".to_string()));
         assert!(part_names.contains(&"list-get".to_string()));
         assert!(part_names.contains(&"list-append".to_string()));
+        assert!(part_names.contains(&"type-ast".to_string()));
+        assert!(part_names.contains(&"part-definition".to_string()));
+        assert!(part_names.contains(&"module-definition".to_string()));
+        assert!(part_names.contains(&"abs".to_string()));
+        assert!(part_names.contains(&"min".to_string()));
+        assert!(part_names.contains(&"max".to_string()));
+        assert!(part_names.contains(&"sign".to_string()));
+        assert!(part_names.contains(&"bool-to-string".to_string()));
+        assert!(part_names.contains(&"list-is-empty".to_string()));
+        assert!(part_names.contains(&"list-head".to_string()));
         assert!(part_names.contains(&"greet".to_string()));
         assert!(part_names.contains(&"is-even-sample".to_string()));
         assert!(part_names.contains(&"prime-numbers".to_string()));
@@ -362,16 +373,16 @@ mod tests {
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 3);
+        assert_eq!(events_after.len(), 4);
     }
 
     #[tokio::test]
     async fn test_cleanup_outdated_builtin_events() {
         let db = init_db().await.unwrap();
 
-        // Check initially 3 events
+        // Check initially 4 events
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events.len(), 3);
+        assert_eq!(events.len(), 4);
 
         // Insert an outdated/unexpected event created by the definy system account
         let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
@@ -401,9 +412,9 @@ mod tests {
             .await
             .unwrap();
 
-        // Verify that there are now 4 events
+        // Verify that there are now 5 events
         let events_with_outdated = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_with_outdated.len(), 4);
+        assert_eq!(events_with_outdated.len(), 5);
 
         // Also insert a user event (not definy system account) to verify user data is NEVER deleted
         let user_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
@@ -423,16 +434,16 @@ mod tests {
             .await
             .unwrap();
 
-        // Total 5 events (3 builtin + 1 outdated builtin + 1 normal user)
+        // Total 6 events (4 builtin + 1 outdated builtin + 1 normal user)
         let events_total = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_total.len(), 5);
+        assert_eq!(events_total.len(), 6);
 
         // Run migrate_builtin_data - it should delete the outdated builtin part, but keep normal_user event!
         migrate_builtin_data(&db).await.unwrap();
 
         let events_cleaned = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 3 built-in events + 1 user event = 4 events (outdated builtin deleted)
-        assert_eq!(events_cleaned.len(), 4);
+        // 4 built-in events + 1 user event = 5 events (outdated builtin deleted)
+        assert_eq!(events_cleaned.len(), 5);
 
         let user_event_hash = sha2::Sha256::digest(&user_binary);
         assert!(get_event(&db, &user_event_hash).await.unwrap().is_some());

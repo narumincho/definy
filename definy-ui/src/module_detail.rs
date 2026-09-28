@@ -469,83 +469,97 @@ fn ModuleHistoryCard(
             } else {
                 div { style: "display: grid; gap: 0.6rem;",
                     for (index, (event_hash, ev)) in related_events.iter().enumerate() {
-                        {
-                            let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
-                            let hash_str = event_hash.to_string();
-                            let short_event_hash = if hash_str.len() > 7 {
-                                format!("#{}", &hash_str[..7])
-                            } else {
-                                format!("#{}", hash_str)
-                            };
-                            let author_name = crate::app_state::account_display_name(
-                                &account_name_map,
-                                &ev.account_id,
-                            );
-                            let (commit_message, parent_hash, parts_count) =
-                                resolve_module_commit_info(language, ev);
-                            let is_latest = index == 0;
-                            let parent_short = parent_hash
-                                .as_ref()
-                                .map(|p| {
-                                    let s = p.to_string();
-                                    if s.len() > 7 { format!("#{}", &s[..7]) } else { format!("#{}", s) }
-                                });
-                            let parent_title = parent_hash.as_ref().map(ToString::to_string);
-                            rsx! {
-                                div {
-                                    key: "{event_hash}",
-                                    style: "display: grid; gap: 0.45rem; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgb(255 255 255 / 0.02);",
-                                    div { style: "display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap;",
-                                        div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
-                                            if is_latest {
-                                                span {
-                                                    class: "badge",
-                                                    style: "font-size: 0.68rem; font-weight: 600; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.05rem 0.4rem; border-radius: var(--radius-full);",
-                                                    "HEAD"
-                                                }
-                                            }
-                                            span { style: "font-size: 0.88rem; font-weight: 600; color: var(--text);",
-                                                "{commit_message}"
-                                            }
-                                        }
-                                        div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.76rem; color: var(--text-secondary);",
-                                            span { "👤 {author_name}" }
-                                            span { "•" }
-                                            span { "{time_str}" }
-                                        }
-                                    }
-                                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;",
-                                        a {
-                                            href: context.href_with_lang(Location::Event(event_hash.clone())),
-                                            class: "mono",
-                                            style: "color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(124 192 216 / 0.08); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
-                                            title: "{event_hash}",
-                                            span { "Commit:" }
-                                            span { "{short_event_hash}" }
-                                        }
-                                        span {
-                                            class: "mono",
-                                            style: "color: var(--text-secondary); background: rgb(255 255 255 / 0.04); border: 1px solid var(--border); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
-                                            "{parts_count} {language.label(\"parts\", \"パーツ\", \"partoj\")}"
-                                        }
-                                        if let (Some(p_hash), Some(p_short)) = (parent_hash, parent_short) {
-                                            a {
-                                                href: context.href_with_lang(Location::Event(p_hash)),
-                                                class: "mono",
-                                                style: "color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(255 255 255 / 0.04); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
-                                                title: parent_title.as_deref().unwrap_or_default(),
-                                                span { "Parent:" }
-                                                span { "{p_short}" }
-                                            }
-                                        } else {
-                                            span { style: "color: #a78bfa; font-size: 0.72rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
-                                                "🌱 Initial Commit"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                        ModuleCommitHistoryItem {
+                            key: "{event_hash}",
+                            context: context.clone(),
+                            account_name_map: account_name_map.clone(),
+                            index,
+                            event_hash: event_hash.clone(),
+                            event: ev.clone(),
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn ModuleCommitHistoryItem(
+    context: PageContext,
+    account_name_map: std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
+    index: usize,
+    event_hash: EventHashId,
+    event: definy_event::event::Event,
+) -> Element {
+    let language = context.language;
+    let time_str = event.time.format("%Y-%m-%d %H:%M:%S").to_string();
+    let hash_str = event_hash.to_string();
+    let short_event_hash = if hash_str.len() > 7 {
+        format!("#{}", &hash_str[..7])
+    } else {
+        format!("#{}", hash_str)
+    };
+    let author_name = crate::app_state::account_display_name(&account_name_map, &event.account_id);
+    let (commit_message, parent_hash, parts_count) = resolve_module_commit_info(language, &event);
+    let is_latest = index == 0;
+    let parent_short = parent_hash.as_ref().map(|p| {
+        let s = p.to_string();
+        if s.len() > 7 {
+            format!("#{}", &s[..7])
+        } else {
+            format!("#{}", s)
+        }
+    });
+    let parent_title = parent_hash.as_ref().map(ToString::to_string);
+
+    rsx! {
+        div { style: "display: grid; gap: 0.45rem; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgb(255 255 255 / 0.02);",
+            div { style: "display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap;",
+                div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
+                    if is_latest {
+                        span {
+                            class: "badge",
+                            style: "font-size: 0.68rem; font-weight: 600; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.05rem 0.4rem; border-radius: var(--radius-full);",
+                            "HEAD"
+                        }
+                    }
+                    span { style: "font-size: 0.88rem; font-weight: 600; color: var(--text);",
+                        "{commit_message}"
+                    }
+                }
+                div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.76rem; color: var(--text-secondary);",
+                    span { "👤 {author_name}" }
+                    span { "•" }
+                    span { "{time_str}" }
+                }
+            }
+            div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;",
+                a {
+                    href: context.href_with_lang(Location::Event(event_hash.clone())),
+                    class: "mono",
+                    style: "color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(124 192 216 / 0.08); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                    title: "{event_hash}",
+                    span { "Commit:" }
+                    span { "{short_event_hash}" }
+                }
+                span {
+                    class: "mono",
+                    style: "color: var(--text-secondary); background: rgb(255 255 255 / 0.04); border: 1px solid var(--border); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
+                    "{parts_count} {language.label(\"parts\", \"パーツ\", \"partoj\")}"
+                }
+                if let (Some(p_hash), Some(p_short)) = (parent_hash, parent_short) {
+                    a {
+                        href: context.href_with_lang(Location::Event(p_hash)),
+                        class: "mono",
+                        style: "color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(255 255 255 / 0.04); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                        title: parent_title.as_deref().unwrap_or_default(),
+                        span { "Parent:" }
+                        span { "{p_short}" }
+                    }
+                } else {
+                    span { style: "color: #a78bfa; font-size: 0.72rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
+                        "🌱 Initial Commit"
                     }
                 }
             }

@@ -194,7 +194,11 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                             }
                             set.set(current);
                         },
-                        if is_collapsed { "▸" } else { "▾" }
+                        if is_collapsed {
+                            "▸"
+                        } else {
+                            "▾"
+                        }
                     }
                     div {
                         style: "{badge_style}",

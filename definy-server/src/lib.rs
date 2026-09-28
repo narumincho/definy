@@ -1,5 +1,7 @@
 mod builtin_expression_type;
 mod builtin_migration;
+mod builtin_std_functions;
+mod builtin_type_ast;
 mod builtin_value_type;
 mod connect_rpc;
 mod db;

@@ -1,11 +1,11 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, DivideExpression, Expression, FunctionExpression,
-    MatchArm, MatchExpression, ModulePartEntry, MultiplyExpression, NumberExpression,
-    PartReferenceExpression, PartType, RecordGetExpression, RemainderExpression,
-    SubtractExpression, TypeListExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    TypeUnionExpression, TypeUnionVariant, VariableExpression, VariantExpression,
-    derive_module_part_id,
+    AddExpression, CallExpression, Description, DivideExpression, EqualExpression, Expression,
+    FunctionExpression, IfExpression, LessThanExpression, MatchArm, MatchExpression,
+    ModulePartEntry, MultiplyExpression, NumberExpression, PartReferenceExpression, PartType,
+    RecordGetExpression, RemainderExpression, SubtractExpression, TypeListExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, TypeUnionExpression, TypeUnionVariant,
+    VariableExpression, VariantExpression, derive_module_part_id,
 };
 
 pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
@@ -336,6 +336,36 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
                                 left: Box::new(l),
                                 right: Box::new(r),
                             })
+                        })),
+                    },
+                    MatchArm {
+                        tag: "equal".into(),
+                        variable_id: Some(70),
+                        variable_name: Some("bin".into()),
+                        body: Box::new(Expression::If(IfExpression {
+                            condition: Box::new(binary_eval(&eval_ast_hash, 70, |l, r| {
+                                Expression::Equal(EqualExpression {
+                                    left: Box::new(l),
+                                    right: Box::new(r),
+                                })
+                            })),
+                            then_expr: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                            else_expr: Box::new(Expression::Number(NumberExpression { value: 0 })),
+                        })),
+                    },
+                    MatchArm {
+                        tag: "less_than".into(),
+                        variable_id: Some(80),
+                        variable_name: Some("bin".into()),
+                        body: Box::new(Expression::If(IfExpression {
+                            condition: Box::new(binary_eval(&eval_ast_hash, 80, |l, r| {
+                                Expression::LessThan(LessThanExpression {
+                                    left: Box::new(l),
+                                    right: Box::new(r),
+                                })
+                            })),
+                            then_expr: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                            else_expr: Box::new(Expression::Number(NumberExpression { value: 0 })),
                         })),
                     },
                 ],
