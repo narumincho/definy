@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use dioxus::prelude::*;
 
 use super::engine::{compute_layout, expression_to_layout_node};
@@ -9,12 +11,15 @@ pub fn ExpressionTreeViewer(
     expression: Option<definy_event::event::Expression>,
     #[props(default = 720.0)] max_width: f32,
     #[props(default = None)] selected_node_id: Option<Signal<Option<String>>>,
+    #[props(default = None)] hovered_node_id: Option<Signal<Option<String>>>,
+    #[props(default = None)] collapsed_node_ids: Option<Signal<HashSet<String>>>,
     #[props(default = None)] on_node_select: Option<EventHandler<String>>,
 ) -> Element {
     let internal_selected = use_signal(|| None::<String>);
-    let hovered_node_id = use_signal(|| None::<String>);
+    let internal_hovered = use_signal(|| None::<String>);
 
     let effective_selected = selected_node_id.unwrap_or(internal_selected);
+    let effective_hovered = hovered_node_id.unwrap_or(internal_hovered);
 
     let expr = match expression {
         Some(e) => e,
@@ -43,7 +48,8 @@ pub fn ExpressionTreeViewer(
             TreeLayoutRenderer {
                 node: layout_result.root,
                 selected_node_id: effective_selected,
-                hovered_node_id,
+                hovered_node_id: effective_hovered,
+                collapsed_node_ids,
             }
         }
     }

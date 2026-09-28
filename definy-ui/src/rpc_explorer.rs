@@ -1,8 +1,9 @@
 use definy_event::EventHashId;
 use definy_event::event::{Event, EventContent};
 use definy_event::rpc::{
-    ConnectError, GetEventRequest, GetEventResponse, GetEventsRequest, GetEventsResponse,
-    PATH_GET_EVENT, PATH_GET_EVENTS, PATH_SUBMIT_EVENT,
+    CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, ConnectError, GetEventRequest,
+    GetEventResponse, GetEventsRequest, GetEventsResponse, PATH_GET_EVENT, PATH_GET_EVENTS,
+    PATH_SUBMIT_EVENT,
 };
 use dioxus::prelude::*;
 
@@ -688,7 +689,7 @@ async fn fetch_rpc_json(url: &str, body: &str) -> Result<(u16, String), String> 
         .set("Content-Type", "application/json")
         .map_err(|e| format!("{e:?}"))?;
     headers
-        .set("connect-protocol-version", "1")
+        .set(CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION)
         .map_err(|e| format!("{e:?}"))?;
 
     let req_init = web_sys::RequestInit::new();

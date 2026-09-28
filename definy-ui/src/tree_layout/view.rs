@@ -144,23 +144,7 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     // 子要素がある複合ノード（Operator, Group, Block）
     let is_multiline = node.layout_mode == LayoutMode::Multiline;
     let badge_style = node_badge_style(&node.kind, is_selected, false);
-
-    // カプセル枠のスタイル（入れ子関係が視覚的に明確にわかるようにする）
-    let capsule_border = if is_selected {
-        "1.5px solid var(--accent)"
-    } else if is_hovered {
-        "1.5px solid rgb(124 192 216 / 0.6)"
-    } else {
-        "1px solid rgb(160 176 192 / 0.22)"
-    };
-
-    let capsule_bg = if is_selected {
-        "rgb(124 192 216 / 0.1)"
-    } else if is_hovered {
-        "rgb(124 192 216 / 0.05)"
-    } else {
-        "rgb(255 255 255 / 0.02)"
-    };
+    let container_style = capsule_container_style(is_multiline, is_selected, is_hovered);
 
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
@@ -171,10 +155,6 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
         let is_collapsed = ctx.collapsed_node_ids.read().contains(&node.id);
         let toggle_id = node.id.clone();
         let toggle_id_expand = node.id.clone();
-        let container_style = format!(
-            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;",
-            capsule_bg, capsule_border
-        );
 
         rsx! {
             div {
@@ -249,11 +229,6 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
         }
     } else {
         // インライン（Inline）展開：薄いカプセル枠で囲むことで入れ子関係が一目瞭然（括弧テキストは不要）
-        let container_style = format!(
-            "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; white-space: nowrap;",
-            capsule_bg, capsule_border
-        );
-
         rsx! {
             div {
                 class: "tree-node-capsule-inline",
@@ -427,4 +402,30 @@ pub fn node_badge_style(kind: &NodeKind, is_selected: bool, is_hovered: bool) ->
         "display: inline-flex; align-items: center; padding: 0.12rem 0.42rem; border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: {}; color: {}; border: {}; cursor: pointer; user-select: none; transition: all 0.12s ease; white-space: nowrap; {}",
         bg, text_color, border, focus_style
     )
+}
+
+fn capsule_container_style(is_multiline: bool, is_selected: bool, is_hovered: bool) -> String {
+    let (bg, border) = if is_selected {
+        ("rgb(124 192 216 / 0.1)", "1.5px solid var(--accent)")
+    } else if is_hovered {
+        (
+            "rgb(124 192 216 / 0.05)",
+            "1.5px solid rgb(124 192 216 / 0.6)",
+        )
+    } else {
+        (
+            "rgb(255 255 255 / 0.02)",
+            "1px solid rgb(160 176 192 / 0.22)",
+        )
+    };
+
+    if is_multiline {
+        format!(
+            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {bg}; border: {border}; border-radius: var(--radius-sm); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;"
+        )
+    } else {
+        format!(
+            "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; background: {bg}; border: {border}; border-radius: var(--radius-sm); transition: all 0.12s ease; white-space: nowrap;"
+        )
+    }
 }

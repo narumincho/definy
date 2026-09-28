@@ -2,7 +2,7 @@ use definy_event::event::Expression;
 use dioxus::prelude::*;
 
 use super::engine::{compute_layout, expression_to_layout_node};
-use super::types::LayoutOptions;
+use super::types::{LayoutNode, LayoutOptions};
 use super::view::{TreeLayoutRenderer, node_badge_style};
 
 /// 式（Expression）をツリー構造として表現するコンポーネント。
@@ -43,33 +43,8 @@ pub fn ExpressionTreeSummary(
     let node_count = layout_result.node_count;
     let max_depth = layout_result.max_depth;
 
-    let outer_border = if is_expanded() {
-        "1px solid rgba(124, 192, 216, 0.45)"
-    } else {
-        "1px solid var(--border)"
-    };
-
-    let outer_bg = if is_expanded() {
-        "rgba(124, 192, 216, 0.08)"
-    } else {
-        "rgba(255, 255, 255, 0.03)"
-    };
-
-    let cursor_style = if is_leaf { "default" } else { "pointer" };
-
-    let (expand_btn_bg, expand_btn_color, expand_btn_border) = if is_expanded() {
-        (
-            "rgba(59, 130, 246, 0.2)",
-            "#93c5fd",
-            "1px solid rgba(147, 197, 253, 0.3)",
-        )
-    } else {
-        (
-            "rgba(255, 255, 255, 0.06)",
-            "var(--text-secondary)",
-            "1px solid transparent",
-        )
-    };
+    let outer_bar_style = outer_bar_container_style(is_leaf, is_expanded());
+    let (expand_btn_bg, expand_btn_color, expand_btn_border) = expand_button_style(is_expanded());
 
     rsx! {
         div {
@@ -79,7 +54,7 @@ pub fn ExpressionTreeSummary(
             // 外側プレビュー表示（クリックで展開・折りたたみ）
             div {
                 class: "expression-tree-outer-bar",
-                style: "display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.45rem; background: {outer_bg}; border: {outer_border}; border-radius: var(--radius-sm); cursor: {cursor_style}; transition: all 0.15s ease; user-select: none; max-width: 100%; overflow-x: auto; box-sizing: border-box;",
+                style: "{outer_bar_style}",
                 onclick: move |evt: MouseEvent| {
                     if !is_leaf && show_expand_button {
                         evt.stop_propagation();
@@ -104,27 +79,11 @@ pub fn ExpressionTreeSummary(
                 if !is_leaf {
                     for (idx, child) in root_layout_node.children.iter().enumerate() {
                         {
-                            let child_kind = &child.kind;
-                            let child_is_leaf = child.children.is_empty();
-                            let badge = node_badge_style(child_kind, false, false);
                             rsx! {
                                 if idx > 0 {
                                     span { style: "color: var(--text-secondary); opacity: 0.4; font-size: 0.72rem; margin: 0 -0.1rem;", "·" }
                                 }
-                                if child_is_leaf {
-                                    div {
-                                        key: "{child.id}",
-                                        style: "{badge}; font-size: 0.76rem; padding: 0.08rem 0.32rem;",
-                                        "{child.label}"
-                                    }
-                                } else {
-                                    div {
-                                        key: "{child.id}",
-                                        style: "display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.08rem 0.32rem; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: var(--radius-xs); font-family: monospace; font-size: 0.74rem; color: var(--text-secondary);",
-                                        span { style: "color: var(--accent);", "{child.label}" }
-                                        span { style: "opacity: 0.6;", "…" }
-                                    }
-                                }
+                                {render_child_summary_chip(child)}
                             }
                         }
                     }
@@ -175,5 +134,66 @@ pub fn ExpressionTreeSummary(
                 }
             }
         }
+    }
+}
+
+fn render_child_summary_chip(child: &LayoutNode) -> Element {
+    let child_kind = &child.kind;
+    let child_is_leaf = child.children.is_empty();
+
+    if child_is_leaf {
+        let badge = node_badge_style(child_kind, false, false);
+        rsx! {
+            div {
+                key: "{child.id}",
+                style: "{badge}; font-size: 0.76rem; padding: 0.08rem 0.32rem;",
+                "{child.label}"
+            }
+        }
+    } else {
+        rsx! {
+            div {
+                key: "{child.id}",
+                style: "display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.08rem 0.32rem; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: var(--radius-xs); font-family: monospace; font-size: 0.74rem; color: var(--text-secondary);",
+                span { style: "color: var(--accent);", "{child.label}" }
+                span { style: "opacity: 0.6;", "…" }
+            }
+        }
+    }
+}
+
+fn outer_bar_container_style(is_leaf: bool, is_expanded: bool) -> String {
+    let outer_border = if is_expanded {
+        "1px solid rgba(124, 192, 216, 0.45)"
+    } else {
+        "1px solid var(--border)"
+    };
+
+    let outer_bg = if is_expanded {
+        "rgba(124, 192, 216, 0.08)"
+    } else {
+        "rgba(255, 255, 255, 0.03)"
+    };
+
+    let cursor_style = if is_leaf { "default" } else { "pointer" };
+
+    format!(
+        "display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.45rem; background: {outer_bg}; border: {outer_border}; border-radius: var(--radius-sm); cursor: {cursor_style}; transition: all 0.15s ease; user-select: none; max-width: 100%; overflow-x: auto; box-sizing: border-box;"
+    )
+}
+
+fn expand_button_style(is_expanded: bool) -> (&'static str, &'static str, &'static str) {
+    if is_expanded {
+        (
+            "rgba(59, 130, 246, 0.2)",
+            "#93c5fd",
+            "1px solid rgba(147, 197, 253, 0.3)",
+        )
+    } else {
+        (
+            "rgba(255, 255, 255, 0.06)",
+            "var(--text-secondary)",
+            "1px solid transparent",
+        )
     }
 }
