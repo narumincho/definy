@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::app_state::PathStep;
 use dioxus::prelude::*;
 
@@ -7,6 +9,7 @@ use super::types::{LayoutMode, LayoutNode, NodeKind};
 struct RenderContext {
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
+    collapsed_node_ids: Signal<HashSet<String>>,
     editable: bool,
     on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
@@ -19,15 +22,20 @@ pub fn TreeLayoutRenderer(
     node: LayoutNode,
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
+    #[props(default = None)] collapsed_node_ids: Option<Signal<HashSet<String>>>,
     #[props(default = false)] editable: bool,
     #[props(default = None)] on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     #[props(default = None)] on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     #[props(default = None)] on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
     #[props(default = None)] on_change_boolean: Option<EventHandler<(Vec<PathStep>, bool)>>,
 ) -> Element {
+    let internal_collapsed = use_signal(HashSet::<String>::new);
+    let effective_collapsed = collapsed_node_ids.unwrap_or(internal_collapsed);
+
     let ctx = RenderContext {
         selected_node_id,
         hovered_node_id,
+        collapsed_node_ids: effective_collapsed,
         editable,
         on_select_node,
         on_change_number,
@@ -160,6 +168,9 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
 
     if is_multiline {
         // 複数行（Multiline）展開：ヘッダー行＋インデントされた各引数スロット
+        let is_collapsed = ctx.collapsed_node_ids.read().contains(&node.id);
+        let toggle_id = node.id.clone();
+        let toggle_id_expand = node.id.clone();
         let container_style = format!(
             "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {}; border: {}; border-radius: var(--radius-sm); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;",
             capsule_bg, capsule_border
@@ -187,19 +198,50 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                     let mut hov = ctx.hovered_node_id;
                     hov.set(None);
                 },
-                // ヘッダー行（演算子/キーワードラベル）
-                div { style: "display: flex; align-items: center;",
+                // ヘッダー行（演算子/キーワードラベル ＋ 折りたたみトグル）
+                div { style: "display: flex; align-items: center; gap: 0.3rem;",
+                    button {
+                        style: "background: transparent; border: none; padding: 0.05rem 0.2rem; cursor: pointer; color: var(--text-secondary); font-size: 0.72rem; line-height: 1; border-radius: 2px;",
+                        title: if is_collapsed { "詳細を展開" } else { "折りたたむ" },
+                        onclick: move |evt: MouseEvent| {
+                            evt.stop_propagation();
+                            let mut set = ctx.collapsed_node_ids;
+                            let mut current = set.read().clone();
+                            if current.contains(&toggle_id) {
+                                current.remove(&toggle_id);
+                            } else {
+                                current.insert(toggle_id.clone());
+                            }
+                            set.set(current);
+                        },
+                        if is_collapsed { "▸" } else { "▾" }
+                    }
                     div {
                         style: "{badge_style}",
                         title: "ID: {node.id} ({node.computed_width:.0}x{node.computed_height:.0}px)",
                         "{node.label}"
                     }
+                    if is_collapsed {
+                        span {
+                            style: "font-size: 0.72rem; color: var(--text-secondary); opacity: 0.75; font-family: monospace; font-style: italic; cursor: pointer;",
+                            onclick: move |evt: MouseEvent| {
+                                evt.stop_propagation();
+                                let mut set = ctx.collapsed_node_ids;
+                                let mut current = set.read().clone();
+                                current.remove(&toggle_id_expand);
+                                set.set(current);
+                            },
+                            "... ({node.children.len()} args)"
+                        }
+                    }
                 }
-                // 各引数（独立した行としてインデント展開）
-                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
-                    for child in &node.children {
-                        div { style: "width: fit-content; max-width: 100%;",
-                            {render_node(child, ctx)}
+                // 各引数（独立した行としてインデント展開、展開時のみ表示）
+                if !is_collapsed {
+                    div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
+                        for child in &node.children {
+                            div { style: "width: fit-content; max-width: 100%;",
+                                {render_node(child, ctx)}
+                            }
                         }
                     }
                 }
@@ -323,7 +365,7 @@ fn render_table_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     }
 }
 
-fn node_badge_style(kind: &NodeKind, is_selected: bool, is_hovered: bool) -> String {
+pub fn node_badge_style(kind: &NodeKind, is_selected: bool, is_hovered: bool) -> String {
     let (bg, text_color, border) = match kind {
         NodeKind::LiteralNumber => (
             "rgb(180 215 255 / 0.14)",

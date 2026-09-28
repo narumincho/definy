@@ -4,7 +4,6 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_eval::expression_to_source;
 use crate::page_context::PageContext;
 
 #[component]
@@ -234,7 +233,6 @@ fn RenderDetailContent(
                                 } else {
                                     (None, None)
                                 };
-                                let expr_source = part.expression.as_ref().map(expression_to_source);
                                 rsx! {
                                     div {
                                         key: "{part.name}",
@@ -258,12 +256,10 @@ fn RenderDetailContent(
                                                 }
                                             }
                                         }
-                                        if let Some(expr_str) = expr_source {
-                                            div {
-                                                class: "mono",
-                                                style: "font-size: 0.8rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
-                                                "{expr_str}"
-                                            }
+                                        crate::tree_layout::ExpressionTreeSummary {
+                                            expression: part.expression.clone(),
+                                            initial_expanded: false,
+                                            max_width: 500.0,
                                         }
                                     }
                                 }

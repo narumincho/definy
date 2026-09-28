@@ -3,7 +3,6 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_eval::expression_to_source;
 #[cfg(target_arch = "wasm32")]
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
@@ -185,13 +184,6 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                             );
                             let def_hash = part.definition_event_hash.clone();
                             let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
-                            let expr_str = part
-                                .expression
-                                .as_ref()
-                                .map(expression_to_source)
-                                .unwrap_or_else(|| {
-                                    context.language.label("(none)", "(なし)", "(neniu)").to_string()
-                                });
                             let module_snapshot = crate::module_projection::find_module_snapshot(
                                 &state,
                                 &part.module_definition_event_hash,
@@ -243,12 +235,10 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                     }
                                     // Row 2: 内容
                                     div { style: "display: grid; gap: 0.2rem;",
-                                        if part.expression.is_some() {
-                                            div {
-                                                class: "mono",
-                                                style: "font-size: 0.78rem; color: #7dd3fc; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 0.35rem 0.65rem; overflow-x: auto; white-space: nowrap; max-width: 100%;",
-                                                "{expr_str}"
-                                            }
+                                        crate::tree_layout::ExpressionTreeSummary {
+                                            expression: part.expression.clone(),
+                                            initial_expanded: false,
+                                            max_width: 640.0,
                                         }
                                         {
                                             let desc = part.description_for(context.language);

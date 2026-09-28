@@ -341,24 +341,10 @@ pub fn PartDefinitionFormView(
                         }
                     }
                 }
-                {
-                    let expr_str = composing_expression
-                        .read()
-                        .as_ref()
-                        .map(crate::expression_eval::expression_to_source)
-                        .unwrap_or_else(|| {
-                            context
-                                .language
-                                .label("(no expression)", "(式なし)", "(neniu esprimo)")
-                                .to_string()
-                        });
-                    rsx! {
-                        div {
-                            class: "mono",
-                            style: "font-size: 0.78rem; color: #7dd3fc; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); overflow-x: auto; white-space: nowrap;",
-                            "{expr_str}"
-                        }
-                    }
+                crate::tree_layout::ExpressionTreeSummary {
+                    expression: composing_expression.read().clone(),
+                    initial_expanded: true,
+                    max_width: 700.0,
                 }
             }
             if let Some(result) = eval_result() {

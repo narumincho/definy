@@ -8,7 +8,6 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_eval::expression_to_source;
 use crate::page_context::PageContext;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -605,10 +604,6 @@ fn RenderDecodedCborCard(index: usize, info: DecodedCborInfo, context: PageConte
                                                 Some(t) => format!("{t}"),
                                                 None => "(Any / Untyped)".to_string(),
                                             };
-                                            let expr_desc = match &part.expression {
-                                                Some(expr) => expression_to_source(expr),
-                                                None => "(No expression)".to_string(),
-                                            };
                                             rsx! {
                                                 div {
                                                     key: "{part.name}",
@@ -624,8 +619,10 @@ fn RenderDecodedCborCard(index: usize, info: DecodedCborInfo, context: PageConte
                                                     div { style: "font-size: 0.78rem; font-family: monospace; color: var(--text-secondary);",
                                                         "Type: {type_desc}"
                                                     }
-                                                    div { style: "padding: 0.35rem 0.5rem; background: rgba(0, 0, 0, 0.25); border-radius: 3px; font-family: monospace; font-size: 0.76rem; color: #a5b4fc; overflow-x: auto;",
-                                                        "{expr_desc}"
+                                                    crate::tree_layout::ExpressionTreeSummary {
+                                                        expression: part.expression.clone(),
+                                                        initial_expanded: false,
+                                                        max_width: 600.0,
                                                     }
                                                 }
                                             }

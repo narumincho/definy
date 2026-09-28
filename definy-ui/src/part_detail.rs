@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_editor::part_type_to_expression_type;
-use crate::expression_eval::{evaluate_expression, expression_to_source};
+use crate::expression_eval::evaluate_expression;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::{collect_related_part_events, find_part_snapshot};
@@ -490,21 +490,10 @@ fn PartEditorCard(
                     expression,
                     expected_type,
                 }
-                {
-                    let expr_str = expression
-                        .read()
-                        .as_ref()
-                        .map(expression_to_source)
-                        .unwrap_or_else(|| {
-                            context.language.label("(none)", "(なし)", "(neniu)").to_string()
-                        });
-                    rsx! {
-                        div {
-                            class: "mono",
-                            style: "font-size: 0.82rem; color: #7dd3fc; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); overflow-x: auto; white-space: nowrap;",
-                            "{expr_str}"
-                        }
-                    }
+                crate::tree_layout::ExpressionTreeSummary {
+                    expression: expression.read().clone(),
+                    initial_expanded: true,
+                    max_width: 800.0,
                 }
                 {
                     eval_result()
