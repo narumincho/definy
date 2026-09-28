@@ -322,7 +322,9 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
     let accepts_html = headers
         .get("accept")
         .and_then(|value| value.to_str().ok())
-        .is_some_and(|value| value.contains("text/html"));
+        .map_or(true, |value| {
+            value.contains("text/html") || value.contains("*/*")
+        });
 
     if accepts_html {
         return handle_html_request(&state, &uri, &headers).await;
