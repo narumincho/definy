@@ -19,8 +19,7 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
     let is_arch_active = active == ApiNavActive::Architecture;
 
     rsx! {
-        div {
-            style: "display: flex; flex-direction: column; gap: 0.6rem; width: 100%; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; margin-bottom: 0.5rem;",
+        div { style: "display: flex; flex-direction: column; gap: 0.6rem; width: 100%; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; margin-bottom: 0.5rem;",
             div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;",
                 div { style: "display: flex; align-items: center; gap: 0.5rem;",
                     span { style: "font-size: 1.2rem;", "⚡" }
@@ -35,22 +34,23 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                     a {
                         href: context.href_with_lang(Location::About),
                         style: "font-size: 0.82rem; color: var(--text-secondary); text-decoration: none; padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border); transition: background 0.15s ease;",
-                        {lang.label("← Back to About", "← definy についてに戻る", "← Reen al Pri")}
+                        {
+                            lang.label(
+                                "← Back to About",
+                                "← definy についてに戻る",
+                                "← Reen al Pri",
+                            )
+                        }
                     }
                 }
             }
 
             // ナビゲーションバー
-            nav {
-                style: "display: flex; gap: 0.35rem; overflow-x: auto; scrollbar-width: none; padding: 0.2rem 0; width: 100%;",
+            nav { style: "display: flex; gap: 0.35rem; overflow-x: auto; scrollbar-width: none; padding: 0.2rem 0; width: 100%;",
                 // 1. 概要
                 a {
                     href: context.href_with_lang(Location::ApiOverview),
-                    style: if is_overview_active {
-                        "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--primary); color: #fff; white-space: nowrap; flex-shrink: 0;"
-                    } else {
-                        "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;"
-                    },
+                    style: if is_overview_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--primary); color: #fff; white-space: nowrap; flex-shrink: 0;" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
                     {lang.label("Overview", "API 概要", "Superrigardo")}
                 }
 
@@ -67,12 +67,7 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                             "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;"
                         };
                         rsx! {
-                            a {
-                                key: "{name}",
-                                href: "{href}",
-                                style: "{style_str}",
-                                "{name}"
-                            }
+                            a { key: "{name}", href: "{href}", style: "{style_str}", "{name}" }
                         }
                     }
                 }
@@ -80,12 +75,14 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                 // 3. アーキテクチャ・シーケンス図
                 a {
                     href: context.href_with_lang(Location::ApiArchitecture),
-                    style: if is_arch_active {
-                        "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: #8b5cf6; color: #fff; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);"
-                    } else {
-                        "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;"
-                    },
-                    {lang.label("Sequence Diagrams", "シーケンス図・アーキテクチャ", "Sekvencaj Diagramoj")}
+                    style: if is_arch_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: #8b5cf6; color: #fff; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
+                    {
+                        lang.label(
+                            "Sequence Diagrams",
+                            "シーケンス図・アーキテクチャ",
+                            "Sekvencaj Diagramoj",
+                        )
+                    }
                 }
             }
         }

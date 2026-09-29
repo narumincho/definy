@@ -114,7 +114,13 @@ pub fn ApiOverviewPageView(context: PageContext) -> Element {
                                         }
                                         div { style: "display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.6rem; font-size: 0.8rem; font-weight: 600; color: #60a5fa;",
                                             span {
-                                                {lang.label("Open Dedicated Page →", "専用ページで構造を見る →", "Vidi Detalojn →")}
+                                                {
+                                                    lang.label(
+                                                        "Open Dedicated Page →",
+                                                        "専用ページで構造を見る →",
+                                                        "Vidi Detalojn →",
+                                                    )
+                                                }
                                             }
                                             span { "↗" }
                                         }

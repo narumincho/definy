@@ -184,7 +184,10 @@ pub fn RpcMethodDetailView(
             div { style: "display: grid; gap: 1.5rem; max-width: 1040px; margin: 0 auto; width: 100%;",
 
                 // 上部サブナビゲーション
-                ApiSubNav { context: context.clone(), active: ApiNavActive::Method(method) }
+                ApiSubNav {
+                    context: context.clone(),
+                    active: ApiNavActive::Method(method),
+                }
 
                 // メソッドヘッダー
                 div {
@@ -266,7 +269,10 @@ pub fn RpcMethodDetailView(
                                 span { "📤" }
                                 span { "Response: {schema.response_name}" }
                             }
-                            RenderFieldsTable { fields: schema.response_fields, language: lang }
+                            RenderFieldsTable {
+                                fields: schema.response_fields,
+                                language: lang,
+                            }
                         }
                     }
 
@@ -313,7 +319,9 @@ pub fn RpcMethodDetailView(
                                         }
                                         div { style: "display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;",
                                             div { style: "display: grid; gap: 0.3rem;",
-                                                label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);", "limit:" }
+                                                label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);",
+                                                    "limit:"
+                                                }
                                                 input {
                                                     value: "{get_events_limit}",
                                                     oninput: move |e| get_events_limit.set(e.value()),
@@ -321,7 +329,9 @@ pub fn RpcMethodDetailView(
                                                 }
                                             }
                                             div { style: "display: grid; gap: 0.3rem;",
-                                                label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);", "offset:" }
+                                                label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);",
+                                                    "offset:"
+                                                }
                                                 input {
                                                     value: "{get_events_offset}",
                                                     oninput: move |e| get_events_offset.set(e.value()),
@@ -375,7 +385,9 @@ pub fn RpcMethodDetailView(
                                 ApiMethod::UploadContent => rsx! {
                                     div { style: "display: grid; gap: 0.6rem;",
                                         div { style: "display: grid; gap: 0.3rem;",
-                                            label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);", "content_hash:" }
+                                            label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);",
+                                                "content_hash:"
+                                            }
                                             input {
                                                 placeholder: "ch-...",
                                                 value: "{upload_content_hash}",
@@ -384,7 +396,9 @@ pub fn RpcMethodDetailView(
                                             }
                                         }
                                         div { style: "display: grid; gap: 0.3rem;",
-                                            label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);", "content_bytes (Base64 / Hex expression CBOR):" }
+                                            label { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);",
+                                                "content_bytes (Base64 / Hex expression CBOR):"
+                                            }
                                             textarea {
                                                 placeholder: "Expression CBOR binary...",
                                                 value: "{upload_content_bytes}",
@@ -417,9 +431,13 @@ pub fn RpcMethodDetailView(
                             disabled: is_loading(),
                             style: "padding: 0.65rem 1.2rem; background: #0284c7; color: #fff; font-weight: 600; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: opacity 0.15s ease;",
                             if is_loading() {
-                                span { "⏳ {lang.label(\"Executing RPC...\", \"RPC実行中...\", \"Rulante...\")}" }
+                                span {
+                                    "⏳ {lang.label(\"Executing RPC...\", \"RPC実行中...\", \"Rulante...\")}"
+                                }
                             } else {
-                                span { "▶ {lang.label(\"Send Connect-RPC Request\", \"Connect-RPC リクエストを送信\", \"Sendi Peton\")}" }
+                                span {
+                                    "▶ {lang.label(\"Send Connect-RPC Request\", \"Connect-RPC リクエストを送信\", \"Sendi Peton\")}"
+                                }
                             }
                         }
 
@@ -483,10 +501,18 @@ fn RenderFieldsTable(
             table { style: "width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;",
                 thead {
                     tr { style: "background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid var(--border);",
-                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary); width: 40px;", "#" }
-                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary);", "Field" }
-                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary);", "Type" }
-                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary);", "Description" }
+                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary); width: 40px;",
+                            "#"
+                        }
+                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary);",
+                            "Field"
+                        }
+                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary);",
+                            "Type"
+                        }
+                        th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary);",
+                            "Description"
+                        }
                     }
                 }
                 tbody {

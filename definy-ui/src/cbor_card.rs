@@ -167,9 +167,7 @@ pub fn RenderDecodedCborCard(index: usize, info: DecodedCborInfo, context: PageC
                                                     key: "{part.name}",
                                                     style: "padding: 0.4rem 0.6rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem;",
                                                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                                                        span { style: "font-weight: 600; color: var(--text);",
-                                                            "{part.name}"
-                                                        }
+                                                        span { style: "font-weight: 600; color: var(--text);", "{part.name}" }
                                                         if let Some(pt) = &part.part_type {
                                                             span { style: "font-family: monospace; font-size: 0.75rem; color: #a78bfa; background: rgba(167, 139, 250, 0.1); padding: 0.1rem 0.35rem; border-radius: 3px;",
                                                                 ": {pt}"
@@ -182,9 +180,7 @@ pub fn RenderDecodedCborCard(index: usize, info: DecodedCborInfo, context: PageC
                                                         }
                                                     }
                                                     if part.expression.is_some() {
-                                                        span { style: "font-size: 0.75rem; color: #34d399;",
-                                                            "Has Expression AST"
-                                                        }
+                                                        span { style: "font-size: 0.75rem; color: #34d399;", "Has Expression AST" }
                                                     }
                                                 }
                                             }

@@ -25,7 +25,10 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
             div { style: "display: grid; gap: 1.5rem; max-width: 1140px; margin: 0 auto; width: 100%;",
 
                 // 上部サブナビゲーション
-                ApiSubNav { context: context.clone(), active: ApiNavActive::Architecture }
+                ApiSubNav {
+                    context: context.clone(),
+                    active: ApiNavActive::Architecture,
+                }
 
                 // ヘッダー説明
                 div {
@@ -57,11 +60,7 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
                     div { style: "display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;",
                         button {
                             onclick: move |_| current_tab.set(ArchDiagramTab::Negotiation),
-                            style: if current_tab() == ArchDiagramTab::Negotiation {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;"
-                            } else {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;"
-                            },
+                            style: if current_tab() == ArchDiagramTab::Negotiation { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;" } else { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;" },
                             {
                                 lang.label(
                                     "1. Diff Hash Negotiation (CAS)",
@@ -72,11 +71,7 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
                         }
                         button {
                             onclick: move |_| current_tab.set(ArchDiagramTab::Submit),
-                            style: if current_tab() == ArchDiagramTab::Submit {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;"
-                            } else {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;"
-                            },
+                            style: if current_tab() == ArchDiagramTab::Submit { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;" } else { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;" },
                             {
                                 lang.label(
                                     "2. Event Submission (SubmitEvent)",
@@ -87,11 +82,7 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
                         }
                         button {
                             onclick: move |_| current_tab.set(ArchDiagramTab::Fetch),
-                            style: if current_tab() == ArchDiagramTab::Fetch {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;"
-                            } else {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;"
-                            },
+                            style: if current_tab() == ArchDiagramTab::Fetch { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;" } else { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;" },
                             {
                                 lang.label(
                                     "3. Event Fetching (GetEvents)",
@@ -102,11 +93,7 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
                         }
                         button {
                             onclick: move |_| current_tab.set(ArchDiagramTab::DataLayers),
-                            style: if current_tab() == ArchDiagramTab::DataLayers {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;"
-                            } else {
-                                "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;"
-                            },
+                            style: if current_tab() == ArchDiagramTab::DataLayers { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; border: none; background: #0284c7; color: #fff; cursor: pointer;" } else { "padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer;" },
                             {
                                 lang.label(
                                     "4. Data Layers Architecture",
@@ -121,10 +108,18 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
                 // シーケンス図表示コンポーネント (幅いっぱいのコンテナ)
                 div { style: "width: 100%;",
                     match current_tab() {
-                        ArchDiagramTab::Negotiation => rsx! { NegotiationSequenceDiagram { language: lang } },
-                        ArchDiagramTab::Submit => rsx! { SubmitSequenceDiagram { language: lang } },
-                        ArchDiagramTab::Fetch => rsx! { FetchSequenceDiagram { language: lang } },
-                        ArchDiagramTab::DataLayers => rsx! { DataLayersExplanation { language: lang } },
+                        ArchDiagramTab::Negotiation => rsx! {
+                            NegotiationSequenceDiagram { language: lang }
+                        },
+                        ArchDiagramTab::Submit => rsx! {
+                            SubmitSequenceDiagram { language: lang }
+                        },
+                        ArchDiagramTab::Fetch => rsx! {
+                            FetchSequenceDiagram { language: lang }
+                        },
+                        ArchDiagramTab::DataLayers => rsx! {
+                            DataLayersExplanation { language: lang }
+                        },
                     }
                 }
             }

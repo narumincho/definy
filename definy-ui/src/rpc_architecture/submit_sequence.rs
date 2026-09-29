@@ -153,78 +153,391 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     }
 
                     // アクター縦線（ライフライン）
-                    line { x1: "100", y1: "55", x2: "100", y2: "510", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "330", y1: "55", x2: "330", y2: "510", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "570", y1: "55", x2: "570", y2: "510", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "800", y1: "55", x2: "800", y2: "510", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "990", y1: "55", x2: "990", y2: "510", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line {
+                        x1: "100",
+                        y1: "55",
+                        x2: "100",
+                        y2: "510",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "330",
+                        y1: "55",
+                        x2: "330",
+                        y2: "510",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "570",
+                        y1: "55",
+                        x2: "570",
+                        y2: "510",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "800",
+                        y1: "55",
+                        x2: "800",
+                        y2: "510",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "990",
+                        y1: "55",
+                        x2: "990",
+                        y2: "510",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
 
                     // アクターボックス
                     // 1. User
-                    rect { x: "25", y: "12", width: "150", height: "38", rx: "8", fill: "#0f172a", stroke: "#3b82f6", stroke_width: "1.8" }
-                    text { x: "100", y: "36", fill: "#93c5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_user}" }
+                    rect {
+                        x: "25",
+                        y: "12",
+                        width: "150",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#3b82f6",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "100",
+                        y: "36",
+                        fill: "#93c5fd",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_user}"
+                    }
 
                     // 2. Client
-                    rect { x: "235", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#8b5cf6", stroke_width: "1.8" }
-                    text { x: "330", y: "36", fill: "#c4b5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_client}" }
+                    rect {
+                        x: "235",
+                        y: "12",
+                        width: "190",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#8b5cf6",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "330",
+                        y: "36",
+                        fill: "#c4b5fd",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_client}"
+                    }
 
                     // 3. IndexedDB
-                    rect { x: "475", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#f59e0b", stroke_width: "1.8" }
-                    text { x: "570", y: "36", fill: "#fbbf24", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_idb}" }
+                    rect {
+                        x: "475",
+                        y: "12",
+                        width: "190",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#f59e0b",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "570",
+                        y: "36",
+                        fill: "#fbbf24",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_idb}"
+                    }
 
                     // 4. Server
-                    rect { x: "705", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#10b981", stroke_width: "1.8" }
-                    text { x: "800", y: "36", fill: "#6ee7b7", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_server}" }
+                    rect {
+                        x: "705",
+                        y: "12",
+                        width: "190",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#10b981",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "800",
+                        y: "36",
+                        fill: "#6ee7b7",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_server}"
+                    }
 
                     // 5. DB
-                    rect { x: "910", y: "12", width: "160", height: "38", rx: "8", fill: "#0f172a", stroke: "#ec4899", stroke_width: "1.8" }
-                    text { x: "990", y: "36", fill: "#f472b6", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_db}" }
+                    rect {
+                        x: "910",
+                        y: "12",
+                        width: "160",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#ec4899",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "990",
+                        y: "36",
+                        fill: "#f472b6",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_db}"
+                    }
 
                     // ----------------------------------------------------
                     // ステップ 1: 送信クリック
-                    line { x1: "100", y1: "80", x2: "325", y2: "80", stroke: "#38bdf8", stroke_width: "1.8", marker_end: "url(#sub-arrow-blue)" }
-                    text { x: "212", y: "73", fill: "#38bdf8", font_weight: "600", text_anchor: "middle", "{step1_title}" }
+                    line {
+                        x1: "100",
+                        y1: "80",
+                        x2: "325",
+                        y2: "80",
+                        stroke: "#38bdf8",
+                        stroke_width: "1.8",
+                        marker_end: "url(#sub-arrow-blue)",
+                    }
+                    text {
+                        x: "212",
+                        y: "73",
+                        fill: "#38bdf8",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step1_title}"
+                    }
 
                     // ステップ 2: 決定論的CBOR
-                    path { d: "M 330 95 H 430 V 128 H 335", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#sub-arrow-purple)" }
-                    text { x: "440", y: "107", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step2_title}" }
-                    text { x: "440", y: "124", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step2_sub}" }
+                    path {
+                        d: "M 330 95 H 430 V 128 H 335",
+                        fill: "none",
+                        stroke: "#c084fc",
+                        stroke_width: "1.8",
+                        marker_end: "url(#sub-arrow-purple)",
+                    }
+                    text {
+                        x: "440",
+                        y: "107",
+                        fill: "#d8b4fe",
+                        font_weight: "600",
+                        font_size: "13px",
+                        text_anchor: "start",
+                        "{step2_title}"
+                    }
+                    text {
+                        x: "440",
+                        y: "124",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "start",
+                        "{step2_sub}"
+                    }
 
                     // ステップ 3: Ed25519 署名
-                    path { d: "M 330 145 H 430 V 178 H 335", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#sub-arrow-purple)" }
-                    text { x: "440", y: "157", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step3_title}" }
-                    text { x: "440", y: "174", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step3_sub}" }
+                    path {
+                        d: "M 330 145 H 430 V 178 H 335",
+                        fill: "none",
+                        stroke: "#c084fc",
+                        stroke_width: "1.8",
+                        marker_end: "url(#sub-arrow-purple)",
+                    }
+                    text {
+                        x: "440",
+                        y: "157",
+                        fill: "#d8b4fe",
+                        font_weight: "600",
+                        font_size: "13px",
+                        text_anchor: "start",
+                        "{step3_title}"
+                    }
+                    text {
+                        x: "440",
+                        y: "174",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "start",
+                        "{step3_sub}"
+                    }
 
                     // ステップ 4: IndexedDB 即時保存
-                    line { x1: "330", y1: "205", x2: "565", y2: "205", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#sub-arrow-purple)" }
-                    text { x: "450", y: "198", fill: "#fde68a", font_weight: "600", text_anchor: "middle", "{step4_title}" }
+                    line {
+                        x1: "330",
+                        y1: "205",
+                        x2: "565",
+                        y2: "205",
+                        stroke: "#fbbf24",
+                        stroke_width: "1.8",
+                        marker_end: "url(#sub-arrow-purple)",
+                    }
+                    text {
+                        x: "450",
+                        y: "198",
+                        fill: "#fde68a",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step4_title}"
+                    }
 
                     // ステップ 5: Connect-RPC POST
-                    line { x1: "330", y1: "248", x2: "795", y2: "248", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#sub-arrow-blue)" }
-                    rect { x: "430", y: "232", width: "270", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
-                    text { x: "565", y: "246", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step5_title}" }
-                    text { x: "565", y: "266", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step5_sub}" }
+                    line {
+                        x1: "330",
+                        y1: "248",
+                        x2: "795",
+                        y2: "248",
+                        stroke: "#38bdf8",
+                        stroke_width: "2.2",
+                        marker_end: "url(#sub-arrow-blue)",
+                    }
+                    rect {
+                        x: "430",
+                        y: "232",
+                        width: "270",
+                        height: "20",
+                        rx: "4",
+                        fill: "rgba(15, 23, 42, 0.95)",
+                        stroke: "#0284c7",
+                    }
+                    text {
+                        x: "565",
+                        y: "246",
+                        fill: "#38bdf8",
+                        font_weight: "bold",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step5_title}"
+                    }
+                    text {
+                        x: "565",
+                        y: "266",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "middle",
+                        "{step5_sub}"
+                    }
 
                     // ステップ 6: サーバー検証
-                    path { d: "M 800 285 H 900 V 315 H 805", fill: "none", stroke: "#34d399", stroke_width: "1.8", marker_end: "url(#sub-arrow-green)" }
-                    text { x: "910", y: "297", fill: "#6ee7b7", font_weight: "600", font_size: "13px", text_anchor: "start", "{step6_title}" }
-                    text { x: "910", y: "314", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step6_sub}" }
+                    path {
+                        d: "M 800 285 H 900 V 315 H 805",
+                        fill: "none",
+                        stroke: "#34d399",
+                        stroke_width: "1.8",
+                        marker_end: "url(#sub-arrow-green)",
+                    }
+                    text {
+                        x: "910",
+                        y: "297",
+                        fill: "#6ee7b7",
+                        font_weight: "600",
+                        font_size: "13px",
+                        text_anchor: "start",
+                        "{step6_title}"
+                    }
+                    text {
+                        x: "910",
+                        y: "314",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "start",
+                        "{step6_sub}"
+                    }
 
                     // ステップ 7: DB保存
-                    line { x1: "800", y1: "345", x2: "985", y2: "345", stroke: "#ec4899", stroke_width: "1.8", marker_end: "url(#sub-arrow-purple)" }
-                    text { x: "892", y: "338", fill: "#f472b6", font_weight: "600", text_anchor: "middle", "{step7_title}" }
+                    line {
+                        x1: "800",
+                        y1: "345",
+                        x2: "985",
+                        y2: "345",
+                        stroke: "#ec4899",
+                        stroke_width: "1.8",
+                        marker_end: "url(#sub-arrow-purple)",
+                    }
+                    text {
+                        x: "892",
+                        y: "338",
+                        fill: "#f472b6",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step7_title}"
+                    }
 
                     // ステップ 8: DB応答
-                    line { x1: "990", y1: "375", x2: "805", y2: "375", stroke: "#ec4899", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#sub-arrow-purple)" }
-                    text { x: "892", y: "368", fill: "#f472b6", font_size: "12px", text_anchor: "middle", "{step8_title}" }
+                    line {
+                        x1: "990",
+                        y1: "375",
+                        x2: "805",
+                        y2: "375",
+                        stroke: "#ec4899",
+                        stroke_width: "1.8",
+                        stroke_dasharray: "4 4",
+                        marker_end: "url(#sub-arrow-purple)",
+                    }
+                    text {
+                        x: "892",
+                        y: "368",
+                        fill: "#f472b6",
+                        font_size: "12px",
+                        text_anchor: "middle",
+                        "{step8_title}"
+                    }
 
                     // ステップ 9: Connect-RPC レスポンス
-                    line { x1: "800", y1: "415", x2: "335", y2: "415", stroke: "#34d399", stroke_width: "2.2", stroke_dasharray: "4 4", marker_end: "url(#sub-arrow-green)" }
-                    text { x: "565", y: "408", fill: "#34d399", font_weight: "bold", font_size: "13px", text_anchor: "middle", "{step9_title}" }
+                    line {
+                        x1: "800",
+                        y1: "415",
+                        x2: "335",
+                        y2: "415",
+                        stroke: "#34d399",
+                        stroke_width: "2.2",
+                        stroke_dasharray: "4 4",
+                        marker_end: "url(#sub-arrow-green)",
+                    }
+                    text {
+                        x: "565",
+                        y: "408",
+                        fill: "#34d399",
+                        font_weight: "bold",
+                        font_size: "13px",
+                        text_anchor: "middle",
+                        "{step9_title}"
+                    }
 
                     // ステップ 10: UI 更新
-                    line { x1: "330", y1: "455", x2: "105", y2: "455", stroke: "#38bdf8", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#sub-arrow-blue)" }
-                    text { x: "217", y: "448", fill: "#38bdf8", font_weight: "600", text_anchor: "middle", "{step10_title}" }
+                    line {
+                        x1: "330",
+                        y1: "455",
+                        x2: "105",
+                        y2: "455",
+                        stroke: "#38bdf8",
+                        stroke_width: "1.8",
+                        stroke_dasharray: "4 4",
+                        marker_end: "url(#sub-arrow-blue)",
+                    }
+                    text {
+                        x: "217",
+                        y: "448",
+                        fill: "#38bdf8",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step10_title}"
+                    }
                 }
             }
 

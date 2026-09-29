@@ -206,105 +206,550 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     }
 
                     // アクター縦線（ライフライン）
-                    line { x1: "90", y1: "55", x2: "90", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "310", y1: "55", x2: "310", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "580", y1: "55", x2: "580", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "860", y1: "55", x2: "860", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
-                    line { x1: "1050", y1: "55", x2: "1050", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line {
+                        x1: "90",
+                        y1: "55",
+                        x2: "90",
+                        y2: "675",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "310",
+                        y1: "55",
+                        x2: "310",
+                        y2: "675",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "580",
+                        y1: "55",
+                        x2: "580",
+                        y2: "675",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "860",
+                        y1: "55",
+                        x2: "860",
+                        y2: "675",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
+                    line {
+                        x1: "1050",
+                        y1: "55",
+                        x2: "1050",
+                        y2: "675",
+                        stroke: "#1e293b",
+                        stroke_width: "1.5",
+                        stroke_dasharray: "5 5",
+                    }
 
                     // アクターヘッダーボックス
                     // 1. User
-                    rect { x: "20", y: "12", width: "140", height: "38", rx: "8", fill: "#0f172a", stroke: "#3b82f6", stroke_width: "1.8" }
-                    text { x: "90", y: "36", fill: "#93c5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_user}" }
+                    rect {
+                        x: "20",
+                        y: "12",
+                        width: "140",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#3b82f6",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "90",
+                        y: "36",
+                        fill: "#93c5fd",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_user}"
+                    }
 
                     // 2. Client
-                    rect { x: "220", y: "12", width: "180", height: "38", rx: "8", fill: "#0f172a", stroke: "#8b5cf6", stroke_width: "1.8" }
-                    text { x: "310", y: "36", fill: "#c4b5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_client}" }
+                    rect {
+                        x: "220",
+                        y: "12",
+                        width: "180",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#8b5cf6",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "310",
+                        y: "36",
+                        fill: "#c4b5fd",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_client}"
+                    }
 
                     // 3. Connect-RPC Server
-                    rect { x: "485", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#0284c7", stroke_width: "1.8" }
-                    text { x: "580", y: "36", fill: "#38bdf8", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_gateway}" }
+                    rect {
+                        x: "485",
+                        y: "12",
+                        width: "190",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#0284c7",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "580",
+                        y: "36",
+                        fill: "#38bdf8",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_gateway}"
+                    }
 
                     // 4. CAS SurrealDB
-                    rect { x: "765", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#f59e0b", stroke_width: "1.8" }
-                    text { x: "860", y: "36", fill: "#fbbf24", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_cas}" }
+                    rect {
+                        x: "765",
+                        y: "12",
+                        width: "190",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#f59e0b",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "860",
+                        y: "36",
+                        fill: "#fbbf24",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_cas}"
+                    }
 
                     // 5. Event Store
-                    rect { x: "965", y: "12", width: "170", height: "38", rx: "8", fill: "#0f172a", stroke: "#ec4899", stroke_width: "1.8" }
-                    text { x: "1050", y: "36", fill: "#f472b6", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_store}" }
+                    rect {
+                        x: "965",
+                        y: "12",
+                        width: "170",
+                        height: "38",
+                        rx: "8",
+                        fill: "#0f172a",
+                        stroke: "#ec4899",
+                        stroke_width: "1.8",
+                    }
+                    text {
+                        x: "1050",
+                        y: "36",
+                        fill: "#f472b6",
+                        font_weight: "bold",
+                        font_size: "13.5px",
+                        text_anchor: "middle",
+                        "{actor_store}"
+                    }
 
                     // ----------------------------------------------------
                     // ステップ 1: パーツ編集
-                    line { x1: "90", y1: "80", x2: "305", y2: "80", stroke: "#3b82f6", stroke_width: "1.8", marker_end: "url(#neg-arrow-blue)" }
-                    text { x: "197", y: "73", fill: "#93c5fd", font_weight: "600", text_anchor: "middle", "{step1_title}" }
+                    line {
+                        x1: "90",
+                        y1: "80",
+                        x2: "305",
+                        y2: "80",
+                        stroke: "#3b82f6",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-blue)",
+                    }
+                    text {
+                        x: "197",
+                        y: "73",
+                        fill: "#93c5fd",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step1_title}"
+                    }
 
                     // ステップ 2: ハッシュ計算 & 署名
-                    path { d: "M 310 95 H 410 V 128 H 315", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#neg-arrow-purple)" }
-                    text { x: "420", y: "107", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step2_title}" }
-                    text { x: "420", y: "124", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step2_sub}" }
+                    path {
+                        d: "M 310 95 H 410 V 128 H 315",
+                        fill: "none",
+                        stroke: "#c084fc",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-purple)",
+                    }
+                    text {
+                        x: "420",
+                        y: "107",
+                        fill: "#d8b4fe",
+                        font_weight: "600",
+                        font_size: "13px",
+                        text_anchor: "start",
+                        "{step2_title}"
+                    }
+                    text {
+                        x: "420",
+                        y: "124",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "start",
+                        "{step2_sub}"
+                    }
 
                     // ステップ 3: 初回 SubmitEvent (楽観的送信)
-                    line { x1: "310", y1: "158", x2: "575", y2: "158", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#neg-arrow-blue)" }
-                    rect { x: "355", y: "142", width: "230", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
-                    text { x: "470", y: "156", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step3_title}" }
-                    text { x: "470", y: "176", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step3_sub}" }
+                    line {
+                        x1: "310",
+                        y1: "158",
+                        x2: "575",
+                        y2: "158",
+                        stroke: "#38bdf8",
+                        stroke_width: "2.2",
+                        marker_end: "url(#neg-arrow-blue)",
+                    }
+                    rect {
+                        x: "355",
+                        y: "142",
+                        width: "230",
+                        height: "20",
+                        rx: "4",
+                        fill: "rgba(15, 23, 42, 0.95)",
+                        stroke: "#0284c7",
+                    }
+                    text {
+                        x: "470",
+                        y: "156",
+                        fill: "#38bdf8",
+                        font_weight: "bold",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step3_title}"
+                    }
+                    text {
+                        x: "470",
+                        y: "176",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "middle",
+                        "{step3_sub}"
+                    }
 
                     // ステップ 4: サーバー側で CAS 照会
-                    line { x1: "580", y1: "200", x2: "855", y2: "200", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#neg-arrow-amber)" }
-                    text { x: "717", y: "193", fill: "#fbbf24", font_weight: "600", text_anchor: "middle", "{step4_title}" }
+                    line {
+                        x1: "580",
+                        y1: "200",
+                        x2: "855",
+                        y2: "200",
+                        stroke: "#fbbf24",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-amber)",
+                    }
+                    text {
+                        x: "717",
+                        y: "193",
+                        fill: "#fbbf24",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step4_title}"
+                    }
 
-                    line { x1: "860", y1: "226", x2: "585", y2: "226", stroke: "#fbbf24", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#neg-arrow-amber)" }
-                    text { x: "717", y: "219", fill: "#fde68a", font_size: "12px", text_anchor: "middle", "{step4_sub}" }
+                    line {
+                        x1: "860",
+                        y1: "226",
+                        x2: "585",
+                        y2: "226",
+                        stroke: "#fbbf24",
+                        stroke_width: "1.8",
+                        stroke_dasharray: "4 4",
+                        marker_end: "url(#neg-arrow-amber)",
+                    }
+                    text {
+                        x: "717",
+                        y: "219",
+                        fill: "#fde68a",
+                        font_size: "12px",
+                        text_anchor: "middle",
+                        "{step4_sub}"
+                    }
 
                     // ステップ 5: ネゴシエーションレスポンス: missing_content
-                    line { x1: "580", y1: "258", x2: "315", y2: "258", stroke: "#f59e0b", stroke_width: "2.2", marker_end: "url(#neg-arrow-amber)" }
-                    rect { x: "360", y: "242", width: "230", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#d97706" }
-                    text { x: "475", y: "256", fill: "#fbbf24", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step5_title}" }
-                    text { x: "475", y: "276", fill: "#fde68a", font_size: "11.5px", text_anchor: "middle", "{step5_sub}" }
+                    line {
+                        x1: "580",
+                        y1: "258",
+                        x2: "315",
+                        y2: "258",
+                        stroke: "#f59e0b",
+                        stroke_width: "2.2",
+                        marker_end: "url(#neg-arrow-amber)",
+                    }
+                    rect {
+                        x: "360",
+                        y: "242",
+                        width: "230",
+                        height: "20",
+                        rx: "4",
+                        fill: "rgba(15, 23, 42, 0.95)",
+                        stroke: "#d97706",
+                    }
+                    text {
+                        x: "475",
+                        y: "256",
+                        fill: "#fbbf24",
+                        font_weight: "bold",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step5_title}"
+                    }
+                    text {
+                        x: "475",
+                        y: "276",
+                        fill: "#fde68a",
+                        font_size: "11.5px",
+                        text_anchor: "middle",
+                        "{step5_sub}"
+                    }
 
                     // ステップ 6: クライアントが不足分のみ抽出
-                    path { d: "M 310 295 H 410 V 328 H 315", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#neg-arrow-purple)" }
-                    text { x: "420", y: "307", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step6_title}" }
-                    text { x: "420", y: "324", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step6_sub}" }
+                    path {
+                        d: "M 310 295 H 410 V 328 H 315",
+                        fill: "none",
+                        stroke: "#c084fc",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-purple)",
+                    }
+                    text {
+                        x: "420",
+                        y: "307",
+                        fill: "#d8b4fe",
+                        font_weight: "600",
+                        font_size: "13px",
+                        text_anchor: "start",
+                        "{step6_title}"
+                    }
+                    text {
+                        x: "420",
+                        y: "324",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "start",
+                        "{step6_sub}"
+                    }
 
                     // ステップ 7: POST UploadContent
-                    line { x1: "310", y1: "358", x2: "575", y2: "358", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#neg-arrow-blue)" }
-                    rect { x: "370", y: "342", width: "210", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
-                    text { x: "475", y: "356", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step7_title}" }
-                    text { x: "475", y: "376", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step7_sub}" }
+                    line {
+                        x1: "310",
+                        y1: "358",
+                        x2: "575",
+                        y2: "358",
+                        stroke: "#38bdf8",
+                        stroke_width: "2.2",
+                        marker_end: "url(#neg-arrow-blue)",
+                    }
+                    rect {
+                        x: "370",
+                        y: "342",
+                        width: "210",
+                        height: "20",
+                        rx: "4",
+                        fill: "rgba(15, 23, 42, 0.95)",
+                        stroke: "#0284c7",
+                    }
+                    text {
+                        x: "475",
+                        y: "356",
+                        fill: "#38bdf8",
+                        font_weight: "bold",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step7_title}"
+                    }
+                    text {
+                        x: "475",
+                        y: "376",
+                        fill: "#94a3b8",
+                        font_size: "11.5px",
+                        text_anchor: "middle",
+                        "{step7_sub}"
+                    }
 
                     // ステップ 8 & 9: サーバー側検証 & CAS 保存
-                    path { d: "M 580 395 H 680 V 425 H 585", fill: "none", stroke: "#34d399", stroke_width: "1.8", marker_end: "url(#neg-arrow-green)" }
-                    text { x: "690", y: "414", fill: "#6ee7b7", font_weight: "600", font_size: "13px", text_anchor: "start", "{step8_title}" }
+                    path {
+                        d: "M 580 395 H 680 V 425 H 585",
+                        fill: "none",
+                        stroke: "#34d399",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-green)",
+                    }
+                    text {
+                        x: "690",
+                        y: "414",
+                        fill: "#6ee7b7",
+                        font_weight: "600",
+                        font_size: "13px",
+                        text_anchor: "start",
+                        "{step8_title}"
+                    }
 
-                    line { x1: "580", y1: "445", x2: "855", y2: "445", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#neg-arrow-amber)" }
-                    text { x: "717", y: "438", fill: "#fbbf24", font_weight: "600", text_anchor: "middle", "{step9_title}" }
+                    line {
+                        x1: "580",
+                        y1: "445",
+                        x2: "855",
+                        y2: "445",
+                        stroke: "#fbbf24",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-amber)",
+                    }
+                    text {
+                        x: "717",
+                        y: "438",
+                        fill: "#fbbf24",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step9_title}"
+                    }
 
                     // ステップ 10: アップロード完了通知
-                    line { x1: "580", y1: "470", x2: "315", y2: "470", stroke: "#38bdf8", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#neg-arrow-blue)" }
-                    text { x: "447", y: "463", fill: "#7dd3fc", font_size: "12px", text_anchor: "middle", "{step10_title}" }
+                    line {
+                        x1: "580",
+                        y1: "470",
+                        x2: "315",
+                        y2: "470",
+                        stroke: "#38bdf8",
+                        stroke_width: "1.8",
+                        stroke_dasharray: "4 4",
+                        marker_end: "url(#neg-arrow-blue)",
+                    }
+                    text {
+                        x: "447",
+                        y: "463",
+                        fill: "#7dd3fc",
+                        font_size: "12px",
+                        text_anchor: "middle",
+                        "{step10_title}"
+                    }
 
                     // ステップ 11: SubmitEvent 再送
-                    line { x1: "310", y1: "505", x2: "575", y2: "505", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#neg-arrow-blue)" }
-                    rect { x: "365", y: "489", width: "220", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
-                    text { x: "475", y: "503", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step11_title}" }
+                    line {
+                        x1: "310",
+                        y1: "505",
+                        x2: "575",
+                        y2: "505",
+                        stroke: "#38bdf8",
+                        stroke_width: "2.2",
+                        marker_end: "url(#neg-arrow-blue)",
+                    }
+                    rect {
+                        x: "365",
+                        y: "489",
+                        width: "220",
+                        height: "20",
+                        rx: "4",
+                        fill: "rgba(15, 23, 42, 0.95)",
+                        stroke: "#0284c7",
+                    }
+                    text {
+                        x: "475",
+                        y: "503",
+                        fill: "#38bdf8",
+                        font_weight: "bold",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step11_title}"
+                    }
 
                     // ステップ 12: 全コンテンツ充足確認
-                    line { x1: "580", y1: "532", x2: "855", y2: "532", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#neg-arrow-amber)" }
-                    text { x: "717", y: "525", fill: "#fde68a", font_size: "12.5px", text_anchor: "middle", "{step12_title}" }
+                    line {
+                        x1: "580",
+                        y1: "532",
+                        x2: "855",
+                        y2: "532",
+                        stroke: "#fbbf24",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-amber)",
+                    }
+                    text {
+                        x: "717",
+                        y: "525",
+                        fill: "#fde68a",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step12_title}"
+                    }
 
                     // ステップ 13: イベント保存
-                    line { x1: "580", y1: "565", x2: "1045", y2: "565", stroke: "#ec4899", stroke_width: "1.8", marker_end: "url(#neg-arrow-purple)" }
-                    text { x: "812", y: "558", fill: "#f472b6", font_weight: "600", text_anchor: "middle", "{step13_title}" }
+                    line {
+                        x1: "580",
+                        y1: "565",
+                        x2: "1045",
+                        y2: "565",
+                        stroke: "#ec4899",
+                        stroke_width: "1.8",
+                        marker_end: "url(#neg-arrow-purple)",
+                    }
+                    text {
+                        x: "812",
+                        y: "558",
+                        fill: "#f472b6",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step13_title}"
+                    }
 
                     // ステップ 14: 確定成功レスポンス
-                    line { x1: "580", y1: "605", x2: "315", y2: "605", stroke: "#34d399", stroke_width: "2.2", marker_end: "url(#neg-arrow-green)" }
-                    rect { x: "370", y: "589", width: "210", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#059669" }
-                    text { x: "475", y: "603", fill: "#34d399", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step14_title}" }
+                    line {
+                        x1: "580",
+                        y1: "605",
+                        x2: "315",
+                        y2: "605",
+                        stroke: "#34d399",
+                        stroke_width: "2.2",
+                        marker_end: "url(#neg-arrow-green)",
+                    }
+                    rect {
+                        x: "370",
+                        y: "589",
+                        width: "210",
+                        height: "20",
+                        rx: "4",
+                        fill: "rgba(15, 23, 42, 0.95)",
+                        stroke: "#059669",
+                    }
+                    text {
+                        x: "475",
+                        y: "603",
+                        fill: "#34d399",
+                        font_weight: "bold",
+                        font_size: "12.5px",
+                        text_anchor: "middle",
+                        "{step14_title}"
+                    }
 
                     // ステップ 15: UI 確定
-                    line { x1: "310", y1: "645", x2: "95", y2: "645", stroke: "#34d399", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#neg-arrow-green)" }
-                    text { x: "202", y: "638", fill: "#86efac", font_weight: "600", text_anchor: "middle", "{step15_title}" }
+                    line {
+                        x1: "310",
+                        y1: "645",
+                        x2: "95",
+                        y2: "645",
+                        stroke: "#34d399",
+                        stroke_width: "1.8",
+                        stroke_dasharray: "4 4",
+                        marker_end: "url(#neg-arrow-green)",
+                    }
+                    text {
+                        x: "202",
+                        y: "638",
+                        fill: "#86efac",
+                        font_weight: "600",
+                        text_anchor: "middle",
+                        "{step15_title}"
+                    }
                 }
             }
 
