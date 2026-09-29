@@ -610,8 +610,11 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
         }
     }
 
-    let ret_ptr = pop_i32(&mut stack)? as usize;
-    read_value_from_memory(&memory, ret_ptr)
+    match stack.pop() {
+        Some(StackVal::I64(val)) => Ok(Value::Number(val)),
+        Some(StackVal::I32(ret_ptr)) => read_value_from_memory(&memory, ret_ptr as usize),
+        _ => Err("Expected return value (i32 pointer or i64 number) on stack"),
+    }
 }
 
 fn code_bytes_slice(bytes: &[u8], pos: usize) -> Result<&[u8], &'static str> {

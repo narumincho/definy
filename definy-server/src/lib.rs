@@ -1,14 +1,19 @@
+mod builtin_evaluator;
 mod builtin_expression_type;
 mod builtin_migration;
 mod builtin_std_functions;
 mod builtin_type_ast;
+mod builtin_type_checker;
 mod builtin_value_type;
+mod builtin_wasm_compiler;
 mod connect_rpc;
 mod db;
 mod error;
 mod extractor;
 mod html;
 pub mod mcp;
+#[cfg(test)]
+mod self_hosting_tests;
 
 use std::net::SocketAddr;
 use std::sync::Arc;

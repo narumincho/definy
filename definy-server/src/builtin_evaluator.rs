@@ -1,0 +1,556 @@
+use definy_event::EventHashId;
+use definy_event::event::{
+    AddExpression, CallExpression, Description, DivideExpression, EqualExpression, Expression,
+    FunctionExpression, IfExpression, LessThanExpression, MatchArm, MatchExpression,
+    ModulePartEntry, MultiplyExpression, PartReferenceExpression, PartType, RecordGetExpression,
+    RemainderExpression, SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression,
+    VariableExpression, VariantExpression, derive_module_part_id,
+};
+
+/// 汎用自己評価器 `core.eval-value`: `expression -> env -> value`
+/// definy 内で定義された式 AST を、definy の純粋関数として評価・解釈実行します。
+pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
+    let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
+    let val_part_hash = derive_module_part_id(core_module_id, "value");
+    let env_part_hash = derive_module_part_id(core_module_id, "env");
+    let env_lookup_hash = derive_module_part_id(core_module_id, "env-lookup");
+    let env_extend_hash = derive_module_part_id(core_module_id, "env-extend");
+    let eval_value_hash = derive_module_part_id(core_module_id, "eval-value");
+
+    // Helper: call eval-value(sub_expr)(env)
+    fn eval_sub(eval_hash: &EventHashId, sub_expr: Expression, env_expr: Expression) -> Expression {
+        Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    eval_hash.clone(),
+                ))),
+                argument: Box::new(sub_expr),
+            })),
+            argument: Box::new(env_expr),
+        })
+    }
+
+    fn val_num(n: Expression) -> Expression {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "number".into(),
+            payload: Some(Box::new(n)),
+        })
+    }
+
+    fn val_str(s: Expression) -> Expression {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "string".into(),
+            payload: Some(Box::new(s)),
+        })
+    }
+
+    fn val_bool(b: Expression) -> Expression {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "boolean".into(),
+            payload: Some(Box::new(b)),
+        })
+    }
+
+    let val_unit = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "unit".into(),
+        payload: None,
+    });
+
+    let binary_arith_arm =
+        |tag: &'static str,
+         eval_hash: &EventHashId,
+         var_id: i64,
+         op_fn: fn(Expression, Expression) -> Expression| {
+            let left_expr = Expression::RecordGet(RecordGetExpression {
+                record: Box::new(Expression::Variable(VariableExpression {
+                    variable_id: var_id,
+                })),
+                key: "left".into(),
+            });
+            let right_expr = Expression::RecordGet(RecordGetExpression {
+                record: Box::new(Expression::Variable(VariableExpression {
+                    variable_id: var_id,
+                })),
+                key: "right".into(),
+            });
+
+            let eval_l = eval_sub(
+                eval_hash,
+                left_expr,
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            );
+            let eval_r = eval_sub(
+                eval_hash,
+                right_expr,
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            );
+
+            let left_num_var = 10;
+            let right_num_var = 11;
+
+            let compute = val_num(op_fn(
+                Expression::Variable(VariableExpression {
+                    variable_id: left_num_var,
+                }),
+                Expression::Variable(VariableExpression {
+                    variable_id: right_num_var,
+                }),
+            ));
+
+            let inner_match = Expression::Match(MatchExpression {
+                target: Box::new(eval_r),
+                arms: vec![
+                    MatchArm {
+                        tag: "number".into(),
+                        variable_id: Some(right_num_var),
+                        variable_name: Some("r_num".into()),
+                        body: Box::new(compute),
+                    },
+                    MatchArm {
+                        tag: "_".into(),
+                        variable_id: Some(99),
+                        variable_name: Some("_".into()),
+                        body: Box::new(val_unit.clone()),
+                    },
+                ],
+                default: None,
+            });
+
+            let outer_match = Expression::Match(MatchExpression {
+                target: Box::new(eval_l),
+                arms: vec![
+                    MatchArm {
+                        tag: "number".into(),
+                        variable_id: Some(left_num_var),
+                        variable_name: Some("l_num".into()),
+                        body: Box::new(inner_match),
+                    },
+                    MatchArm {
+                        tag: "_".into(),
+                        variable_id: Some(98),
+                        variable_name: Some("_".into()),
+                        body: Box::new(val_unit.clone()),
+                    },
+                ],
+                default: None,
+            });
+
+            MatchArm {
+                tag: tag.into(),
+                variable_id: Some(var_id),
+                variable_name: Some("bin".into()),
+                body: Box::new(outer_match),
+            }
+        };
+
+    let mut arms = Vec::new();
+
+    // 1. Literal: number
+    arms.push(MatchArm {
+        tag: "number".into(),
+        variable_id: Some(10),
+        variable_name: Some("n".into()),
+        body: Box::new(val_num(Expression::Variable(VariableExpression {
+            variable_id: 10,
+        }))),
+    });
+
+    // 2. Literal: string
+    arms.push(MatchArm {
+        tag: "string".into(),
+        variable_id: Some(11),
+        variable_name: Some("s".into()),
+        body: Box::new(val_str(Expression::Variable(VariableExpression {
+            variable_id: 11,
+        }))),
+    });
+
+    // 3. Literal: boolean
+    arms.push(MatchArm {
+        tag: "boolean".into(),
+        variable_id: Some(12),
+        variable_name: Some("b".into()),
+        body: Box::new(val_bool(Expression::Variable(VariableExpression {
+            variable_id: 12,
+        }))),
+    });
+
+    // 4. Arithmetic
+    arms.push(binary_arith_arm("add", &eval_value_hash, 13, |l, r| {
+        Expression::Add(AddExpression {
+            left: Box::new(l),
+            right: Box::new(r),
+        })
+    }));
+    arms.push(binary_arith_arm(
+        "subtract",
+        &eval_value_hash,
+        14,
+        |l, r| {
+            Expression::Subtract(SubtractExpression {
+                left: Box::new(l),
+                right: Box::new(r),
+            })
+        },
+    ));
+    arms.push(binary_arith_arm(
+        "multiply",
+        &eval_value_hash,
+        15,
+        |l, r| {
+            Expression::Multiply(MultiplyExpression {
+                left: Box::new(l),
+                right: Box::new(r),
+            })
+        },
+    ));
+    arms.push(binary_arith_arm("divide", &eval_value_hash, 16, |l, r| {
+        Expression::Divide(DivideExpression {
+            left: Box::new(l),
+            right: Box::new(r),
+        })
+    }));
+    arms.push(binary_arith_arm(
+        "remainder",
+        &eval_value_hash,
+        17,
+        |l, r| {
+            Expression::Remainder(RemainderExpression {
+                left: Box::new(l),
+                right: Box::new(r),
+            })
+        },
+    ));
+
+    // 5. Comparison: equal
+    {
+        let var_id = 18;
+        let left_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_id,
+            })),
+            key: "left".into(),
+        });
+        let right_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_id,
+            })),
+            key: "right".into(),
+        });
+        let eval_l = eval_sub(
+            &eval_value_hash,
+            left_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let eval_r = eval_sub(
+            &eval_value_hash,
+            right_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+
+        arms.push(MatchArm {
+            tag: "equal".into(),
+            variable_id: Some(var_id),
+            variable_name: Some("eq".into()),
+            body: Box::new(val_bool(Expression::Equal(EqualExpression {
+                left: Box::new(eval_l),
+                right: Box::new(eval_r),
+            }))),
+        });
+    }
+
+    // 6. Comparison: less_than
+    arms.push(binary_arith_arm(
+        "less_than",
+        &eval_value_hash,
+        19,
+        |l, r| {
+            Expression::LessThan(LessThanExpression {
+                left: Box::new(l),
+                right: Box::new(r),
+            })
+        },
+    ));
+
+    // 7. Variable lookup: env-lookup(env)(variable_id)
+    {
+        let var_payload_id = 20;
+        let target_var_id = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_payload_id,
+            })),
+            key: "variable_id".into(),
+        });
+        let lookup_call = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    env_lookup_hash.clone(),
+                ))),
+                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            })),
+            argument: Box::new(target_var_id),
+        });
+
+        arms.push(MatchArm {
+            tag: "variable".into(),
+            variable_id: Some(var_payload_id),
+            variable_name: Some("var".into()),
+            body: Box::new(lookup_call),
+        });
+    }
+
+    // 8. Conditional: if({ condition, then_expr, else_expr })
+    {
+        let if_var_id = 21;
+        let cond_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: if_var_id,
+            })),
+            key: "condition".into(),
+        });
+        let then_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: if_var_id,
+            })),
+            key: "then_expr".into(),
+        });
+        let else_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: if_var_id,
+            })),
+            key: "else_expr".into(),
+        });
+
+        let eval_cond = eval_sub(
+            &eval_value_hash,
+            cond_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let eval_then = eval_sub(
+            &eval_value_hash,
+            then_sub,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let eval_else = eval_sub(
+            &eval_value_hash,
+            else_sub,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+
+        let bool_var_id = 22;
+        let if_body = Expression::Match(MatchExpression {
+            target: Box::new(eval_cond),
+            arms: vec![
+                MatchArm {
+                    tag: "boolean".into(),
+                    variable_id: Some(bool_var_id),
+                    variable_name: Some("b".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: bool_var_id,
+                        })),
+                        then_expr: Box::new(eval_then),
+                        else_expr: Box::new(eval_else),
+                    })),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(97),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "if".into(),
+            variable_id: Some(if_var_id),
+            variable_name: Some("if_e".into()),
+            body: Box::new(if_body),
+        });
+    }
+
+    // 9. Function definition: function({ parameter_variable_id, body }) -> value.closure
+    {
+        let func_var_id = 23;
+        let param_id_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: func_var_id,
+            })),
+            key: "parameter_variable_id".into(),
+        });
+        let body_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: func_var_id,
+            })),
+            key: "body".into(),
+        });
+
+        let closure_record = Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "parameter_variable_id".into(),
+                    value: Box::new(param_id_expr),
+                },
+                TypeLiteralItemExpression {
+                    key: "body".into(),
+                    value: Box::new(body_expr),
+                },
+                TypeLiteralItemExpression {
+                    key: "captured_env".into(),
+                    value: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                },
+            ],
+        });
+
+        let closure_val = Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "closure".into(),
+            payload: Some(Box::new(closure_record)),
+        });
+
+        arms.push(MatchArm {
+            tag: "function".into(),
+            variable_id: Some(func_var_id),
+            variable_name: Some("fn_def".into()),
+            body: Box::new(closure_val),
+        });
+    }
+
+    // 10. Function call: call({ function, argument })
+    {
+        let call_var_id = 24;
+        let fn_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: call_var_id,
+            })),
+            key: "function".into(),
+        });
+        let arg_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: call_var_id,
+            })),
+            key: "argument".into(),
+        });
+
+        let eval_fn = eval_sub(
+            &eval_value_hash,
+            fn_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let eval_arg = eval_sub(
+            &eval_value_hash,
+            arg_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+
+        let closure_var_id = 25;
+        let closure_param_id = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: closure_var_id,
+            })),
+            key: "parameter_variable_id".into(),
+        });
+        let closure_body = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: closure_var_id,
+            })),
+            key: "body".into(),
+        });
+        let closure_env = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: closure_var_id,
+            })),
+            key: "captured_env".into(),
+        });
+
+        // extended_env = env-extend(closure_env)(closure_param_id)(eval_arg)
+        let extended_env = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::Call(CallExpression {
+                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                        env_extend_hash.clone(),
+                    ))),
+                    argument: Box::new(closure_env),
+                })),
+                argument: Box::new(closure_param_id),
+            })),
+            argument: Box::new(eval_arg),
+        });
+
+        let call_result = eval_sub(&eval_value_hash, closure_body, extended_env);
+
+        let call_body = Expression::Match(MatchExpression {
+            target: Box::new(eval_fn),
+            arms: vec![
+                MatchArm {
+                    tag: "closure".into(),
+                    variable_id: Some(closure_var_id),
+                    variable_name: Some("c".into()),
+                    body: Box::new(call_result),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(96),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "call".into(),
+            variable_id: Some(call_var_id),
+            variable_name: Some("call_e".into()),
+            body: Box::new(call_body),
+        });
+    }
+
+    // Default arm
+    arms.push(MatchArm {
+        tag: "_".into(),
+        variable_id: Some(95),
+        variable_name: Some("_".into()),
+        body: Box::new(val_unit),
+    });
+
+    let main_expr = Expression::Function(FunctionExpression {
+        parameter_id: 0,
+        parameter_name: "expr".into(),
+        body: Box::new(Expression::Function(FunctionExpression {
+            parameter_id: 1,
+            parameter_name: "env".into(),
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+                arms,
+                default: None,
+            })),
+        })),
+    });
+
+    ModulePartEntry {
+        name: "eval-value".into(),
+        part_type: Some(PartType::Function {
+            parameter: Box::new(PartType::TypePart(expr_type_part_hash)),
+            return_type: Box::new(PartType::Function {
+                parameter: Box::new(PartType::TypePart(env_part_hash)),
+                return_type: Box::new(PartType::TypePart(val_part_hash)),
+            }),
+        }),
+        description: Description::localized(vec![
+            (
+                "en",
+                "Universal self-hosted AST evaluator returning dynamic values",
+            ),
+            ("ja", "動的値を返却する汎用自己ホスト AST 評価器"),
+        ]),
+        content_hash: None,
+        expression: Some(main_expr),
+    }
+}
