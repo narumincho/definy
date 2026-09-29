@@ -8,8 +8,10 @@ pub(crate) struct CompileContext<'a> {
     events: &'a [crate::app_state::EventWithHash],
     static_data: Vec<u8>,
     current_static_offset: u32,
-    visited_parts: Vec<definy_event::EventHashId>,
+    visited_parts: Vec<(definy_event::EventHashId, Option<definy_event::ContentHash>)>,
     pub(crate) pending_functions: Vec<PendingFunction>,
+    pub(crate) part_functions:
+        HashMap<(definy_event::EventHashId, Option<definy_event::ContentHash>), u32>,
 }
 
 impl<'a> CompileContext<'a> {
@@ -20,6 +22,7 @@ impl<'a> CompileContext<'a> {
             current_static_offset: 1024,
             visited_parts: Vec::new(),
             pending_functions: Vec::new(),
+            part_functions: HashMap::new(),
         }
     }
 
@@ -28,7 +31,7 @@ impl<'a> CompileContext<'a> {
         self.static_data.extend_from_slice(bytes);
         self.current_static_offset += bytes.len() as u32;
         // Align to 8 bytes
-        while self.current_static_offset % 8 != 0 {
+        while !self.current_static_offset.is_multiple_of(8) {
             self.static_data.push(0);
             self.current_static_offset += 1;
         }
@@ -94,121 +97,14 @@ pub fn compile_expression_to_wasm(
         compiled_function_bodies.push(func_body);
     }
 
-    // Assemble full Wasm binary module
-    let mut module = Vec::new();
-    module.extend_from_slice(&WASM_MAGIC);
-    module.extend_from_slice(&WASM_VERSION);
-
-    // 1. Type Section:
-    // Type 0: () -> i32 (returns pointer to Value in memory)
-    // Type 1: (i32, i32) -> i32 (function with env_ptr and arg_ptr returning Value pointer)
-    let mut type_section = Vec::new();
-    type_section.push(2); // 2 types
-    type_section.extend_from_slice(&[0x60, 0, 1, I32]);
-    type_section.extend_from_slice(&[0x60, 2, I32, I32, 1, I32]);
-    emit_section(&mut module, TYPE_SECTION, &type_section);
-
-    // 2. Function Section:
-    let num_funcs = compiled_function_bodies.len();
-    let mut function_section = Vec::new();
-    encode_u32_leb128(&mut function_section, (1 + num_funcs) as u32);
-    function_section.push(0); // function 0 is evaluate (type 0)
-    for _ in 0..num_funcs {
-        function_section.push(1); // function 1.. are compiled functions (type 1)
-    }
-    emit_section(&mut module, FUNCTION_SECTION, &function_section);
-
-    // 3. Table Section:
-    let mut table_section = Vec::new();
-    table_section.push(1); // 1 table
-    table_section.push(FUNCREF);
-    table_section.push(0x00); // limits: flag 0 (min only)
-    encode_u32_leb128(&mut table_section, num_funcs.max(1) as u32);
-    emit_section(&mut module, TABLE_SECTION, &table_section);
-
-    // 4. Memory Section: 1 memory, min 2 pages (128KB)
-    let memory_section = vec![1, 0x00, 2];
-    emit_section(&mut module, MEMORY_SECTION, &memory_section);
-
-    // 5. Global Section:
-    // Global 0: mut i32 = HEAP_START_OFFSET (bump heap pointer)
-    let mut global_section = Vec::new();
-    global_section.push(1); // 1 global
-    global_section.push(I32); // type i32
-    global_section.push(1); // mutability: 1 (mutable)
-    global_section.push(I32_CONST);
-    encode_i32_sleb128(&mut global_section, HEAP_START_OFFSET as i32);
-    global_section.push(END);
-    emit_section(&mut module, GLOBAL_SECTION, &global_section);
-
-    // 6. Export Section:
-    let mut export_section = Vec::new();
-    export_section.push(2); // 2 exports
-
-    let export_name_eval = "evaluate".as_bytes();
-    export_section.push(export_name_eval.len() as u8);
-    export_section.extend_from_slice(export_name_eval);
-    export_section.push(0x00); // kind: function
-    export_section.push(0); // function idx 0
-
-    let export_name_mem = "memory".as_bytes();
-    export_section.push(export_name_mem.len() as u8);
-    export_section.extend_from_slice(export_name_mem);
-    export_section.push(0x02); // kind: memory
-    export_section.push(0); // memory idx 0
-
-    emit_section(&mut module, EXPORT_SECTION, &export_section);
-
-    // 7. Element Section: initialize Table with Function indices 1..=num_funcs
-    if num_funcs > 0 {
-        let mut element_section = Vec::new();
-        element_section.push(1); // 1 segment
-        element_section.push(0); // table index 0
-        element_section.push(I32_CONST);
-        encode_i32_sleb128(&mut element_section, 0); // table offset 0
-        element_section.push(END);
-        encode_u32_leb128(&mut element_section, num_funcs as u32);
-        for f in 0..num_funcs {
-            encode_u32_leb128(&mut element_section, (1 + f) as u32);
-        }
-        emit_section(&mut module, ELEMENT_SECTION, &element_section);
-    }
-
-    // 8. Code Section:
-    let mut code_section = Vec::new();
-    encode_u32_leb128(&mut code_section, (1 + num_funcs) as u32);
-
-    let mut func_body = Vec::new();
+    // Assemble full Wasm binary module using module_builder
     let locals_count = count_locals(expression) + next_local_idx + 64;
-    func_body.push(2); // 2 local declaration groups
-    encode_u32_leb128(&mut func_body, 1);
-    func_body.push(I64); // local 0 is i64 (temp for number arithmetic)
-    encode_u32_leb128(&mut func_body, locals_count);
-    func_body.push(I32); // locals 1 .. 1 + locals_count are i32 (pointers / temp values)
-    func_body.extend_from_slice(&code_bytes);
-
-    encode_u32_leb128(&mut code_section, func_body.len() as u32);
-    code_section.extend_from_slice(&func_body);
-
-    for f_body in &compiled_function_bodies {
-        encode_u32_leb128(&mut code_section, f_body.len() as u32);
-        code_section.extend_from_slice(f_body);
-    }
-
-    emit_section(&mut module, CODE_SECTION, &code_section);
-
-    // 9. Data Section:
-    if !ctx.static_data.is_empty() {
-        let mut data_section = Vec::new();
-        data_section.push(1); // 1 segment
-        data_section.push(0); // memory 0
-        data_section.push(I32_CONST);
-        encode_i32_sleb128(&mut data_section, 1024);
-        data_section.push(END);
-        encode_u32_leb128(&mut data_section, ctx.static_data.len() as u32);
-        data_section.extend_from_slice(&ctx.static_data);
-        emit_section(&mut module, DATA_SECTION, &data_section);
-    }
+    let module = super::module_builder::assemble_wasm_module(
+        &code_bytes,
+        locals_count,
+        &compiled_function_bodies,
+        &ctx.static_data,
+    );
 
     Ok(module)
 }
@@ -265,7 +161,7 @@ pub(crate) fn emit_expression(
             encode_mem_arg(out, 2, 4);
 
             // Update heap ptr: list_ptr + 8 + count * 4 (aligned to 8)
-            let total_size = ((8 + count * 4 + 7) / 8) * 8;
+            let total_size = (8 + count * 4).div_ceil(8) * 8;
             out.push(GLOBAL_GET);
             out.push(0);
             out.push(I32_CONST);
@@ -320,7 +216,7 @@ pub(crate) fn emit_expression(
             out.push(I32_STORE);
             encode_mem_arg(out, 2, 4);
 
-            let total_size = ((8 + count * 8 + 7) / 8) * 8;
+            let total_size = (8 + count * 8).div_ceil(8) * 8;
             out.push(GLOBAL_GET);
             out.push(0);
             out.push(I32_CONST);
@@ -356,6 +252,9 @@ pub(crate) fn emit_expression(
 
             out.push(LOCAL_GET);
             encode_u32_leb128(out, record_ptr_local);
+        }
+        Expression::RecordGet(rg) => {
+            super::record_ops::emit_record_get(rg, out, env, next_local_idx, ctx)?;
         }
         Expression::Constructor(ConstructorExpression { value, .. }) => {
             emit_expression(value, out, env, next_local_idx, ctx)?;
@@ -418,6 +317,57 @@ pub(crate) fn emit_expression(
                 next_local_idx,
                 ctx,
                 "remainder by zero",
+            )?;
+        }
+        Expression::BitAnd(BitAndExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_AND,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "bit and",
+            )?;
+        }
+        Expression::BitOr(BitOrExpression { left, right }) => {
+            emit_binary_arithmetic(left, right, I64_OR, out, env, next_local_idx, ctx, "bit or")?;
+        }
+        Expression::BitXor(BitXorExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_XOR,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "bit xor",
+            )?;
+        }
+        Expression::ShiftLeft(ShiftLeftExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SHL,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "shift left",
+            )?;
+        }
+        Expression::ShiftRight(ShiftRightExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SHR_U,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "shift right",
             )?;
         }
         Expression::Equal(EqualExpression { left, right }) => {
@@ -544,44 +494,46 @@ pub(crate) fn emit_expression(
         }
         Expression::PartReference(PartReferenceExpression {
             part_definition_event_hash,
+            content_hash,
         }) => {
-            if ctx.visited_parts.contains(part_definition_event_hash) {
-                return Err(
-                    "Circular reference detected while compiling PartReference to Wasm".into(),
-                );
-            }
-            if ctx.visited_parts.len() > 100 {
-                return Err("Maximum part reference recursion depth exceeded".into());
+            let part_key = (part_definition_event_hash.clone(), content_hash.clone());
+            if let Some(&table_idx) = ctx.part_functions.get(&part_key) {
+                super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
+                return Ok(());
             }
 
-            let mut latest_expression = None;
-            for (event_hash, event_result) in ctx.events.iter().rev() {
-                if let Ok((_, event)) = event_result {
-                    match &event.content {
-                        definy_event::event::EventContent::PartDefinition(part_definition)
-                            if part_definition_event_hash == event_hash =>
-                        {
-                            latest_expression = part_definition.expression.as_ref();
-                            break;
-                        }
-                        definy_event::event::EventContent::PartUpdate(part_update)
-                            if part_update.part_definition_event_hash
-                                == *part_definition_event_hash =>
-                        {
-                            latest_expression = part_update.expression.as_ref();
-                            break;
-                        }
-                        _ => {}
+            if let Some(target_expr) = resolve_part_expression(
+                ctx.events,
+                part_definition_event_hash,
+                content_hash.as_ref(),
+            ) {
+                if let Expression::Function(f) = target_expr {
+                    let table_idx = ctx.pending_functions.len() as u32;
+                    ctx.part_functions.insert(part_key, table_idx);
+                    ctx.pending_functions
+                        .push(super::function_ops::PendingFunction {
+                            captured_vars: Vec::new(),
+                            parameter_id: f.parameter_id,
+                            body: (*f.body).clone(),
+                        });
+                    super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
+                } else {
+                    if ctx.visited_parts.contains(&part_key) {
+                        return Err(
+                            "Circular reference detected while compiling PartReference to Wasm"
+                                .into(),
+                        );
                     }
-                }
-            }
+                    if ctx.visited_parts.len() > 100 {
+                        return Err("Maximum part reference recursion depth exceeded".into());
+                    }
 
-            if let Some(target_expr) = latest_expression {
-                ctx.visited_parts.push(part_definition_event_hash.clone());
-                let empty_env = HashMap::new();
-                let res = emit_expression(target_expr, out, &empty_env, next_local_idx, ctx);
-                ctx.visited_parts.pop();
-                res?;
+                    ctx.visited_parts.push(part_key);
+                    let empty_env = HashMap::new();
+                    let res = emit_expression(target_expr, out, &empty_env, next_local_idx, ctx);
+                    ctx.visited_parts.pop();
+                    res?;
+                }
             } else {
                 return Err(format!(
                     "Part not found or has no expression: {}",
@@ -616,6 +568,7 @@ pub(crate) fn emit_expression(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_binary_arithmetic(
     left: &Expression,
     right: &Expression,
@@ -763,6 +716,11 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::Multiply(m) => 4 + count_locals(&m.left) + count_locals(&m.right),
         Expression::Divide(d) => 4 + count_locals(&d.left) + count_locals(&d.right),
         Expression::Remainder(r) => 4 + count_locals(&r.left) + count_locals(&r.right),
+        Expression::BitAnd(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::BitOr(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::BitXor(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::ShiftLeft(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
+        Expression::ShiftRight(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
         Expression::Equal(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
         Expression::NotEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
         Expression::LessThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
@@ -792,6 +750,7 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
                 .map(|item| count_locals(item.value.as_ref()))
                 .sum::<u32>()
         }
+        Expression::RecordGet(r) => 12 + count_locals(&r.record),
         Expression::Constructor(c) => count_locals(c.value.as_ref()),
         Expression::Variant(v) => {
             4 + v
@@ -815,4 +774,43 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
         _ => 2,
     }
+}
+
+pub fn resolve_part_expression<'a>(
+    events: &'a [crate::app_state::EventWithHash],
+    target_part_hash: &definy_event::EventHashId,
+    target_content_hash: Option<&definy_event::ContentHash>,
+) -> Option<&'a Expression> {
+    for (_event_hash, event_result) in events.iter().rev() {
+        let Ok((_, event)) = event_result else {
+            continue;
+        };
+        let definy_event::event::EventContent::ModuleCommit(module_commit) = &event.content else {
+            continue;
+        };
+        let module_id =
+            definy_event::event::derive_module_id(&event.account_id, &module_commit.module_name);
+        for part in &module_commit.parts {
+            let part_id = definy_event::event::derive_module_part_id(&module_id, &part.name);
+            if &part_id != target_part_hash {
+                continue;
+            }
+            let Some(expr) = part.expression.as_ref() else {
+                continue;
+            };
+            match target_content_hash {
+                Some(desired_hash) => {
+                    if definy_event::ContentHash::from_expression(expr)
+                        .ok()
+                        .as_ref()
+                        == Some(desired_hash)
+                    {
+                        return Some(expr);
+                    }
+                }
+                None => return Some(expr),
+            }
+        }
+    }
+    None
 }

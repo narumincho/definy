@@ -1,10 +1,13 @@
 use crate::event::Event;
 
 pub mod cbor_datetime_tag1;
+pub mod content_hash;
 pub mod event;
 mod event_hash_id;
-pub mod response;
+pub mod naming;
+pub mod rpc;
 
+pub use content_hash::{ContentHash, ContentHashFromStrError};
 pub use event_hash_id::EventHashId;
 
 #[derive(serde::Serialize, serde::Deserialize)]

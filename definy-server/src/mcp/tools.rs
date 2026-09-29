@@ -4,8 +4,8 @@ use std::str::FromStr;
 use definy_event::{
     EventHashId,
     event::{
-        AccountId, Description, Event, EventContent, Expression, ModuleDefinitionEvent,
-        PartDefinitionEvent, PartType, PartUpdateEvent,
+        AccountId, Description, Event, EventContent, Expression, ModuleCommitEvent,
+        ModulePartEntry, PartType, derive_module_id, derive_module_part_id,
     },
 };
 use definy_ui::AppState as UiAppState;
@@ -17,7 +17,7 @@ use serde_json::{Value, json};
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
 
-use super::protocol::{Tool, ToolCallResult};
+use super::protocol::ToolCallResult;
 use crate::db::{get_event, get_events, save_event};
 
 pub const AI_AGENT_KEY_SEED: [u8; 32] = *b"definy-mcp-ai-agent-key-2026\0\0\0\0";
@@ -46,182 +46,7 @@ pub async fn build_ui_app_state(db: &Surreal<Any>) -> Result<UiAppState, String>
     ))
 }
 
-pub fn all_tools() -> Vec<Tool> {
-    vec![
-        Tool {
-            name: "list_modules".to_string(),
-            description: "List all modules defined in definy with their name, hash, and description.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {}
-            }),
-        },
-        Tool {
-            name: "list_parts".to_string(),
-            description: "List all parts defined in definy. Supports filtering by module or name.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "module": {
-                        "type": "string",
-                        "description": "Optional module name or module hash to filter by"
-                    },
-                    "name_filter": {
-                        "type": "string",
-                        "description": "Optional substring to search within part names"
-                    }
-                }
-            }),
-        },
-        Tool {
-            name: "get_part".to_string(),
-            description: "Get detailed information about a part, including its AST expression, source code representation, and evaluated value.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "identifier": {
-                        "type": "string",
-                        "description": "Part name or definition event hash (base64 or hex)"
-                    }
-                },
-                "required": ["identifier"]
-            }),
-        },
-        Tool {
-            name: "eval_expression".to_string(),
-            description: "Evaluate a definy expression AST directly. Returns the source code string representation and evaluated runtime Value.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "expression": {
-                        "type": "object",
-                        "description": "Definy AST Expression in JSON format"
-                    }
-                },
-                "required": ["expression"]
-            }),
-        },
-        Tool {
-            name: "eval_part".to_string(),
-            description: "Evaluate the expression of a specified part and return its evaluated value and source code.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "identifier": {
-                        "type": "string",
-                        "description": "Part name or definition event hash"
-                    }
-                },
-                "required": ["identifier"]
-            }),
-        },
-        Tool {
-            name: "create_module".to_string(),
-            description: "Create a new module in definy signed with the AI agent key.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the new module"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Description of the module"
-                    }
-                },
-                "required": ["name", "description"]
-            }),
-        },
-        Tool {
-            name: "create_part".to_string(),
-            description: "Create a new part (function, constant, type, etc.) in definy signed with the AI agent key.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "module": {
-                        "type": "string",
-                        "description": "Module name or module event hash where this part belongs"
-                    },
-                    "name": {
-                        "type": "string",
-                        "description": "Name of the new part"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Description of the new part"
-                    },
-                    "part_type": {
-                        "description": "Optional part type (e.g. \"Number\", \"String\", \"Boolean\", or type AST object)",
-                        "type": ["string", "object", "null"]
-                    },
-                    "expression": {
-                        "type": "object",
-                        "description": "Definy AST Expression in JSON format"
-                    }
-                },
-                "required": ["module", "name", "description", "expression"]
-            }),
-        },
-        Tool {
-            name: "update_part".to_string(),
-            description: "Update an existing part in definy signed with the AI agent key.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "part_identifier": {
-                        "type": "string",
-                        "description": "Part name or definition event hash of the part to update"
-                    },
-                    "name": {
-                        "type": "string",
-                        "description": "Optional new name for the part"
-                    },
-                    "description": {
-                        "type": "string",
-                        "description": "Optional new description for the part"
-                    },
-                    "expression": {
-                        "type": "object",
-                        "description": "Optional new definy AST Expression"
-                    }
-                },
-                "required": ["part_identifier"]
-            }),
-        },
-        Tool {
-            name: "list_events".to_string(),
-            description: "List recent raw events from the definy event store.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "limit": {
-                        "type": "integer",
-                        "description": "Maximum number of events to return (default: 20)"
-                    },
-                    "offset": {
-                        "type": "integer",
-                        "description": "Offset for pagination (default: 0)"
-                    }
-                }
-            }),
-        },
-        Tool {
-            name: "get_event".to_string(),
-            description: "Get the full JSON representation of an event by its hash.".to_string(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "hash": {
-                        "type": "string",
-                        "description": "Event hash (URL-safe base64 or hex)"
-                    }
-                },
-                "required": ["hash"]
-            }),
-        },
-    ]
-}
+pub use super::tool_definitions::all_tools;
 
 pub async fn handle_tool_call(
     name: &str,
@@ -280,10 +105,10 @@ async fn tool_list_parts(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     let filtered = parts
         .into_iter()
         .filter(|p| {
-            if let Some(nf) = name_filter {
-                if !p.part_name.to_lowercase().contains(&nf.to_lowercase()) {
-                    return false;
-                }
+            if let Some(nf) = name_filter
+                && !p.part_name.to_lowercase().contains(&nf.to_lowercase())
+            {
+                return false;
             }
             if let Some(mf) = module_filter {
                 let mod_match = modules.iter().any(|m| {
@@ -319,21 +144,29 @@ async fn tool_list_parts(args: Value, db: &Surreal<Any>) -> ToolCallResult {
 
 fn crate_part_type_summary(pt: PartType) -> Value {
     match pt {
-        PartType::Number => json!("Number"),
-        PartType::String => json!("String"),
-        PartType::Boolean => json!("Boolean"),
-        PartType::Type => json!("Type"),
-        PartType::TypePart(h) => json!({ "TypePart": h.to_string() }),
-        PartType::List(sub) => json!({ "List": crate_part_type_summary(*sub) }),
+        PartType::Number => json!("number"),
+        PartType::String => json!("string"),
+        PartType::Boolean => json!("boolean"),
+        PartType::Type => json!("type"),
+        PartType::TypePart(h) => json!({ "type-part": h.to_string() }),
+        PartType::List(sub) => json!({ "list": crate_part_type_summary(*sub) }),
         PartType::Function {
             parameter,
             return_type,
         } => json!({
-            "Function": {
+            "function": {
                 "parameter": crate_part_type_summary(*parameter),
                 "return": crate_part_type_summary(*return_type)
             }
         }),
+        PartType::Record(fields) => {
+            let fields_json: serde_json::Value = fields
+                .into_iter()
+                .map(|f| (f.key.to_string(), crate_part_type_summary(*f.value)))
+                .collect::<serde_json::Map<String, serde_json::Value>>()
+                .into();
+            json!({ "record": fields_json })
+        }
         PartType::Union(variants) => {
             let vars = variants
                 .into_iter()
@@ -470,43 +303,78 @@ async fn tool_eval_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
+async fn sign_and_save_ai_event(
+    content: EventContent,
+    db: &Surreal<Any>,
+) -> Result<EventHashId, String> {
+    let (signing_key, account_id) = get_signing_key_and_account();
+    let event = Event {
+        account_id,
+        time: chrono::Utc::now(),
+        content,
+    };
+    let binary = definy_event::sign_and_serialize(event.clone(), &signing_key)
+        .map_err(|e| format!("Failed to sign event: {:?}", e))?;
+    let hash = EventHashId::from_bytes(&binary);
+    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
+    let (sig, _) = definy_event::verify_and_deserialize(&binary)
+        .map_err(|e| format!("Failed to verify event immediately after signing: {:?}", e))?;
+
+    save_event(&event, &sig, &binary, dummy_addr, db)
+        .await
+        .map_err(|e| format!("Failed to save event to DB: {:?}", e))?;
+
+    if let EventContent::ModuleCommit(ref mc) = event.content {
+        for part in &mc.parts {
+            if let Some(ref expr) = part.expression {
+                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                    if let Ok(bytes) = serde_cbor::to_vec(expr) {
+                        let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(hash)
+}
+
 async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     let name = match args.get("name").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'name' argument"),
     };
+    if !definy_event::naming::is_valid_name(&name) {
+        return ToolCallResult::error(format!(
+            "Invalid module name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-module')",
+            name
+        ));
+    }
     let desc = match args.get("description").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'description' argument"),
     };
 
-    let (signing_key, account_id) = get_signing_key_and_account();
-    let event = Event {
-        account_id,
-        time: chrono::Utc::now(),
-        content: EventContent::ModuleDefinition(ModuleDefinitionEvent {
-            module_name: name.clone().into(),
-            description: Description::Plain(desc.into()),
-        }),
+    let content = EventContent::ModuleCommit(ModuleCommitEvent {
+        module_name: name.clone().into(),
+        module_description: Description::Plain(desc.into()),
+        parent_commit_hash: None,
+        message: "Initial commit".into(),
+        parts: vec![],
+    });
+
+    let hash = match sign_and_save_ai_event(content, db).await {
+        Ok(h) => h,
+        Err(e) => return ToolCallResult::error(e),
     };
 
-    let binary = match definy_event::sign_and_serialize(event.clone(), &signing_key) {
-        Ok(b) => b,
-        Err(e) => return ToolCallResult::error(format!("Failed to sign event: {:?}", e)),
-    };
-    let hash = EventHashId::from_bytes(&binary);
-    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let sig = definy_event::verify_and_deserialize(&binary)
-        .map(|(s, _)| s)
-        .unwrap();
-
-    if let Err(e) = save_event(&event, &sig, &binary, dummy_addr, db).await {
-        return ToolCallResult::error(format!("Failed to save event to DB: {:?}", e));
-    }
+    let (_, account_id) = get_signing_key_and_account();
+    let module_id = derive_module_id(&account_id, &name);
 
     let res = json!({
         "status": "created",
-        "module_hash": hash.to_string(),
+        "module_id": module_id.to_string(),
+        "commit_hash": hash.to_string(),
         "module_name": name
     });
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
@@ -521,6 +389,12 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'name' argument"),
     };
+    if !definy_event::naming::is_valid_name(&name) {
+        return ToolCallResult::error(format!(
+            "Invalid part name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-part')",
+            name
+        ));
+    }
     let desc = match args.get("description").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'description' argument"),
@@ -535,10 +409,7 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     };
 
     let part_type: Option<PartType> = match args.get("part_type") {
-        Some(v) if !v.is_null() => match serde_json::from_value(v.clone()) {
-            Ok(pt) => Some(pt),
-            Err(_) => None,
-        },
+        Some(v) if !v.is_null() => serde_json::from_value(v.clone()).ok(),
         _ => None,
     };
 
@@ -547,49 +418,56 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         Err(e) => return ToolCallResult::error(e),
     };
     let modules = collect_module_snapshots(&state);
-    let module_hash = match modules.iter().find(|m| {
+    let module = match modules.iter().find(|m| {
         m.module_name == module_ident || m.definition_event_hash.to_string() == module_ident
     }) {
-        Some(m) => m.definition_event_hash.clone(),
-        None => {
-            if let Ok(h) = EventHashId::from_str(module_ident) {
-                h
-            } else {
-                return ToolCallResult::error(format!("Module '{}' not found", module_ident));
-            }
-        }
+        Some(m) => m.clone(),
+        None => return ToolCallResult::error(format!("Module '{}' not found", module_ident)),
     };
 
-    let (signing_key, account_id) = get_signing_key_and_account();
-    let event = Event {
-        account_id,
-        time: chrono::Utc::now(),
-        content: EventContent::PartDefinition(PartDefinitionEvent {
-            part_name: name.clone().into(),
-            description: Description::Plain(desc.into()),
-            module_definition_event_hash: module_hash,
-            part_type,
-            expression: Some(expression),
-        }),
+    // 既存パーツ一覧を取得し、新パーツを追加
+    let existing_parts = collect_part_snapshots(&state);
+    let mut parts: Vec<ModulePartEntry> = existing_parts
+        .into_iter()
+        .filter(|p| {
+            p.module_definition_event_hash == module.definition_event_hash && p.part_name != name
+        })
+        .map(|p| ModulePartEntry {
+            name: p.part_name.into(),
+            part_type: p.part_type,
+            description: p.part_description,
+            content_hash: None,
+            expression: p.expression,
+        })
+        .collect();
+
+    parts.push(ModulePartEntry {
+        name: name.clone().into(),
+        part_type,
+        description: Description::Plain(desc.into()),
+        content_hash: None,
+        expression: Some(expression),
+    });
+
+    let content = EventContent::ModuleCommit(ModuleCommitEvent {
+        module_name: module.module_name.clone().into(),
+        module_description: module.module_description.clone(),
+        parent_commit_hash: Some(module.latest_event_hash.clone()),
+        message: format!("Add part '{}'", name).into(),
+        parts,
+    });
+
+    let hash = match sign_and_save_ai_event(content, db).await {
+        Ok(h) => h,
+        Err(e) => return ToolCallResult::error(e),
     };
 
-    let binary = match definy_event::sign_and_serialize(event.clone(), &signing_key) {
-        Ok(b) => b,
-        Err(e) => return ToolCallResult::error(format!("Failed to sign event: {:?}", e)),
-    };
-    let hash = EventHashId::from_bytes(&binary);
-    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let sig = definy_event::verify_and_deserialize(&binary)
-        .map(|(s, _)| s)
-        .unwrap();
-
-    if let Err(e) = save_event(&event, &sig, &binary, dummy_addr, db).await {
-        return ToolCallResult::error(format!("Failed to save event to DB: {:?}", e));
-    }
+    let part_id = derive_module_part_id(&module.definition_event_hash, &name);
 
     let res = json!({
         "status": "created",
-        "part_definition_hash": hash.to_string(),
+        "part_id": part_id.to_string(),
+        "commit_hash": hash.to_string(),
         "part_name": name
     });
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
@@ -610,7 +488,23 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         None => return ToolCallResult::error(format!("Part '{}' not found", part_ident)),
     };
 
+    let module = match definy_ui::module_projection::find_module_snapshot(
+        &state,
+        &part.module_definition_event_hash,
+    ) {
+        Some(m) => m,
+        None => return ToolCallResult::error("Module for part not found"),
+    };
+
     let name = args.get("name").and_then(|v| v.as_str()).map(String::from);
+    if let Some(ref n) = name
+        && !definy_event::naming::is_valid_name(n)
+    {
+        return ToolCallResult::error(format!(
+            "Invalid part name '{}': must be lowercase alphanumeric with hyphens (e.g. 'my-part')",
+            n
+        ));
+    }
     let desc = args
         .get("description")
         .and_then(|v| v.as_str())
@@ -625,45 +519,69 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         None => None,
     };
 
-    let part_name: Box<str> = name.unwrap_or_else(|| part.part_name.clone()).into();
-    let part_description: Description = desc.unwrap_or_else(|| part.part_description.clone());
-    let final_expression: Option<Expression> = if let Some(opt) = expression {
+    let part_type: Option<Option<PartType>> = match args.get("part_type") {
+        Some(v) if !v.is_null() => match serde_json::from_value(v.clone()) {
+            Ok(pt) => Some(Some(pt)),
+            Err(e) => return ToolCallResult::error(format!("Invalid PartType: {:?}", e)),
+        },
+        Some(_) => Some(None),
+        None => None,
+    };
+
+    let target_name = part.part_name.clone();
+    let new_name = name.unwrap_or_else(|| target_name.clone());
+    let final_desc = desc.unwrap_or_else(|| part.part_description.clone());
+    let final_type = match part_type {
+        Some(pt) => pt,
+        None => part.part_type.clone(),
+    };
+    let final_expr = if let Some(opt) = expression {
         opt
     } else {
         part.expression.clone()
     };
 
-    let (signing_key, account_id) = get_signing_key_and_account();
-    let event = Event {
-        account_id,
-        time: chrono::Utc::now(),
-        content: EventContent::PartUpdate(PartUpdateEvent {
-            part_definition_event_hash: part.definition_event_hash.clone(),
-            part_name,
-            part_description,
-            expression: final_expression,
-            module_definition_event_hash: part.module_definition_event_hash.clone(),
-        }),
-    };
+    let existing_parts = collect_part_snapshots(&state);
+    let mut parts: Vec<ModulePartEntry> = existing_parts
+        .into_iter()
+        .filter(|p| {
+            p.module_definition_event_hash == module.definition_event_hash
+                && p.part_name != target_name
+        })
+        .map(|p| ModulePartEntry {
+            name: p.part_name.into(),
+            part_type: p.part_type,
+            description: p.part_description,
+            content_hash: None,
+            expression: p.expression,
+        })
+        .collect();
 
-    let binary = match definy_event::sign_and_serialize(event.clone(), &signing_key) {
-        Ok(b) => b,
-        Err(e) => return ToolCallResult::error(format!("Failed to sign event: {:?}", e)),
-    };
-    let hash = EventHashId::from_bytes(&binary);
-    let dummy_addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
-    let sig = definy_event::verify_and_deserialize(&binary)
-        .map(|(s, _)| s)
-        .unwrap();
+    parts.push(ModulePartEntry {
+        name: new_name.clone().into(),
+        part_type: final_type,
+        description: final_desc,
+        content_hash: None,
+        expression: final_expr,
+    });
 
-    if let Err(e) = save_event(&event, &sig, &binary, dummy_addr, db).await {
-        return ToolCallResult::error(format!("Failed to save event to DB: {:?}", e));
-    }
+    let content = EventContent::ModuleCommit(ModuleCommitEvent {
+        module_name: module.module_name.clone().into(),
+        module_description: module.module_description.clone(),
+        parent_commit_hash: Some(module.latest_event_hash.clone()),
+        message: format!("Update part '{}'", new_name).into(),
+        parts,
+    });
+
+    let hash = match sign_and_save_ai_event(content, db).await {
+        Ok(h) => h,
+        Err(e) => return ToolCallResult::error(e),
+    };
 
     let res = json!({
         "status": "updated",
-        "update_event_hash": hash.to_string(),
-        "part_definition_hash": part.definition_event_hash.to_string()
+        "commit_hash": hash.to_string(),
+        "part_id": part.definition_event_hash.to_string()
     });
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }

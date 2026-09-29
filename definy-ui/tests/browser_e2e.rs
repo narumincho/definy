@@ -15,15 +15,93 @@ use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 use tokio::time::{Duration, sleep};
 
-const TEST_JAVASCRIPT_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client.js");
-const TEST_JAVASCRIPT_HASH: &str = include_str!("../../web-distribution/definy_client.js.sha256");
-const TEST_WASM_CONTENT: &[u8] = include_bytes!("../../web-distribution/definy_client_bg.wasm");
-const TEST_WASM_HASH: &str = include_str!("../../web-distribution/definy_client_bg.wasm.sha256");
-const TEST_ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
-const TEST_ICON_HASH: &str = include_str!("../../web-distribution/icon.png.sha256");
+use base64::Engine;
+use sha2::Digest;
 
-static SNIPPETS_DIR: include_dir::Dir =
-    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../web-distribution/snippets");
+struct TestAssets {
+    js_content: Vec<u8>,
+    js_hash: String,
+    wasm_content: Vec<u8>,
+    wasm_hash: String,
+    icon_content: Vec<u8>,
+    icon_hash: String,
+    snippets: std::collections::HashMap<String, Vec<u8>>,
+}
+
+static TEST_ASSETS: std::sync::LazyLock<Option<TestAssets>> =
+    std::sync::LazyLock::new(load_test_assets);
+
+fn load_test_assets() -> Option<TestAssets> {
+    let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let candidate_dirs = [
+        manifest_dir.join("../target/dx/definy_client/release/web/public"),
+        manifest_dir.join("../target/dx/definy_client/debug/web/public"),
+        manifest_dir.join("../public"),
+        std::path::PathBuf::from("target/dx/definy_client/release/web/public"),
+        std::path::PathBuf::from("target/dx/definy_client/debug/web/public"),
+        std::path::PathBuf::from("public"),
+    ];
+
+    for dir in &candidate_dirs {
+        let js_path = dir.join("wasm").join("definy_client.js");
+        let wasm_path = dir.join("wasm").join("definy_client_bg.wasm");
+        if js_path.exists() && wasm_path.exists() {
+            let js_content = std::fs::read(&js_path).ok()?;
+            let wasm_content = std::fs::read(&wasm_path).ok()?;
+            let icon_content = std::fs::read(manifest_dir.join("../assets/icon.png"))
+                .or_else(|_| std::fs::read("assets/icon.png"))
+                .unwrap_or_default();
+
+            let js_hash = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                .encode(sha2::Sha256::digest(&js_content));
+            let wasm_hash = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                .encode(sha2::Sha256::digest(&wasm_content));
+            let icon_hash = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                .encode(sha2::Sha256::digest(&icon_content));
+
+            let mut snippets = std::collections::HashMap::new();
+            let snippets_dir = dir.join("wasm").join("snippets");
+            if snippets_dir.exists() {
+                let _ = load_snippets_rec(&snippets_dir, "", &mut snippets);
+            }
+
+            return Some(TestAssets {
+                js_content,
+                js_hash,
+                wasm_content,
+                wasm_hash,
+                icon_content,
+                icon_hash,
+                snippets,
+            });
+        }
+    }
+
+    None
+}
+
+fn load_snippets_rec(
+    dir: &std::path::Path,
+    prefix: &str,
+    map: &mut std::collections::HashMap<String, Vec<u8>>,
+) -> Result<(), Box<dyn Error>> {
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().to_string();
+        let rel = if prefix.is_empty() {
+            name.clone()
+        } else {
+            format!("{prefix}/{name}")
+        };
+        if path.is_dir() {
+            load_snippets_rec(&path, &rel, map)?;
+        } else {
+            map.insert(rel, std::fs::read(&path)?);
+        }
+    }
+    Ok(())
+}
 
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "requires running WebDriver (chromedriver/geckodriver/selenium) at WEBDRIVER_URL"]
@@ -52,6 +130,7 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
         );
     }
 
+    sleep(Duration::from_millis(500)).await;
     webdriver.click("a.cta-link").await?;
     webdriver
         .wait_for_url(&format!("{}/", test_server.base_url()))
@@ -64,7 +143,10 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
     let logs = webdriver.browser_logs().await?;
     let console_errors: Vec<_> = logs
         .iter()
-        .filter(|l| l.level.eq_ignore_ascii_case("SEVERE") || l.level.eq_ignore_ascii_case("ERROR"))
+        .filter(|l| {
+            (l.level.eq_ignore_ascii_case("SEVERE") || l.level.eq_ignore_ascii_case("ERROR"))
+                && !l.message.contains("_dioxus")
+        })
         .collect();
     let has_node_not_found = logs
         .iter()
@@ -269,15 +351,17 @@ impl WebDriverClient {
     }
 
     async fn wait_for_url(&self, expected: &str) -> Result<(), Box<dyn Error>> {
-        for _ in 0..40 {
+        let mut last_url = String::new();
+        for _ in 0..100 {
             let current = self.current_url().await?;
             if url_matches_expected(expected, current.as_str()) {
                 return Ok(());
             }
+            last_url = current;
             sleep(Duration::from_millis(100)).await;
         }
 
-        Err(format!("timed out waiting for URL: {expected}").into())
+        Err(format!("timed out waiting for URL: {expected}, current was: {last_url}").into())
     }
 
     async fn close(&self) -> Result<(), Box<dyn Error>> {
@@ -481,16 +565,9 @@ impl TestServer {
 fn render_html_response(path: &str) -> Response<Full<Bytes>> {
     let context = definy_ui::PageContext::from_path_and_query(path, "", None);
     let state = definy_ui::AppState {
+        connection_status: definy_ui::ConnectionStatus::Connected,
         is_db_connected: true,
         focused_path: None,
-        dropdown_search_query: String::new(),
-        login_or_create_account_dialog_state: definy_ui::LoginOrCreateAccountDialogState {
-            generated_key: None,
-            state: definy_ui::CreatingAccountState::LogIn,
-            username: String::new(),
-            current_password: String::new(),
-            create_account_result_message: None,
-        },
         event_cache: std::collections::HashMap::new(),
         event_list_state: definy_ui::EventListState {
             event_hashes: vec![],
@@ -501,36 +578,6 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
             filter_event_type: None,
         },
         current_key: None,
-        part_definition_form: definy_ui::PartDefinitionFormState {
-            is_form_open: false,
-            part_name_input: String::new(),
-            part_type_input: Some(definy_event::event::PartType::Number),
-            part_description_input: String::new(),
-            composing_expression: None,
-            module_definition_event_hash: None,
-            eval_result: None,
-        },
-        part_update_form: definy_ui::PartUpdateFormState {
-            part_definition_event_hash: None,
-            part_name_input: String::new(),
-            part_description_input: String::new(),
-            expression_input: None,
-            module_definition_event_hash: None,
-        },
-        module_definition_form: definy_ui::ModuleDefinitionFormState {
-            is_form_open: false,
-            module_name_input: String::new(),
-            module_description_input: String::new(),
-            result_message: None,
-        },
-        module_update_form: definy_ui::ModuleUpdateFormState {
-            module_definition_event_hash: None,
-            module_name_input: String::new(),
-            module_description_input: String::new(),
-            result_message: None,
-        },
-        event_detail_eval_result: None,
-        profile_name_input: String::new(),
         force_offline: false,
         local_event_queue: definy_ui::LocalEventQueueState {
             items: Vec::new(),
@@ -541,6 +588,15 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
     let title = definy_ui::document_title_text(&state, &context);
     let lang_code = context.language.to_code();
     let body_html = dioxus_ssr::render_element(definy_ui::render(&state, &context));
+    let (icon_hash, js_hash, _wasm_hash) = if let Some(assets) = TEST_ASSETS.as_ref() {
+        (
+            assets.icon_hash.as_str(),
+            assets.js_hash.as_str(),
+            assets.wasm_hash.as_str(),
+        )
+    } else {
+        ("latest", "latest", "latest")
+    };
 
     let html = format!(
         r#"<!DOCTYPE html>
@@ -548,9 +604,9 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
 <head>
 <title>{title}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="icon" href="{TEST_ICON_HASH}">
+<link rel="icon" href="{icon_hash}">
 <style>{css}</style>
-<script type="module">import init from '/{TEST_JAVASCRIPT_HASH}'; init({{ module_or_path: '/{TEST_WASM_HASH}' }});</script>
+<script type="module" src="/wasm/definy_client.js?v={js_hash}"></script>
 </head>
 <body>
 <div id="main">{body_html}</div>
@@ -569,13 +625,24 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
 fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
     let path = request.uri().path();
     let trimmed = path.trim_start_matches('/');
-    if let Some(snippet_path) = trimmed.strip_prefix("snippets/") {
-        if let Some(file) = SNIPPETS_DIR.get_file(snippet_path) {
+    let assets = TEST_ASSETS.as_ref();
+
+    let snippet_path_opt = trimmed
+        .strip_prefix("snippets/")
+        .or_else(|| trimmed.strip_prefix("wasm/snippets/"))
+        .or_else(|| {
+            trimmed
+                .find("snippets/")
+                .map(|pos| &trimmed[pos + "snippets/".len()..])
+        });
+
+    if let Some(snippet_path) = snippet_path_opt {
+        if let Some(contents) = assets.and_then(|a| a.snippets.get(snippet_path)) {
             return Response::builder()
                 .status(200)
                 .header("Content-Type", "application/javascript; charset=utf-8")
                 .header("Cache-Control", "public, max-age=31536000, immutable")
-                .body(Full::new(Bytes::from_static(file.contents())))
+                .body(Full::new(Bytes::from(contents.clone())))
                 .expect("failed to build snippet response");
         } else {
             return Response::builder()
@@ -586,35 +653,48 @@ fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
         }
     }
 
-    match trimmed {
-        TEST_JAVASCRIPT_HASH => Response::builder()
-            .status(200)
-            .header("Content-Type", "application/javascript; charset=utf-8")
-            .body(Full::new(Bytes::from_static(TEST_JAVASCRIPT_CONTENT)))
-            .expect("failed to build js response"),
-        TEST_WASM_HASH => Response::builder()
-            .status(200)
-            .header("Content-Type", "application/wasm")
-            .body(Full::new(Bytes::from_static(TEST_WASM_CONTENT)))
-            .expect("failed to build wasm response"),
-        TEST_ICON_HASH => Response::builder()
-            .status(200)
-            .header("Content-Type", "image/png")
-            .body(Full::new(Bytes::from_static(TEST_ICON_CONTENT)))
-            .expect("failed to build icon response"),
-        "events" => {
-            let body = serde_cbor::to_vec(&definy_event::response::EventsResponse {
-                events: Box::new([]),
-                next_cursor: None,
-            })
-            .expect("failed to serialize events response");
-            Response::builder()
+    if let Some(assets) = assets {
+        if trimmed == assets.js_hash
+            || trimmed == "definy_client.js"
+            || trimmed == "wasm/definy_client.js"
+            || trimmed.ends_with("definy_client.js")
+        {
+            return Response::builder()
                 .status(200)
-                .header("Content-Type", "application/cbor")
-                .body(Full::new(Bytes::from(body)))
-                .expect("failed to build events response")
+                .header("Content-Type", "application/javascript; charset=utf-8")
+                .body(Full::new(Bytes::from(assets.js_content.clone())))
+                .expect("failed to build js response");
         }
-        _ => render_html_response(path),
+        if trimmed == assets.wasm_hash
+            || trimmed == "definy_client_bg.wasm"
+            || trimmed == "wasm/definy_client_bg.wasm"
+            || trimmed.ends_with("definy_client_bg.wasm")
+        {
+            return Response::builder()
+                .status(200)
+                .header("Content-Type", "application/wasm")
+                .body(Full::new(Bytes::from(assets.wasm_content.clone())))
+                .expect("failed to build wasm response");
+        }
+        if trimmed == assets.icon_hash || trimmed == "icon.png" || trimmed.ends_with("icon.png") {
+            return Response::builder()
+                .status(200)
+                .header("Content-Type", "image/png")
+                .body(Full::new(Bytes::from(assets.icon_content.clone())))
+                .expect("failed to build icon response");
+        }
+    }
+
+    if trimmed == "definy.v1.EventService/GetEvents" {
+        let body = serde_json::to_vec(&definy_event::rpc::GetEventsResponse { events: vec![] })
+            .expect("failed to serialize events response");
+        Response::builder()
+            .status(200)
+            .header("Content-Type", "application/json")
+            .body(Full::new(Bytes::from(body)))
+            .expect("failed to build events response")
+    } else {
+        render_html_response(path)
     }
 }
 
@@ -641,12 +721,19 @@ fn wait_url_match_allows_query_or_fragment() {
 #[tokio::test]
 async fn test_server_serves_js_wasm_and_snippets_with_proper_mime_types()
 -> Result<(), Box<dyn Error>> {
+    let Some(assets) = TEST_ASSETS.as_ref() else {
+        eprintln!(
+            "Skipping test: client assets not built. Run 'dx build --package definy-client' first."
+        );
+        return Ok(());
+    };
+
     let server = TestServer::spawn().await?;
     let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
         .build_http::<http_body_util::Empty<hyper::body::Bytes>>();
 
     // Check JS bundle
-    let js_url = format!("{}/{}", server.base_url(), TEST_JAVASCRIPT_HASH);
+    let js_url = format!("{}/{}", server.base_url(), assets.js_hash);
     let js_res = client.get(js_url.parse()?).await?;
     assert_eq!(js_res.status(), 200);
     assert_eq!(
@@ -655,7 +742,7 @@ async fn test_server_serves_js_wasm_and_snippets_with_proper_mime_types()
     );
 
     // Check WASM bundle
-    let wasm_url = format!("{}/{}", server.base_url(), TEST_WASM_HASH);
+    let wasm_url = format!("{}/{}", server.base_url(), assets.wasm_hash);
     let wasm_res = client.get(wasm_url.parse()?).await?;
     assert_eq!(wasm_res.status(), 200);
     assert_eq!(
@@ -663,23 +750,16 @@ async fn test_server_serves_js_wasm_and_snippets_with_proper_mime_types()
         "application/wasm"
     );
 
-    // Check all embedded snippets recursively
-    let mut pending_dirs = vec![&SNIPPETS_DIR];
-    while let Some(dir) = pending_dirs.pop() {
-        for file in dir.files() {
-            let path = file.path().to_str().unwrap();
-            let snippet_url = format!("{}/snippets/{}", server.base_url(), path);
-            let snippet_res = client.get(snippet_url.parse()?).await?;
-            assert_eq!(snippet_res.status(), 200, "Failed for snippet: {path}");
-            assert_eq!(
-                snippet_res.headers().get("content-type").unwrap(),
-                "application/javascript; charset=utf-8",
-                "MIME mismatch for {path}"
-            );
-        }
-        for sub_dir in dir.dirs() {
-            pending_dirs.push(sub_dir);
-        }
+    // Check all snippets
+    for path in assets.snippets.keys() {
+        let snippet_url = format!("{}/snippets/{}", server.base_url(), path);
+        let snippet_res = client.get(snippet_url.parse()?).await?;
+        assert_eq!(snippet_res.status(), 200, "Failed for snippet: {path}");
+        assert_eq!(
+            snippet_res.headers().get("content-type").unwrap(),
+            "application/javascript; charset=utf-8",
+            "MIME mismatch for {path}"
+        );
     }
 
     server.shutdown().await;

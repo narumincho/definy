@@ -23,6 +23,9 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                 .map(|item| max_local_variable_id(item.value.as_ref()))
                 .max()
                 .unwrap_or(0),
+            definy_event::event::Expression::RecordGet(get_expr) => {
+                max_local_variable_id(get_expr.record.as_ref())
+            }
             definy_event::event::Expression::Add(add_expression) => {
                 max_local_variable_id(add_expression.left.as_ref())
                     .max(max_local_variable_id(add_expression.right.as_ref()))
@@ -42,6 +45,26 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
             definy_event::event::Expression::Remainder(rem_expression) => {
                 max_local_variable_id(rem_expression.left.as_ref())
                     .max(max_local_variable_id(rem_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::BitAnd(bit_and_expression) => {
+                max_local_variable_id(bit_and_expression.left.as_ref())
+                    .max(max_local_variable_id(bit_and_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::BitOr(bit_or_expression) => {
+                max_local_variable_id(bit_or_expression.left.as_ref())
+                    .max(max_local_variable_id(bit_or_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::BitXor(bit_xor_expression) => {
+                max_local_variable_id(bit_xor_expression.left.as_ref())
+                    .max(max_local_variable_id(bit_xor_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::ShiftLeft(shift_left_expression) => {
+                max_local_variable_id(shift_left_expression.left.as_ref())
+                    .max(max_local_variable_id(shift_left_expression.right.as_ref()))
+            }
+            definy_event::event::Expression::ShiftRight(shift_right_expression) => {
+                max_local_variable_id(shift_right_expression.left.as_ref())
+                    .max(max_local_variable_id(shift_right_expression.right.as_ref()))
             }
             definy_event::event::Expression::Equal(equal_expression) => {
                 max_local_variable_id(equal_expression.left.as_ref())

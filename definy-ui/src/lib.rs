@@ -1,6 +1,9 @@
+mod about;
 mod account_detail;
 mod account_list;
+pub mod api_pages;
 pub mod app_state;
+pub mod cbor_card;
 pub mod dom;
 pub mod dropdown;
 mod event_detail;
@@ -26,11 +29,17 @@ pub mod navigator_credential;
 mod not_found;
 pub mod page_context;
 mod page_title;
+mod part_create_form;
 mod part_detail;
 mod part_list;
 pub mod part_projection;
 pub mod query;
+mod rpc_architecture;
+mod settings;
+pub mod tree_layout;
+mod tree_layout_view;
 pub mod wasm_emitter;
+pub mod wasm_inspector;
 
 pub use app_state::*;
 pub use event_filter::*;
@@ -140,6 +149,41 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
                 local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() }
             }
         }
+        Some(Location::TreeLayout) => {
+            rsx! {
+                tree_layout_view::TreeLayoutView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::Settings) => {
+            rsx! {
+                settings::SettingsView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::About) => {
+            rsx! {
+                about::AboutView { context: context.clone() }
+            }
+        }
+        Some(Location::ApiOverview) => {
+            rsx! {
+                api_pages::ApiOverviewPageView { context: context.clone() }
+            }
+        }
+        Some(Location::ApiArchitecture) => {
+            rsx! {
+                api_pages::RpcArchitecturePageView { context: context.clone() }
+            }
+        }
+        Some(Location::ApiMethod(method, target_hash)) => {
+            rsx! {
+                api_pages::RpcMethodDetailView {
+                    state: state.clone(),
+                    context: context.clone(),
+                    method: *method,
+                    initial_target_hash: target_hash.clone(),
+                }
+            }
+        }
         Some(Location::Module(hash)) => {
             rsx! {
                 module_detail::ModuleDetailView {
@@ -188,31 +232,85 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
             div {
                 key: "main-wrapper",
                 style: "display: grid; gap: 0.8rem; width: 100%;",
-                if !state.is_db_connected {
-                    DbWarningBanner { context: context.clone() }
+                if state.connection_status != app_state::ConnectionStatus::Connected {
+                    ConnectionWarningBanner {
+                        context: context.clone(),
+                        status: state.connection_status,
+                    }
                 }
                 {page_content}
             }
-            login_or_create_account_dialog::LoginOrCreateAccountDialog { state: state.clone(), context: context.clone() }
+            login_or_create_account_dialog::LoginOrCreateAccountDialog { context: context.clone() }
         }
     }
 }
 
 #[component]
-fn DbWarningBanner(context: PageContext) -> Element {
+fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionStatus) -> Element {
+    let retrying_text = context
+        .language
+        .label("Retrying...", "再試行中...", "Rekonektante...");
+    let (message, status_badge) = match status {
+        app_state::ConnectionStatus::ServerDisconnected => {
+            let msg = context.language.label(
+                "Cannot connect to API server. Local and offline features are available. Retrying connection...",
+                "APIサーバーに接続できません。ローカル機能・式の計算は利用可能です。接続を再試行しています...",
+                "Ne povas konektiĝi al API-servilo. Lokaj funkcioj disponeblas. Rekonektante...",
+            );
+            let badge_text = context.language.label(
+                "API Server: Disconnected",
+                "APIサーバー: 未接続",
+                "API-servilo: Malkonektita",
+            );
+            (
+                msg,
+                rsx! {
+                    span { style: "background: rgb(239 68 68 / 0.2); border: 1px solid rgb(239 68 68 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #fca5a5;",
+                        "{badge_text}"
+                    }
+                },
+            )
+        }
+        app_state::ConnectionStatus::DatabaseUnavailable => {
+            let msg = context.language.label(
+                "Connected to API server, but database is unavailable. Local and offline features are available. Retrying connection...",
+                "APIサーバーに接続中ですが、データベースが利用できません。ローカル機能・式の計算は利用可能です。接続を再試行しています...",
+                "Konektita al API-servilo, sed datumbazo ne disponeblas. Lokaj funkcioj disponeblas. Rekonektante...",
+            );
+            let api_ok_text =
+                context
+                    .language
+                    .label("API: Connected", "API: 接続中", "API: Konektita");
+            let db_bad_text = context.language.label(
+                "Database: Unavailable",
+                "DB: 未接続",
+                "Datumbazo: Nedisponebla",
+            );
+            (
+                msg,
+                rsx! {
+                    span { style: "background: rgb(34 197 94 / 0.15); border: 1px solid rgb(34 197 94 / 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #86efac; margin-right: 0.3rem;",
+                        "{api_ok_text}"
+                    }
+                    span { style: "background: rgb(245 158 11 / 0.2); border: 1px solid rgb(245 158 11 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #fde047;",
+                        "{db_bad_text}"
+                    }
+                },
+            )
+        }
+        app_state::ConnectionStatus::Connected => return rsx! {},
+    };
+
     rsx! {
         div {
-            class: "db-warning-banner",
+            class: "connection-warning-banner",
             style: "width: calc(100% - 1.8rem); max-width: 920px; margin: 0.4rem auto 0; padding: 0.65rem 1rem; background: rgb(245 158 11 / 0.12); border: 1px solid rgb(245 158 11 / 0.35); border-radius: var(--radius-md); color: #fcd34d; font-size: 0.86rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;",
-            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+            div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                 div { style: "font-size: 1rem;", "⚠️" }
-                div {
-                    "{context.language.label(\"Cannot connect to database. Local and offline features are available. Retrying connection...\", \"データベースに接続できません。ローカル機能・式の計算は利用可能です。接続を再試行しています...\", \"Ne povas konektiĝi al datumbazo. Lokaj funkcioj disponeblas. Rekonektante...\")}"
-                }
+                div { "{message}" }
+                div { style: "display: flex; align-items: center; gap: 0.3rem;", {status_badge} }
             }
-            div { style: "font-size: 0.75rem; opacity: 0.8; white-space: nowrap;",
-                "{context.language.label(\"Retrying...\", \"再接続中...\", \"Rekonektante...\")}"
-            }
+            div { style: "font-size: 0.75rem; opacity: 0.8; white-space: nowrap;", "{retrying_text}" }
         }
     }
 }

@@ -1,14 +1,17 @@
 pub mod constructor;
+#[cfg(test)]
+mod tests;
 pub mod type_check;
+pub mod type_check_binary;
 
 use std::collections::HashMap;
 
 use definy_event::EventHashId;
 
 use crate::app_state::AppState;
-use crate::part_projection::{PartSnapshot, collect_part_snapshots, find_part_snapshot};
+use crate::part_projection::{PartSnapshot, collect_part_snapshots};
 
-use super::types::{EditorTarget, ExpressionType, TypeDiagnostic};
+use super::types::{ExpressionType, TypeDiagnostic};
 
 pub use constructor::*;
 pub(crate) use type_check::*;
@@ -30,35 +33,23 @@ pub fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -
             parameter: Box::new(part_type_to_expression_type(parameter.as_ref())),
             return_type: Box::new(part_type_to_expression_type(return_type.as_ref())),
         },
+        definy_event::event::PartType::Record(_) => ExpressionType::Record,
         definy_event::event::PartType::Union(_) => ExpressionType::Union,
     }
 }
 
-pub fn expected_type_for_target(state: &AppState, target: EditorTarget) -> Option<ExpressionType> {
-    match target {
-        EditorTarget::PartDefinition => state
-            .part_definition_form
-            .part_type_input
-            .as_ref()
-            .map(part_type_to_expression_type),
-        EditorTarget::PartUpdate => {
-            let hash = match &state.part_update_form.part_definition_event_hash {
-                Some(hash) => hash,
-                _ => return None,
-            };
-            find_part_snapshot(state, hash)
-                .and_then(|snapshot| snapshot.part_type)
-                .as_ref()
-                .map(part_type_to_expression_type)
-        }
-    }
+#[derive(Clone, Debug, Default)]
+pub struct TypeAnalysis {
+    pub diagnostics: Vec<TypeDiagnostic>,
+    pub expected_types: HashMap<Vec<crate::app_state::PathStep>, ExpressionType>,
+    pub variable_types: HashMap<i64, ExpressionType>,
 }
 
-pub fn collect_type_diagnostics(
+pub fn analyze_expression_types(
     state: &AppState,
     expression: &definy_event::event::Expression,
     expected_type: Option<ExpressionType>,
-) -> Vec<TypeDiagnostic> {
+) -> TypeAnalysis {
     let snapshots = collect_part_snapshots(state);
     let part_type_map = snapshots
         .iter()
@@ -77,15 +68,29 @@ pub fn collect_type_diagnostics(
         .collect::<HashMap<EventHashId, PartSnapshot>>();
 
     let mut diagnostics = Vec::new();
+    let mut expected_types = HashMap::new();
+    let mut variable_types = HashMap::new();
     let env = HashMap::new();
-    check_expression_type(
-        expression,
-        &Vec::new(),
-        expected_type,
+    let mut ctx = TypeCheckContext::new(
         &env,
         &part_type_map,
         &part_snapshot_map,
         &mut diagnostics,
+        &mut expected_types,
+        &mut variable_types,
     );
-    diagnostics
+    ctx.check(expression, &Vec::new(), expected_type);
+    TypeAnalysis {
+        diagnostics,
+        expected_types,
+        variable_types,
+    }
+}
+
+pub fn collect_type_diagnostics(
+    state: &AppState,
+    expression: &definy_event::event::Expression,
+    expected_type: Option<ExpressionType>,
+) -> Vec<TypeDiagnostic> {
+    analyze_expression_types(state, expression, expected_type).diagnostics
 }

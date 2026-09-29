@@ -3,12 +3,6 @@ use definy_event::EventHashId;
 use crate::app_state::PathStep;
 use crate::language::Language;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EditorTarget {
-    PartDefinition,
-    PartUpdate,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScopeVariable {
     pub id: i64,
@@ -76,9 +70,10 @@ pub struct TypeDiagnostic {
 
 pub struct ExpressionEditorContext<'a> {
     pub path: Vec<PathStep>,
-    pub target: EditorTarget,
     pub scope_variables: Vec<ScopeVariable>,
     pub diagnostics: &'a [TypeDiagnostic],
+    pub expected_types: &'a std::collections::HashMap<Vec<PathStep>, ExpressionType>,
+    pub variable_types: &'a std::collections::HashMap<i64, ExpressionType>,
     pub structure_locked: bool,
     pub allow_kind_change: bool,
     pub language: Language,
@@ -94,9 +89,10 @@ impl<'a> ExpressionEditorContext<'a> {
     ) -> ExpressionEditorContext<'a> {
         ExpressionEditorContext {
             path,
-            target: self.target,
             scope_variables,
             diagnostics: self.diagnostics,
+            expected_types: self.expected_types,
+            variable_types: self.variable_types,
             structure_locked,
             allow_kind_change,
             language: self.language,

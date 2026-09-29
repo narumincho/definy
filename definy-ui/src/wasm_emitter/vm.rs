@@ -83,6 +83,7 @@ struct CallFrame {
     func_idx: usize,
     ip: usize,
     locals: Vec<StackVal>,
+    control_stack: Vec<ControlFrame>,
 }
 
 pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
@@ -162,21 +163,21 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
             }
         } else if section_id == CODE_SECTION {
             let mut c_pos = pos;
-            let (func_count, count_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+            let (func_count, count_bytes) = read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
             c_pos += count_bytes;
 
             for _ in 0..func_count {
-                let (body_size, b_bytes) = read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                let (body_size, b_bytes) = read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
                 c_pos += b_bytes;
                 let body_end = c_pos + body_size as usize;
 
                 let (num_local_groups, g_bytes) =
-                    read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                    read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
                 c_pos += g_bytes;
                 let mut total_locals = 0;
                 for _ in 0..num_local_groups {
                     let (count, count_bytes) =
-                        read_u32_leb128(&code_bytes_slice(wasm_bytes, c_pos)?)?;
+                        read_u32_leb128(code_bytes_slice(wasm_bytes, c_pos)?)?;
                     c_pos += count_bytes;
                     c_pos += 1; // type
                     total_locals += count as usize;
@@ -203,7 +204,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
         memory[data_offset..data_offset + initial_data.len()].copy_from_slice(&initial_data);
     }
 
-    let mut globals = vec![HEAP_START_OFFSET as i32];
+    let mut globals = [HEAP_START_OFFSET as i32];
 
     let mut current_func_idx = 0;
     let mut locals = vec![StackVal::I32(0); functions[0].num_locals];
@@ -234,7 +235,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 let frame = control_stack[target_pos].clone();
                 match frame {
                     ControlFrame::Block { end_ip } | ControlFrame::If { end_ip } => {
-                        ip = end_ip;
+                        ip = end_ip + 1;
                         control_stack.truncate(target_pos);
                     }
                     ControlFrame::Loop { loop_ip } => {
@@ -252,7 +253,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                     let frame = control_stack[target_pos].clone();
                     match frame {
                         ControlFrame::Block { end_ip } | ControlFrame::If { end_ip } => {
-                            ip = end_ip;
+                            ip = end_ip + 1;
                             control_stack.truncate(target_pos);
                         }
                         ControlFrame::Loop { loop_ip } => {
@@ -351,6 +352,37 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                     return Err("Remainder by zero in Wasm");
                 }
                 stack.push(StackVal::I64(a.wrapping_rem(b)));
+            }
+            I64_AND => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a & b));
+            }
+            I64_OR => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a | b));
+            }
+            I64_XOR => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a ^ b));
+            }
+            I64_SHL => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a.wrapping_shl((b as u64 % 64) as u32)));
+            }
+            I64_SHR_U => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                let res = (a as u64).wrapping_shr((b as u64 % 64) as u32) as i64;
+                stack.push(StackVal::I64(res));
+            }
+            I64_SHR_S => {
+                let b = pop_i64(&mut stack)?;
+                let a = pop_i64(&mut stack)?;
+                stack.push(StackVal::I64(a.wrapping_shr((b as u64 % 64) as u32)));
             }
             I32_EQ => {
                 let b = pop_i32(&mut stack)?;
@@ -517,9 +549,9 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 }
             }
             ELSE => {
-                // If we hit ELSE during then execution, skip to matching END
+                // If we hit ELSE during then execution, skip past matching END
                 if let Some(ControlFrame::If { end_ip }) = control_stack.pop() {
-                    ip = end_ip;
+                    ip = end_ip + 1;
                 }
             }
             CALL_INDIRECT => {
@@ -549,6 +581,7 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                     func_idx: current_func_idx,
                     ip,
                     locals,
+                    control_stack: std::mem::take(&mut control_stack),
                 });
 
                 current_func_idx = target_func_idx;
@@ -556,15 +589,19 @@ pub fn execute_wasm_in_vm(wasm_bytes: &[u8]) -> Result<Value, &'static str> {
                 ip = 0;
             }
             END => {
-                control_stack.pop();
                 if ip >= instructions.len() {
+                    // Function body terminator END: return to the caller frame and restore its control stack
                     if let Some(frame) = call_stack.pop() {
                         current_func_idx = frame.func_idx;
                         ip = frame.ip;
                         locals = frame.locals;
+                        control_stack = frame.control_stack;
                     } else {
                         break;
                     }
+                } else {
+                    // Intra-function block/loop/if terminator END
+                    control_stack.pop();
                 }
             }
             _ => {

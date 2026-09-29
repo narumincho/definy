@@ -1,6 +1,6 @@
 [application]
 name = "definy_client"
-default_platform = "web"
+default_platform = "ssr"
 
 [web.app]
 title = "definy"

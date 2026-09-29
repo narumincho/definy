@@ -70,8 +70,8 @@ mod tests {
 
     #[test]
     fn parse_query_parses_both_lang_and_event_type() {
-        let params = parse_query(Some("lang=ja&event_type=part_definition"));
+        let params = parse_query(Some("lang=ja&event_type=module_commit"));
         assert_eq!(params.lang.as_deref(), Some("ja"));
-        assert_eq!(params.event_type, Some(EventType::PartDefinition));
+        assert_eq!(params.event_type, Some(EventType::ModuleCommit));
     }
 }

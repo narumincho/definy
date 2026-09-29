@@ -82,6 +82,19 @@ pub fn set_record_item_key(
     }
 }
 
+pub fn set_record_get_key(
+    root_expression_opt: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+    value: &str,
+) {
+    if let Some(root_expression) = root_expression_opt.as_mut()
+        && let Some(definy_event::event::Expression::RecordGet(get_expr)) =
+            get_mut_expression_at_path(root_expression, path)
+    {
+        get_expr.key = value.into();
+    }
+}
+
 pub fn add_record_item(
     root_expression_opt: &mut Option<definy_event::event::Expression>,
     path: &[PathStep],

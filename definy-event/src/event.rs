@@ -14,15 +14,18 @@ pub struct Event {
 #[strum_discriminants(name(EventType))]
 #[strum_discriminants(serde(rename_all = "snake_case"))]
 #[strum_discriminants(strum(serialize_all = "snake_case"))]
-#[strum_discriminants(derive(Serialize, Deserialize, strum_macros::Display, strum::VariantNames))]
+#[strum_discriminants(derive(
+    Serialize,
+    Deserialize,
+    strum_macros::Display,
+    strum_macros::EnumString,
+    strum::VariantNames
+))]
 #[cfg_attr(feature = "utoipa", strum_discriminants(derive(utoipa::ToSchema)))]
 pub enum EventContent {
     CreateAccount(CreateAccountEvent),
     ChangeProfile(ChangeProfileEvent),
-    PartDefinition(PartDefinitionEvent),
-    PartUpdate(PartUpdateEvent),
-    ModuleDefinition(ModuleDefinitionEvent),
-    ModuleUpdate(ModuleUpdateEvent),
+    ModuleCommit(ModuleCommitEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -128,40 +131,75 @@ impl std::fmt::Display for Description {
     }
 }
 
+/// モジュールのコミット（スナップショット）イベント。
+/// 初回コミット (`parent_commit_hash == None`) ではモジュールの作成を兼ね、そのコミットハッシュがモジュールIDとなります。
+/// 2回目以降のコミット (`parent_commit_hash == Some(...)`) では、モジュールの更新を表します。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PartDefinitionEvent {
-    pub part_name: Box<str>,
+pub struct ModuleCommitEvent {
+    pub module_name: Box<str>,
+    #[serde(default)]
+    pub module_description: Description,
+    #[serde(default)]
+    pub parent_commit_hash: Option<EventHashId>,
+    #[serde(default)]
+    pub message: Box<str>,
+    pub parts: Vec<ModulePartEntry>,
+}
+
+impl ModuleCommitEvent {
+    /// このコミット内のパーツが参照しているコンテンツハッシュ一覧を返します。
+    pub fn referenced_content_hashes(&self) -> Vec<crate::content_hash::ContentHash> {
+        self.parts
+            .iter()
+            .filter_map(|p| p.resolve_content_hash())
+            .collect()
+    }
+}
+
+/// アカウントとモジュール名から決定論的な Module ID を導出します。
+pub fn derive_module_id(account_id: &AccountId, module_name: &str) -> EventHashId {
+    use sha2::Digest;
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(b"definy:module:");
+    hasher.update(account_id.0.as_bytes());
+    hasher.update(b":");
+    hasher.update(module_name.as_bytes());
+    EventHashId::from_bytes(&hasher.finalize())
+}
+
+/// モジュール内の各パーツの決定論的パーツ ID を導出します。
+/// 同一モジュール内において、パーツ名から一意かつ不変な ID を生成します。
+pub fn derive_module_part_id(module_id: &EventHashId, part_name: &str) -> EventHashId {
+    use sha2::Digest;
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(module_id.as_bytes());
+    hasher.update(b":part:");
+    hasher.update(part_name.as_bytes());
+    EventHashId::from_bytes(&hasher.finalize())
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ModulePartEntry {
+    pub name: Box<str>,
     #[serde(default)]
     pub part_type: Option<PartType>,
     #[serde(default)]
     pub description: Description,
     #[serde(default)]
-    pub expression: Option<Expression>,
-    pub module_definition_event_hash: EventHashId,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct PartUpdateEvent {
-    pub part_name: Box<str>,
-    pub part_description: Description,
-    pub part_definition_event_hash: EventHashId,
+    pub content_hash: Option<crate::content_hash::ContentHash>,
     #[serde(default)]
     pub expression: Option<Expression>,
-    pub module_definition_event_hash: EventHashId,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ModuleDefinitionEvent {
-    pub module_name: Box<str>,
-    #[serde(default)]
-    pub description: Description,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct ModuleUpdateEvent {
-    pub module_name: Box<str>,
-    pub module_description: Description,
-    pub module_definition_event_hash: EventHashId,
+impl ModulePartEntry {
+    /// 既存の content_hash または式から計算した content_hash を取得します。
+    pub fn resolve_content_hash(&self) -> Option<crate::content_hash::ContentHash> {
+        self.content_hash.clone().or_else(|| {
+            self.expression
+                .as_ref()
+                .and_then(|e| crate::content_hash::ContentHash::from_expression(e).ok())
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -177,13 +215,155 @@ pub enum PartType {
         parameter: Box<PartType>,
         return_type: Box<PartType>,
     },
+    Record(Vec<RecordFieldType>),
     Union(Vec<UnionVariantType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RecordFieldType {
+    pub key: Box<str>,
+    pub value: Box<PartType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UnionVariantType {
     pub tag: Box<str>,
     pub payload: Option<Box<PartType>>,
+}
+
+impl std::fmt::Display for PartType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PartType::Number => write!(f, "number"),
+            PartType::String => write!(f, "string"),
+            PartType::Boolean => write!(f, "boolean"),
+            PartType::Type => write!(f, "type"),
+            PartType::TypePart(hash) => write!(f, "type-part({hash})"),
+            PartType::List(item) => write!(f, "list<{item}>"),
+            PartType::Function {
+                parameter,
+                return_type,
+            } => write!(f, "{parameter} -> {return_type}"),
+            PartType::Record(fields) => {
+                let field_texts = fields
+                    .iter()
+                    .map(|f| format!("{}: {}", f.key, f.value))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "{{{field_texts}}}")
+            }
+            PartType::Union(variants) => {
+                let var_texts = variants
+                    .iter()
+                    .map(|v| match &v.payload {
+                        Some(p) => format!("{}({p})", v.tag),
+                        None => v.tag.to_string(),
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" | ");
+                write!(f, "union<{var_texts}>")
+            }
+        }
+    }
+}
+
+impl PartType {
+    #[must_use]
+    pub fn optional_to_string(opt: &Option<Self>) -> String {
+        opt.as_ref()
+            .map(|t| t.to_string())
+            .unwrap_or_else(|| "none".to_string())
+    }
+
+    pub fn to_expression(&self) -> Expression {
+        match self {
+            PartType::Number => Expression::TypeNumber,
+            PartType::String => Expression::TypeString,
+            PartType::Boolean => Expression::TypeBoolean,
+            PartType::Type => Expression::TypeNumber,
+            PartType::TypePart(hash) => Expression::PartReference(PartReferenceExpression {
+                part_definition_event_hash: hash.clone(),
+                content_hash: None,
+            }),
+            PartType::List(item) => Expression::TypeList(TypeListExpression {
+                item_type: Box::new(item.to_expression()),
+            }),
+            PartType::Function {
+                parameter,
+                return_type,
+            } => Expression::TypeFunction(TypeFunctionExpression {
+                parameter: Box::new(parameter.to_expression()),
+                return_type: Box::new(return_type.to_expression()),
+            }),
+            PartType::Record(fields) => Expression::TypeLiteral(TypeLiteralExpression {
+                items: fields
+                    .iter()
+                    .map(|f| TypeLiteralItemExpression {
+                        key: f.key.clone(),
+                        value: Box::new(f.value.to_expression()),
+                    })
+                    .collect(),
+            }),
+            PartType::Union(variants) => Expression::TypeUnion(TypeUnionExpression {
+                variants: variants
+                    .iter()
+                    .map(|v| TypeUnionVariant {
+                        tag: v.tag.clone(),
+                        payload_type: v.payload.as_ref().map(|p| Box::new(p.to_expression())),
+                    })
+                    .collect(),
+            }),
+        }
+    }
+
+    pub fn from_expression(expr: &Expression) -> Option<PartType> {
+        match expr {
+            Expression::TypeNumber => Some(PartType::Number),
+            Expression::TypeString => Some(PartType::String),
+            Expression::TypeBoolean => Some(PartType::Boolean),
+            Expression::TypeList(list_expr) => {
+                let item = Self::from_expression(&list_expr.item_type)?;
+                Some(PartType::List(Box::new(item)))
+            }
+            Expression::TypeFunction(func_expr) => {
+                let parameter = Self::from_expression(&func_expr.parameter)?;
+                let return_type = Self::from_expression(&func_expr.return_type)?;
+                Some(PartType::Function {
+                    parameter: Box::new(parameter),
+                    return_type: Box::new(return_type),
+                })
+            }
+            Expression::TypeLiteral(record_expr) => {
+                let mut fields = Vec::with_capacity(record_expr.items.len());
+                for item in &record_expr.items {
+                    let val_type = Self::from_expression(&item.value)?;
+                    fields.push(RecordFieldType {
+                        key: item.key.clone(),
+                        value: Box::new(val_type),
+                    });
+                }
+                Some(PartType::Record(fields))
+            }
+            Expression::TypeUnion(union_expr) => {
+                let mut variants = Vec::with_capacity(union_expr.variants.len());
+                for v in &union_expr.variants {
+                    let payload = match &v.payload_type {
+                        Some(p) => Some(Box::new(Self::from_expression(p)?)),
+                        None => None,
+                    };
+                    variants.push(UnionVariantType {
+                        tag: v.tag.clone(),
+                        payload,
+                    });
+                }
+                Some(PartType::Union(variants))
+            }
+            Expression::PartReference(part_ref) => Some(PartType::TypePart(
+                part_ref.part_definition_event_hash.clone(),
+            )),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -200,6 +380,11 @@ pub enum Expression {
     Multiply(MultiplyExpression),
     Divide(DivideExpression),
     Remainder(RemainderExpression),
+    BitAnd(BitAndExpression),
+    BitOr(BitOrExpression),
+    BitXor(BitXorExpression),
+    ShiftLeft(ShiftLeftExpression),
+    ShiftRight(ShiftRightExpression),
     LessThan(LessThanExpression),
     LessThanOrEqual(LessThanOrEqualExpression),
     GreaterThan(GreaterThanExpression),
@@ -223,6 +408,7 @@ pub enum Expression {
     Variable(VariableExpression),
     #[serde(alias = "RecordLiteral")]
     TypeLiteral(TypeLiteralExpression),
+    RecordGet(RecordGetExpression),
     Constructor(ConstructorExpression),
     Function(FunctionExpression),
     Call(CallExpression),
@@ -262,6 +448,11 @@ pub enum CompilerBuiltin {
     If,
     Function,
     Call,
+    BitAnd,
+    BitOr,
+    BitXor,
+    ShiftLeft,
+    ShiftRight,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -290,6 +481,36 @@ pub struct DivideExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RemainderExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BitAndExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BitOrExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BitXorExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ShiftLeftExpression {
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ShiftRightExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
@@ -405,6 +626,27 @@ pub struct TypeListExpression {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PartReferenceExpression {
     pub part_definition_event_hash: EventHashId,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_hash: Option<crate::ContentHash>,
+}
+
+impl PartReferenceExpression {
+    pub fn new(part_definition_event_hash: EventHashId) -> Self {
+        Self {
+            part_definition_event_hash,
+            content_hash: None,
+        }
+    }
+
+    pub fn with_content_hash(
+        part_definition_event_hash: EventHashId,
+        content_hash: crate::ContentHash,
+    ) -> Self {
+        Self {
+            part_definition_event_hash,
+            content_hash: Some(content_hash),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -447,6 +689,13 @@ pub struct TypeLiteralExpression {
 pub struct TypeLiteralItemExpression {
     pub key: Box<str>,
     pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RecordGetExpression {
+    pub record: Box<Expression>,
+    #[serde(alias = "field_name")]
+    pub key: Box<str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -555,4 +804,98 @@ pub enum AccountIdFromStrError {
     DecodeError(base64::DecodeError),
     InvalidBytes(ed25519_dalek::SignatureError),
     InvalidByteSize(<[u8; 32] as TryFrom<Vec<u8>>>::Error),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_part_type_display() {
+        assert_eq!(PartType::Number.to_string(), "number");
+        assert_eq!(PartType::String.to_string(), "string");
+        assert_eq!(PartType::Boolean.to_string(), "boolean");
+        assert_eq!(PartType::Type.to_string(), "type");
+        assert_eq!(
+            PartType::List(Box::new(PartType::Number)).to_string(),
+            "list<number>"
+        );
+        assert_eq!(
+            PartType::Function {
+                parameter: Box::new(PartType::Number),
+                return_type: Box::new(PartType::String),
+            }
+            .to_string(),
+            "number -> string"
+        );
+        let record_type = PartType::Record(vec![
+            RecordFieldType {
+                key: "name".into(),
+                value: Box::new(PartType::String),
+            },
+            RecordFieldType {
+                key: "age".into(),
+                value: Box::new(PartType::Number),
+            },
+        ]);
+        assert_eq!(record_type.to_string(), "{name: string, age: number}");
+
+        let union_type = PartType::Union(vec![
+            UnionVariantType {
+                tag: "none".into(),
+                payload: None,
+            },
+            UnionVariantType {
+                tag: "some".into(),
+                payload: Some(Box::new(PartType::Number)),
+            },
+        ]);
+        assert_eq!(union_type.to_string(), "union<none | some(number)>");
+
+        assert_eq!(PartType::optional_to_string(&None), "none");
+        assert_eq!(
+            PartType::optional_to_string(&Some(PartType::Number)),
+            "number"
+        );
+    }
+
+    #[test]
+    fn test_part_type_expression_roundtrip() {
+        let types = vec![
+            PartType::Number,
+            PartType::String,
+            PartType::Boolean,
+            PartType::List(Box::new(PartType::Number)),
+            PartType::Function {
+                parameter: Box::new(PartType::String),
+                return_type: Box::new(PartType::Boolean),
+            },
+            PartType::Record(vec![
+                RecordFieldType {
+                    key: "x".into(),
+                    value: Box::new(PartType::Number),
+                },
+                RecordFieldType {
+                    key: "y".into(),
+                    value: Box::new(PartType::String),
+                },
+            ]),
+            PartType::Union(vec![
+                UnionVariantType {
+                    tag: "none".into(),
+                    payload: None,
+                },
+                UnionVariantType {
+                    tag: "some".into(),
+                    payload: Some(Box::new(PartType::Number)),
+                },
+            ]),
+        ];
+
+        for pt in types {
+            let expr = pt.to_expression();
+            let recovered = PartType::from_expression(&expr).expect("should convert back");
+            assert_eq!(pt, recovered);
+        }
+    }
 }

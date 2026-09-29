@@ -15,18 +15,19 @@ use inputs::*;
 pub use selector::*;
 
 pub fn is_compound_expression(expr: &definy_event::event::Expression) -> bool {
-    match expr {
+    !matches!(
+        expr,
         definy_event::event::Expression::Number(_)
-        | definy_event::event::Expression::String(_)
-        | definy_event::event::Expression::Boolean(_)
-        | definy_event::event::Expression::Variable(_)
-        | definy_event::event::Expression::PartReference(_)
-        | definy_event::event::Expression::TypeNumber
-        | definy_event::event::Expression::TypeString
-        | definy_event::event::Expression::TypeBoolean
-        | definy_event::event::Expression::Compiler(_) => false,
-        _ => true,
-    }
+            | definy_event::event::Expression::String(_)
+            | definy_event::event::Expression::Boolean(_)
+            | definy_event::event::Expression::Variable(_)
+            | definy_event::event::Expression::PartReference(_)
+            | definy_event::event::Expression::TypeNumber
+            | definy_event::event::Expression::TypeString
+            | definy_event::event::Expression::TypeBoolean
+            | definy_event::event::Expression::Compiler(_)
+            | definy_event::event::Expression::Variant(_)
+    )
 }
 
 pub fn render_expression_editor(
@@ -35,43 +36,52 @@ pub fn render_expression_editor(
     context: ExpressionEditorContext,
 ) -> Element {
     let path = context.path.clone();
-    let target = context.target;
     let scope_variables = context.scope_variables.clone();
     let diagnostics = context.diagnostics;
     let structure_locked = context.structure_locked;
     let allow_kind_change = context.allow_kind_change;
     let language = context.language;
     let current_selection = current_selection_value(state, expression);
-    let selector_options = selector_options(state, language, &scope_variables, path.is_empty());
+    let expected_type = context.expected_types.get(&path);
+    let selector_options = selector_options(
+        state,
+        language,
+        &scope_variables,
+        path.is_empty(),
+        expected_type,
+        context.variable_types,
+    );
     let warning_message = diagnostics
         .iter()
         .find(|diagnostic| diagnostic.path == path)
         .map(|diagnostic| diagnostic.message.as_str());
 
     let is_focused = state.focused_path.as_ref() == Some(&path);
-    let border_style = if is_focused {
-        "2px solid var(--accent)"
+    let (border_style, shadow_style) = if is_focused {
+        (
+            "1px solid var(--primary)",
+            "box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), 0 4px 16px rgba(56, 189, 248, 0.15);",
+        )
     } else if warning_message.is_some() {
-        "1px solid var(--error)"
+        (
+            "1px solid var(--error)",
+            "box-shadow: 0 0 8px rgba(251, 113, 133, 0.2);",
+        )
     } else if path.is_empty() {
-        "1px solid var(--border)"
+        ("1px solid var(--border)", "box-shadow: var(--shadow-sm);")
     } else {
-        "1px solid rgb(255 255 255 / 0.1)"
+        ("1px solid rgba(255, 255, 255, 0.07)", "")
     };
     let card_padding = if path.is_empty() {
-        "0.5rem 0.65rem"
+        "0.6rem 0.75rem"
     } else {
-        "0.3rem 0.45rem"
+        "0.35rem 0.55rem"
     };
-    let card_gap = if path.is_empty() {
-        "0.35rem"
-    } else {
-        "0.25rem"
-    };
+    let card_gap = if path.is_empty() { "0.4rem" } else { "0.3rem" };
     let card_bg = if path.is_empty() {
-        "var(--surface)"
+        "rgba(14, 21, 33, 0.65)"
     } else {
-        "rgb(255 255 255 / 0.02)"
+        "rgba(255, 255, 255, 0.025)"
     };
     let card_class = if path.is_empty() {
         "event-detail-card"
@@ -84,17 +94,17 @@ pub fn render_expression_editor(
         div {
             class: "{card_class}",
             "data-path": "{path_str}",
-            style: "padding: {card_padding}; display: grid; gap: {card_gap}; border: {border_style}; background: {card_bg}; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box;",
-            if allow_kind_change && is_compound_expression(expression) {
-                {
-                    expression_selector(
-                        state,
-                        path.clone(),
-                        target,
-                        &current_selection,
-                        &selector_options,
-                    )
+            style: "padding: {card_padding}; display: grid; gap: {card_gap}; border: {border_style}; {shadow_style} background: {card_bg}; border-radius: var(--radius-sm); width: 100%; box-sizing: border-box; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);",
+            onclick: {
+                let p = path.clone();
+                move |evt: MouseEvent| {
+                    evt.stop_propagation();
+                    let mut state_sig = use_context::<Signal<AppState>>();
+                    state_sig.write().focused_path = Some(p.clone());
                 }
+            },
+            if allow_kind_change && is_compound_expression(expression) {
+                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
             }
             if let Some(msg) = warning_message {
                 div { style: "font-size: 0.75rem; color: var(--error);", "{msg}" }
@@ -105,17 +115,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {number_input(path.clone(), target, number_expression.value)}
+                                {number_input(path.clone(), number_expression.value)}
                             }
                         }
                     }
@@ -123,17 +125,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {string_input(path.clone(), target, string_expression.value.as_ref())}
+                                {string_input(path.clone(), string_expression.value.as_ref())}
                             }
                         }
                     }
@@ -142,18 +136,7 @@ pub fn render_expression_editor(
                     | definy_event::event::Expression::TypeBoolean => rsx! {
                         div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
-                            }
-                            div { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                                "{language.label(\"Built-in types\", \"組み込み型\", \"Enkonstruitaj tipoj\")}"
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
                         }
                     },
@@ -180,7 +163,7 @@ pub fn render_expression_editor(
                         }
                     }
                     definy_event::event::Expression::ListLiteral(list_expression) => {
-                        render_list_literal(state, &context, &path, target, list_expression)
+                        render_list_literal(state, &context, &path, list_expression)
                     }
                     definy_event::event::Expression::Add(add_expression) => {
                         render_binary_inputs(
@@ -225,6 +208,51 @@ pub fn render_expression_editor(
                             &path,
                             &rem_expression.left,
                             &rem_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::BitAnd(bit_and_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &bit_and_expression.left,
+                            &bit_and_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::BitOr(bit_or_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &bit_or_expression.left,
+                            &bit_or_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::BitXor(bit_xor_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &bit_xor_expression.left,
+                            &bit_xor_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::ShiftLeft(shift_left_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &shift_left_expression.left,
+                            &shift_left_expression.right,
+                        )
+                    }
+                    definy_event::event::Expression::ShiftRight(shift_right_expression) => {
+                        render_binary_inputs(
+                            state,
+                            &context,
+                            &path,
+                            &shift_right_expression.left,
+                            &shift_right_expression.right,
                         )
                     }
                     definy_event::event::Expression::Equal(equal_expression) => {
@@ -389,6 +417,9 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::ListGet(get_expr) => {
                         render_list_get(state, &context, &path, get_expr)
                     }
+                    definy_event::event::Expression::RecordGet(get_expr) => {
+                        render_record_get(state, &context, &path, get_expr)
+                    }
                     definy_event::event::Expression::ListAppend(append_expr) => {
                         render_list_append(state, &context, &path, append_expr)
                     }
@@ -396,17 +427,9 @@ pub fn render_expression_editor(
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
-                                {boolean_input(language, path.clone(), target, boolean_expression.value)}
+                                {boolean_input(language, path.clone(), boolean_expression.value)}
                             }
                         }
                     }
@@ -414,10 +437,10 @@ pub fn render_expression_editor(
                         render_if(state, &context, &path, if_expression)
                     }
                     definy_event::event::Expression::Let(let_expression) => {
-                        render_let(state, &context, &path, target, let_expression)
+                        render_let(state, &context, &path, let_expression)
                     }
                     definy_event::event::Expression::TypeLiteral(record_expression) => {
-                        render_type_literal(state, &context, &path, target, record_expression)
+                        render_type_literal(state, &context, &path, record_expression)
                     }
                     definy_event::event::Expression::Constructor(constructor_expression) => {
                         let mut value_path = path.clone();
@@ -465,20 +488,35 @@ pub fn render_expression_editor(
                         let part_type = part
                             .as_ref()
                             .and_then(|p| p.part_type.as_ref())
-                            .map(crate::part_list::part_type_text)
+                            .map(ToString::to_string)
                             .unwrap_or_else(|| "Part".to_string());
+                        let current_hash = part_reference_expression.content_hash.as_ref();
+                        let latest_hash = part.as_ref().and_then(|p| p.content_hash.as_ref());
+                        let has_update = current_hash.is_some()
+                            && latest_hash.is_some()
+                            && current_hash != latest_hash;
+                        let hash_display = current_hash
+                            .map(|h| {
+                                let s = h.to_string();
+                                if s.len() > 7 {
+                                    format!("#{}", &s[..7])
+                                } else {
+                                    format!("#{}", s)
+                                }
+                            });
+                        let latest_short_hash = latest_hash
+                            .map(|h| {
+                                let s = h.to_string();
+                                if s.len() > 7 {
+                                    format!("#{}", &s[..7])
+                                } else {
+                                    format!("#{}", s)
+                                }
+                            });
                         rsx! {
                             div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                                 }
                                 div { style: "display: flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; padding: 0.15rem 0.4rem; background: rgb(255 255 255 / 0.05); border-radius: var(--radius-sm);",
                                     div { style: "font-weight: 600;", "{part_name}" }
@@ -487,6 +525,94 @@ pub fn render_expression_editor(
                                         style: "font-size: 0.68rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.05rem 0.3rem; border-radius: var(--radius-full);",
                                         "{part_type}"
                                     }
+                                    if let Some(h_text) = hash_display {
+                                        div {
+                                            style: "font-size: 0.68rem; font-family: var(--font-mono); color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.28); padding: 0.05rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "固定されたコンテンツハッシュ (Pinned ContentHash)",
+                                            span { "📌" }
+                                            span { "{h_text}" }
+                                        }
+                                        button {
+                                            r#type: "button",
+                                            style: "cursor: pointer; border: 1px solid var(--border); font-size: 0.68rem; background: rgba(255, 255, 255, 0.06); color: var(--text-secondary); padding: 0.08rem 0.35rem; border-radius: var(--radius-xs); font-weight: 500;",
+                                            title: "最新バージョンを追跡 (Switch to tracking latest)",
+                                            onclick: {
+                                                let target_path = path.clone();
+                                                move |_| {
+                                                    let mut expr_signal = use_context::<
+                                                        Signal<Option<definy_event::event::Expression>>,
+                                                    >();
+                                                    let mut current_opt = expr_signal.read().clone();
+                                                    crate::expression_editor::mutation::upgrade_part_reference_content_hash(
+                                                        &mut current_opt,
+                                                        &target_path,
+                                                        None,
+                                                    );
+                                                    expr_signal.set(current_opt);
+                                                }
+                                            },
+                                            "🔄 Unpin"
+                                        }
+                                    } else {
+                                        div {
+                                            style: "font-size: 0.68rem; font-family: var(--font-mono); color: #34d399; background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.28); padding: 0.05rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "最新バージョンを常に追跡中 (Tracking latest version)",
+                                            span { "🔄" }
+                                            span { "latest" }
+                                        }
+                                        if let (Some(target_hash), Some(short_hash)) = (
+                                            latest_hash.cloned(),
+                                            latest_short_hash,
+                                        )
+                                        {
+                                            button {
+                                                r#type: "button",
+                                                style: "cursor: pointer; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; padding: 0.08rem 0.35rem; border-radius: var(--radius-xs); font-weight: 500;",
+                                                title: "現在のバージョンで固定 (Pin to current version)",
+                                                onclick: {
+                                                    let target_path = path.clone();
+                                                    let h = target_hash.clone();
+                                                    move |_| {
+                                                        let mut expr_signal = use_context::<
+                                                            Signal<Option<definy_event::event::Expression>>,
+                                                        >();
+                                                        let mut current_opt = expr_signal.read().clone();
+                                                        crate::expression_editor::mutation::upgrade_part_reference_content_hash(
+                                                            &mut current_opt,
+                                                            &target_path,
+                                                            Some(h.clone()),
+                                                        );
+                                                        expr_signal.set(current_opt);
+                                                    }
+                                                },
+                                                "📌 Pin ({short_hash})"
+                                            }
+                                        }
+                                    }
+                                    if has_update {
+                                        button {
+                                            r#type: "button",
+                                            style: "cursor: pointer; border: none; font-size: 0.68rem; background: #e06c75; color: #fff; padding: 0.08rem 0.4rem; border-radius: var(--radius-xs); font-weight: 600; display: inline-flex; align-items: center; gap: 0.2rem;",
+                                            title: "最新バージョンに更新 (Upgrade to latest version)",
+                                            onclick: {
+                                                let target_path = path.clone();
+                                                let target_hash = latest_hash.cloned();
+                                                move |_| {
+                                                    let mut expr_signal = use_context::<
+                                                        Signal<Option<definy_event::event::Expression>>,
+                                                    >();
+                                                    let mut current_opt = expr_signal.read().clone();
+                                                    crate::expression_editor::mutation::upgrade_part_reference_content_hash(
+                                                        &mut current_opt,
+                                                        &target_path,
+                                                        target_hash.clone(),
+                                                    );
+                                                    expr_signal.set(current_opt);
+                                                }
+                                            },
+                                            "↑ Upgrade"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -494,30 +620,14 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::Variable(_) => rsx! {
                         div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
                         }
                     },
                     definy_event::event::Expression::Compiler(_) => rsx! {
                         div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;",
                             if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
+                                {expression_selector(state, path.clone(), &current_selection, &selector_options)}
                             }
                             div { style: "font-size: 0.75rem; color: var(--text-secondary);",
                                 "{language.label(\"Compiler Builtin\", \"コンパイラ組み込み\", \"Kompililo enkonstruita\")}"
@@ -527,106 +637,69 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::Function(func_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
-                                }
-                                {render_function(state, &context, &path, target, func_expression)}
+                                {render_function(state, &context, &path, func_expression)}
                             }
                         }
                     }
                     definy_event::event::Expression::Call(call_expression) => rsx! {
                         div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                            if allow_kind_change {
-                                {
-                                    expression_selector(
-                                        state,
-                                        path.clone(),
-                                        target,
-                                        &current_selection,
-                                        &selector_options,
-                                    )
-                                }
-                            }
-                            {render_call(state, &context, &path, target, call_expression)}
+                            {render_call(state, &context, &path, call_expression)}
                         }
                     },
                     definy_event::event::Expression::TypeFunction(type_func_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
-                                }
-                                {render_type_function(state, &context, &path, target, type_func_expression)}
+                                {render_type_function(state, &context, &path, type_func_expression)}
                             }
                         }
                     }
                     definy_event::event::Expression::TypeUnion(type_union_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
-                                }
-                                {render_type_union(state, &context, &path, target, type_union_expression)}
+                                {render_type_union(state, &context, &path, type_union_expression)}
                             }
                         }
                     }
                     definy_event::event::Expression::Variant(variant_expression) => {
                         rsx! {
-                            div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
+                            div { style: "display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; width: 100%;",
                                 if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
+                                    {expression_selector(state, path.clone(), &current_selection, &selector_options)}
+                                } else {
+                                    span { style: "font-weight: 600; font-size: 0.85rem; padding: 0.15rem 0.4rem; background: var(--accent-subtle); color: var(--accent); border-radius: var(--radius-sm);",
+                                        "{variant_expression.tag}"
                                     }
                                 }
-                                {render_variant(state, &context, &path, target, variant_expression)}
+                                if let Some(payload) = &variant_expression.payload {
+                                    div { style: "display: flex; align-items: center; gap: 0.25rem; flex: 1; min-width: 0;",
+                                        span { style: "color: var(--text-secondary); font-weight: 600;", "(" }
+                                        div { style: "flex: 1;",
+                                            {
+                                                let mut payload_path = path.clone();
+                                                payload_path.push(crate::app_state::PathStep::VariantPayload);
+                                                render_expression_editor(
+                                                    state,
+                                                    payload.as_ref(),
+                                                    context
+                                                        .child(
+                                                            payload_path,
+                                                            context.scope_variables.clone(),
+                                                            context.structure_locked,
+                                                            context.allow_kind_change,
+                                                        ),
+                                                )
+                                            }
+                                        }
+                                        span { style: "color: var(--text-secondary); font-weight: 600;", ")" }
+                                    }
+                                }
                             }
                         }
                     }
                     definy_event::event::Expression::Match(match_expression) => {
                         rsx! {
                             div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-                                if allow_kind_change {
-                                    {
-                                        expression_selector(
-                                            state,
-                                            path.clone(),
-                                            target,
-                                            &current_selection,
-                                            &selector_options,
-                                        )
-                                    }
-                                }
-                                {render_match(state, &context, &path, target, match_expression)}
+                                {render_match(state, &context, &path, match_expression)}
                             }
                         }
                     }

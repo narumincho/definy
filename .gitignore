@@ -1,7 +1,7 @@
 .DS_Store
 /generated/
 /target/
-/web-distribution/
+/dist/
 .codex/
 /narumincho-vdom-build/data.json
 /narumincho-vdom-build/cache/

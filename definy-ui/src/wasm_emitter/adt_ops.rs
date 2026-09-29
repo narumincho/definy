@@ -241,6 +241,7 @@ pub(crate) fn emit_string_eq(
     out.push(END); // else fast path
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_match_arms(
     arms: &[MatchArm],
     idx: usize,

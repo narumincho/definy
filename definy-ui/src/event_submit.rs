@@ -7,16 +7,13 @@ use crate::app_state::{AppState, upsert_local_event_record};
 use crate::fetch::{get_events, post_event_with_queue};
 use crate::local_event::{LocalEventRecord, LocalEventStatus};
 
-pub async fn submit_event<F>(
+pub async fn submit_event(
     content: EventContent,
     key: SigningKey,
     force_offline: bool,
     filter_for_refresh: Option<EventType>,
     mut state_sig: Signal<AppState>,
-    on_complete: F,
-) where
-    F: FnOnce(&mut AppState, &LocalEventRecord) + 'static,
-{
+) -> Option<LocalEventRecord> {
     let event = Event {
         account_id: AccountId(key.verifying_key()),
         time: chrono::Utc::now(),
@@ -29,7 +26,7 @@ pub async fn submit_event<F>(
             web_sys::console::error_1(
                 &format!("Failed to sign and serialize event: {:?}", error).into(),
             );
-            return;
+            return None;
         }
     };
 
@@ -48,11 +45,12 @@ pub async fn submit_event<F>(
             }
             next.event_cache.insert(event_hash, decoded_event);
             upsert_local_event_record(&mut next, record.clone());
-            on_complete(&mut next, &record);
             state_sig.set(next);
+            Some(record)
         }
         Err(error) => {
             web_sys::console::error_1(&format!("Failed to post event: {:?}", error).into());
+            None
         }
     }
 }

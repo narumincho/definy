@@ -263,6 +263,52 @@ pub async fn get_event(
     Ok(record.map(|r| r.event_binary))
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+pub struct ContentRecord {
+    pub content_hash: String,
+    pub content_bytes: Vec<u8>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+pub async fn save_content(
+    db: &Surreal<Any>,
+    content_hash: &str,
+    content_bytes: &[u8],
+) -> Result<(), anyhow::Error> {
+    let record = ContentRecord {
+        content_hash: content_hash.to_string(),
+        content_bytes: content_bytes.to_vec(),
+        created_at: chrono::Utc::now(),
+    };
+    let _: Option<ContentRecord> = db
+        .create(("contents", content_hash))
+        .content(record)
+        .await?;
+    Ok(())
+}
+
+pub async fn get_content(
+    db: &Surreal<Any>,
+    content_hash: &str,
+) -> Result<Option<Vec<u8>>, anyhow::Error> {
+    let record: Option<ContentRecord> = db.select(("contents", content_hash)).await?;
+    Ok(record.map(|r| r.content_bytes))
+}
+
+pub async fn filter_missing_content_hashes(
+    db: &Surreal<Any>,
+    hashes: &[String],
+) -> Result<Vec<String>, anyhow::Error> {
+    let mut missing = Vec::new();
+    for hash in hashes {
+        let record: Option<ContentRecord> = db.select(("contents", hash.as_str())).await?;
+        if record.is_none() {
+            missing.push(hash.clone());
+        }
+    }
+    Ok(missing)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -304,23 +350,21 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 1 CreateAccount + 2 ModuleDefinition + 34 PartDefinition = 37 events
-        assert_eq!(events.len(), 37);
+        // 1 CreateAccount + 3 ModuleCommit (core, sample, std) = 4 events
+        assert_eq!(events.len(), 4);
 
         let mut part_names = Vec::new();
         let mut module_names = Vec::new();
         for event_binary in events.iter() {
             let (_, event) = definy_event::verify_and_deserialize(event_binary).unwrap();
             match event.content {
-                definy_event::event::EventContent::ModuleDefinition(module) => {
-                    assert!(module.description.get("en").is_some());
-                    assert!(module.description.get("ja").is_some());
-                    module_names.push(module.module_name.to_string());
-                }
-                definy_event::event::EventContent::PartDefinition(part) => {
-                    assert!(part.description.get("en").is_some());
-                    assert!(part.description.get("ja").is_some());
-                    part_names.push(part.part_name.to_string());
+                definy_event::event::EventContent::ModuleCommit(module_commit) => {
+                    assert!(module_commit.module_description.get("en").is_some());
+                    assert!(module_commit.module_description.get("ja").is_some());
+                    module_names.push(module_commit.module_name.to_string());
+                    for part in &module_commit.parts {
+                        part_names.push(part.name.to_string());
+                    }
                 }
                 definy_event::event::EventContent::CreateAccount(account) => {
                     assert_eq!(account.account_name.as_ref(), "definy");
@@ -331,54 +375,60 @@ mod tests {
 
         assert!(module_names.contains(&"core".to_string()));
         assert!(module_names.contains(&"sample".to_string()));
+        assert!(module_names.contains(&"std".to_string()));
         assert!(part_names.contains(&"let".to_string()));
         assert!(part_names.contains(&"plus".to_string()));
-        assert!(part_names.contains(&"number literal".to_string()));
+        assert!(part_names.contains(&"number-literal".to_string()));
         assert!(part_names.contains(&"if".to_string()));
-        assert!(part_names.contains(&"Number".to_string()));
-        assert!(part_names.contains(&"String".to_string()));
-        assert!(part_names.contains(&"Boolean".to_string()));
-        assert!(part_names.contains(&"List".to_string()));
-        assert!(part_names.contains(&"Equal".to_string()));
+        assert!(part_names.contains(&"number".to_string()));
+        assert!(part_names.contains(&"string".to_string()));
+        assert!(part_names.contains(&"boolean".to_string()));
+        assert!(part_names.contains(&"expression".to_string()));
+        assert!(part_names.contains(&"value".to_string()));
+        assert!(part_names.contains(&"eval-ast".to_string()));
+        assert!(part_names.contains(&"sample-ast-calc".to_string()));
+        assert!(part_names.contains(&"list".to_string()));
+        assert!(part_names.contains(&"equal".to_string()));
         assert!(part_names.contains(&"minus".to_string()));
         assert!(part_names.contains(&"multiply".to_string()));
         assert!(part_names.contains(&"divide".to_string()));
         assert!(part_names.contains(&"remainder".to_string()));
-        assert!(part_names.contains(&"less than".to_string()));
-        assert!(part_names.contains(&"less than or equal".to_string()));
-        assert!(part_names.contains(&"greater than".to_string()));
-        assert!(part_names.contains(&"greater than or equal".to_string()));
-        assert!(part_names.contains(&"not equal".to_string()));
+        assert!(part_names.contains(&"less-than".to_string()));
+        assert!(part_names.contains(&"less-than-or-equal".to_string()));
+        assert!(part_names.contains(&"greater-than".to_string()));
+        assert!(part_names.contains(&"greater-than-or-equal".to_string()));
         assert!(part_names.contains(&"not".to_string()));
-        assert!(part_names.contains(&"and".to_string()));
-        assert!(part_names.contains(&"or".to_string()));
-        assert!(part_names.contains(&"string concat".to_string()));
-        assert!(part_names.contains(&"string length".to_string()));
-        assert!(part_names.contains(&"string slice".to_string()));
-        assert!(part_names.contains(&"list length".to_string()));
-        assert!(part_names.contains(&"list concat".to_string()));
-        assert!(part_names.contains(&"list get".to_string()));
-        assert!(part_names.contains(&"list append".to_string()));
-        assert!(part_names.contains(&"triangle_area".to_string()));
+        assert!(part_names.contains(&"list-get".to_string()));
+        assert!(part_names.contains(&"list-append".to_string()));
+        assert!(part_names.contains(&"type-ast".to_string()));
+        assert!(part_names.contains(&"part-definition".to_string()));
+        assert!(part_names.contains(&"module-definition".to_string()));
+        assert!(part_names.contains(&"abs".to_string()));
+        assert!(part_names.contains(&"min".to_string()));
+        assert!(part_names.contains(&"max".to_string()));
+        assert!(part_names.contains(&"sign".to_string()));
+        assert!(part_names.contains(&"bool-to-string".to_string()));
+        assert!(part_names.contains(&"list-is-empty".to_string()));
+        assert!(part_names.contains(&"list-head".to_string()));
         assert!(part_names.contains(&"greet".to_string()));
-        assert!(part_names.contains(&"is_even_sample".to_string()));
-        assert!(part_names.contains(&"prime_numbers".to_string()));
-        assert!(part_names.contains(&"OptionNumber".to_string()));
-        assert!(part_names.contains(&"match_option_sample".to_string()));
+        assert!(part_names.contains(&"is-even-sample".to_string()));
+        assert!(part_names.contains(&"prime-numbers".to_string()));
+        assert!(part_names.contains(&"option-number".to_string()));
+        assert!(part_names.contains(&"match-option-sample".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 37);
+        assert_eq!(events_after.len(), 4);
     }
 
     #[tokio::test]
     async fn test_cleanup_outdated_builtin_events() {
         let db = init_db().await.unwrap();
 
-        // Check initially 37 events
+        // Check initially 4 events
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events.len(), 37);
+        assert_eq!(events.len(), 4);
 
         // Insert an outdated/unexpected event created by the definy system account
         let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
@@ -387,16 +437,16 @@ mod tests {
         let outdated_event = definy_event::event::Event {
             account_id: account_id.clone(),
             time: chrono::Utc::now(),
-            content: definy_event::event::EventContent::PartDefinition(
-                definy_event::event::PartDefinitionEvent {
-                    part_name: "obsolete_builtin_part".into(),
-                    part_type: None,
-                    description: definy_event::event::Description::localized(vec![(
+            content: definy_event::event::EventContent::ModuleCommit(
+                definy_event::event::ModuleCommitEvent {
+                    module_name: "obsolete_builtin_module".into(),
+                    module_description: definy_event::event::Description::localized(vec![(
                         "en",
-                        "Obsolete part",
+                        "Obsolete module",
                     )]),
-                    expression: None,
-                    module_definition_event_hash: definy_event::EventHashId::from_bytes(&[0; 32]),
+                    parent_commit_hash: None,
+                    message: "Obsolete".into(),
+                    parts: vec![],
                 },
             ),
         };
@@ -408,9 +458,9 @@ mod tests {
             .await
             .unwrap();
 
-        // Verify that there are now 38 events
+        // Verify that there are now 5 events
         let events_with_outdated = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_with_outdated.len(), 38);
+        assert_eq!(events_with_outdated.len(), 5);
 
         // Also insert a user event (not definy system account) to verify user data is NEVER deleted
         let user_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
@@ -430,21 +480,40 @@ mod tests {
             .await
             .unwrap();
 
-        // Total 39 events
+        // Total 6 events (4 builtin + 1 outdated builtin + 1 normal user)
         let events_total = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_total.len(), 39);
+        assert_eq!(events_total.len(), 6);
 
         // Run migrate_builtin_data - it should delete the outdated builtin part, but keep normal_user event!
         migrate_builtin_data(&db).await.unwrap();
 
         let events_cleaned = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 37 built-in events + 1 user event = 38 events (outdated builtin deleted)
-        assert_eq!(events_cleaned.len(), 38);
+        // 4 built-in events + 1 user event = 5 events (outdated builtin deleted)
+        assert_eq!(events_cleaned.len(), 5);
 
         let user_event_hash = sha2::Sha256::digest(&user_binary);
         assert!(get_event(&db, &user_event_hash).await.unwrap().is_some());
 
         let outdated_hash = sha2::Sha256::digest(&outdated_binary);
         assert!(get_event(&db, &outdated_hash).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_content_storage_and_filter_missing() {
+        let db = init_db().await.unwrap();
+
+        let hash1 = "dummy_content_hash_1".to_string();
+        let bytes1 = vec![1, 2, 3, 4];
+        let hash2 = "dummy_content_hash_2".to_string();
+
+        assert_eq!(get_content(&db, &hash1).await.unwrap(), None);
+
+        save_content(&db, &hash1, &bytes1).await.unwrap();
+        assert_eq!(get_content(&db, &hash1).await.unwrap(), Some(bytes1));
+
+        let missing = filter_missing_content_hashes(&db, &[hash1.clone(), hash2.clone()])
+            .await
+            .unwrap();
+        assert_eq!(missing, vec![hash2]);
     }
 }

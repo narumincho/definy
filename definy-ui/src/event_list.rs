@@ -5,42 +5,6 @@ use dioxus::prelude::*;
 use crate::app_state::AppState;
 use crate::page_context::PageContext;
 
-fn part_type_text(part_type: &definy_event::event::PartType) -> String {
-    match part_type {
-        definy_event::event::PartType::Number => "Number".to_string(),
-        definy_event::event::PartType::String => "String".to_string(),
-        definy_event::event::PartType::Boolean => "Boolean".to_string(),
-        definy_event::event::PartType::Type => "Type".to_string(),
-        definy_event::event::PartType::TypePart(hash) => {
-            format!("TypePart({})", hash)
-        }
-        definy_event::event::PartType::List(item_type) => {
-            format!("list<{}>", part_type_text(item_type.as_ref()))
-        }
-        definy_event::event::PartType::Function {
-            parameter,
-            return_type,
-        } => {
-            format!(
-                "{} -> {}",
-                part_type_text(parameter.as_ref()),
-                part_type_text(return_type.as_ref())
-            )
-        }
-        definy_event::event::PartType::Union(variants) => {
-            let var_texts = variants
-                .iter()
-                .map(|v| match &v.payload {
-                    Some(p) => format!("{}({})", v.tag, part_type_text(p.as_ref())),
-                    None => v.tag.to_string(),
-                })
-                .collect::<Vec<String>>()
-                .join(" | ");
-            format!("union<{}>", var_texts)
-        }
-    }
-}
-
 #[component]
 pub fn EventListView(state: AppState, context: PageContext) -> Element {
     let filter_options = vec![
@@ -66,31 +30,10 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                 .to_string(),
         ),
         (
-            "part_definition".to_string(),
+            "module_commit".to_string(),
             context
                 .language
-                .label("Part Definition", "パーツ定義", "Parto-difino")
-                .to_string(),
-        ),
-        (
-            "part_update".to_string(),
-            context
-                .language
-                .label("Part Update", "パーツ更新", "Parto-ĝisdatigo")
-                .to_string(),
-        ),
-        (
-            "module_definition".to_string(),
-            context
-                .language
-                .label("Module Definition", "モジュール定義", "Modulo-difino")
-                .to_string(),
-        ),
-        (
-            "module_update".to_string(),
-            context
-                .language
-                .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
+                .label("Module Commit", "モジュールコミット", "Modulo-enmeto")
                 .to_string(),
         ),
     ];
@@ -139,10 +82,7 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                         let event_type = match _val.as_str() {
                             "create_account" => Some(EventType::CreateAccount),
                             "change_profile" => Some(EventType::ChangeProfile),
-                            "part_definition" => Some(EventType::PartDefinition),
-                            "part_update" => Some(EventType::PartUpdate),
-                            "module_definition" => Some(EventType::ModuleDefinition),
-                            "module_update" => Some(EventType::ModuleUpdate),
+                            "module_commit" => Some(EventType::ModuleCommit),
                             _ => None,
                         };
                         #[cfg(target_arch = "wasm32")]
@@ -158,7 +98,7 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                     }
                 },
             }
-            div { class: "event-list", style: "display: grid; gap: 1rem;",
+            div { class: "event-list", style: "display: grid; gap: 0.45rem;",
                 for hash in hashes {
                     if let Some(event_result) = state.event_cache.get(&hash) {
                         EventCard {
@@ -242,48 +182,50 @@ fn EventCard(
             let author_name =
                 crate::app_state::account_display_name(&account_name_map, &event.account_id);
             let time_str = event.time.format("%Y-%m-%d %H:%M:%S").to_string();
-            let event_type_badge = event_type_label(&event.content, &context);
+            let (event_type_text, event_badge_class) =
+                event_type_badge_info(&event.content, &context);
             let hash_str = hash.to_string();
 
             rsx! {
                 div {
                     class: "event-card",
-                    style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.9rem 1.1rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 0.65rem;",
-                    // Header row
-                    div { style: "display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.5rem; border-bottom: 1px solid rgb(255 255 255 / 0.05); gap: 0.8rem;",
-                        div { style: "display: flex; align-items: center; gap: 0.6rem; font-size: 0.82rem;",
+                    style: "display: flex; flex-direction: column; gap: 0.45rem;",
+                    // Row 1: 作成者 日時 [イベント種別バッジ]
+                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.84rem;",
+                        div { style: "display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex-wrap: wrap;",
                             a {
                                 href: context.href_with_lang(crate::Location::Account(event.account_id.clone())),
                                 style: "font-weight: 600; color: var(--primary); text-decoration: none;",
                                 "{author_name}"
                             }
-                            div { style: "color: var(--text-secondary); font-size: 0.76rem;",
+                            span { style: "color: var(--text-muted); font-size: 0.76rem;",
                                 "{time_str}"
                             }
                         }
-                        div {
-                            class: "badge",
-                            style: "font-size: 0.72rem; font-weight: 500; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.18rem 0.5rem; border-radius: var(--radius-full); white-space: nowrap;",
-                            "{event_type_badge}"
-                        }
+                        div { class: "{event_badge_class}", "{event_type_text}" }
                     }
-                    // Body
+                    // Row 2: イベントの内容
                     EventContentView {
                         event: event.clone(),
                         context: context.clone(),
                         hash: hash.clone(),
                     }
-                    // Footer
-                    div { style: "display: flex; justify-content: space-between; align-items: center; margin-top: 0.2rem; padding-top: 0.45rem; border-top: 1px solid rgb(255 255 255 / 0.04); font-size: 0.76rem;",
+                    // Row 3: イベントハッシュ 詳細リンク
+                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.74rem; padding-top: 0.2rem; border-top: 1px solid rgba(255, 255, 255, 0.04);",
                         div {
                             class: "mono",
-                            style: "color: var(--text-secondary); opacity: 0.7; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+                            style: "color: var(--text-muted); font-size: 0.72rem; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
                             "{hash_str}"
                         }
                         a {
                             href: context.href_with_lang(crate::Location::Event(hash.clone())),
-                            style: "color: var(--primary); text-decoration: none; font-weight: 500;",
-                            "{context.language.label(\"Event detail →\", \"イベント詳細 →\", \"Eventaj detaloj →\")}"
+                            style: "color: var(--primary); text-decoration: none; font-weight: 500; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.25rem;",
+                            span {
+                                "{context.language.label(\"Event detail\", \"イベント詳細\", \"Eventaj detaloj\")}"
+                            }
+                            span { style: "font-size: 0.85rem; transition: transform 0.15s ease;",
+                                "→"
+                            }
                         }
                     }
                 }
@@ -301,11 +243,11 @@ fn EventCard(
             rsx! {
                 div {
                     class: "event-card",
-                    style: "padding: 0.85rem 1.1rem; border-left: 3px solid var(--error); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: 0.3rem;",
-                    div { style: "font-size: 0.85rem; font-weight: 600; color: var(--error);",
+                    style: "padding: 0.55rem 0.8rem; border-left: 3px solid var(--error); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); display: grid; gap: 0.2rem;",
+                    div { style: "font-size: 0.82rem; font-weight: 600; color: var(--error);",
                         "{invalid_label}"
                     }
-                    div { style: "font-size: 0.8rem; color: var(--text-secondary);",
+                    div { style: "font-size: 0.76rem; color: var(--text-secondary);",
                         "{err_str}"
                     }
                 }
@@ -318,146 +260,63 @@ fn EventCard(
 fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> Element {
     match event.content {
         EventContent::CreateAccount(create_account_event) => rsx! {
-            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                div { style: "color: var(--text-secondary);",
+            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                span { style: "color: var(--text-secondary); font-size: 0.82rem;",
                     {
                         context
                             .language
-                            .label(
-                                "Created account:",
-                                "アカウントを作成しました:",
-                                "Kreis konton:",
-                            )
+                            .label("Created account:", "アカウントを作成:", "Kreis konton:")
                     }
                 }
-                div { style: "font-weight: 600;", "{create_account_event.account_name}" }
+                span { style: "font-weight: 600; color: var(--text);",
+                    "{create_account_event.account_name}"
+                }
             }
         },
         EventContent::ChangeProfile(change_profile_event) => rsx! {
-            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                div { style: "color: var(--text-secondary);",
+            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                span { style: "color: var(--text-secondary); font-size: 0.82rem;",
                     {
                         context
                             .language
                             .label(
                                 "Changed account name to:",
-                                "アカウント名を変更しました:",
+                                "アカウント名を変更:",
                                 "Ŝanĝis kontonomon al:",
                             )
                     }
                 }
-                div { style: "font-weight: 600;", "{change_profile_event.account_name}" }
+                span { style: "font-weight: 600; color: var(--text);",
+                    "{change_profile_event.account_name}"
+                }
             }
         },
-        EventContent::PartDefinition(part_definition_event) => {
-            let part_name = part_definition_event.part_name.to_string();
-            let part_type_badge = part_definition_event.part_type.as_ref().map(part_type_text);
-            let desc = part_definition_event
-                .description
-                .to_display_string(context.language.to_code());
 
+        EventContent::ModuleCommit(module_commit_event) => {
+            let msg = &module_commit_event.message;
+            let parts_count = module_commit_event.parts.len();
             rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                        a {
-                            href: context.href_with_lang(crate::Location::Part(hash.clone())),
-                            style: "font-size: 1.05rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                            "{part_name}"
-                        }
-                        if let Some(badge) = part_type_badge {
-                            span {
-                                class: "badge mono",
-                                style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.45rem; border-radius: var(--radius-full);",
-                                "{badge}"
-                            }
-                        }
-                    }
-                    if !desc.is_empty() {
-                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
-                            "{desc}"
-                        }
-                    }
-                }
-            }
-        }
-        EventContent::PartUpdate(part_update_event) => {
-            let part_name = part_update_event.part_name.to_string();
-            let base_hash = part_update_event.part_definition_event_hash.clone();
-
-            rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                        div { style: "color: var(--text-secondary);",
+                div { style: "display: grid; gap: 0.2rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem;",
+                        span { style: "color: var(--text-secondary); font-size: 0.82rem;",
                             {
                                 context
                                     .language
                                     .label(
-                                        "Updated part:",
-                                        "パーツを更新しました:",
-                                        "Ĝisdatigis parton:",
+                                        "Committed module:",
+                                        "モジュールをコミット:",
+                                        "Enmetis modulon:",
                                     )
                             }
                         }
-                        a {
-                            href: context.href_with_lang(crate::Location::Part(base_hash)),
-                            style: "font-weight: 600; color: var(--text); text-decoration: none;",
-                            "{part_name}"
-                        }
+                        span { style: "font-weight: 600; color: var(--text);", "{msg}" }
                     }
-                }
-            }
-        }
-        EventContent::ModuleDefinition(module_definition_event) => {
-            let mod_name = module_definition_event.module_name.to_string();
-            let desc = module_definition_event
-                .description
-                .to_display_string(context.language.to_code());
-
-            rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    a {
-                        href: context.href_with_lang(crate::Location::Module(hash.clone())),
-                        style: "font-size: 1.05rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                        "{mod_name}"
-                    }
-                    if !desc.is_empty() {
-                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
-                            "{desc}"
-                        }
-                    }
-                }
-            }
-        }
-        EventContent::ModuleUpdate(module_update_event) => {
-            let mod_name = module_update_event.module_name.to_string();
-            let base_hash = module_update_event.module_definition_event_hash.clone();
-            let desc = module_update_event
-                .module_description
-                .to_display_string(context.language.to_code());
-
-            rsx! {
-                div { style: "display: grid; gap: 0.35rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.95rem;",
-                        div { style: "color: var(--text-secondary);",
-                            {
-                                context
-                                    .language
-                                    .label(
-                                        "Updated module:",
-                                        "モジュールを更新しました:",
-                                        "Ĝisdatigis modulon:",
-                                    )
-                            }
-                        }
-                        a {
-                            href: context.href_with_lang(crate::Location::Module(base_hash)),
-                            style: "font-weight: 600; color: var(--text); text-decoration: none;",
-                            "{mod_name}"
-                        }
-                    }
-                    if !desc.is_empty() {
-                        div { style: "font-size: 0.84rem; color: var(--text-secondary); line-height: 1.4; white-space: pre-wrap;",
-                            "{desc}"
+                    div { style: "font-size: 0.8rem; color: var(--text-secondary);",
+                        "{parts_count} "
+                        {
+                            context
+                                .language
+                                .label("parts included", "個のパーツを含む", "partoj inkluzivitaj")
                         }
                     }
                 }
@@ -466,31 +325,39 @@ fn EventContentView(event: Event, context: PageContext, hash: EventHashId) -> El
     }
 }
 
-fn event_type_label(content: &EventContent, context: &PageContext) -> String {
+fn event_type_badge_info(content: &EventContent, context: &PageContext) -> (String, &'static str) {
     match content {
-        EventContent::CreateAccount(_) => context
-            .language
-            .label("Create Account", "アカウント作成", "Krei konton")
-            .to_string(),
-        EventContent::ChangeProfile(_) => context
-            .language
-            .label("Change Profile", "プロフィール変更", "Ŝanĝi profilon")
-            .to_string(),
-        EventContent::PartDefinition(_) => context
-            .language
-            .label("Part Definition", "パーツ定義", "Parto-difino")
-            .to_string(),
-        EventContent::PartUpdate(_) => context
-            .language
-            .label("Part Update", "パーツ更新", "Parto-ĝisdatigo")
-            .to_string(),
-        EventContent::ModuleDefinition(_) => context
-            .language
-            .label("Module Definition", "モジュール定義", "Modulo-difino")
-            .to_string(),
-        EventContent::ModuleUpdate(_) => context
-            .language
-            .label("Module Update", "モジュール更新", "Modulo-ĝisdatigo")
-            .to_string(),
+        EventContent::CreateAccount(_) => (
+            context
+                .language
+                .label("Create Account", "アカウント作成", "Krei konton")
+                .to_string(),
+            "badge badge-string",
+        ),
+        EventContent::ChangeProfile(_) => (
+            context
+                .language
+                .label("Change Profile", "プロフィール変更", "Ŝanĝi profilon")
+                .to_string(),
+            "badge badge-string",
+        ),
+        EventContent::ModuleCommit(_) => (
+            context
+                .language
+                .label("Module Commit", "モジュールコミット", "Modula enmeto")
+                .to_string(),
+            "badge badge-primary",
+        ),
+    }
+}
+
+pub(crate) fn part_type_badge_class(type_str: &str) -> &'static str {
+    match type_str {
+        "type" => "badge badge-type mono",
+        "number" => "badge badge-number mono",
+        "string" => "badge badge-string mono",
+        "boolean" => "badge badge-boolean mono",
+        _ if type_str.contains("->") => "badge badge-func mono",
+        _ => "badge badge-type mono",
     }
 }

@@ -48,4 +48,4 @@
 
 # 結論
 
-PostgreSQL (Supabase)
+SurrealDB Cloud. 料金が高くなったら他に移る

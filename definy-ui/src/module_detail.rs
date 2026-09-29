@@ -31,8 +31,9 @@ pub fn ModuleDetailView(
                 .language
                 .label("latest author:", "最新の投稿者:", "lasta aŭtoro:")
         );
-        let (initial_name, initial_description) =
-            effective_module_update_form(&state, &definition_event_hash, Some(&module_snapshot));
+
+        let related_events =
+            crate::module_projection::collect_related_module_events(&state, &definition_event_hash);
 
         rsx! {
             div { class: "page-shell", style: "{page_shell_style}",
@@ -48,8 +49,6 @@ pub fn ModuleDetailView(
                     definition_event_hash: definition_event_hash.clone(),
                     module_snapshot,
                     author_label,
-                    initial_name,
-                    initial_description,
                 }
                 div { style: "margin-top: 1rem; font-weight: 600;",
                     "{context.language.label(\"Parts in this module\", \"このモジュールのパーツ\", \"Partoj en ĉi tiu modulo\")}"
@@ -73,6 +72,11 @@ pub fn ModuleDetailView(
                             }
                         }
                     }
+                }
+                ModuleHistoryCard {
+                    state: state.clone(),
+                    context: context.clone(),
+                    related_events,
                 }
             }
         }
@@ -106,15 +110,38 @@ fn ModulePartItem(
             .label("latest author:", "最新の投稿者:", "lasta aŭtoro:")
     );
 
+    let (ch_str, short_ch) = if let Some(ch) = &part.content_hash {
+        let s = ch.to_string();
+        let short = if s.len() > 7 {
+            format!("#{}", &s[..7])
+        } else {
+            format!("#{}", s)
+        };
+        (Some(s), Some(short))
+    } else {
+        (None, None)
+    };
+
     rsx! {
         div {
             class: "event-card",
             style: "display: grid; gap: 0.5rem; padding: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
             div { style: "font-size: 0.85rem; color: var(--text-secondary);", "{time_str}" }
-            a {
-                href: context.href_with_lang(Location::Part(def_hash)),
-                style: "font-size: 0.98rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                "{part.part_name}"
+            div { style: "display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;",
+                a {
+                    href: context.href_with_lang(Location::Part(def_hash)),
+                    style: "font-size: 0.98rem; font-weight: 600; color: var(--text); text-decoration: none;",
+                    "{part.part_name}"
+                }
+                if let (Some(full_ch), Some(short_ch)) = (ch_str, short_ch) {
+                    span {
+                        class: "mono",
+                        style: "font-size: 0.72rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                        title: "ContentHash: {full_ch}",
+                        span { "📌" }
+                        span { "{short_ch}" }
+                    }
+                }
             }
             {
                 let desc = part.description_for(context.language);
@@ -140,13 +167,13 @@ fn ModuleEditorCard(
     definition_event_hash: EventHashId,
     module_snapshot: crate::module_projection::ModuleSnapshot,
     author_label: String,
-    initial_name: String,
-    initial_description: String,
 ) -> Element {
     let language = context.language;
-    let def_hash_clone = definition_event_hash.clone();
-    let def_hash_name = definition_event_hash.clone();
-    let def_hash_desc = definition_event_hash.clone();
+    let mut module_name = use_signal(|| module_snapshot.module_name.clone());
+    let mut module_description = use_signal(|| module_snapshot.description_for(language));
+    let mut commit_message = use_signal(String::new);
+    let mut result_message = use_signal(|| None::<String>);
+
     let placeholder_text = language.label(
         "module description (supports multiple lines)",
         "モジュール説明 (複数行対応)",
@@ -173,7 +200,7 @@ fn ModuleEditorCard(
             div { style: "display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; flex-wrap: wrap;",
                 div {
                     h2 { style: "font-size: 1.4rem; font-weight: 600; margin: 0;",
-                        "{initial_name}"
+                        "{module_name}"
                     }
                     div { style: "font-size: 0.85rem; color: var(--primary); margin-top: 0.2rem;",
                         "{author_label}"
@@ -188,15 +215,11 @@ fn ModuleEditorCard(
                 input {
                     r#type: "text",
                     name: "module-update-name",
-                    value: "{initial_name}",
+                    value: "{module_name}",
+                    placeholder: "my-module",
                     style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
                     oninput: move |evt: FormEvent| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
-                        let mut next = state_sig.write();
-                        next.module_update_form.module_definition_event_hash = Some(
-                            def_hash_name.clone(),
-                        );
-                        next.module_update_form.module_name_input = evt.value();
+                        module_name.set(evt.value());
                     },
                 }
             }
@@ -206,16 +229,36 @@ fn ModuleEditorCard(
                 }
                 textarea {
                     name: "module-update-description",
-                    value: "{initial_description}",
+                    value: "{module_description}",
                     placeholder: "{placeholder_text}",
                     style: "min-height: 4.5rem; padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.92rem; resize: vertical;",
                     oninput: move |evt: FormEvent| {
-                        let mut state_sig = use_context::<Signal<AppState>>();
-                        let mut next = state_sig.write();
-                        next.module_update_form.module_definition_event_hash = Some(
-                            def_hash_desc.clone(),
-                        );
-                        next.module_update_form.module_description_input = evt.value();
+                        module_description.set(evt.value());
+                    },
+                }
+            }
+            div { style: "display: grid; gap: 0.35rem;",
+                div { style: "font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);",
+                    {
+                        context
+                            .language
+                            .label("Commit Message", "コミットメッセージ", "Enmeta mesaĝo")
+                    }
+                }
+                input {
+                    r#type: "text",
+                    name: "module-update-commit-message",
+                    value: "{commit_message}",
+                    placeholder: context
+                        .language
+                        .label(
+                            "e.g. Update module description",
+                            "例: モジュール説明の更新",
+                            "ekz. Ĝisdatigi modulan priskribon",
+                        ),
+                    style: "padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.95rem;",
+                    oninput: move |evt: FormEvent| {
+                        commit_message.set(evt.value());
                     },
                 }
             }
@@ -226,7 +269,129 @@ fn ModuleEditorCard(
                     style: if is_logged_in { "padding: 0.5rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;" } else { "padding: 0.5rem 1.2rem; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: not-allowed; opacity: 0.6;" },
                     onclick: move |_| {
                         let state_sig = use_context::<Signal<AppState>>();
-                        handle_module_update_submit(state_sig, def_hash_clone.clone(), language);
+                        let state_val = state_sig.read().clone();
+                        let key = if let Some(key) = &state_val.current_key {
+                            key.clone()
+                        } else {
+                            result_message
+                                .set(
+                                    Some(
+                                        language
+                                            .label(
+                                                "Error: login required",
+                                                "エラー: ログインが必要です",
+                                                "Eraro: ensaluto necesas",
+                                            )
+                                            .to_string(),
+                                    ),
+                                );
+                            return;
+                        };
+                        let name = module_name().trim().to_string();
+                        let desc = module_description();
+                        if name.is_empty() {
+                            result_message
+                                .set(
+                                    Some(
+                                        language
+                                            .label(
+                                                "Error: module name is required",
+                                                "エラー: モジュール名は必須です",
+                                                "Eraro: modulo-nomo estas bezonata",
+                                            )
+                                            .to_string(),
+                                    ),
+                                );
+                            return;
+                        }
+                        if !definy_event::naming::is_valid_name(&name) {
+                            result_message
+                                .set(
+                                    Some(
+                                        language
+                                            .label(
+                                                "Error: module name must be lowercase alphanumeric with hyphens (e.g. my-module)",
+                                                "エラー: モジュール名はアルファベット小文字・ハイフン区切りで入力してください (例: my-module)",
+                                                "Eraro: modulo-nomo devas esti minusklaj literoj disigitaj per streketoj (ekz. my-module)",
+                                            )
+                                            .to_string(),
+                                    ),
+                                );
+                            return;
+                        }
+                        let force_offline = state_val.force_offline;
+                        let def_hash = definition_event_hash.clone();
+                        let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
+                        let parts: Vec<definy_event::event::ModulePartEntry> = existing_parts
+                            .into_iter()
+                            .filter(|p| p.module_definition_event_hash == def_hash)
+                            .map(|p| definy_event::event::ModulePartEntry {
+                                name: p.part_name.into(),
+                                part_type: p.part_type,
+                                description: p.part_description,
+                                content_hash: p.content_hash,
+                                expression: p.expression,
+                            })
+                            .collect();
+                        let commit_msg_trimmed = commit_message().trim().to_string();
+                        let final_commit_msg = if commit_msg_trimmed.is_empty() {
+                            "Update module info".to_string()
+                        } else {
+                            commit_msg_trimmed
+                        };
+                        let latest_commit = Some(module_snapshot.latest_event_hash.clone());
+                        spawn(async move {
+                            let record_opt = crate::event_submit::submit_event(
+                                    definy_event::event::EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                                        module_name: name.into(),
+                                        module_description: desc.into(),
+                                        parent_commit_hash: latest_commit,
+                                        message: final_commit_msg.into(),
+                                        parts,
+                                    }),
+                                    key,
+                                    force_offline,
+                                    None,
+                                    state_sig,
+                                )
+                                .await;
+                            if let Some(record) = record_opt {
+                                result_message
+                                    .set(
+                                        Some(
+                                            match record.status {
+                                                crate::local_event::LocalEventStatus::Sent => {
+                                                    language
+                                                        .label(
+                                                            "Changes saved successfully",
+                                                            "変更を保存しました",
+                                                            "Ŝanĝoj konservitaj",
+                                                        )
+                                                        .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Queued => {
+                                                    language
+                                                        .label(
+                                                            "Changes queued (offline)",
+                                                            "変更をキューに追加しました (オフライン)",
+                                                            "Ŝanĝoj envicigitaj (senkonekte)",
+                                                        )
+                                                        .to_string()
+                                                }
+                                                crate::local_event::LocalEventStatus::Failed => {
+                                                    language
+                                                        .label(
+                                                            "Failed to save changes",
+                                                            "変更の保存に失敗しました",
+                                                            "Konservado de ŝanĝoj malsukcesis",
+                                                        )
+                                                        .to_string()
+                                                }
+                                            },
+                                        ),
+                                    );
+                            }
+                        });
                     },
                     "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
                 }
@@ -236,7 +401,7 @@ fn ModuleEditorCard(
                     }
                 }
             }
-            if let Some(result) = &state.module_update_form.result_message {
+            if let Some(result) = result_message() {
                 div {
                     class: "mono",
                     style: "font-size: 0.85rem; word-break: break-word; background: rgb(124 192 216 / 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
@@ -247,124 +412,158 @@ fn ModuleEditorCard(
     }
 }
 
-fn handle_module_update_submit(
-    mut state_sig: Signal<AppState>,
-    def_hash_clone: EventHashId,
+fn resolve_module_commit_info(
     language: crate::language::Language,
-) {
-    let state_val = state_sig.read().clone();
-    let key = if let Some(key) = &state_val.current_key {
-        key.clone()
-    } else {
-        state_sig.write().module_update_form.result_message = Some(
-            language
-                .label(
-                    "Error: login required",
-                    "エラー: ログインが必要です",
-                    "Eraro: ensaluto necesas",
-                )
-                .to_string(),
-        );
-        return;
-    };
-    let force_offline = state_val.force_offline;
-    let (module_name, module_description) =
-        effective_module_update_form(&state_val, &def_hash_clone, None);
-    let module_name = module_name.trim().to_string();
-    if module_name.is_empty() {
-        state_sig.write().module_update_form.result_message = Some(
-            language
-                .label(
-                    "Error: module name is required",
-                    "エラー: モジュール名は必須です",
-                    "Eraro: modulo-nomo estas bezonata",
-                )
-                .to_string(),
-        );
-        return;
-    }
-    let def_hash_for_cb = def_hash_clone.clone();
-    spawn(async move {
-        crate::event_submit::submit_event(
-            definy_event::event::EventContent::ModuleUpdate(
-                definy_event::event::ModuleUpdateEvent {
-                    module_name: module_name.into(),
-                    module_description: module_description.into(),
-                    module_definition_event_hash: def_hash_for_cb.clone(),
-                },
-            ),
-            key,
-            force_offline,
+    ev: &definy_event::event::Event,
+) -> (String, Option<EventHashId>, usize) {
+    match &ev.content {
+        definy_event::event::EventContent::ModuleCommit(mc) => {
+            let msg = if mc.message.trim().is_empty() {
+                language
+                    .label(
+                        "Commit (no message)",
+                        "コミット (メッセージなし)",
+                        "Enmeto (sen mesaĝo)",
+                    )
+                    .to_string()
+            } else {
+                mc.message.to_string()
+            };
+            (msg, mc.parent_commit_hash.clone(), mc.parts.len())
+        }
+        _ => (
+            crate::event_presenter::event_kind_label(language, ev).to_string(),
             None,
-            state_sig,
-            move |next, record| {
-                if record.status == crate::local_event::LocalEventStatus::Sent {
-                    if let Some(snapshot) = find_module_snapshot(next, &def_hash_for_cb) {
-                        next.module_update_form.module_definition_event_hash =
-                            Some(def_hash_for_cb);
-                        let desc = snapshot.description_for(language);
-                        next.module_update_form.module_name_input = snapshot.module_name;
-                        next.module_update_form.module_description_input = desc;
-                    }
-                    next.module_update_form.result_message = Some(
-                        language
-                            .label(
-                                "Changes saved successfully",
-                                "変更を保存しました",
-                                "Ŝanĝoj konservitaj",
-                            )
-                            .to_string(),
-                    );
-                } else {
-                    next.module_update_form.result_message = Some(match record.status {
-                        crate::local_event::LocalEventStatus::Queued => language
-                            .label(
-                                "Changes queued (offline)",
-                                "変更をキューに追加しました (オフライン)",
-                                "Ŝanĝoj envicigitaj (senkonekte)",
-                            )
-                            .to_string(),
-                        crate::local_event::LocalEventStatus::Failed => language
-                            .label(
-                                "Failed to save changes",
-                                "変更の保存に失敗しました",
-                                "Konservado de ŝanĝoj malsukcesis",
-                            )
-                            .to_string(),
-                        crate::local_event::LocalEventStatus::Sent => unreachable!(),
-                    });
-                }
-            },
-        )
-        .await;
-    });
+            0,
+        ),
+    }
 }
 
-fn effective_module_update_form(
-    state: &AppState,
-    definition_event_hash: &EventHashId,
-    snapshot: Option<&crate::module_projection::ModuleSnapshot>,
-) -> (String, String) {
-    if let Some(hash) = &state.module_update_form.module_definition_event_hash
-        && hash == definition_event_hash
-    {
-        return (
-            state.module_update_form.module_name_input.clone(),
-            state.module_update_form.module_description_input.clone(),
-        );
+#[component]
+fn ModuleHistoryCard(
+    state: AppState,
+    context: PageContext,
+    related_events: Vec<(EventHashId, definy_event::event::Event)>,
+) -> Element {
+    let account_name_map = state.account_name_map();
+    let language = context.language;
+
+    rsx! {
+        div {
+            class: "event-detail-card",
+            style: "display: grid; gap: 0.75rem; padding: 1.1rem 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-top: 1rem;",
+            div { style: "display: flex; align-items: center; justify-content: space-between;",
+                div { style: "font-size: 0.95rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.4rem;",
+                    span { "📜" }
+                    span {
+                        "{language.label(\"Commit History\", \"コミット履歴\", \"Enmeta historio\")}"
+                    }
+                }
+                span { style: "font-size: 0.75rem; color: var(--text-secondary);",
+                    "{related_events.len()} {language.label(\"commits\", \"コミット\", \"enmetoj\")}"
+                }
+            }
+            if related_events.is_empty() {
+                div { style: "color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem 0;",
+                    "{language.label(\"No history found.\", \"履歴はありません。\", \"Neniu historio trovita.\")}"
+                }
+            } else {
+                div { style: "display: grid; gap: 0.6rem;",
+                    for (index, (event_hash, ev)) in related_events.iter().enumerate() {
+                        ModuleCommitHistoryItem {
+                            key: "{event_hash}",
+                            context: context.clone(),
+                            account_name_map: account_name_map.clone(),
+                            index,
+                            event_hash: event_hash.clone(),
+                            event: ev.clone(),
+                        }
+                    }
+                }
+            }
+        }
     }
-    if let Some(snapshot) = snapshot {
-        return (
-            snapshot.module_name.clone(),
-            snapshot.description_for(crate::language::default_language()),
-        );
+}
+
+#[component]
+fn ModuleCommitHistoryItem(
+    context: PageContext,
+    account_name_map: std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
+    index: usize,
+    event_hash: EventHashId,
+    event: definy_event::event::Event,
+) -> Element {
+    let language = context.language;
+    let time_str = event.time.format("%Y-%m-%d %H:%M:%S").to_string();
+    let hash_str = event_hash.to_string();
+    let short_event_hash = if hash_str.len() > 7 {
+        format!("#{}", &hash_str[..7])
+    } else {
+        format!("#{}", hash_str)
+    };
+    let author_name = crate::app_state::account_display_name(&account_name_map, &event.account_id);
+    let (commit_message, parent_hash, parts_count) = resolve_module_commit_info(language, &event);
+    let is_latest = index == 0;
+    let parent_short = parent_hash.as_ref().map(|p| {
+        let s = p.to_string();
+        if s.len() > 7 {
+            format!("#{}", &s[..7])
+        } else {
+            format!("#{}", s)
+        }
+    });
+    let parent_title = parent_hash.as_ref().map(ToString::to_string);
+
+    rsx! {
+        div { style: "display: grid; gap: 0.45rem; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgb(255 255 255 / 0.02);",
+            div { style: "display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap;",
+                div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
+                    if is_latest {
+                        span {
+                            class: "badge",
+                            style: "font-size: 0.68rem; font-weight: 600; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.05rem 0.4rem; border-radius: var(--radius-full);",
+                            "HEAD"
+                        }
+                    }
+                    span { style: "font-size: 0.88rem; font-weight: 600; color: var(--text);",
+                        "{commit_message}"
+                    }
+                }
+                div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.76rem; color: var(--text-secondary);",
+                    span { "👤 {author_name}" }
+                    span { "•" }
+                    span { "{time_str}" }
+                }
+            }
+            div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;",
+                a {
+                    href: context.href_with_lang(Location::Event(event_hash.clone())),
+                    class: "mono",
+                    style: "color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(124 192 216 / 0.08); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                    title: "{event_hash}",
+                    span { "Commit:" }
+                    span { "{short_event_hash}" }
+                }
+                span {
+                    class: "mono",
+                    style: "color: var(--text-secondary); background: rgb(255 255 255 / 0.04); border: 1px solid var(--border); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
+                    "{parts_count} {language.label(\"parts\", \"パーツ\", \"partoj\")}"
+                }
+                if let (Some(p_hash), Some(p_short)) = (parent_hash, parent_short) {
+                    a {
+                        href: context.href_with_lang(Location::Event(p_hash)),
+                        class: "mono",
+                        style: "color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(255 255 255 / 0.04); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                        title: parent_title.as_deref().unwrap_or_default(),
+                        span { "Parent:" }
+                        span { "{p_short}" }
+                    }
+                } else {
+                    span { style: "color: #a78bfa; font-size: 0.72rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
+                        "🌱 Initial Commit"
+                    }
+                }
+            }
+        }
     }
-    if let Some(snapshot) = find_module_snapshot(state, definition_event_hash) {
-        let desc = snapshot.description_for(crate::language::default_language());
-        return (snapshot.module_name, desc);
-    }
-    (
-        state.module_update_form.module_name_input.clone(),
-        state.module_update_form.module_description_input.clone(),
-    )
 }

@@ -2,29 +2,11 @@ pub mod builder;
 pub mod values;
 pub mod variables;
 
-use super::types::EditorTarget;
-use crate::app_state::{AppState, PathStep};
+use crate::app_state::PathStep;
 
 pub use builder::*;
 pub use values::*;
 pub use variables::*;
-
-pub fn selector_prefix(target: EditorTarget) -> &'static str {
-    match target {
-        EditorTarget::PartDefinition => "part-definition",
-        EditorTarget::PartUpdate => "part-update",
-    }
-}
-
-pub fn target_expression_mut(
-    state: &mut AppState,
-    target: EditorTarget,
-) -> &mut Option<definy_event::event::Expression> {
-    match target {
-        EditorTarget::PartDefinition => &mut state.part_definition_form.composing_expression,
-        EditorTarget::PartUpdate => &mut state.part_update_form.expression_input,
-    }
-}
 
 pub fn path_to_key(path: &[PathStep]) -> String {
     if path.is_empty() {
@@ -57,6 +39,7 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::MatchArmBody(index) => format!("MAB{}", index),
             PathStep::MatchDefault => "MD".to_string(),
             PathStep::TypeUnionVariant(index) => format!("TUV{}", index),
+            PathStep::Record => "REC".to_string(),
         })
         .collect::<Vec<String>>()
         .join("-")
@@ -252,6 +235,12 @@ pub fn get_mut_expression_at_path<'a>(
             }
             _ => None,
         },
+        definy_event::event::Expression::RecordGet(get_expr) => match path[0] {
+            PathStep::Record | PathStep::Left => {
+                get_mut_expression_at_path(get_expr.record.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
         definy_event::event::Expression::Constructor(constructor_expression) => match path[0] {
             PathStep::ConstructorValue => {
                 get_mut_expression_at_path(constructor_expression.value.as_mut(), &path[1..])
@@ -327,5 +316,18 @@ pub fn get_mut_expression_at_path<'a>(
             _ => None,
         },
         _ => None,
+    }
+}
+
+pub fn upgrade_part_reference_content_hash(
+    expression: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+    new_content_hash: Option<definy_event::ContentHash>,
+) {
+    if let Some(definy_event::event::Expression::PartReference(ref_expr)) = expression
+        .as_mut()
+        .and_then(|expr| get_mut_expression_at_path(expr, path))
+    {
+        ref_expr.content_hash = new_content_hash;
     }
 }

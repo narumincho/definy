@@ -1,6 +1,7 @@
 pub mod prompts;
 pub mod protocol;
 pub mod resources;
+pub mod tool_definitions;
 pub mod tools;
 
 use std::collections::HashMap;
@@ -240,11 +241,7 @@ pub async fn handle_mcp_post(
 
     if let Ok(req) = serde_json::from_value::<JsonRpcRequest>(payload.clone()) {
         if let Some(resp) = dispatch_request(req, db.as_ref()).await {
-            return (
-                StatusCode::OK,
-                axum::Json(serde_json::to_value(resp).unwrap()),
-            )
-                .into_response();
+            return (StatusCode::OK, axum::Json(resp)).into_response();
         } else {
             return StatusCode::NO_CONTENT.into_response();
         }
@@ -257,23 +254,16 @@ pub async fn handle_mcp_post(
                 responses.push(resp);
             }
         }
-        return (
-            StatusCode::OK,
-            axum::Json(serde_json::to_value(responses).unwrap()),
-        )
-            .into_response();
+        return (StatusCode::OK, axum::Json(responses)).into_response();
     }
 
     (
         StatusCode::BAD_REQUEST,
-        axum::Json(
-            serde_json::to_value(JsonRpcResponse::error(
-                None,
-                -32700,
-                "Invalid JSON-RPC request",
-            ))
-            .unwrap(),
-        ),
+        axum::Json(JsonRpcResponse::error(
+            None,
+            -32700,
+            "Invalid JSON-RPC request",
+        )),
     )
         .into_response()
 }
@@ -453,7 +443,7 @@ mod tests {
             .as_str()
             .unwrap()
             .to_string();
-        assert!(text.contains("match_option_sample"));
+        assert!(text.contains("match-option-sample"));
 
         // 3. eval_expression
         let eval_req = JsonRpcRequest {
@@ -487,7 +477,7 @@ mod tests {
             params: Some(json!({
                 "name": "create_module",
                 "arguments": {
-                    "name": "ai_test_mod",
+                    "name": "ai-test-mod",
                     "description": "Module created by AI via MCP"
                 }
             })),
@@ -497,7 +487,7 @@ mod tests {
             .as_str()
             .unwrap()
             .to_string();
-        assert!(text.contains("ai_test_mod"));
+        assert!(text.contains("ai-test-mod"));
 
         // 5. create_part
         let create_part_req = JsonRpcRequest {
@@ -507,8 +497,8 @@ mod tests {
             params: Some(json!({
                 "name": "create_part",
                 "arguments": {
-                    "module": "ai_test_mod",
-                    "name": "ai_constant",
+                    "module": "ai-test-mod",
+                    "name": "ai-constant",
                     "description": "A test constant created via MCP",
                     "expression": {
                         "Number": { "value": 999 }
@@ -521,7 +511,7 @@ mod tests {
             .as_str()
             .unwrap()
             .to_string();
-        assert!(text.contains("ai_constant"));
+        assert!(text.contains("ai-constant"));
 
         // 6. eval_part
         let eval_part_req = JsonRpcRequest {
@@ -531,7 +521,7 @@ mod tests {
             params: Some(json!({
                 "name": "eval_part",
                 "arguments": {
-                    "identifier": "ai_constant"
+                    "identifier": "ai-constant"
                 }
             })),
         };
@@ -563,7 +553,7 @@ mod tests {
             .as_str()
             .unwrap()
             .to_string();
-        assert!(content_text.contains("ai_test_mod"));
+        assert!(content_text.contains("ai-test-mod"));
     }
 
     #[tokio::test]

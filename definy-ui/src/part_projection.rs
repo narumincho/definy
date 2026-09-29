@@ -1,6 +1,6 @@
 use definy_event::{
-    EventHashId,
-    event::{AccountId, Event, EventContent, Expression},
+    ContentHash, EventHashId,
+    event::{AccountId, Event, EventContent, Expression, derive_module_id, derive_module_part_id},
 };
 
 use crate::AppState;
@@ -14,9 +14,9 @@ pub struct PartSnapshot {
     pub part_type: Option<definy_event::event::PartType>,
     pub part_description: definy_event::event::Description,
     pub expression: Option<Expression>,
+    pub content_hash: Option<ContentHash>,
     pub module_definition_event_hash: EventHashId,
     pub updated_at: chrono::DateTime<chrono::Utc>,
-    pub has_definition: bool,
 }
 
 impl PartSnapshot {
@@ -37,54 +37,42 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
     events.sort_by_key(|(_, event)| event.time);
 
     let mut map = std::collections::HashMap::<EventHashId, PartSnapshot>::new();
+
     for (event_hash, event) in events {
-        match &event.content {
-            EventContent::PartDefinition(part_definition) => {
-                map.insert(
-                    event_hash.clone(),
-                    PartSnapshot {
-                        definition_event_hash: event_hash.clone(),
-                        latest_event_hash: event_hash,
-                        account_id: event.account_id.clone(),
-                        part_name: part_definition.part_name.to_string(),
-                        part_type: part_definition.part_type.clone(),
-                        part_description: part_definition.description.clone(),
-                        expression: part_definition.expression.clone(),
-                        module_definition_event_hash: part_definition
-                            .module_definition_event_hash
-                            .clone(),
-                        updated_at: event.time,
-                        has_definition: true,
-                    },
-                );
-            }
-            EventContent::PartUpdate(part_update) => {
-                let entry = map
-                    .entry(part_update.part_definition_event_hash.clone())
-                    .or_insert_with(|| PartSnapshot {
-                        definition_event_hash: part_update.part_definition_event_hash.clone(),
-                        latest_event_hash: event_hash.clone(),
-                        account_id: event.account_id.clone(),
-                        part_name: String::new(),
-                        part_type: None,
-                        part_description: definy_event::event::Description::default(),
-                        expression: part_update.expression.clone(),
-                        module_definition_event_hash: part_update
-                            .module_definition_event_hash
-                            .clone(),
-                        updated_at: event.time,
-                        has_definition: false,
-                    });
+        if let EventContent::ModuleCommit(module_commit) = &event.content {
+            let module_id = derive_module_id(&event.account_id, &module_commit.module_name);
+
+            for part in &module_commit.parts {
+                let part_id = derive_module_part_id(&module_id, &part.name);
+                let content_hash = part
+                    .expression
+                    .as_ref()
+                    .and_then(|e| ContentHash::from_expression(e).ok());
+
+                let entry = map.entry(part_id.clone()).or_insert_with(|| PartSnapshot {
+                    definition_event_hash: part_id.clone(),
+                    latest_event_hash: event_hash.clone(),
+                    account_id: event.account_id.clone(),
+                    part_name: part.name.to_string(),
+                    part_type: part.part_type.clone(),
+                    part_description: part.description.clone(),
+                    content_hash: content_hash.clone(),
+                    expression: part.expression.clone(),
+                    module_definition_event_hash: module_id.clone(),
+                    updated_at: event.time,
+                });
                 entry.latest_event_hash = event_hash.clone();
                 entry.account_id = event.account_id.clone();
-                entry.part_name = part_update.part_name.to_string();
-                entry.part_description = part_update.part_description.clone();
-                entry.expression = part_update.expression.clone();
-                entry.module_definition_event_hash =
-                    part_update.module_definition_event_hash.clone();
+                entry.part_name = part.name.to_string();
+                entry.part_description = part.description.clone();
+                if part.part_type.is_some() {
+                    entry.part_type = part.part_type.clone();
+                }
+                entry.expression = part.expression.clone();
+                entry.content_hash = content_hash;
+                entry.module_definition_event_hash = module_id.clone();
                 entry.updated_at = event.time;
             }
-            _ => {}
         }
     }
 
@@ -106,25 +94,30 @@ pub fn collect_related_part_events(
     state: &AppState,
     definition_event_hash: &EventHashId,
 ) -> Vec<(EventHashId, Event)> {
-    let mut events = state
+    let mut sorted_events = state
         .event_cache
         .iter()
         .filter_map(|(hash, event_result)| {
             let (_, event) = event_result.as_ref().ok()?;
-            let is_related = match &event.content {
-                EventContent::PartDefinition(_) => hash == definition_event_hash,
-                EventContent::PartUpdate(part_update) => {
-                    &part_update.part_definition_event_hash == definition_event_hash
-                }
-                _ => false,
-            };
-            if is_related {
-                Some((hash.clone(), event.clone()))
-            } else {
-                None
-            }
+            Some((hash.clone(), event.clone()))
         })
         .collect::<Vec<(EventHashId, Event)>>();
-    events.sort_by_key(|(_, b)| std::cmp::Reverse(b.time));
-    events
+    sorted_events.sort_by_key(|(_, event)| event.time);
+
+    let mut related = Vec::new();
+    for (event_hash, event) in sorted_events {
+        if let EventContent::ModuleCommit(module_commit) = &event.content {
+            let module_id = derive_module_id(&event.account_id, &module_commit.module_name);
+
+            let contains_part = module_commit.parts.iter().any(|p| {
+                let pid = derive_module_part_id(&module_id, &p.name);
+                &pid == definition_event_hash
+            });
+            if contains_part {
+                related.push((event_hash, event));
+            }
+        }
+    }
+    related.reverse();
+    related
 }

@@ -4,49 +4,7 @@ use dioxus::prelude::*;
 
 use crate::Location;
 use crate::app_state::AppState;
-use crate::expression_eval::{evaluate_expression, expression_to_source};
 use crate::page_context::PageContext;
-
-fn part_type_text(part_type: &definy_event::event::PartType) -> String {
-    match part_type {
-        definy_event::event::PartType::Number => "Number".to_string(),
-        definy_event::event::PartType::String => "String".to_string(),
-        definy_event::event::PartType::Boolean => "Boolean".to_string(),
-        definy_event::event::PartType::Type => "Type".to_string(),
-        definy_event::event::PartType::TypePart(hash) => format!("TypePart({})", hash),
-        definy_event::event::PartType::List(item_type) => {
-            format!("list<{}>", part_type_text(item_type.as_ref()))
-        }
-        definy_event::event::PartType::Function {
-            parameter,
-            return_type,
-        } => {
-            format!(
-                "{} -> {}",
-                part_type_text(parameter.as_ref()),
-                part_type_text(return_type.as_ref())
-            )
-        }
-        definy_event::event::PartType::Union(variants) => {
-            let var_texts = variants
-                .iter()
-                .map(|v| match &v.payload {
-                    Some(p) => format!("{}({})", v.tag, part_type_text(p.as_ref())),
-                    None => v.tag.to_string(),
-                })
-                .collect::<Vec<String>>()
-                .join(" | ");
-            format!("union<{}>", var_texts)
-        }
-    }
-}
-
-fn optional_part_type_text(part_type: &Option<definy_event::event::PartType>) -> String {
-    part_type
-        .as_ref()
-        .map(part_type_text)
-        .unwrap_or_else(|| "None".to_string())
-}
 
 #[component]
 pub fn EventDetailView(state: AppState, context: PageContext, target_hash: EventHashId) -> Element {
@@ -91,7 +49,6 @@ fn RenderEventDetail(
     account_name_map: std::collections::HashMap<definy_event::event::AccountId, Box<str>>,
 ) -> Element {
     let account_name = crate::app_state::account_display_name(&account_name_map, &event.account_id);
-    let root_part_definition_hash = root_part_definition_hash(&hash, &event.content);
     let hash_str = hash.to_string();
     let time_str = event.time.format("%Y-%m-%d %H:%M:%S").to_string();
 
@@ -100,16 +57,22 @@ fn RenderEventDetail(
             div {
                 class: "event-detail-card",
                 style: "display: grid; gap: 1rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-                div { style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem;",
+                div { style: "display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;",
                     div { style: "display: flex; align-items: center; gap: 0.75rem;",
                         div { style: "font-size: 1.25rem; font-weight: 600;",
                             "{crate::event_presenter::event_kind_label(context.language, &event)}"
                         }
                     }
-                    div {
-                        class: "badge",
-                        style: "font-size: 0.8rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.2rem 0.6rem; border-radius: var(--radius-full);",
-                        "{crate::event_presenter::event_kind_label(context.language, &event)}"
+                    a {
+                        href: context
+                            .href_with_lang(
+                                Location::ApiMethod(
+                                    crate::app_state::ApiMethod::GetEvent,
+                                    Some(hash.clone()),
+                                ),
+                            ),
+                        style: "text-decoration: none; padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--primary); display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 500;",
+                        "🔬 {context.language.label(\"Inspect RPC & CBOR\", \"RPC & CBOR を検査\", \"Inspekti RPC & CBOR\")}"
                     }
                 }
                 div { style: "display: grid; gap: 0.75rem;",
@@ -149,13 +112,6 @@ fn RenderEventDetail(
                     }
                 }
             }
-            if let Some(root_part_hash) = root_part_definition_hash {
-                RelatedPartEvents {
-                    state: state.clone(),
-                    context: context.clone(),
-                    root_part_definition_hash: root_part_hash,
-                }
-            }
         }
     }
 }
@@ -167,8 +123,6 @@ fn RenderDetailContent(
     event: Event,
     hash: EventHashId,
 ) -> Element {
-    let events_list: Vec<crate::app_state::EventWithHash> = state.events_with_hash();
-
     match event.content {
         EventContent::CreateAccount(create_account_event) => rsx! {
             div { style: "display: grid; gap: 0.4rem;",
@@ -190,324 +144,162 @@ fn RenderDetailContent(
                 }
             }
         },
-        EventContent::PartDefinition(part_definition_event) => {
-            let eval_result = part_definition_event
-                .expression
-                .as_ref()
-                .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
-            let module_hash = part_definition_event.module_definition_event_hash.clone();
-            let module_snapshot =
-                crate::module_projection::find_module_snapshot(&state, &module_hash);
-            let module_name = module_snapshot
-                .as_ref()
-                .map(|m| m.module_name.as_str())
-                .unwrap_or("module");
-            let open_part_label = context.language.label(
-                "Open part detail →",
-                "パーツ詳細を開く →",
-                "Malfermi partajn detalojn →",
+        EventContent::ModuleCommit(module_commit_event) => {
+            let module_id = definy_event::event::derive_module_id(
+                &event.account_id,
+                &module_commit_event.module_name,
             );
-            let module_label = context.language.label("Module:", "モジュール:", "Modulo:");
-            let expr_body_label =
-                context
-                    .language
-                    .label("Expression Body", "本体の式", "Esprimo korpo");
-
-            rsx! {
-                div { style: "display: grid; gap: 0.75rem;",
-                    div { style: "display: flex; align-items: center; justify-content: space-between;",
-                        div { style: "display: flex; align-items: center; gap: 0.6rem;",
-                            div { style: "font-size: 1.15rem; font-weight: 600;",
-                                "{part_definition_event.part_name}"
-                            }
-                            div {
-                                class: "badge",
-                                style: "font-size: 0.74rem; color: var(--primary); background: rgb(124 192 216 / 0.12); padding: 0.15rem 0.5rem; border-radius: var(--radius-full);",
-                                "{optional_part_type_text(&part_definition_event.part_type)}"
-                            }
-                        }
-                        a {
-                            href: context.href_with_lang(Location::Part(hash.clone())),
-                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                            "{open_part_label}"
-                        }
-                    }
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem;",
-                        span { style: "color: var(--text-secondary);", "{module_label}" }
-                        a {
-                            href: context.href_with_lang(Location::Module(module_hash)),
-                            style: "color: var(--primary); font-weight: 500; text-decoration: none;",
-                            "{module_name}"
-                        }
-                    }
-                    {
-                        let desc = part_definition_event
-                            .description
-                            .to_display_string(context.language.to_code());
-                        if !desc.is_empty() {
-                            rsx! {
-                                div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
-                                    "{desc}"
-                                }
-                            }
-                        } else {
-                            rsx! {}
-                        }
-                    }
-                    if let Some(expr) = &part_definition_event.expression {
-                        div { style: "display: grid; gap: 0.35rem;",
-                            div { style: "font-size: 0.76rem; color: var(--text-secondary);",
-                                "{expr_body_label}"
-                            }
-                            div {
-                                class: "mono",
-                                style: "font-size: 0.85rem; background: rgb(0 0 0 / 0.25); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; overflow-x: auto; white-space: nowrap;",
-                                "{expression_to_source(expr)}"
-                            }
-                        }
-                    }
-                    if let Some(eval_text) = eval_result {
-                        div { style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
-                            "{eval_text}"
-                        }
-                    }
-                }
-            }
-        }
-        EventContent::PartUpdate(part_update_event) => {
-            let base_hash = part_update_event.part_definition_event_hash.clone();
-            let eval_result = part_update_event
-                .expression
-                .as_ref()
-                .map(|expr| evaluate_message_result(&context.language, expr, &events_list));
-            let module_hash = part_update_event.module_definition_event_hash.clone();
-            let module_snapshot =
-                crate::module_projection::find_module_snapshot(&state, &module_hash);
-            let module_name = module_snapshot
-                .as_ref()
-                .map(|m| m.module_name.as_str())
-                .unwrap_or("module");
-            let open_part_label = context.language.label(
-                "Open part detail →",
-                "パーツ詳細を開く →",
-                "Malfermi partajn detalojn →",
+            let open_detail_label = context.language.label(
+                "Open module detail →",
+                "モジュール詳細を開く →",
+                "Malfermi modulajn detalojn →",
             );
-            let module_label = context.language.label("Module:", "モジュール:", "Modulo:");
-            let expr_body_label =
-                context
-                    .language
-                    .label("Expression Body", "本体の式", "Esprimo korpo");
-
-            rsx! {
-                div { style: "display: grid; gap: 0.75rem;",
-                    div { style: "display: flex; align-items: center; justify-content: space-between;",
-                        div { style: "font-size: 1.15rem; font-weight: 600;",
-                            "{part_update_event.part_name}"
-                        }
-                        a {
-                            href: context.href_with_lang(Location::Part(base_hash.clone())),
-                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                            "{open_part_label}"
-                        }
-                    }
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.86rem;",
-                        span { style: "color: var(--text-secondary);", "{module_label}" }
-                        a {
-                            href: context.href_with_lang(Location::Module(module_hash)),
-                            style: "color: var(--primary); font-weight: 500; text-decoration: none;",
-                            "{module_name}"
-                        }
-                    }
-                    div { style: "display: grid; gap: 0.25rem;",
-                        div { style: "font-size: 0.76rem; color: var(--text-secondary);",
-                            "Base Part Definition ID"
-                        }
-                        div {
-                            class: "mono",
-                            style: "font-size: 0.8rem; color: var(--text-secondary);",
-                            "{base_hash}"
-                        }
-                    }
-                    if let Some(expr) = &part_update_event.expression {
-                        div { style: "display: grid; gap: 0.35rem;",
-                            div { style: "font-size: 0.76rem; color: var(--text-secondary);",
-                                "{expr_body_label}"
-                            }
-                            div {
-                                class: "mono",
-                                style: "font-size: 0.85rem; background: rgb(0 0 0 / 0.25); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.7rem; overflow-x: auto; white-space: nowrap;",
-                                "{expression_to_source(expr)}"
-                            }
-                        }
-                    }
-                    if let Some(eval_text) = eval_result {
-                        div { style: "font-size: 0.85rem; color: var(--text); font-weight: 500; background: rgb(124 192 216 / 0.08); padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);",
-                            "{eval_text}"
-                        }
-                    }
-                }
-            }
-        }
-        EventContent::ModuleDefinition(module_definition_event) => rsx! {
-            div { style: "display: grid; gap: 0.6rem;",
-                div { style: "display: flex; align-items: center; justify-content: space-between;",
-                    div { style: "font-size: 1.15rem; font-weight: 600;",
-                        "{module_definition_event.module_name}"
-                    }
-                    a {
-                        href: context.href_with_lang(Location::Module(hash.clone())),
-                        style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                        "{context.language.label(\"Open module detail →\", \"モジュール詳細を開く →\", \"Malfermi modulajn detalojn →\")}"
-                    }
-                }
-                {
-                    let desc = module_definition_event
-                        .description
-                        .to_display_string(context.language.to_code());
-                    if !desc.is_empty() {
-                        rsx! {
-                            div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
-                                "{desc}"
-                            }
-                        }
-                    } else {
-                        rsx! {}
-                    }
-                }
-            }
-        },
-        EventContent::ModuleUpdate(module_update_event) => {
-            let base_hash = module_update_event.module_definition_event_hash.clone();
-            rsx! {
-                div { style: "display: grid; gap: 0.6rem;",
-                    div { style: "display: flex; align-items: center; justify-content: space-between;",
-                        div { style: "font-size: 1.15rem; font-weight: 600;",
-                            "{module_update_event.module_name}"
-                        }
-                        a {
-                            href: context.href_with_lang(Location::Module(base_hash.clone())),
-                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
-                            "{context.language.label(\"Open module detail →\", \"モジュール詳細を開く →\", \"Malfermi modulajn detalojn →\")}"
-                        }
-                    }
-                    {
-                        let desc = module_update_event
-                            .module_description
-                            .to_display_string(context.language.to_code());
-                        if !desc.is_empty() {
-                            rsx! {
-                                div { style: "font-size: 0.88rem; color: var(--text-secondary); white-space: pre-wrap;",
-                                    "{desc}"
-                                }
-                            }
-                        } else {
-                            rsx! {}
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[component]
-fn RelatedPartEvents(
-    state: AppState,
-    context: PageContext,
-    root_part_definition_hash: EventHashId,
-) -> Element {
-    let related_events = collect_related_part_events(&state, &root_part_definition_hash);
-
-    rsx! {
-        div {
-            class: "event-detail-card",
-            style: "display: grid; gap: 0.6rem; padding: 1.2rem 1.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div { style: "font-size: 0.95rem; font-weight: 600;",
-                "{context.language.label(\"History & Related Events\", \"変更履歴・関連イベント\", \"Historio kaj rilataj eventoj\")}"
-            }
-            div { style: "display: grid; gap: 0.4rem;",
-                for (event_hash, ev) in related_events {
-                    {
-                        let label = crate::event_presenter::event_kind_label(context.language, &ev);
-                        let time_str = ev.time.format("%Y-%m-%d %H:%M:%S").to_string();
-                        rsx! {
-                            a {
-                                key: "{event_hash}",
-                                href: context.href_with_lang(Location::Event(event_hash.clone())),
-                                style: "display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius-sm); text-decoration: none; color: var(--text); background: rgb(255 255 255 / 0.02);",
-                                div { style: "font-weight: 500;", "{label}" }
-                                div { style: "font-size: 0.8rem; color: var(--text-secondary);", "{time_str}" }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn collect_related_part_events(
-    state: &AppState,
-    root_part_definition_hash: &EventHashId,
-) -> Vec<(EventHashId, Event)> {
-    let mut events = state
-        .event_cache
-        .iter()
-        .filter_map(|(hash, event_result)| {
-            let (_, event) = event_result.as_ref().ok()?;
-            let is_related = match &event.content {
-                EventContent::PartDefinition(_) => hash == root_part_definition_hash,
-                EventContent::PartUpdate(part_update) => {
-                    part_update.part_definition_event_hash == *root_part_definition_hash
-                }
-                _ => false,
-            };
-            if is_related {
-                Some((hash.clone(), event.clone()))
+            let parts_label = context.language.label(
+                "Committed parts:",
+                "コミットされたパーツ:",
+                "Enmetitaj partoj:",
+            );
+            let parts_count = module_commit_event.parts.len();
+            let commit_message = if module_commit_event.message.trim().is_empty() {
+                context.language.label(
+                    "(no commit message)",
+                    "(コミットメッセージなし)",
+                    "(sen enmeta mesaĝo)",
+                )
             } else {
-                None
+                &module_commit_event.message
+            };
+            let parent_commit_hash = module_commit_event.parent_commit_hash.clone();
+            let parent_short = parent_commit_hash.as_ref().map(|p| {
+                let s = p.to_string();
+                if s.len() > 7 {
+                    format!("#{}", &s[..7])
+                } else {
+                    format!("#{}", s)
+                }
+            });
+            let parent_title = parent_commit_hash.as_ref().map(ToString::to_string);
+
+            rsx! {
+                div { style: "display: flex; flex-direction: column; gap: 0.8rem;",
+                    div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;",
+                        div { style: "display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;",
+                            div { style: "font-size: 1.15rem; font-weight: 700;",
+                                "{module_commit_event.module_name}"
+                            }
+                            div { style: "font-size: 0.95rem; color: var(--text-secondary);",
+                                "{commit_message}"
+                            }
+                        }
+                        a {
+                            href: context.href_with_lang(Location::Module(module_id.clone())),
+                            style: "font-size: 0.84rem; color: var(--primary); text-decoration: none; font-weight: 500;",
+                            "{open_detail_label}"
+                        }
+                    }
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                        if let (Some(p_hash), Some(p_short)) = (parent_commit_hash, parent_short) {
+                            div { style: "display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem;",
+                                span { style: "color: var(--text-secondary);",
+                                    {context.language.label("Parent commit:", "親コミット:", "Gepatra enmeto:")}
+                                }
+                                a {
+                                    href: context.href_with_lang(Location::Event(p_hash)),
+                                    class: "mono",
+                                    style: "color: var(--primary); text-decoration: none; background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                                    title: parent_title.as_deref().unwrap_or_default(),
+                                    "{p_short}"
+                                }
+                            }
+                        } else {
+                            span { style: "color: #a78bfa; font-size: 0.75rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.15rem 0.45rem; border-radius: var(--radius-xs);",
+                                "🌱 Initial Commit (root)"
+                            }
+                        }
+                    }
+                    div { style: "font-size: 0.86rem; color: var(--text-secondary); font-weight: 600; margin-top: 0.3rem;",
+                        "{parts_label} ({parts_count})"
+                    }
+                    div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+                        for part in &module_commit_event.parts {
+                            {
+                                let part_id = definy_event::event::derive_module_part_id(&module_id, &part.name);
+                                let content_hash = part
+                                    .expression
+                                    .as_ref()
+                                    .and_then(|e| definy_event::ContentHash::from_expression(e).ok());
+                                let (ch_str, short_ch) = if let Some(ch) = &content_hash {
+                                    let s = ch.to_string();
+                                    let short = if s.len() > 7 {
+                                        format!("#{}", &s[..7])
+                                    } else {
+                                        format!("#{}", s)
+                                    };
+                                    (Some(s), Some(short))
+                                } else {
+                                    (None, None)
+                                };
+                                rsx! {
+                                    div {
+                                        key: "{part.name}",
+                                        style: "display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.75rem; border-radius: var(--radius-sm); background: var(--bg-surface); border: 1px solid var(--border); gap: 0.6rem; flex-wrap: wrap;",
+                                        div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                                            a {
+                                                href: context.href_with_lang(Location::Part(part_id)),
+                                                style: "font-weight: 600; font-size: 0.9rem; color: var(--primary); text-decoration: none;",
+                                                "{part.name}"
+                                            }
+                                            if let Some(pt) = &part.part_type {
+                                                span { class: "badge badge-type mono", style: "font-size: 0.72rem;", "{pt}" }
+                                            }
+                                            if let (Some(full_ch), Some(short_ch)) = (ch_str, short_ch) {
+                                                span {
+                                                    class: "mono",
+                                                    style: "font-size: 0.72rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                                    title: "ContentHash: {full_ch}",
+                                                    span { "📌" }
+                                                    span { "{short_ch}" }
+                                                }
+                                            }
+                                        }
+                                        crate::tree_layout::ExpressionTreeSummary {
+                                            expression: part.expression.clone(),
+                                            initial_expanded: false,
+                                            max_width: 500.0,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        })
-        .collect::<Vec<(definy_event::EventHashId, Event)>>();
-    events.sort_by_key(|(_, b)| std::cmp::Reverse(b.time));
-    events
-}
-
-fn root_part_definition_hash(
-    current_hash: &definy_event::EventHashId,
-    content: &EventContent,
-) -> Option<definy_event::EventHashId> {
-    match content {
-        EventContent::PartDefinition(_) => Some(current_hash.clone()),
-        EventContent::PartUpdate(part_update) => {
-            Some(part_update.part_definition_event_hash.clone())
         }
-        _ => None,
-    }
-}
-
-fn evaluate_message_result(
-    language: &crate::language::Language,
-    expression: &definy_event::event::Expression,
-    events: &[crate::app_state::EventWithHash],
-) -> String {
-    match evaluate_expression(expression, events) {
-        Ok(value) => format!(
-            "{} {}",
-            language.label("Result:", "結果:", "Rezulto:"),
-            value
-        ),
-        Err(error) => format!(
-            "{} {}",
-            language.label("Error:", "エラー:", "Eraro:"),
-            error
-        ),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::evaluate_message_result;
+    use crate::expression_eval::evaluate_expression;
+
+    fn evaluate_message_result(
+        language: &crate::language::Language,
+        expression: &definy_event::event::Expression,
+        events: &[crate::app_state::EventWithHash],
+    ) -> String {
+        match evaluate_expression(expression, events) {
+            Ok(value) => format!(
+                "{} {}",
+                language.label("Result:", "結果:", "Rezulto:"),
+                value
+            ),
+            Err(error) => format!(
+                "{} {}",
+                language.label("Error:", "エラー:", "Eraro:"),
+                error
+            ),
+        }
+    }
 
     #[test]
     fn evaluate_message_in_detail() {

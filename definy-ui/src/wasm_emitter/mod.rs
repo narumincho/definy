@@ -4,6 +4,8 @@ pub mod compiler;
 pub mod function_ops;
 pub mod list_ops;
 pub mod memory;
+pub mod module_builder;
+pub mod record_ops;
 pub mod string_ops;
 pub mod vm;
 

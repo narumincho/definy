@@ -6,6 +6,7 @@ use surrealdb::engine::any::Any;
 use crate::AppState;
 use crate::error::ApiError;
 
+#[derive(Clone)]
 pub struct Database(pub Surreal<Any>);
 
 impl FromRequestParts<AppState> for Database {

@@ -10,10 +10,16 @@ enum RouteId {
     PartList,
     ModuleList,
     LocalEventQueue,
+    TreeLayout,
+    Settings,
     AccountDetail,
     PartDetail,
     ModuleDetail,
     EventDetail,
+    ApiOverview,
+    ApiMethod(crate::app_state::ApiMethod),
+    ApiArchitecture,
+    About,
     NotFound,
 }
 
@@ -25,6 +31,12 @@ impl RouteId {
             Some(Location::PartList) => Self::PartList,
             Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::LocalEventQueue) => Self::LocalEventQueue,
+            Some(Location::TreeLayout) => Self::TreeLayout,
+            Some(Location::Settings) => Self::Settings,
+            Some(Location::About) => Self::About,
+            Some(Location::ApiOverview) => Self::ApiOverview,
+            Some(Location::ApiArchitecture) => Self::ApiArchitecture,
+            Some(Location::ApiMethod(method, _)) => Self::ApiMethod(*method),
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Module(_)) => Self::ModuleDetail,
@@ -33,25 +45,65 @@ impl RouteId {
         }
     }
 
-    fn title_prefix(self, context: &PageContext) -> &'static str {
+    fn title_prefix(self, context: &PageContext) -> String {
         match self {
-            Self::Home => context.language.label("home", "ホーム", "hejmo"),
-            Self::AccountList | Self::AccountDetail => {
-                context.language.label("accounts", "アカウント", "kontoj")
-            }
-            Self::PartList | Self::PartDetail => {
-                context.language.label("parts", "パーツ", "partoj")
-            }
-            Self::ModuleList | Self::ModuleDetail => {
-                context.language.label("modules", "モジュール", "moduloj")
-            }
-            Self::LocalEventQueue => {
-                context
-                    .language
-                    .label("local-events", "ローカルイベント", "lokaj-eventoj")
-            }
-            Self::EventDetail => context.language.label("events", "イベント", "eventoj"),
-            Self::NotFound => context.language.label("not-found", "未検出", "ne-trovita"),
+            Self::Home => context
+                .language
+                .label("Home", "ホーム", "Hejmo")
+                .to_string(),
+            Self::About => context
+                .language
+                .label("About definy", "definy について", "Pri definy")
+                .to_string(),
+            Self::AccountList | Self::AccountDetail => context
+                .language
+                .label("Accounts", "アカウント", "Kontoj")
+                .to_string(),
+            Self::PartList | Self::PartDetail => context
+                .language
+                .label("Parts", "パーツ", "Partoj")
+                .to_string(),
+            Self::ModuleList | Self::ModuleDetail => context
+                .language
+                .label("Modules", "モジュール", "Moduloj")
+                .to_string(),
+            Self::Settings => context
+                .language
+                .label("Settings", "設定", "Agordoj")
+                .to_string(),
+            Self::ApiOverview => context
+                .language
+                .label(
+                    "Connect-RPC Specification",
+                    "Connect-RPC API 仕様",
+                    "Connect-RPC Specifigo",
+                )
+                .to_string(),
+            Self::ApiArchitecture => context
+                .language
+                .label(
+                    "RPC & CAS Sequence Diagrams",
+                    "RPC & CAS シーケンス図",
+                    "RPC & CAS Sekvencaj Diagramoj",
+                )
+                .to_string(),
+            Self::ApiMethod(method) => format!("RPC: {}", method.name()),
+            Self::LocalEventQueue => context
+                .language
+                .label("Local Events", "ローカルイベント", "Lokaj eventoj")
+                .to_string(),
+            Self::TreeLayout => context
+                .language
+                .label("Tree Layout", "木構造レイアウト", "Arba aranĝo")
+                .to_string(),
+            Self::EventDetail => context
+                .language
+                .label("Events", "イベント", "Eventoj")
+                .to_string(),
+            Self::NotFound => context
+                .language
+                .label("Not Found", "未検出", "Ne trovita")
+                .to_string(),
         }
     }
 }
@@ -64,7 +116,13 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::PartList)
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
-        | None => route_id.title_prefix(context).to_string(),
+        | Some(Location::TreeLayout)
+        | Some(Location::Settings)
+        | Some(Location::About)
+        | Some(Location::ApiOverview)
+        | Some(Location::ApiArchitecture)
+        | Some(Location::ApiMethod(_, _))
+        | None => route_id.title_prefix(context),
         Some(Location::Account(account_id)) => {
             let account_name =
                 crate::app_state::account_display_name(&state.account_name_map(), account_id);
@@ -99,48 +157,16 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
                             .language
                             .label("change-profile", "プロフィール変更", "profil-ŝanĝo")
                             .to_string(),
-                        definy_event::event::EventContent::PartDefinition(part_definition) => {
+                        definy_event::event::EventContent::ModuleCommit(module_commit) => {
                             format!(
-                                "{}/{}",
+                                "{}/{}: {}",
                                 context.language.label(
-                                    "part-definition",
-                                    "パーツ定義",
-                                    "parto-difino"
+                                    "module-commit",
+                                    "モジュールコミット",
+                                    "modulo-enmeto"
                                 ),
-                                part_definition.part_name
-                            )
-                        }
-                        definy_event::event::EventContent::PartUpdate(part_update) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "part-update",
-                                    "パーツ更新",
-                                    "parto-ĝisdatigo"
-                                ),
-                                part_update.part_name
-                            )
-                        }
-                        definy_event::event::EventContent::ModuleDefinition(module_definition) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "module-definition",
-                                    "モジュール定義",
-                                    "modulo-difino"
-                                ),
-                                module_definition.module_name
-                            )
-                        }
-                        definy_event::event::EventContent::ModuleUpdate(module_update) => {
-                            format!(
-                                "{}/{}",
-                                context.language.label(
-                                    "module-update",
-                                    "モジュール更新",
-                                    "modulo-ĝisdatigo"
-                                ),
-                                module_update.module_name
+                                module_commit.module_name,
+                                module_commit.message
                             )
                         }
                     };
@@ -157,32 +183,5 @@ pub fn document_title_text(state: &AppState, context: &PageContext) -> String {
 }
 
 fn resolve_part_name(state: &AppState, definition_event_hash: &EventHashId) -> Option<String> {
-    let mut events = state
-        .event_cache
-        .iter()
-        .filter_map(|(hash, event_result)| {
-            let (_, event) = event_result.as_ref().ok()?;
-            Some((hash.clone(), event))
-        })
-        .collect::<Vec<(EventHashId, &definy_event::event::Event)>>();
-    events.sort_by_key(|(_, event)| event.time);
-
-    let mut name = None::<String>;
-    for (hash, event) in events {
-        match &event.content {
-            definy_event::event::EventContent::PartDefinition(part_definition)
-                if &hash == definition_event_hash =>
-            {
-                name = Some(part_definition.part_name.to_string());
-            }
-            definy_event::event::EventContent::PartUpdate(part_update)
-                if &part_update.part_definition_event_hash == definition_event_hash
-                    && name.is_some() =>
-            {
-                name = Some(part_update.part_name.to_string());
-            }
-            _ => {}
-        }
-    }
-    name
+    crate::part_projection::find_part_snapshot(state, definition_event_hash).map(|p| p.part_name)
 }

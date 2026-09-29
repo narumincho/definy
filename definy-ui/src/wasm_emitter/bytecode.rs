@@ -64,6 +64,12 @@ pub const I64_SUB: u8 = 0x7D;
 pub const I64_MUL: u8 = 0x7E;
 pub const I64_DIV_S: u8 = 0x7F;
 pub const I64_REM_S: u8 = 0x81;
+pub const I64_AND: u8 = 0x83;
+pub const I64_OR: u8 = 0x84;
+pub const I64_XOR: u8 = 0x85;
+pub const I64_SHL: u8 = 0x86;
+pub const I64_SHR_S: u8 = 0x87;
+pub const I64_SHR_U: u8 = 0x88;
 pub const I32_WRAP_I64: u8 = 0xA7;
 pub const I64_EXTEND_I32_U: u8 = 0xAD;
 

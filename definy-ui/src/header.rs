@@ -20,17 +20,45 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
     let title_text = crate::page_title::page_title_text(&state, &context);
     let current_key_opt = state.current_key.clone();
 
+    let queued_count = state
+        .local_event_queue
+        .items
+        .iter()
+        .filter(|i| i.status == crate::local_event::LocalEventStatus::Queued)
+        .count();
+    let failed_count = state
+        .local_event_queue
+        .items
+        .iter()
+        .filter(|i| i.status == crate::local_event::LocalEventStatus::Failed)
+        .count();
+
+    let local_events_badge = if queued_count > 0 || failed_count > 0 {
+        let (bg, text_color, count) = if failed_count > 0 {
+            ("#f87171", "#ffffff", failed_count)
+        } else {
+            ("#fbbf24", "#0f172a", queued_count)
+        };
+        Some(rsx! {
+            span { style: "font-size: 0.68rem; font-weight: 700; background: {bg}; color: {text_color}; padding: 0.05rem 0.35rem; border-radius: 9999px; line-height: 1.2;",
+                "{count}"
+            }
+        })
+    } else {
+        None
+    };
+
     rsx! {
         header {
             class: "app-header",
-            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.2rem; background: rgb(16 22 27 / 0.8); backdrop-filter: var(--glass-blur); left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; border-bottom: 1px solid var(--border); box-sizing: border-box;",
-            div { style: "display: flex; align-items: center; gap: 1rem;",
+            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.4rem; left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; box-sizing: border-box;",
+            div {
+                class: "app-nav",
+                style: "display: flex; align-items: center; gap: 0.4rem; overflow-x: auto; scrollbar-width: none;",
                 a {
                     href: context.href_with_lang(Location::Home),
-                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.3rem;",
-                    h1 { style: "font-size: 1.45rem; font-weight: 700; color: var(--primary); letter-spacing: -0.03em; margin: 0;",
-                        "definy"
-                    }
+                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.4rem; flex-shrink: 0;",
+                    h1 { class: "logo-text", "definy" }
                 }
                 NavLink {
                     context: context.clone(),
@@ -55,30 +83,36 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
                 NavLink {
                     context: context.clone(),
-                    target: Location::LocalEventQueue,
-                    label: "Local Events",
-                    label_ja: "ローカルイベント",
-                    label_eo: "Lokaj eventoj",
-                }
-                NavLink {
-                    context: context.clone(),
                     target: Location::AccountList,
                     label: "Accounts",
                     label_ja: "アカウント",
                     label_eo: "Kontoj",
                 }
-                a {
-                    class: "nav-link",
-                    href: "{crate::fetch::api_base_url()}/swagger-ui/",
-                    "API"
+                NavLink {
+                    context: context.clone(),
+                    target: Location::About,
+                    label: "About",
+                    label_ja: "About",
+                    label_eo: "Pri",
+                }
+                NavLink {
+                    context: context.clone(),
+                    target: Location::Settings,
+                    label: "Settings",
+                    label_ja: "設定",
+                    label_eo: "Agordoj",
+                    badge: local_events_badge,
                 }
             }
-            div { style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
-                div { style: "font-size: 0.86rem; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+            div {
+                class: "header-title-container",
+                style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
+                div { style: "font-size: 0.84rem; font-weight: 500; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.01em;",
                     "{title_text}"
                 }
             }
-            div { style: "display: flex; align-items: center; gap: 0.65rem;",
+            div { style: "display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0;",
+                ConnectionStatusIndicator { state: state.clone(), context: context.clone() }
                 LanguageDropdown { state: state.clone(), context: context.clone() }
                 if let Some(secret_key) = current_key_opt {
                     {
@@ -97,9 +131,10 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                         rsx! {
                             button {
                                 r#type: "button",
+                                class: "btn-secondary",
                                 "popovertarget": "header-popover",
                                 "popovertargetaction": "show",
-                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; background: rgb(255 255 255 / 0.06); color: var(--text); border: 1px solid var(--border); padding: 0.38rem 0.75rem; border-radius: var(--radius-sm); cursor: pointer; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
+                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
                                 "{account_name}"
                             }
                         }
@@ -107,17 +142,10 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 } else {
                     button {
                         r#type: "button",
-                        onclick: move |_| {
-                            let _ = web_sys::window()
-                                .and_then(|w| w.document())
-                                .and_then(|d| d.get_element_by_id("login-or-create-account-dialog"))
-                                .and_then(|el| {
-                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlDialogElement>(el).ok()
-                                })
-                                .map(|dlg| dlg.show_modal());
-                        },
-                        style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.88rem; border-radius: var(--radius-sm); cursor: pointer; box-shadow: 0 2px 8px rgb(124 192 216 / 0.22); transition: opacity 0.15s ease;",
-                        "{context.language.label(\"Log In / Sign Up\", \"ログイン / サインアップ\", \"Ensaluti / Registriĝi\")}"
+                        class: "btn-primary",
+                        "commandfor": "login-or-create-account-dialog",
+                        "command": "show-modal",
+                        "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }
                 }
             }
@@ -132,6 +160,7 @@ fn NavLink(
     label: &'static str,
     label_ja: &'static str,
     label_eo: &'static str,
+    #[props(default = None)] badge: Option<Element>,
 ) -> Element {
     let is_active = matches!(
         (&context.location, &target),
@@ -144,10 +173,14 @@ fn NavLink(
                 Some(Location::ModuleList | Location::Module(_)),
                 Location::ModuleList
             )
-            | (Some(Location::LocalEventQueue), Location::LocalEventQueue)
             | (
                 Some(Location::AccountList | Location::Account(_)),
                 Location::AccountList
+            )
+            | (Some(Location::About), Location::About)
+            | (
+                Some(Location::Settings | Location::TreeLayout | Location::LocalEventQueue),
+                Location::Settings
             )
     );
 
@@ -158,8 +191,136 @@ fn NavLink(
     };
 
     rsx! {
-        a { class: "{class_name}", href: context.href_with_lang(target),
-            "{context.language.label(label, label_ja, label_eo)}"
+        a {
+            class: "{class_name}",
+            href: context.href_with_lang(target),
+            style: "display: inline-flex; align-items: center; gap: 0.35rem;",
+            span { "{context.language.label(label, label_ja, label_eo)}" }
+            if let Some(b) = badge {
+                {b}
+            }
+        }
+    }
+}
+
+#[component]
+fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
+    let queued_count = state
+        .local_event_queue
+        .items
+        .iter()
+        .filter(|i| i.status == crate::local_event::LocalEventStatus::Queued)
+        .count();
+    let failed_count = state
+        .local_event_queue
+        .items
+        .iter()
+        .filter(|i| i.status == crate::local_event::LocalEventStatus::Failed)
+        .count();
+
+    let (dot_color, status_text, tooltip) = if state.force_offline {
+        (
+            "#fbbf24",
+            context
+                .language
+                .label("Offline", "オフライン", "Senkonekte"),
+            context.language.label(
+                "Offline mode is forced (Click to toggle)",
+                "強制オフラインが有効です（クリックで切替）",
+                "Deviga senkonekta reĝimo estas enŝaltita (Alklaku por ŝanĝi)",
+            ),
+        )
+    } else {
+        match state.connection_status {
+            crate::app_state::ConnectionStatus::Connected => (
+                "#34d399",
+                context.language.label("Connected", "接続中", "Konektita"),
+                context.language.label(
+                    "Connected to server",
+                    "サーバーに接続されています",
+                    "Konektita al servilo",
+                ),
+            ),
+            crate::app_state::ConnectionStatus::ServerDisconnected => (
+                "#f87171",
+                context
+                    .language
+                    .label("Disconnected", "未接続", "Malkonektita"),
+                context.language.label(
+                    "Server disconnected",
+                    "サーバーに接続できません",
+                    "Servilo malkonektita",
+                ),
+            ),
+            crate::app_state::ConnectionStatus::DatabaseUnavailable => (
+                "#f87171",
+                context.language.label("DB Error", "DB停止", "DB Eraro"),
+                context.language.label(
+                    "Database is unavailable",
+                    "データベースが利用できません",
+                    "Datumbazo ne atingeblas",
+                ),
+            ),
+        }
+    };
+
+    rsx! {
+        div { style: "display: flex; align-items: center; gap: 0.35rem;",
+            // 接続ステータスドット＆ラベル
+            button {
+                r#type: "button",
+                style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.65rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;",
+                title: "{tooltip}",
+                onclick: move |_| {
+                    let mut dispatch = use_context::<Signal<AppState>>();
+                    let cur = dispatch.read().force_offline;
+                    dispatch.write().force_offline = !cur;
+                },
+                span { style: "display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {dot_color}; box-shadow: 0 0 8px {dot_color}; flex-shrink: 0; animation: pulse-glow 2s infinite ease-in-out;" }
+                span { style: "white-space: nowrap;", "{status_text}" }
+            }
+            // 未送信ローカルイベントがある場合のチップ表示
+            if queued_count > 0 || failed_count > 0 {
+                {
+                    let total_unsent = queued_count + failed_count;
+                    let (bg, border, text_color, chip_text) = if failed_count > 0 {
+                        (
+                            "rgb(239 68 68 / 0.15)",
+                            "#ef4444",
+                            "#fca5a5",
+                            format!(
+                                "{}: {}",
+                                context
+                                    .language
+                                    .label("Failed", "送信失敗", "Malsukcesis"),
+                                failed_count,
+                            ),
+                        )
+                    } else {
+                        (
+                            "rgb(245 158 11 / 0.15)",
+                            "#f59e0b",
+                            "#fde68a",
+                            format!(
+                                "{}: {}",
+                                context
+                                    .language
+                                    .label("Unsent", "未送信", "Nesendita"),
+                                total_unsent,
+                            ),
+                        )
+                    };
+                    rsx! {
+                        a {
+                            href: context.href_with_lang(Location::LocalEventQueue),
+                            style: "display: inline-flex; align-items: center; gap: 0.3rem; text-decoration: none; font-size: 0.74rem; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.22rem 0.5rem; border-radius: var(--radius-full); font-weight: 600; white-space: nowrap; transition: opacity 0.15s ease;",
+                            title: "{context.language.label(\"View local event queue\", \"ローカルイベントキューを確認\", \"Vidi lokan eventovicon\")}",
+                            span { style: "display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: {border};" }
+                            span { "{chip_text}" }
+                        }
+                    }
+                }
+            }
         }
     }
 }
