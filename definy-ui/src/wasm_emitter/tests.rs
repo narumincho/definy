@@ -334,6 +334,7 @@ fn test_compile_and_execute_part_reference_function() {
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("".into()),
+                content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
                     parameter_id: 1,
                     parameter_name: "x".into(),
@@ -458,6 +459,7 @@ fn test_compile_and_execute_recursive_function_part() {
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("factorial function".into()),
+                content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
                     parameter_id: 1,
                     parameter_name: "n".into(),
@@ -542,6 +544,7 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("eval AST".into()),
+                content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
                     parameter_id: 1, // e
                     parameter_name: "e".into(),

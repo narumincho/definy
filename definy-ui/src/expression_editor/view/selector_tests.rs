@@ -147,12 +147,14 @@ fn test_selector_options_with_snapshots_has_part_links() {
                     name: "number".into(),
                     part_type: Some(PartType::Type),
                     description: Description::localized(vec![("en", "number type")]),
+                    content_hash: None,
                     expression: None,
                 },
                 ModulePartEntry {
                     name: "number-literal".into(),
                     part_type: Some(PartType::Number),
                     description: Description::localized(vec![("en", "number literal")]),
+                    content_hash: None,
                     expression: Some(definy_event::event::Expression::Compiler(
                         definy_event::event::CompilerBuiltin::NumberLiteral,
                     )),

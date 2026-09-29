@@ -254,6 +254,7 @@ fn evaluate_part_reference_by_definition_hash() {
                             name: "legacy-name".into(),
                             part_type: Some(definy_event::event::PartType::Number),
                             description: "".into(),
+                            content_hash: None,
                             expression: Some(part_expression),
                         }],
                     },

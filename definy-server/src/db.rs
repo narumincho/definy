@@ -263,6 +263,52 @@ pub async fn get_event(
     Ok(record.map(|r| r.event_binary))
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+pub struct ContentRecord {
+    pub content_hash: String,
+    pub content_bytes: Vec<u8>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+pub async fn save_content(
+    db: &Surreal<Any>,
+    content_hash: &str,
+    content_bytes: &[u8],
+) -> Result<(), anyhow::Error> {
+    let record = ContentRecord {
+        content_hash: content_hash.to_string(),
+        content_bytes: content_bytes.to_vec(),
+        created_at: chrono::Utc::now(),
+    };
+    let _: Option<ContentRecord> = db
+        .create(("contents", content_hash))
+        .content(record)
+        .await?;
+    Ok(())
+}
+
+pub async fn get_content(
+    db: &Surreal<Any>,
+    content_hash: &str,
+) -> Result<Option<Vec<u8>>, anyhow::Error> {
+    let record: Option<ContentRecord> = db.select(("contents", content_hash)).await?;
+    Ok(record.map(|r| r.content_bytes))
+}
+
+pub async fn filter_missing_content_hashes(
+    db: &Surreal<Any>,
+    hashes: &[String],
+) -> Result<Vec<String>, anyhow::Error> {
+    let mut missing = Vec::new();
+    for hash in hashes {
+        let record: Option<ContentRecord> = db.select(("contents", hash.as_str())).await?;
+        if record.is_none() {
+            missing.push(hash.clone());
+        }
+    }
+    Ok(missing)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -450,5 +496,24 @@ mod tests {
 
         let outdated_hash = sha2::Sha256::digest(&outdated_binary);
         assert!(get_event(&db, &outdated_hash).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_content_storage_and_filter_missing() {
+        let db = init_db().await.unwrap();
+
+        let hash1 = "dummy_content_hash_1".to_string();
+        let bytes1 = vec![1, 2, 3, 4];
+        let hash2 = "dummy_content_hash_2".to_string();
+
+        assert_eq!(get_content(&db, &hash1).await.unwrap(), None);
+
+        save_content(&db, &hash1, &bytes1).await.unwrap();
+        assert_eq!(get_content(&db, &hash1).await.unwrap(), Some(bytes1));
+
+        let missing = filter_missing_content_hashes(&db, &[hash1.clone(), hash2.clone()])
+            .await
+            .unwrap();
+        assert_eq!(missing, vec![hash2]);
     }
 }

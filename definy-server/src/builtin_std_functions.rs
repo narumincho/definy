@@ -18,6 +18,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ("en", "Return absolute value of a number"),
                 ("ja", "数値の絶対値を返します"),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "x".into(),
@@ -52,6 +53,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ("en", "Return the smaller of two numbers (curried)"),
                 ("ja", "2つの数値のうち小さい方を返します (カリー化)"),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "a".into(),
@@ -91,6 +93,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ("en", "Return the larger of two numbers (curried)"),
                 ("ja", "2つの数値のうち大きい方を返します (カリー化)"),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "a".into(),
@@ -133,6 +136,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                     "数値の符号を返します (正なら 1, 負なら -1, ゼロなら 0)",
                 ),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "x".into(),
@@ -169,6 +173,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                     "真偽値を文字列 (\"true\" または \"false\") に変換します",
                 ),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "b".into(),
@@ -193,6 +198,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ("en", "Check if a list is empty"),
                 ("ja", "リストが空かどうかを判定します"),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "xs".into(),
@@ -214,6 +220,7 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ("en", "Get the first item of a list"),
                 ("ja", "リストの先頭要素を取得します"),
             ]),
+            content_hash: None,
             expression: Some(Expression::Function(FunctionExpression {
                 parameter_id: 1,
                 parameter_name: "xs".into(),

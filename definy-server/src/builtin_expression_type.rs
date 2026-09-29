@@ -34,6 +34,7 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
             ("en", "Definy AST expression type (self-describing AST)"),
             ("ja", "Definy の AST 式型 (メタデータ・ASTの自己表現)"),
         ]),
+        content_hash: None,
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
                 TypeUnionVariant {
@@ -269,6 +270,7 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
                 "Definy の AST 式を評価して数値を計算する関数 (セルフホスティング評価器)",
             ),
         ]),
+        content_hash: None,
         expression: Some(Expression::Function(FunctionExpression {
             parameter_id: 1,
             parameter_name: "e".into(),
@@ -426,6 +428,7 @@ pub fn create_sample_ast_calc_part(core_module_id: &EventHashId) -> ModulePartEn
                 "core::eval-ast を用いて AST 式 (100 - (10 * 3)) + (50 / 2) = 95 を評価するサンプル",
             ),
         ]),
+        content_hash: None,
         expression: Some(Expression::Call(CallExpression {
             function: Box::new(Expression::PartReference(PartReferenceExpression::new(
                 eval_ast_part_hash,

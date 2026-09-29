@@ -1,14 +1,15 @@
 use definy_event::EventHashId;
-use definy_event::event::{Event, EventContent};
 use definy_event::rpc::{
-    CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, ConnectError, GetEventRequest,
-    GetEventResponse, GetEventsRequest, GetEventsResponse, PATH_GET_EVENT, PATH_GET_EVENTS,
-    PATH_SUBMIT_EVENT,
+    CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, CheckMissingHashesRequest,
+    CheckMissingHashesResponse, ConnectError, ContentItem, GetContentRequest, GetEventRequest,
+    GetEventResponse, GetEventsRequest, GetEventsResponse, PATH_CHECK_MISSING_HASHES,
+    PATH_GET_CONTENT, PATH_GET_EVENT, PATH_GET_EVENTS, PATH_SUBMIT_EVENT, PATH_UPLOAD_CONTENT,
+    UploadContentRequest,
 };
 use dioxus::prelude::*;
 
-use crate::Location;
 use crate::app_state::AppState;
+use crate::cbor_card::{DecodedCborInfo, RenderDecodedCborCard, decode_signed_bytes};
 use crate::page_context::PageContext;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -16,50 +17,10 @@ enum RpcTab {
     GetEvents,
     GetEvent,
     SubmitEvent,
+    CheckMissingHashes,
+    UploadContent,
+    GetContent,
     CborDecoder,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-struct DecodedCborInfo {
-    event_hash: EventHashId,
-    byte_count: usize,
-    base64_str: String,
-    hex_str: String,
-    signature_valid: bool,
-    signature_hex: String,
-    event: Option<Event>,
-    error_message: Option<String>,
-}
-
-fn decode_signed_bytes(bytes: &[u8]) -> DecodedCborInfo {
-    let event_hash = EventHashId::from_bytes(bytes);
-    let byte_count = bytes.len();
-    let base64_str =
-        base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, bytes);
-    let hex_str = hex::encode(bytes);
-
-    match definy_event::verify_and_deserialize(bytes) {
-        Ok((sig, event)) => DecodedCborInfo {
-            event_hash,
-            byte_count,
-            base64_str,
-            hex_str,
-            signature_valid: true,
-            signature_hex: hex::encode(sig.to_bytes()),
-            event: Some(event),
-            error_message: None,
-        },
-        Err(e) => DecodedCborInfo {
-            event_hash,
-            byte_count,
-            base64_str,
-            hex_str,
-            signature_valid: false,
-            signature_hex: String::new(),
-            event: None,
-            error_message: Some(format!("{e:?}")),
-        },
-    }
 }
 
 #[component]
@@ -88,6 +49,11 @@ pub fn RpcExplorerView(
     });
 
     let mut custom_cbor_input = use_signal(String::new);
+    let mut check_hashes_input = use_signal(String::new);
+    let mut upload_content_hash = use_signal(String::new);
+    let mut upload_content_bytes = use_signal(String::new);
+    let mut get_content_hash = use_signal(String::new);
+    let mut missing_hashes_result = use_signal(Vec::<String>::new);
 
     let mut is_loading = use_signal(|| false);
     let mut response_status = use_signal(|| None::<String>);
@@ -242,6 +208,180 @@ pub fn RpcExplorerView(
         }
     };
 
+    let on_run_check_missing_hashes = move |_| {
+        let text = check_hashes_input();
+        let hashes: Vec<String> = text
+            .split(|c: char| c == '\n' || c == ',' || c == ' ')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if hashes.is_empty() {
+            error_text.set(Some("Please enter at least one content hash".to_string()));
+            return;
+        }
+
+        is_loading.set(true);
+        error_text.set(None);
+        response_status.set(None);
+        response_json.set(None);
+        decoded_events.set(Vec::new());
+
+        spawn(async move {
+            let req = CheckMissingHashesRequest {
+                content_hashes: hashes,
+            };
+            let req_body = match serde_json::to_string(&req) {
+                Ok(b) => b,
+                Err(e) => {
+                    error_text.set(Some(format!("Serialize request failed: {e}")));
+                    is_loading.set(false);
+                    return;
+                }
+            };
+
+            let base = crate::fetch::api_base_url();
+            let url = format!("{}{}", base, PATH_CHECK_MISSING_HASHES);
+
+            match fetch_rpc_json(&url, &req_body).await {
+                Ok((status, text)) => {
+                    response_status.set(Some(format!("HTTP {status} (Connect-RPC 1)")));
+                    response_json.set(Some(text.clone()));
+
+                    if let Ok(res) = serde_json::from_str::<CheckMissingHashesResponse>(&text) {
+                        missing_hashes_result.set(res.missing_content_hashes);
+                    } else if let Ok(err) = serde_json::from_str::<ConnectError>(&text) {
+                        error_text.set(Some(format!("RPC Error [{}]: {}", err.code, err.message)));
+                    }
+                }
+                Err(e) => {
+                    error_text.set(Some(e));
+                }
+            }
+            is_loading.set(false);
+        });
+    };
+
+    let on_run_upload_content = move |_| {
+        let ch = upload_content_hash().trim().to_string();
+        let raw_bytes_str = upload_content_bytes().trim().to_string();
+
+        if ch.is_empty() {
+            error_text.set(Some(
+                "Please specify content_hash (e.g. ch-...)".to_string(),
+            ));
+            return;
+        }
+
+        let bytes_opt: Option<Vec<u8>> = if let Ok(b) = base64::Engine::decode(
+            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+            &raw_bytes_str,
+        ) {
+            Some(b)
+        } else if let Ok(b) =
+            base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &raw_bytes_str)
+        {
+            Some(b)
+        } else if let Ok(b) = hex::decode(&raw_bytes_str) {
+            Some(b)
+        } else {
+            Some(raw_bytes_str.into_bytes())
+        };
+
+        let bytes = match bytes_opt {
+            Some(b) if !b.is_empty() => b,
+            _ => {
+                error_text.set(Some(
+                    "Please enter content bytes (Base64, Hex, or text)".to_string(),
+                ));
+                return;
+            }
+        };
+
+        is_loading.set(true);
+        error_text.set(None);
+        response_status.set(None);
+        response_json.set(None);
+        decoded_events.set(Vec::new());
+
+        spawn(async move {
+            let req = UploadContentRequest {
+                items: vec![ContentItem {
+                    content_hash: ch,
+                    content_bytes: bytes,
+                }],
+            };
+            let req_body = match serde_json::to_string(&req) {
+                Ok(b) => b,
+                Err(e) => {
+                    error_text.set(Some(format!("Serialize request failed: {e}")));
+                    is_loading.set(false);
+                    return;
+                }
+            };
+
+            let base = crate::fetch::api_base_url();
+            let url = format!("{}{}", base, PATH_UPLOAD_CONTENT);
+
+            match fetch_rpc_json(&url, &req_body).await {
+                Ok((status, text)) => {
+                    response_status.set(Some(format!("HTTP {status} (Connect-RPC 1)")));
+                    response_json.set(Some(text.clone()));
+                    if let Ok(err) = serde_json::from_str::<ConnectError>(&text) {
+                        error_text.set(Some(format!("RPC Error [{}]: {}", err.code, err.message)));
+                    }
+                }
+                Err(e) => {
+                    error_text.set(Some(e));
+                }
+            }
+            is_loading.set(false);
+        });
+    };
+
+    let on_run_get_content = move |_| {
+        let ch = get_content_hash().trim().to_string();
+        if ch.is_empty() {
+            error_text.set(Some("Please enter a content hash (ch-...)".to_string()));
+            return;
+        }
+
+        is_loading.set(true);
+        error_text.set(None);
+        response_status.set(None);
+        response_json.set(None);
+        decoded_events.set(Vec::new());
+
+        spawn(async move {
+            let req = GetContentRequest { content_hash: ch };
+            let req_body = match serde_json::to_string(&req) {
+                Ok(b) => b,
+                Err(e) => {
+                    error_text.set(Some(format!("Serialize request failed: {e}")));
+                    is_loading.set(false);
+                    return;
+                }
+            };
+
+            let base = crate::fetch::api_base_url();
+            let url = format!("{}{}", base, PATH_GET_CONTENT);
+
+            match fetch_rpc_json(&url, &req_body).await {
+                Ok((status, text)) => {
+                    response_status.set(Some(format!("HTTP {status} (Connect-RPC 1)")));
+                    response_json.set(Some(text.clone()));
+                    if let Ok(err) = serde_json::from_str::<ConnectError>(&text) {
+                        error_text.set(Some(format!("RPC Error [{}]: {}", err.code, err.message)));
+                    }
+                }
+                Err(e) => {
+                    error_text.set(Some(e));
+                }
+            }
+            is_loading.set(false);
+        });
+    };
+
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
             div { style: "display: grid; gap: 1.5rem;",
@@ -288,6 +428,21 @@ pub fn RpcExplorerView(
                         style: tab_button_style(current_tab() == RpcTab::SubmitEvent),
                         onclick: move |_| current_tab.set(RpcTab::SubmitEvent),
                         "SubmitEvent (RPC)"
+                    }
+                    button {
+                        style: tab_button_style(current_tab() == RpcTab::CheckMissingHashes),
+                        onclick: move |_| current_tab.set(RpcTab::CheckMissingHashes),
+                        "CheckMissingHashes (RPC)"
+                    }
+                    button {
+                        style: tab_button_style(current_tab() == RpcTab::UploadContent),
+                        onclick: move |_| current_tab.set(RpcTab::UploadContent),
+                        "UploadContent (RPC)"
+                    }
+                    button {
+                        style: tab_button_style(current_tab() == RpcTab::GetContent),
+                        onclick: move |_| current_tab.set(RpcTab::GetContent),
+                        "GetContent (RPC)"
                     }
                     button {
                         style: tab_button_style(current_tab() == RpcTab::CborDecoder),
@@ -413,6 +568,100 @@ pub fn RpcExplorerView(
                                 }
                             }
                         },
+                        RpcTab::CheckMissingHashes => rsx! {
+                            div { style: "display: grid; gap: 0.8rem;",
+                                div { style: "display: flex; align-items: center; gap: 0.6rem; font-family: monospace; font-size: 0.85rem; color: var(--primary);",
+                                    span { style: "background: rgba(43, 192, 131, 0.15); color: #2bc083; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700;",
+                                        "POST"
+                                    }
+                                    span { "{PATH_CHECK_MISSING_HASHES}" }
+                                }
+                                label { style: "font-size: 0.78rem; color: var(--text-secondary);",
+                                    "Content Hashes to Check (one per line or comma-separated)"
+                                }
+                                textarea {
+                                    rows: 3,
+                                    placeholder: "ch-abcdef...\nch-123456...",
+                                    value: "{check_hashes_input()}",
+                                    oninput: move |e| check_hashes_input.set(e.value()),
+                                    style: "padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.84rem; resize: vertical;",
+                                }
+                                div { style: "display: flex; justify-content: flex-end;",
+                                    button {
+                                        disabled: is_loading(),
+                                        onclick: on_run_check_missing_hashes,
+                                        style: "padding: 0.5rem 1.2rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 0.88rem;",
+                                        "Check Missing Hashes RPC"
+                                    }
+                                }
+                            }
+                        },
+                        RpcTab::UploadContent => rsx! {
+                            div { style: "display: grid; gap: 0.8rem;",
+                                div { style: "display: flex; align-items: center; gap: 0.6rem; font-family: monospace; font-size: 0.85rem; color: var(--primary);",
+                                    span { style: "background: rgba(43, 192, 131, 0.15); color: #2bc083; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700;",
+                                        "POST"
+                                    }
+                                    span { "{PATH_UPLOAD_CONTENT}" }
+                                }
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    label { style: "font-size: 0.78rem; color: var(--text-secondary);", "content_hash (ch-...)" }
+                                    input {
+                                        r#type: "text",
+                                        placeholder: "ch-...",
+                                        value: "{upload_content_hash()}",
+                                        oninput: move |e| upload_content_hash.set(e.value()),
+                                        style: "padding: 0.45rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.88rem;",
+                                    }
+                                }
+                                div { style: "display: grid; gap: 0.3rem;",
+                                    label { style: "font-size: 0.78rem; color: var(--text-secondary);", "content_bytes (Base64, Hex, or raw text)" }
+                                    textarea {
+                                        rows: 3,
+                                        placeholder: "Base64 or hex encoded expression bytes...",
+                                        value: "{upload_content_bytes()}",
+                                        oninput: move |e| upload_content_bytes.set(e.value()),
+                                        style: "padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.84rem; resize: vertical;",
+                                    }
+                                }
+                                div { style: "display: flex; justify-content: flex-end;",
+                                    button {
+                                        disabled: is_loading(),
+                                        onclick: on_run_upload_content,
+                                        style: "padding: 0.5rem 1.2rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 0.88rem;",
+                                        "Upload Content RPC"
+                                    }
+                                }
+                            }
+                        },
+                        RpcTab::GetContent => rsx! {
+                            div { style: "display: grid; gap: 0.8rem;",
+                                div { style: "display: flex; align-items: center; gap: 0.6rem; font-family: monospace; font-size: 0.85rem; color: var(--primary);",
+                                    span { style: "background: rgba(43, 192, 131, 0.15); color: #2bc083; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700;",
+                                        "POST"
+                                    }
+                                    span { "{PATH_GET_CONTENT}" }
+                                }
+                                div { style: "display: flex; gap: 0.8rem; align-items: flex-end;",
+                                    div { style: "display: grid; gap: 0.3rem; flex: 1;",
+                                        label { style: "font-size: 0.78rem; color: var(--text-secondary);", "content_hash (ch-...)" }
+                                        input {
+                                            r#type: "text",
+                                            placeholder: "ch-...",
+                                            value: "{get_content_hash()}",
+                                            oninput: move |e| get_content_hash.set(e.value()),
+                                            style: "padding: 0.45rem 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: monospace; font-size: 0.88rem;",
+                                        }
+                                    }
+                                    button {
+                                        disabled: is_loading(),
+                                        onclick: on_run_get_content,
+                                        style: "padding: 0.5rem 1.2rem; background: var(--primary); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; font-size: 0.88rem;",
+                                        "Get Content RPC"
+                                    }
+                                }
+                            }
+                        },
                         RpcTab::CborDecoder => rsx! {
                             div { style: "display: grid; gap: 0.8rem;",
                                 label { style: "font-size: 0.78rem; color: var(--text-secondary);",
@@ -476,203 +725,6 @@ pub fn RpcExplorerView(
                         }
                         pre { style: "margin-top: 0.6rem; padding: 0.8rem; background: rgba(0, 0, 0, 0.25); border-radius: var(--radius-sm); overflow-x: auto; font-family: monospace; font-size: 0.78rem; color: var(--text);",
                             "{raw_json}"
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-#[component]
-fn RenderDecodedCborCard(index: usize, info: DecodedCborInfo, context: PageContext) -> Element {
-    let mut show_hex = use_signal(|| false);
-
-    rsx! {
-        div { style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem; display: grid; gap: 1rem;",
-            // Card header
-            div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.6rem;",
-                div { style: "display: flex; align-items: center; gap: 0.6rem;",
-                    span { style: "font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);",
-                        "#{index + 1}"
-                    }
-                    if info.signature_valid {
-                        span { style: "background: rgba(43, 192, 131, 0.15); color: #2bc083; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
-                            "✓ Ed25519 Verified"
-                        }
-                    } else {
-                        span { style: "background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
-                            "✗ Signature Invalid"
-                        }
-                    }
-                    span { style: "background: rgba(147, 51, 234, 0.15); color: #a855f7; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
-                        "Deterministic CBOR ({info.byte_count} B)"
-                    }
-                }
-                div { style: "font-size: 0.8rem; font-family: monospace; color: var(--text-secondary);",
-                    "EventHash: {info.event_hash}"
-                }
-            }
-
-            // Event metadata
-            if let Some(event) = &info.event {
-                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; font-size: 0.84rem;",
-                    div { style: "display: grid; gap: 0.2rem;",
-                        span { style: "color: var(--text-secondary); font-size: 0.76rem;",
-                            "Author Account ID"
-                        }
-                        a {
-                            href: context.href_with_lang(Location::Account(event.account_id.clone())),
-                            style: "color: var(--primary); text-decoration: none; font-family: monospace; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis;",
-                            "{event.account_id}"
-                        }
-                    }
-                    div { style: "display: grid; gap: 0.2rem;",
-                        span { style: "color: var(--text-secondary); font-size: 0.76rem;",
-                            "Created At (RFC 3339)"
-                        }
-                        span { style: "font-family: monospace;", "{event.time.to_rfc3339()}" }
-                    }
-                    div { style: "display: grid; gap: 0.2rem;",
-                        span { style: "color: var(--text-secondary); font-size: 0.76rem;",
-                            "Event Type"
-                        }
-                        span { style: "font-weight: 600; color: var(--text);",
-                            match &event.content {
-                                EventContent::CreateAccount(_) => "CreateAccount",
-                                EventContent::ChangeProfile(_) => "ChangeProfile",
-                                EventContent::ModuleCommit(_) => "ModuleCommit",
-                            }
-                        }
-                    }
-                }
-
-                // Event Content Detail
-                div { style: "border-top: 1px dashed var(--border); padding-top: 0.8rem; display: grid; gap: 0.6rem;",
-                    span { style: "font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;",
-                        "Event Content (Decoded AST & Metadata)"
-                    }
-                    match &event.content {
-                        EventContent::CreateAccount(ev) => rsx! {
-                            div { style: "padding: 0.6rem 0.8rem; background: rgba(0, 0, 0, 0.15); border-radius: var(--radius-sm); font-size: 0.88rem;",
-                                span { style: "color: var(--text-secondary);", "New Account Name: " }
-                                strong { "{ev.account_name}" }
-                            }
-                        },
-                        EventContent::ChangeProfile(ev) => rsx! {
-                            div { style: "padding: 0.6rem 0.8rem; background: rgba(0, 0, 0, 0.15); border-radius: var(--radius-sm); font-size: 0.88rem;",
-                                span { style: "color: var(--text-secondary);", "Updated Account Name: " }
-                                strong { "{ev.account_name}" }
-                            }
-                        },
-                        EventContent::ModuleCommit(ev) => rsx! {
-                            div { style: "display: grid; gap: 0.6rem;",
-                                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem; padding: 0.6rem 0.8rem; background: rgba(0, 0, 0, 0.15); border-radius: var(--radius-sm); font-size: 0.84rem;",
-                                    div {
-                                        span { style: "color: var(--text-secondary);", "Module: " }
-                                        strong { "{ev.module_name}" }
-                                    }
-                                    div {
-                                        span { style: "color: var(--text-secondary);", "Message: " }
-                                        span { style: "font-style: italic;", "\"{ev.message}\"" }
-                                    }
-                                    if let Some(parent) = &ev.parent_commit_hash {
-                                        div {
-                                            span { style: "color: var(--text-secondary);", "Parent: " }
-                                            a {
-                                                href: context.href_with_lang(Location::Event(parent.clone())),
-                                                style: "color: var(--primary); text-decoration: none; font-family: monospace;",
-                                                "#{&parent.to_string()[..7.min(parent.to_string().len())]}"
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Parts in Module
-                                div { style: "display: grid; gap: 0.4rem;",
-                                    span { style: "font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;",
-                                        "Parts ({ev.parts.len()})"
-                                    }
-                                    for part in &ev.parts {
-                                        {
-                                            let part_content_hash = part
-                                                .expression
-                                                .as_ref()
-                                                .and_then(|e| {
-                                                    definy_event::content_hash::ContentHash::from_expression(e).ok()
-                                                });
-                                            let type_desc = match &part.part_type {
-                                                Some(t) => format!("{t}"),
-                                                None => "(Any / Untyped)".to_string(),
-                                            };
-                                            rsx! {
-                                                div {
-                                                    key: "{part.name}",
-                                                    style: "padding: 0.6rem 0.8rem; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border); border-radius: var(--radius-sm); display: grid; gap: 0.35rem;",
-                                                    div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                                        span { style: "font-weight: 600; color: var(--text); font-size: 0.86rem;", "{part.name}" }
-                                                        if let Some(ch) = &part_content_hash {
-                                                            span { style: "font-family: monospace; font-size: 0.76rem; color: var(--primary); background: rgba(59, 130, 246, 0.15); padding: 0.1rem 0.4rem; border-radius: 3px;",
-                                                                "ContentHash: #{&ch.to_string()[..7.min(ch.to_string().len())]}"
-                                                            }
-                                                        }
-                                                    }
-                                                    div { style: "font-size: 0.78rem; font-family: monospace; color: var(--text-secondary);",
-                                                        "Type: {type_desc}"
-                                                    }
-                                                    crate::tree_layout::ExpressionTreeSummary {
-                                                        expression: part.expression.clone(),
-                                                        initial_expanded: false,
-                                                        max_width: 600.0,
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                    }
-                }
-            } else if let Some(err) = &info.error_message {
-                div { style: "padding: 0.6rem 0.8rem; background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-sm); color: #ef4444; font-size: 0.84rem;",
-                    "Failed to deserialize event: {err}"
-                }
-            }
-
-            // Raw Binary Dump (Hex / Base64)
-            div { style: "border-top: 1px solid var(--border); padding-top: 0.6rem;",
-                div { style: "display: flex; justify-content: space-between; align-items: center;",
-                    button {
-                        style: "background: none; border: none; color: var(--text-secondary); font-size: 0.78rem; cursor: pointer; padding: 0;",
-                        onclick: move |_| show_hex.set(!show_hex()),
-                        if show_hex() {
-                            "Hide Raw Binary Dump ▲"
-                        } else {
-                            "Show Raw Binary Dump (Hex / Base64) ▼"
-                        }
-                    }
-                    span { style: "font-size: 0.74rem; font-family: monospace; color: var(--text-secondary);",
-                        "Sig: {&info.signature_hex[..16.min(info.signature_hex.len())]}..."
-                    }
-                }
-                if show_hex() {
-                    div { style: "margin-top: 0.5rem; display: grid; gap: 0.5rem;",
-                        div {
-                            span { style: "font-size: 0.72rem; color: var(--text-secondary);",
-                                "URL-Safe Base64:"
-                            }
-                            div { style: "font-family: monospace; font-size: 0.74rem; word-break: break-all; background: rgba(0, 0, 0, 0.2); padding: 0.4rem; border-radius: 3px;",
-                                "{info.base64_str}"
-                            }
-                        }
-                        div {
-                            span { style: "font-size: 0.72rem; color: var(--text-secondary);",
-                                "Hex Dump:"
-                            }
-                            div { style: "font-family: monospace; font-size: 0.74rem; word-break: break-all; background: rgba(0, 0, 0, 0.2); padding: 0.4rem; border-radius: 3px;",
-                                "{info.hex_str}"
-                            }
                         }
                     }
                 }

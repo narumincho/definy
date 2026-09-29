@@ -8,10 +8,16 @@ pub const SERVICE_NAME: &str = "definy.v1.EventService";
 pub const METHOD_GET_EVENTS: &str = "GetEvents";
 pub const METHOD_GET_EVENT: &str = "GetEvent";
 pub const METHOD_SUBMIT_EVENT: &str = "SubmitEvent";
+pub const METHOD_CHECK_MISSING_HASHES: &str = "CheckMissingHashes";
+pub const METHOD_UPLOAD_CONTENT: &str = "UploadContent";
+pub const METHOD_GET_CONTENT: &str = "GetContent";
 
 pub const PATH_GET_EVENTS: &str = "/definy.v1.EventService/GetEvents";
 pub const PATH_GET_EVENT: &str = "/definy.v1.EventService/GetEvent";
 pub const PATH_SUBMIT_EVENT: &str = "/definy.v1.EventService/SubmitEvent";
+pub const PATH_CHECK_MISSING_HASHES: &str = "/definy.v1.EventService/CheckMissingHashes";
+pub const PATH_UPLOAD_CONTENT: &str = "/definy.v1.EventService/UploadContent";
+pub const PATH_GET_CONTENT: &str = "/definy.v1.EventService/GetContent";
 
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
@@ -170,6 +176,79 @@ pub struct SubmitEventResponse {
     #[prost(string, tag = "2")]
     #[serde(default)]
     pub status: String,
+
+    /// 差分ハッシュ・ネゴシエーション: サーバー側で欠損しているコンテンツハッシュ一覧
+    #[prost(string, repeated, tag = "3")]
+    #[serde(default, alias = "missing_content_hashes")]
+    pub missing_content_hashes: Vec<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct ContentItem {
+    #[prost(string, tag = "1")]
+    #[serde(default, alias = "content_hash")]
+    pub content_hash: String,
+
+    #[prost(bytes = "vec", tag = "2")]
+    #[serde(with = "base64_bytes", alias = "content_bytes")]
+    #[cfg_attr(feature = "utoipa", schema(value_type = String, format = Byte))]
+    pub content_bytes: Vec<u8>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct CheckMissingHashesRequest {
+    #[prost(string, repeated, tag = "1")]
+    #[serde(default, alias = "content_hashes")]
+    pub content_hashes: Vec<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct CheckMissingHashesResponse {
+    #[prost(string, repeated, tag = "1")]
+    #[serde(default, alias = "missing_content_hashes")]
+    pub missing_content_hashes: Vec<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct UploadContentRequest {
+    #[prost(message, repeated, tag = "1")]
+    #[serde(default)]
+    pub items: Vec<ContentItem>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct UploadContentResponse {
+    #[prost(string, repeated, tag = "1")]
+    #[serde(default, alias = "stored_content_hashes")]
+    pub stored_content_hashes: Vec<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct GetContentRequest {
+    #[prost(string, tag = "1")]
+    #[serde(default, alias = "content_hash")]
+    pub content_hash: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+pub struct GetContentResponse {
+    #[prost(message, optional, tag = "1")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub item: Option<ContentItem>,
 }
 
 /// Connect-RPC standard error format
@@ -222,12 +301,24 @@ mod tests {
     }
 
     #[test]
-    fn test_json_roundtrip() {
-        let req = SubmitEventRequest {
-            signed_event_bytes: vec![1, 2, 3, 4, 5],
+    fn test_negotiation_messages_roundtrip() {
+        let req = CheckMissingHashesRequest {
+            content_hashes: vec!["hash1".into(), "hash2".into()],
         };
-        let json_str = serde_json::to_string(&req).unwrap();
-        let decoded: SubmitEventRequest = serde_json::from_str(&json_str).unwrap();
+        let mut buf = Vec::new();
+        req.encode(&mut buf).unwrap();
+        let decoded = CheckMissingHashesRequest::decode(&buf[..]).unwrap();
         assert_eq!(req, decoded);
+
+        let upload_req = UploadContentRequest {
+            items: vec![ContentItem {
+                content_hash: "hash1".into(),
+                content_bytes: vec![10, 20, 30],
+            }],
+        };
+        let mut buf2 = Vec::new();
+        upload_req.encode(&mut buf2).unwrap();
+        let decoded_upload = UploadContentRequest::decode(&buf2[..]).unwrap();
+        assert_eq!(upload_req, decoded_upload);
     }
 }

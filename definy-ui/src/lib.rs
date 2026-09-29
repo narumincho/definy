@@ -2,6 +2,7 @@ mod about;
 mod account_detail;
 mod account_list;
 pub mod app_state;
+pub mod cbor_card;
 pub mod dom;
 pub mod dropdown;
 mod event_detail;

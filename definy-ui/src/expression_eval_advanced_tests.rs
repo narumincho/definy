@@ -36,6 +36,7 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("eval AST all arithmetic ops".into()),
+                content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
                     parameter_id: 1, // e
                     parameter_name: "e".into(),
@@ -165,6 +166,7 @@ fn test_part_reference_content_hash_version_locking() {
                 name: "a".into(),
                 part_type: Some(PartType::Number),
                 description: Description::Plain("part a v1".into()),
+                content_hash: None,
                 expression: Some(expr_v1),
             }],
         }),
@@ -185,6 +187,7 @@ fn test_part_reference_content_hash_version_locking() {
                 name: "a".into(),
                 part_type: Some(PartType::Number),
                 description: Description::Plain("part a v2".into()),
+                content_hash: None,
                 expression: Some(expr_v2),
             }],
         }),
@@ -257,12 +260,14 @@ fn test_module_commit_batch_parts_projection_and_eval() {
                         return_type: Box::new(PartType::Number),
                     }),
                     description: Description::Plain("adds 10 to input".into()),
+                    content_hash: Some(add_ten_content_hash.clone()),
                     expression: Some(add_ten_expr.clone()),
                 },
                 ModulePartEntry {
                     name: "forty_two".into(),
                     part_type: Some(PartType::Number),
                     description: Description::Plain("the answer".into()),
+                    content_hash: None,
                     expression: Some(Expression::Number(NumberExpression { value: 42 })),
                 },
             ],

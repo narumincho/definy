@@ -16,6 +16,7 @@ pub fn create_value_type_part(core_module_id: &EventHashId) -> ModulePartEntry {
             ("en", "Definy runtime value type (self-describing value)"),
             ("ja", "Definy のランタイム値型 (値の自己表現)"),
         ]),
+        content_hash: None,
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
                 TypeUnionVariant {

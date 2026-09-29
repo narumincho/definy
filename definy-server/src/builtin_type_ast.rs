@@ -18,6 +18,7 @@ pub fn create_type_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
             ("en", "Definy type system AST (self-describing types)"),
             ("ja", "Definy の型システム AST (型の自己表現)"),
         ]),
+        content_hash: None,
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
                 TypeUnionVariant {
@@ -122,6 +123,7 @@ pub fn create_part_definition_part(core_module_id: &EventHashId) -> ModulePartEn
             ),
             ("ja", "Definy のパーツ定義構造 (パーツメタデータの自己表現)"),
         ]),
+        content_hash: None,
         expression: Some(Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![
                 TypeLiteralItemExpression {
@@ -163,6 +165,7 @@ pub fn create_module_definition_part(core_module_id: &EventHashId) -> ModulePart
                 "Definy のモジュール定義構造 (モジュールメタデータの自己表現)",
             ),
         ]),
+        content_hash: None,
         expression: Some(Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![
                 TypeLiteralItemExpression {

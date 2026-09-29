@@ -274,6 +274,45 @@ pub async fn handle_submit_event(
 
     let event_hash = EventHashId::from_bytes(&req.signed_event_bytes);
 
+    // Check if event is a ModuleCommit
+    if let definy_event::event::EventContent::ModuleCommit(module_commit) = &data.content {
+        // Automatically save any embedded expressions to CAS
+        for part in &module_commit.parts {
+            if let Some(ref expr) = part.expression {
+                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                    if let Ok(bytes) = serde_cbor::to_vec(expr) {
+                        let _ = crate::db::save_content(&db, &ch.to_string(), &bytes).await;
+                    }
+                }
+            }
+        }
+
+        // Collect all referenced content hashes (from parts that may have only content_hash)
+        let referenced_hashes: Vec<String> = module_commit
+            .referenced_content_hashes()
+            .into_iter()
+            .map(|h| h.to_string())
+            .collect();
+
+        // Check if any referenced content hashes are missing
+        let missing = crate::db::filter_missing_content_hashes(&db, &referenced_hashes)
+            .await
+            .unwrap_or_default();
+
+        if !missing.is_empty() {
+            // Diff hash negotiation: report missing content hashes to client
+            let response = SubmitEventResponse {
+                event_hash: event_hash.to_string(),
+                status: "missing_content".to_string(),
+                missing_content_hashes: missing,
+            };
+            return match encode_response(codec, &response) {
+                Ok(res) => res,
+                Err(err) => error_to_response(err),
+            };
+        }
+    }
+
     if let Err(e) =
         crate::db::save_event(&data, &signature, &req.signed_event_bytes, address, &db).await
     {
@@ -287,7 +326,143 @@ pub async fn handle_submit_event(
     let response = SubmitEventResponse {
         event_hash: event_hash.to_string(),
         status: "ok".to_string(),
+        missing_content_hashes: vec![],
     };
+
+    match encode_response(codec, &response) {
+        Ok(res) => res,
+        Err(err) => error_to_response(err),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.EventService/CheckMissingHashes",
+    tag = "connect-rpc",
+    request_body(
+        content = CheckMissingHashesRequest,
+        content_type = "application/json",
+        description = "Check which content hashes are missing on the server"
+    ),
+    responses(
+        (status = 200, description = "CheckMissingHashes response", body = CheckMissingHashesResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_check_missing_hashes(
+    Database(db): Database,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: CheckMissingHashesRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let missing = match crate::db::filter_missing_content_hashes(&db, &req.content_hashes).await {
+        Ok(m) => m,
+        Err(e) => return error_to_response(ConnectError::internal(e.to_string())),
+    };
+
+    let response = CheckMissingHashesResponse {
+        missing_content_hashes: missing,
+    };
+
+    match encode_response(codec, &response) {
+        Ok(res) => res,
+        Err(err) => error_to_response(err),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.EventService/UploadContent",
+    tag = "connect-rpc",
+    request_body(
+        content = UploadContentRequest,
+        content_type = "application/json",
+        description = "Upload missing content-addressed items"
+    ),
+    responses(
+        (status = 200, description = "UploadContent response", body = UploadContentResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_upload_content(
+    Database(db): Database,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: UploadContentRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let mut stored = Vec::new();
+    for item in req.items {
+        // Validate hash integrity
+        let computed = definy_event::ContentHash::from_bytes(&item.content_bytes).to_string();
+        if computed != item.content_hash {
+            return error_to_response(ConnectError::invalid_argument(format!(
+                "Content hash mismatch: declared {} but computed {}",
+                item.content_hash, computed
+            )));
+        }
+
+        if let Err(e) = crate::db::save_content(&db, &item.content_hash, &item.content_bytes).await
+        {
+            return error_to_response(ConnectError::internal(e.to_string()));
+        }
+        stored.push(item.content_hash);
+    }
+
+    let response = UploadContentResponse {
+        stored_content_hashes: stored,
+    };
+
+    match encode_response(codec, &response) {
+        Ok(res) => res,
+        Err(err) => error_to_response(err),
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.EventService/GetContent",
+    tag = "connect-rpc",
+    request_body(
+        content = GetContentRequest,
+        content_type = "application/json",
+        description = "Get content item by content hash"
+    ),
+    responses(
+        (status = 200, description = "GetContent response", body = GetContentResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_get_content(
+    Database(db): Database,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: GetContentRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let item = match crate::db::get_content(&db, &req.content_hash).await {
+        Ok(Some(bytes)) => Some(ContentItem {
+            content_hash: req.content_hash,
+            content_bytes: bytes,
+        }),
+        Ok(None) => None,
+        Err(e) => return error_to_response(ConnectError::internal(e.to_string())),
+    };
+
+    let response = GetContentResponse { item };
 
     match encode_response(codec, &response) {
         Ok(res) => res,
@@ -300,6 +475,15 @@ pub fn router() -> axum::Router<AppState> {
         .route(PATH_GET_EVENTS, axum::routing::post(handle_get_events))
         .route(PATH_GET_EVENT, axum::routing::post(handle_get_event))
         .route(PATH_SUBMIT_EVENT, axum::routing::post(handle_submit_event))
+        .route(
+            PATH_CHECK_MISSING_HASHES,
+            axum::routing::post(handle_check_missing_hashes),
+        )
+        .route(
+            PATH_UPLOAD_CONTENT,
+            axum::routing::post(handle_upload_content),
+        )
+        .route(PATH_GET_CONTENT, axum::routing::post(handle_get_content))
 }
 
 #[cfg(test)]
@@ -387,12 +571,130 @@ mod tests {
         };
         let bad_body = serde_json::to_vec(&bad_submit_req).unwrap();
         let bad_res = handle_submit_event(
-            database,
+            database.clone(),
             ConnectInfo(client_addr),
-            headers,
+            headers.clone(),
             Bytes::from(bad_body),
         )
         .await;
         assert_eq!(bad_res.status(), StatusCode::BAD_REQUEST);
+
+        // 6. Test Diff Hash Negotiation
+        let test_expr =
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 999,
+            });
+        let test_content_bytes = serde_cbor::to_vec(&test_expr).unwrap();
+        let test_content_hash = definy_event::ContentHash::from_expression(&test_expr).unwrap();
+        let test_hash_str = test_content_hash.to_string();
+
+        let commit_event = Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                module_name: "test-negotiation".into(),
+                module_description: "test".into(),
+                parent_commit_hash: None,
+                message: "test negotiation".into(),
+                parts: vec![definy_event::event::ModulePartEntry {
+                    name: "test-part".into(),
+                    part_type: Some(definy_event::event::PartType::Number),
+                    description: "test".into(),
+                    content_hash: Some(test_content_hash),
+                    expression: None, // Only content_hash, expression not embedded
+                }],
+            }),
+        };
+        let commit_binary = definy_event::sign_and_serialize(commit_event, &signing_key).unwrap();
+
+        // 6-a. SubmitEvent should return missing_content
+        let submit_req = SubmitEventRequest {
+            signed_event_bytes: commit_binary.clone(),
+        };
+        let res = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(serde_json::to_vec(&submit_req).unwrap()),
+        )
+        .await;
+        assert_eq!(res.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(res.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let submit_res: SubmitEventResponse = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(submit_res.status, "missing_content");
+        assert_eq!(
+            submit_res.missing_content_hashes,
+            vec![test_hash_str.clone()]
+        );
+
+        // 6-b. CheckMissingHashes
+        let check_req = CheckMissingHashesRequest {
+            content_hashes: vec![test_hash_str.clone()],
+        };
+        let check_res = handle_check_missing_hashes(
+            database.clone(),
+            headers.clone(),
+            Bytes::from(serde_json::to_vec(&check_req).unwrap()),
+        )
+        .await;
+        assert_eq!(check_res.status(), StatusCode::OK);
+        let check_bytes = axum::body::to_bytes(check_res.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let check_data: CheckMissingHashesResponse = serde_json::from_slice(&check_bytes).unwrap();
+        assert_eq!(
+            check_data.missing_content_hashes,
+            vec![test_hash_str.clone()]
+        );
+
+        // 6-c. UploadContent
+        let upload_req = UploadContentRequest {
+            items: vec![ContentItem {
+                content_hash: test_hash_str.clone(),
+                content_bytes: test_content_bytes.clone(),
+            }],
+        };
+        let upload_res = handle_upload_content(
+            database.clone(),
+            headers.clone(),
+            Bytes::from(serde_json::to_vec(&upload_req).unwrap()),
+        )
+        .await;
+        assert_eq!(upload_res.status(), StatusCode::OK);
+
+        // 6-d. GetContent
+        let get_content_req = GetContentRequest {
+            content_hash: test_hash_str.clone(),
+        };
+        let get_c_res = handle_get_content(
+            database.clone(),
+            headers.clone(),
+            Bytes::from(serde_json::to_vec(&get_content_req).unwrap()),
+        )
+        .await;
+        assert_eq!(get_c_res.status(), StatusCode::OK);
+        let get_c_bytes = axum::body::to_bytes(get_c_res.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let get_c_data: GetContentResponse = serde_json::from_slice(&get_c_bytes).unwrap();
+        assert_eq!(get_c_data.item.unwrap().content_bytes, test_content_bytes);
+
+        // 6-e. Re-submit: should now succeed with status "ok"
+        let res2 = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(serde_json::to_vec(&submit_req).unwrap()),
+        )
+        .await;
+        assert_eq!(res2.status(), StatusCode::OK);
+        let bytes2 = axum::body::to_bytes(res2.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        let submit_res2: SubmitEventResponse = serde_json::from_slice(&bytes2).unwrap();
+        assert_eq!(submit_res2.status, "ok");
+        assert!(submit_res2.missing_content_hashes.is_empty());
     }
 }

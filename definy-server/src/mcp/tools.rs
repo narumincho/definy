@@ -324,6 +324,18 @@ async fn sign_and_save_ai_event(
         .await
         .map_err(|e| format!("Failed to save event to DB: {:?}", e))?;
 
+    if let EventContent::ModuleCommit(ref mc) = event.content {
+        for part in &mc.parts {
+            if let Some(ref expr) = part.expression {
+                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                    if let Ok(bytes) = serde_cbor::to_vec(expr) {
+                        let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
+                    }
+                }
+            }
+        }
+    }
+
     Ok(hash)
 }
 
@@ -424,6 +436,7 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
             name: p.part_name.into(),
             part_type: p.part_type,
             description: p.part_description,
+            content_hash: None,
             expression: p.expression,
         })
         .collect();
@@ -432,6 +445,7 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         name: name.clone().into(),
         part_type,
         description: Description::Plain(desc.into()),
+        content_hash: None,
         expression: Some(expression),
     });
 
@@ -538,6 +552,7 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
             name: p.part_name.into(),
             part_type: p.part_type,
             description: p.part_description,
+            content_hash: None,
             expression: p.expression,
         })
         .collect();
@@ -546,6 +561,7 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
         name: new_name.clone().into(),
         part_type: final_type,
         description: final_desc,
+        content_hash: None,
         expression: final_expr,
     });
 

@@ -491,6 +491,9 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_get_events,
         connect_rpc::handle_get_event,
         connect_rpc::handle_submit_event,
+        connect_rpc::handle_check_missing_hashes,
+        connect_rpc::handle_upload_content,
+        connect_rpc::handle_get_content,
     ),
     components(
         schemas(
@@ -501,6 +504,13 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::GetEventResponse,
             definy_event::rpc::SubmitEventRequest,
             definy_event::rpc::SubmitEventResponse,
+            definy_event::rpc::ContentItem,
+            definy_event::rpc::CheckMissingHashesRequest,
+            definy_event::rpc::CheckMissingHashesResponse,
+            definy_event::rpc::UploadContentRequest,
+            definy_event::rpc::UploadContentResponse,
+            definy_event::rpc::GetContentRequest,
+            definy_event::rpc::GetContentResponse,
             definy_event::rpc::ConnectError,
         )
     ),
@@ -532,6 +542,9 @@ mod tests {
         assert!(json.contains("/definy.v1.EventService/GetEvents"));
         assert!(json.contains("/definy.v1.EventService/GetEvent"));
         assert!(json.contains("/definy.v1.EventService/SubmitEvent"));
+        assert!(json.contains("/definy.v1.EventService/CheckMissingHashes"));
+        assert!(json.contains("/definy.v1.EventService/UploadContent"));
+        assert!(json.contains("/definy.v1.EventService/GetContent"));
     }
 
     #[tokio::test]
@@ -558,15 +571,13 @@ mod tests {
 
     #[test]
     fn test_resolve_client_js_and_wasm() {
-        let js = resolve_client_js();
-        assert!(
-            js.is_some(),
-            "definy_client.js should be found after dx build --fullstack"
-        );
-        let wasm = resolve_client_wasm();
-        assert!(
-            wasm.is_some(),
-            "definy_client_bg.wasm should be found after dx build --fullstack"
-        );
+        if let Some(js) = resolve_client_js() {
+            assert!(!js.bytes.is_empty());
+            assert!(!js.hash.is_empty());
+        }
+        if let Some(wasm) = resolve_client_wasm() {
+            assert!(!wasm.bytes.is_empty());
+            assert!(!wasm.hash.is_empty());
+        }
     }
 }

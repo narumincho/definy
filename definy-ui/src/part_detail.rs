@@ -237,14 +237,19 @@ fn PartEditorCard(
                     name: p.part_name.into(),
                     part_type: p.part_type,
                     description: p.part_description,
+                    content_hash: p.content_hash,
                     expression: p.expression,
                 })
                 .collect();
 
+            let content_hash = expr_val
+                .as_ref()
+                .and_then(|e| definy_event::ContentHash::from_expression(e).ok());
             parts.push(definy_event::event::ModulePartEntry {
                 name: name.clone().into(),
                 part_type: type_val,
                 description: desc.into(),
+                content_hash,
                 expression: expr_val,
             });
 

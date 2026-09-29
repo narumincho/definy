@@ -70,9 +70,12 @@ pub fn api_base_url() -> String {
 }
 
 use definy_event::rpc::{
-    CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, ConnectError, GetEventRequest,
-    GetEventResponse, GetEventsRequest, GetEventsResponse, PATH_GET_EVENT, PATH_GET_EVENTS,
-    PATH_SUBMIT_EVENT, SubmitEventRequest, SubmitEventResponse,
+    CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, CheckMissingHashesRequest,
+    CheckMissingHashesResponse, ConnectError, ContentItem, GetContentRequest, GetContentResponse,
+    GetEventRequest, GetEventResponse, GetEventsRequest, GetEventsResponse,
+    PATH_CHECK_MISSING_HASHES, PATH_GET_CONTENT, PATH_GET_EVENT, PATH_GET_EVENTS,
+    PATH_SUBMIT_EVENT, PATH_UPLOAD_CONTENT, SubmitEventRequest, SubmitEventResponse,
+    UploadContentRequest, UploadContentResponse,
 };
 
 async fn connect_rpc_post<Req: serde::Serialize, Res: serde::de::DeserializeOwned>(
@@ -227,6 +230,33 @@ pub async fn get_event(
     }
 }
 
+pub async fn check_missing_hashes(hashes: &[String]) -> Result<Vec<String>, FetchError> {
+    let req = CheckMissingHashesRequest {
+        content_hashes: hashes.to_vec(),
+    };
+    let res: CheckMissingHashesResponse = connect_rpc_post(PATH_CHECK_MISSING_HASHES, &req).await?;
+    Ok(res.missing_content_hashes)
+}
+
+pub async fn upload_content(items: Vec<ContentItem>) -> Result<Vec<String>, FetchError> {
+    let req = UploadContentRequest { items };
+    let res: UploadContentResponse = connect_rpc_post(PATH_UPLOAD_CONTENT, &req).await?;
+    Ok(res.stored_content_hashes)
+}
+
+pub async fn get_content(hash: &str) -> Result<Option<Vec<u8>>, FetchError> {
+    let req = GetContentRequest {
+        content_hash: hash.to_string(),
+    };
+    let res: GetContentResponse = match connect_rpc_post(PATH_GET_CONTENT, &req).await {
+        Ok(r) => r,
+        Err(FetchError::HttpError(404)) => return Ok(None),
+        Err(FetchError::Other(msg)) if msg.starts_with("not_found:") => return Ok(None),
+        Err(e) => return Err(e),
+    };
+    Ok(res.item.map(|item| item.content_bytes))
+}
+
 pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
     let req = SubmitEventRequest {
         signed_event_bytes: signated_event.to_vec(),
@@ -236,7 +266,50 @@ pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
         connect_rpc_post(PATH_SUBMIT_EVENT, &req).await;
 
     match res {
-        Ok(_) => Ok(200),
+        Ok(submit_res) => {
+            // 差分ハッシュ・ネゴシエーション: サーバー側で不足しているコンテンツがあれば自動アップロードして再試行
+            if submit_res.status == "missing_content"
+                && !submit_res.missing_content_hashes.is_empty()
+            {
+                let missing_set: std::collections::HashSet<&str> = submit_res
+                    .missing_content_hashes
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect();
+
+                let mut upload_items = Vec::new();
+
+                if let Ok((_sig, event)) = definy_event::verify_and_deserialize(signated_event) {
+                    if let definy_event::event::EventContent::ModuleCommit(mc) = event.content {
+                        for part in mc.parts {
+                            if let Some(ref expr) = part.expression {
+                                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                                    let ch_str = ch.to_string();
+                                    if missing_set.contains(ch_str.as_str()) {
+                                        if let Ok(bytes) = serde_cbor::to_vec(expr) {
+                                            upload_items.push(ContentItem {
+                                                content_hash: ch_str,
+                                                content_bytes: bytes,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if !upload_items.is_empty() {
+                    let _ = upload_content(upload_items).await?;
+                    let retry_res: SubmitEventResponse =
+                        connect_rpc_post(PATH_SUBMIT_EVENT, &req).await?;
+                    if retry_res.status == "ok" {
+                        return Ok(200);
+                    }
+                }
+            }
+            Ok(200)
+        }
         Err(FetchError::HttpError(status)) => Ok(status),
         Err(FetchError::DatabaseUnavailable) => Ok(503),
         Err(err) => Err(anyhow::anyhow!(err.to_string())),

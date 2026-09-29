@@ -28,6 +28,7 @@ fn compiler_part_entry(
             ("en", desc_en),
             ("ja", desc_ja),
         ]),
+        content_hash: None,
         expression: Some(definy_event::event::Expression::Compiler(builtin)),
     }
 }
@@ -44,6 +45,7 @@ fn type_part_entry(
             ("en", desc_en),
             ("ja", desc_ja),
         ]),
+        content_hash: None,
         expression: None,
     }
 }
@@ -327,6 +329,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)",
                 ),
             ]),
+            content_hash: None,
             expression: Some(definy_event::event::Expression::Let(
                 definy_event::event::LetExpression {
                     variable_id: 1,
@@ -378,6 +381,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 ("en", "Greeting message using string concatenation"),
                 ("ja", "文字列結合を使った挨拶メッセージの生成サンプル"),
             ]),
+            content_hash: None,
             expression: Some(definy_event::event::Expression::StringConcat(
                 definy_event::event::StringConcatExpression {
                     left: Box::new(definy_event::event::Expression::String(
@@ -403,6 +407,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 ),
                 ("ja", "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)"),
             ]),
+            content_hash: None,
             expression: Some(definy_event::event::Expression::Let(
                 definy_event::event::LetExpression {
                     variable_id: 1,
@@ -461,6 +466,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 ("en", "List literal containing prime numbers"),
                 ("ja", "素数のリストリテラルサンプル [2, 3, 5, 7, 11]"),
             ]),
+            content_hash: None,
             expression: Some(definy_event::event::Expression::ListLiteral(
                 definy_event::event::ListLiteralExpression {
                     items: vec![
@@ -490,6 +496,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                 ("en", "Option type for numbers (none or some(number))"),
                 ("ja", "数値用の Option 型 (none または some(number))"),
             ]),
+            content_hash: None,
             expression: Some(definy_event::event::Expression::TypeUnion(
                 definy_event::event::TypeUnionExpression {
                     variants: vec![
@@ -517,6 +524,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
                     "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)",
                 ),
             ]),
+            content_hash: None,
             expression: Some(definy_event::event::Expression::Match(
                 definy_event::event::MatchExpression {
                     target: Box::new(definy_event::event::Expression::Variant(
@@ -654,13 +662,26 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         }
     }
 
-    // 2. Insert any missing built-in events
-    for (_event, event_binary, hash) in prepared_events {
+    // 2. Insert any missing built-in events and register their contents to CAS
+    for (event, event_binary, hash) in prepared_events {
         if get_event(db, &hash).await?.is_none() {
             let (signature, verified_event) =
                 definy_event::verify_and_deserialize(&event_binary)
                     .map_err(|e| anyhow::anyhow!("Failed to verify builtin event: {:?}", e))?;
             save_event(&verified_event, &signature, &event_binary, system_addr, db).await?;
+        }
+
+        // Always ensure expressions of built-in module parts are stored in contents table
+        if let definy_event::event::EventContent::ModuleCommit(ref mc) = event.content {
+            for part in &mc.parts {
+                if let Some(ref expr) = part.expression {
+                    if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
+                        if let Ok(bytes) = serde_cbor::to_vec(expr) {
+                            let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
+                        }
+                    }
+                }
+            }
         }
     }
 

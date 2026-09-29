@@ -146,6 +146,16 @@ pub struct ModuleCommitEvent {
     pub parts: Vec<ModulePartEntry>,
 }
 
+impl ModuleCommitEvent {
+    /// このコミット内のパーツが参照しているコンテンツハッシュ一覧を返します。
+    pub fn referenced_content_hashes(&self) -> Vec<crate::content_hash::ContentHash> {
+        self.parts
+            .iter()
+            .filter_map(|p| p.resolve_content_hash())
+            .collect()
+    }
+}
+
 /// アカウントとモジュール名から決定論的な Module ID を導出します。
 pub fn derive_module_id(account_id: &AccountId, module_name: &str) -> EventHashId {
     use sha2::Digest;
@@ -176,7 +186,20 @@ pub struct ModulePartEntry {
     #[serde(default)]
     pub description: Description,
     #[serde(default)]
+    pub content_hash: Option<crate::content_hash::ContentHash>,
+    #[serde(default)]
     pub expression: Option<Expression>,
+}
+
+impl ModulePartEntry {
+    /// 既存の content_hash または式から計算した content_hash を取得します。
+    pub fn resolve_content_hash(&self) -> Option<crate::content_hash::ContentHash> {
+        self.content_hash.clone().or_else(|| {
+            self.expression
+                .as_ref()
+                .and_then(|e| crate::content_hash::ContentHash::from_expression(e).ok())
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

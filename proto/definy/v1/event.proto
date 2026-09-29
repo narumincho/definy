@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package definy.v1;
 
-// EventService provides Connect-RPC APIs for definy events.
+// EventService provides Connect-RPC APIs for definy events and content-addressed storage.
 service EventService {
   // GetEvents retrieves a paginated list of events, optionally filtered by event type.
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
@@ -10,8 +10,48 @@ service EventService {
   // GetEvent retrieves a single event by its URL-safe base64 hash.
   rpc GetEvent(GetEventRequest) returns (GetEventResponse);
 
-  // SubmitEvent submits a signed event to the server.
+  // SubmitEvent submits a signed event to the server. Supports diff hash negotiation.
   rpc SubmitEvent(SubmitEventRequest) returns (SubmitEventResponse);
+
+  // CheckMissingHashes checks which content hashes are missing on the server.
+  rpc CheckMissingHashes(CheckMissingHashesRequest) returns (CheckMissingHashesResponse);
+
+  // UploadContent uploads missing content-addressed items (AST expressions / blobs).
+  rpc UploadContent(UploadContentRequest) returns (UploadContentResponse);
+
+  // GetContent retrieves a content item by its content hash.
+  rpc GetContent(GetContentRequest) returns (GetContentResponse);
+}
+
+message ContentItem {
+  // URL-safe base64 encoded content hash (SHA-256)
+  string content_hash = 1;
+  // Raw CBOR binary of the content (e.g. Expression AST)
+  bytes content_bytes = 2;
+}
+
+message CheckMissingHashesRequest {
+  repeated string content_hashes = 1;
+}
+
+message CheckMissingHashesResponse {
+  repeated string missing_content_hashes = 1;
+}
+
+message UploadContentRequest {
+  repeated ContentItem items = 1;
+}
+
+message UploadContentResponse {
+  repeated string stored_content_hashes = 1;
+}
+
+message GetContentRequest {
+  string content_hash = 1;
+}
+
+message GetContentResponse {
+  optional ContentItem item = 1;
 }
 
 message EventItem {
@@ -53,4 +93,5 @@ message SubmitEventRequest {
 message SubmitEventResponse {
   string event_hash = 1;
   string status = 2;
+  repeated string missing_content_hashes = 3;
 }

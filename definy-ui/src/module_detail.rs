@@ -329,6 +329,7 @@ fn ModuleEditorCard(
                                 name: p.part_name.into(),
                                 part_type: p.part_type,
                                 description: p.part_description,
+                                content_hash: p.content_hash,
                                 expression: p.expression,
                             })
                             .collect();
