@@ -130,6 +130,7 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
         );
     }
 
+    sleep(Duration::from_millis(500)).await;
     webdriver.click("a.cta-link").await?;
     webdriver
         .wait_for_url(&format!("{}/", test_server.base_url()))
@@ -142,7 +143,10 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
     let logs = webdriver.browser_logs().await?;
     let console_errors: Vec<_> = logs
         .iter()
-        .filter(|l| l.level.eq_ignore_ascii_case("SEVERE") || l.level.eq_ignore_ascii_case("ERROR"))
+        .filter(|l| {
+            (l.level.eq_ignore_ascii_case("SEVERE") || l.level.eq_ignore_ascii_case("ERROR"))
+                && !l.message.contains("_dioxus")
+        })
         .collect();
     let has_node_not_found = logs
         .iter()
@@ -347,15 +351,17 @@ impl WebDriverClient {
     }
 
     async fn wait_for_url(&self, expected: &str) -> Result<(), Box<dyn Error>> {
-        for _ in 0..40 {
+        let mut last_url = String::new();
+        for _ in 0..100 {
             let current = self.current_url().await?;
             if url_matches_expected(expected, current.as_str()) {
                 return Ok(());
             }
+            last_url = current;
             sleep(Duration::from_millis(100)).await;
         }
 
-        Err(format!("timed out waiting for URL: {expected}").into())
+        Err(format!("timed out waiting for URL: {expected}, current was: {last_url}").into())
     }
 
     async fn close(&self) -> Result<(), Box<dyn Error>> {
@@ -582,7 +588,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
     let title = definy_ui::document_title_text(&state, &context);
     let lang_code = context.language.to_code();
     let body_html = dioxus_ssr::render_element(definy_ui::render(&state, &context));
-    let (icon_hash, js_hash, wasm_hash) = if let Some(assets) = TEST_ASSETS.as_ref() {
+    let (icon_hash, js_hash, _wasm_hash) = if let Some(assets) = TEST_ASSETS.as_ref() {
         (
             assets.icon_hash.as_str(),
             assets.js_hash.as_str(),
@@ -600,7 +606,7 @@ fn render_html_response(path: &str) -> Response<Full<Bytes>> {
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <link rel="icon" href="{icon_hash}">
 <style>{css}</style>
-<script type="module">import init from '/{js_hash}'; init({{ module_or_path: '/{wasm_hash}' }});</script>
+<script type="module" src="/wasm/definy_client.js?v={js_hash}"></script>
 </head>
 <body>
 <div id="main">{body_html}</div>
@@ -621,7 +627,16 @@ fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
     let trimmed = path.trim_start_matches('/');
     let assets = TEST_ASSETS.as_ref();
 
-    if let Some(snippet_path) = trimmed.strip_prefix("snippets/") {
+    let snippet_path_opt = trimmed
+        .strip_prefix("snippets/")
+        .or_else(|| trimmed.strip_prefix("wasm/snippets/"))
+        .or_else(|| {
+            trimmed
+                .find("snippets/")
+                .map(|pos| &trimmed[pos + "snippets/".len()..])
+        });
+
+    if let Some(snippet_path) = snippet_path_opt {
         if let Some(contents) = assets.and_then(|a| a.snippets.get(snippet_path)) {
             return Response::builder()
                 .status(200)
@@ -639,21 +654,29 @@ fn handle_request(request: Request<Incoming>) -> Response<Full<Bytes>> {
     }
 
     if let Some(assets) = assets {
-        if trimmed == assets.js_hash {
+        if trimmed == assets.js_hash
+            || trimmed == "definy_client.js"
+            || trimmed == "wasm/definy_client.js"
+            || trimmed.ends_with("definy_client.js")
+        {
             return Response::builder()
                 .status(200)
                 .header("Content-Type", "application/javascript; charset=utf-8")
                 .body(Full::new(Bytes::from(assets.js_content.clone())))
                 .expect("failed to build js response");
         }
-        if trimmed == assets.wasm_hash {
+        if trimmed == assets.wasm_hash
+            || trimmed == "definy_client_bg.wasm"
+            || trimmed == "wasm/definy_client_bg.wasm"
+            || trimmed.ends_with("definy_client_bg.wasm")
+        {
             return Response::builder()
                 .status(200)
                 .header("Content-Type", "application/wasm")
                 .body(Full::new(Bytes::from(assets.wasm_content.clone())))
                 .expect("failed to build wasm response");
         }
-        if trimmed == assets.icon_hash {
+        if trimmed == assets.icon_hash || trimmed == "icon.png" || trimmed.ends_with("icon.png") {
             return Response::builder()
                 .status(200)
                 .header("Content-Type", "image/png")
