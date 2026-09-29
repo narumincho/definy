@@ -178,7 +178,7 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
 
                         // Connect-RPC & CBOR Explorer カード
                         a {
-                            href: context.href_with_lang(Location::ApiExplorer(None)),
+                            href: context.href_with_lang(Location::ApiOverview),
                             class: "event-detail-card",
                             style: "display: flex; flex-direction: column; gap: 0.5rem; padding: 1.1rem 1.2rem; text-decoration: none; color: inherit; transition: transform 0.15s ease, border-color 0.15s ease; border-radius: var(--radius-md);",
                             div { style: "display: flex; align-items: center; justify-content: space-between;",

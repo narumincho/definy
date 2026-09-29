@@ -16,7 +16,9 @@ enum RouteId {
     PartDetail,
     ModuleDetail,
     EventDetail,
-    ApiExplorer,
+    ApiOverview,
+    ApiMethod(crate::app_state::ApiMethod),
+    ApiArchitecture,
     About,
     NotFound,
 }
@@ -32,7 +34,9 @@ impl RouteId {
             Some(Location::TreeLayout) => Self::TreeLayout,
             Some(Location::Settings) => Self::Settings,
             Some(Location::About) => Self::About,
-            Some(Location::ApiExplorer(_)) => Self::ApiExplorer,
+            Some(Location::ApiOverview) => Self::ApiOverview,
+            Some(Location::ApiArchitecture) => Self::ApiArchitecture,
+            Some(Location::ApiMethod(method, _)) => Self::ApiMethod(*method),
             Some(Location::Account(_)) => Self::AccountDetail,
             Some(Location::Part(_)) => Self::PartDetail,
             Some(Location::Module(_)) => Self::ModuleDetail,
@@ -41,39 +45,65 @@ impl RouteId {
         }
     }
 
-    fn title_prefix(self, context: &PageContext) -> &'static str {
+    fn title_prefix(self, context: &PageContext) -> String {
         match self {
-            Self::Home => context.language.label("Home", "ホーム", "Hejmo"),
+            Self::Home => context
+                .language
+                .label("Home", "ホーム", "Hejmo")
+                .to_string(),
             Self::About => context
                 .language
-                .label("About definy", "definy について", "Pri definy"),
-            Self::AccountList | Self::AccountDetail => {
-                context.language.label("Accounts", "アカウント", "Kontoj")
-            }
-            Self::PartList | Self::PartDetail => {
-                context.language.label("Parts", "パーツ", "Partoj")
-            }
-            Self::ModuleList | Self::ModuleDetail => {
-                context.language.label("Modules", "モジュール", "Moduloj")
-            }
-            Self::Settings => context.language.label("Settings", "設定", "Agordoj"),
-            Self::ApiExplorer => context.language.label(
-                "Connect-RPC Explorer",
-                "Connect-RPC エクスプローラー",
-                "Connect-RPC Esplorilo",
-            ),
-            Self::LocalEventQueue => {
-                context
-                    .language
-                    .label("Local Events", "ローカルイベント", "Lokaj eventoj")
-            }
-            Self::TreeLayout => {
-                context
-                    .language
-                    .label("Tree Layout", "木構造レイアウト", "Arba aranĝo")
-            }
-            Self::EventDetail => context.language.label("Events", "イベント", "Eventoj"),
-            Self::NotFound => context.language.label("Not Found", "未検出", "Ne trovita"),
+                .label("About definy", "definy について", "Pri definy")
+                .to_string(),
+            Self::AccountList | Self::AccountDetail => context
+                .language
+                .label("Accounts", "アカウント", "Kontoj")
+                .to_string(),
+            Self::PartList | Self::PartDetail => context
+                .language
+                .label("Parts", "パーツ", "Partoj")
+                .to_string(),
+            Self::ModuleList | Self::ModuleDetail => context
+                .language
+                .label("Modules", "モジュール", "Moduloj")
+                .to_string(),
+            Self::Settings => context
+                .language
+                .label("Settings", "設定", "Agordoj")
+                .to_string(),
+            Self::ApiOverview => context
+                .language
+                .label(
+                    "Connect-RPC Specification",
+                    "Connect-RPC API 仕様",
+                    "Connect-RPC Specifigo",
+                )
+                .to_string(),
+            Self::ApiArchitecture => context
+                .language
+                .label(
+                    "RPC & CAS Sequence Diagrams",
+                    "RPC & CAS シーケンス図",
+                    "RPC & CAS Sekvencaj Diagramoj",
+                )
+                .to_string(),
+            Self::ApiMethod(method) => format!("RPC: {}", method.name()),
+            Self::LocalEventQueue => context
+                .language
+                .label("Local Events", "ローカルイベント", "Lokaj eventoj")
+                .to_string(),
+            Self::TreeLayout => context
+                .language
+                .label("Tree Layout", "木構造レイアウト", "Arba aranĝo")
+                .to_string(),
+            Self::EventDetail => context
+                .language
+                .label("Events", "イベント", "Eventoj")
+                .to_string(),
+            Self::NotFound => context
+                .language
+                .label("Not Found", "未検出", "Ne trovita")
+                .to_string(),
         }
     }
 }
@@ -89,8 +119,10 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::TreeLayout)
         | Some(Location::Settings)
         | Some(Location::About)
-        | Some(Location::ApiExplorer(_))
-        | None => route_id.title_prefix(context).to_string(),
+        | Some(Location::ApiOverview)
+        | Some(Location::ApiArchitecture)
+        | Some(Location::ApiMethod(_, _))
+        | None => route_id.title_prefix(context),
         Some(Location::Account(account_id)) => {
             let account_name =
                 crate::app_state::account_display_name(&state.account_name_map(), account_id);

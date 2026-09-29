@@ -64,13 +64,13 @@ pub fn AboutView(context: PageContext) -> Element {
                             }
                         }
                         a {
-                            href: context.href_with_lang(Location::ApiExplorer(None)),
+                            href: context.href_with_lang(Location::ApiOverview),
                             style: "padding: 0.6rem 1.4rem; background: rgba(255, 255, 255, 0.08); color: var(--text-primary); text-decoration: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: background 0.15s ease;",
                             {
                                 lang.label(
-                                    "Connect-RPC & CBOR Explorer",
-                                    "RPC & CBOR エクスプローラー",
-                                    "RPC & CBOR Esplorilo",
+                                    "Connect-RPC & API Specs →",
+                                    "Connect-RPC API 仕様・構造 →",
+                                    "Connect-RPC Specifigoj →",
                                 )
                             }
                         }
@@ -346,6 +346,87 @@ pub fn AboutView(context: PageContext) -> Element {
                     }
                 }
 
+                // Connect-RPC & 差分ハッシュ・ネゴシエーション仕様セクション
+                div { style: "display: grid; gap: 1.2rem;",
+                    div { style: "display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 0.8rem;",
+                        div { style: "display: grid; gap: 0.3rem;",
+                            h2 { style: "font-size: 1.4rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.6rem; color: var(--text-primary);",
+                                span { "⚡" }
+                                span {
+                                    {
+                                        lang.label(
+                                            "Connect-RPC (gRPC) & Diff Hash Negotiation",
+                                            "Connect-RPC (gRPC) & 差分ハッシュ・ネゴシエーション",
+                                            "Connect-RPC & Diferenca Negocado",
+                                        )
+                                    }
+                                }
+                            }
+                            p { style: "font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.5; max-width: 680px;",
+                                {
+                                    lang.label(
+                                        "definy replaces REST with Connect-RPC over HTTP POST. Each method has its own dedicated page detailing request/response structures, Protobuf schemas, and CAS integration.",
+                                        "definy は通信プロトコルを Connect-RPC に一本化。各メソッドは専用の個別ページで構造・Protobuf スキーマ・差分ネゴシエーションでの役割を解説しています。",
+                                        "definy uzas Connect-RPC. Ĉiu metodo havas sian propran dediĉitan paĝon.",
+                                    )
+                                }
+                            }
+                        }
+                        a {
+                            href: context.href_with_lang(Location::ApiArchitecture),
+                            style: "padding: 0.45rem 0.9rem; background: #8b5cf6; color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;",
+                            span { "🗺️" }
+                            span {
+                                {
+                                    lang.label(
+                                        "Sequence Diagrams →",
+                                        "シーケンス図を見る →",
+                                        "Vidi Diagramojn →",
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;",
+                        for method in crate::app_state::ApiMethod::all() {
+                            {
+                                let schema = crate::api_pages::get_method_schema(*method);
+                                let target_loc = Location::ApiMethod(*method, None);
+                                let href = context.href_with_lang(target_loc);
+                                let name = method.name();
+
+                                rsx! {
+                                    a {
+                                        key: "{name}",
+                                        href: "{href}",
+                                        class: "event-detail-card",
+                                        style: "text-decoration: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.1rem; display: grid; gap: 0.6rem; transition: transform 0.15s ease, border-color 0.15s ease; color: inherit;",
+                                        div { style: "display: flex; justify-content: space-between; align-items: center;",
+                                            span { style: "padding: 0.15rem 0.45rem; background: #0284c7; color: #fff; font-size: 0.68rem; font-weight: 700; border-radius: 4px;",
+                                                "POST"
+                                            }
+                                            span { style: "font-size: 0.74rem; color: #38bdf8; font-family: ui-monospace, monospace;",
+                                                "{schema.request_name}"
+                                            }
+                                        }
+                                        div { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary);",
+                                            "{name}"
+                                        }
+                                        p { style: "font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
+                                            "{schema.description(lang)}"
+                                        }
+                                        div { style: "border-top: 1px solid var(--border); padding-top: 0.5rem; font-size: 0.78rem; font-weight: 600; color: #60a5fa; display: flex; justify-content: space-between; align-items: center;",
+                                            span { {lang.label("Structure & Tester", "構造とテスター", "Strukturo & Testilo")} }
+                                            span { "↗" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // フッターカード
                 div {
                     class: "event-detail-card",
@@ -363,9 +444,9 @@ pub fn AboutView(context: PageContext) -> Element {
                         div { style: "font-size: 0.84rem; color: var(--text-secondary);",
                             {
                                 lang.label(
-                                    "Browse public modules, inspect the Connect-RPC architecture, or test the live CBOR decoder.",
-                                    "公開されているモジュールを閲覧したり、RPC & CBOR エクスプローラーで暗号検証を体験できます。",
-                                    "Esploru publikajn modulojn aŭ provu la RPC & CBOR esplorilon.",
+                                    "Browse public modules, inspect the Connect-RPC architecture, or test each dedicated gRPC method.",
+                                    "公開されているモジュールを閲覧したり、Connect-RPC 各メソッドの専用ページで構造を検査できます。",
+                                    "Esploru publikajn modulojn aŭ inspektu la Connect-RPC metodojn.",
                                 )
                             }
                         }
@@ -377,9 +458,9 @@ pub fn AboutView(context: PageContext) -> Element {
                             {lang.label("View Modules", "モジュール一覧", "Vidi Modulojn")}
                         }
                         a {
-                            href: context.href_with_lang(Location::PartList),
+                            href: context.href_with_lang(Location::ApiOverview),
                             style: "padding: 0.5rem 1rem; background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;",
-                            {lang.label("View Parts", "パーツ一覧", "Vidi Partojn")}
+                            {lang.label("Connect-RPC Specs", "RPC 仕様・一覧", "RPC Specifigoj")}
                         }
                     }
                 }

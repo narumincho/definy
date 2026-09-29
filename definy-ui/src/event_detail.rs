@@ -64,7 +64,7 @@ fn RenderEventDetail(
                         }
                     }
                     a {
-                        href: context.href_with_lang(Location::ApiExplorer(Some(hash.clone()))),
+                        href: context.href_with_lang(Location::ApiMethod(crate::app_state::ApiMethod::GetEvent, Some(hash.clone()))),
                         style: "text-decoration: none; padding: 0.35rem 0.75rem; font-size: 0.8rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--primary); display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 500;",
                         "🔬 {context.language.label(\"Inspect RPC & CBOR\", \"RPC & CBOR を検査\", \"Inspekti RPC & CBOR\")}"
                     }

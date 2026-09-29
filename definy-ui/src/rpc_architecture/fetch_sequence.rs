@@ -4,28 +4,119 @@ use crate::language::Language;
 
 #[component]
 pub fn FetchSequenceDiagram(language: Language) -> Element {
+    // 多言語ラベル
+    let actor_screen = language.label("Browser Screen", "ブラウザ画面", "Retumila Ekrano");
+    let actor_client = language.label(
+        "definy-ui (WASM)",
+        "definy-ui (WASMクライアント)",
+        "definy-ui (WASM)",
+    );
+    let actor_idb = language.label(
+        "IndexedDB (Cache)",
+        "IndexedDB (キャッシュ)",
+        "IndexedDB (Kaŝmemoro)",
+    );
+    let actor_server = language.label(
+        "definy-server (Axum)",
+        "definy-server (Axumサーバー)",
+        "definy-server (Servilo)",
+    );
+    let actor_db = language.label(
+        "SurrealDB (events)",
+        "SurrealDB (events テーブル)",
+        "SurrealDB (events)",
+    );
+
+    let step1_title = language.label(
+        "1. Open /api, /modules, or /events Page",
+        "1. /api やモジュール・イベント画面を開く",
+        "1. Malfermi Paĝon /api aŭ /modules",
+    );
+    let step2_title = language.label(
+        "2. POST /definy.v1.EventService/GetEvents",
+        "2. POST /definy.v1.EventService/GetEvents",
+        "2. POST /definy.v1.EventService/GetEvents",
+    );
+    let step2_sub = language.label(
+        "Request: { event_type: \"...\", limit: 10, offset: 0 }",
+        "リクエスト: { event_type: \"...\", limit: 10, offset: 0 }",
+        "Peto: { event_type: \"...\", limit: 10, offset: 0 }",
+    );
+    let step3_title = language.label(
+        "3. DB Query: get_events(event_type, limit, offset)",
+        "3. DB 照会: get_events(event_type, limit, offset)",
+        "3. DB Peto: get_events(event_type, limit, offset)",
+    );
+    let step4_title = language.label(
+        "4. Return event records + raw CBOR bytes",
+        "4. イベントレコードと生の決定論的 CBOR バイト列を返却",
+        "4. Redoni eventajn rikordojn + CBOR bajtojn",
+    );
+    let step5_title = language.label(
+        "5. 200 OK: GetEventsResponse { events: [EventItem] }",
+        "5. 200 OK: GetEventsResponse { events: [EventItem] }",
+        "5. 200 OK: GetEventsResponse { events: [EventItem] }",
+    );
+    let step5_sub = language.label(
+        "Each EventItem contains signed_event_bytes (Base64)",
+        "各項目に signed_event_bytes (Base64 エンコードされた署名済みCBOR) を内包",
+        "Ĉiu ero enhavas signed_event_bytes (Base64)",
+    );
+    let step6_title = language.label(
+        "6. store_events(&bytes) -> Cache in IndexedDB",
+        "6. IndexedDB に各イベントバイナリをキャッシュ保存",
+        "6. store_events(&bytes) -> Kaŝmemori en IndexedDB",
+    );
+    let step7_title = language.label(
+        "7. verify_and_deserialize(&bytes) (Zero-Trust)",
+        "7. クライアント側で Ed25519 署名 & CBOR を数学的に独立検証",
+        "7. verify_and_deserialize(&bytes) (Nulfida Kontrolo)",
+    );
+    let step7_sub = language.label(
+        "Verify Ed25519 signature & compute EventHash without trusting server",
+        "サーバーを盲信せず、ブラウザ内 WASM で署名検証と EventHash 算出を実行",
+        "Kontroli Ed25519 subskribon & kalkuli EventHash",
+    );
+    let step8_title = language.label(
+        "8. Decode AST & compute ContentHash",
+        "8. 式（AST）をパースし ContentHash による依存固定を確立",
+        "8. Malkodi AST & kalkuli ContentHash",
+    );
+    let step8_sub = language.label(
+        "Pure functional AST tree & type definitions resolved",
+        "純粋関数型構文木および型定義が決定論的に解決される",
+        "Pura funkcia AST arbo & tipdifinoj solvitaj",
+    );
+    let step9_title = language.label(
+        "9. Render Verified Events, Expressions & Types in UI",
+        "9. 検証済みイベント・式・型を UI にリアクティブ描画",
+        "9. Montri Kontrolitajn Eventojn, Esprimojn & Tipojn",
+    );
+
     rsx! {
-        div { style: "display: grid; gap: 1rem;",
-            p { style: "font-size: 0.86rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
+        div { style: "display: grid; gap: 1.2rem; width: 100%;",
+            p { style: "font-size: 0.92rem; color: var(--text-secondary); margin: 0; line-height: 1.6;",
                 {
                     language
                         .label(
-                            "Sequence of fetching events via Connect-RPC, storing into IndexedDB, and zero-trust verification on client:",
-                            "Connect-RPC によるイベント取得、IndexedDB キャッシュ、クライアント側ゼロトラスト署名検証・AST レンダリングのシーケンス:",
+                            "Sequence of fetching events via Connect-RPC, caching into IndexedDB, and zero-trust cryptographic verification on the client:",
+                            "Connect-RPC によるイベント取得、IndexedDB キャッシュ、クライアント側ゼロトラスト暗号署名検証・AST レンダリングの完全シーケンス図:",
                             "Sekvenco de evento-akiro per Connect-RPC kaj nulfida kontrolo:",
                         )
                 }
             }
 
-            // SVG シーケンス図
-            div { style: "background: #090d16; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; display: flex; justify-content: center;",
+            // フル幅 SVG シーケンス図コンテナ
+            div {
+                class: "event-detail-card",
+                style: "background: #080c14; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.8rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
-                    view_box: "0 0 860 440",
-                    style: "width: 100%; height: auto; max-width: 860px; font-family: ui-monospace, monospace; font-size: 11px;",
+                    view_box: "0 0 1100 480",
+                    style: "width: 100%; min-width: 860px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px;",
 
                     defs {
                         marker {
-                            id: "arrow-blue2",
+                            id: "fetch-arrow-blue",
                             view_box: "0 0 10 10",
                             ref_x: "8",
                             ref_y: "5",
@@ -35,7 +126,7 @@ pub fn FetchSequenceDiagram(language: Language) -> Element {
                             path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#38bdf8" }
                         }
                         marker {
-                            id: "arrow-green2",
+                            id: "fetch-arrow-green",
                             view_box: "0 0 10 10",
                             ref_x: "8",
                             ref_y: "5",
@@ -45,374 +136,102 @@ pub fn FetchSequenceDiagram(language: Language) -> Element {
                             path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#34d399" }
                         }
                         marker {
-                            id: "arrow-purple2",
+                            id: "fetch-arrow-purple",
                             view_box: "0 0 10 10",
                             ref_x: "8",
                             ref_y: "5",
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#a78bfa" }
+                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#c084fc" }
                         }
                     }
 
-                    // アクターライン
-                    line {
-                        x1: "100",
-                        y1: "55",
-                        x2: "100",
-                        y2: "410",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "280",
-                        y1: "55",
-                        x2: "280",
-                        y2: "410",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "460",
-                        y1: "55",
-                        x2: "460",
-                        y2: "410",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "640",
-                        y1: "55",
-                        x2: "640",
-                        y2: "410",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "780",
-                        y1: "55",
-                        x2: "780",
-                        y2: "410",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
+                    // アクター縦線（ライフライン）
+                    line { x1: "100", y1: "55", x2: "100", y2: "450", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "330", y1: "55", x2: "330", y2: "450", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "570", y1: "55", x2: "570", y2: "450", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "800", y1: "55", x2: "800", y2: "450", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "990", y1: "55", x2: "990", y2: "450", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
 
                     // アクターボックス
-                    rect {
-                        x: "35",
-                        y: "15",
-                        width: "130",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#3b82f6",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "100",
-                        y: "37",
-                        fill: "#93c5fd",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "Browser Screen"
-                    }
+                    // 1. Browser Screen
+                    rect { x: "25", y: "12", width: "150", height: "38", rx: "8", fill: "#0f172a", stroke: "#3b82f6", stroke_width: "1.8" }
+                    text { x: "100", y: "36", fill: "#93c5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_screen}" }
 
-                    rect {
-                        x: "215",
-                        y: "15",
-                        width: "130",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#8b5cf6",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "280",
-                        y: "37",
-                        fill: "#c4b5fd",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "definy-ui (WASM)"
-                    }
+                    // 2. Client
+                    rect { x: "235", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#8b5cf6", stroke_width: "1.8" }
+                    text { x: "330", y: "36", fill: "#c4b5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_client}" }
 
-                    rect {
-                        x: "405",
-                        y: "15",
-                        width: "110",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#f59e0b",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "460",
-                        y: "37",
-                        fill: "#fcd34d",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "IndexedDB"
-                    }
+                    // 3. IndexedDB
+                    rect { x: "475", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#f59e0b", stroke_width: "1.8" }
+                    text { x: "570", y: "36", fill: "#fbbf24", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_idb}" }
 
-                    rect {
-                        x: "570",
-                        y: "15",
-                        width: "140",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#10b981",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "640",
-                        y: "37",
-                        fill: "#6ee7b7",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "definy-server (Axum)"
-                    }
+                    // 4. Server
+                    rect { x: "705", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#10b981", stroke_width: "1.8" }
+                    text { x: "800", y: "36", fill: "#6ee7b7", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_server}" }
 
-                    rect {
-                        x: "725",
-                        y: "15",
-                        width: "110",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#ec4899",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "780",
-                        y: "37",
-                        fill: "#f472b6",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "SurrealDB"
-                    }
+                    // 5. DB
+                    rect { x: "910", y: "12", width: "160", height: "38", rx: "8", fill: "#0f172a", stroke: "#ec4899", stroke_width: "1.8" }
+                    text { x: "990", y: "36", fill: "#f472b6", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_db}" }
 
-                    // ステップ 1: ページナビゲーション
-                    line {
-                        x1: "100",
-                        y1: "80",
-                        x2: "275",
-                        y2: "80",
-                        stroke: "#38bdf8",
-                        stroke_width: "1.5",
-                        marker_end: "url(#arrow-blue2)",
-                    }
-                    text {
-                        x: "190",
-                        y: "73",
-                        fill: "#38bdf8",
-                        text_anchor: "middle",
-                        "1. Open /api or Module/Event View"
-                    }
+                    // ----------------------------------------------------
+                    // ステップ 1: 画面遷移
+                    line { x1: "100", y1: "80", x2: "325", y2: "80", stroke: "#38bdf8", stroke_width: "1.8", marker_end: "url(#fetch-arrow-blue)" }
+                    text { x: "212", y: "73", fill: "#38bdf8", font_weight: "600", text_anchor: "middle", "{step1_title}" }
 
-                    // ステップ 2: Connect-RPC GetEvents
-                    line {
-                        x1: "280",
-                        y1: "115",
-                        x2: "635",
-                        y2: "115",
-                        stroke: "#38bdf8",
-                        stroke_width: "2",
-                        marker_end: "url(#arrow-blue2)",
-                    }
-                    rect {
-                        x: "320",
-                        y: "98",
-                        width: "275",
-                        height: "18",
-                        rx: "3",
-                        fill: "rgba(15, 23, 42, 0.9)",
-                        stroke: "#0284c7",
-                    }
-                    text {
-                        x: "457",
-                        y: "111",
-                        fill: "#38bdf8",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "2. POST /definy.v1.EventService/GetEvents"
-                    }
-                    text {
-                        x: "457",
-                        y: "130",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "middle",
-                        {"Request: { event_type: \"...\", limit: 10 }"}
-                    }
+                    // ステップ 2: Connect-RPC POST GetEvents
+                    line { x1: "330", y1: "115", x2: "795", y2: "115", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#fetch-arrow-blue)" }
+                    rect { x: "440", y: "99", width: "250", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
+                    text { x: "565", y: "113", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step2_title}" }
+                    text { x: "565", y: "133", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step2_sub}" }
 
-                    // ステップ 3: データベース問い合わせ
-                    line {
-                        x1: "640",
-                        y1: "150",
-                        x2: "775",
-                        y2: "150",
-                        stroke: "#ec4899",
-                        stroke_width: "1.5",
-                        marker_end: "url(#arrow-purple2)",
-                    }
-                    text {
-                        x: "710",
-                        y: "143",
-                        fill: "#f472b6",
-                        text_anchor: "middle",
-                        "3. get_events(limit, offset)"
-                    }
+                    // ステップ 3: データベース照会
+                    line { x1: "800", y1: "155", x2: "985", y2: "155", stroke: "#ec4899", stroke_width: "1.8", marker_end: "url(#fetch-arrow-purple)" }
+                    text { x: "892", y: "148", fill: "#f472b6", font_weight: "600", text_anchor: "middle", "{step3_title}" }
 
                     // ステップ 4: データベース応答
-                    line {
-                        x1: "780",
-                        y1: "180",
-                        x2: "645",
-                        y2: "180",
-                        stroke: "#ec4899",
-                        stroke_width: "1.5",
-                        stroke_dasharray: "4 4",
-                        marker_end: "url(#arrow-purple2)",
-                    }
-                    text {
-                        x: "710",
-                        y: "173",
-                        fill: "#f472b6",
-                        text_anchor: "middle",
-                        "4. Event records + raw bytes"
-                    }
+                    line { x1: "990", y1: "185", x2: "805", y2: "185", stroke: "#ec4899", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#fetch-arrow-purple)" }
+                    text { x: "892", y: "178", fill: "#f472b6", font_size: "12px", text_anchor: "middle", "{step4_title}" }
 
                     // ステップ 5: Connect-RPC レスポンス
-                    line {
-                        x1: "640",
-                        y1: "215",
-                        x2: "285",
-                        y2: "215",
-                        stroke: "#34d399",
-                        stroke_width: "1.8",
-                        stroke_dasharray: "4 4",
-                        marker_end: "url(#arrow-green2)",
-                    }
-                    text {
-                        x: "460",
-                        y: "208",
-                        fill: "#34d399",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        {"5. 200 OK: GetEventsResponse { events: [EventItem] }"}
-                    }
-                    text {
-                        x: "460",
-                        y: "228",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "middle",
-                        "Each Item has signed_event_bytes (Base64)"
-                    }
+                    line { x1: "800", y1: "220", x2: "335", y2: "220", stroke: "#34d399", stroke_width: "2.2", stroke_dasharray: "4 4", marker_end: "url(#fetch-arrow-green)" }
+                    text { x: "565", y: "213", fill: "#34d399", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step5_title}" }
+                    text { x: "565", y: "233", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step5_sub}" }
 
                     // ステップ 6: IndexedDB キャッシュ保存
-                    line {
-                        x1: "280",
-                        y1: "255",
-                        x2: "455",
-                        y2: "255",
-                        stroke: "#f59e0b",
-                        stroke_width: "1.5",
-                        marker_end: "url(#arrow-purple2)",
-                    }
-                    text {
-                        x: "370",
-                        y: "248",
-                        fill: "#fcd34d",
-                        text_anchor: "middle",
-                        "6. store_events(&bytes)"
-                    }
+                    line { x1: "330", y1: "260", x2: "565", y2: "260", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#fetch-arrow-purple)" }
+                    text { x: "450", y: "253", fill: "#fde68a", font_weight: "600", text_anchor: "middle", "{step6_title}" }
 
                     // ステップ 7: クライアント側ゼロトラスト検証
-                    path {
-                        d: "M 280 280 H 340 V 305 H 285",
-                        fill: "none",
-                        stroke: "#a78bfa",
-                        stroke_width: "1.5",
-                        marker_end: "url(#arrow-purple2)",
-                    }
-                    text {
-                        x: "348",
-                        y: "290",
-                        fill: "#c4b5fd",
-                        text_anchor: "start",
-                        "7. verify_and_deserialize(&bytes)"
-                    }
-                    text {
-                        x: "348",
-                        y: "303",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "start",
-                        "Verify Ed25519 signature & compute EventHash"
-                    }
+                    path { d: "M 330 285 H 430 V 315 H 335", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#fetch-arrow-purple)" }
+                    text { x: "440", y: "297", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step7_title}" }
+                    text { x: "440", y: "314", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step7_sub}" }
 
                     // ステップ 8: AST・パーツ・型のパース
-                    path {
-                        d: "M 280 325 H 340 V 350 H 285",
-                        fill: "none",
-                        stroke: "#a78bfa",
-                        stroke_width: "1.5",
-                        marker_end: "url(#arrow-purple2)",
-                    }
-                    text {
-                        x: "348",
-                        y: "335",
-                        fill: "#c4b5fd",
-                        text_anchor: "start",
-                        "8. Decode AST & compute ContentHash"
-                    }
-                    text {
-                        x: "348",
-                        y: "348",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "start",
-                        "Lock function ASTs with content hashes"
-                    }
+                    path { d: "M 330 335 H 430 V 365 H 335", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#fetch-arrow-purple)" }
+                    text { x: "440", y: "347", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step8_title}" }
+                    text { x: "440", y: "364", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step8_sub}" }
 
                     // ステップ 9: リアクティブ描画
-                    line {
-                        x1: "280",
-                        y1: "380",
-                        x2: "105",
-                        y2: "380",
-                        stroke: "#38bdf8",
-                        stroke_width: "1.5",
-                        stroke_dasharray: "4 4",
-                        marker_end: "url(#arrow-blue2)",
-                    }
-                    text {
-                        x: "190",
-                        y: "373",
-                        fill: "#38bdf8",
-                        text_anchor: "middle",
-                        "9. Render Verified Events, AST, and Types"
-                    }
+                    line { x1: "330", y1: "400", x2: "105", y2: "400", stroke: "#38bdf8", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#fetch-arrow-blue)" }
+                    text { x: "217", y: "393", fill: "#38bdf8", font_weight: "600", text_anchor: "middle", "{step9_title}" }
                 }
             }
 
             // 説明注記
-            div { style: "display: grid; gap: 0.5rem; font-size: 0.82rem; color: var(--text-secondary); background: rgba(0,0,0,0.15); padding: 0.8rem 1rem; border-radius: var(--radius-sm); border-left: 3px solid #10b981;",
-                div { style: "font-weight: 600; color: var(--text-primary);",
+            div { style: "display: grid; gap: 0.6rem; font-size: 0.86rem; color: var(--text-secondary); background: rgba(0,0,0,0.15); padding: 1.2rem; border-radius: var(--radius-sm); border-left: 3px solid #10b981;",
+                div { style: "font-weight: 700; color: var(--text-primary); font-size: 0.95rem;",
                     {
                         language
                             .label(
                                 "Why Zero-Trust Client Verification Matters:",
-                                "なぜクライアント側のゼロトラスト検証が重要か:",
+                                "なぜクライアント側のゼロトラスト暗号検証が不可欠なのか:",
                                 "Kial Nulfida Klienta Kontrolo Gravas:",
                             )
                     }
                 }
-                div {
+                div { style: "line-height: 1.6;",
                     {
                         language
                             .label(

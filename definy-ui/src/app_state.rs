@@ -437,6 +437,63 @@ where
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ApiMethod {
+    GetEvents,
+    GetEvent,
+    SubmitEvent,
+    CheckMissingHashes,
+    UploadContent,
+    GetContent,
+}
+
+impl ApiMethod {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::GetEvents => "GetEvents",
+            Self::GetEvent => "GetEvent",
+            Self::SubmitEvent => "SubmitEvent",
+            Self::CheckMissingHashes => "CheckMissingHashes",
+            Self::UploadContent => "UploadContent",
+            Self::GetContent => "GetContent",
+        }
+    }
+
+    pub fn slug(&self) -> &'static str {
+        match self {
+            Self::GetEvents => "get-events",
+            Self::GetEvent => "get-event",
+            Self::SubmitEvent => "submit-event",
+            Self::CheckMissingHashes => "check-missing-hashes",
+            Self::UploadContent => "upload-content",
+            Self::GetContent => "get-content",
+        }
+    }
+
+    pub fn from_slug(slug: &str) -> Option<Self> {
+        match slug.to_ascii_lowercase().as_str() {
+            "getevents" | "get-events" => Some(Self::GetEvents),
+            "getevent" | "get-event" => Some(Self::GetEvent),
+            "submitevent" | "submit-event" => Some(Self::SubmitEvent),
+            "checkmissinghashes" | "check-missing-hashes" => Some(Self::CheckMissingHashes),
+            "uploadcontent" | "upload-content" => Some(Self::UploadContent),
+            "getcontent" | "get-content" => Some(Self::GetContent),
+            _ => None,
+        }
+    }
+
+    pub fn all() -> &'static [Self] {
+        &[
+            Self::GetEvents,
+            Self::GetEvent,
+            Self::SubmitEvent,
+            Self::CheckMissingHashes,
+            Self::UploadContent,
+            Self::GetContent,
+        ]
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Location {
     Home,
@@ -450,8 +507,10 @@ pub enum Location {
     Account(AccountId),
     TreeLayout,
     Settings,
-    ApiExplorer(Option<definy_event::EventHashId>),
     About,
+    ApiOverview,
+    ApiMethod(ApiMethod, Option<definy_event::EventHashId>),
+    ApiArchitecture,
 }
 
 impl Location {
@@ -465,8 +524,10 @@ impl Location {
             Location::TreeLayout => "/tree-layout".to_string(),
             Location::Settings => "/settings".to_string(),
             Location::About => "/about".to_string(),
-            Location::ApiExplorer(None) => "/api".to_string(),
-            Location::ApiExplorer(Some(hash)) => format!("/api/{}", hash),
+            Location::ApiOverview => "/api".to_string(),
+            Location::ApiArchitecture => "/api/architecture".to_string(),
+            Location::ApiMethod(method, None) => format!("/api/{}", method.slug()),
+            Location::ApiMethod(method, Some(hash)) => format!("/api/{}/{}", method.slug(), hash),
             Location::Module(hash) => format!("/modules/{}", hash),
             Location::Part(hash) => format!("/parts/{}", hash),
             Location::Event(hash) => format!("/events/{}", hash),
@@ -485,10 +546,23 @@ impl Location {
             ["tree-layout"] => Some(Location::TreeLayout),
             ["settings"] => Some(Location::Settings),
             ["about"] => Some(Location::About),
-            ["api"] => Some(Location::ApiExplorer(None)),
-            ["api", hash_str] => Some(Location::ApiExplorer(Some(
-                EventHashId::from_str(hash_str).ok()?,
-            ))),
+            ["api"] => Some(Location::ApiOverview),
+            ["api", "architecture"] => Some(Location::ApiArchitecture),
+            ["api", method_or_hash] => {
+                if let Some(method) = ApiMethod::from_slug(method_or_hash) {
+                    Some(Location::ApiMethod(method, None))
+                } else if let Ok(hash) = EventHashId::from_str(method_or_hash) {
+                    // /api/{hash} is treated as GetEvent with target hash
+                    Some(Location::ApiMethod(ApiMethod::GetEvent, Some(hash)))
+                } else {
+                    None
+                }
+            }
+            ["api", method_slug, hash_str] => {
+                let method = ApiMethod::from_slug(method_slug)?;
+                let hash = EventHashId::from_str(hash_str).ok()?;
+                Some(Location::ApiMethod(method, Some(hash)))
+            }
             ["modules", hash_str] => Some(Location::Module(EventHashId::from_str(hash_str).ok()?)),
             ["parts", hash_str] => Some(Location::Part(EventHashId::from_str(hash_str).ok()?)),
             ["events", hash_str] => Some(Location::Event(EventHashId::from_str(hash_str).ok()?)),
@@ -519,12 +593,21 @@ mod tests {
             Location::TreeLayout,
             Location::Settings,
             Location::About,
-            Location::ApiExplorer(None),
-            Location::ApiExplorer(Some(
-                EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-                    .ok()
-                    .unwrap(),
-            )),
+            Location::ApiOverview,
+            Location::ApiArchitecture,
+            Location::ApiMethod(super::ApiMethod::GetEvents, None),
+            Location::ApiMethod(super::ApiMethod::SubmitEvent, None),
+            Location::ApiMethod(super::ApiMethod::CheckMissingHashes, None),
+            Location::ApiMethod(super::ApiMethod::UploadContent, None),
+            Location::ApiMethod(super::ApiMethod::GetContent, None),
+            Location::ApiMethod(
+                super::ApiMethod::GetEvent,
+                Some(
+                    EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                        .ok()
+                        .unwrap(),
+                ),
+            ),
             Location::Module(
                 EventHashId::from_str("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
                     .ok()

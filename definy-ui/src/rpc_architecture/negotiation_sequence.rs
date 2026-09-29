@@ -4,24 +4,163 @@ use crate::language::Language;
 
 #[component]
 pub fn NegotiationSequenceDiagram(language: Language) -> Element {
+    // 多言語ラベル定義
+    let actor_user = language.label("User / UI", "ユーザー / UI", "Uzanto / UI");
+    let actor_client = language.label(
+        "definy-ui (Client)",
+        "definy-ui (クライアント)",
+        "definy-ui (Kliento)",
+    );
+    let actor_gateway = language.label(
+        "Connect-RPC Server",
+        "Connect-RPC サーバー",
+        "Connect-RPC Servilo",
+    );
+    let actor_cas = language.label(
+        "CAS (contents テーブル)",
+        "CAS (contents テーブル)",
+        "CAS (contents Tabelo)",
+    );
+    let actor_store = language.label(
+        "Event Store (events)",
+        "イベントストア (events)",
+        "Eventa Stokado (events)",
+    );
+
+    // ステップラベル
+    let step1_title = language.label(
+        "1. Edit Part Expression",
+        "1. パーツの式（AST）を編集",
+        "1. Redakti Partan Esprimon",
+    );
+    let step2_title = language.label(
+        "2. Compute ContentHash: ch = SHA256(CBOR(expr))",
+        "2. ContentHash 算出: ch = SHA256(CBOR(式))",
+        "2. Kalkuli ContentHash: ch = SHA256(CBOR(espr))",
+    );
+    let step2_sub = language.label(
+        "Create ModuleCommit with content_hash reference & sign with Ed25519",
+        "式のハッシュを参照する ModuleCommit を構築し、Ed25519 秘密鍵で署名",
+        "Krei ModuleCommit kun referenco de content_hash & subskribi per Ed25519",
+    );
+
+    let step3_title = language.label(
+        "3. POST SubmitEvent (Optimistic Submit)",
+        "3. POST SubmitEvent (楽観的送信)",
+        "3. POST SubmitEvent (Optimisma Sendo)",
+    );
+    let step3_sub = language.label(
+        "Payload: signed_event_bytes (Contains metadata + content_hashes, no AST blobs)",
+        "送信データ: signed_event_bytes (メタデータとハッシュのみ含み、式バイナリは含めない)",
+        "Ŝarĝo: signed_event_bytes (Metadatenoj + content_hashes, sen AST)",
+    );
+
+    let step4_title = language.label(
+        "4. Check CAS: filter_missing([\"ch-abc\"])",
+        "4. CAS 照会: 不足ハッシュを判定 filter_missing([\"ch-abc\"])",
+        "4. Kontroli CAS: filtri mankantajn([\"ch-abc\"])",
+    );
+    let step4_sub = language.label(
+        "Missing hashes: [\"ch-abc\"] (Unregistered expression)",
+        "未登録のハッシュ: [\"ch-abc\"] (サーバー未所持)",
+        "Mankantaj haŝoj: [\"ch-abc\"] (Neregistrita esprimo)",
+    );
+
+    let step5_title = language.label(
+        "5. Respond: status = \"missing_content\"",
+        "5. 応答: status = \"missing_content\" (不足通知)",
+        "5. Respondo: status = \"missing_content\"",
+    );
+    let step5_sub = language.label(
+        "missing_content_hashes: [\"ch-abc\"]",
+        "不足ハッシュリスト: [\"ch-abc\"]",
+        "mankantaj_enhav_haŝoj: [\"ch-abc\"]",
+    );
+
+    let step6_title = language.label(
+        "6. Client isolates missing expression ASTs",
+        "6. クライアントが不足分の式バイナリのみを抽出",
+        "6. Kliento apartigas mankantajn esprimajn AST-ojn",
+    );
+    let step6_sub = language.label(
+        "Only modified expressions are prepared (0 bytes sent for unchanged parts)",
+        "変更があったパーツのみを準備（過去と共通のパーツは転送量 0 バイト）",
+        "Nur modifitaj esprimoj estas pretigataj (0 bajtoj por senŝanĝaj partoj)",
+    );
+
+    let step7_title = language.label(
+        "7. POST UploadContent",
+        "7. POST UploadContent (式バイナリ送信)",
+        "7. POST UploadContent",
+    );
+    let step7_sub = language.label(
+        "items: [{ content_hash: \"ch-abc\", content_bytes }]",
+        "アップロード配列: [{ content_hash: \"ch-abc\", content_bytes }]",
+        "eroj: [{ content_hash: \"ch-abc\", content_bytes }]",
+    );
+
+    let step8_title = language.label(
+        "8. Server validates SHA256(content_bytes) == content_hash",
+        "8. サーバー側検証: SHA256(content_bytes) == content_hash",
+        "8. Servilo kontrolas: SHA256(bajtoj) == content_hash",
+    );
+    let step9_title = language.label(
+        "9. Save validated AST to SurrealDB contents table",
+        "9. 検証済み式バイナリを SurrealDB contents テーブル (CAS) に永続化",
+        "9. Konservi validigitajn esprimojn en SurrealDB contents (CAS)",
+    );
+    let step10_title = language.label(
+        "10. Upload completed: uploaded_count = 1",
+        "10. アップロード完了応答: uploaded_count = 1",
+        "10. Alŝuto finita: uploaded_count = 1",
+    );
+
+    let step11_title = language.label(
+        "11. Re-POST SubmitEvent (Retry Transaction)",
+        "11. SubmitEvent を再送信 (トランザクション確定)",
+        "11. Resendi SubmitEvent (Fini Transakcion)",
+    );
+    let step12_title = language.label(
+        "12. Verify: All referenced content_hashes now exist in CAS",
+        "12. 照会成功: 参照されている全ハッシュが CAS に存在することを確認",
+        "12. Konfirmo: Ĉiuj referencitaj haŝoj nun ekzistas en CAS",
+    );
+    let step13_title = language.label(
+        "13. Save signed commit event to SurrealDB events table",
+        "13. 署名済みコミットイベントを SurrealDB events テーブルに保存",
+        "13. Konservi subskribitan eventon en SurrealDB events tabelo",
+    );
+    let step14_title = language.label(
+        "14. Respond: status = \"success\", event_hash = \"ev-...\"",
+        "14. 成功応答: status = \"success\", event_hash = \"ev-...\"",
+        "14. Sukcesa respondo: status = \"success\", event_hash = \"ev-...\"",
+    );
+    let step15_title = language.label(
+        "15. UI Confirms Commit & Updates Local Projections",
+        "15. UI がコミット完了を反映しローカル状態を更新",
+        "15. UI Konfirmas Komiton kaj Ĝisdatigas Lokajn Projekciojn",
+    );
+
     rsx! {
-        div { style: "display: grid; gap: 1rem;",
-            p { style: "font-size: 0.86rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
+        div { style: "display: grid; gap: 1.2rem; width: 100%;",
+            p { style: "font-size: 0.92rem; color: var(--text-secondary); margin: 0; line-height: 1.6;",
                 {
                     language
                         .label(
-                            "Sequence of Git-style Content-Addressed Storage (CAS) and Diff Hash Negotiation between client and server:",
-                            "Git の Tree / Blob 分離モデルに基づくコンテンツアドレスストレージ (CAS) と、クライアント・サーバー間の差分ハッシュ・ネゴシエーションの通信シーケンス:",
-                            "Sekvenco de enhav-adresita stokado kaj diferenca haŝ-negocado inter kliento kaj servilo:",
+                            "Sequence of Git-style Content-Addressed Storage (CAS) and Diff Hash Negotiation between client and server (Optimistic Submit, Upload Blobs, Commit Tree):",
+                            "Git の Tree / Blob 分離モデルに基づくコンテンツアドレスストレージ (CAS) と、クライアント・サーバー間の差分ハッシュ・ネゴシエーション（楽観的送信、未登録Blobの一括転送、コミットTreeの確定）の完全シーケンス図:",
+                            "Sekvenco de Git-stila enhav-adresita stokado (CAS) kaj diferenca haŝ-negocado inter kliento kaj servilo:",
                         )
                 }
             }
 
-            // SVG シーケンス図
-            div { style: "background: #090d16; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; display: flex; justify-content: center;",
+            // フル幅 SVG シーケンス図コンテナ
+            div {
+                class: "event-detail-card",
+                style: "background: #080c14; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.8rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
-                    view_box: "0 0 920 620",
-                    style: "width: 100%; height: auto; max-width: 920px; font-family: ui-monospace, monospace; font-size: 11px;",
+                    view_box: "0 0 1140 700",
+                    style: "width: 100%; min-width: 900px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px;",
 
                     defs {
                         marker {
@@ -62,539 +201,130 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#a78bfa" }
+                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#c084fc" }
                         }
                     }
 
-                    // アクターライン
-                    line {
-                        x1: "80",
-                        y1: "55",
-                        x2: "80",
-                        y2: "590",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "250",
-                        y1: "55",
-                        x2: "250",
-                        y2: "590",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "470",
-                        y1: "55",
-                        x2: "470",
-                        y2: "590",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "690",
-                        y1: "55",
-                        x2: "690",
-                        y2: "590",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
-                    line {
-                        x1: "850",
-                        y1: "55",
-                        x2: "850",
-                        y2: "590",
-                        stroke: "#334155",
-                        stroke_dasharray: "4 4",
-                    }
+                    // アクター縦線（ライフライン）
+                    line { x1: "90", y1: "55", x2: "90", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "310", y1: "55", x2: "310", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "580", y1: "55", x2: "580", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "860", y1: "55", x2: "860", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
+                    line { x1: "1050", y1: "55", x2: "1050", y2: "675", stroke: "#1e293b", stroke_width: "1.5", stroke_dasharray: "5 5" }
 
-                    // アクターボックス
-                    rect {
-                        x: "20",
-                        y: "15",
-                        width: "120",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#3b82f6",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "80",
-                        y: "37",
-                        fill: "#93c5fd",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "User / UI"
-                    }
+                    // アクターヘッダーボックス
+                    // 1. User
+                    rect { x: "20", y: "12", width: "140", height: "38", rx: "8", fill: "#0f172a", stroke: "#3b82f6", stroke_width: "1.8" }
+                    text { x: "90", y: "36", fill: "#93c5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_user}" }
 
-                    rect {
-                        x: "185",
-                        y: "15",
-                        width: "130",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#8b5cf6",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "250",
-                        y: "37",
-                        fill: "#c4b5fd",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "definy-ui (Client)"
-                    }
+                    // 2. Client
+                    rect { x: "220", y: "12", width: "180", height: "38", rx: "8", fill: "#0f172a", stroke: "#8b5cf6", stroke_width: "1.8" }
+                    text { x: "310", y: "36", fill: "#c4b5fd", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_client}" }
 
-                    rect {
-                        x: "395",
-                        y: "15",
-                        width: "150",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#0284c7",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "470",
-                        y: "37",
-                        fill: "#38bdf8",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "Connect-RPC Gateway"
-                    }
+                    // 3. Connect-RPC Server
+                    rect { x: "485", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#0284c7", stroke_width: "1.8" }
+                    text { x: "580", y: "36", fill: "#38bdf8", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_gateway}" }
 
-                    rect {
-                        x: "625",
-                        y: "15",
-                        width: "130",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#f59e0b",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "690",
-                        y: "37",
-                        fill: "#fbbf24",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "CAS (contents)"
-                    }
+                    // 4. CAS SurrealDB
+                    rect { x: "765", y: "12", width: "190", height: "38", rx: "8", fill: "#0f172a", stroke: "#f59e0b", stroke_width: "1.8" }
+                    text { x: "860", y: "36", fill: "#fbbf24", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_cas}" }
 
-                    rect {
-                        x: "795",
-                        y: "15",
-                        width: "110",
-                        height: "36",
-                        rx: "6",
-                        fill: "#1e293b",
-                        stroke: "#ec4899",
-                        stroke_width: "1.5",
-                    }
-                    text {
-                        x: "850",
-                        y: "37",
-                        fill: "#f472b6",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "Event Store"
-                    }
+                    // 5. Event Store
+                    rect { x: "965", y: "12", width: "170", height: "38", rx: "8", fill: "#0f172a", stroke: "#ec4899", stroke_width: "1.8" }
+                    text { x: "1050", y: "36", fill: "#f472b6", font_weight: "bold", font_size: "13.5px", text_anchor: "middle", "{actor_store}" }
 
-                    // ステップ 1: コミット作成・ハッシュ計算
-                    line {
-                        x1: "80",
-                        y1: "80",
-                        x2: "245",
-                        y2: "80",
-                        stroke: "#3b82f6",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-blue)",
-                    }
-                    text {
-                        x: "162",
-                        y: "73",
-                        fill: "#93c5fd",
-                        text_anchor: "middle",
-                        "1. Edit Part Expression"
-                    }
+                    // ----------------------------------------------------
+                    // ステップ 1: パーツ編集
+                    line { x1: "90", y1: "80", x2: "305", y2: "80", stroke: "#3b82f6", stroke_width: "1.8", marker_end: "url(#neg-arrow-blue)" }
+                    text { x: "197", y: "73", fill: "#93c5fd", font_weight: "600", text_anchor: "middle", "{step1_title}" }
 
-                    path {
-                        d: "M 250 95 H 320 V 125 H 255",
-                        fill: "none",
-                        stroke: "#a78bfa",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-purple)",
-                    }
-                    text {
-                        x: "328",
-                        y: "107",
-                        fill: "#c4b5fd",
-                        text_anchor: "start",
-                        "2. Compute ContentHash: ch = SHA256(CBOR(expr))"
-                    }
-                    text {
-                        x: "328",
-                        y: "120",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "start",
-                        "Create ModuleCommit with part.content_hash, sign Ed25519"
-                    }
+                    // ステップ 2: ハッシュ計算 & 署名
+                    path { d: "M 310 95 H 410 V 128 H 315", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#neg-arrow-purple)" }
+                    text { x: "420", y: "107", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step2_title}" }
+                    text { x: "420", y: "124", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step2_sub}" }
 
-                    // ステップ 3: 初回 SubmitEvent (差分ネゴシエーション開始)
-                    line {
-                        x1: "250",
-                        y1: "155",
-                        x2: "465",
-                        y2: "155",
-                        stroke: "#38bdf8",
-                        stroke_width: "2",
-                        marker_end: "url(#neg-arrow-blue)",
-                    }
-                    rect {
-                        x: "280",
-                        y: "140",
-                        width: "155",
-                        height: "17",
-                        rx: "3",
-                        fill: "rgba(15, 23, 42, 0.9)",
-                        stroke: "#0284c7",
-                    }
-                    text {
-                        x: "357",
-                        y: "152",
-                        fill: "#38bdf8",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "3. POST SubmitEvent"
-                    }
-                    text {
-                        x: "357",
-                        y: "170",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "middle",
-                        {"Payload: signed_event_bytes (references ch-abc)"}
-                    }
+                    // ステップ 3: 初回 SubmitEvent (楽観的送信)
+                    line { x1: "310", y1: "158", x2: "575", y2: "158", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#neg-arrow-blue)" }
+                    rect { x: "355", y: "142", width: "230", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
+                    text { x: "470", y: "156", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step3_title}" }
+                    text { x: "470", y: "176", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step3_sub}" }
 
                     // ステップ 4: サーバー側で CAS 照会
-                    line {
-                        x1: "470",
-                        y1: "195",
-                        x2: "685",
-                        y2: "195",
-                        stroke: "#fbbf24",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-amber)",
-                    }
-                    text {
-                        x: "577",
-                        y: "188",
-                        fill: "#fbbf24",
-                        text_anchor: "middle",
-                        "4. Check missing content hashes: filter_missing([ch-abc])"
-                    }
+                    line { x1: "580", y1: "200", x2: "855", y2: "200", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#neg-arrow-amber)" }
+                    text { x: "717", y: "193", fill: "#fbbf24", font_weight: "600", text_anchor: "middle", "{step4_title}" }
 
-                    line {
-                        x1: "690",
-                        y1: "220",
-                        x2: "475",
-                        y2: "220",
-                        stroke: "#fbbf24",
-                        stroke_width: "1.5",
-                        stroke_dasharray: "4 4",
-                        marker_end: "url(#neg-arrow-amber)",
-                    }
-                    text {
-                        x: "577",
-                        y: "213",
-                        fill: "#fde68a",
-                        text_anchor: "middle",
-                        "Missing: [\"ch-abc\"]"
-                    }
+                    line { x1: "860", y1: "226", x2: "585", y2: "226", stroke: "#fbbf24", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#neg-arrow-amber)" }
+                    text { x: "717", y: "219", fill: "#fde68a", font_size: "12px", text_anchor: "middle", "{step4_sub}" }
 
                     // ステップ 5: ネゴシエーションレスポンス: missing_content
-                    line {
-                        x1: "470",
-                        y1: "250",
-                        x2: "255",
-                        y2: "250",
-                        stroke: "#f59e0b",
-                        stroke_width: "2",
-                        marker_end: "url(#neg-arrow-amber)",
-                    }
-                    rect {
-                        x: "285",
-                        y: "235",
-                        width: "150",
-                        height: "17",
-                        rx: "3",
-                        fill: "rgba(15, 23, 42, 0.9)",
-                        stroke: "#d97706",
-                    }
-                    text {
-                        x: "360",
-                        y: "247",
-                        fill: "#fbbf24",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "5. status: \"missing_content\""
-                    }
-                    text {
-                        x: "360",
-                        y: "265",
-                        fill: "#fde68a",
-                        font_size: "9.5px",
-                        text_anchor: "middle",
-                        {"missingContentHashes: [\"ch-abc\"]"}
-                    }
+                    line { x1: "580", y1: "258", x2: "315", y2: "258", stroke: "#f59e0b", stroke_width: "2.2", marker_end: "url(#neg-arrow-amber)" }
+                    rect { x: "360", y: "242", width: "230", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#d97706" }
+                    text { x: "475", y: "256", fill: "#fbbf24", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step5_title}" }
+                    text { x: "475", y: "276", fill: "#fde68a", font_size: "11.5px", text_anchor: "middle", "{step5_sub}" }
 
-                    // ステップ 6: 不足分のみ抽出して UploadContent
-                    path {
-                        d: "M 250 285 H 320 V 310 H 255",
-                        fill: "none",
-                        stroke: "#a78bfa",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-purple)",
-                    }
-                    text {
-                        x: "328",
-                        y: "297",
-                        fill: "#c4b5fd",
-                        text_anchor: "start",
-                        "6. Client isolates missing expression AST"
-                    }
-                    text {
-                        x: "328",
-                        y: "309",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "start",
-                        "Only new/modified parts are prepared for upload"
-                    }
+                    // ステップ 6: クライアントが不足分のみ抽出
+                    path { d: "M 310 295 H 410 V 328 H 315", fill: "none", stroke: "#c084fc", stroke_width: "1.8", marker_end: "url(#neg-arrow-purple)" }
+                    text { x: "420", y: "307", fill: "#d8b4fe", font_weight: "600", font_size: "13px", text_anchor: "start", "{step6_title}" }
+                    text { x: "420", y: "324", fill: "#94a3b8", font_size: "11.5px", text_anchor: "start", "{step6_sub}" }
 
-                    line {
-                        x1: "250",
-                        y1: "340",
-                        x2: "465",
-                        y2: "340",
-                        stroke: "#38bdf8",
-                        stroke_width: "2",
-                        marker_end: "url(#neg-arrow-blue)",
-                    }
-                    rect {
-                        x: "280",
-                        y: "325",
-                        width: "155",
-                        height: "17",
-                        rx: "3",
-                        fill: "rgba(15, 23, 42, 0.9)",
-                        stroke: "#0284c7",
-                    }
-                    text {
-                        x: "357",
-                        y: "337",
-                        fill: "#38bdf8",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "7. POST UploadContent"
-                    }
-                    text {
-                        x: "357",
-                        y: "355",
-                        fill: "#94a3b8",
-                        font_size: "9.5px",
-                        text_anchor: "middle",
-                        {"items: [{ contentHash: \"ch-abc\", contentBytes }]"}
-                    }
+                    // ステップ 7: POST UploadContent
+                    line { x1: "310", y1: "358", x2: "575", y2: "358", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#neg-arrow-blue)" }
+                    rect { x: "370", y: "342", width: "210", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
+                    text { x: "475", y: "356", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step7_title}" }
+                    text { x: "475", y: "376", fill: "#94a3b8", font_size: "11.5px", text_anchor: "middle", "{step7_sub}" }
 
-                    // ステップ 8: サーバー側でハッシュ検証 & CAS 永続化
-                    path {
-                        d: "M 470 375 H 540 V 400 H 475",
-                        fill: "none",
-                        stroke: "#34d399",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-green)",
-                    }
-                    text {
-                        x: "548",
-                        y: "387",
-                        fill: "#6ee7b7",
-                        text_anchor: "start",
-                        "8. Verify: SHA256(bytes) == ch-abc"
-                    }
+                    // ステップ 8 & 9: サーバー側検証 & CAS 保存
+                    path { d: "M 580 395 H 680 V 425 H 585", fill: "none", stroke: "#34d399", stroke_width: "1.8", marker_end: "url(#neg-arrow-green)" }
+                    text { x: "690", y: "414", fill: "#6ee7b7", font_weight: "600", font_size: "13px", text_anchor: "start", "{step8_title}" }
 
-                    line {
-                        x1: "470",
-                        y1: "420",
-                        x2: "685",
-                        y2: "420",
-                        stroke: "#fbbf24",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-amber)",
-                    }
-                    text {
-                        x: "577",
-                        y: "413",
-                        fill: "#fbbf24",
-                        text_anchor: "middle",
-                        "9. save_content(ch-abc, bytes) -> SurrealDB contents"
-                    }
+                    line { x1: "580", y1: "445", x2: "855", y2: "445", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#neg-arrow-amber)" }
+                    text { x: "717", y: "438", fill: "#fbbf24", font_weight: "600", text_anchor: "middle", "{step9_title}" }
 
-                    line {
-                        x1: "470",
-                        y1: "445",
-                        x2: "255",
-                        y2: "445",
-                        stroke: "#38bdf8",
-                        stroke_width: "1.5",
-                        stroke_dasharray: "4 4",
-                        marker_end: "url(#neg-arrow-blue)",
-                    }
-                    text {
-                        x: "362",
-                        y: "440",
-                        fill: "#7dd3fc",
-                        text_anchor: "middle",
-                        "10. storedContentHashes: [\"ch-abc\"]"
-                    }
+                    // ステップ 10: アップロード完了通知
+                    line { x1: "580", y1: "470", x2: "315", y2: "470", stroke: "#38bdf8", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#neg-arrow-blue)" }
+                    text { x: "447", y: "463", fill: "#7dd3fc", font_size: "12px", text_anchor: "middle", "{step10_title}" }
 
                     // ステップ 11: SubmitEvent 再送
-                    line {
-                        x1: "250",
-                        y1: "480",
-                        x2: "465",
-                        y2: "480",
-                        stroke: "#38bdf8",
-                        stroke_width: "2",
-                        marker_end: "url(#neg-arrow-blue)",
-                    }
-                    rect {
-                        x: "280",
-                        y: "465",
-                        width: "155",
-                        height: "17",
-                        rx: "3",
-                        fill: "rgba(15, 23, 42, 0.9)",
-                        stroke: "#0284c7",
-                    }
-                    text {
-                        x: "357",
-                        y: "477",
-                        fill: "#38bdf8",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "11. Re-POST SubmitEvent"
-                    }
+                    line { x1: "310", y1: "505", x2: "575", y2: "505", stroke: "#38bdf8", stroke_width: "2.2", marker_end: "url(#neg-arrow-blue)" }
+                    rect { x: "365", y: "489", width: "220", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#0284c7" }
+                    text { x: "475", y: "503", fill: "#38bdf8", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step11_title}" }
 
-                    // ステップ 12: 今度は全コンテンツ充足、Ed25519 検証、イベント保存
-                    line {
-                        x1: "470",
-                        y1: "505",
-                        x2: "685",
-                        y2: "505",
-                        stroke: "#fbbf24",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-amber)",
-                    }
-                    text {
-                        x: "577",
-                        y: "500",
-                        fill: "#fde68a",
-                        text_anchor: "middle",
-                        "12. All referenced hashes verified present in CAS"
-                    }
+                    // ステップ 12: 全コンテンツ充足確認
+                    line { x1: "580", y1: "532", x2: "855", y2: "532", stroke: "#fbbf24", stroke_width: "1.8", marker_end: "url(#neg-arrow-amber)" }
+                    text { x: "717", y: "525", fill: "#fde68a", font_size: "12.5px", text_anchor: "middle", "{step12_title}" }
 
-                    line {
-                        x1: "470",
-                        y1: "535",
-                        x2: "845",
-                        y2: "535",
-                        stroke: "#ec4899",
-                        stroke_width: "1.5",
-                        marker_end: "url(#neg-arrow-purple)",
-                    }
-                    text {
-                        x: "657",
-                        y: "528",
-                        fill: "#f472b6",
-                        text_anchor: "middle",
-                        "13. save_event(event, sig, bytes) -> SurrealDB events"
-                    }
+                    // ステップ 13: イベント保存
+                    line { x1: "580", y1: "565", x2: "1045", y2: "565", stroke: "#ec4899", stroke_width: "1.8", marker_end: "url(#neg-arrow-purple)" }
+                    text { x: "812", y: "558", fill: "#f472b6", font_weight: "600", text_anchor: "middle", "{step13_title}" }
 
-                    line {
-                        x1: "470",
-                        y1: "565",
-                        x2: "255",
-                        y2: "565",
-                        stroke: "#34d399",
-                        stroke_width: "2",
-                        marker_end: "url(#neg-arrow-green)",
-                    }
-                    rect {
-                        x: "295",
-                        y: "550",
-                        width: "130",
-                        height: "17",
-                        rx: "3",
-                        fill: "rgba(15, 23, 42, 0.9)",
-                        stroke: "#059669",
-                    }
-                    text {
-                        x: "360",
-                        y: "562",
-                        fill: "#34d399",
-                        font_weight: "bold",
-                        text_anchor: "middle",
-                        "14. status: \"ok\""
-                    }
-                    text {
-                        x: "360",
-                        y: "580",
-                        fill: "#6ee7b7",
-                        font_size: "9.5px",
-                        text_anchor: "middle",
-                        {"eventHash: \"ev-xyz...\""}
-                    }
+                    // ステップ 14: 確定成功レスポンス
+                    line { x1: "580", y1: "605", x2: "315", y2: "605", stroke: "#34d399", stroke_width: "2.2", marker_end: "url(#neg-arrow-green)" }
+                    rect { x: "370", y: "589", width: "210", height: "20", rx: "4", fill: "rgba(15, 23, 42, 0.95)", stroke: "#059669" }
+                    text { x: "475", y: "603", fill: "#34d399", font_weight: "bold", font_size: "12.5px", text_anchor: "middle", "{step14_title}" }
 
-                    line {
-                        x1: "250",
-                        y1: "590",
-                        x2: "85",
-                        y2: "590",
-                        stroke: "#34d399",
-                        stroke_width: "1.5",
-                        stroke_dasharray: "4 4",
-                        marker_end: "url(#neg-arrow-green)",
-                    }
-                    text {
-                        x: "167",
-                        y: "585",
-                        fill: "#86efac",
-                        text_anchor: "middle",
-                        "15. UI Confirmed & Projected"
-                    }
+                    // ステップ 15: UI 確定
+                    line { x1: "310", y1: "645", x2: "95", y2: "645", stroke: "#34d399", stroke_width: "1.8", stroke_dasharray: "4 4", marker_end: "url(#neg-arrow-green)" }
+                    text { x: "202", y: "638", fill: "#86efac", font_weight: "600", text_anchor: "middle", "{step15_title}" }
                 }
             }
 
             // 説明ブロック
-            div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;",
-                div { style: "background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); padding: 1rem; display: grid; gap: 0.4rem;",
-                    h4 { style: "font-size: 0.88rem; font-weight: 700; color: #fbbf24; margin: 0;",
-                        {
-                            language
-                                .label(
-                                    "Why Diff Negotiation?",
-                                    "なぜ差分ネゴシエーションが必要か？",
-                                    "Kial diferenca negocado?",
-                                )
+            div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; margin-top: 0.5rem;",
+                div { style: "background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.5rem;",
+                    h4 { style: "font-size: 0.95rem; font-weight: 700; color: #fbbf24; margin: 0; display: flex; align-items: center; gap: 0.5rem;",
+                        span { "💡" }
+                        span {
+                            {
+                                language
+                                    .label(
+                                        "Why Diff Hash Negotiation?",
+                                        "なぜ差分ハッシュ・ネゴシエーションが必要か？",
+                                        "Kial diferenca negocado?",
+                                    )
+                            }
                         }
                     }
-                    p { style: "font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
+                    p { style: "font-size: 0.86rem; color: var(--text-secondary); margin: 0; line-height: 1.6;",
                         {
                             language
                                 .label(
@@ -606,18 +336,21 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     }
                 }
 
-                div { style: "background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 1rem; display: grid; gap: 0.4rem;",
-                    h4 { style: "font-size: 0.88rem; font-weight: 700; color: #34d399; margin: 0;",
-                        {
-                            language
-                                .label(
-                                    "Zero Trust & Cryptographic Integrity",
-                                    "ゼロトラストと暗号学的完全性",
-                                    "Nula Fido kaj Kriptografia Integreco",
-                                )
+                div { style: "background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.5rem;",
+                    h4 { style: "font-size: 0.95rem; font-weight: 700; color: #34d399; margin: 0; display: flex; align-items: center; gap: 0.5rem;",
+                        span { "🛡️" }
+                        span {
+                            {
+                                language
+                                    .label(
+                                        "Zero Trust & Cryptographic Integrity",
+                                        "ゼロトラストと暗号学的完全性",
+                                        "Nula Fido kaj Kriptografia Integreco",
+                                    )
+                            }
                         }
                     }
-                    p { style: "font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
+                    p { style: "font-size: 0.86rem; color: var(--text-secondary); margin: 0; line-height: 1.6;",
                         {
                             language
                                 .label(

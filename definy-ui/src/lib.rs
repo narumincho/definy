@@ -1,6 +1,7 @@
 mod about;
 mod account_detail;
 mod account_list;
+pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
 pub mod dom;
@@ -34,7 +35,6 @@ mod part_list;
 pub mod part_projection;
 pub mod query;
 mod rpc_architecture;
-mod rpc_explorer;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
@@ -164,11 +164,22 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
                 about::AboutView { context: context.clone() }
             }
         }
-        Some(Location::ApiExplorer(target_hash)) => {
+        Some(Location::ApiOverview) => {
             rsx! {
-                rpc_explorer::RpcExplorerView {
+                api_pages::ApiOverviewPageView { context: context.clone() }
+            }
+        }
+        Some(Location::ApiArchitecture) => {
+            rsx! {
+                api_pages::RpcArchitecturePageView { context: context.clone() }
+            }
+        }
+        Some(Location::ApiMethod(method, target_hash)) => {
+            rsx! {
+                api_pages::RpcMethodDetailView {
                     state: state.clone(),
                     context: context.clone(),
+                    method: *method,
                     initial_target_hash: target_hash.clone(),
                 }
             }

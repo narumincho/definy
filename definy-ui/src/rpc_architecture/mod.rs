@@ -14,6 +14,7 @@ pub use negotiation_sequence::NegotiationSequenceDiagram;
 pub use overview::ArchitectureOverview;
 pub use submit_sequence::SubmitSequenceDiagram;
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ArchitectureTab {
     Overview,
@@ -23,6 +24,7 @@ pub enum ArchitectureTab {
     DataLayers,
 }
 
+#[allow(dead_code)]
 #[component]
 pub fn RpcArchitectureSection(context: PageContext) -> Element {
     let mut selected_tab = use_signal(|| ArchitectureTab::Overview);
