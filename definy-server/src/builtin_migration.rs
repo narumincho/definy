@@ -288,6 +288,18 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_value_type::create_value_type_part(
         &core_module_id,
     ));
+    core_parts.push(crate::builtin_value_type::create_env_type_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_value_type::create_env_lookup_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_value_type::create_env_lookup_inner_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_value_type::create_env_extend_part(
+        &core_module_id,
+    ));
     core_parts.push(crate::builtin_type_ast::create_type_ast_part(
         &core_module_id,
     ));
@@ -298,6 +310,37 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         &core_module_id,
     ));
     core_parts.push(crate::builtin_expression_type::create_eval_ast_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_evaluator::create_eval_value_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_error_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_result_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_env_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_env_lookup_part(
+        &core_module_id,
+    ));
+    core_parts
+        .push(crate::builtin_type_checker::create_type_env_lookup_inner_part(&core_module_id));
+    core_parts.push(crate::builtin_type_checker::create_type_env_extend_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_equals_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_check_part(
+        &core_module_id,
+    ));
+    core_parts
+        .push(crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&core_module_id));
+    core_parts.push(crate::builtin_wasm_compiler::create_compile_to_wasm_part(
         &core_module_id,
     ));
 

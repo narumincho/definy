@@ -6,9 +6,9 @@ definy を definy
 ## 概要
 
 definy
-は、構文木（AST）、型システム、パーツやモジュールのメタデータ、そしてそれらの評価器を
+は、構文木（AST）、型システム、パーツやモジュールのメタデータ、そしてそれらの評価器・型チェッカー・コンパイラを
 definy
-の純粋なデータ構造および式（`Expression`）として自己記述できるセルフホスト環境を目指しています。
+の純粋なデータ構造および式（`Expression`）として自己記述できるセルフホスト環境を実現しています。
 
 これにより、以下の利点が得られます：
 
@@ -20,100 +20,169 @@ definy
    によるコンテンツ指向ハッシュで管理され、バージョンロックと不変性が保証される。
 3. **安全なマクロ・メタプログラミング**:
    式をデータとして受け取り、式を返す関数を通常パーツとして安全に定義可能。
-
-## セルフホスト用ビルトインパーツ (`core` モジュール)
-
-### 1. 式 AST: `core.expression`
-
-式（`Expression`）の直和型（Union Type）。definy の全計算式を表現します。
-
-- `number(value: number)`: 数値リテラル
-- `string(value: string)`: 文字列リテラル
-- `boolean(value: boolean)`: 真偽値リテラル
-- `add({ left: expression, right: expression })`: 加算
-- `subtract({ left: expression, right: expression })`: 減算
-- `multiply({ left: expression, right: expression })`: 乗算
-- `divide({ left: expression, right: expression })`: 除算
-- `remainder({ left: expression, right: expression })`: 剰余算
-- `equal({ left: expression, right: expression })`: 等価判定
-- `less_than({ left: expression, right: expression })`: 小なり比較
-- `if({ condition: expression, then_expr: expression, else_expr: expression })`:
-  条件分岐
-- `let({ variable_id: number, value: expression, body: expression })`: 変数束縛
-- `variable({ variable_id: number })`: 変数参照
-- `function({ parameter_id: number, body: expression })`: 1引数関数
-- `call({ function: expression, argument: expression })`: 関数呼び出し
-- `record(list<{ key: string, value: expression }>)`: レコード生成
-- `record_get({ record: expression, key: string })`: フィールド取得
-
-### 2. 型 AST: `core.type-ast`
-
-型（`Type`）の直和型（Union Type）。自己記述的な型チェッカーやスキーマ検証用。
-
-- `number`: 64bit 数値型
-- `string`: 文字列型
-- `boolean`: 真偽値型
-- `list({ item_type: type-ast })`: リスト型
-- `function({ parameter: type-ast, return_type: type-ast })`: 関数型
-- `record(list<{ key: string, field_type: type-ast }>)`: レコード型 (直積型)
-- `union(list<{ tag: string, payload_type: type-ast }>)`: 直和型
-  (タグ付きユニオン型)
-- `reference({ part_hash: string })`: 既存パーツ参照型
-
-### 3. パーツ定義: `core.part-definition`
-
-パーツのメタデータおよび実装式を表現するレコード型。
-
-```definy
-{
-  name: string,
-  description: string,
-  part_type: type-ast,
-  expression: expression
-}
-```
-
-### 4. モジュール定義: `core.module-definition`
-
-複数のパーツ定義を束ねるモジュールのレコード型。
-
-```definy
-{
-  name: string,
-  description: string,
-  parts: list<part-definition>
-}
-```
-
-### 5. 自己記述評価器: `core.eval-ast`
-
-`expression` 型の AST
-を入力として受け取り、その式を解釈実行して結果（数値等）を返す definy
-内の純粋関数。
-
-```definy
-eval-ast: expression -> number
-```
-
-`eval-ast`
-は再帰呼び出し（`Expression::PartReference`）およびパターンマッチ（`Expression::Match`）を用いて、definy
-の式を definy 自身の中で評価します。
+4. **自己ホスト WebAssembly 生成**: definy 式から WebAssembly
+   バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザ実行可能。
 
 ---
 
-## 標準ライブラリ (`std` モジュール)
+## セルフホストのロードマップと到達状況
 
-definy 内で純粋な `Expression::Function`
-として構築された実用的なユーティリティ関数群。
+- [x] **Phase 1: 完全動的値評価器 (Self-Evaluating Interpreter)**
+  - 動的値型 `core.value`、変数環境型 `core.env`、環境探索
+    `core.env-lookup`、環境拡張 `core.env-extend`
+  - 完全動的値自己評価器 `core.eval-value`: `expression -> env -> value`
+- [x] **Phase 2: 自己記述型チェッカー (Self-Hosted Type Checker)**
+  - 型エラー型 `core.type-error`、型検査結果型 `core.type-result`、型環境
+    `core.type-env`
+  - 型等価性判定 `core.type-equals`
+  - 静的型検査器 `core.type-check`: `expression -> type-env -> type-result`
+- [x] **Phase 3: 自己ホスト WebAssembly コンパイラ (Self-Hosted Wasm Compiler)**
+  - 式スタック命令列コンパイラ `core.compile-expr-instructions`:
+    `expression -> list<number>`
+  - 完全 WebAssembly バイナリ生成器 `core.compile-to-wasm`:
+    `expression -> list<number>`
+  - definy の Wasm VM による即時実行・検証を実証完了
 
-| 関数名           | 引数型 -> 戻り値型           | 説明                                                    |
-| :--------------- | :--------------------------- | :------------------------------------------------------ |
-| `abs`            | `number -> number`           | 数値の絶対値を計算します（負数の場合は 0 - x を返却）   |
-| `min`            | `number -> number -> number` | 2つの数値のうち小さい方を返します（カリー化）           |
-| `max`            | `number -> number -> number` | 2つの数値のうち大きい方を返します（カリー化）           |
-| `sign`           | `number -> number`           | 数値の符号（正: 1, 負: -1, ゼロ: 0）を返します          |
-| `bool-to-string` | `boolean -> string`          | 真偽値を文字列 (`"true"` または `"false"`) に変換します |
-| `list-is-empty`  | `list<T> -> boolean`         | リストの長さが 0 かどうかを判定します                   |
-| `list-head`      | `list<T> -> T`               | リストの先頭要素を取得します                            |
+---
 
-すべてがイベント履歴にコミットされ、決定論的に参照・再利用できます。
+## セルフホスト用ビルトインパーツ (`core` モジュール)
+
+### Phase 1: 動的値・環境と完全評価器
+
+#### 1. 動的値型: `core.value`
+
+ランタイム実行時の動的値を表現する直和型（Union Type）。
+
+- `number(value: number)`: 数値
+- `string(value: string)`: 文字列
+- `boolean(value: boolean)`: 真偽値
+- `list(value: list<value>)`: リスト値
+- `closure({ parameter_id: number, body: expression, captured_env: env })`:
+  レキシカルスコープを保持する関数クロージャ
+- `variant({ tag: string, payload: value })`: タグ付き直和型値
+- `unit`: 空値
+
+#### 2. 変数環境型 & 補助関数: `core.env`, `core.env-lookup`, `core.env-extend`
+
+- `core.env`: `list<{ variable_id: number, value: value }>`
+- `core.env-lookup`:
+  `env -> variable_id -> value`（環境の末尾から最新の束縛を線形探索）
+- `core.env-extend`:
+  `env -> variable_id -> value -> env`（環境の末尾に新しい変数値を追加）
+
+#### 3. 完全動的値評価器: `core.eval-value`
+
+```definy
+eval-value: expression -> env -> value
+```
+
+- リテラル（数値・文字列・真偽値）、算術演算（`add`, `subtract`, `multiply`,
+  `divide`, `remainder`）、等価比較（`equal`）、小なり比較（`less_than`）
+- レキシカルスコープ環境による変数解決（`variable`）
+- 条件分岐（`if`）
+- 関数定義時における環境キャプチャ（クロージャ生成）
+- 関数呼び出し（`call`）時におけるキャプチャ環境の復元と引数束縛
+
+---
+
+### Phase 2: 自己記述型チェッカー
+
+#### 1. 型エラー型 & 結果型: `core.type-error`, `core.type-result`
+
+- `core.type-error`:
+  - `type_mismatch({ expected: type-ast, actual: type-ast })`: 型の不一致
+  - `undefined_variable({ variable_id: number })`: 未定義の変数参照
+  - `condition_not_boolean({ actual: type-ast })`: 条件式の型が boolean 以外
+  - `unknown_error`: 未知のエラー
+- `core.type-result`: `ok(type-ast) | error(type-error)`
+
+#### 2. 型環境型: `core.type-env`, `core.type-env-lookup`, `core.type-env-extend`
+
+- `core.type-env`: `list<{ variable_id: number, var_type: type-ast }>`
+- 静的スコープにおける変数の型を追跡。
+
+#### 3. 型等価性判定: `core.type-equals`
+
+```definy
+type-equals: type-ast -> type-ast -> boolean
+```
+
+2つの `type-ast` が同一の型であるかを再帰的に判定。
+
+#### 4. 静的型チェッカー: `core.type-check`
+
+```definy
+type-check: expression -> type-env -> type-result
+```
+
+definy の式 AST
+を静的に走査し、型安全性を検証して最終的な型または詳細な型エラーを返却。
+
+---
+
+### Phase 3: 自己ホスト WebAssembly コンパイラ
+
+#### 1. スタックマシン命令列コンパイラ: `core.compile-expr-instructions`
+
+```definy
+compile-expr-instructions: expression -> list<number>
+```
+
+式 AST を WebAssembly
+のバイトコード命令列（`list<number>`）へ再帰的に変換します。
+
+- `number`: `i64.const` (`0x42`) + LEB128 エンコードバイト列
+- `add`: 左辺命令列 + 右辺命令列 + `i64.add` (`0x7c`)
+- `subtract`: 左辺命令列 + 右辺命令列 + `i64.sub` (`0x7d`)
+- `multiply`: 左辺命令列 + 右辺命令列 + `i64.mul` (`0x7e`)
+- `divide`: 左辺命令列 + 右辺命令列 + `i64.div_s` (`0x7f`)
+- `equal`: 左辺命令列 + 右辺命令列 + `i64.eq` (`0x51`)
+- `less_than`: 左辺命令列 + 右辺命令列 + `i64.lt_s` (`0x53`)
+
+#### 2. 完全 Wasm モジュール生成器: `core.compile-to-wasm`
+
+```definy
+compile-to-wasm: expression -> list<number>
+```
+
+スタック命令列をラップし、完全で実行可能な WebAssembly
+バイナリ（`list<number>`）を組み立てて出力します。
+
+出力されるバイナリ構造：
+
+1. **Magic Header** (8 bytes): `\0asm` (`[0x00, 0x61, 0x73, 0x6d]`) + Version 1
+   (`[0x01, 0x00, 0x00, 0x00]`)
+2. **Type Section** (Section 1): 1 つの関数シグネチャ `() -> i64`
+3. **Function Section** (Section 3): Type 0 を参照する 1 つの関数
+4. **Export Section** (Section 7): 関数 0 を `"main"` としてエクスポート
+5. **Code Section** (Section 10): ローカル変数定義（0個）+
+   コンパイルされたスタック命令列 + `end` (`0x0b`)
+
+生成されたバイト列は、definy の Wasm VM およびブラウザの
+`WebAssembly.instantiate` で即座にロード・実行できます。
+
+---
+
+## 既存の型定義・AST・標準ライブラリ
+
+### 1. 式 AST: `core.expression`
+
+definy の全計算式を表現する直和型。
+
+### 2. 型 AST: `core.type-ast`
+
+`number`, `string`, `boolean`, `list`, `function`, `record`, `union`,
+`reference` を表現する直和型。
+
+### 3. パーツ定義 & モジュール定義: `core.part-definition`, `core.module-definition`
+
+メタデータ（名前、説明、型、式）をコンテンツ指向で保持するレコード型。
+
+### 4. 標準ライブラリ (`std` モジュール)
+
+- `abs`: `number -> number`
+- `min`, `max`: `number -> number -> number`
+- `sign`: `number -> number`
+- `bool-to-string`: `boolean -> string`
+- `list-is-empty`: `list<T> -> boolean`
+- `list-head`: `list<T> -> T`
