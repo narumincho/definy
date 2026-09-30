@@ -247,3 +247,62 @@ fn test_recursive_type_cycle_detection_in_constructor() {
         other => panic!("Expected Record shape, got {:?}", other),
     }
 }
+
+#[test]
+fn test_function_parameter_accepts_lambda_argument() {
+    let state = crate::app_state::AppState::default();
+    let callback_type = ExpressionType::Function {
+        parameter: Box::new(ExpressionType::Number),
+        return_type: Box::new(ExpressionType::Number),
+    };
+    let map_type = ExpressionType::Function {
+        parameter: Box::new(callback_type),
+        return_type: Box::new(ExpressionType::Number),
+    };
+    let expected_type = ExpressionType::Function {
+        parameter: Box::new(map_type),
+        return_type: Box::new(ExpressionType::Number),
+    };
+    let callback = Expression::Function(FunctionExpression {
+        parameter_id: 2,
+        parameter_name: "value".into(),
+        body: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+    });
+    let expression = Expression::Function(FunctionExpression {
+        parameter_id: 1,
+        parameter_name: "map".into(),
+        body: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            argument: Box::new(callback),
+        })),
+    });
+
+    let analysis = analyze_expression_types(&state, &expression, Some(expected_type));
+
+    assert!(
+        analysis.diagnostics.is_empty(),
+        "{:?}",
+        analysis.diagnostics
+    );
+}
+
+#[test]
+fn test_direct_lambda_application_is_diagnosed() {
+    let state = crate::app_state::AppState::default();
+    let expression = Expression::Call(CallExpression {
+        function: Box::new(Expression::Function(FunctionExpression {
+            parameter_id: 1,
+            parameter_name: "value".into(),
+            body: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        })),
+        argument: Box::new(Expression::Number(NumberExpression { value: 1 })),
+    });
+
+    let analysis = analyze_expression_types(&state, &expression, Some(ExpressionType::Number));
+
+    assert!(analysis.diagnostics.iter().any(|diagnostic| {
+        diagnostic
+            .message
+            .contains("Inline lambda application is not supported")
+    }));
+}

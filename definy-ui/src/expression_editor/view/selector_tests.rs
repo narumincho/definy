@@ -76,6 +76,42 @@ fn test_selector_options_sorted_for_type() {
 }
 
 #[test]
+fn test_lambda_selector_is_only_available_for_function_expectations() {
+    let state = AppState::default();
+    let function_type = ExpressionType::Function {
+        parameter: Box::new(ExpressionType::Number),
+        return_type: Box::new(ExpressionType::Number),
+    };
+    let function_options = selector_options(
+        &state,
+        Language::English,
+        &[],
+        false,
+        Some(&function_type),
+        &HashMap::new(),
+    );
+    assert!(
+        function_options
+            .iter()
+            .any(|(value, _)| value == "expr:function")
+    );
+
+    let number_options = selector_options(
+        &state,
+        Language::English,
+        &[],
+        false,
+        Some(&ExpressionType::Number),
+        &HashMap::new(),
+    );
+    assert!(
+        !number_options
+            .iter()
+            .any(|(value, _)| value == "expr:function")
+    );
+}
+
+#[test]
 fn test_selector_options_sorted_for_union() {
     let state = AppState::default();
     let options = selector_options(
@@ -122,6 +158,30 @@ fn test_current_selection_value_for_variant() {
         current_selection_value(&state, &none_expr),
         "expr:variant:none"
     );
+}
+
+#[test]
+fn test_function_and_call_use_syntax_selector_values() {
+    let state = AppState::default();
+    let function =
+        definy_event::event::Expression::Function(definy_event::event::FunctionExpression {
+            parameter_id: 1,
+            parameter_name: "value".into(),
+            body: Box::new(definy_event::event::Expression::Variable(
+                definy_event::event::VariableExpression { variable_id: 1 },
+            )),
+        });
+    let call = definy_event::event::Expression::Call(definy_event::event::CallExpression {
+        function: Box::new(definy_event::event::Expression::Variable(
+            definy_event::event::VariableExpression { variable_id: 1 },
+        )),
+        argument: Box::new(definy_event::event::Expression::Number(
+            definy_event::event::NumberExpression { value: 1 },
+        )),
+    });
+
+    assert_eq!(current_selection_value(&state, &function), "expr:function");
+    assert_eq!(current_selection_value(&state, &call), "expr:call");
 }
 
 #[test]

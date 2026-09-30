@@ -561,6 +561,16 @@ fn check_expression_type_with_context(
             let mut func_path = path.to_vec();
             func_path.push(PathStep::CallFunction);
 
+            if matches!(
+                call_expression.function.as_ref(),
+                definy_event::event::Expression::Function(_)
+            ) {
+                ctx.diagnostics.push(TypeDiagnostic {
+                    path: func_path.clone(),
+                    message: "Inline lambda application is not supported; pass lambdas only to function-typed parameters.".to_string(),
+                });
+            }
+
             let func_type = ctx.check(call_expression.function.as_ref(), &func_path, None);
 
             let mut arg_path = path.to_vec();

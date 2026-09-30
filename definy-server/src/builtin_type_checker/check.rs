@@ -12,6 +12,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
     let type_result_part_hash = derive_module_part_id(core_module_id, "type-result");
     let type_check_hash = derive_module_part_id(core_module_id, "type-check");
+    let type_check_against_hash = derive_module_part_id(core_module_id, "type-check-against");
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
     let type_env_lookup_hash = derive_module_part_id(core_module_id, "type-env-lookup");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
@@ -410,11 +411,18 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
             record: Box::new(Expression::Variable(VariableExpression { variable_id: 58 })),
             key: "return_type".into(),
         });
-        let argument_check = check_sub(
-            &type_check_hash,
-            argument_expr,
-            Expression::Variable(VariableExpression { variable_id: 1 }),
-        );
+        let argument_check = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::Call(CallExpression {
+                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                        type_check_against_hash.clone(),
+                    ))),
+                    argument: Box::new(argument_expr),
+                })),
+                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            })),
+            argument: Box::new(parameter_type.clone()),
+        });
         let argument_type_var_id = 59;
         let argument_matches = Expression::Call(CallExpression {
             function: Box::new(Expression::Call(CallExpression {

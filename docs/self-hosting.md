@@ -30,7 +30,10 @@ definy
 
 - `core.type-check` は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、型環境上の関数適用を扱います。
   宣言型を与える `core.type-check-against` は関数引数を型環境へ束縛して関数本体を検査します。
-  lambda 単独では引数型を推論せず、期待関数型が必要です。リスト・レコード式やパーツ参照の検査は未対応です。
+  lambda はパーツ宣言型が要求する関数形に沿う位置か、関数型 parameter への Call 引数でのみ受け入れます。
+  lambda を callee とする即時適用や、期待関数型のない位置の lambda は拒否します。
+  `ModulePartEntry.part_type` はパーツ直下の宣言 metadata であり、式の中に置く型 marker ではありません。
+  リスト・レコード式やパーツ参照の検査は未対応です。
   `core.type-equals` は基本型・リスト型・関数型・record 型を再帰比較します。
   union 型も variant の順序と optional payload 型を含めて比較し、reference 型は part hash で比較します。
   record/union は定義順を含めて比較します。
@@ -43,6 +46,16 @@ definy
 
 実サービスで一般的なモジュールを受け入れるには、残る型 AST の構造比較を実装し、式 AST と
 パーツ参照を解決するモジュール型環境を型チェッカーへ渡す必要があります。
+
+#### Lambda の配置規則
+
+関数値を作る `function` 式は、期待する `PartType::Function` に対応する場所だけで有効です。
+これはパーツ定義直下の関数本体（curried function は宣言された関数戻り値型に沿って束ねる）と、
+関数型 parameter を受け取る Call 引数です。`((x) => ...)(arg)` のように lambda 自体を
+callee にする即時適用は許可しません。関数の呼び出し先はパーツ参照または型環境上の変数にします。
+
+`number` などのパーツ形状も式 node ではなく、パーツ定義の `part_type` metadata に宣言します。
+その宣言型が式 root の期待型になり、`core.validate-part` が式全体を検査します。
 
 ### セルフホスティング全体アーキテクチャ
 

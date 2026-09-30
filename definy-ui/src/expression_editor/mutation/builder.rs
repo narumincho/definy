@@ -162,11 +162,7 @@ pub(crate) fn default_expression_for_compiler_builtin(
             body: var_expr(next_variable_id),
         }),
         CompilerBuiltin::Call => Expression::Call(CallExpression {
-            function: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: next_variable_id,
-                parameter_name: "x".into(),
-                body: var_expr(next_variable_id),
-            })),
+            function: num(0),
             argument: num(0),
         }),
     }
