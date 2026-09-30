@@ -7,6 +7,9 @@ mod arith_arms;
 mod control_arms;
 mod helpers;
 mod logical_arms;
+pub mod record_eval;
+
+pub use record_eval::*;
 
 use definy_event::EventHashId;
 use definy_event::event::{
@@ -18,6 +21,7 @@ use self::arith_arms::create_arithmetic_arms;
 use self::control_arms::create_control_arms;
 use self::helpers::{val_bool, val_num, val_str, val_unit};
 use self::logical_arms::create_logical_arms;
+use self::record_eval::create_record_eval_arms;
 
 /// 汎用自己評価器 `core.eval-value`: `expression -> env -> value`
 ///
@@ -68,6 +72,9 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
 
     // 12, 13, 14. Logical operations
     create_logical_arms(&eval_value_hash, &mut arms);
+
+    // 17, 18. Record operations (record, record_get)
+    create_record_eval_arms(core_module_id, &eval_value_hash, &mut arms);
 
     // Default arm
     arms.push(MatchArm {

@@ -16,6 +16,10 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
     let type_env_lookup_hash = derive_module_part_id(core_module_id, "type-env-lookup");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
+    let record_field_type_lookup_hash =
+        derive_module_part_id(core_module_id, "record-field-type-lookup");
+    let check_record_fields_hash =
+        derive_module_part_id(core_module_id, "type-check-record-fields");
 
     fn ok_type(t: Expression) -> Expression {
         Expression::Variant(VariantExpression {
@@ -887,6 +891,13 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
             body: Box::new(let_match),
         });
     }
+
+    // Record operations: record_get, record
+    arms.extend(super::record_ops::create_record_check_arms(
+        &type_check_hash,
+        record_field_type_lookup_hash,
+        check_record_fields_hash,
+    ));
 
     // Default arm: unknown_error
     arms.push(MatchArm {

@@ -28,12 +28,12 @@ definy
 セルフホスト部品の実行テストは、Definy AST で記述した関数を Rust の `definy-core`
 実行基盤上で動かす検証です。Definy サービス全体のブートストラップが完了したことを意味しません。
 
-- `core.type-check` は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、型環境上の関数適用を扱います。
+- `core.type-check` は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、レコード構築（`record`）、フィールドアクセス（`record_get`）、型環境上の関数適用を扱います。
   宣言型を与える `core.type-check-against` は関数引数を型環境へ束縛して関数本体を検査します。
   lambda はパーツ宣言型が要求する関数形に沿う位置か、関数型 parameter への Call 引数でのみ受け入れます。
   lambda を callee とする即時適用や、期待関数型のない位置の lambda は拒否します。
   `ModulePartEntry.part_type` はパーツ直下の宣言 metadata であり、式の中に置く型 marker ではありません。
-  リスト・レコード式やパーツ参照の検査は未対応です。
+  リスト式やパーツ参照の検査は未対応です。
   `core.type-equals` は基本型・リスト型・関数型・record 型を再帰比較します。
   union 型も variant の順序と optional payload 型を含めて比較し、reference 型は part hash で比較します。
   record/union は定義順を含めて比較します。
@@ -45,12 +45,12 @@ definy
 - Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition` 値へ変換し、
   `core.validate-module` で検証してから保存します。式や型の変換に失敗した場合、または
   型チェッカーが拒否した場合は `400` を返します。
-- 現段階ではリスト・レコード・直和型・関数・他パーツ参照などを網羅的に型検査できません。
+- 現段階ではリスト・直和型構築・他パーツ参照などを網羅的に型検査できません。
   型チェッカーの入力表現や環境が未対応のため、これらを含む有効なモジュールも fail-closed
   で拒否される場合があります。
 
 一般的なモジュールを受け入れる次のブロッカーは、module 内外の part reference を解決する型環境と、
-リスト・レコード・構築子・パターンマッチを含む式検査です。
+リスト・構築子・パターンマッチを含む式検査です。
 
 Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash 衝突や既存 bytes
 と異なる内容は拒否します。ModuleCommit に同じ式が複数回現れても、投稿再試行が CAS 重複で失敗しません。
@@ -203,6 +203,16 @@ graph TD
     `(a -> b) -> list<a> -> list<b>`、`core.list-fold`:
     `(b -> a -> b) -> b -> list<a> -> b`
   - メタ循環パターンマッチ実行および高階リスト処理の実行実証完了
+- [x] **Phase 8: レコード構築・フィールドアクセスの自己ホスト型検査 & 自己評価拡張 (Self-Hosted Record & Field Access)**
+  - 型エラー型 `core.type-error` に `not_a_record`, `field_not_found` を追加
+  - レコードフィールド型探索 `core.record-field-type-lookup` およびレコード型検査器 `core.type-check-record-fields` を新設
+  - 静的型検査器 `core.type-check` に `record`（レコードリテラル）および `record_get`（フィールドアクセス）の型検査アームを追加
+  - 動的値型 `core.value` に `record(value: list<{ key: string, value: value }>)` を追加
+  - 動的フィールド値探索 `core.record-field-lookup` およびレコード動的評価器 `core.eval-record-fields` を新設
+  - 完全動的値評価器 `core.eval-value` に `record` リテラルの評価および `record_get` によるフィールド値アクセスの評価アームを追加
+  - 動的等価判定器 `core.value-equals` に `core.value-equals-record-fields` を追加し、動的レコード同士の順序依存・キー/値再帰等価比較に対応
+  - Wasm コンパイラ `emit_match_arms` におけるワイルドカード `_` の無条件マッチ対応
+  - レコード式の型検査・動的自己評価・動的等価判定およびパーツ妥当性検証（`core.validate-part`）のメタ循環実証完了
 
 ---
 
@@ -428,13 +438,52 @@ validate-module: module-definition -> boolean
 
 ---
 
+### Phase 7: 直和型・パターンマッチ自己評価 & 高階コレクション
+
+- `core.eval-match-arms`, `core.eval-match-arms-inner`:
+  `match` 式のアームリストを先頭から走査し、タグ一致時にペイロードを変数環境に束縛して本体式を評価するパーツ群。
+- `core.value-equals`:
+  数値・文字列・真偽値・バリアント・レコードの深層再帰等価比較を行うパーツ。
+- `core.list-map`, `core.list-fold`:
+  関数型クロージャを受け取りリストの各要素に適用・畳み込む標準高階コンビネータ。
+
+---
+
+### Phase 8: レコード構築・フィールドアクセスと動的等価判定
+
+#### 1. レコード型検査パーツ群 (`builtin_type_checker/record_ops.rs`)
+
+- `core.record-field-type-lookup`:
+  `list<{ key: string, value: type-ast }> -> string -> number -> optional<type-ast>`
+  レコード型内のフィールドリストとキー文字列を受け取り、インデックス再帰探索により対応するフィールドの型を抽出。
+- `core.type-check-record-fields`:
+  `list<{ key: string, value: expression }> -> type-env -> number -> list<{ key: string, value: type-ast }> -> type-result`
+  レコードリテラルを走査し、各フィールド式を `core.type-check` で検査して成功時に型アスト `record(list<{ key, value }>)` を構築。
+
+#### 2. レコード動的評価パーツ群 (`builtin_evaluator/record_eval.rs`)
+
+- `core.record-field-lookup`:
+  `list<{ key: string, value: value }> -> string -> number -> value`
+  評価済み動的レコード値からキーに合致するフィールド値を探索。
+- `core.eval-record-fields`:
+  `list<{ key: string, value: expression }> -> env -> number -> list<{ key: string, value: value }> -> value`
+  レコードリテラルの全フィールド式を `core.eval-value` で動的評価して動的レコード `core.value::record` を構築。
+
+#### 3. レコード動的等価判定パーツ (`builtin_value_type.rs`)
+
+- `core.value-equals-record-fields`:
+  `list<{ key: string, value: value }> -> list<{ key: string, value: value }> -> number -> boolean`
+  2つの動的レコードの長さ・フィールド名・および各値を `core.value-equals` で再帰比較。
+
+---
+
 ### 完全自己ホストコンパイル & メタ循環実行の実証
 
 definy
 のテストスイート（`definy-server/src/self_hosting_tests/`）において、以下の
 end-to-end メタ循環実行がすべて実証されています。 テストコードは責務に応じて
-`ast_structure_tests.rs`（静的構造検証）と
-`execution_tests.rs`（動的実行実証）、および共通ヘルパー `helpers.rs`
+`ast_structure_tests.rs`（静的構造検証）、`execution_tests.rs`（動的実行実証）、
+`record_tests.rs`（レコード検証）、および共通ヘルパー `helpers.rs`
 に分割・整理されています。
 
 | テスト関数名                                              | 検証対象パーツ                                      | 入力・実行内容                                                  | 実証された結果                             |
@@ -450,6 +499,11 @@ end-to-end メタ循環実行がすべて実証されています。 テスト�
 | `test_self_hosted_value_equals_execution`                 | `core.value-equals`                                 | 数値・文字列・真偽値の動的値等価比較                            | 判定結果 `true` / `false`                  |
 | `test_self_hosted_eval_value_variant_and_match_execution` | `core.eval-value` + `core.eval-match-arms`          | AST `match variant("some", 42) { some(x) => x + 8 }`            | パターンマッチ自己実行で `50` を算出       |
 | `test_self_hosted_list_map_and_fold_execution`            | `core.list-map` + `core.list-fold`                  | `map (*2) [1,2,3]` および `fold (+) 0 [10,20,30]`               | `[2, 4, 6]` および `60` を算出             |
+| `test_self_hosted_record_type_checking_execution`         | `core.type-check`                                   | レコードリテラル `{ x: 10, y: "hello" }` の静的型検査            | 推論型 `ok(record({ x: number, y: str }))`  |
+| `test_self_hosted_record_get_type_checking_execution`     | `core.type-check`                                   | フィールドアクセス `{ a: 42 }.a` および不正アクセス時のエラー    | 成功型 `ok(number)` および `not_a_record`   |
+| `test_self_hosted_record_eval_value_and_get_execution`     | `core.eval-value`                                   | レコード評価およびフィールド抽出 `{ x: 20 + 22 }.x`              | 動的値 `number(42)`                        |
+| `test_self_hosted_record_value_equals_execution`          | `core.value-equals`                                 | レコード同士の等価比較 `{ a: 1, b: "ok" } == { a: 1, b: "ok" }`  | 判定結果 `true` / `false`                  |
+| `test_self_hosted_validate_part_with_record_expression`   | `core.validate-part`                                | レコード式を本体に持つパーツ定義の自己妥当性検証                | 判定結果 `true`                            |
 
 ---
 
@@ -512,6 +566,16 @@ Arms）を持つため、単一ファイル（約 950 行）から以下の 5
 プリミティブ値（数値、文字列、真偽値）の等価判定では、2 つの `core.value`
 を連続マッチして同種バリアントであることを確認する構造が反復するため、`primitive_eq_arm`
 クロージャを導入してパターンを共通化し、コード行数を約 80 行削減しました。
+
+### 5. Wasm コンパイラにおけるワイルドカード（`_`）パターンの無条件マッチ処理
+
+パターンマッチ（`MatchExpression`）の Wasm 生成処理（`adt_ops::emit_match_arms`）では、通常各アームの `tag` とターゲット値のタグ文字列の等価比較（`emit_string_eq`）を出力します。
+しかしフォールスルー用のワイルドカードアーム（`arm.tag == "_"`）に対しても文字列 `"_"` との比較を行ってしまうと、他のタグにマッチせず `default`（未指定時は `Number(0)`）へ誤ってフォールスルーしてしまいます。
+これを解消するため、`arm.tag == "_"` の場合はタグ比較を行わずに無条件でアーム本体を展開するよう改善し、Rust の `_ => ...` と同等の挙動と実行速度を実現しました。
+
+### 6. レコード関連ロジックの責任分割（`record_ops.rs`, `record_eval.rs`）
+
+definy のコードベース品質規則（「ファイルが1000行を超えたら適切に分割する」）を遵守するため、レコードのフィールド型探索・型検査ループを `record_ops.rs`、レコードのフィールド値探索・動的評価ループを `record_eval.rs` として独立したサブモジュールに分離しました。これにより、各モジュールの責務が明確化され、保守性とテスト容易性が向上しました。
 
 ---
 

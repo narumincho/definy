@@ -303,6 +303,8 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_value_type::create_value_equals_part(
         &core_module_id,
     ));
+    core_parts
+        .push(crate::builtin_value_type::create_value_equals_record_fields_part(&core_module_id));
     core_parts.push(crate::builtin_type_ast::create_type_ast_part(
         &core_module_id,
     ));
@@ -316,6 +318,12 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         &core_module_id,
     ));
     core_parts.push(crate::builtin_evaluator::create_eval_value_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_evaluator::create_record_field_lookup_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_evaluator::create_eval_record_fields_part(
         &core_module_id,
     ));
     core_parts.push(crate::builtin_eval_match::create_eval_match_arms_part(
@@ -346,6 +354,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         .push(crate::builtin_type_checker::create_type_equals_record_fields_part(&core_module_id));
     core_parts
         .push(crate::builtin_type_checker::create_type_equals_union_variants_part(&core_module_id));
+    core_parts
+        .push(crate::builtin_type_checker::create_record_field_type_lookup_part(&core_module_id));
+    core_parts
+        .push(crate::builtin_type_checker::create_type_check_record_fields_part(&core_module_id));
     core_parts.push(crate::builtin_type_checker::create_type_check_part(
         &core_module_id,
     ));

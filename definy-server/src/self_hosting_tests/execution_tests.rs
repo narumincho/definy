@@ -70,6 +70,8 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
     let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&mod_id);
     let eval_match_arms_inner =
         crate::builtin_eval_match::create_eval_match_arms_inner_part(&mod_id);
+    let eval_rec_lookup = crate::builtin_evaluator::create_record_field_lookup_part(&mod_id);
+    let eval_rec_fields = crate::builtin_evaluator::create_eval_record_fields_part(&mod_id);
 
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
@@ -85,6 +87,8 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
             eval_value,
             eval_match_arms,
             eval_match_arms_inner,
+            eval_rec_lookup,
+            eval_rec_fields,
         ],
         125,
     );
@@ -130,6 +134,10 @@ fn test_self_hosted_type_checker_execution() {
         crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
+    let rec_type_lookup =
+        crate::builtin_type_checker::create_record_field_type_lookup_part(&mod_id);
+    let check_rec_fields =
+        crate::builtin_type_checker::create_type_check_record_fields_part(&mod_id);
 
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
@@ -148,6 +156,8 @@ fn test_self_hosted_type_checker_execution() {
             type_equals_union_variants,
             type_check,
             type_check_against,
+            rec_type_lookup,
+            check_rec_fields,
         ],
         126,
     );
@@ -486,6 +496,10 @@ fn test_self_hosted_validate_part_execution() {
         crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
+    let rec_type_lookup =
+        crate::builtin_type_checker::create_record_field_type_lookup_part(&mod_id);
+    let check_rec_fields =
+        crate::builtin_type_checker::create_type_check_record_fields_part(&mod_id);
     let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
 
     let validate_part_hash = derive_module_part_id(&mod_id, "validate-part");
@@ -505,6 +519,8 @@ fn test_self_hosted_validate_part_execution() {
             type_equals_union_variants,
             type_check,
             type_check_against,
+            rec_type_lookup,
+            check_rec_fields,
             validate_part,
         ],
         127,
@@ -964,6 +980,10 @@ fn test_self_hosted_validate_module_execution() {
         crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
+    let rec_type_lookup =
+        crate::builtin_type_checker::create_record_field_type_lookup_part(&mod_id);
+    let check_rec_fields =
+        crate::builtin_type_checker::create_type_check_record_fields_part(&mod_id);
     let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
     let validate_parts = crate::builtin_validator::create_validate_parts_part(&mod_id);
     let validate_module = crate::builtin_validator::create_validate_module_part(&mod_id);
@@ -985,6 +1005,8 @@ fn test_self_hosted_validate_module_execution() {
             type_equals_union_variants,
             type_check,
             type_check_against,
+            rec_type_lookup,
+            check_rec_fields,
             validate_part,
             validate_parts,
             validate_module,
@@ -1149,9 +1171,11 @@ fn test_self_hosted_value_equals_execution() {
 
     let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
     let val_equals = crate::builtin_value_type::create_value_equals_part(&mod_id);
+    let val_equals_rec = crate::builtin_value_type::create_value_equals_record_fields_part(&mod_id);
     let val_eq_hash = derive_module_part_id(&mod_id, "value-equals");
 
-    let events = create_test_module_events(account, vec![val_part, val_equals], 201);
+    let events =
+        create_test_module_events(account, vec![val_part, val_equals, val_equals_rec], 201);
 
     let check_eq = |a: Expression, b: Expression| {
         let call = call_part2(val_eq_hash.clone(), a, b);
@@ -1204,6 +1228,8 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
     let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&mod_id);
     let eval_match_arms_inner =
         crate::builtin_eval_match::create_eval_match_arms_inner_part(&mod_id);
+    let eval_rec_lookup = crate::builtin_evaluator::create_record_field_lookup_part(&mod_id);
+    let eval_rec_fields = crate::builtin_evaluator::create_eval_record_fields_part(&mod_id);
 
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
 
@@ -1218,6 +1244,8 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
             eval_value,
             eval_match_arms,
             eval_match_arms_inner,
+            eval_rec_lookup,
+            eval_rec_fields,
         ],
         202,
     );

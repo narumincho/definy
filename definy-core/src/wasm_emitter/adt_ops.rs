@@ -255,6 +255,20 @@ fn emit_match_arms(
 ) -> Result<(), String> {
     if idx < arms.len() {
         let arm = &arms[idx];
+        if arm.tag.as_ref() == "_" {
+            let mut arm_env = env.clone();
+            if let Some(var_id) = arm.variable_id {
+                let var_local = *next_local_idx;
+                *next_local_idx += 1;
+                out.push(LOCAL_GET);
+                encode_u32_leb128(out, target_payload_ptr_local);
+                out.push(LOCAL_SET);
+                encode_u32_leb128(out, var_local);
+                arm_env.insert(var_id, var_local);
+            }
+            return emit_expression(&arm.body, out, &arm_env, next_local_idx, ctx);
+        }
+
         let arm_tag_ptr = ctx.alloc_static_string(&arm.tag);
         let arm_tag_ptr_local = *next_local_idx;
         *next_local_idx += 1;

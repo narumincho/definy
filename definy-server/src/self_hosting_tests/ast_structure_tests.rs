@@ -54,8 +54,20 @@ fn test_self_hosting_parts_registration() {
     // Optimizer part
     let optimize_expr = crate::builtin_optimizer::create_optimize_expression_part(&core_id);
 
-    // Value equals part
+    // Value equals parts
     let val_equals = crate::builtin_value_type::create_value_equals_part(&core_id);
+    let val_equals_record_fields =
+        crate::builtin_value_type::create_value_equals_record_fields_part(&core_id);
+
+    // Record evaluation parts
+    let record_field_lookup = crate::builtin_evaluator::create_record_field_lookup_part(&core_id);
+    let eval_record_fields = crate::builtin_evaluator::create_eval_record_fields_part(&core_id);
+
+    // Record type checking parts
+    let record_field_type_lookup =
+        crate::builtin_type_checker::create_record_field_type_lookup_part(&core_id);
+    let check_record_fields =
+        crate::builtin_type_checker::create_type_check_record_fields_part(&core_id);
 
     // Pattern match evaluation parts
     let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&core_id);
@@ -84,6 +96,8 @@ fn test_self_hosting_parts_registration() {
         type_equals,
         type_equals_record_fields,
         type_equals_union_variants,
+        record_field_type_lookup,
+        check_record_fields,
         type_check,
         type_check_against,
         compile_instr,
@@ -94,6 +108,9 @@ fn test_self_hosting_parts_registration() {
         validate_module,
         optimize_expr,
         val_equals,
+        val_equals_record_fields,
+        record_field_lookup,
+        eval_record_fields,
         eval_match_arms,
         eval_match_arms_inner,
         list_map,
@@ -167,6 +184,8 @@ fn test_phase1_evaluator_ast_structure() {
         "function",
         "call",
         "let",
+        "record",
+        "record_get",
         "not",
         "and",
         "or",
@@ -224,6 +243,8 @@ fn test_phase2_type_checker_ast_structure() {
         "variable",
         "if",
         "let",
+        "record",
+        "record_get",
         "not",
         "and",
         "or",
@@ -509,6 +530,7 @@ fn test_value_equals_ast_structure() {
                     assert!(tags.contains("boolean"));
                     assert!(tags.contains("unit"));
                     assert!(tags.contains("variant"));
+                    assert!(tags.contains("record"));
                     assert!(tags.contains("_"));
                 }
                 other => panic!("Expected Match, got {:?}", other),

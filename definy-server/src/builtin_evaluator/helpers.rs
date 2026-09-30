@@ -72,3 +72,12 @@ pub fn val_unit() -> Expression {
         payload: None,
     })
 }
+
+/// レコード動的値 `Value::Record` を生成する式です。
+pub fn val_record(fields: Expression) -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "record".into(),
+        payload: Some(Box::new(fields)),
+    })
+}
