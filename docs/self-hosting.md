@@ -42,6 +42,12 @@ definy
   - 完全 WebAssembly バイナリ生成器 `core.compile-to-wasm`:
     `expression -> list<number>`
   - definy の Wasm VM による即時実行・検証を実証完了
+- [x] **Phase 4: 自己記述フォーマッター・メタ循環評価 (Self-Hosted Formatter &
+      Meta-Circular Execution)**
+  - 自己記述コード整形器 `core.expression-to-source`: `expression -> string`
+  - 構文拡張: `let`, `not`, `and`, `or` の完全自己評価 (`core.eval-value`) &
+    型検査 (`core.type-check`)
+  - definy 式で definy 自身を実行・検証するメタ循環テストの自動化実証完了
 
 ---
 
@@ -160,6 +166,46 @@ compile-to-wasm: expression -> list<number>
 
 生成されたバイト列は、definy の Wasm VM およびブラウザの
 `WebAssembly.instantiate` で即座にロード・実行できます。
+
+---
+
+### Phase 4: 自己記述フォーマッターとメタ循環評価
+
+#### 1. 式 AST コード整形器: `core.expression-to-source`
+
+```definy
+expression-to-source: expression -> string
+```
+
+definy の式
+AST（`core.expression`）を受け取り、対応するソースコード文字列（`string`）を再帰的に組み立てて出力する純粋な
+definy パーツ。
+
+- `number`: `"<number>"`
+- `string`: 文字列リテラルそのもの
+- `boolean`: `"true"` または `"false"`
+- `add`, `subtract`, `multiply`, `divide`, `remainder`:
+  括弧と二項演算子記号付き文字列（例: `"((a + b) * c)"`）
+- `equal`, `less_than`: 比較式文字列（例: `"(a < b)"`）
+- `and`, `or`: 論理結合文字列（例: `"(a && b)"`）
+- `not`: 単項否定文字列（例: `"!a"`）
+- `if`: `"if (cond) then then_expr else else_expr"`
+- `call`: `"fn(arg)"`
+- `variable`: 変数参照文字列
+
+#### 2. メタ循環評価 (Meta-Circular Evaluation) 実証
+
+definy 式として記述された評価器・フォーマッターパーツは、definy の WebAssembly
+実行基盤（`definy-core`）上で直接実行・検証されています。
+
+- `test_self_hosted_meta_circular_eval_ast_execution`: `core.eval-ast`
+  パーツに多項式 AST `(100 - (10 * 3)) + (50 / 2)` を与えて実行し、自己評価結果
+  `95` を実証。
+- `test_self_hosted_expression_to_source_execution`: `core.expression-to-source`
+  パーツに `10 + 20` の AST を与えて実行し、自己整形結果
+  `"((<number> + <number>))"` を実証。
+- `test_self_hosting_phase3_compiled_wasm_execution`: 自己ホスト Wasm
+  コンパイラのバイト列生成仕様に基づき、Wasm VM での計算実行（`50`）を実証。
 
 ---
 

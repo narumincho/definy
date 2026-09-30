@@ -223,6 +223,61 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
                         }],
                     }))),
                 },
+                TypeUnionVariant {
+                    tag: "if".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "condition".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "then_expr".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "else_expr".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                        ],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "let".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "variable_id".into(),
+                                value: Box::new(Expression::TypeNumber),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "value".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "body".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                        ],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "not".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "value".into(),
+                            value: Box::new(expr_ref.clone()),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "and".into(),
+                    payload_type: Some(Box::new(binary_op_payload("left", "right"))),
+                },
+                TypeUnionVariant {
+                    tag: "or".into(),
+                    payload_type: Some(Box::new(binary_op_payload("left", "right"))),
+                },
             ],
         })),
     }

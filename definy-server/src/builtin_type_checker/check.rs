@@ -14,6 +14,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_check_hash = derive_module_part_id(core_module_id, "type-check");
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
     let type_env_lookup_hash = derive_module_part_id(core_module_id, "type-env-lookup");
+    let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
 
     fn ok_type(t: Expression) -> Expression {
         Expression::Variant(VariantExpression {
@@ -560,6 +561,280 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
             variable_id: Some(if_var_id),
             variable_name: Some("if_e".into()),
             body: Box::new(cond_match),
+        });
+    }
+
+    let binary_bool_op = |tag: &'static str, check_hash: &EventHashId, var_id: i64| {
+        let left_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_id,
+            })),
+            key: "left".into(),
+        });
+        let right_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_id,
+            })),
+            key: "right".into(),
+        });
+
+        let check_l = check_sub(
+            check_hash,
+            left_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let check_r = check_sub(
+            check_hash,
+            right_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+
+        let r_ok_var = 41;
+        let l_ok_var = 40;
+
+        let check_r_match = Expression::Match(MatchExpression {
+            target: Box::new(check_r),
+            arms: vec![
+                MatchArm {
+                    tag: "ok".into(),
+                    variable_id: Some(r_ok_var),
+                    variable_name: Some("r_ok".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Call(CallExpression {
+                            function: Box::new(Expression::Call(CallExpression {
+                                function: Box::new(Expression::PartReference(
+                                    PartReferenceExpression::new(type_equals_hash.clone()),
+                                )),
+                                argument: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: r_ok_var,
+                                })),
+                            })),
+                            argument: Box::new(type_bool()),
+                        })),
+                        then_expr: Box::new(ok_type(type_bool())),
+                        else_expr: Box::new(err_mismatch(
+                            type_bool(),
+                            Expression::Variable(VariableExpression {
+                                variable_id: r_ok_var,
+                            }),
+                        )),
+                    })),
+                },
+                MatchArm {
+                    tag: "error".into(),
+                    variable_id: Some(42),
+                    variable_name: Some("err".into()),
+                    body: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "error".into(),
+                        payload: Some(Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 42,
+                        }))),
+                    })),
+                },
+            ],
+            default: None,
+        });
+
+        let check_l_match = Expression::Match(MatchExpression {
+            target: Box::new(check_l),
+            arms: vec![
+                MatchArm {
+                    tag: "ok".into(),
+                    variable_id: Some(l_ok_var),
+                    variable_name: Some("l_ok".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Call(CallExpression {
+                            function: Box::new(Expression::Call(CallExpression {
+                                function: Box::new(Expression::PartReference(
+                                    PartReferenceExpression::new(type_equals_hash.clone()),
+                                )),
+                                argument: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: l_ok_var,
+                                })),
+                            })),
+                            argument: Box::new(type_bool()),
+                        })),
+                        then_expr: Box::new(check_r_match),
+                        else_expr: Box::new(err_mismatch(
+                            type_bool(),
+                            Expression::Variable(VariableExpression {
+                                variable_id: l_ok_var,
+                            }),
+                        )),
+                    })),
+                },
+                MatchArm {
+                    tag: "error".into(),
+                    variable_id: Some(43),
+                    variable_name: Some("err".into()),
+                    body: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "error".into(),
+                        payload: Some(Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 43,
+                        }))),
+                    })),
+                },
+            ],
+            default: None,
+        });
+
+        MatchArm {
+            tag: tag.into(),
+            variable_id: Some(var_id),
+            variable_name: Some("bin".into()),
+            body: Box::new(check_l_match),
+        }
+    };
+
+    // Logical and & or
+    arms.push(binary_bool_op("and", &type_check_hash, 44));
+    arms.push(binary_bool_op("or", &type_check_hash, 45));
+
+    // Logical not: not({ value })
+    {
+        let not_var_id = 46;
+        let val_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: not_var_id,
+            })),
+            key: "value".into(),
+        });
+        let check_v = check_sub(
+            &type_check_hash,
+            val_sub,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let v_ok_var = 47;
+        let not_match = Expression::Match(MatchExpression {
+            target: Box::new(check_v),
+            arms: vec![
+                MatchArm {
+                    tag: "ok".into(),
+                    variable_id: Some(v_ok_var),
+                    variable_name: Some("v_ok".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Call(CallExpression {
+                            function: Box::new(Expression::Call(CallExpression {
+                                function: Box::new(Expression::PartReference(
+                                    PartReferenceExpression::new(type_equals_hash.clone()),
+                                )),
+                                argument: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: v_ok_var,
+                                })),
+                            })),
+                            argument: Box::new(type_bool()),
+                        })),
+                        then_expr: Box::new(ok_type(type_bool())),
+                        else_expr: Box::new(err_mismatch(
+                            type_bool(),
+                            Expression::Variable(VariableExpression {
+                                variable_id: v_ok_var,
+                            }),
+                        )),
+                    })),
+                },
+                MatchArm {
+                    tag: "error".into(),
+                    variable_id: Some(48),
+                    variable_name: Some("err".into()),
+                    body: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "error".into(),
+                        payload: Some(Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 48,
+                        }))),
+                    })),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "not".into(),
+            variable_id: Some(not_var_id),
+            variable_name: Some("not_e".into()),
+            body: Box::new(not_match),
+        });
+    }
+
+    // Let binding: let({ variable_id, value, body })
+    {
+        let let_var_id = 49;
+        let var_id_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "variable_id".into(),
+        });
+        let val_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "value".into(),
+        });
+        let body_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "body".into(),
+        });
+
+        let check_val = check_sub(
+            &type_check_hash,
+            val_sub,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let val_ok_var = 50;
+
+        let extended_env = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::Call(CallExpression {
+                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                        type_env_extend_hash.clone(),
+                    ))),
+                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                })),
+                argument: Box::new(var_id_sub),
+            })),
+            argument: Box::new(Expression::Variable(VariableExpression {
+                variable_id: val_ok_var,
+            })),
+        });
+
+        let check_body = check_sub(&type_check_hash, body_sub, extended_env);
+
+        let let_match = Expression::Match(MatchExpression {
+            target: Box::new(check_val),
+            arms: vec![
+                MatchArm {
+                    tag: "ok".into(),
+                    variable_id: Some(val_ok_var),
+                    variable_name: Some("v_t".into()),
+                    body: Box::new(check_body),
+                },
+                MatchArm {
+                    tag: "error".into(),
+                    variable_id: Some(51),
+                    variable_name: Some("err".into()),
+                    body: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "error".into(),
+                        payload: Some(Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 51,
+                        }))),
+                    })),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "let".into(),
+            variable_id: Some(let_var_id),
+            variable_name: Some("let_e".into()),
+            body: Box::new(let_match),
         });
     }
 

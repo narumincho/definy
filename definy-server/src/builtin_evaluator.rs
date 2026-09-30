@@ -1,10 +1,10 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, DivideExpression, EqualExpression, Expression,
-    FunctionExpression, IfExpression, LessThanExpression, MatchArm, MatchExpression,
-    ModulePartEntry, MultiplyExpression, PartReferenceExpression, PartType, RecordGetExpression,
-    RemainderExpression, SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    VariableExpression, VariantExpression, derive_module_part_id,
+    AddExpression, BooleanExpression, CallExpression, Description, DivideExpression,
+    EqualExpression, Expression, FunctionExpression, IfExpression, LessThanExpression, MatchArm,
+    MatchExpression, ModulePartEntry, MultiplyExpression, PartReferenceExpression, PartType,
+    RecordGetExpression, RemainderExpression, SubtractExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, VariableExpression, VariantExpression, derive_module_part_id,
 };
 
 /// 汎用自己評価器 `core.eval-value`: `expression -> env -> value`
@@ -509,6 +509,229 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
             variable_id: Some(call_var_id),
             variable_name: Some("call_e".into()),
             body: Box::new(call_body),
+        });
+    }
+
+    // 11. Let binding: let({ variable_id, value, body })
+    {
+        let let_var_id = 26;
+        let var_id_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "variable_id".into(),
+        });
+        let val_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "value".into(),
+        });
+        let body_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "body".into(),
+        });
+
+        let eval_val = eval_sub(
+            &eval_value_hash,
+            val_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+
+        let extended_env = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::Call(CallExpression {
+                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                        env_extend_hash.clone(),
+                    ))),
+                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                })),
+                argument: Box::new(var_id_expr),
+            })),
+            argument: Box::new(eval_val),
+        });
+
+        let let_eval_body = eval_sub(&eval_value_hash, body_expr, extended_env);
+
+        arms.push(MatchArm {
+            tag: "let".into(),
+            variable_id: Some(let_var_id),
+            variable_name: Some("let_e".into()),
+            body: Box::new(let_eval_body),
+        });
+    }
+
+    // 12. Logical not: not({ value })
+    {
+        let not_var_id = 27;
+        let val_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: not_var_id,
+            })),
+            key: "value".into(),
+        });
+        let eval_v = eval_sub(
+            &eval_value_hash,
+            val_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let b_id = 28;
+        let not_body = Expression::Match(MatchExpression {
+            target: Box::new(eval_v),
+            arms: vec![
+                MatchArm {
+                    tag: "boolean".into(),
+                    variable_id: Some(b_id),
+                    variable_name: Some("b".into()),
+                    body: Box::new(val_bool(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: b_id,
+                        })),
+                        then_expr: Box::new(Expression::Boolean(BooleanExpression {
+                            value: false,
+                        })),
+                        else_expr: Box::new(Expression::Boolean(BooleanExpression { value: true })),
+                    }))),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(94),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "not".into(),
+            variable_id: Some(not_var_id),
+            variable_name: Some("not_e".into()),
+            body: Box::new(not_body),
+        });
+    }
+
+    // 13. Logical and: and({ left, right })
+    {
+        let and_var_id = 29;
+        let left_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: and_var_id,
+            })),
+            key: "left".into(),
+        });
+        let right_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: and_var_id,
+            })),
+            key: "right".into(),
+        });
+        let eval_l = eval_sub(
+            &eval_value_hash,
+            left_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let eval_r = eval_sub(
+            &eval_value_hash,
+            right_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let b_id = 30;
+        let and_body = Expression::Match(MatchExpression {
+            target: Box::new(eval_l),
+            arms: vec![
+                MatchArm {
+                    tag: "boolean".into(),
+                    variable_id: Some(b_id),
+                    variable_name: Some("b".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: b_id,
+                        })),
+                        then_expr: Box::new(eval_r),
+                        else_expr: Box::new(val_bool(Expression::Boolean(BooleanExpression {
+                            value: false,
+                        }))),
+                    })),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(93),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "and".into(),
+            variable_id: Some(and_var_id),
+            variable_name: Some("and_e".into()),
+            body: Box::new(and_body),
+        });
+    }
+
+    // 14. Logical or: or({ left, right })
+    {
+        let or_var_id = 31;
+        let left_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: or_var_id,
+            })),
+            key: "left".into(),
+        });
+        let right_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: or_var_id,
+            })),
+            key: "right".into(),
+        });
+        let eval_l = eval_sub(
+            &eval_value_hash,
+            left_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let eval_r = eval_sub(
+            &eval_value_hash,
+            right_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let b_id = 32;
+        let or_body = Expression::Match(MatchExpression {
+            target: Box::new(eval_l),
+            arms: vec![
+                MatchArm {
+                    tag: "boolean".into(),
+                    variable_id: Some(b_id),
+                    variable_name: Some("b".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: b_id,
+                        })),
+                        then_expr: Box::new(val_bool(Expression::Boolean(BooleanExpression {
+                            value: true,
+                        }))),
+                        else_expr: Box::new(eval_r),
+                    })),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(92),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "or".into(),
+            variable_id: Some(or_var_id),
+            variable_name: Some("or_e".into()),
+            body: Box::new(or_body),
         });
     }
 

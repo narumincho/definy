@@ -37,6 +37,9 @@ mod tests {
             crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&core_id);
         let compile_to_wasm = crate::builtin_wasm_compiler::create_compile_to_wasm_part(&core_id);
 
+        // Formatter part
+        let expr_to_source = crate::builtin_formatter::create_expression_to_source_part(&core_id);
+
         let all_parts = vec![
             val_part,
             env_part,
@@ -54,6 +57,7 @@ mod tests {
             type_check,
             compile_instr,
             compile_to_wasm,
+            expr_to_source,
         ];
 
         let mut names = HashSet::new();
@@ -104,7 +108,7 @@ mod tests {
 
         let arm_tags: HashSet<String> = match_arms.into_iter().map(|a| a.tag.to_string()).collect();
 
-        // Must cover literals, arithmetics, comparisons, branching, and functions
+        // Must cover literals, arithmetics, comparisons, branching, functions, and logic
         let expected_tags = [
             "number",
             "string",
@@ -120,6 +124,10 @@ mod tests {
             "if",
             "function",
             "call",
+            "let",
+            "not",
+            "and",
+            "or",
             "_",
         ];
 
@@ -173,6 +181,10 @@ mod tests {
             "less_than",
             "variable",
             "if",
+            "let",
+            "not",
+            "and",
+            "or",
             "_",
         ];
 
@@ -310,5 +322,164 @@ mod tests {
         }
 
         assert_eq!(section_ids, vec![1, 3, 7, 10]);
+    }
+
+    #[test]
+    fn test_formatter_ast_structure() {
+        let core_id = get_dummy_core_id();
+        let formatter_part = crate::builtin_formatter::create_expression_to_source_part(&core_id);
+        let expr = formatter_part
+            .expression
+            .expect("expression-to-source must have expression");
+
+        let match_arms = match expr {
+            Expression::Function(f) => match *f.body {
+                Expression::Match(m) => m.arms,
+                other => panic!("Expected Match in formatter body, got: {:?}", other),
+            },
+            other => panic!("Expected Function, got: {:?}", other),
+        };
+
+        let arm_tags: HashSet<String> = match_arms.into_iter().map(|a| a.tag.to_string()).collect();
+        let expected_tags = [
+            "number",
+            "string",
+            "boolean",
+            "add",
+            "subtract",
+            "multiply",
+            "divide",
+            "remainder",
+            "equal",
+            "less_than",
+            "and",
+            "or",
+            "not",
+            "variable",
+            "if",
+            "call",
+            "_",
+        ];
+
+        for tag in expected_tags {
+            assert!(
+                arm_tags.contains(tag),
+                "core.expression-to-source arms must contain: '{}'",
+                tag
+            );
+        }
+    }
+
+    #[test]
+    fn test_self_hosted_meta_circular_eval_ast_execution() {
+        use definy_core::expression_eval::Value;
+        use definy_event::event::{
+            AccountId, Description, Event, EventContent, ModuleCommitEvent, derive_module_id,
+        };
+
+        let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
+        let dummy_account = AccountId(dummy_key);
+        let mod_id = derive_module_id(&dummy_account, "core");
+
+        let eval_ast_part = crate::builtin_expression_type::create_eval_ast_part(&mod_id);
+        let sample_calc_part = crate::builtin_expression_type::create_sample_ast_calc_part(&mod_id);
+
+        let eval_event = Event {
+            account_id: dummy_account,
+            time: chrono::DateTime::UNIX_EPOCH,
+            content: EventContent::ModuleCommit(ModuleCommitEvent {
+                module_name: "core".into(),
+                module_description: Description::Plain("".into()),
+                parent_commit_hash: None,
+                message: "Self-hosting test".into(),
+                parts: vec![eval_ast_part],
+            }),
+        };
+
+        let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+        let commit_hash = EventHashId::from_bytes(&[123u8; 32]);
+        let events = vec![(commit_hash, Ok((dummy_sig, eval_event)))];
+
+        let sample_expr = sample_calc_part.expression.expect("sample expr required");
+        let result = definy_core::evaluate_expression(&sample_expr, &events)
+            .expect("Failed to evaluate self-hosted sample calc");
+
+        // Evaluates: (100 - (10 * 3)) + (50 / 2) = 70 + 25 = 95
+        assert_eq!(result, Value::Number(95));
+    }
+
+    #[test]
+    fn test_self_hosted_expression_to_source_execution() {
+        use definy_core::expression_eval::Value;
+        use definy_event::event::{
+            AccountId, CallExpression, Description, Event, EventContent, ModuleCommitEvent,
+            NumberExpression, PartReferenceExpression, TypeLiteralExpression,
+            TypeLiteralItemExpression, VariantExpression, derive_module_id, derive_module_part_id,
+        };
+
+        let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
+        let dummy_account = AccountId(dummy_key);
+        let mod_id = derive_module_id(&dummy_account, "core");
+
+        let expr_to_source_part =
+            crate::builtin_formatter::create_expression_to_source_part(&mod_id);
+        let to_source_hash = derive_module_part_id(&mod_id, "expression-to-source");
+        let expr_type_hash = derive_module_part_id(&mod_id, "expression");
+
+        let commit_event = Event {
+            account_id: dummy_account,
+            time: chrono::DateTime::UNIX_EPOCH,
+            content: EventContent::ModuleCommit(ModuleCommitEvent {
+                module_name: "core".into(),
+                module_description: Description::Plain("".into()),
+                parent_commit_hash: None,
+                message: "Self-hosting formatter test".into(),
+                parts: vec![expr_to_source_part],
+            }),
+        };
+
+        let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+        let commit_hash = EventHashId::from_bytes(&[124u8; 32]);
+        let events = vec![(commit_hash, Ok((dummy_sig, commit_event)))];
+
+        // Construct AST: add(number(10), number(20))
+        let ast_num = |val: i64| {
+            Expression::Variant(VariantExpression {
+                tag: "number".into(),
+                payload: Some(Box::new(Expression::Number(NumberExpression {
+                    value: val,
+                }))),
+                type_part_definition_event_hash: Some(expr_type_hash.clone()),
+            })
+        };
+
+        let ast_add = Expression::Variant(VariantExpression {
+            tag: "add".into(),
+            payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "left".into(),
+                        value: Box::new(ast_num(10)),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "right".into(),
+                        value: Box::new(ast_num(20)),
+                    },
+                ],
+            }))),
+            type_part_definition_event_hash: Some(expr_type_hash.clone()),
+        });
+
+        let call_expr = Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                to_source_hash,
+            ))),
+            argument: Box::new(ast_add),
+        });
+
+        let result = definy_core::evaluate_expression(&call_expr, &events)
+            .expect("Failed to evaluate self-hosted expression-to-source");
+
+        assert_eq!(result, Value::String("(<number> + <number>)".into()));
     }
 }
