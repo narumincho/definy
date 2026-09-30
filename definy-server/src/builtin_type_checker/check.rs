@@ -71,6 +71,23 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
         })
     }
 
+    fn err_not_a_function(actual: Expression) -> Expression {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "error".into(),
+            payload: Some(Box::new(Expression::Variant(VariantExpression {
+                type_part_definition_event_hash: None,
+                tag: "not_a_function".into(),
+                payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                    items: vec![TypeLiteralItemExpression {
+                        key: "actual".into(),
+                        value: Box::new(actual),
+                    }],
+                }))),
+            }))),
+        })
+    }
+
     fn check_sub(check_hash: &EventHashId, expr: Expression, env: Expression) -> Expression {
         Expression::Call(CallExpression {
             function: Box::new(Expression::Call(CallExpression {
@@ -360,6 +377,145 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
         variable_name: Some("lt".into()),
         body: Box::new(ok_type(type_bool())),
     });
+
+    // Function application: check the callee, argument, and parameter type.
+    {
+        let call_var_id = 56;
+        let function_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: call_var_id,
+            })),
+            key: "function".into(),
+        });
+        let argument_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: call_var_id,
+            })),
+            key: "argument".into(),
+        });
+        let function_check = check_sub(
+            &type_check_hash,
+            function_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let function_type_var_id = 57;
+        let function_type = Expression::Variable(VariableExpression {
+            variable_id: function_type_var_id,
+        });
+        let parameter_type = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression { variable_id: 58 })),
+            key: "parameter".into(),
+        });
+        let return_type = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression { variable_id: 58 })),
+            key: "return_type".into(),
+        });
+        let argument_check = check_sub(
+            &type_check_hash,
+            argument_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+        let argument_type_var_id = 59;
+        let argument_matches = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    type_equals_hash.clone(),
+                ))),
+                argument: Box::new(parameter_type.clone()),
+            })),
+            argument: Box::new(Expression::Variable(VariableExpression {
+                variable_id: argument_type_var_id,
+            })),
+        });
+        let check_argument_result = Expression::Match(MatchExpression {
+            target: Box::new(argument_check),
+            arms: vec![
+                MatchArm {
+                    tag: "ok".into(),
+                    variable_id: Some(argument_type_var_id),
+                    variable_name: Some("argument_type".into()),
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(argument_matches),
+                        then_expr: Box::new(ok_type(return_type)),
+                        else_expr: Box::new(err_mismatch(
+                            parameter_type,
+                            Expression::Variable(VariableExpression {
+                                variable_id: argument_type_var_id,
+                            }),
+                        )),
+                    })),
+                },
+                MatchArm {
+                    tag: "error".into(),
+                    variable_id: Some(60),
+                    variable_name: Some("argument_error".into()),
+                    body: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "error".into(),
+                        payload: Some(Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 60,
+                        }))),
+                    })),
+                },
+            ],
+            default: Some(Box::new(Expression::Variant(VariantExpression {
+                type_part_definition_event_hash: None,
+                tag: "error".into(),
+                payload: Some(Box::new(Expression::Variant(VariantExpression {
+                    type_part_definition_event_hash: None,
+                    tag: "unknown_error".into(),
+                    payload: None,
+                }))),
+            }))),
+        });
+        let function_type_match = Expression::Match(MatchExpression {
+            target: Box::new(function_type.clone()),
+            arms: vec![MatchArm {
+                tag: "function".into(),
+                variable_id: Some(58),
+                variable_name: Some("function_type".into()),
+                body: Box::new(check_argument_result),
+            }],
+            default: Some(Box::new(err_not_a_function(function_type))),
+        });
+        arms.push(MatchArm {
+            tag: "call".into(),
+            variable_id: Some(call_var_id),
+            variable_name: Some("call_expr".into()),
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(function_check),
+                arms: vec![
+                    MatchArm {
+                        tag: "ok".into(),
+                        variable_id: Some(function_type_var_id),
+                        variable_name: Some("function_type".into()),
+                        body: Box::new(function_type_match),
+                    },
+                    MatchArm {
+                        tag: "error".into(),
+                        variable_id: Some(61),
+                        variable_name: Some("function_error".into()),
+                        body: Box::new(Expression::Variant(VariantExpression {
+                            type_part_definition_event_hash: None,
+                            tag: "error".into(),
+                            payload: Some(Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 61,
+                            }))),
+                        })),
+                    },
+                ],
+                default: Some(Box::new(Expression::Variant(VariantExpression {
+                    type_part_definition_event_hash: None,
+                    tag: "error".into(),
+                    payload: Some(Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "unknown_error".into(),
+                        payload: None,
+                    }))),
+                }))),
+            })),
+        });
+    }
 
     // 5. Variable lookup
     {

@@ -23,6 +23,27 @@ definy
 4. **自己ホスト WebAssembly 生成**: definy 式から WebAssembly
    バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザ実行可能。
 
+### 実サービスとの接続状況
+
+セルフホスト部品の実行テストは、Definy AST で記述した関数を Rust の `definy-core`
+実行基盤上で動かす検証です。Definy サービス全体のブートストラップが完了したことを意味しません。
+
+- `core.type-check` は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、型環境上の関数適用を扱います。
+  宣言型を与える `core.type-check-against` は関数引数を型環境へ束縛して関数本体を検査します。
+  lambda 単独では引数型を推論せず、期待関数型が必要です。リスト・レコード式やパーツ参照の検査は未対応です。
+  `core.type-equals` は基本型・リスト型・関数型・record 型を再帰比較します。
+  union 型も variant の順序と optional payload 型を含めて比較し、reference 型は part hash で比較します。
+  record/union は定義順を含めて比較します。
+- Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition` 値へ変換し、
+  `core.validate-module` で検証してから保存します。式や型の変換に失敗した場合、または
+  型チェッカーが拒否した場合は `400` を返します。
+- 現段階ではリスト・レコード・直和型・関数・他パーツ参照などを網羅的に型検査できません。
+  型チェッカーの入力表現や環境が未対応のため、これらを含む有効なモジュールも fail-closed
+  で拒否される場合があります。
+
+実サービスで一般的なモジュールを受け入れるには、残る型 AST の構造比較を実装し、式 AST と
+パーツ参照を解決するモジュール型環境を型チェッカーへ渡す必要があります。
+
 ### セルフホスティング全体アーキテクチャ
 
 ```mermaid
@@ -201,6 +222,7 @@ eval-value: expression -> env -> value
 
 - `core.type-env`: `list<{ variable_id: number, var_type: type-ast }>`
 - 静的スコープにおける変数の型を追跡。
+- `core.type-env-extend` は関数引数や `let` 変数の束縛に使われます。
 
 #### 3. 型等価性判定: `core.type-equals`
 
@@ -218,6 +240,17 @@ type-check: expression -> type-env -> type-result
 
 definy の式 AST
 を静的に走査し、型安全性を検証して最終的な型または詳細な型エラーを返却。
+
+#### 5. 期待型に対する検査: `core.type-check-against`
+
+```definy
+type-check-against: expression -> type-env -> type-ast -> type-result
+```
+
+式・型環境に加えて期待型を受け取る bidirectional checker です。`function` 式では期待型の
+parameter を環境へ束縛して body を return type に照らして検査します。`call` 式は環境から
+関数型を得て、引数型と parameter の一致を確認してから return type を返します。
+引数型注釈を持たない lambda の型は、宣言された期待関数型から決めます。
 
 ---
 
@@ -310,12 +343,11 @@ definy 式として記述された評価器・フォーマッターパーツは�
 validate-part: part-definition -> boolean
 ```
 
-definy
-のパーツ定義メタデータ（`core.part-definition`）を受け取り、そのパーツの式（`expression`）が自己記述型チェッカー（`core.type-check`）によって推論された型と、パーツの宣言型（`part_type`）が
-`core.type-equals` で一致するかを判定する自己完結バリデータ。
+definy のパーツ定義メタデータ（`core.part-definition`）を受け取り、式（`expression`）を
+宣言型（`part_type`）に照らして `core.type-check-against` で検証する自己完結バリデータ。
 
-- 入力パーツの式を空の型環境（`[]`）で静的型検査
-- 型検査が `ok(inferred_type)` の場合、宣言型との等価性を `type-equals` で判定
+- 入力パーツの式を空の初期型環境（`[]`）と宣言型で検査
+- 関数式は宣言型から引数型を得て、関数本体の変数環境へ束縛
 - 型不一致または型エラーの場合は `false` を返却
 
 ---

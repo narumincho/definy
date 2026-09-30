@@ -31,7 +31,12 @@ fn test_self_hosting_parts_registration() {
         crate::builtin_type_checker::create_type_env_lookup_inner_part(&core_id);
     let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&core_id);
     let type_equals = crate::builtin_type_checker::create_type_equals_part(&core_id);
+    let type_equals_record_fields =
+        crate::builtin_type_checker::create_type_equals_record_fields_part(&core_id);
+    let type_equals_union_variants =
+        crate::builtin_type_checker::create_type_equals_union_variants_part(&core_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&core_id);
+    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&core_id);
 
     // Phase 3 parts
     let compile_instr =
@@ -43,6 +48,7 @@ fn test_self_hosting_parts_registration() {
 
     // Validator parts
     let validate_part = crate::builtin_validator::create_validate_part_part(&core_id);
+    let validate_parts = crate::builtin_validator::create_validate_parts_part(&core_id);
     let validate_module = crate::builtin_validator::create_validate_module_part(&core_id);
 
     // Optimizer part
@@ -76,11 +82,15 @@ fn test_self_hosting_parts_registration() {
         type_env_lookup_inner,
         type_env_extend,
         type_equals,
+        type_equals_record_fields,
+        type_equals_union_variants,
         type_check,
+        type_check_against,
         compile_instr,
         compile_to_wasm,
         expr_to_source,
         validate_part,
+        validate_parts,
         validate_module,
         optimize_expr,
         val_equals,

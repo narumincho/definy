@@ -342,7 +342,14 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_type_checker::create_type_equals_part(
         &core_module_id,
     ));
+    core_parts
+        .push(crate::builtin_type_checker::create_type_equals_record_fields_part(&core_module_id));
+    core_parts
+        .push(crate::builtin_type_checker::create_type_equals_union_variants_part(&core_module_id));
     core_parts.push(crate::builtin_type_checker::create_type_check_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_type_check_against_part(
         &core_module_id,
     ));
     core_parts
@@ -354,6 +361,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         &core_module_id,
     ));
     core_parts.push(crate::builtin_validator::create_validate_part_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_validator::create_validate_parts_part(
         &core_module_id,
     ));
     core_parts.push(crate::builtin_validator::create_validate_module_part(

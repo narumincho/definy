@@ -46,7 +46,7 @@ fn test_self_hosted_expression_to_source_execution() {
     let ast_expr = ast_add(
         ast_num(10, expr_type_opt.clone()),
         ast_num(20, expr_type_opt.clone()),
-        expr_type_opt,
+        expr_type_opt.clone(),
     );
 
     let call_expr = call_part1(to_source_hash, ast_expr);
@@ -124,7 +124,12 @@ fn test_self_hosted_type_checker_execution() {
         crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
     let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
     let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
+    let type_equals_record_fields =
+        crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
+    let type_equals_union_variants =
+        crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
+    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
 
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
@@ -139,7 +144,10 @@ fn test_self_hosted_type_checker_execution() {
             type_env_lookup_inner,
             type_env_extend,
             type_equals,
+            type_equals_record_fields,
+            type_equals_union_variants,
             type_check,
+            type_check_against,
         ],
         126,
     );
@@ -168,6 +176,296 @@ fn test_self_hosted_type_checker_execution() {
             })),
         }
     );
+
+    let type_equals_hash = derive_module_part_id(&mod_id, "type-equals");
+    let number_type = Expression::Variant(VariantExpression {
+        tag: "number".into(),
+        payload: None,
+        type_part_definition_event_hash: None,
+    });
+    let string_type = Expression::Variant(VariantExpression {
+        tag: "string".into(),
+        payload: None,
+        type_part_definition_event_hash: None,
+    });
+    let unequal_types = call_part2(type_equals_hash, number_type.clone(), string_type.clone());
+    let unequal_types_result = definy_core::evaluate_expression(&unequal_types, &events)
+        .expect("Failed to compare distinct primitive type ASTs");
+    assert_eq!(unequal_types_result, Value::Bool(false));
+
+    let type_ast_hash = derive_module_part_id(&mod_id, "type-ast");
+    let make_type = |tag: &str, payload: Option<Expression>| {
+        Expression::Variant(VariantExpression {
+            tag: tag.into(),
+            payload: payload.map(Box::new),
+            type_part_definition_event_hash: Some(type_ast_hash.clone()),
+        })
+    };
+    let make_record = |items: Vec<(&str, Expression)>| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: items
+                .into_iter()
+                .map(|(key, value)| TypeLiteralItemExpression {
+                    key: key.into(),
+                    value: Box::new(value),
+                })
+                .collect(),
+        })
+    };
+    let list_number = make_type(
+        "list",
+        Some(make_record(vec![("item_type", number_type.clone())])),
+    );
+    let list_number_again = make_type(
+        "list",
+        Some(make_record(vec![("item_type", number_type.clone())])),
+    );
+    let list_string = make_type(
+        "list",
+        Some(make_record(vec![("item_type", string_type.clone())])),
+    );
+    let type_equals_hash = derive_module_part_id(&mod_id, "type-equals");
+    let compare_types = |left, right| {
+        definy_core::evaluate_expression(
+            &call_part2(type_equals_hash.clone(), left, right),
+            &events,
+        )
+        .expect("Failed to compare structural type ASTs")
+    };
+    assert_eq!(
+        compare_types(list_number.clone(), list_number_again),
+        Value::Bool(true)
+    );
+    assert_eq!(compare_types(list_number, list_string), Value::Bool(false));
+
+    let function_number_to_string = make_type(
+        "function",
+        Some(make_record(vec![
+            ("parameter", number_type.clone()),
+            ("return_type", string_type.clone()),
+        ])),
+    );
+    let same_function_type = make_type(
+        "function",
+        Some(make_record(vec![
+            ("parameter", number_type.clone()),
+            ("return_type", string_type.clone()),
+        ])),
+    );
+    let different_function_type = make_type(
+        "function",
+        Some(make_record(vec![
+            ("parameter", string_type.clone()),
+            ("return_type", number_type.clone()),
+        ])),
+    );
+    assert_eq!(
+        compare_types(function_number_to_string.clone(), same_function_type),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        compare_types(function_number_to_string, different_function_type),
+        Value::Bool(false)
+    );
+
+    let record_number = make_type(
+        "record",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![make_record(vec![
+                (
+                    "key",
+                    Expression::String(StringExpression {
+                        value: "count".into(),
+                    }),
+                ),
+                ("field_type", number_type.clone()),
+            ])],
+        })),
+    );
+    let same_record_type = make_type(
+        "record",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![make_record(vec![
+                (
+                    "key",
+                    Expression::String(StringExpression {
+                        value: "count".into(),
+                    }),
+                ),
+                ("field_type", number_type.clone()),
+            ])],
+        })),
+    );
+    let record_string = make_type(
+        "record",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![make_record(vec![
+                (
+                    "key",
+                    Expression::String(StringExpression {
+                        value: "count".into(),
+                    }),
+                ),
+                ("field_type", string_type.clone()),
+            ])],
+        })),
+    );
+    assert_eq!(
+        compare_types(record_number.clone(), same_record_type),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        compare_types(record_number, record_string),
+        Value::Bool(false)
+    );
+
+    let count_and_label = make_type(
+        "record",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_record(vec![
+                    (
+                        "key",
+                        Expression::String(StringExpression {
+                            value: "count".into(),
+                        }),
+                    ),
+                    ("field_type", number_type.clone()),
+                ]),
+                make_record(vec![
+                    (
+                        "key",
+                        Expression::String(StringExpression {
+                            value: "label".into(),
+                        }),
+                    ),
+                    ("field_type", string_type.clone()),
+                ]),
+            ],
+        })),
+    );
+    let label_and_count = make_type(
+        "record",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_record(vec![
+                    (
+                        "key",
+                        Expression::String(StringExpression {
+                            value: "label".into(),
+                        }),
+                    ),
+                    ("field_type", string_type.clone()),
+                ]),
+                make_record(vec![
+                    (
+                        "key",
+                        Expression::String(StringExpression {
+                            value: "count".into(),
+                        }),
+                    ),
+                    ("field_type", number_type.clone()),
+                ]),
+            ],
+        })),
+    );
+    assert_eq!(
+        compare_types(count_and_label, label_and_count),
+        Value::Bool(false)
+    );
+
+    let reference_a = make_type(
+        "reference",
+        Some(make_record(vec![(
+            "part_hash",
+            Expression::String(StringExpression {
+                value: "part-a".into(),
+            }),
+        )])),
+    );
+    let same_reference = make_type(
+        "reference",
+        Some(make_record(vec![(
+            "part_hash",
+            Expression::String(StringExpression {
+                value: "part-a".into(),
+            }),
+        )])),
+    );
+    let different_reference = make_type(
+        "reference",
+        Some(make_record(vec![(
+            "part_hash",
+            Expression::String(StringExpression {
+                value: "part-b".into(),
+            }),
+        )])),
+    );
+    assert_eq!(
+        compare_types(reference_a.clone(), same_reference),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        compare_types(reference_a, different_reference),
+        Value::Bool(false)
+    );
+
+    let make_optional_type = |payload: Option<Expression>| match payload {
+        Some(payload) => Expression::Variant(VariantExpression {
+            tag: "some".into(),
+            payload: Some(Box::new(payload)),
+            type_part_definition_event_hash: None,
+        }),
+        None => Expression::Variant(VariantExpression {
+            tag: "none".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        }),
+    };
+    let make_union_variant = |tag: &str, payload_type: Option<Expression>| {
+        make_record(vec![
+            (
+                "tag",
+                Expression::String(StringExpression { value: tag.into() }),
+            ),
+            ("payload_type", make_optional_type(payload_type)),
+        ])
+    };
+    let union_number = make_type(
+        "union",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_union_variant("none", None),
+                make_union_variant("some", Some(number_type.clone())),
+            ],
+        })),
+    );
+    let same_union_type = make_type(
+        "union",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_union_variant("none", None),
+                make_union_variant("some", Some(number_type.clone())),
+            ],
+        })),
+    );
+    let union_string = make_type(
+        "union",
+        Some(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_union_variant("none", None),
+                make_union_variant("some", Some(string_type)),
+            ],
+        })),
+    );
+    assert_eq!(
+        compare_types(union_number.clone(), same_union_type),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        compare_types(union_number, union_string),
+        Value::Bool(false)
+    );
 }
 
 #[test]
@@ -182,7 +480,12 @@ fn test_self_hosted_validate_part_execution() {
         crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
     let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
     let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
+    let type_equals_record_fields =
+        crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
+    let type_equals_union_variants =
+        crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
+    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
     let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
 
     let validate_part_hash = derive_module_part_id(&mod_id, "validate-part");
@@ -198,7 +501,10 @@ fn test_self_hosted_validate_part_execution() {
             type_env_lookup_inner,
             type_env_extend,
             type_equals,
+            type_equals_record_fields,
+            type_equals_union_variants,
             type_check,
+            type_check_against,
             validate_part,
         ],
         127,
@@ -208,7 +514,7 @@ fn test_self_hosted_validate_part_execution() {
     let sample_expr = ast_add(
         ast_num(10, expr_type_opt.clone()),
         ast_num(20, expr_type_opt.clone()),
-        expr_type_opt,
+        expr_type_opt.clone(),
     );
 
     // Construct valid part definition:
@@ -242,12 +548,200 @@ fn test_self_hosted_validate_part_execution() {
         ],
     });
 
-    let call_validate = call_part1(validate_part_hash, valid_part_def);
+    let call_validate = call_part1(validate_part_hash.clone(), valid_part_def);
 
     let result = definy_core::evaluate_expression(&call_validate, &events)
         .expect("Failed to validate part using core.validate-part");
 
     assert_eq!(result, Value::Bool(true));
+
+    let make_type_record = |items: Vec<(&str, Expression)>| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: items
+                .into_iter()
+                .map(|(key, value)| TypeLiteralItemExpression {
+                    key: key.into(),
+                    value: Box::new(value),
+                })
+                .collect(),
+        })
+    };
+    let number_type = Expression::Variant(VariantExpression {
+        tag: "number".into(),
+        payload: None,
+        type_part_definition_event_hash: None,
+    });
+    let function_type = Expression::Variant(VariantExpression {
+        tag: "function".into(),
+        payload: Some(Box::new(make_type_record(vec![
+            ("parameter", number_type.clone()),
+            ("return_type", number_type),
+        ]))),
+        type_part_definition_event_hash: None,
+    });
+    let function_expression = Expression::Variant(VariantExpression {
+        tag: "function".into(),
+        payload: Some(Box::new(make_type_record(vec![
+            (
+                "parameter_variable_id",
+                Expression::Number(definy_event::event::NumberExpression { value: 7 }),
+            ),
+            (
+                "body",
+                Expression::Variant(VariantExpression {
+                    tag: "variable".into(),
+                    payload: Some(Box::new(make_type_record(vec![(
+                        "variable_id",
+                        Expression::Number(definy_event::event::NumberExpression { value: 7 }),
+                    )]))),
+                    type_part_definition_event_hash: expr_type_opt.clone(),
+                }),
+            ),
+        ]))),
+        type_part_definition_event_hash: expr_type_opt.clone(),
+    });
+    let function_part_def = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "identity".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "identity function".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(function_type),
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(function_expression),
+            },
+        ],
+    });
+    let validate_function_call = call_part1(validate_part_hash.clone(), function_part_def);
+    let function_result = definy_core::evaluate_expression(&validate_function_call, &events)
+        .expect("Failed to validate declared identity function");
+    assert_eq!(function_result, Value::Bool(true));
+
+    let function_type_ast = |parameter: Expression, return_type: Expression| {
+        Expression::Variant(VariantExpression {
+            tag: "function".into(),
+            payload: Some(Box::new(make_type_record(vec![
+                ("parameter", parameter),
+                ("return_type", return_type),
+            ]))),
+            type_part_definition_event_hash: None,
+        })
+    };
+    let number_type_ast = || {
+        Expression::Variant(VariantExpression {
+            tag: "number".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        })
+    };
+    let string_type_ast = || {
+        Expression::Variant(VariantExpression {
+            tag: "string".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        })
+    };
+    let number_to_number = function_type_ast(number_type_ast(), number_type_ast());
+    let string_to_number = function_type_ast(string_type_ast(), number_type_ast());
+    let higher_order_type = function_type_ast(
+        number_to_number.clone(),
+        function_type_ast(number_type_ast(), number_type_ast()),
+    );
+    let invalid_higher_order_type = function_type_ast(
+        string_to_number,
+        function_type_ast(number_type_ast(), number_type_ast()),
+    );
+    let variable_ast = |variable_id| {
+        Expression::Variant(VariantExpression {
+            tag: "variable".into(),
+            payload: Some(Box::new(make_type_record(vec![(
+                "variable_id",
+                Expression::Number(definy_event::event::NumberExpression { value: variable_id }),
+            )]))),
+            type_part_definition_event_hash: expr_type_opt.clone(),
+        })
+    };
+    let call_ast = Expression::Variant(VariantExpression {
+        tag: "call".into(),
+        payload: Some(Box::new(make_type_record(vec![
+            ("function", variable_ast(1)),
+            ("argument", variable_ast(2)),
+        ]))),
+        type_part_definition_event_hash: expr_type_opt.clone(),
+    });
+    let inner_function_ast = Expression::Variant(VariantExpression {
+        tag: "function".into(),
+        payload: Some(Box::new(make_type_record(vec![
+            (
+                "parameter_variable_id",
+                Expression::Number(definy_event::event::NumberExpression { value: 2 }),
+            ),
+            ("body", call_ast),
+        ]))),
+        type_part_definition_event_hash: expr_type_opt.clone(),
+    });
+    let higher_order_expression = Expression::Variant(VariantExpression {
+        tag: "function".into(),
+        payload: Some(Box::new(make_type_record(vec![
+            (
+                "parameter_variable_id",
+                Expression::Number(definy_event::event::NumberExpression { value: 1 }),
+            ),
+            ("body", inner_function_ast),
+        ]))),
+        type_part_definition_event_hash: expr_type_opt.clone(),
+    });
+    let make_part_definition = |name: &str, part_type: Expression| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "name".into(),
+                    value: Box::new(Expression::String(StringExpression { value: name.into() })),
+                },
+                TypeLiteralItemExpression {
+                    key: "description".into(),
+                    value: Box::new(Expression::String(StringExpression {
+                        value: "higher order call test".into(),
+                    })),
+                },
+                TypeLiteralItemExpression {
+                    key: "part_type".into(),
+                    value: Box::new(part_type),
+                },
+                TypeLiteralItemExpression {
+                    key: "expression".into(),
+                    value: Box::new(higher_order_expression.clone()),
+                },
+            ],
+        })
+    };
+    let higher_order_call = call_part1(
+        validate_part_hash.clone(),
+        make_part_definition("apply", higher_order_type),
+    );
+    let higher_order_result = definy_core::evaluate_expression(&higher_order_call, &events)
+        .expect("Failed to type-check a higher-order function call");
+    assert_eq!(higher_order_result, Value::Bool(true));
+
+    let wrong_argument_type = call_part1(
+        validate_part_hash,
+        make_part_definition("invalid-apply", invalid_higher_order_type),
+    );
+    let wrong_argument_result = definy_core::evaluate_expression(&wrong_argument_type, &events)
+        .expect("Failed to reject a higher-order call with mismatched argument type");
+    assert_eq!(wrong_argument_result, Value::Bool(false));
 }
 
 #[test]
@@ -363,8 +857,14 @@ fn test_self_hosted_validate_module_execution() {
         crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
     let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
     let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
+    let type_equals_record_fields =
+        crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
+    let type_equals_union_variants =
+        crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
+    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
     let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
+    let validate_parts = crate::builtin_validator::create_validate_parts_part(&mod_id);
     let validate_module = crate::builtin_validator::create_validate_module_part(&mod_id);
 
     let validate_module_hash = derive_module_part_id(&mod_id, "validate-module");
@@ -380,8 +880,12 @@ fn test_self_hosted_validate_module_execution() {
             type_env_lookup_inner,
             type_env_extend,
             type_equals,
+            type_equals_record_fields,
+            type_equals_union_variants,
             type_check,
+            type_check_against,
             validate_part,
+            validate_parts,
             validate_module,
         ],
         130,
@@ -439,7 +943,7 @@ fn test_self_hosted_validate_module_execution() {
             TypeLiteralItemExpression {
                 key: "parts".into(),
                 value: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                    items: vec![valid_part_def],
+                    items: vec![valid_part_def.clone()],
                 })),
             },
         ],
@@ -473,11 +977,69 @@ fn test_self_hosted_validate_module_execution() {
         ],
     });
 
-    let call_invalid = call_part1(validate_module_hash, invalid_mod);
+    let call_invalid = call_part1(validate_module_hash.clone(), invalid_mod);
 
     let invalid_result = definy_core::evaluate_expression(&call_invalid, &events)
         .expect("Failed to evaluate validate-module on invalid module");
     assert_eq!(invalid_result, Value::Bool(false));
+
+    let invalid_second_part = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "invalid_fn".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "invalid function".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(Expression::Variant(VariantExpression {
+                    tag: "number".into(),
+                    payload: None,
+                    type_part_definition_event_hash: None,
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(Expression::Boolean(
+                    definy_event::event::BooleanExpression { value: true },
+                )),
+            },
+        ],
+    });
+    let invalid_second_part_mod = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "math".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "math module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![valid_part_def, invalid_second_part],
+                })),
+            },
+        ],
+    });
+    let call_invalid_second_part = call_part1(validate_module_hash, invalid_second_part_mod);
+    let invalid_second_part_result =
+        definy_core::evaluate_expression(&call_invalid_second_part, &events)
+            .expect("Failed to evaluate validate-module with an invalid second part");
+    assert_eq!(invalid_second_part_result, Value::Bool(false));
 }
 
 #[test]

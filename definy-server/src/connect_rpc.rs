@@ -276,21 +276,20 @@ pub async fn handle_submit_event(
 
     // Check if event is a ModuleCommit
     if let definy_event::event::EventContent::ModuleCommit(module_commit) = &data.content {
-        // Automatically save any embedded expressions to CAS
-        for part in &module_commit.parts {
-            if let Some(ref expr) = part.expression
-                && let Ok(ch) = definy_event::ContentHash::from_expression(expr)
-                && let Ok(bytes) = serde_cbor::to_vec(expr)
-            {
-                let _ = crate::db::save_content(&db, &ch.to_string(), &bytes).await;
-            }
-        }
+        let embedded_content_hashes: std::collections::HashSet<String> = module_commit
+            .parts
+            .iter()
+            .filter_map(|part| part.expression.as_ref())
+            .filter_map(|expr| definy_event::ContentHash::from_expression(expr).ok())
+            .map(|hash| hash.to_string())
+            .collect();
 
         // Collect all referenced content hashes (from parts that may have only content_hash)
         let referenced_hashes: Vec<String> = module_commit
             .referenced_content_hashes()
             .into_iter()
             .map(|h| h.to_string())
+            .filter(|hash| !embedded_content_hashes.contains(hash))
             .collect();
 
         // Check if any referenced content hashes are missing
@@ -309,6 +308,25 @@ pub async fn handle_submit_event(
                 Ok(res) => res,
                 Err(err) => error_to_response(err),
             };
+        }
+
+        if let Err(error) =
+            validate_module_commit(&db, module_commit, &data, &signature, &event_hash).await
+        {
+            return error_to_response(ConnectError::invalid_argument(error));
+        }
+
+        // Persist embedded expressions only after the self-hosted validation succeeds.
+        for part in &module_commit.parts {
+            if let Some(ref expr) = part.expression
+                && let Ok(hash) = definy_event::ContentHash::from_expression(expr)
+                && let Ok(bytes) = serde_cbor::to_vec(expr)
+                && let Err(error) = crate::db::save_content(&db, &hash.to_string(), &bytes).await
+            {
+                return error_to_response(ConnectError::internal(format!(
+                    "Failed to save module expression: {error}"
+                )));
+            }
         }
     }
 
@@ -485,6 +503,79 @@ pub fn router() -> axum::Router<AppState> {
         .route(PATH_GET_CONTENT, axum::routing::post(handle_get_content))
 }
 
+async fn validate_module_commit(
+    db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
+    module_commit: &definy_event::event::ModuleCommitEvent,
+    candidate_event: &definy_event::event::Event,
+    candidate_signature: &ed25519_dalek::Signature,
+    candidate_hash: &EventHashId,
+) -> Result<(), String> {
+    let mut hydrated_commit = module_commit.clone();
+    for part in &mut hydrated_commit.parts {
+        if part.expression.is_none() {
+            let content_hash = part
+                .resolve_content_hash()
+                .ok_or_else(|| format!("part '{}' has no expression", part.name))?;
+            let content = crate::db::get_content(db, &content_hash.to_string())
+                .await
+                .map_err(|error| format!("failed to load part '{}': {error}", part.name))?
+                .ok_or_else(|| format!("part '{}' expression is unavailable", part.name))?;
+            part.expression = Some(serde_cbor::from_slice(&content).map_err(|error| {
+                format!("part '{}' has invalid expression data: {error}", part.name)
+            })?);
+        }
+    }
+
+    let system_key =
+        ed25519_dalek::SigningKey::from_bytes(&crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED);
+    let system_account = definy_event::event::AccountId(system_key.verifying_key());
+    let core_module_id = definy_event::event::derive_module_id(&system_account, "core");
+    let expression_type_hash =
+        definy_event::event::derive_module_part_id(&core_module_id, "expression");
+    let type_ast_hash = definy_event::event::derive_module_part_id(&core_module_id, "type-ast");
+    let validate_module_hash =
+        definy_event::event::derive_module_part_id(&core_module_id, "validate-module");
+    let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
+        &hydrated_commit,
+        &expression_type_hash,
+        &type_ast_hash,
+    )?;
+
+    let event_binaries = crate::db::get_events(db, None, None, None)
+        .await
+        .map_err(|error| format!("failed to load events for type checking: {error}"))?;
+    let mut events: Vec<definy_core::EventWithHash> = event_binaries
+        .into_vec()
+        .into_iter()
+        .map(|binary| {
+            let hash = EventHashId::from_bytes(&binary);
+            (hash, definy_event::verify_and_deserialize(&binary))
+        })
+        .collect();
+    events.push((
+        candidate_hash.clone(),
+        Ok((*candidate_signature, candidate_event.clone())),
+    ));
+
+    let validation_call =
+        definy_event::event::Expression::Call(definy_event::event::CallExpression {
+            function: Box::new(definy_event::event::Expression::PartReference(
+                definy_event::event::PartReferenceExpression::new(validate_module_hash),
+            )),
+            argument: Box::new(module_value),
+        });
+    match definy_core::evaluate_expression(&validation_call, &events) {
+        Ok(definy_core::Value::Bool(true)) => Ok(()),
+        Ok(definy_core::Value::Bool(false)) => {
+            Err("self-hosted type checker rejected the module".into())
+        }
+        Ok(value) => Err(format!(
+            "self-hosted validator returned unexpected value: {value}"
+        )),
+        Err(error) => Err(format!("self-hosted module validation failed: {error}")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -577,6 +668,86 @@ mod tests {
         )
         .await;
         assert_eq!(bad_res.status(), StatusCode::BAD_REQUEST);
+
+        let invalid_module_expression =
+            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
+                value: 123,
+            });
+        let invalid_module_content_hash =
+            definy_event::ContentHash::from_expression(&invalid_module_expression).unwrap();
+        let invalid_module_event = Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                module_name: "invalid-module".into(),
+                module_description: "invalid module".into(),
+                parent_commit_hash: None,
+                message: "reject a type mismatch".into(),
+                parts: vec![definy_event::event::ModulePartEntry {
+                    name: "wrong-type".into(),
+                    part_type: Some(definy_event::event::PartType::String),
+                    description: "declares string but evaluates to number".into(),
+                    content_hash: None,
+                    expression: Some(invalid_module_expression),
+                }],
+            }),
+        };
+        let invalid_module_bytes =
+            definy_event::sign_and_serialize(invalid_module_event, &signing_key).unwrap();
+        let invalid_module_res = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(
+                serde_json::to_vec(&SubmitEventRequest {
+                    signed_event_bytes: invalid_module_bytes,
+                })
+                .unwrap(),
+            ),
+        )
+        .await;
+        assert_eq!(invalid_module_res.status(), StatusCode::BAD_REQUEST);
+        assert!(
+            crate::db::get_content(&database.0, &invalid_module_content_hash.to_string())
+                .await
+                .unwrap()
+                .is_none()
+        );
+
+        let unsupported_module_event = Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                module_name: "unsupported-module".into(),
+                module_description: "unsupported module".into(),
+                parent_commit_hash: None,
+                message: "reject unrepresented syntax".into(),
+                parts: vec![definy_event::event::ModulePartEntry {
+                    name: "unsupported".into(),
+                    part_type: Some(definy_event::event::PartType::Number),
+                    description: "compiler expressions are outside core.expression".into(),
+                    content_hash: None,
+                    expression: Some(definy_event::event::Expression::Compiler(
+                        definy_event::event::CompilerBuiltin::Plus,
+                    )),
+                }],
+            }),
+        };
+        let unsupported_module_bytes =
+            definy_event::sign_and_serialize(unsupported_module_event, &signing_key).unwrap();
+        let unsupported_module_res = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(
+                serde_json::to_vec(&SubmitEventRequest {
+                    signed_event_bytes: unsupported_module_bytes,
+                })
+                .unwrap(),
+            ),
+        )
+        .await;
+        assert_eq!(unsupported_module_res.status(), StatusCode::BAD_REQUEST);
 
         // 6. Test Diff Hash Negotiation
         let test_expr =

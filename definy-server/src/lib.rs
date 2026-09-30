@@ -17,6 +17,7 @@ mod error;
 mod extractor;
 mod html;
 pub mod mcp;
+mod self_hosted_ast;
 #[cfg(test)]
 mod self_hosting_tests;
 
