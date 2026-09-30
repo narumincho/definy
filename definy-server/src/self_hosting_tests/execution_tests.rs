@@ -132,6 +132,9 @@ fn test_self_hosted_type_checker_execution() {
         crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
     let type_equals_union_variants =
         crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
+    let type_assignable_record_fields =
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(&mod_id);
+    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
     let rec_type_lookup =
@@ -154,6 +157,8 @@ fn test_self_hosted_type_checker_execution() {
             type_equals,
             type_equals_record_fields,
             type_equals_union_variants,
+            type_assignable_record_fields,
+            type_assignable,
             type_check,
             type_check_against,
             rec_type_lookup,
@@ -494,6 +499,9 @@ fn test_self_hosted_validate_part_execution() {
         crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
     let type_equals_union_variants =
         crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
+    let type_assignable_record_fields =
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(&mod_id);
+    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
     let rec_type_lookup =
@@ -517,6 +525,8 @@ fn test_self_hosted_validate_part_execution() {
             type_equals,
             type_equals_record_fields,
             type_equals_union_variants,
+            type_assignable_record_fields,
+            type_assignable,
             type_check,
             type_check_against,
             rec_type_lookup,
@@ -978,6 +988,9 @@ fn test_self_hosted_validate_module_execution() {
         crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
     let type_equals_union_variants =
         crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
+    let type_assignable_record_fields =
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(&mod_id);
+    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&mod_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
     let rec_type_lookup =
@@ -1003,6 +1016,8 @@ fn test_self_hosted_validate_module_execution() {
             type_equals,
             type_equals_record_fields,
             type_equals_union_variants,
+            type_assignable_record_fields,
+            type_assignable,
             type_check,
             type_check_against,
             rec_type_lookup,

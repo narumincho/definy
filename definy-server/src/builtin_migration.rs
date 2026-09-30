@@ -358,6 +358,12 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         .push(crate::builtin_type_checker::create_record_field_type_lookup_part(&core_module_id));
     core_parts
         .push(crate::builtin_type_checker::create_type_check_record_fields_part(&core_module_id));
+    core_parts.push(
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(&core_module_id),
+    );
+    core_parts.push(crate::builtin_type_checker::create_type_assignable_part(
+        &core_module_id,
+    ));
     core_parts.push(crate::builtin_type_checker::create_type_check_part(
         &core_module_id,
     ));

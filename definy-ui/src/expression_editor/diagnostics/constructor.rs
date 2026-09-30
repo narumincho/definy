@@ -17,7 +17,12 @@ pub(crate) fn expression_type_from_constructor_shape(
         ConstructorValueShape::List(item_shape) => ExpressionType::List(Box::new(
             expression_type_from_constructor_shape(item_shape.as_ref()),
         )),
-        ConstructorValueShape::Record(_) => ExpressionType::Record,
+        ConstructorValueShape::Record(fields) => ExpressionType::Record(
+            fields
+                .iter()
+                .map(|(k, s)| (k.clone(), expression_type_from_constructor_shape(s)))
+                .collect(),
+        ),
         ConstructorValueShape::Unknown => ExpressionType::Unknown,
     }
 }

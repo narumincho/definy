@@ -373,7 +373,7 @@ fn classify_option_type(
         return Some(ExpressionType::List(Box::new(ExpressionType::Unknown)));
     }
     if opt_val == "expr:type_literal" {
-        return Some(ExpressionType::Record);
+        return Some(ExpressionType::Record(vec![]));
     }
     if matches!(
         opt_val,
@@ -474,7 +474,7 @@ fn option_match_rank(
             (ExpressionType::Type, ExpressionType::Type) => true,
             (ExpressionType::TypePart(h1), ExpressionType::TypePart(h2)) => h1 == h2,
             (ExpressionType::List(_), ExpressionType::List(_)) => true,
-            (ExpressionType::Record, ExpressionType::Record) => true,
+            (ExpressionType::Record(_), ExpressionType::Record(_)) => true,
             (ExpressionType::Union, ExpressionType::Union) => true,
             (ExpressionType::Function { .. }, ExpressionType::Function { .. }) => true,
             _ => false,

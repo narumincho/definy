@@ -14,6 +14,7 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
     let type_check_hash = derive_module_part_id(core_module_id, "type-check");
     let type_check_against_hash = derive_module_part_id(core_module_id, "type-check-against");
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
+    let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
 
     let expected_type = Expression::Variable(VariableExpression { variable_id: 2 });
@@ -83,7 +84,7 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
 
     let inferred_type = Expression::Variable(VariableExpression { variable_id: 18 });
     let types_match = call_part(
-        &type_equals_hash,
+        &type_assignable_hash,
         vec![inferred_type.clone(), expected_type.clone()],
     );
     let check_inferred_type = Expression::If(definy_event::event::IfExpression {

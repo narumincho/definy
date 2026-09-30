@@ -6,8 +6,8 @@
 use definy_core::Value;
 use definy_event::event::{
     AddExpression, CallExpression, Expression, FunctionExpression, ModulePartEntry,
-    PartReferenceExpression, PartType, RecordGetExpression, TypeLiteralExpression,
-    VariableExpression, derive_module_part_id,
+    NumberExpression, PartReferenceExpression, PartType, RecordFieldType, RecordGetExpression,
+    TypeLiteralExpression, VariableExpression, derive_module_part_id,
 };
 
 use super::helpers::{create_test_module_events, get_test_account_and_mod_id};
@@ -16,7 +16,7 @@ use crate::builtin_wasi::{
     create_mock_random_capability, create_mock_wasi_env, create_system_clock_capability,
     create_system_wasi_env, create_wasi_clock_get_seconds_part, create_wasi_clock_is_expired_part,
     create_wasi_clock_now_part, create_wasi_monotonic_now_part, create_wasi_random_u64_part,
-    wasi_datetime_type, wasi_env_type, wasi_wall_clock_type,
+    expr_record, wasi_datetime_type, wasi_env_type, wasi_wall_clock_type,
 };
 
 #[test]
@@ -410,4 +410,192 @@ fn test_wasi_full_environment_system_injection() {
     } else {
         panic!("Expected Number, got {:?}", res);
     }
+}
+
+/// ユーザー要望のユースケース検証:
+/// `funcA: WASI-Clock -> IO Data`
+/// `funcB: Data -> WASI-Crypto+WASI-Clock -> IO Data`
+/// のように、各関数が求めるコンテキストが絶妙に異なる場合でも、
+/// 余分なフィールド（crypto, random 等）を手動で除くことなく、大きなコンテキストレコード `ctx` を
+/// そのまま直接渡して呼び出せること（幅のサブタイピング）を実証します。
+#[test]
+fn test_wasi_capability_structural_subtyping_allows_extra_fields_in_context() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+
+    // 1. funcA: ctx => (ctx.now)({})
+    // 要求: { now: () -> datetime } のみ
+    let unit_arg = expr_record(vec![]);
+    let func_a_body = Expression::Call(CallExpression {
+        function: Box::new(Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            key: "now".into(),
+        })),
+        argument: Box::new(unit_arg.clone()),
+    });
+    let func_a_part = ModulePartEntry {
+        name: "funcA".into(),
+        part_type: Some(PartType::Function {
+            parameter: Box::new(PartType::Record(vec![RecordFieldType {
+                key: "now".into(),
+                value: Box::new(PartType::Function {
+                    parameter: Box::new(PartType::Record(vec![])),
+                    return_type: Box::new(PartType::Record(vec![
+                        RecordFieldType {
+                            key: "seconds".into(),
+                            value: Box::new(PartType::Number),
+                        },
+                        RecordFieldType {
+                            key: "nanoseconds".into(),
+                            value: Box::new(PartType::Number),
+                        },
+                    ])),
+                }),
+            }])),
+            return_type: Box::new(PartType::Record(vec![
+                RecordFieldType {
+                    key: "seconds".into(),
+                    value: Box::new(PartType::Number),
+                },
+                RecordFieldType {
+                    key: "nanoseconds".into(),
+                    value: Box::new(PartType::Number),
+                },
+            ])),
+        }),
+        description: "funcA: { now: () -> datetime } -> datetime".into(),
+        content_hash: None,
+        expression: Some(Expression::Function(FunctionExpression {
+            parameter_id: 1,
+            parameter_name: "ctx".into(),
+            body: Box::new(func_a_body),
+        })),
+    };
+
+    // 2. funcB: data => ctx => (ctx.now)({}).seconds + ctx.crypto_salt
+    // 要求: { now: () -> datetime, crypto_salt: number }
+    let now_call = Expression::Call(CallExpression {
+        function: Box::new(Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
+            key: "now".into(),
+        })),
+        argument: Box::new(unit_arg),
+    });
+    let get_seconds = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(now_call),
+        key: "seconds".into(),
+    });
+    let get_salt = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
+        key: "crypto_salt".into(),
+    });
+    let func_b_body = Expression::Add(definy_event::event::AddExpression {
+        left: Box::new(get_seconds),
+        right: Box::new(get_salt),
+    });
+    let func_b_part = ModulePartEntry {
+        name: "funcB".into(),
+        part_type: Some(PartType::Function {
+            parameter: Box::new(PartType::Number),
+            return_type: Box::new(PartType::Function {
+                parameter: Box::new(PartType::Record(vec![
+                    RecordFieldType {
+                        key: "now".into(),
+                        value: Box::new(PartType::Function {
+                            parameter: Box::new(PartType::Record(vec![])),
+                            return_type: Box::new(PartType::Record(vec![
+                                RecordFieldType {
+                                    key: "seconds".into(),
+                                    value: Box::new(PartType::Number),
+                                },
+                                RecordFieldType {
+                                    key: "nanoseconds".into(),
+                                    value: Box::new(PartType::Number),
+                                },
+                            ])),
+                        }),
+                    },
+                    RecordFieldType {
+                        key: "crypto_salt".into(),
+                        value: Box::new(PartType::Number),
+                    },
+                ])),
+                return_type: Box::new(PartType::Number),
+            }),
+        }),
+        description: "funcB: data -> ctx -> number".into(),
+        content_hash: None,
+        expression: Some(Expression::Function(FunctionExpression {
+            parameter_id: 2,
+            parameter_name: "data".into(),
+            body: Box::new(Expression::Function(FunctionExpression {
+                parameter_id: 3,
+                parameter_name: "ctx".into(),
+                body: Box::new(func_b_body),
+            })),
+        })),
+    };
+
+    let func_a_hash = derive_module_part_id(&mod_id, "funcA");
+    let func_b_hash = derive_module_part_id(&mod_id, "funcB");
+    let events = create_test_module_events(account, vec![func_a_part, func_b_part], 220);
+
+    // 3. 巨大な共通コンテキストレコード ctx の作成:
+    // { now: () => { seconds: 1500, nanoseconds: 0 }, crypto_salt: 42, extra_logger: "dummy", random_seed: 9999 }
+    let mock_clock = create_mock_clock_capability(1500, 0);
+    let Expression::TypeLiteral(mut clock_lit) = mock_clock else {
+        panic!("mock_clock is not TypeLiteral");
+    };
+    clock_lit
+        .items
+        .push(definy_event::event::TypeLiteralItemExpression {
+            key: "crypto_salt".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 42 })),
+        });
+    clock_lit
+        .items
+        .push(definy_event::event::TypeLiteralItemExpression {
+            key: "extra_logger".into(),
+            value: Box::new(Expression::String(definy_event::event::StringExpression {
+                value: "debug-logger".into(),
+            })),
+        });
+    clock_lit
+        .items
+        .push(definy_event::event::TypeLiteralItemExpression {
+            key: "random_seed".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 9999 })),
+        });
+    let wide_ctx = Expression::TypeLiteral(clock_lit);
+
+    // (A) funcA(wide_ctx): 余分なフィールド（crypto_salt, extra_logger, random_seed）があってもそのまま呼び出せる！
+    let call_a = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            func_a_hash,
+        ))),
+        argument: Box::new(wide_ctx.clone()),
+    });
+    let res_a = definy_core::evaluate_expression(&call_a, &events)
+        .expect("Failed to call funcA with wide context");
+    assert_eq!(
+        res_a,
+        Value::Record(vec![
+            ("nanoseconds".into(), Value::Number(0)),
+            ("seconds".into(), Value::Number(1500)),
+        ])
+    );
+
+    // (B) funcB(100)(wide_ctx): 同じ wide_ctx をそのまま渡して呼び出せる！
+    let call_b = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                func_b_hash,
+            ))),
+            argument: Box::new(Expression::Number(NumberExpression { value: 100 })),
+        })),
+        argument: Box::new(wide_ctx),
+    });
+    let res_b = definy_core::evaluate_expression(&call_b, &events)
+        .expect("Failed to call funcB with wide context");
+    // seconds (1500) + crypto_salt (42) = 1542
+    assert_eq!(res_b, Value::Number(1542));
 }

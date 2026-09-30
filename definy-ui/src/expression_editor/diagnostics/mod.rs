@@ -33,7 +33,12 @@ pub fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -
             parameter: Box::new(part_type_to_expression_type(parameter.as_ref())),
             return_type: Box::new(part_type_to_expression_type(return_type.as_ref())),
         },
-        definy_event::event::PartType::Record(_) => ExpressionType::Record,
+        definy_event::event::PartType::Record(fields) => ExpressionType::Record(
+            fields
+                .iter()
+                .map(|f| (f.key.to_string(), part_type_to_expression_type(&f.value)))
+                .collect(),
+        ),
         definy_event::event::PartType::Union(_) => ExpressionType::Union,
     }
 }

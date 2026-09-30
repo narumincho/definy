@@ -28,6 +28,8 @@ fn all_type_checker_parts(
         crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
         crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
         crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_part(mod_id),
         crate::builtin_type_checker::create_type_check_part(mod_id),
         crate::builtin_type_checker::create_type_check_against_part(mod_id),
     ]
@@ -682,4 +684,243 @@ fn test_self_hosted_validate_part_with_record_expression() {
         .expect("Failed to validate part with record expression");
 
     assert_eq!(result, Value::Bool(true));
+}
+
+#[test]
+fn test_self_hosted_record_width_subtyping_in_call_and_against() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+    let parts = all_type_checker_parts(&mod_id);
+    let type_assignable_hash = derive_module_part_id(&mod_id, "type-assignable");
+    let type_check_hash = derive_module_part_id(&mod_id, "type-check");
+    let expr_type_hash = derive_module_part_id(&mod_id, "expression");
+
+    let events = create_test_module_events(account, parts, 183);
+
+    let num_type = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "number".into(),
+        payload: None,
+    });
+    let str_type = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "string".into(),
+        payload: None,
+    });
+
+    let make_field = |k: &str, t: Expression| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "key".into(),
+                    value: Box::new(Expression::String(StringExpression { value: k.into() })),
+                },
+                TypeLiteralItemExpression {
+                    key: "field_type".into(),
+                    value: Box::new(t),
+                },
+            ],
+        })
+    };
+
+    // 期待型: { clock: number }
+    let expected_clock_record_type = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "record".into(),
+        payload: Some(Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![make_field("clock", num_type.clone())],
+        }))),
+    });
+
+    // 実際の型: { clock: number, crypto: string, random: number } (余計なフィールドあり)
+    let actual_large_record_type = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "record".into(),
+        payload: Some(Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_field("clock", num_type.clone()),
+                make_field("crypto", str_type.clone()),
+                make_field("random", num_type.clone()),
+            ],
+        }))),
+    });
+
+    // 1. type-assignable(actual_large, expected_clock) -> true !
+    let call_subtyping = call_part2(
+        type_assignable_hash.clone(),
+        actual_large_record_type.clone(),
+        expected_clock_record_type.clone(),
+    );
+    let res_subtyping = definy_core::evaluate_expression(&call_subtyping, &events)
+        .expect("Failed to evaluate type-assignable");
+    assert_eq!(
+        res_subtyping,
+        Value::Bool(true),
+        "Actual record with extra fields should be assignable to expected record"
+    );
+
+    // 2. 逆方向 type-assignable(expected_clock, actual_large) -> false ! (不足フィールドあり)
+    let call_reverse = call_part2(
+        type_assignable_hash.clone(),
+        expected_clock_record_type.clone(),
+        actual_large_record_type,
+    );
+    let res_reverse = definy_core::evaluate_expression(&call_reverse, &events)
+        .expect("Failed to evaluate reverse type-assignable");
+    assert_eq!(
+        res_reverse,
+        Value::Bool(false),
+        "Record lacking required fields must not be assignable"
+    );
+
+    // 3. フィールドの並び順が異なる場合: { crypto: string, clock: number } -> true !
+    let reordered_record_type = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "record".into(),
+        payload: Some(Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_field("crypto", str_type),
+                make_field("clock", num_type.clone()),
+            ],
+        }))),
+    });
+    let call_reordered = call_part2(
+        type_assignable_hash,
+        reordered_record_type,
+        expected_clock_record_type.clone(),
+    );
+    let res_reordered = definy_core::evaluate_expression(&call_reordered, &events)
+        .expect("Failed to evaluate reordered type-assignable");
+    assert_eq!(
+        res_reordered,
+        Value::Bool(true),
+        "Reordered record fields must be assignable"
+    );
+
+    // 4. 関数呼び出し (Call 式):
+    // funcA: { clock: number } -> number
+    // call(funcA, { clock: 42, crypto: "secret", random: 99 }) -> ok(number)
+    let func_type = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "function".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "parameter".into(),
+                    value: Box::new(expected_clock_record_type),
+                },
+                TypeLiteralItemExpression {
+                    key: "return_type".into(),
+                    value: Box::new(num_type),
+                },
+            ],
+        }))),
+    });
+
+    let env = Expression::ListLiteral(ListLiteralExpression {
+        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "variable_id".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+                },
+                TypeLiteralItemExpression {
+                    key: "var_type".into(),
+                    value: Box::new(func_type),
+                },
+            ],
+        })],
+    });
+
+    // 引数: record({ clock: 42, crypto: "secret", random: 99 })
+    let make_value_expr = |k: &str, v: Expression| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "key".into(),
+                    value: Box::new(Expression::String(StringExpression { value: k.into() })),
+                },
+                TypeLiteralItemExpression {
+                    key: "value".into(),
+                    value: Box::new(v),
+                },
+            ],
+        })
+    };
+
+    let arg_record_expr = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: Some(expr_type_hash.clone()),
+        tag: "record".into(),
+        payload: Some(Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                make_value_expr(
+                    "clock",
+                    Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: Some(expr_type_hash.clone()),
+                        tag: "number".into(),
+                        payload: Some(Box::new(Expression::Number(NumberExpression { value: 42 }))),
+                    }),
+                ),
+                make_value_expr(
+                    "crypto",
+                    Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: Some(expr_type_hash.clone()),
+                        tag: "string".into(),
+                        payload: Some(Box::new(Expression::String(StringExpression {
+                            value: "secret".into(),
+                        }))),
+                    }),
+                ),
+                make_value_expr(
+                    "random",
+                    Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: Some(expr_type_hash.clone()),
+                        tag: "number".into(),
+                        payload: Some(Box::new(Expression::Number(NumberExpression { value: 99 }))),
+                    }),
+                ),
+            ],
+        }))),
+    });
+
+    let call_func_expr = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: Some(expr_type_hash.clone()),
+        tag: "call".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "function".into(),
+                    value: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: Some(expr_type_hash),
+                        tag: "variable".into(),
+                        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![TypeLiteralItemExpression {
+                                key: "variable_id".into(),
+                                value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+                            }],
+                        }))),
+                    })),
+                },
+                TypeLiteralItemExpression {
+                    key: "argument".into(),
+                    value: Box::new(arg_record_expr),
+                },
+            ],
+        }))),
+    });
+
+    let check_call = call_part2(type_check_hash, call_func_expr, env);
+    let check_result = definy_core::evaluate_expression(&check_call, &events)
+        .expect("Failed to evaluate call type check with extra record fields");
+
+    assert_eq!(
+        check_result,
+        Value::Variant {
+            tag: "ok".into(),
+            payload: Some(Box::new(Value::Variant {
+                tag: "number".into(),
+                payload: None,
+            })),
+        },
+        "Call with extra record fields must type check successfully"
+    );
 }

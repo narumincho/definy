@@ -192,7 +192,10 @@ fn test_recursive_type_variant_type_inference_and_matching() {
         assert!(diagnostics.is_empty());
 
         // Variable 1 should have been inferred as Record
-        assert_eq!(variable_types.get(&1), Some(&ExpressionType::Record));
+        assert!(matches!(
+            variable_types.get(&1),
+            Some(ExpressionType::Record(_))
+        ));
         // Variable 2 should have been inferred as Number
         assert_eq!(variable_types.get(&2), Some(&ExpressionType::Number));
     }
@@ -305,4 +308,128 @@ fn test_direct_lambda_application_is_diagnosed() {
             .message
             .contains("Inline lambda application is not supported")
     }));
+}
+
+#[test]
+fn test_record_structural_width_subtyping_allows_extra_fields() {
+    let state = crate::app_state::AppState::default();
+
+    // funcA: { clock: Number } -> Number
+    let expected_param_type =
+        ExpressionType::Record(vec![("clock".to_string(), ExpressionType::Number)]);
+    let func_expected_type = ExpressionType::Function {
+        parameter: Box::new(expected_param_type),
+        return_type: Box::new(ExpressionType::Number),
+    };
+
+    // fn ctx => ctx.clock
+    let func_expr = Expression::Function(FunctionExpression {
+        parameter_id: 1,
+        parameter_name: "ctx".into(),
+        body: Box::new(Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            key: "clock".into(),
+        })),
+    });
+
+    // 1. 関数の型定義検査: 期待型 { clock: Number } -> Number に合致すること
+    let func_analysis = analyze_expression_types(&state, &func_expr, Some(func_expected_type));
+    assert!(
+        func_analysis.diagnostics.is_empty(),
+        "Function definition should have no diagnostics: {:?}",
+        func_analysis.diagnostics
+    );
+
+    // 2. 呼び出し引数検査:
+    // funcA に 余分なフィールドを持つ ctx: { clock: 42, crypto: "hash", random: 99 } を渡す
+    let extra_record_arg = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "clock".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 42 })),
+            },
+            TypeLiteralItemExpression {
+                key: "crypto".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "hash".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "random".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 99 })),
+            },
+        ],
+    });
+
+    let call_expr = Expression::Call(CallExpression {
+        function: Box::new(Expression::Variable(VariableExpression { variable_id: 10 })),
+        argument: Box::new(extra_record_arg),
+    });
+
+    // env: 変数 10 は funcA ({ clock: Number } -> Number)
+    let mut env = std::collections::HashMap::new();
+    env.insert(
+        10,
+        ExpressionType::Function {
+            parameter: Box::new(ExpressionType::Record(vec![(
+                "clock".to_string(),
+                ExpressionType::Number,
+            )])),
+            return_type: Box::new(ExpressionType::Number),
+        },
+    );
+
+    let part_type_map = std::collections::HashMap::new();
+    let part_snapshot_map = std::collections::HashMap::new();
+    let mut diagnostics = Vec::new();
+    let mut expected_types = std::collections::HashMap::new();
+    let mut variable_types = std::collections::HashMap::new();
+    let mut ctx = TypeCheckContext::new(
+        &env,
+        &part_type_map,
+        &part_snapshot_map,
+        &mut diagnostics,
+        &mut expected_types,
+        &mut variable_types,
+    );
+
+    let result_type = ctx.check(&call_expr, &[], Some(ExpressionType::Number));
+    assert_eq!(result_type, ExpressionType::Number);
+    assert!(
+        diagnostics.is_empty(),
+        "Extra fields in record should be accepted without diagnostics, but found: {:?}",
+        diagnostics
+    );
+
+    // 3. 必須フィールド clock が欠けている場合はエラーになること
+    let missing_clock_arg = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![TypeLiteralItemExpression {
+            key: "crypto".into(),
+            value: Box::new(Expression::String(StringExpression {
+                value: "hash".into(),
+            })),
+        }],
+    });
+    let call_missing_expr = Expression::Call(CallExpression {
+        function: Box::new(Expression::Variable(VariableExpression { variable_id: 10 })),
+        argument: Box::new(missing_clock_arg),
+    });
+
+    let mut diagnostics_missing = Vec::new();
+    let mut expected_types_missing = std::collections::HashMap::new();
+    let mut variable_types_missing = std::collections::HashMap::new();
+    let mut ctx_missing = TypeCheckContext::new(
+        &env,
+        &part_type_map,
+        &part_snapshot_map,
+        &mut diagnostics_missing,
+        &mut expected_types_missing,
+        &mut variable_types_missing,
+    );
+
+    ctx_missing.check(&call_missing_expr, &[], Some(ExpressionType::Number));
+    assert!(
+        !diagnostics_missing.is_empty(),
+        "Missing required field 'clock' should produce a diagnostic"
+    );
 }

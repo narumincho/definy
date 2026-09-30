@@ -48,6 +48,9 @@ impl<'a> TypeCheckContext<'a> {
         expected_type: &ExpressionType,
         actual_type: &ExpressionType,
     ) {
+        if is_type_assignable(actual_type, expected_type, self.part_snapshot_map) {
+            return;
+        }
         push_type_mismatch_diagnostic(self.diagnostics, path, expected_type, actual_type);
     }
 
@@ -78,6 +81,125 @@ pub(crate) fn push_type_mismatch_diagnostic(
             actual_type.text()
         ),
     });
+}
+
+pub(crate) fn resolve_record_fields(
+    expr_type: &ExpressionType,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+) -> Option<Vec<(String, ExpressionType)>> {
+    let mut visited = Vec::new();
+    resolve_record_fields_with_visited(expr_type, part_snapshot_map, &mut visited)
+}
+
+fn resolve_record_fields_with_visited(
+    expr_type: &ExpressionType,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+    visited: &mut Vec<EventHashId>,
+) -> Option<Vec<(String, ExpressionType)>> {
+    match expr_type {
+        ExpressionType::Record(fields) => Some(fields.clone()),
+        ExpressionType::TypePart(hash) => {
+            if visited.contains(hash) {
+                return None;
+            }
+            visited.push(hash.clone());
+            let snapshot = part_snapshot_map.get(hash)?;
+            if let Some(definy_event::event::Expression::TypeLiteral(record)) = &snapshot.expression
+            {
+                let fields = record
+                    .items
+                    .iter()
+                    .map(|item| {
+                        (
+                            item.key.to_string(),
+                            type_expression_to_expression_type(
+                                item.value.as_ref(),
+                                part_snapshot_map,
+                            ),
+                        )
+                    })
+                    .collect();
+                return Some(fields);
+            }
+            if let Some(definy_event::event::PartType::Record(fields)) = &snapshot.part_type {
+                let res = fields
+                    .iter()
+                    .map(|f| {
+                        (
+                            f.key.to_string(),
+                            super::part_type_to_expression_type(&f.value),
+                        )
+                    })
+                    .collect();
+                return Some(res);
+            }
+            if let Some(definy_event::event::Expression::PartReference(target)) =
+                &snapshot.expression
+            {
+                return resolve_record_fields_with_visited(
+                    &ExpressionType::TypePart(target.part_definition_event_hash.clone()),
+                    part_snapshot_map,
+                    visited,
+                );
+            }
+            None
+        }
+        _ => None,
+    }
+}
+
+pub(crate) fn is_type_assignable(
+    actual: &ExpressionType,
+    expected: &ExpressionType,
+    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
+) -> bool {
+    if actual == expected
+        || actual == &ExpressionType::Unknown
+        || expected == &ExpressionType::Unknown
+    {
+        return true;
+    }
+
+    // 1. レコードの構造的幅サブタイピング (Structural Width Subtyping for Records)
+    // 期待されるレコード型の全フィールドが実際の型に存在し代入可能であれば、
+    // 実際の型に余分なフィールドが存在していても代入可能とする。
+    if let (Some(actual_fields), Some(expected_fields)) = (
+        resolve_record_fields(actual, part_snapshot_map),
+        resolve_record_fields(expected, part_snapshot_map),
+    ) {
+        return expected_fields.iter().all(|(exp_key, exp_type)| {
+            if let Some((_, act_type)) =
+                actual_fields.iter().find(|(act_key, _)| act_key == exp_key)
+            {
+                is_type_assignable(act_type, exp_type, part_snapshot_map)
+            } else {
+                false
+            }
+        });
+    }
+
+    // 2. 関数型の適合性 (引数は反変、戻り値は共変)
+    if let (
+        ExpressionType::Function {
+            parameter: act_p,
+            return_type: act_r,
+        },
+        ExpressionType::Function {
+            parameter: exp_p,
+            return_type: exp_r,
+        },
+    ) = (actual, expected)
+    {
+        return is_type_assignable(exp_p, act_p, part_snapshot_map)
+            && is_type_assignable(act_r, exp_r, part_snapshot_map);
+    }
+
+    // 3. リスト型の適合性
+    if let (ExpressionType::List(act_item), ExpressionType::List(exp_item)) = (actual, expected) {
+        return is_type_assignable(act_item, exp_item, part_snapshot_map);
+    }
+
+    false
 }
 
 fn check_expression_type_with_context(
@@ -142,21 +264,32 @@ fn check_expression_type_with_context(
             } else {
                 None
             };
+            let mut fields = Vec::with_capacity(record_expression.items.len());
             for (index, item) in record_expression.items.iter().enumerate() {
                 let mut item_path = path.to_vec();
                 item_path.push(PathStep::RecordItemValue(index));
-                ctx.check(item.value.as_ref(), &item_path, item_expected_type.clone());
+                let field_type =
+                    ctx.check(item.value.as_ref(), &item_path, item_expected_type.clone());
+                fields.push((item.key.to_string(), field_type));
             }
             if expected_type == Some(ExpressionType::Type) {
                 ExpressionType::Type
             } else {
-                ExpressionType::Record
+                ExpressionType::Record(fields)
             }
         }
         definy_event::event::Expression::RecordGet(get_expr) => {
             let mut record_path = path.to_vec();
             record_path.push(PathStep::Record);
             let record_type = ctx.check(get_expr.record.as_ref(), &record_path, None);
+
+            if let ExpressionType::Record(fields) = &record_type
+                && let Some((_, field_type)) = fields
+                    .iter()
+                    .find(|(k, _)| k.as_str() == get_expr.key.as_ref())
+            {
+                return field_type.clone();
+            }
 
             if let definy_event::event::Expression::TypeLiteral(record) = get_expr.record.as_ref()
                 && let Some((idx, item)) = record
@@ -460,17 +593,13 @@ fn check_expression_type_with_context(
                 if let definy_event::event::Expression::TypeLiteral(record_expression) =
                     constructor_expression.value.as_ref()
                 {
-                    for (index, (field_name, field_shape)) in fields.iter().enumerate() {
-                        if let Some(item) = record_expression.items.get(index) {
-                            if item.key.as_ref() != field_name.as_str() {
-                                ctx.diagnostics.push(TypeDiagnostic {
-                                    path: value_path.clone(),
-                                    message: format!(
-                                        "Field name mismatch: expected {}, but found {}",
-                                        field_name, item.key
-                                    ),
-                                });
-                            }
+                    for (field_name, field_shape) in fields.iter() {
+                        if let Some((index, item)) = record_expression
+                            .items
+                            .iter()
+                            .enumerate()
+                            .find(|(_, item)| item.key.as_ref() == field_name.as_str())
+                        {
                             let field_expected_type =
                                 expression_type_from_constructor_shape(field_shape);
                             let mut field_path = value_path.clone();
@@ -483,11 +612,13 @@ fn check_expression_type_with_context(
                             });
                         }
                     }
-                    if record_expression.items.len() > fields.len() {
-                        ctx.diagnostics.push(TypeDiagnostic {
-                            path: value_path.clone(),
-                            message: "Extra fields in record".to_string(),
-                        });
+                    // TypeScript のように余計なフィールドがあってもエラーにしない
+                    for (index, item) in record_expression.items.iter().enumerate() {
+                        if !fields.iter().any(|(f_name, _)| f_name == item.key.as_ref()) {
+                            let mut field_path = value_path.clone();
+                            field_path.push(PathStep::RecordItemValue(index));
+                            ctx.check(item.value.as_ref(), &field_path, None);
+                        }
                     }
                 } else {
                     let mut dummy_diag = Vec::new();
@@ -733,7 +864,19 @@ pub(crate) fn type_expression_to_expression_type(
         definy_event::event::Expression::TypeList(list) => ExpressionType::List(Box::new(
             type_expression_to_expression_type(list.item_type.as_ref(), _part_snapshot_map),
         )),
-        definy_event::event::Expression::TypeLiteral(_) => ExpressionType::Record,
+        definy_event::event::Expression::TypeLiteral(record) => {
+            let fields = record
+                .items
+                .iter()
+                .map(|item| {
+                    (
+                        item.key.to_string(),
+                        type_expression_to_expression_type(item.value.as_ref(), _part_snapshot_map),
+                    )
+                })
+                .collect();
+            ExpressionType::Record(fields)
+        }
         definy_event::event::Expression::PartReference(part_ref) => {
             ExpressionType::TypePart(part_ref.part_definition_event_hash.clone())
         }

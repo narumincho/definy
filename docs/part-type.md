@@ -20,16 +20,16 @@ Type）を値の式（Expression）と同じ式エディタ UI（`render_root_ex
 `PartType` と型式（`Expression`）は相互変換（`PartType::to_expression` /
 `PartType::from_expression`）可能。
 
-| `PartType`                            | 対応する型式 (`Expression`) | 説明                                  |
-| :------------------------------------ | :-------------------------- | :------------------------------------ |
-| `Number`                              | `Expression::TypeNumber`    | 64ビット数値型                        |
-| `String`                              | `Expression::TypeString`    | 文字列型                              |
-| `Boolean`                             | `Expression::TypeBoolean`   | 真偽値型                              |
-| `List(T)`                             | `Expression::TypeList`      | 要素型 T のリスト型                   |
-| `Function { parameter, return_type }` | `Expression::TypeFunction`  | 引数型 -> 戻り値型                    |
-| `Record([Field])`                     | `Expression::TypeLiteral`   | レコード型（直積型 `{ key: Type }`）  |
-| `Union([Variant])`                    | `Expression::TypeUnion`     | 直和型（Enum `Tag(Type) \| Tag`）     |
-| `TypePart(hash)`                      | `Expression::PartReference` | 定義済み型パーツの参照（`@part:...`） |
+| `PartType`                            | 対応する型式 (`Expression`) | 説明                                                                                       |
+| :------------------------------------ | :-------------------------- | :----------------------------------------------------------------------------------------- |
+| `Number`                              | `Expression::TypeNumber`    | 64ビット数値型                                                                             |
+| `String`                              | `Expression::TypeString`    | 文字列型                                                                                   |
+| `Boolean`                             | `Expression::TypeBoolean`   | 真偽値型                                                                                   |
+| `List(T)`                             | `Expression::TypeList`      | 要素型 T のリスト型                                                                        |
+| `Function { parameter, return_type }` | `Expression::TypeFunction`  | 引数型 -> 戻り値型                                                                         |
+| `Record([Field])`                     | `Expression::TypeLiteral`   | レコード型（直積型 `{ key: Type }`。余剰フィールドを許容する構造的幅サブタイピングに対応） |
+| `Union([Variant])`                    | `Expression::TypeUnion`     | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
+| `TypePart(hash)`                      | `Expression::PartReference` | 定義済み型パーツの参照（`@part:...`）                                                      |
 
 ## イベント仕様
 

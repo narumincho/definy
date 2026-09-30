@@ -23,7 +23,7 @@ pub enum ExpressionType {
     Type,
     TypePart(EventHashId),
     List(Box<ExpressionType>),
-    Record,
+    Record(Vec<(String, ExpressionType)>),
     Union,
     Function {
         parameter: Box<ExpressionType>,
@@ -41,7 +41,18 @@ impl ExpressionType {
             ExpressionType::Type => "Type".to_string(),
             ExpressionType::TypePart(hash) => format!("TypePart({})", hash),
             ExpressionType::List(item) => format!("list<{}>", item.text()),
-            ExpressionType::Record => "Record".to_string(),
+            ExpressionType::Record(fields) => {
+                if fields.is_empty() {
+                    "{}".to_string()
+                } else {
+                    let inner = fields
+                        .iter()
+                        .map(|(k, v)| format!("{}: {}", k, v.text()))
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    format!("{{{}}}", inner)
+                }
+            }
             ExpressionType::Union => "Union".to_string(),
             ExpressionType::Function {
                 parameter,

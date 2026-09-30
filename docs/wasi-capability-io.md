@@ -176,3 +176,49 @@ let result = evaluate(main(system_env));
 
 すべての外部環境依存が関数の引数（Record）に集約されるため、 definy
 のコア言語仕様は極めてシンプルかつ純粋に保たれ、安全なサンドボックス実行と完全なテスト容易性が両立されます。
+
+---
+
+## 5. 構造的幅サブタイピング (Structural Width Subtyping) による合成容易性
+
+### 課題: 合成時における不要なフィールド除去の手間
+
+Capability
+パターンを多用すると、合成したい各関数が要求する環境が異なるケースが頻発します：
+
+```definy
+funcA: wasi.wall-clock -> IO Data
+funcB: Data -> { wall_clock: wasi.wall-clock, random: wasi.random } -> IO Data
+
+-- ctx に wall_clock と random の両方が含まれる場合:
+andThen (funcA ctx) (\r -> funcB r ctx)
+```
+
+厳密な型一致（Nominal または完全一致の Structural Typing）を要求すると、`funcA`
+を呼ぶために `ctx` からわざわざ `{ wall_clock = ctx.wall_clock }`
+という新しいレコードを作って渡すボイラープレートが必要になってしまいます。
+
+### 解決策: 余計なフィールドを許容する幅サブタイピング
+
+definy では TypeScript
+のオブジェクト型と同様に、**レコードの構造的幅サブタイピング（Width
+Subtyping）** を採用しています。
+
+1. **余剰フィールドの許容**: 期待型 `{ wall_clock: wasi.wall-clock }`
+   に対して、余分なフィールドを持つ
+   `{ wall_clock: wasi.wall-clock, random: wasi.random, ... }`
+   をそのまま渡すことができます。
+2. **キー順序の非依存**:
+   フィールドの定義順やリテラルの並び順が異なっていても、同名フィールドの型が合致していれば代入可能です。
+3. **安全な欠落検知**:
+   要求されているフィールドが存在しない、あるいは型が不適合な場合のみ型エラー（Diagnostics
+   / Type Check Error）として報告されます。
+
+### 実装アーキテクチャ
+
+- **UI 型診断 (`definy-ui`)**: `is_type_assignable`
+  が期待型の各フィールドが実引数のレコードに含まれるかを再帰的に検証し、余剰フィールドに対する誤検知エラーを防止します。
+- **セルフホスト型チェッカー (`definy-server`)**:
+  `core.type-assignable`（`assignable.rs`）により、関数呼び出し（`Call`）や期待型との照合（`check-against`）において幅サブタイピングを検証します。
+- **ランタイム評価器**: `record-field-lookup`
+  によるキー名での動的フィールド探索を行っているため、余分なフィールドが存在していてもオーバーヘッドなく正しく動作します。
