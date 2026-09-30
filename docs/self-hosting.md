@@ -47,7 +47,15 @@ definy
   - 自己記述コード整形器 `core.expression-to-source`: `expression -> string`
   - 構文拡張: `let`, `not`, `and`, `or` の完全自己評価 (`core.eval-value`) &
     型検査 (`core.type-check`)
-  - definy 式で definy 自身を実行・検証するメタ循環テストの自動化実証完了
+- [x] **Phase 5: パーツ自己検証器 & 完全自己ホストコンパイル実証
+      (Self-Validation & End-to-End Compiler Execution)**
+  - パーツ妥当性自己検証器 `core.validate-part`: `part-definition -> boolean`
+  - Wasm 命令列コンパイラ `core.compile-expr-instructions` の論理演算（`not`,
+    `and`, `or`）対応
+  - 自己記述コンパイラ `core.compile-to-wasm` による Wasm
+    生成・即時実行の実証完了
+  - 汎用自己評価器 `core.eval-value`、自己型チェッカー
+    `core.type-check`、自己バリデータ `core.validate-part` のメタ循環実証完了
 
 ---
 
@@ -204,8 +212,43 @@ definy 式として記述された評価器・フォーマッターパーツは�
 - `test_self_hosted_expression_to_source_execution`: `core.expression-to-source`
   パーツに `10 + 20` の AST を与えて実行し、自己整形結果
   `"((<number> + <number>))"` を実証。
-- `test_self_hosting_phase3_compiled_wasm_execution`: 自己ホスト Wasm
-  コンパイラのバイト列生成仕様に基づき、Wasm VM での計算実行（`50`）を実証。
+
+---
+
+### Phase 5: パーツ自己検証器 & 完全自己ホストコンパイル実証
+
+#### 1. パーツ妥当性自己検証器: `core.validate-part`
+
+```definy
+validate-part: part-definition -> boolean
+```
+
+definy
+のパーツ定義メタデータ（`core.part-definition`）を受け取り、そのパーツの式（`expression`）が自己記述型チェッカー（`core.type-check`）によって推論された型と、パーツの宣言型（`part_type`）が
+`core.type-equals` で一致するかを判定する自己完結バリデータ。
+
+- 入力パーツの式を空の型環境（`[]`）で静的型検査
+- 型検査が `ok(inferred_type)` の場合、宣言型との等価性を `type-equals` で判定
+- 型不一致または型エラーの場合は `false` を返却
+
+#### 2. 完全自己ホストコンパイル & メタ循環実行の実証
+
+definy のテストスイート（`self_hosting_tests.rs`）において、以下の end-to-end
+メタ循環実行が実証されています：
+
+- **`test_self_hosted_compile_to_wasm_execution`**: `core.compile-to-wasm`
+  パーツを呼び出して WebAssembly
+  バイトコード（`list<number>`）を自己生成。その生成バイト列を Wasm VM
+  でロード・実行し、正しく `42` が算出されることを実証。
+- **`test_self_hosted_meta_circular_eval_value_execution`**: 完全動的値評価器
+  `core.eval-value`
+  を呼び出し、算術演算（`10 + 25 = 35`）が自己解釈実行されることを実証。
+- **`test_self_hosted_type_checker_execution`**: 静的型チェッカー
+  `core.type-check` を呼び出し、式 `10 + 20` に対して正しく `ok(number)`
+  が導出されることを実証。
+- **`test_self_hosted_validate_part_execution`**: パーツ検証器
+  `core.validate-part` を呼び出し、パーツ定義の型整合性が `true`
+  と正しく判定されることを実証。
 
 ---
 

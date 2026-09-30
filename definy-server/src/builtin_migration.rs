@@ -346,6 +346,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_formatter::create_expression_to_source_part(
         &core_module_id,
     ));
+    core_parts.push(crate::builtin_validator::create_validate_part_part(
+        &core_module_id,
+    ));
 
     let core_module_commit = definy_event::event::Event {
         account_id: account_id.clone(),
