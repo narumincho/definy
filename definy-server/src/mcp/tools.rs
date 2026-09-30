@@ -326,12 +326,11 @@ async fn sign_and_save_ai_event(
 
     if let EventContent::ModuleCommit(ref mc) = event.content {
         for part in &mc.parts {
-            if let Some(ref expr) = part.expression {
-                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
-                    if let Ok(bytes) = serde_cbor::to_vec(expr) {
-                        let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
-                    }
-                }
+            if let Some(ref expr) = part.expression
+                && let Ok(ch) = definy_event::ContentHash::from_expression(expr)
+                && let Ok(bytes) = serde_cbor::to_vec(expr)
+            {
+                let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
             }
         }
     }

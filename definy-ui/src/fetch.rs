@@ -279,21 +279,21 @@ pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
 
                 let mut upload_items = Vec::new();
 
-                if let Ok((_sig, event)) = definy_event::verify_and_deserialize(signated_event) {
-                    if let definy_event::event::EventContent::ModuleCommit(mc) = event.content {
-                        for part in mc.parts {
-                            if let Some(ref expr) = part.expression {
-                                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
-                                    let ch_str = ch.to_string();
-                                    if missing_set.contains(ch_str.as_str()) {
-                                        if let Ok(bytes) = serde_cbor::to_vec(expr) {
-                                            upload_items.push(ContentItem {
-                                                content_hash: ch_str,
-                                                content_bytes: bytes,
-                                            });
-                                        }
-                                    }
-                                }
+                if let Ok((_sig, event)) = definy_event::verify_and_deserialize(signated_event)
+                    && let definy_event::event::EventContent::ModuleCommit(mc) = event.content
+                {
+                    for part in mc.parts {
+                        if let Some(ref expr) = part.expression
+                            && let Ok(ch) = definy_event::ContentHash::from_expression(expr)
+                        {
+                            let ch_str = ch.to_string();
+                            if missing_set.contains(ch_str.as_str())
+                                && let Ok(bytes) = serde_cbor::to_vec(expr)
+                            {
+                                upload_items.push(ContentItem {
+                                    content_hash: ch_str,
+                                    content_bytes: bytes,
+                                });
                             }
                         }
                     }

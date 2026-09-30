@@ -717,12 +717,11 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         // Always ensure expressions of built-in module parts are stored in contents table
         if let definy_event::event::EventContent::ModuleCommit(ref mc) = event.content {
             for part in &mc.parts {
-                if let Some(ref expr) = part.expression {
-                    if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
-                        if let Ok(bytes) = serde_cbor::to_vec(expr) {
-                            let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
-                        }
-                    }
+                if let Some(ref expr) = part.expression
+                    && let Ok(ch) = definy_event::ContentHash::from_expression(expr)
+                    && let Ok(bytes) = serde_cbor::to_vec(expr)
+                {
+                    let _ = crate::db::save_content(db, &ch.to_string(), &bytes).await;
                 }
             }
         }

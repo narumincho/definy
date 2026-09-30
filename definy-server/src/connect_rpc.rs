@@ -278,12 +278,11 @@ pub async fn handle_submit_event(
     if let definy_event::event::EventContent::ModuleCommit(module_commit) = &data.content {
         // Automatically save any embedded expressions to CAS
         for part in &module_commit.parts {
-            if let Some(ref expr) = part.expression {
-                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
-                    if let Ok(bytes) = serde_cbor::to_vec(expr) {
-                        let _ = crate::db::save_content(&db, &ch.to_string(), &bytes).await;
-                    }
-                }
+            if let Some(ref expr) = part.expression
+                && let Ok(ch) = definy_event::ContentHash::from_expression(expr)
+                && let Ok(bytes) = serde_cbor::to_vec(expr)
+            {
+                let _ = crate::db::save_content(&db, &ch.to_string(), &bytes).await;
             }
         }
 

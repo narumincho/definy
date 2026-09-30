@@ -592,34 +592,32 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
         }
     };
 
-    let mut arms = Vec::new();
-
-    // 1. Literal types
-    arms.push(MatchArm {
-        tag: "number".into(),
-        variable_id: Some(10),
-        variable_name: Some("n".into()),
-        body: Box::new(ok_type(type_num())),
-    });
-    arms.push(MatchArm {
-        tag: "string".into(),
-        variable_id: Some(11),
-        variable_name: Some("s".into()),
-        body: Box::new(ok_type(type_str())),
-    });
-    arms.push(MatchArm {
-        tag: "boolean".into(),
-        variable_id: Some(12),
-        variable_name: Some("b".into()),
-        body: Box::new(ok_type(type_bool())),
-    });
-
-    // 2. Arithmetic
-    arms.push(binary_num_op("add", &type_check_hash, 13));
-    arms.push(binary_num_op("subtract", &type_check_hash, 14));
-    arms.push(binary_num_op("multiply", &type_check_hash, 15));
-    arms.push(binary_num_op("divide", &type_check_hash, 16));
-    arms.push(binary_num_op("remainder", &type_check_hash, 17));
+    // 1. Literal types & 2. Arithmetic
+    let mut arms = vec![
+        MatchArm {
+            tag: "number".into(),
+            variable_id: Some(10),
+            variable_name: Some("n".into()),
+            body: Box::new(ok_type(type_num())),
+        },
+        MatchArm {
+            tag: "string".into(),
+            variable_id: Some(11),
+            variable_name: Some("s".into()),
+            body: Box::new(ok_type(type_str())),
+        },
+        MatchArm {
+            tag: "boolean".into(),
+            variable_id: Some(12),
+            variable_name: Some("b".into()),
+            body: Box::new(ok_type(type_bool())),
+        },
+        binary_num_op("add", &type_check_hash, 13),
+        binary_num_op("subtract", &type_check_hash, 14),
+        binary_num_op("multiply", &type_check_hash, 15),
+        binary_num_op("divide", &type_check_hash, 16),
+        binary_num_op("remainder", &type_check_hash, 17),
+    ];
 
     // 3. Comparison: equal
     {
