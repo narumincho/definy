@@ -1,8 +1,9 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    BooleanExpression, CallExpression, Description, Expression, FunctionExpression,
-    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, PartReferenceExpression,
-    PartType, RecordGetExpression, VariableExpression, derive_module_part_id,
+    BooleanExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
+    LessThanExpression, ListGetExpression, ListLengthExpression, ListLiteralExpression, MatchArm,
+    MatchExpression, ModulePartEntry, NumberExpression, PartReferenceExpression, PartType,
+    RecordGetExpression, StringLengthExpression, VariableExpression, derive_module_part_id,
 };
 
 /// パーツ妥当性検証器 `core.validate-part`: `part-definition -> boolean`
@@ -98,6 +99,99 @@ pub fn create_validate_part_part(core_module_id: &EventHashId) -> ModulePartEntr
             (
                 "ja",
                 "自己記述型チェッカーを用いてパーツ定義の式が宣言された型と一致するか検証する関数",
+            ),
+        ]),
+        content_hash: None,
+        expression: Some(main_expr),
+    }
+}
+
+/// モジュール妥当性検証器 `core.validate-module`: `module-definition -> boolean`
+/// モジュール定義に含まれるメタデータ（非空の名前）や構成パーツの自己検証を行います。
+pub fn create_validate_module_part(core_module_id: &EventHashId) -> ModulePartEntry {
+    let mod_def_hash = derive_module_part_id(core_module_id, "module-definition");
+    let validate_part_hash = derive_module_part_id(core_module_id, "validate-part");
+
+    let mod_var_id = 0;
+    let name_access = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Variable(VariableExpression {
+            variable_id: mod_var_id,
+        })),
+        key: "name".into(),
+    });
+    let parts_access = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Variable(VariableExpression {
+            variable_id: mod_var_id,
+        })),
+        key: "parts".into(),
+    });
+
+    // name_len > 0 (0 < string_length(name))
+    let name_len = Expression::StringLength(StringLengthExpression {
+        value: Box::new(name_access),
+    });
+    let name_not_empty = Expression::LessThan(LessThanExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 0 })),
+        right: Box::new(name_len),
+    });
+
+    // parts_len > 0
+    let parts_len = Expression::ListLength(ListLengthExpression {
+        value: Box::new(parts_access.clone()),
+    });
+    let has_parts = Expression::LessThan(LessThanExpression {
+        left: Box::new(Expression::Number(NumberExpression { value: 0 })),
+        right: Box::new(parts_len),
+    });
+
+    // first_part = list_get(parts, 0)
+    let first_part = Expression::ListGet(ListGetExpression {
+        list: Box::new(parts_access),
+        index: Box::new(Expression::Number(NumberExpression { value: 0 })),
+    });
+
+    // validate-part(first_part)
+    let validate_first_part = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            validate_part_hash,
+        ))),
+        argument: Box::new(first_part),
+    });
+
+    // if has_parts then validate_first_part else true
+    let parts_valid = Expression::If(IfExpression {
+        condition: Box::new(has_parts),
+        then_expr: Box::new(validate_first_part),
+        else_expr: Box::new(Expression::Boolean(BooleanExpression { value: true })),
+    });
+
+    // if name_not_empty then parts_valid else false
+    let body = Expression::If(IfExpression {
+        condition: Box::new(name_not_empty),
+        then_expr: Box::new(parts_valid),
+        else_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
+    });
+
+    let main_expr = Expression::Function(FunctionExpression {
+        parameter_id: mod_var_id,
+        parameter_name: "mod_def".into(),
+        body: Box::new(body),
+    });
+
+    ModulePartEntry {
+        name: "validate-module".into(),
+        part_type: Some(PartType::Function {
+            parameter: Box::new(PartType::TypePart(mod_def_hash)),
+            return_type: Box::new(PartType::Boolean),
+        }),
+        description: Description::localized(vec![
+            (
+                "en",
+                "Validates a module definition ensuring non-empty module name and valid member parts",
+            ),
+            (
+                "ja",
+                "モジュール名が非空であり構成パーツが自己検証を満たすかを検証する関数",
             ),
         ]),
         content_hash: None,

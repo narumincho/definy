@@ -82,3 +82,27 @@ pub fn ast_add(
         type_part_definition_event_hash: expr_type_hash,
     })
 }
+
+/// `core.expression` 型の乗算 AST (`multiply({ left, right })`) を構築します。
+pub fn ast_mul(
+    left: Expression,
+    right: Expression,
+    expr_type_hash: Option<EventHashId>,
+) -> Expression {
+    Expression::Variant(VariantExpression {
+        tag: "multiply".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "left".into(),
+                    value: Box::new(left),
+                },
+                TypeLiteralItemExpression {
+                    key: "right".into(),
+                    value: Box::new(right),
+                },
+            ],
+        }))),
+        type_part_definition_event_hash: expr_type_hash,
+    })
+}

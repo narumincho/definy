@@ -41,8 +41,12 @@ fn test_self_hosting_parts_registration() {
     // Formatter part
     let expr_to_source = crate::builtin_formatter::create_expression_to_source_part(&core_id);
 
-    // Validator part
+    // Validator parts
     let validate_part = crate::builtin_validator::create_validate_part_part(&core_id);
+    let validate_module = crate::builtin_validator::create_validate_module_part(&core_id);
+
+    // Optimizer part
+    let optimize_expr = crate::builtin_optimizer::create_optimize_expression_part(&core_id);
 
     let all_parts = vec![
         val_part,
@@ -63,6 +67,8 @@ fn test_self_hosting_parts_registration() {
         compile_to_wasm,
         expr_to_source,
         validate_part,
+        validate_module,
+        optimize_expr,
     ];
 
     let mut names = HashSet::new();
@@ -394,6 +400,61 @@ fn test_validator_ast_structure() {
                     assert!(arm_tags.contains("_"));
                 }
                 other => panic!("Expected Match in validate-part, got: {:?}", other),
+            }
+        }
+        other => panic!("Expected Function, got: {:?}", other),
+    }
+}
+
+/// `core.optimize-expression` の AST 構造（関数、マッチアームのタグ構成）を検証します。
+#[test]
+fn test_optimizer_ast_structure() {
+    let core_id = get_dummy_core_id();
+    let opt_part = crate::builtin_optimizer::create_optimize_expression_part(&core_id);
+    let expr = opt_part
+        .expression
+        .expect("optimize-expression must have expression");
+
+    match expr {
+        Expression::Function(f) => {
+            assert_eq!(f.parameter_id, 0);
+            assert_eq!(&*f.parameter_name, "expr");
+            match *f.body {
+                Expression::Match(m) => {
+                    let arm_tags: HashSet<String> =
+                        m.arms.into_iter().map(|a| a.tag.to_string()).collect();
+                    assert!(arm_tags.contains("number"));
+                    assert!(arm_tags.contains("boolean"));
+                    assert!(arm_tags.contains("add"));
+                    assert!(arm_tags.contains("subtract"));
+                    assert!(arm_tags.contains("multiply"));
+                    assert!(arm_tags.contains("if"));
+                    assert!(arm_tags.contains("not"));
+                    assert!(arm_tags.contains("_"));
+                }
+                other => panic!("Expected Match in optimize-expression, got: {:?}", other),
+            }
+        }
+        other => panic!("Expected Function, got: {:?}", other),
+    }
+}
+
+/// `core.validate-module` の AST 構造（関数、モジュール名・パーツ検証の論理結合）を検証します。
+#[test]
+fn test_validate_module_ast_structure() {
+    let core_id = get_dummy_core_id();
+    let val_mod_part = crate::builtin_validator::create_validate_module_part(&core_id);
+    let expr = val_mod_part
+        .expression
+        .expect("validate-module must have expression");
+
+    match expr {
+        Expression::Function(f) => {
+            assert_eq!(f.parameter_id, 0);
+            assert_eq!(&*f.parameter_name, "mod_def");
+            match *f.body {
+                Expression::If(_) => {}
+                other => panic!("Expected If in validate-module, got: {:?}", other),
             }
         }
         other => panic!("Expected Function, got: {:?}", other),

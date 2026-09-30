@@ -2,6 +2,7 @@ mod builtin_evaluator;
 mod builtin_expression_type;
 mod builtin_formatter;
 mod builtin_migration;
+mod builtin_optimizer;
 mod builtin_std_functions;
 mod builtin_type_ast;
 mod builtin_type_checker;

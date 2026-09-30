@@ -9,7 +9,9 @@ use definy_event::event::{
     TypeLiteralExpression, TypeLiteralItemExpression, VariantExpression, derive_module_part_id,
 };
 
-use super::helpers::{ast_add, ast_num, create_test_module_events, get_test_account_and_mod_id};
+use super::helpers::{
+    ast_add, ast_mul, ast_num, create_test_module_events, get_test_account_and_mod_id,
+};
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
 #[test]
@@ -326,4 +328,227 @@ fn test_self_hosted_compile_to_wasm_execution() {
         .expect("Failed to execute Wasm binary emitted by self-hosted compiler");
 
     assert_eq!(execution_result, Value::Number(42));
+}
+
+/// `core.optimize-expression` を呼び出し、式 `(10 * 3) + 12` を定数畳み込みして `42` に最適化し、
+/// さらに最適化された AST から自己ホスト Wasm コンパイラでバイナリを生成・実行して `42` が返ることを実証します。
+#[test]
+fn test_self_hosted_optimize_expression_execution() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+
+    let optimize_part = crate::builtin_optimizer::create_optimize_expression_part(&mod_id);
+    let compile_instr =
+        crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&mod_id);
+    let compile_to_wasm = crate::builtin_wasm_compiler::create_compile_to_wasm_part(&mod_id);
+
+    let optimize_hash = derive_module_part_id(&mod_id, "optimize-expression");
+    let compile_to_wasm_hash = derive_module_part_id(&mod_id, "compile-to-wasm");
+    let expr_type_hash = derive_module_part_id(&mod_id, "expression");
+
+    let events = create_test_module_events(
+        account,
+        vec![optimize_part, compile_instr, compile_to_wasm],
+        129,
+    );
+
+    let expr_type_opt = Some(expr_type_hash.clone());
+    // AST to optimize: (10 * 3) + 12
+    let expr_to_optimize = ast_add(
+        ast_mul(
+            ast_num(10, expr_type_opt.clone()),
+            ast_num(3, expr_type_opt.clone()),
+            expr_type_opt.clone(),
+        ),
+        ast_num(12, expr_type_opt.clone()),
+        expr_type_opt.clone(),
+    );
+
+    let call_optimize = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            optimize_hash,
+        ))),
+        argument: Box::new(expr_to_optimize),
+    });
+
+    // Execute self-hosted optimizer!
+    let optimized_result = definy_core::evaluate_expression(&call_optimize, &events)
+        .expect("Failed to execute self-hosted optimize-expression");
+
+    // The entire (10 * 3) + 12 AST should be constant-folded to number(42)!
+    assert_eq!(
+        optimized_result,
+        Value::Variant {
+            tag: "number".into(),
+            payload: Some(Box::new(Value::Number(42))),
+        }
+    );
+
+    // Now compile the folded AST: number(42) directly to Wasm
+    let folded_ast = ast_num(42, expr_type_opt);
+    let call_compile = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            compile_to_wasm_hash,
+        ))),
+        argument: Box::new(folded_ast),
+    });
+
+    let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
+        .expect("Failed to compile optimized AST to Wasm");
+
+    let wasm_bytes: Vec<u8> = match generated_wasm_list {
+        Value::List(bytes) => bytes
+            .into_iter()
+            .map(|v| match v {
+                Value::Number(n) => n as u8,
+                other => panic!("Expected Number byte, got: {:?}", other),
+            })
+            .collect(),
+        other => panic!("Expected List of bytes, got: {:?}", other),
+    };
+
+    let execution_result = definy_core::wasm_emitter::execute_wasm(&wasm_bytes)
+        .expect("Failed to execute Wasm from optimized AST");
+
+    assert_eq!(execution_result, Value::Number(42));
+}
+
+/// `core.validate-module` を呼び出し、正常なモジュール定義に対して `true`、
+/// モジュール名が空の不正なモジュールに対して `false` が自己判定されることを実証します。
+#[test]
+fn test_self_hosted_validate_module_execution() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+
+    let type_err = crate::builtin_type_checker::create_type_error_part(&mod_id);
+    let type_res = crate::builtin_type_checker::create_type_result_part(&mod_id);
+    let type_env = crate::builtin_type_checker::create_type_env_part(&mod_id);
+    let type_env_lookup = crate::builtin_type_checker::create_type_env_lookup_part(&mod_id);
+    let type_env_lookup_inner =
+        crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
+    let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
+    let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
+    let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
+    let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
+    let validate_module = crate::builtin_validator::create_validate_module_part(&mod_id);
+
+    let validate_module_hash = derive_module_part_id(&mod_id, "validate-module");
+    let expr_type_hash = derive_module_part_id(&mod_id, "expression");
+
+    let events = create_test_module_events(
+        account,
+        vec![
+            type_err,
+            type_res,
+            type_env,
+            type_env_lookup,
+            type_env_lookup_inner,
+            type_env_extend,
+            type_equals,
+            type_check,
+            validate_part,
+            validate_module,
+        ],
+        130,
+    );
+
+    let expr_type_opt = Some(expr_type_hash.clone());
+    let valid_part_def = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "sample_fn".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "valid function".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(Expression::Variant(VariantExpression {
+                    tag: "number".into(),
+                    payload: None,
+                    type_part_definition_event_hash: None,
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(ast_add(
+                    ast_num(10, expr_type_opt.clone()),
+                    ast_num(20, expr_type_opt),
+                    Some(expr_type_hash),
+                )),
+            },
+        ],
+    });
+
+    // Valid module: name: "math", description: "math module", parts: [valid_part]
+    let valid_mod = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "math".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "math functions".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![valid_part_def],
+                })),
+            },
+        ],
+    });
+
+    let call_valid = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            validate_module_hash.clone(),
+        ))),
+        argument: Box::new(valid_mod),
+    });
+
+    let valid_result = definy_core::evaluate_expression(&call_valid, &events)
+        .expect("Failed to evaluate validate-module on valid module");
+    assert_eq!(valid_result, Value::Bool(true));
+
+    // Invalid module: empty name ""
+    let invalid_mod = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression { value: "".into() })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "empty name module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![],
+                })),
+            },
+        ],
+    });
+
+    let call_invalid = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+            validate_module_hash,
+        ))),
+        argument: Box::new(invalid_mod),
+    });
+
+    let invalid_result = definy_core::evaluate_expression(&call_invalid, &events)
+        .expect("Failed to evaluate validate-module on invalid module");
+    assert_eq!(invalid_result, Value::Bool(false));
 }

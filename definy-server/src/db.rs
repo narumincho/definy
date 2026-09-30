@@ -415,6 +415,8 @@ mod tests {
         assert!(part_names.contains(&"prime-numbers".to_string()));
         assert!(part_names.contains(&"option-number".to_string()));
         assert!(part_names.contains(&"match-option-sample".to_string()));
+        assert!(part_names.contains(&"validate-module".to_string()));
+        assert!(part_names.contains(&"optimize-expression".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();

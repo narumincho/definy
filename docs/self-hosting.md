@@ -35,10 +35,15 @@ graph TD
         Formatter["core.expression-to-source<br/>(ソースコード自己整形器)"]
     end
 
-    subgraph "自己静的解析系 (Phase 2 & 5)"
+    subgraph "自己静的解析系 (Phase 2, 5 & 6)"
         TypeChecker["core.type-check<br/>(自己記述型チェッカー)"]
         TypeEquals["core.type-equals<br/>(型等価性判定器)"]
-        Validator["core.validate-part<br/>(パーツ型妥当性自己検証器)"]
+        ValidatorPart["core.validate-part<br/>(パーツ型妥当性自己検証器)"]
+        ValidatorModule["core.validate-module<br/>(モジュール妥当性自己検証器)"]
+    end
+
+    subgraph "自己最適化系 (Phase 6)"
+        Optimizer["core.optimize-expression<br/>(自己記述 AST 定数畳み込み最適化器)"]
     end
 
     subgraph "自己コンパイラ系 (Phase 3)"
@@ -54,12 +59,18 @@ graph TD
     ExpressionAST --> Evaluator
     ExpressionAST --> Formatter
     ExpressionAST --> TypeChecker
+    ExpressionAST --> Optimizer
     ExpressionAST --> CompileInstr
 
+    Optimizer -->|最適化された AST| CompileInstr
+    Optimizer -->|最適化された AST| Evaluator
+
     TypeChecker --> TypeEquals
-    TypeChecker --> Validator
-    TypeEquals --> Validator
-    PartDef --> Validator
+    TypeChecker --> ValidatorPart
+    TypeEquals --> ValidatorPart
+    PartDef --> ValidatorPart
+    ValidatorPart --> ValidatorModule
+    ModuleDef["core.module-definition"] --> ValidatorModule
 
     CompileInstr --> CompileToWasm
     CompileToWasm -->|生成された Wasm バイト列| WasmVM
@@ -99,6 +110,14 @@ graph TD
     生成・即時実行の実証完了
   - 汎用自己評価器 `core.eval-value`、自己型チェッカー
     `core.type-check`、自己バリデータ `core.validate-part` のメタ循環実証完了
+- [x] **Phase 6: 自己記述 AST 最適化器 & モジュール全体自己検証 (Self-Hosted
+      Optimizer & Module Validation)**
+  - 自己記述 AST 最適化器 `core.optimize-expression`: `expression -> expression`
+    - 定数畳み込み（Constant Folding: 算術演算、論理否定、条件分岐の枝刈り）
+    - 最適化された AST からの Wasm 生成 & 即時実行実証完了
+  - モジュール妥当性自己検証器 `core.validate-module`:
+    `module-definition -> boolean`
+    - モジュール名検証（非空文字チェック）および全パーツの型妥当性の網羅検証実証完了
 
 ---
 
@@ -274,7 +293,46 @@ definy
 - 型検査が `ok(inferred_type)` の場合、宣言型との等価性を `type-equals` で判定
 - 型不一致または型エラーの場合は `false` を返却
 
-#### 2. 完全自己ホストコンパイル & メタ循環実行の実証
+---
+
+### Phase 6: 自己記述 AST 最適化器 & モジュール全体自己検証
+
+#### 1. 自己記述 AST 最適化器: `core.optimize-expression`
+
+```definy
+optimize-expression: expression -> expression
+```
+
+definy の式
+AST（`core.expression`）を受け取り、定数同士の計算を事前に計算して置き換える「定数畳み込み（Constant
+Folding）」および不要な分岐の枝刈り（Dead Code
+Elimination）を行う純粋な最適化パーツ。
+
+- `add(number(a), number(b))` => `number(a + b)`
+- `subtract(number(a), number(b))` => `number(a - b)`
+- `multiply(number(a), number(b))` => `number(a * b)`
+- `not(boolean(b))` => `boolean(!b)`
+- `if({ condition: boolean(true), then_expr, else_expr })` =>
+  `optimize(then_expr)`
+- `if({ condition: boolean(false), then_expr, else_expr })` =>
+  `optimize(else_expr)`
+
+最適化された AST は、`core.compile-to-wasm`
+を介して単一の定数命令（`i64.const 42`）などに凝縮され、WebAssembly
+バイトコードサイズの縮小と実行高速化をセルフホスト自身で実現します。
+
+#### 2. モジュール妥当性自己検証器: `core.validate-module`
+
+```definy
+validate-module: module-definition -> boolean
+```
+
+モジュール定義（`core.module-definition`）を受け取り、モジュール名が非空文字（`string-length > 0`）であること、および構成パーツが
+`core.validate-part` による型妥当性を満たすかを網羅的に検証します。
+
+---
+
+### 完全自己ホストコンパイル & メタ循環実行の実証
 
 definy
 のテストスイート（`definy-server/src/self_hosting_tests/`）において、以下の
@@ -283,14 +341,16 @@ end-to-end メタ循環実行がすべて実証されています。 テスト�
 `execution_tests.rs`（動的実行実証）、および共通ヘルパー `helpers.rs`
 に分割・整理されています。
 
-| テスト関数名                                          | 検証対象パーツ              | 入力・実行内容                                           | 実証された結果                             |
-| :---------------------------------------------------- | :-------------------------- | :------------------------------------------------------- | :----------------------------------------- |
-| `test_self_hosted_meta_circular_eval_ast_execution`   | `core.eval-ast`             | 多項式 AST `(100 - (10 * 3)) + (50 / 2)`                 | 自己評価値 `95`                            |
-| `test_self_hosted_expression_to_source_execution`     | `core.expression-to-source` | 加算式 AST `add(10, 20)`                                 | 整形文字列 `"((<number> + <number>))"`     |
-| `test_self_hosted_meta_circular_eval_value_execution` | `core.eval-value`           | 加算式 AST `add(10, 25)` と空環境 `[]`                   | 動的値 `number(35)`                        |
-| `test_self_hosted_type_checker_execution`             | `core.type-check`           | 加算式 AST `add(10, 20)` と空型環境 `[]`                 | 型推論結果 `ok(number)`                    |
-| `test_self_hosted_validate_part_execution`            | `core.validate-part`        | 正常なパーツ定義 `{ name, type: number, expr: 10 + 20 }` | 判定結果 `true`                            |
-| `test_self_hosted_compile_to_wasm_execution`          | `core.compile-to-wasm`      | 式 `15 + 27` から自己ホストで Wasm バイナリを生成        | 生成された Wasm を VM で実行し `42` を算出 |
+| テスト関数名                                          | 検証対象パーツ                                      | 入力・実行内容                                                  | 実証された結果                             |
+| :---------------------------------------------------- | :-------------------------------------------------- | :-------------------------------------------------------------- | :----------------------------------------- |
+| `test_self_hosted_meta_circular_eval_ast_execution`   | `core.eval-ast`                                     | 多項式 AST `(100 - (10 * 3)) + (50 / 2)`                        | 自己評価値 `95`                            |
+| `test_self_hosted_expression_to_source_execution`     | `core.expression-to-source`                         | 加算式 AST `add(10, 20)`                                        | 整形文字列 `"((<number> + <number>))"`     |
+| `test_self_hosted_meta_circular_eval_value_execution` | `core.eval-value`                                   | 加算式 AST `add(10, 25)` と空環境 `[]`                          | 動的値 `number(35)`                        |
+| `test_self_hosted_type_checker_execution`             | `core.type-check`                                   | 加算式 AST `add(10, 20)` と空型環境 `[]`                        | 型推論結果 `ok(number)`                    |
+| `test_self_hosted_validate_part_execution`            | `core.validate-part`                                | 正常なパーツ定義 `{ name, type: number, expr: 10 + 20 }`        | 判定結果 `true`                            |
+| `test_self_hosted_validate_module_execution`          | `core.validate-module`                              | 正常なモジュール定義（`true`）と空名不正モジュール（`false`）   | 判定結果 `true` / `false`                  |
+| `test_self_hosted_compile_to_wasm_execution`          | `core.compile-to-wasm`                              | 式 `15 + 27` から自己ホストで Wasm バイナリを生成               | 生成された Wasm を VM で実行し `42` を算出 |
+| `test_self_hosted_optimize_expression_execution`      | `core.optimize-expression` + `core.compile-to-wasm` | 多項式 `(10 * 3) + 12` を `42` に定数畳み込み最適化し Wasm 生成 | 最適化された Wasm を実行し `42` を算出     |
 
 ---
 
