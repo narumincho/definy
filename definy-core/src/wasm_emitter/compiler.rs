@@ -5,7 +5,7 @@ use definy_event::event::*;
 use super::{bytecode::*, function_ops::PendingFunction};
 
 pub(crate) struct CompileContext<'a> {
-    events: &'a [crate::app_state::EventWithHash],
+    events: &'a [crate::EventWithHash],
     static_data: Vec<u8>,
     current_static_offset: u32,
     visited_parts: Vec<(definy_event::EventHashId, Option<definy_event::ContentHash>)>,
@@ -15,7 +15,7 @@ pub(crate) struct CompileContext<'a> {
 }
 
 impl<'a> CompileContext<'a> {
-    fn new(events: &'a [crate::app_state::EventWithHash]) -> Self {
+    fn new(events: &'a [crate::EventWithHash]) -> Self {
         Self {
             events,
             static_data: Vec::new(),
@@ -66,7 +66,7 @@ impl<'a> CompileContext<'a> {
 
 pub fn compile_expression_to_wasm(
     expression: &Expression,
-    events: &[crate::app_state::EventWithHash],
+    events: &[crate::EventWithHash],
 ) -> Result<Vec<u8>, String> {
     let mut ctx = CompileContext::new(events);
     let mut code_bytes = Vec::new();
@@ -777,7 +777,7 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
 }
 
 pub fn resolve_part_expression<'a>(
-    events: &'a [crate::app_state::EventWithHash],
+    events: &'a [crate::EventWithHash],
     target_part_hash: &definy_event::EventHashId,
     target_content_hash: Option<&definy_event::ContentHash>,
 ) -> Option<&'a Expression> {

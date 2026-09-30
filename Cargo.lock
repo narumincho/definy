@@ -1015,6 +1015,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "definy-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "definy-event",
+ "ed25519-dalek",
+]
+
+[[package]]
 name = "definy-event"
 version = "0.1.0"
 dependencies = [
@@ -1041,6 +1050,7 @@ dependencies = [
  "axum",
  "base64",
  "chrono",
+ "definy-core",
  "definy-event",
  "definy-ui",
  "dioxus",
@@ -1078,6 +1088,7 @@ dependencies = [
  "anyhow",
  "base64",
  "chrono",
+ "definy-core",
  "definy-event",
  "dioxus",
  "dioxus-ssr",

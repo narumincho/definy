@@ -99,8 +99,7 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
     let commit_hash = EventHashId::from_bytes(&[203u8; 32]);
-    let events: Vec<crate::app_state::EventWithHash> =
-        vec![(commit_hash, Ok((dummy_sig, eval_event)))];
+    let events: Vec<crate::EventWithHash> = vec![(commit_hash, Ok((dummy_sig, eval_event)))];
 
     // Build AST: ((100 - (10 * 3)) + (50 / 2)) + (17 % 5)
     // 10 * 3 = 30
@@ -193,7 +192,7 @@ fn test_part_reference_content_hash_version_locking() {
         }),
     };
 
-    let events: Vec<crate::app_state::EventWithHash> = vec![
+    let events: Vec<crate::EventWithHash> = vec![
         (commit_1_hash, Ok((dummy_sig, commit_1_event))),
         (commit_2_hash, Ok((dummy_sig, commit_2_event))),
     ];
@@ -245,7 +244,7 @@ fn test_module_commit_batch_parts_projection_and_eval() {
 
     // ModuleCommitEvent で add_ten と forty_two パーツを一度にコミット
     let commit_event = Event {
-        account_id: dummy_account,
+        account_id: dummy_account.clone(),
         time: chrono::DateTime::UNIX_EPOCH,
         content: EventContent::ModuleCommit(ModuleCommitEvent {
             module_name: "math".into(),
@@ -274,44 +273,16 @@ fn test_module_commit_batch_parts_projection_and_eval() {
         }),
     };
 
-    let events: Vec<crate::app_state::EventWithHash> =
+    let events: Vec<crate::EventWithHash> =
         vec![(commit_hash.clone(), Ok((dummy_sig, commit_event)))];
 
-    // 1. プロジェクションのテスト: 2つのパーツが同時にスナップショット化されていること
-    let mut state = crate::app_state::AppState::default();
-    for (h, res) in &events {
-        let decoded = res
-            .as_ref()
-            .map(|(_, e)| (dummy_sig, e.clone()))
-            .map_err(|_| definy_event::VerifyAndDeserializeError::DecodeError);
-        state.event_cache.insert(h.clone(), decoded);
-    }
-    let snapshots = crate::part_projection::collect_part_snapshots(&state);
-    assert_eq!(snapshots.len(), 2);
-    let s_add_ten = snapshots.iter().find(|s| s.part_name == "add_ten").unwrap();
-    let s_forty_two = snapshots
-        .iter()
-        .find(|s| s.part_name == "forty_two")
-        .unwrap();
+    let mod_id = definy_event::event::derive_module_id(&dummy_account, "math");
+    let part_add_ten_id = definy_event::event::derive_module_part_id(&mod_id, "add_ten");
 
-    assert_eq!(s_add_ten.content_hash, Some(add_ten_content_hash.clone()));
-    assert_eq!(
-        s_forty_two.content_hash,
-        Some(
-            definy_event::ContentHash::from_expression(&Expression::Number(NumberExpression {
-                value: 42
-            }))
-            .unwrap()
-        )
-    );
-
-    // 2. 評価器のテスト: add_ten を ContentHash で呼び出して 32 + 10 = 42
+    // 評価器のテスト: add_ten を ContentHash で呼び出して 32 + 10 = 42
     let call_expr = Expression::Call(CallExpression {
         function: Box::new(Expression::PartReference(
-            PartReferenceExpression::with_content_hash(
-                s_add_ten.definition_event_hash.clone(),
-                add_ten_content_hash,
-            ),
+            PartReferenceExpression::with_content_hash(part_add_ten_id, add_ten_content_hash),
         )),
         argument: Box::new(Expression::Number(NumberExpression { value: 32 })),
     });

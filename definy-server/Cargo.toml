@@ -19,6 +19,7 @@ tokio-stream = { workspace = true, features = ["sync"] }
 http-body-util = { workspace = true }
 hyper-util = { workspace = true, features = ["full"] }
 definy-ui = { workspace = true }
+definy-core = { workspace = true }
 definy-event = { workspace = true, features = ["utoipa"] }
 dioxus = { workspace = true, features = ["macro", "hooks"] }
 dioxus-fullstack = { workspace = true }

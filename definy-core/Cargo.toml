@@ -1,0 +1,9 @@
+[package]
+name = "definy-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+definy-event = { workspace = true }
+ed25519-dalek = { workspace = true }
+chrono = { workspace = true }

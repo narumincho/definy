@@ -45,7 +45,7 @@ impl std::fmt::Display for Value {
 
 pub fn evaluate_expression(
     expression: &definy_event::event::Expression,
-    events: &[crate::app_state::EventWithHash],
+    events: &[crate::EventWithHash],
 ) -> Result<Value, String> {
     let wasm_bytes = crate::wasm_emitter::compile_expression_to_wasm(expression, events)
         .map_err(|e| format!("Failed to compile expression to WebAssembly: {}", e))?;

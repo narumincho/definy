@@ -9,6 +9,7 @@ base64 = { workspace = true }
 hex = { workspace = true }
 ed25519-dalek = { workspace = true, features = ["rand_core"] }
 definy-event = { workspace = true }
+definy-core = { workspace = true }
 web-sys = { workspace = true, features = [
   "console",
   "Window",

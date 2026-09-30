@@ -12,7 +12,6 @@ mod event_list;
 pub mod event_presenter;
 pub mod event_submit;
 pub mod expression_editor;
-pub mod expression_eval;
 pub mod fetch;
 mod header;
 pub mod indexed_db;
@@ -38,7 +37,7 @@ mod rpc_architecture;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
-pub mod wasm_emitter;
+pub use definy_core::{expression_eval, wasm_emitter};
 pub mod wasm_inspector;
 
 pub use app_state::*;

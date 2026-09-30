@@ -349,8 +349,7 @@ fn test_compile_and_execute_part_reference_function() {
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
     let commit_hash = EventHashId::from_bytes(&[42u8; 32]);
-    let events: Vec<crate::app_state::EventWithHash> =
-        vec![(commit_hash, Ok((dummy_sig, part_event)))];
+    let events: Vec<crate::EventWithHash> = vec![(commit_hash, Ok((dummy_sig, part_event)))];
 
     let expr = Expression::Call(CallExpression {
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
@@ -499,8 +498,7 @@ fn test_compile_and_execute_recursive_function_part() {
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
     let commit_hash = EventHashId::from_bytes(&[99u8; 32]);
-    let events: Vec<crate::app_state::EventWithHash> =
-        vec![(commit_hash, Ok((dummy_sig, fact_event)))];
+    let events: Vec<crate::EventWithHash> = vec![(commit_hash, Ok((dummy_sig, fact_event)))];
 
     // Call factorial(5) -> 120
     let call_fact = Expression::Call(CallExpression {
@@ -637,8 +635,7 @@ fn test_compile_and_execute_definy_eval_ast_function() {
 
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
     let commit_hash = EventHashId::from_bytes(&[103u8; 32]);
-    let events: Vec<crate::app_state::EventWithHash> =
-        vec![(commit_hash, Ok((dummy_sig, eval_event)))];
+    let events: Vec<crate::EventWithHash> = vec![(commit_hash, Ok((dummy_sig, eval_event)))];
 
     // Build AST: (10 + (3 * 4))
     let num_10 = Expression::Variant(VariantExpression {

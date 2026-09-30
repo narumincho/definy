@@ -3,11 +3,7 @@ use definy_event::{
     event::{AccountId, EventType},
 };
 
-pub type DecodedEvent = Result<
-    (ed25519_dalek::Signature, definy_event::event::Event),
-    definy_event::VerifyAndDeserializeError,
->;
-pub type EventWithHash = (EventHashId, DecodedEvent);
+pub use definy_core::{DecodedEvent, EventWithHash};
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum PathStep {
