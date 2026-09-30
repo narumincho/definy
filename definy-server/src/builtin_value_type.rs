@@ -376,11 +376,35 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
     let false_expr = Expression::Boolean(BooleanExpression { value: false });
     let true_expr = Expression::Boolean(BooleanExpression { value: true });
 
-    let match_inner = |tag: &'static str, var_id: i64, body: Expression| MatchArm {
+    let primitive_eq_arm = |tag: &'static str, var1_id: i64, var2_id: i64| MatchArm {
         tag: tag.into(),
-        variable_id: Some(var_id),
-        variable_name: Some("inner".into()),
-        body: Box::new(body),
+        variable_id: Some(var1_id),
+        variable_name: Some("v1".into()),
+        body: Box::new(Expression::Match(MatchExpression {
+            target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            arms: vec![
+                MatchArm {
+                    tag: tag.into(),
+                    variable_id: Some(var2_id),
+                    variable_name: Some("v2".into()),
+                    body: Box::new(Expression::Equal(EqualExpression {
+                        left: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: var1_id,
+                        })),
+                        right: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: var2_id,
+                        })),
+                    })),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(99),
+                    variable_name: Some("_".into()),
+                    body: Box::new(false_expr.clone()),
+                },
+            ],
+            default: None,
+        })),
     };
 
     // For variant:
@@ -436,96 +460,9 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
     });
 
     let arms = vec![
-        // number
-        MatchArm {
-            tag: "number".into(),
-            variable_id: Some(10),
-            variable_name: Some("n1".into()),
-            body: Box::new(Expression::Match(MatchExpression {
-                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                arms: vec![
-                    match_inner(
-                        "number",
-                        20,
-                        Expression::Equal(EqualExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 10,
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 20,
-                            })),
-                        }),
-                    ),
-                    MatchArm {
-                        tag: "_".into(),
-                        variable_id: Some(99),
-                        variable_name: Some("_".into()),
-                        body: Box::new(false_expr.clone()),
-                    },
-                ],
-                default: None,
-            })),
-        },
-        // string
-        MatchArm {
-            tag: "string".into(),
-            variable_id: Some(11),
-            variable_name: Some("s1".into()),
-            body: Box::new(Expression::Match(MatchExpression {
-                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                arms: vec![
-                    match_inner(
-                        "string",
-                        21,
-                        Expression::Equal(EqualExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 11,
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 21,
-                            })),
-                        }),
-                    ),
-                    MatchArm {
-                        tag: "_".into(),
-                        variable_id: Some(99),
-                        variable_name: Some("_".into()),
-                        body: Box::new(false_expr.clone()),
-                    },
-                ],
-                default: None,
-            })),
-        },
-        // boolean
-        MatchArm {
-            tag: "boolean".into(),
-            variable_id: Some(12),
-            variable_name: Some("b1".into()),
-            body: Box::new(Expression::Match(MatchExpression {
-                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                arms: vec![
-                    match_inner(
-                        "boolean",
-                        22,
-                        Expression::Equal(EqualExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 12,
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 22,
-                            })),
-                        }),
-                    ),
-                    MatchArm {
-                        tag: "_".into(),
-                        variable_id: Some(99),
-                        variable_name: Some("_".into()),
-                        body: Box::new(false_expr.clone()),
-                    },
-                ],
-                default: None,
-            })),
-        },
+        primitive_eq_arm("number", 10, 20),
+        primitive_eq_arm("string", 11, 21),
+        primitive_eq_arm("boolean", 12, 22),
         // unit
         MatchArm {
             tag: "unit".into(),

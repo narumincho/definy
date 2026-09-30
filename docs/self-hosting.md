@@ -408,13 +408,39 @@ let binary_bool_op = |tag, check_hash, var_id| {
 
 - **`helpers.rs`**:
   テスト用アカウント生成（`get_test_account_and_mod_id`）、イベントコミット生成（`create_test_module_events`）、AST
-  構築簡易ヘルパー（`ast_num`, `ast_add`）を集約。型エイリアス `TestEvents`
-  によりシグネチャの複雑さを抑制。
+  構築簡易ヘルパー（`ast_num`,
+  `ast_add`）、パーツ呼び出しビルダー（`call_part1`, `call_part2`,
+  `call_part3`）、および Wasm
+  バイト列抽出ヘルパー（`value_list_to_u8_vec`）を集約。型エイリアス
+  `TestEvents` によりシグネチャの複雑さを抑制。
 - **`ast_structure_tests.rs`**:
   ビルトインパーツの登録、および各パーツの式が意図通りの
   AST（パターンマッチ分岐やタグの網羅性）を持つことを検証。
 - **`execution_tests.rs`**: 実際にパーツを definy
   実行系に登録し、メタ循環評価を実行して期待通りの値が返ることを実証。
+
+### 3. 自己評価器（`builtin_evaluator`）の責任分割サブモジュール化
+
+動的値評価器 `core.eval-value` は、多数の構文式に対する評価分岐（Match
+Arms）を持つため、単一ファイル（約 950 行）から以下の 5
+つのサブモジュールへ責任を分割しました：
+
+- **`mod.rs`**: エントリポイント `create_eval_value_part`。各アームを集約して
+  `core.eval-value` パーツを構成。
+- **`helpers.rs`**: AST 再帰評価 `eval_sub` や、動的値生成関数群（`val_num`,
+  `val_str`, `val_bool`, `val_variant`, `val_unit`）を定義。
+- **`arith_arms.rs`**: 算術演算・比較演算（`add`, `subtract`, `multiply`,
+  `divide`, `remainder`, `equal`, `less_than`）の評価分岐。
+- **`logical_arms.rs`**: 論理演算（`not`, `and`,
+  `or`）の短絡評価を含む評価分岐。
+- **`control_arms.rs`**: 制御構文・バリアント・マッチ（`variable`, `if`,
+  `function`, `call`, `let`, `variant`, `match`）の評価分岐。
+
+### 4. 動的値等価判定器（`builtin_value_type`）の二重 Match 共通化
+
+プリミティブ値（数値、文字列、真偽値）の等価判定では、2 つの `core.value`
+を連続マッチして同種バリアントであることを確認する構造が反復するため、`primitive_eq_arm`
+クロージャを導入してパターンを共通化し、コード行数を約 80 行削減しました。
 
 ---
 

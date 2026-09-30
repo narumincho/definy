@@ -5,12 +5,13 @@
 
 use definy_core::expression_eval::Value;
 use definy_event::event::{
-    CallExpression, Expression, ListLiteralExpression, PartReferenceExpression, StringExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariantExpression, derive_module_part_id,
+    Expression, ListLiteralExpression, StringExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, VariantExpression, derive_module_part_id,
 };
 
 use super::helpers::{
-    ast_add, ast_mul, ast_num, create_test_module_events, get_test_account_and_mod_id,
+    ast_add, ast_mul, ast_num, call_part1, call_part2, call_part3, create_test_module_events,
+    get_test_account_and_mod_id, test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
 };
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
@@ -48,12 +49,7 @@ fn test_self_hosted_expression_to_source_execution() {
         expr_type_opt,
     );
 
-    let call_expr = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            to_source_hash,
-        ))),
-        argument: Box::new(ast_expr),
-    });
+    let call_expr = call_part1(to_source_hash, ast_expr);
 
     let result = definy_core::evaluate_expression(&call_expr, &events)
         .expect("Failed to evaluate self-hosted expression-to-source");
@@ -102,16 +98,7 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
     );
     let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
 
-    // call(call(eval-value, expr_to_eval), empty_env)
-    let eval_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                eval_hash,
-            ))),
-            argument: Box::new(expr_to_eval),
-        })),
-        argument: Box::new(empty_env),
-    });
+    let eval_call = call_part2(eval_hash, expr_to_eval, empty_env);
 
     let result = definy_core::evaluate_expression(&eval_call, &events)
         .expect("Failed to evaluate expression using core.eval-value");
@@ -166,16 +153,7 @@ fn test_self_hosted_type_checker_execution() {
     );
     let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
 
-    // call(call(type-check, expr_to_check), empty_env)
-    let check_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_check_hash,
-            ))),
-            argument: Box::new(expr_to_check),
-        })),
-        argument: Box::new(empty_env),
-    });
+    let check_call = call_part2(type_check_hash, expr_to_check, empty_env);
 
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("Failed to type-check expression using core.type-check");
@@ -264,12 +242,7 @@ fn test_self_hosted_validate_part_execution() {
         ],
     });
 
-    let call_validate = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            validate_part_hash,
-        ))),
-        argument: Box::new(valid_part_def),
-    });
+    let call_validate = call_part1(validate_part_hash, valid_part_def);
 
     let result = definy_core::evaluate_expression(&call_validate, &events)
         .expect("Failed to validate part using core.validate-part");
@@ -298,35 +271,13 @@ fn test_self_hosted_compile_to_wasm_execution() {
         expr_type_opt,
     );
 
-    let call_compile = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            compile_to_wasm_hash,
-        ))),
-        argument: Box::new(expr_to_compile),
-    });
+    let call_compile = call_part1(compile_to_wasm_hash, expr_to_compile);
 
     // Execute self-hosted compiler to generate Wasm bytecode!
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
         .expect("Failed to execute self-hosted compile-to-wasm");
 
-    let wasm_bytes: Vec<u8> = match generated_wasm_list {
-        Value::List(bytes) => bytes
-            .into_iter()
-            .map(|v| match v {
-                Value::Number(n) => n as u8,
-                other => {
-                    panic!(
-                        "Expected Number byte in generated wasm list, got: {:?}",
-                        other
-                    )
-                }
-            })
-            .collect(),
-        other => panic!(
-            "Expected List of bytes from compile-to-wasm, got: {:?}",
-            other
-        ),
-    };
+    let wasm_bytes = value_list_to_u8_vec(generated_wasm_list);
 
     // Now execute the Wasm binary emitted BY definy's own compiled code!
     let execution_result = definy_core::wasm_emitter::execute_wasm(&wasm_bytes)
@@ -368,12 +319,7 @@ fn test_self_hosted_optimize_expression_execution() {
         expr_type_opt.clone(),
     );
 
-    let call_optimize = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            optimize_hash,
-        ))),
-        argument: Box::new(expr_to_optimize),
-    });
+    let call_optimize = call_part1(optimize_hash, expr_to_optimize);
 
     // Execute self-hosted optimizer!
     let optimized_result = definy_core::evaluate_expression(&call_optimize, &events)
@@ -390,26 +336,12 @@ fn test_self_hosted_optimize_expression_execution() {
 
     // Now compile the folded AST: number(42) directly to Wasm
     let folded_ast = ast_num(42, expr_type_opt);
-    let call_compile = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            compile_to_wasm_hash,
-        ))),
-        argument: Box::new(folded_ast),
-    });
+    let call_compile = call_part1(compile_to_wasm_hash, folded_ast);
 
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
         .expect("Failed to compile optimized AST to Wasm");
 
-    let wasm_bytes: Vec<u8> = match generated_wasm_list {
-        Value::List(bytes) => bytes
-            .into_iter()
-            .map(|v| match v {
-                Value::Number(n) => n as u8,
-                other => panic!("Expected Number byte, got: {:?}", other),
-            })
-            .collect(),
-        other => panic!("Expected List of bytes, got: {:?}", other),
-    };
+    let wasm_bytes = value_list_to_u8_vec(generated_wasm_list);
 
     let execution_result = definy_core::wasm_emitter::execute_wasm(&wasm_bytes)
         .expect("Failed to execute Wasm from optimized AST");
@@ -513,12 +445,7 @@ fn test_self_hosted_validate_module_execution() {
         ],
     });
 
-    let call_valid = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            validate_module_hash.clone(),
-        ))),
-        argument: Box::new(valid_mod),
-    });
+    let call_valid = call_part1(validate_module_hash.clone(), valid_mod);
 
     let valid_result = definy_core::evaluate_expression(&call_valid, &events)
         .expect("Failed to evaluate validate-module on valid module");
@@ -546,12 +473,7 @@ fn test_self_hosted_validate_module_execution() {
         ],
     });
 
-    let call_invalid = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            validate_module_hash,
-        ))),
-        argument: Box::new(invalid_mod),
-    });
+    let call_invalid = call_part1(validate_module_hash, invalid_mod);
 
     let invalid_result = definy_core::evaluate_expression(&call_invalid, &events)
         .expect("Failed to evaluate validate-module on invalid module");
@@ -560,8 +482,6 @@ fn test_self_hosted_validate_module_execution() {
 
 #[test]
 fn test_self_hosted_value_equals_execution() {
-    use definy_event::event::NumberExpression;
-
     let (account, mod_id) = get_test_account_and_mod_id();
 
     let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
@@ -570,65 +490,38 @@ fn test_self_hosted_value_equals_execution() {
 
     let events = create_test_module_events(account, vec![val_part, val_equals], 201);
 
-    let val_num = |n: i64| {
-        Expression::Variant(VariantExpression {
-            type_part_definition_event_hash: None,
-            tag: "number".into(),
-            payload: Some(Box::new(Expression::Number(NumberExpression { value: n }))),
-        })
-    };
-
-    let val_str = |s: &str| {
-        Expression::Variant(VariantExpression {
-            type_part_definition_event_hash: None,
-            tag: "string".into(),
-            payload: Some(Box::new(Expression::String(StringExpression {
-                value: s.into(),
-            }))),
-        })
-    };
-
-    let val_bool = |b: bool| {
-        Expression::Variant(VariantExpression {
-            type_part_definition_event_hash: None,
-            tag: "boolean".into(),
-            payload: Some(Box::new(Expression::Boolean(
-                definy_event::event::BooleanExpression { value: b },
-            ))),
-        })
-    };
-
     let check_eq = |a: Expression, b: Expression| {
-        let call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    val_eq_hash.clone(),
-                ))),
-                argument: Box::new(a),
-            })),
-            argument: Box::new(b),
-        });
+        let call = call_part2(val_eq_hash.clone(), a, b);
         definy_core::evaluate_expression(&call, &events).expect("evaluate value-equals")
     };
 
     // Numbers: 42 == 42 -> true, 42 == 100 -> false
-    assert_eq!(check_eq(val_num(42), val_num(42)), Value::Bool(true));
-    assert_eq!(check_eq(val_num(42), val_num(100)), Value::Bool(false));
-
-    // Strings: "hello" == "hello" -> true, "hello" == "world" -> false
     assert_eq!(
-        check_eq(val_str("hello"), val_str("hello")),
+        check_eq(test_val_num(42), test_val_num(42)),
         Value::Bool(true)
     );
     assert_eq!(
-        check_eq(val_str("hello"), val_str("world")),
+        check_eq(test_val_num(42), test_val_num(100)),
+        Value::Bool(false)
+    );
+
+    // Strings: "hello" == "hello" -> true, "hello" == "world" -> false
+    assert_eq!(
+        check_eq(test_val_str("hello"), test_val_str("hello")),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        check_eq(test_val_str("hello"), test_val_str("world")),
         Value::Bool(false)
     );
 
     // Booleans: true == true -> true, true == false -> false
-    assert_eq!(check_eq(val_bool(true), val_bool(true)), Value::Bool(true));
     assert_eq!(
-        check_eq(val_bool(true), val_bool(false)),
+        check_eq(test_val_bool(true), test_val_bool(true)),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        check_eq(test_val_bool(true), test_val_bool(false)),
         Value::Bool(false)
     );
 }
@@ -771,15 +664,7 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
     });
 
     let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
-    let eval_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                eval_hash,
-            ))),
-            argument: Box::new(match_ast),
-        })),
-        argument: Box::new(empty_env),
-    });
+    let eval_call = call_part2(eval_hash, match_ast, empty_env);
 
     let eval_result = definy_core::evaluate_expression(&eval_call, &events)
         .expect("Failed to evaluate self-hosted variant and match");
@@ -834,15 +719,7 @@ fn test_self_hosted_list_map_and_fold_execution() {
         ],
     });
 
-    let map_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                map_hash,
-            ))),
-            argument: Box::new(double_fn),
-        })),
-        argument: Box::new(list_input),
-    });
+    let map_call = call_part2(map_hash, double_fn, list_input);
 
     let map_res = definy_core::evaluate_expression(&map_call, &events)
         .expect("Failed to evaluate self-hosted list-map");
@@ -877,18 +754,12 @@ fn test_self_hosted_list_map_and_fold_execution() {
         ],
     });
 
-    let fold_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    fold_hash,
-                ))),
-                argument: Box::new(add_reducer),
-            })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-        })),
-        argument: Box::new(fold_list_input),
-    });
+    let fold_call = call_part3(
+        fold_hash,
+        add_reducer,
+        Expression::Number(NumberExpression { value: 0 }),
+        fold_list_input,
+    );
 
     let fold_res = definy_core::evaluate_expression(&fold_call, &events)
         .expect("Failed to evaluate self-hosted list-fold");

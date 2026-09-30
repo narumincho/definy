@@ -106,3 +106,87 @@ pub fn ast_mul(
         type_part_definition_event_hash: expr_type_hash,
     })
 }
+
+/// 1引数パーツ呼び出し式 `part_ref(arg)` を構築します。
+pub fn call_part1(part_hash: EventHashId, arg: Expression) -> Expression {
+    Expression::Call(definy_event::event::CallExpression {
+        function: Box::new(Expression::PartReference(
+            definy_event::event::PartReferenceExpression::new(part_hash),
+        )),
+        argument: Box::new(arg),
+    })
+}
+
+/// カリー化 2引数パーツ呼び出し式 `part_ref(arg1)(arg2)` を構築します。
+pub fn call_part2(part_hash: EventHashId, arg1: Expression, arg2: Expression) -> Expression {
+    Expression::Call(definy_event::event::CallExpression {
+        function: Box::new(Expression::Call(definy_event::event::CallExpression {
+            function: Box::new(Expression::PartReference(
+                definy_event::event::PartReferenceExpression::new(part_hash),
+            )),
+            argument: Box::new(arg1),
+        })),
+        argument: Box::new(arg2),
+    })
+}
+
+/// カリー化 3引数パーツ呼び出し式 `part_ref(arg1)(arg2)(arg3)` を構築します。
+pub fn call_part3(
+    part_hash: EventHashId,
+    arg1: Expression,
+    arg2: Expression,
+    arg3: Expression,
+) -> Expression {
+    Expression::Call(definy_event::event::CallExpression {
+        function: Box::new(call_part2(part_hash, arg1, arg2)),
+        argument: Box::new(arg3),
+    })
+}
+
+/// 式評価結果の `Value::List` (数値リスト) からバイト列 `Vec<u8>` を抽出します。
+pub fn value_list_to_u8_vec(val: definy_core::Value) -> Vec<u8> {
+    match val {
+        definy_core::Value::List(bytes) => bytes
+            .into_iter()
+            .map(|v| match v {
+                definy_core::Value::Number(n) => n as u8,
+                other => panic!(
+                    "Expected Number byte in generated wasm list, got: {:?}",
+                    other
+                ),
+            })
+            .collect(),
+        other => panic!("Expected List of bytes, got: {:?}", other),
+    }
+}
+
+/// テスト用 `core.value` の数値バリアント式を構築します。
+pub fn test_val_num(n: i64) -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "number".into(),
+        payload: Some(Box::new(Expression::Number(NumberExpression { value: n }))),
+    })
+}
+
+/// テスト用 `core.value` の文字列バリアント式を構築します。
+pub fn test_val_str(s: &str) -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "string".into(),
+        payload: Some(Box::new(Expression::String(
+            definy_event::event::StringExpression { value: s.into() },
+        ))),
+    })
+}
+
+/// テスト用 `core.value` の真偽値バリアント式を構築します。
+pub fn test_val_bool(b: bool) -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "boolean".into(),
+        payload: Some(Box::new(Expression::Boolean(
+            definy_event::event::BooleanExpression { value: b },
+        ))),
+    })
+}
