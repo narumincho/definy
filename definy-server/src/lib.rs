@@ -40,6 +40,19 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
     let state = AppState {
         db: Arc::new(RwLock::new(None)),
     };
+    println!("Initializing database connection and schema...");
+    match db::init_db().await {
+        Ok(db) => {
+            *state.db.write().await = Some(db);
+            println!("Database initialized successfully on startup.");
+        }
+        Err(err) => {
+            eprintln!(
+                "WARNING: Failed to initialize database on startup ({:?}). Will retry on demand.",
+                err
+            );
+        }
+    }
     let mcp_session_manager = mcp::McpSessionManager::new();
 
     let port: u16 = std::env::var("PORT")
@@ -224,14 +237,14 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
         return Some(db);
     }
 
+    let mut guard = state.db.write().await;
+    if let Some(existing_db) = guard.clone() {
+        return Some(existing_db);
+    }
+
     match db::init_db().await {
         Ok(db) => {
-            let mut guard = state.db.write().await;
-            if let Some(existing_db) = guard.clone() {
-                return Some(existing_db);
-            }
             *guard = Some(db.clone());
-            drop(guard);
             println!("Database is available. API requests will use the database.");
             Some(db)
         }
