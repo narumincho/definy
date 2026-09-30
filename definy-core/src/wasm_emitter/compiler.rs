@@ -602,15 +602,69 @@ fn emit_binary_comparison(
     next_local_idx: &mut u32,
     ctx: &mut CompileContext,
 ) -> Result<(), String> {
-    emit_expression(left, out, env, next_local_idx, ctx)?;
-    out.push(I64_LOAD);
-    encode_mem_arg(out, 3, 8);
+    if opcode == I64_EQ || opcode == I64_NE {
+        let left_ptr_local = *next_local_idx;
+        *next_local_idx += 1;
+        let right_ptr_local = *next_local_idx;
+        *next_local_idx += 1;
 
-    emit_expression(right, out, env, next_local_idx, ctx)?;
-    out.push(I64_LOAD);
-    encode_mem_arg(out, 3, 8);
+        emit_expression(left, out, env, next_local_idx, ctx)?;
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, left_ptr_local);
 
-    out.push(opcode); // comparison returns i32
+        emit_expression(right, out, env, next_local_idx, ctx)?;
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, right_ptr_local);
+
+        // Check if both operands are strings (Tag 2: String at offset 0)
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, left_ptr_local);
+        out.push(I32_LOAD8_U);
+        encode_mem_arg(out, 0, 0);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 2);
+        out.push(I32_EQ);
+
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, right_ptr_local);
+        out.push(I32_LOAD8_U);
+        encode_mem_arg(out, 0, 0);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 2);
+        out.push(I32_EQ);
+
+        out.push(I32_AND);
+
+        out.push(IF);
+        out.push(BLOCK_TYPE_I32);
+        super::adt_ops::emit_string_eq(left_ptr_local, right_ptr_local, out, next_local_idx);
+        if opcode == I64_NE {
+            out.push(I32_EQZ);
+        }
+        out.push(ELSE);
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, left_ptr_local);
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, right_ptr_local);
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        out.push(opcode);
+        out.push(END);
+    } else {
+        emit_expression(left, out, env, next_local_idx, ctx)?;
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        emit_expression(right, out, env, next_local_idx, ctx)?;
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        out.push(opcode); // comparison returns i32
+    }
 
     emit_alloc_bool_from_stack(out, next_local_idx);
     Ok(())
@@ -721,8 +775,8 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::BitXor(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
         Expression::ShiftLeft(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
         Expression::ShiftRight(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
-        Expression::Equal(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::NotEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::Equal(e) => 10 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::NotEqual(e) => 10 + count_locals(&e.left) + count_locals(&e.right),
         Expression::LessThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
         Expression::LessThanOrEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
         Expression::GreaterThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),

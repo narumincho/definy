@@ -71,6 +71,9 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
     let env_lookup_inner = crate::builtin_value_type::create_env_lookup_inner_part(&mod_id);
     let env_extend = crate::builtin_value_type::create_env_extend_part(&mod_id);
     let eval_value = crate::builtin_evaluator::create_eval_value_part(&mod_id);
+    let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&mod_id);
+    let eval_match_arms_inner =
+        crate::builtin_eval_match::create_eval_match_arms_inner_part(&mod_id);
 
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
@@ -84,6 +87,8 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
             env_lookup_inner,
             env_extend,
             eval_value,
+            eval_match_arms,
+            eval_match_arms_inner,
         ],
         125,
     );
@@ -551,4 +556,341 @@ fn test_self_hosted_validate_module_execution() {
     let invalid_result = definy_core::evaluate_expression(&call_invalid, &events)
         .expect("Failed to evaluate validate-module on invalid module");
     assert_eq!(invalid_result, Value::Bool(false));
+}
+
+#[test]
+fn test_self_hosted_value_equals_execution() {
+    use definy_event::event::NumberExpression;
+
+    let (account, mod_id) = get_test_account_and_mod_id();
+
+    let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
+    let val_equals = crate::builtin_value_type::create_value_equals_part(&mod_id);
+    let val_eq_hash = derive_module_part_id(&mod_id, "value-equals");
+
+    let events = create_test_module_events(account, vec![val_part, val_equals], 201);
+
+    let val_num = |n: i64| {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "number".into(),
+            payload: Some(Box::new(Expression::Number(NumberExpression { value: n }))),
+        })
+    };
+
+    let val_str = |s: &str| {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "string".into(),
+            payload: Some(Box::new(Expression::String(StringExpression {
+                value: s.into(),
+            }))),
+        })
+    };
+
+    let val_bool = |b: bool| {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "boolean".into(),
+            payload: Some(Box::new(Expression::Boolean(
+                definy_event::event::BooleanExpression { value: b },
+            ))),
+        })
+    };
+
+    let check_eq = |a: Expression, b: Expression| {
+        let call = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    val_eq_hash.clone(),
+                ))),
+                argument: Box::new(a),
+            })),
+            argument: Box::new(b),
+        });
+        definy_core::evaluate_expression(&call, &events).expect("evaluate value-equals")
+    };
+
+    // Numbers: 42 == 42 -> true, 42 == 100 -> false
+    assert_eq!(check_eq(val_num(42), val_num(42)), Value::Bool(true));
+    assert_eq!(check_eq(val_num(42), val_num(100)), Value::Bool(false));
+
+    // Strings: "hello" == "hello" -> true, "hello" == "world" -> false
+    assert_eq!(
+        check_eq(val_str("hello"), val_str("hello")),
+        Value::Bool(true)
+    );
+    assert_eq!(
+        check_eq(val_str("hello"), val_str("world")),
+        Value::Bool(false)
+    );
+
+    // Booleans: true == true -> true, true == false -> false
+    assert_eq!(check_eq(val_bool(true), val_bool(true)), Value::Bool(true));
+    assert_eq!(
+        check_eq(val_bool(true), val_bool(false)),
+        Value::Bool(false)
+    );
+}
+
+#[test]
+fn test_self_hosted_eval_value_variant_and_match_execution() {
+    use definy_event::event::NumberExpression;
+
+    let (account, mod_id) = get_test_account_and_mod_id();
+
+    let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
+    let env_part = crate::builtin_value_type::create_env_type_part(&mod_id);
+    let env_lookup = crate::builtin_value_type::create_env_lookup_part(&mod_id);
+    let env_lookup_inner = crate::builtin_value_type::create_env_lookup_inner_part(&mod_id);
+    let env_extend = crate::builtin_value_type::create_env_extend_part(&mod_id);
+    let eval_value = crate::builtin_evaluator::create_eval_value_part(&mod_id);
+    let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&mod_id);
+    let eval_match_arms_inner =
+        crate::builtin_eval_match::create_eval_match_arms_inner_part(&mod_id);
+
+    let eval_hash = derive_module_part_id(&mod_id, "eval-value");
+
+    let events = create_test_module_events(
+        account,
+        vec![
+            val_part,
+            env_part,
+            env_lookup,
+            env_lookup_inner,
+            env_extend,
+            eval_value,
+            eval_match_arms,
+            eval_match_arms_inner,
+        ],
+        202,
+    );
+
+    // Target AST: variant("some", 42)
+    let target_ast = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "variant".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "tag".into(),
+                    value: Box::new(Expression::String(StringExpression {
+                        value: "some".into(),
+                    })),
+                },
+                TypeLiteralItemExpression {
+                    key: "payload".into(),
+                    value: Box::new(Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "some".into(),
+                        payload: Some(Box::new(Expression::Variant(VariantExpression {
+                            type_part_definition_event_hash: None,
+                            tag: "number".into(),
+                            payload: Some(Box::new(Expression::Number(NumberExpression {
+                                value: 42,
+                            }))),
+                        }))),
+                    })),
+                },
+            ],
+        }))),
+    });
+
+    // Arm: { tag: "some", variable_id: 10, body: variable(10) + 8 }
+    let arm_some = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "tag".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "some".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "variable_id".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+            },
+            TypeLiteralItemExpression {
+                key: "body".into(),
+                value: Box::new(Expression::Variant(VariantExpression {
+                    type_part_definition_event_hash: None,
+                    tag: "add".into(),
+                    payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "left".into(),
+                                value: Box::new(Expression::Variant(VariantExpression {
+                                    type_part_definition_event_hash: None,
+                                    tag: "variable".into(),
+                                    payload: Some(Box::new(Expression::TypeLiteral(
+                                        TypeLiteralExpression {
+                                            items: vec![TypeLiteralItemExpression {
+                                                key: "variable_id".into(),
+                                                value: Box::new(Expression::Number(
+                                                    NumberExpression { value: 10 },
+                                                )),
+                                            }],
+                                        },
+                                    ))),
+                                })),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "right".into(),
+                                value: Box::new(Expression::Variant(VariantExpression {
+                                    type_part_definition_event_hash: None,
+                                    tag: "number".into(),
+                                    payload: Some(Box::new(Expression::Number(NumberExpression {
+                                        value: 8,
+                                    }))),
+                                })),
+                            },
+                        ],
+                    }))),
+                })),
+            },
+        ],
+    });
+
+    // Match AST: match(variant("some", 42), [arm_some])
+    let match_ast = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "match".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "target".into(),
+                    value: Box::new(target_ast),
+                },
+                TypeLiteralItemExpression {
+                    key: "arms".into(),
+                    value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                        items: vec![arm_some],
+                    })),
+                },
+            ],
+        }))),
+    });
+
+    let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let eval_call = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                eval_hash,
+            ))),
+            argument: Box::new(match_ast),
+        })),
+        argument: Box::new(empty_env),
+    });
+
+    let eval_result = definy_core::evaluate_expression(&eval_call, &events)
+        .expect("Failed to evaluate self-hosted variant and match");
+
+    // Match arms evaluated 42 + 8 = 50 -> value.number(50)
+    assert_eq!(
+        eval_result,
+        Value::Variant {
+            tag: "number".into(),
+            payload: Some(Box::new(Value::Number(50))),
+        }
+    );
+}
+
+#[test]
+fn test_self_hosted_list_map_and_fold_execution() {
+    use definy_event::event::{FunctionExpression, MultiplyExpression, NumberExpression};
+
+    let (account, mod_id) = get_test_account_and_mod_id();
+
+    let list_map = crate::builtin_list_ops::create_list_map_part(&mod_id);
+    let list_map_inner = crate::builtin_list_ops::create_list_map_inner_part(&mod_id);
+    let list_fold = crate::builtin_list_ops::create_list_fold_part(&mod_id);
+    let list_fold_inner = crate::builtin_list_ops::create_list_fold_inner_part(&mod_id);
+
+    let map_hash = derive_module_part_id(&mod_id, "list-map");
+    let fold_hash = derive_module_part_id(&mod_id, "list-fold");
+
+    let events = create_test_module_events(
+        account,
+        vec![list_map, list_map_inner, list_fold, list_fold_inner],
+        203,
+    );
+
+    // 1. Test list-map: map (x => x * 2) [1, 2, 3] -> [2, 4, 6]
+    let double_fn = Expression::Function(FunctionExpression {
+        parameter_id: 10,
+        parameter_name: "x".into(),
+        body: Box::new(Expression::Multiply(MultiplyExpression {
+            left: Box::new(Expression::Variable(
+                definy_event::event::VariableExpression { variable_id: 10 },
+            )),
+            right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+        })),
+    });
+
+    let list_input = Expression::ListLiteral(ListLiteralExpression {
+        items: vec![
+            Expression::Number(NumberExpression { value: 1 }),
+            Expression::Number(NumberExpression { value: 2 }),
+            Expression::Number(NumberExpression { value: 3 }),
+        ],
+    });
+
+    let map_call = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                map_hash,
+            ))),
+            argument: Box::new(double_fn),
+        })),
+        argument: Box::new(list_input),
+    });
+
+    let map_res = definy_core::evaluate_expression(&map_call, &events)
+        .expect("Failed to evaluate self-hosted list-map");
+    assert_eq!(
+        map_res,
+        Value::List(vec![Value::Number(2), Value::Number(4), Value::Number(6)])
+    );
+
+    // 2. Test list-fold: fold (acc => x => acc + x) 0 [10, 20, 30] -> 60
+    let add_reducer = Expression::Function(FunctionExpression {
+        parameter_id: 20,
+        parameter_name: "acc".into(),
+        body: Box::new(Expression::Function(FunctionExpression {
+            parameter_id: 21,
+            parameter_name: "x".into(),
+            body: Box::new(Expression::Add(definy_event::event::AddExpression {
+                left: Box::new(Expression::Variable(
+                    definy_event::event::VariableExpression { variable_id: 20 },
+                )),
+                right: Box::new(Expression::Variable(
+                    definy_event::event::VariableExpression { variable_id: 21 },
+                )),
+            })),
+        })),
+    });
+
+    let fold_list_input = Expression::ListLiteral(ListLiteralExpression {
+        items: vec![
+            Expression::Number(NumberExpression { value: 10 }),
+            Expression::Number(NumberExpression { value: 20 }),
+            Expression::Number(NumberExpression { value: 30 }),
+        ],
+    });
+
+    let fold_call = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    fold_hash,
+                ))),
+                argument: Box::new(add_reducer),
+            })),
+            argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
+        })),
+        argument: Box::new(fold_list_input),
+    });
+
+    let fold_res = definy_core::evaluate_expression(&fold_call, &events)
+        .expect("Failed to evaluate self-hosted list-fold");
+    assert_eq!(fold_res, Value::Number(60));
 }

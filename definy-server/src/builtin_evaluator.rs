@@ -16,6 +16,7 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let env_lookup_hash = derive_module_part_id(core_module_id, "env-lookup");
     let env_extend_hash = derive_module_part_id(core_module_id, "env-extend");
     let eval_value_hash = derive_module_part_id(core_module_id, "eval-value");
+    let eval_match_arms_hash = derive_module_part_id(core_module_id, "eval-match-arms");
 
     // Helper: call eval-value(sub_expr)(env)
     fn eval_sub(eval_hash: &EventHashId, sub_expr: Expression, env_expr: Expression) -> Expression {
@@ -51,6 +52,25 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
             type_part_definition_event_hash: None,
             tag: "boolean".into(),
             payload: Some(Box::new(b)),
+        })
+    }
+
+    fn val_variant(tag: Expression, payload: Expression) -> Expression {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "variant".into(),
+            payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "tag".into(),
+                        value: Box::new(tag),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "payload".into(),
+                        value: Box::new(payload),
+                    },
+                ],
+            }))),
         })
     }
 
@@ -732,6 +752,145 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
             variable_id: Some(or_var_id),
             variable_name: Some("or_e".into()),
             body: Box::new(or_body),
+        });
+    }
+
+    // 15. Variant constructor: variant({ tag, payload })
+    {
+        let var_id = 33;
+        let tag_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_id,
+            })),
+            key: "tag".into(),
+        });
+        let payload_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_id,
+            })),
+            key: "payload".into(),
+        });
+
+        let payload_sub_id = 34;
+        let payload_match = Expression::Match(MatchExpression {
+            target: Box::new(payload_expr),
+            arms: vec![
+                MatchArm {
+                    tag: "none".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(val_variant(tag_expr.clone(), val_unit.clone())),
+                },
+                MatchArm {
+                    tag: "some".into(),
+                    variable_id: Some(payload_sub_id),
+                    variable_name: Some("sub_e".into()),
+                    body: Box::new(val_variant(
+                        tag_expr,
+                        eval_sub(
+                            &eval_value_hash,
+                            Expression::Variable(VariableExpression {
+                                variable_id: payload_sub_id,
+                            }),
+                            Expression::Variable(VariableExpression { variable_id: 1 }),
+                        ),
+                    )),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(91),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "variant".into(),
+            variable_id: Some(var_id),
+            variable_name: Some("v_def".into()),
+            body: Box::new(payload_match),
+        });
+    }
+
+    // 16. Match expression: match({ target, arms })
+    {
+        let match_var_id = 35;
+        let target_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: match_var_id,
+            })),
+            key: "target".into(),
+        });
+        let arms_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: match_var_id,
+            })),
+            key: "arms".into(),
+        });
+
+        let eval_target = eval_sub(
+            &eval_value_hash,
+            target_expr,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+        );
+
+        let target_var_val_id = 36;
+        let target_val_record = Expression::Variable(VariableExpression {
+            variable_id: target_var_val_id,
+        });
+
+        let target_tag = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(target_val_record.clone()),
+            key: "tag".into(),
+        });
+        let target_payload = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(target_val_record),
+            key: "payload".into(),
+        });
+
+        // call eval-match-arms(arms)(target_tag)(target_payload)(env)
+        let eval_match_call = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::Call(CallExpression {
+                    function: Box::new(Expression::Call(CallExpression {
+                        function: Box::new(Expression::PartReference(
+                            PartReferenceExpression::new(eval_match_arms_hash),
+                        )),
+                        argument: Box::new(arms_expr),
+                    })),
+                    argument: Box::new(target_tag),
+                })),
+                argument: Box::new(target_payload),
+            })),
+            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        });
+
+        let match_body = Expression::Match(MatchExpression {
+            target: Box::new(eval_target),
+            arms: vec![
+                MatchArm {
+                    tag: "variant".into(),
+                    variable_id: Some(target_var_val_id),
+                    variable_name: Some("v_val".into()),
+                    body: Box::new(eval_match_call),
+                },
+                MatchArm {
+                    tag: "_".into(),
+                    variable_id: Some(90),
+                    variable_name: Some("_".into()),
+                    body: Box::new(val_unit.clone()),
+                },
+            ],
+            default: None,
+        });
+
+        arms.push(MatchArm {
+            tag: "match".into(),
+            variable_id: Some(match_var_id),
+            variable_name: Some("match_e".into()),
+            body: Box::new(match_body),
         });
     }
 

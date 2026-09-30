@@ -1,6 +1,8 @@
+mod builtin_eval_match;
 mod builtin_evaluator;
 mod builtin_expression_type;
 mod builtin_formatter;
+mod builtin_list_ops;
 mod builtin_migration;
 mod builtin_optimizer;
 mod builtin_std_functions;

@@ -1,11 +1,11 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Description, EqualExpression, Expression, FunctionExpression, IfExpression,
-    LessThanExpression, ListAppendExpression, ListGetExpression, ListLengthExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordGetExpression,
-    SubtractExpression, TypeListExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    TypeUnionExpression, TypeUnionVariant, VariableExpression, VariantExpression,
-    derive_module_part_id,
+    BooleanExpression, CallExpression, Description, EqualExpression, Expression,
+    FunctionExpression, IfExpression, LessThanExpression, ListAppendExpression, ListGetExpression,
+    ListLengthExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
+    PartReferenceExpression, PartType, RecordGetExpression, SubtractExpression, TypeListExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, TypeUnionExpression, TypeUnionVariant,
+    VariableExpression, VariantExpression, derive_module_part_id,
 };
 
 /// definy のランタイム値を表す自己記述型 (`core.value`)
@@ -348,6 +348,250 @@ pub fn create_env_extend_part(core_module_id: &EventHashId) -> ModulePartEntry {
         description: Description::localized(vec![
             ("en", "Extend environment with a new variable binding"),
             ("ja", "環境に新しい変数束縛を追加した新しい環境を返却"),
+        ]),
+        content_hash: None,
+        expression: Some(body),
+    }
+}
+
+/// 2つの動的値が等しいかを再帰的に判定する自己記述関数 (`core.value-equals`)
+/// `value -> value -> boolean` (カリー化関数)
+pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry {
+    let val_part_hash = derive_module_part_id(core_module_id, "value");
+    let val_equals_hash = derive_module_part_id(core_module_id, "value-equals");
+
+    // Helper: recursive call value-equals(a)(b)
+    let recurse_eq = |a: Expression, b: Expression| {
+        Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    val_equals_hash.clone(),
+                ))),
+                argument: Box::new(a),
+            })),
+            argument: Box::new(b),
+        })
+    };
+
+    let false_expr = Expression::Boolean(BooleanExpression { value: false });
+    let true_expr = Expression::Boolean(BooleanExpression { value: true });
+
+    let match_inner = |tag: &'static str, var_id: i64, body: Expression| MatchArm {
+        tag: tag.into(),
+        variable_id: Some(var_id),
+        variable_name: Some("inner".into()),
+        body: Box::new(body),
+    };
+
+    // For variant:
+    let var1_id = 14;
+    let var2_id = 24;
+    let variant_body = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        arms: vec![
+            MatchArm {
+                tag: "variant".into(),
+                variable_id: Some(var2_id),
+                variable_name: Some("v2".into()),
+                body: Box::new(Expression::If(IfExpression {
+                    condition: Box::new(Expression::Equal(EqualExpression {
+                        left: Box::new(Expression::RecordGet(RecordGetExpression {
+                            record: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: var1_id,
+                            })),
+                            key: "tag".into(),
+                        })),
+                        right: Box::new(Expression::RecordGet(RecordGetExpression {
+                            record: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: var2_id,
+                            })),
+                            key: "tag".into(),
+                        })),
+                    })),
+                    then_expr: Box::new(recurse_eq(
+                        Expression::RecordGet(RecordGetExpression {
+                            record: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: var1_id,
+                            })),
+                            key: "payload".into(),
+                        }),
+                        Expression::RecordGet(RecordGetExpression {
+                            record: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: var2_id,
+                            })),
+                            key: "payload".into(),
+                        }),
+                    )),
+                    else_expr: Box::new(false_expr.clone()),
+                })),
+            },
+            MatchArm {
+                tag: "_".into(),
+                variable_id: Some(99),
+                variable_name: Some("_".into()),
+                body: Box::new(false_expr.clone()),
+            },
+        ],
+        default: None,
+    });
+
+    let arms = vec![
+        // number
+        MatchArm {
+            tag: "number".into(),
+            variable_id: Some(10),
+            variable_name: Some("n1".into()),
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                arms: vec![
+                    match_inner(
+                        "number",
+                        20,
+                        Expression::Equal(EqualExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 10,
+                            })),
+                            right: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 20,
+                            })),
+                        }),
+                    ),
+                    MatchArm {
+                        tag: "_".into(),
+                        variable_id: Some(99),
+                        variable_name: Some("_".into()),
+                        body: Box::new(false_expr.clone()),
+                    },
+                ],
+                default: None,
+            })),
+        },
+        // string
+        MatchArm {
+            tag: "string".into(),
+            variable_id: Some(11),
+            variable_name: Some("s1".into()),
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                arms: vec![
+                    match_inner(
+                        "string",
+                        21,
+                        Expression::Equal(EqualExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 11,
+                            })),
+                            right: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 21,
+                            })),
+                        }),
+                    ),
+                    MatchArm {
+                        tag: "_".into(),
+                        variable_id: Some(99),
+                        variable_name: Some("_".into()),
+                        body: Box::new(false_expr.clone()),
+                    },
+                ],
+                default: None,
+            })),
+        },
+        // boolean
+        MatchArm {
+            tag: "boolean".into(),
+            variable_id: Some(12),
+            variable_name: Some("b1".into()),
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                arms: vec![
+                    match_inner(
+                        "boolean",
+                        22,
+                        Expression::Equal(EqualExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 12,
+                            })),
+                            right: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 22,
+                            })),
+                        }),
+                    ),
+                    MatchArm {
+                        tag: "_".into(),
+                        variable_id: Some(99),
+                        variable_name: Some("_".into()),
+                        body: Box::new(false_expr.clone()),
+                    },
+                ],
+                default: None,
+            })),
+        },
+        // unit
+        MatchArm {
+            tag: "unit".into(),
+            variable_id: None,
+            variable_name: None,
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                arms: vec![
+                    MatchArm {
+                        tag: "unit".into(),
+                        variable_id: None,
+                        variable_name: None,
+                        body: Box::new(true_expr),
+                    },
+                    MatchArm {
+                        tag: "_".into(),
+                        variable_id: Some(99),
+                        variable_name: Some("_".into()),
+                        body: Box::new(false_expr.clone()),
+                    },
+                ],
+                default: None,
+            })),
+        },
+        // variant
+        MatchArm {
+            tag: "variant".into(),
+            variable_id: Some(var1_id),
+            variable_name: Some("v1".into()),
+            body: Box::new(variant_body),
+        },
+        // fallback
+        MatchArm {
+            tag: "_".into(),
+            variable_id: Some(99),
+            variable_name: Some("_".into()),
+            body: Box::new(false_expr),
+        },
+    ];
+
+    let body = Expression::Function(FunctionExpression {
+        parameter_id: 0,
+        parameter_name: "val_a".into(),
+        body: Box::new(Expression::Function(FunctionExpression {
+            parameter_id: 1,
+            parameter_name: "val_b".into(),
+            body: Box::new(Expression::Match(MatchExpression {
+                target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+                arms,
+                default: None,
+            })),
+        })),
+    });
+
+    ModulePartEntry {
+        name: "value-equals".into(),
+        part_type: Some(PartType::Function {
+            parameter: Box::new(PartType::TypePart(val_part_hash.clone())),
+            return_type: Box::new(PartType::Function {
+                parameter: Box::new(PartType::TypePart(val_part_hash)),
+                return_type: Box::new(PartType::Boolean),
+            }),
+        }),
+        description: Description::localized(vec![
+            ("en", "Compare two dynamic values for equality"),
+            ("ja", "2つの動的値が等しいかを再帰的に判定する関数"),
         ]),
         content_hash: None,
         expression: Some(body),

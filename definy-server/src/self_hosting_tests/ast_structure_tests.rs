@@ -48,6 +48,20 @@ fn test_self_hosting_parts_registration() {
     // Optimizer part
     let optimize_expr = crate::builtin_optimizer::create_optimize_expression_part(&core_id);
 
+    // Value equals part
+    let val_equals = crate::builtin_value_type::create_value_equals_part(&core_id);
+
+    // Pattern match evaluation parts
+    let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&core_id);
+    let eval_match_arms_inner =
+        crate::builtin_eval_match::create_eval_match_arms_inner_part(&core_id);
+
+    // List operations parts
+    let list_map = crate::builtin_list_ops::create_list_map_part(&core_id);
+    let list_map_inner = crate::builtin_list_ops::create_list_map_inner_part(&core_id);
+    let list_fold = crate::builtin_list_ops::create_list_fold_part(&core_id);
+    let list_fold_inner = crate::builtin_list_ops::create_list_fold_inner_part(&core_id);
+
     let all_parts = vec![
         val_part,
         env_part,
@@ -69,6 +83,13 @@ fn test_self_hosting_parts_registration() {
         validate_part,
         validate_module,
         optimize_expr,
+        val_equals,
+        eval_match_arms,
+        eval_match_arms_inner,
+        list_map,
+        list_map_inner,
+        list_fold,
+        list_fold_inner,
     ];
 
     let mut names = HashSet::new();
@@ -458,5 +479,65 @@ fn test_validate_module_ast_structure() {
             }
         }
         other => panic!("Expected Function, got: {:?}", other),
+    }
+}
+
+/// `core.value-equals` の AST 構造（カリー化関数、パターンマッチ）を検証します。
+#[test]
+fn test_value_equals_ast_structure() {
+    let core_id = get_dummy_core_id();
+    let val_eq_part = crate::builtin_value_type::create_value_equals_part(&core_id);
+    let expr = val_eq_part.expression.expect("value-equals expression");
+
+    match expr {
+        Expression::Function(f1) => match *f1.body {
+            Expression::Function(f2) => match *f2.body {
+                Expression::Match(m) => {
+                    let tags: HashSet<String> = m.arms.iter().map(|a| a.tag.to_string()).collect();
+                    assert!(tags.contains("number"));
+                    assert!(tags.contains("string"));
+                    assert!(tags.contains("boolean"));
+                    assert!(tags.contains("unit"));
+                    assert!(tags.contains("variant"));
+                    assert!(tags.contains("_"));
+                }
+                other => panic!("Expected Match, got {:?}", other),
+            },
+            other => panic!("Expected inner Function, got {:?}", other),
+        },
+        other => panic!("Expected outer Function, got {:?}", other),
+    }
+}
+
+/// `core.list-map` および `core.list-fold` の AST 構造を検証します。
+#[test]
+fn test_list_ops_ast_structure() {
+    let core_id = get_dummy_core_id();
+    let list_map_part = crate::builtin_list_ops::create_list_map_part(&core_id);
+    let list_fold_part = crate::builtin_list_ops::create_list_fold_part(&core_id);
+
+    match list_map_part.expression.expect("list-map expression") {
+        Expression::Function(f1) => match *f1.body {
+            Expression::Function(f2) => match *f2.body {
+                Expression::Call(_) => {}
+                other => panic!("Expected Call in list-map, got {:?}", other),
+            },
+            other => panic!("Expected inner Function, got {:?}", other),
+        },
+        other => panic!("Expected outer Function, got {:?}", other),
+    }
+
+    match list_fold_part.expression.expect("list-fold expression") {
+        Expression::Function(f1) => match *f1.body {
+            Expression::Function(f2) => match *f2.body {
+                Expression::Function(f3) => match *f3.body {
+                    Expression::Call(_) => {}
+                    other => panic!("Expected Call in list-fold, got {:?}", other),
+                },
+                other => panic!("Expected inner-2 Function, got {:?}", other),
+            },
+            other => panic!("Expected inner-1 Function, got {:?}", other),
+        },
+        other => panic!("Expected outer Function, got {:?}", other),
     }
 }

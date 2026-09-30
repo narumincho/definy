@@ -725,3 +725,55 @@ fn test_self_hosting_phase3_compiled_wasm_execution() {
     let val = execute_wasm(&wasm_binary).expect("Failed to execute phase3 wasm binary");
     assert_eq!(val, Value::Number(50));
 }
+
+#[test]
+fn test_compile_and_execute_string_equal_and_not_equal() {
+    let eval = |expr: &Expression| {
+        let wasm = compile_expression_to_wasm(expr, &[]).expect("compile wasm");
+        execute_wasm(&wasm).expect("execute wasm")
+    };
+
+    // Equal: "hello" == "hello" -> true
+    let eq_true = Expression::Equal(EqualExpression {
+        left: Box::new(Expression::String(StringExpression {
+            value: "hello".into(),
+        })),
+        right: Box::new(Expression::String(StringExpression {
+            value: "hello".into(),
+        })),
+    });
+    assert_eq!(eval(&eq_true), Value::Bool(true));
+
+    // Equal: "hello" == "world" -> false
+    let eq_false = Expression::Equal(EqualExpression {
+        left: Box::new(Expression::String(StringExpression {
+            value: "hello".into(),
+        })),
+        right: Box::new(Expression::String(StringExpression {
+            value: "world".into(),
+        })),
+    });
+    assert_eq!(eval(&eq_false), Value::Bool(false));
+
+    // NotEqual: "apple" != "banana" -> true
+    let ne_true = Expression::NotEqual(NotEqualExpression {
+        left: Box::new(Expression::String(StringExpression {
+            value: "apple".into(),
+        })),
+        right: Box::new(Expression::String(StringExpression {
+            value: "banana".into(),
+        })),
+    });
+    assert_eq!(eval(&ne_true), Value::Bool(true));
+
+    // NotEqual: "apple" != "apple" -> false
+    let ne_false = Expression::NotEqual(NotEqualExpression {
+        left: Box::new(Expression::String(StringExpression {
+            value: "apple".into(),
+        })),
+        right: Box::new(Expression::String(StringExpression {
+            value: "apple".into(),
+        })),
+    });
+    assert_eq!(eval(&ne_false), Value::Bool(false));
+}

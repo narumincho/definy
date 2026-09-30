@@ -300,6 +300,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_value_type::create_env_extend_part(
         &core_module_id,
     ));
+    core_parts.push(crate::builtin_value_type::create_value_equals_part(
+        &core_module_id,
+    ));
     core_parts.push(crate::builtin_type_ast::create_type_ast_part(
         &core_module_id,
     ));
@@ -315,6 +318,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_evaluator::create_eval_value_part(
         &core_module_id,
     ));
+    core_parts.push(crate::builtin_eval_match::create_eval_match_arms_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_eval_match::create_eval_match_arms_inner_part(&core_module_id));
     core_parts.push(crate::builtin_type_checker::create_type_error_part(
         &core_module_id,
     ));
@@ -353,6 +360,18 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         &core_module_id,
     ));
     core_parts.push(crate::builtin_optimizer::create_optimize_expression_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_list_ops::create_list_map_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_list_ops::create_list_map_inner_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_list_ops::create_list_fold_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_list_ops::create_list_fold_inner_part(
         &core_module_id,
     ));
 
