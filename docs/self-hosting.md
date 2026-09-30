@@ -25,62 +25,80 @@ definy
 
 ### 実サービスとの接続状況
 
-セルフホスト部品の実行テストは、Definy AST で記述した関数を Rust の `definy-core`
-実行基盤上で動かす検証です。Definy サービス全体のブートストラップが完了したことを意味しません。
+セルフホスト部品の実行テストは、Definy AST で記述した関数を Rust の
+`definy-core` 実行基盤上で動かす検証です。Definy
+サービス全体のブートストラップが完了したことを意味しません。
 
-- `core.type-check` は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、レコード構築（`record`）、フィールドアクセス（`record_get`）、型環境上の関数適用を扱います。
-  宣言型を与える `core.type-check-against` は関数引数を型環境へ束縛して関数本体を検査します。
-  lambda はパーツ宣言型が要求する関数形に沿う位置か、関数型 parameter への Call 引数でのみ受け入れます。
-  lambda を callee とする即時適用や、期待関数型のない位置の lambda は拒否します。
-  `ModulePartEntry.part_type` はパーツ直下の宣言 metadata であり、式の中に置く型 marker ではありません。
-  リスト式やパーツ参照の検査は未対応です。
+- `core.type-check`
+  は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、レコード構築（`record`）、フィールドアクセス（`record_get`）、型環境上の関数適用を扱います。
+  宣言型を与える `core.type-check-against`
+  は関数引数を型環境へ束縛して関数本体を検査します。 lambda
+  はパーツ宣言型が要求する関数形に沿う位置か、関数型 parameter への Call
+  引数でのみ受け入れます。 lambda を callee
+  とする即時適用や、期待関数型のない位置の lambda は拒否します。
+  `ModulePartEntry.part_type` はパーツ直下の宣言 metadata であり、式の中に置く型
+  marker ではありません。 リスト式やパーツ参照の検査は未対応です。
   `core.type-equals` は基本型・リスト型・関数型・record 型を再帰比較します。
-  union 型も variant の順序と optional payload 型を含めて比較し、reference 型は part hash で比較します。
-  record/union は定義順を含めて比較します。
-- `PartType::Type` は自己ホスト `type-ast` の kind `type` として扱います。通常の投稿経路では
-  `TypeNumber` / `TypeString` / `TypeBoolean` と inline な `TypeList` / `TypeFunction` /
-  `TypeLiteral` / `TypeUnion` 宣言を検証できます。別パーツを参照する type declaration は
-  module type environment がないため、引き続き拒否します。現状は adapter が各 inline node を再帰変換し、
-  self-host checker が root の kind `type` を確認します。field/tag の重複などの意味検査は未完了です。
-- Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition` 値へ変換し、
-  `core.validate-module` で検証してから保存します。式や型の変換に失敗した場合、または
+  union 型も variant の順序と optional payload 型を含めて比較し、reference 型は
+  part hash で比較します。 record/union は定義順を含めて比較します。
+- `PartType::Type` は自己ホスト `type-ast` の kind `type`
+  として扱います。通常の投稿経路では `TypeNumber` / `TypeString` / `TypeBoolean`
+  と inline な `TypeList` / `TypeFunction` / `TypeLiteral` / `TypeUnion`
+  宣言を検証できます。別パーツを参照する type declaration は module type
+  environment がないため、引き続き拒否します。現状は adapter が各 inline node
+  を再帰変換し、 self-host checker が root の kind `type`
+  を確認します。field/tag の重複などの意味検査は未完了です。
+- Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition`
+  値へ変換し、 `core.validate-module`
+  で検証してから保存します。式や型の変換に失敗した場合、または
   型チェッカーが拒否した場合は `400` を返します。
 - 現段階ではリスト・直和型構築・他パーツ参照などを網羅的に型検査できません。
-  型チェッカーの入力表現や環境が未対応のため、これらを含む有効なモジュールも fail-closed
-  で拒否される場合があります。
+  型チェッカーの入力表現や環境が未対応のため、これらを含む有効なモジュールも
+  fail-closed で拒否される場合があります。
 
-一般的なモジュールを受け入れる次のブロッカーは、module 内外の part reference を解決する型環境と、
-リスト・構築子・パターンマッチを含む式検査です。
+一般的なモジュールを受け入れる次のブロッカーは、module 内外の part reference
+を解決する型環境と、 リスト・構築子・パターンマッチを含む式検査です。
 
-Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash 衝突や既存 bytes
-と異なる内容は拒否します。ModuleCommit に同じ式が複数回現れても、投稿再試行が CAS 重複で失敗しません。
+Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash
+衝突や既存 bytes と異なる内容は拒否します。ModuleCommit
+に同じ式が複数回現れても、投稿再試行が CAS 重複で失敗しません。
 
 #### Lambda の配置規則
 
-関数値を作る `function` 式は、期待する `PartType::Function` に対応する場所だけで有効です。
-これはパーツ定義直下の関数本体（curried function は宣言された関数戻り値型に沿って束ねる）と、
-関数型 parameter を受け取る Call 引数です。`((x) => ...)(arg)` のように lambda 自体を
-callee にする即時適用は許可しません。関数の呼び出し先はパーツ参照または型環境上の変数にします。
+関数値を作る `function` 式は、期待する `PartType::Function`
+に対応する場所だけで有効です。 これはパーツ定義直下の関数本体（curried function
+は宣言された関数戻り値型に沿って束ねる）と、 関数型 parameter を受け取る Call
+引数です。`((x) => ...)(arg)` のように lambda 自体を callee
+にする即時適用は許可しません。関数の呼び出し先はパーツ参照または型環境上の変数にします。
 
-`number` などのパーツ形状も式 node ではなく、パーツ定義の `part_type` metadata に宣言します。
-その宣言型が式 root の期待型になり、`core.validate-part` が式全体を検査します。
+`number` などのパーツ形状も式 node ではなく、パーツ定義の `part_type` metadata
+に宣言します。 その宣言型が式 root の期待型になり、`core.validate-part`
+が式全体を検査します。
 
 ### 今後の実装方針
 
 以下の順で、通常の module 投稿を自己ホスト検証の対象へ広げます。
 
-1. **型宣言の意味検査**: record field 名と union tag の重複、空 variant 集合、再帰参照の規則を決め、
-  converter と self-host validator のテストを追加します。現状は別 part reference を含む型宣言を拒否します。
-2. **module type environment**: `ModuleCommitEvent` の全 part 名/hash と宣言型から環境を作り、
-  `PartReference`・構築子・相互参照を解決します。循環参照は明示的に検出し、無制限再帰を避けます。
-3. **式検査の拡張**: list/record の構築と field access、union constructor、match の網羅性を
-  `core.type-check` に追加します。self-host checker と UI diagnostics の共有ケースを conformance test します。
-4. **bootstrap の固定**: Rust migration が生成する core definitions を versioned seed として固定し、
-  空 DB から同じ hash の core が再構築できることを CI で検証します。
-5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy compiler stage1 を作り、
-  stage1 が同一 compiler と test suite を再生成できるか比較します。
-6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を capability-limited host API として公開し、
-  サーバーの純粋な業務ロジックから Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は [wasi-capability-io.md](file:///Users/narumi/Documents/GitHub/definy/docs/wasi-capability-io.md) を参照）。IO を持つサービス全体の移行は言語 runtime の拡張後です。
+1. **型宣言の意味検査**: record field 名と union tag の重複、空 variant
+   集合、再帰参照の規則を決め、 converter と self-host validator
+   のテストを追加します。現状は別 part reference を含む型宣言を拒否します。
+2. **module type environment**: `ModuleCommitEvent` の全 part 名/hash
+   と宣言型から環境を作り、
+   `PartReference`・構築子・相互参照を解決します。循環参照は明示的に検出し、無制限再帰を避けます。
+3. **式検査の拡張**: list/record の構築と field access、union constructor、match
+   の網羅性を `core.type-check` に追加します。self-host checker と UI
+   diagnostics の共有ケースを conformance test します。
+4. **bootstrap の固定**: Rust migration が生成する core definitions を versioned
+   seed として固定し、 空 DB から同じ hash の core が再構築できることを CI
+   で検証します。
+5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
+   compiler stage1 を作り、 stage1 が同一 compiler と test suite
+   を再生成できるか比較します。
+6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を
+   capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
+   Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
+   [wasi-capability-io.md](file:///Users/narumi/Documents/GitHub/definy/docs/wasi-capability-io.md)
+   を参照）。IO を持つサービス全体の移行は言語 runtime の拡張後です。
 
 ### セルフホスティング全体アーキテクチャ
 
@@ -160,7 +178,8 @@ graph TD
     `core.type-env`
   - 型等価性判定 `core.type-equals`
   - 静的型検査器 `core.type-check`: `expression -> type-env -> type-result`
-  - `core.type-check-against` による宣言型ベースの lambda 検査と inline type declaration の kind 検証
+  - `core.type-check-against` による宣言型ベースの lambda 検査と inline type
+    declaration の kind 検証
 - [x] **Phase 3: 自己ホスト WebAssembly コンパイラ (Self-Hosted Wasm Compiler)**
   - 式スタック命令列コンパイラ `core.compile-expr-instructions`:
     `expression -> list<number>`
@@ -203,15 +222,23 @@ graph TD
     `(a -> b) -> list<a> -> list<b>`、`core.list-fold`:
     `(b -> a -> b) -> b -> list<a> -> b`
   - メタ循環パターンマッチ実行および高階リスト処理の実行実証完了
-- [x] **Phase 8: レコード構築・フィールドアクセスの自己ホスト型検査 & 自己評価拡張 (Self-Hosted Record & Field Access)**
+- [x] **Phase 8: レコード構築・フィールドアクセスの自己ホスト型検査 &
+      自己評価拡張 (Self-Hosted Record & Field Access)**
   - 型エラー型 `core.type-error` に `not_a_record`, `field_not_found` を追加
-  - レコードフィールド型探索 `core.record-field-type-lookup` およびレコード型検査器 `core.type-check-record-fields` を新設
-  - 静的型検査器 `core.type-check` に `record`（レコードリテラル）および `record_get`（フィールドアクセス）の型検査アームを追加
-  - 動的値型 `core.value` に `record(value: list<{ key: string, value: value }>)` を追加
-  - 動的フィールド値探索 `core.record-field-lookup` およびレコード動的評価器 `core.eval-record-fields` を新設
-  - 完全動的値評価器 `core.eval-value` に `record` リテラルの評価および `record_get` によるフィールド値アクセスの評価アームを追加
-  - 動的等価判定器 `core.value-equals` に `core.value-equals-record-fields` を追加し、動的レコード同士の順序依存・キー/値再帰等価比較に対応
-  - Wasm コンパイラ `emit_match_arms` におけるワイルドカード `_` の無条件マッチ対応
+  - レコードフィールド型探索 `core.record-field-type-lookup`
+    およびレコード型検査器 `core.type-check-record-fields` を新設
+  - 静的型検査器 `core.type-check` に `record`（レコードリテラル）および
+    `record_get`（フィールドアクセス）の型検査アームを追加
+  - 動的値型 `core.value` に
+    `record(value: list<{ key: string, value: value }>)` を追加
+  - 動的フィールド値探索 `core.record-field-lookup` およびレコード動的評価器
+    `core.eval-record-fields` を新設
+  - 完全動的値評価器 `core.eval-value` に `record` リテラルの評価および
+    `record_get` によるフィールド値アクセスの評価アームを追加
+  - 動的等価判定器 `core.value-equals` に `core.value-equals-record-fields`
+    を追加し、動的レコード同士の順序依存・キー/値再帰等価比較に対応
+  - Wasm コンパイラ `emit_match_arms` におけるワイルドカード `_`
+    の無条件マッチ対応
   - レコード式の型検査・動的自己評価・動的等価判定およびパーツ妥当性検証（`core.validate-part`）のメタ循環実証完了
 
 ---
@@ -296,10 +323,11 @@ definy の式 AST
 type-check-against: expression -> type-env -> type-ast -> type-result
 ```
 
-式・型環境に加えて期待型を受け取る bidirectional checker です。`function` 式では期待型の
-parameter を環境へ束縛して body を return type に照らして検査します。`call` 式は環境から
-関数型を得て、引数型と parameter の一致を確認してから return type を返します。
-引数型注釈を持たない lambda の型は、宣言された期待関数型から決めます。
+式・型環境に加えて期待型を受け取る bidirectional checker です。`function`
+式では期待型の parameter を環境へ束縛して body を return type
+に照らして検査します。`call` 式は環境から 関数型を得て、引数型と parameter
+の一致を確認してから return type を返します。 引数型注釈を持たない lambda
+の型は、宣言された期待関数型から決めます。
 
 ---
 
@@ -392,8 +420,10 @@ definy 式として記述された評価器・フォーマッターパーツは�
 validate-part: part-definition -> boolean
 ```
 
-definy のパーツ定義メタデータ（`core.part-definition`）を受け取り、式（`expression`）を
-宣言型（`part_type`）に照らして `core.type-check-against` で検証する自己完結バリデータ。
+definy
+のパーツ定義メタデータ（`core.part-definition`）を受け取り、式（`expression`）を
+宣言型（`part_type`）に照らして `core.type-check-against`
+で検証する自己完結バリデータ。
 
 - 入力パーツの式を空の初期型環境（`[]`）と宣言型で検査
 - 関数式は宣言型から引数型を得て、関数本体の変数環境へ束縛
@@ -440,8 +470,8 @@ validate-module: module-definition -> boolean
 
 ### Phase 7: 直和型・パターンマッチ自己評価 & 高階コレクション
 
-- `core.eval-match-arms`, `core.eval-match-arms-inner`:
-  `match` 式のアームリストを先頭から走査し、タグ一致時にペイロードを変数環境に束縛して本体式を評価するパーツ群。
+- `core.eval-match-arms`, `core.eval-match-arms-inner`: `match`
+  式のアームリストを先頭から走査し、タグ一致時にペイロードを変数環境に束縛して本体式を評価するパーツ群。
 - `core.value-equals`:
   数値・文字列・真偽値・バリアント・レコードの深層再帰等価比較を行うパーツ。
 - `core.list-map`, `core.list-fold`:
@@ -458,7 +488,8 @@ validate-module: module-definition -> boolean
   レコード型内のフィールドリストとキー文字列を受け取り、インデックス再帰探索により対応するフィールドの型を抽出。
 - `core.type-check-record-fields`:
   `list<{ key: string, value: expression }> -> type-env -> number -> list<{ key: string, value: type-ast }> -> type-result`
-  レコードリテラルを走査し、各フィールド式を `core.type-check` で検査して成功時に型アスト `record(list<{ key, value }>)` を構築。
+  レコードリテラルを走査し、各フィールド式を `core.type-check`
+  で検査して成功時に型アスト `record(list<{ key, value }>)` を構築。
 
 #### 2. レコード動的評価パーツ群 (`builtin_evaluator/record_eval.rs`)
 
@@ -467,13 +498,15 @@ validate-module: module-definition -> boolean
   評価済み動的レコード値からキーに合致するフィールド値を探索。
 - `core.eval-record-fields`:
   `list<{ key: string, value: expression }> -> env -> number -> list<{ key: string, value: value }> -> value`
-  レコードリテラルの全フィールド式を `core.eval-value` で動的評価して動的レコード `core.value::record` を構築。
+  レコードリテラルの全フィールド式を `core.eval-value`
+  で動的評価して動的レコード `core.value::record` を構築。
 
 #### 3. レコード動的等価判定パーツ (`builtin_value_type.rs`)
 
 - `core.value-equals-record-fields`:
   `list<{ key: string, value: value }> -> list<{ key: string, value: value }> -> number -> boolean`
-  2つの動的レコードの長さ・フィールド名・および各値を `core.value-equals` で再帰比較。
+  2つの動的レコードの長さ・フィールド名・および各値を `core.value-equals`
+  で再帰比較。
 
 ---
 
@@ -499,10 +532,10 @@ end-to-end メタ循環実行がすべて実証されています。 テスト�
 | `test_self_hosted_value_equals_execution`                 | `core.value-equals`                                 | 数値・文字列・真偽値の動的値等価比較                            | 判定結果 `true` / `false`                  |
 | `test_self_hosted_eval_value_variant_and_match_execution` | `core.eval-value` + `core.eval-match-arms`          | AST `match variant("some", 42) { some(x) => x + 8 }`            | パターンマッチ自己実行で `50` を算出       |
 | `test_self_hosted_list_map_and_fold_execution`            | `core.list-map` + `core.list-fold`                  | `map (*2) [1,2,3]` および `fold (+) 0 [10,20,30]`               | `[2, 4, 6]` および `60` を算出             |
-| `test_self_hosted_record_type_checking_execution`         | `core.type-check`                                   | レコードリテラル `{ x: 10, y: "hello" }` の静的型検査            | 推論型 `ok(record({ x: number, y: str }))`  |
-| `test_self_hosted_record_get_type_checking_execution`     | `core.type-check`                                   | フィールドアクセス `{ a: 42 }.a` および不正アクセス時のエラー    | 成功型 `ok(number)` および `not_a_record`   |
-| `test_self_hosted_record_eval_value_and_get_execution`     | `core.eval-value`                                   | レコード評価およびフィールド抽出 `{ x: 20 + 22 }.x`              | 動的値 `number(42)`                        |
-| `test_self_hosted_record_value_equals_execution`          | `core.value-equals`                                 | レコード同士の等価比較 `{ a: 1, b: "ok" } == { a: 1, b: "ok" }`  | 判定結果 `true` / `false`                  |
+| `test_self_hosted_record_type_checking_execution`         | `core.type-check`                                   | レコードリテラル `{ x: 10, y: "hello" }` の静的型検査           | 推論型 `ok(record({ x: number, y: str }))` |
+| `test_self_hosted_record_get_type_checking_execution`     | `core.type-check`                                   | フィールドアクセス `{ a: 42 }.a` および不正アクセス時のエラー   | 成功型 `ok(number)` および `not_a_record`  |
+| `test_self_hosted_record_eval_value_and_get_execution`    | `core.eval-value`                                   | レコード評価およびフィールド抽出 `{ x: 20 + 22 }.x`             | 動的値 `number(42)`                        |
+| `test_self_hosted_record_value_equals_execution`          | `core.value-equals`                                 | レコード同士の等価比較 `{ a: 1, b: "ok" } == { a: 1, b: "ok" }` | 判定結果 `true` / `false`                  |
 | `test_self_hosted_validate_part_with_record_expression`   | `core.validate-part`                                | レコード式を本体に持つパーツ定義の自己妥当性検証                | 判定結果 `true`                            |
 
 ---
@@ -569,13 +602,22 @@ Arms）を持つため、単一ファイル（約 950 行）から以下の 5
 
 ### 5. Wasm コンパイラにおけるワイルドカード（`_`）パターンの無条件マッチ処理
 
-パターンマッチ（`MatchExpression`）の Wasm 生成処理（`adt_ops::emit_match_arms`）では、通常各アームの `tag` とターゲット値のタグ文字列の等価比較（`emit_string_eq`）を出力します。
-しかしフォールスルー用のワイルドカードアーム（`arm.tag == "_"`）に対しても文字列 `"_"` との比較を行ってしまうと、他のタグにマッチせず `default`（未指定時は `Number(0)`）へ誤ってフォールスルーしてしまいます。
-これを解消するため、`arm.tag == "_"` の場合はタグ比較を行わずに無条件でアーム本体を展開するよう改善し、Rust の `_ => ...` と同等の挙動と実行速度を実現しました。
+パターンマッチ（`MatchExpression`）の Wasm
+生成処理（`adt_ops::emit_match_arms`）では、通常各アームの `tag`
+とターゲット値のタグ文字列の等価比較（`emit_string_eq`）を出力します。
+しかしフォールスルー用のワイルドカードアーム（`arm.tag == "_"`）に対しても文字列
+`"_"` との比較を行ってしまうと、他のタグにマッチせず `default`（未指定時は
+`Number(0)`）へ誤ってフォールスルーしてしまいます。
+これを解消するため、`arm.tag == "_"`
+の場合はタグ比較を行わずに無条件でアーム本体を展開するよう改善し、Rust の
+`_ => ...` と同等の挙動と実行速度を実現しました。
 
 ### 6. レコード関連ロジックの責任分割（`record_ops.rs`, `record_eval.rs`）
 
-definy のコードベース品質規則（「ファイルが1000行を超えたら適切に分割する」）を遵守するため、レコードのフィールド型探索・型検査ループを `record_ops.rs`、レコードのフィールド値探索・動的評価ループを `record_eval.rs` として独立したサブモジュールに分離しました。これにより、各モジュールの責務が明確化され、保守性とテスト容易性が向上しました。
+definy
+のコードベース品質規則（「ファイルが1000行を超えたら適切に分割する」）を遵守するため、レコードのフィールド型探索・型検査ループを
+`record_ops.rs`、レコードのフィールド値探索・動的評価ループを `record_eval.rs`
+として独立したサブモジュールに分離しました。これにより、各モジュールの責務が明確化され、保守性とテスト容易性が向上しました。
 
 ---
 

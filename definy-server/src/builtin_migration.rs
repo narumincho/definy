@@ -711,6 +711,31 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         ),
     };
 
+    let wasi_mod_id = definy_event::event::derive_module_id(&account_id, "wasi");
+    let wasi_parts = crate::builtin_wasi::create_wasi_module_parts(&wasi_mod_id);
+    let wasi_module_commit = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(20),
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_event::event::ModuleCommitEvent {
+                module_name: "wasi".into(),
+                module_description: definy_event::event::Description::localized(vec![
+                    (
+                        "en",
+                        "WASI 0.3 capabilities (Clocks, Random, I/O) for capability-based DI",
+                    ),
+                    (
+                        "ja",
+                        "WASI 0.3 能力インターフェース (時計・乱数・I/O) と能力注入基盤",
+                    ),
+                ]),
+                parent_commit_hash: None,
+                message: "Initial commit for wasi module".into(),
+                parts: wasi_parts,
+            },
+        ),
+    };
+
     let events = vec![
         definy_event::event::Event {
             account_id: account_id.clone(),
@@ -724,6 +749,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         core_module_commit,
         std_module_commit,
         sample_module_commit,
+        wasi_module_commit,
     ];
 
     // Prepare serialized binaries and expected hashes for all valid built-in events
