@@ -70,6 +70,21 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
 
     let addr = SocketAddr::from((ip, port));
 
+    let app = create_router(state, mcp_session_manager);
+
+    let listener = TcpListener::bind(addr).await?;
+    println!("Listening on http://{}", addr);
+
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub fn create_router(state: AppState, mcp_session_manager: mcp::McpSessionManager) -> axum::Router {
     let cors = CorsLayer::new()
         .allow_origin(tower_http::cors::Any)
         .allow_methods([
@@ -86,7 +101,7 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
         ])
         .max_age(std::time::Duration::from_secs(86400));
 
-    let app = axum::Router::new()
+    axum::Router::new()
         .merge(utoipa_swagger_ui::SwaggerUi::new("/swagger-ui").url(
             "/api-docs/openapi.json",
             <ApiDoc as utoipa::OpenApi>::openapi(),
@@ -95,18 +110,24 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
         .merge(mcp::router(mcp_session_manager))
         .fallback(handle_fallback)
         .layer(cors)
-        .with_state(state);
+        .with_state(state)
+}
 
-    let listener = TcpListener::bind(addr).await?;
-    println!("Listening on http://{}", addr);
+pub fn create_test_router() -> axum::Router {
+    let state = AppState {
+        db: Arc::new(RwLock::new(None)),
+    };
+    let mcp_session_manager = mcp::McpSessionManager::new();
+    create_router(state, mcp_session_manager)
+}
 
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await?;
-
-    Ok(())
+pub async fn create_test_router_with_db() -> Result<axum::Router, anyhow::Error> {
+    let db = db::init_db().await?;
+    let state = AppState {
+        db: Arc::new(RwLock::new(Some(db))),
+    };
+    let mcp_session_manager = mcp::McpSessionManager::new();
+    Ok(create_router(state, mcp_session_manager))
 }
 
 const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
@@ -265,6 +286,35 @@ pub fn resolve_snippet(snippet_path: &str) -> Option<Vec<u8>> {
         }
     }
     None
+}
+
+pub fn resolve_snippets_list() -> Vec<String> {
+    let mut list = Vec::new();
+    for dir in get_public_dir_candidates() {
+        let snippets_dir = dir.join("wasm").join("snippets");
+        if snippets_dir.is_dir() {
+            let mut stack = vec![(snippets_dir.clone(), String::new())];
+            while let Some((curr, prefix)) = stack.pop() {
+                if let Ok(entries) = std::fs::read_dir(curr) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        let rel = if prefix.is_empty() {
+                            name.clone()
+                        } else {
+                            format!("{prefix}/{name}")
+                        };
+                        if path.is_dir() {
+                            stack.push((path, rel));
+                        } else if !list.contains(&rel) {
+                            list.push(rel);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    list
 }
 
 pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
