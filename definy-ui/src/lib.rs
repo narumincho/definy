@@ -47,7 +47,7 @@ pub use event_submit::*;
 pub use local_event::*;
 pub use message::Message;
 pub use page_context::PageContext;
-pub use page_title::document_title_text;
+pub use page_title::{document_description_text, document_title_text};
 
 pub use crate::app_state::Location;
 use dioxus::prelude::*;

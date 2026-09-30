@@ -182,6 +182,39 @@ pub fn document_title_text(state: &AppState, context: &PageContext) -> String {
     format!("{} | definy", page_title_text(state, context))
 }
 
+pub fn document_description_text(state: &AppState, context: &PageContext) -> String {
+    match &context.location {
+        Some(Location::Home) => context
+            .language
+            .label(
+                "definy is a content-addressed, self-hosted purely functional programming language and collaborative platform.",
+                "definy はコンテンツ指向・自己記述型の純粋関数型プログラミング言語・協調開発プラットフォームです。",
+                "definy estas enhav-adresebla, memgastiga pure funkcia programlingvo kaj kunlabora platformo.",
+            )
+            .to_string(),
+        Some(Location::About) => context
+            .language
+            .label(
+                "Learn about definy, its content-addressed architecture, purely functional AST, and self-hosting vision.",
+                "definy の思想、コンテンツ指向アーキテクチャ、純粋関数型 AST、自己記述のロードマップについて紹介します。",
+                "Lernu pri definy, ĝia enhav-adresebla arkitekturo, pure funkcia AST kaj memgastiga vizio.",
+            )
+            .to_string(),
+        Some(Location::Part(definition_event_hash)) => {
+            let part_name = resolve_part_name(state, definition_event_hash)
+                .unwrap_or_else(|| definition_event_hash.to_string());
+            format!("Part '{}' on definy", part_name)
+        }
+        Some(Location::Module(definition_event_hash)) => {
+            let module_name =
+                crate::module_projection::resolve_module_name(state, definition_event_hash)
+                    .unwrap_or_else(|| definition_event_hash.to_string());
+            format!("Module '{}' on definy", module_name)
+        }
+        _ => page_title_text(state, context),
+    }
+}
+
 fn resolve_part_name(state: &AppState, definition_event_hash: &EventHashId) -> Option<String> {
     crate::part_projection::find_part_snapshot(state, definition_event_hash).map(|p| p.part_name)
 }
