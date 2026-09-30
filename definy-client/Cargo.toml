@@ -36,7 +36,7 @@ tokio = { workspace = true, features = ["full"] }
 js-sys = { workspace = true }
 wasm-bindgen = { workspace = true }
 web-sys = { workspace = true, features = ["console", "Window", "Document", "Element", "Node", "NodeList", "HtmlElement", "Event", "MouseEvent", "HtmlAnchorElement", "History", "PopStateEvent", "HtmlDialogElement", "Navigator", "Clipboard", "Request", "RequestInit", "Response", "Headers", "Url", "KeyboardEvent", "DomRect", "ScrollIntoViewOptions", "ScrollBehavior", "ScrollLogicalPosition"] }
-dioxus-web = { workspace = true }
+dioxus-web = { workspace = true, features = ["hydrate"] }
 getrandom = { workspace = true, features = ["js"] }
 wasm-bindgen-futures = { workspace = true }
 console_error_panic_hook = { workspace = true }

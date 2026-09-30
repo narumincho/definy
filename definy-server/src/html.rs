@@ -31,7 +31,9 @@ pub fn render_to_html(
     let js_path = resource_hash.js;
     let icon_href = resource_hash.icon;
 
-    let body_html = dioxus_ssr::render_element(definy_ui::render(state, context));
+    let mut renderer = dioxus_ssr::Renderer::new();
+    renderer.pre_render = true;
+    let body_html = renderer.render_element(definy_ui::render(state, context));
 
     format!(
         r#"<!DOCTYPE html>

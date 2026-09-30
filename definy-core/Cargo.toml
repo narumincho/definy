@@ -7,3 +7,7 @@ edition = "2024"
 definy-event = { workspace = true }
 ed25519-dalek = { workspace = true }
 chrono = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }

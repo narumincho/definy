@@ -1021,6 +1021,8 @@ dependencies = [
  "chrono",
  "definy-event",
  "ed25519-dalek",
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -1595,6 +1597,7 @@ dependencies = [
  "dioxus-core-types",
  "dioxus-devtools",
  "dioxus-document",
+ "dioxus-fullstack-core",
  "dioxus-history",
  "dioxus-html",
  "dioxus-interpreter-js",
