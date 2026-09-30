@@ -37,6 +37,10 @@ definy
   `core.type-equals` は基本型・リスト型・関数型・record 型を再帰比較します。
   union 型も variant の順序と optional payload 型を含めて比較し、reference 型は part hash で比較します。
   record/union は定義順を含めて比較します。
+- `PartType::Type` は自己ホスト `type-ast` の kind `type` として扱います。通常の投稿経路では
+  `TypeNumber` / `TypeString` / `TypeBoolean` による primitive type part を検証できます。
+  `TypeList` / `TypeFunction` / `TypeLiteral` / `TypeUnion` などの composite type declaration は
+  まだ AST 変換・自己検査に未対応のため拒否します。
 - Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition` 値へ変換し、
   `core.validate-module` で検証してから保存します。式や型の変換に失敗した場合、または
   型チェッカーが拒否した場合は `400` を返します。
@@ -135,6 +139,7 @@ graph TD
     `core.type-env`
   - 型等価性判定 `core.type-equals`
   - 静的型検査器 `core.type-check`: `expression -> type-env -> type-result`
+  - `core.type-check-against` による宣言型ベースの lambda 検査と primitive type part 検証
 - [x] **Phase 3: 自己ホスト WebAssembly コンパイラ (Self-Hosted Wasm Compiler)**
   - 式スタック命令列コンパイラ `core.compile-expr-instructions`:
     `expression -> list<number>`

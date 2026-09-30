@@ -48,6 +48,18 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
                 TypeUnionVariant {
+                    tag: "type_number".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
+                    tag: "type_string".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
+                    tag: "type_boolean".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
                     tag: "number".into(),
                     payload_type: Some(Box::new(Expression::TypeNumber)),
                 },

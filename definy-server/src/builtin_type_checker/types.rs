@@ -258,6 +258,16 @@ pub fn create_type_equals_part(core_module_id: &EventHashId) -> ModulePartEntry 
                         )),
                     },
                     MatchArm {
+                        tag: "type".into(),
+                        variable_id: None,
+                        variable_name: None,
+                        body: Box::new(compare_second_tag(
+                            "type",
+                            None,
+                            Expression::Boolean(BooleanExpression { value: true }),
+                        )),
+                    },
+                    MatchArm {
                         tag: "list".into(),
                         variable_id: Some(2),
                         variable_name: None,

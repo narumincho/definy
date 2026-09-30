@@ -281,9 +281,22 @@ pub(crate) fn expression_to_self_hosted_ast(
         E::ListConcat(_) => Err("core.expression does not represent list_concat".into()),
         E::ListGet(_) => Err("core.expression does not represent list_get".into()),
         E::ListAppend(_) => Err("core.expression does not represent list_append".into()),
-        E::TypeNumber | E::TypeString | E::TypeBoolean | E::TypeList(_) => {
-            Err("core.expression does not represent type expressions".into())
-        }
+        E::TypeNumber => Ok(expression_variant(
+            "type_number",
+            None,
+            expression_type_hash,
+        )),
+        E::TypeString => Ok(expression_variant(
+            "type_string",
+            None,
+            expression_type_hash,
+        )),
+        E::TypeBoolean => Ok(expression_variant(
+            "type_boolean",
+            None,
+            expression_type_hash,
+        )),
+        E::TypeList(_) => Err("core.expression does not represent type-list expressions".into()),
         E::Constructor(_) => Err("core.expression does not represent constructors".into()),
         E::TypeFunction(_) | E::TypeUnion(_) => {
             Err("core.expression does not represent type declarations".into())
@@ -386,7 +399,7 @@ pub(crate) fn part_type_to_self_hosted_ast(
                 )),
             ))
         }
-        T::Type => Err("core.type-ast does not represent the type kind".into()),
+        T::Type => Ok(make_variant("type".into(), None)),
         T::TypePart(part_hash) => Ok(make_variant(
             "reference".into(),
             Some(record_payload(vec![(

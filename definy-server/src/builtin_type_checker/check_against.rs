@@ -17,6 +17,20 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
 
     let expected_type = Expression::Variable(VariableExpression { variable_id: 2 });
+    let type_kind = Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: Some(type_ast_hash.clone()),
+        tag: "type".into(),
+        payload: None,
+    });
+    let type_kind_matches = call_part(
+        &type_equals_hash,
+        vec![expected_type.clone(), type_kind.clone()],
+    );
+    let check_type_expression = Expression::If(definy_event::event::IfExpression {
+        condition: Box::new(type_kind_matches),
+        then_expr: Box::new(ok_type(type_kind.clone())),
+        else_expr: Box::new(error_mismatch(expected_type.clone(), type_kind)),
+    });
     let function_payload = Expression::Variable(VariableExpression { variable_id: 15 });
     let parameter_type = record_get(function_payload.clone(), "parameter");
     let return_type = record_get(function_payload, "return_type");
@@ -116,12 +130,32 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
                 parameter_name: "expected_type".into(),
                 body: Box::new(Expression::Match(MatchExpression {
                     target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-                    arms: vec![MatchArm {
-                        tag: "function".into(),
-                        variable_id: Some(10),
-                        variable_name: Some("function_expr".into()),
-                        body: Box::new(expected_function_match),
-                    }],
+                    arms: vec![
+                        MatchArm {
+                            tag: "type_number".into(),
+                            variable_id: None,
+                            variable_name: None,
+                            body: Box::new(check_type_expression.clone()),
+                        },
+                        MatchArm {
+                            tag: "type_string".into(),
+                            variable_id: None,
+                            variable_name: None,
+                            body: Box::new(check_type_expression.clone()),
+                        },
+                        MatchArm {
+                            tag: "type_boolean".into(),
+                            variable_id: None,
+                            variable_name: None,
+                            body: Box::new(check_type_expression),
+                        },
+                        MatchArm {
+                            tag: "function".into(),
+                            variable_id: Some(10),
+                            variable_name: Some("function_expr".into()),
+                            body: Box::new(expected_function_match),
+                        },
+                    ],
                     default: Some(Box::new(check_non_function)),
                 })),
             })),

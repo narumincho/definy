@@ -749,6 +749,87 @@ mod tests {
         .await;
         assert_eq!(unsupported_module_res.status(), StatusCode::BAD_REQUEST);
 
+        let primitive_type_module = Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                module_name: "primitive-types".into(),
+                module_description: "primitive type declarations".into(),
+                parent_commit_hash: None,
+                message: "submit a primitive type alias".into(),
+                parts: vec![definy_event::event::ModulePartEntry {
+                    name: "my-number".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "the number type".into(),
+                    content_hash: None,
+                    expression: Some(definy_event::event::Expression::TypeNumber),
+                }],
+            }),
+        };
+        let primitive_type_bytes =
+            definy_event::sign_and_serialize(primitive_type_module, &signing_key).unwrap();
+        let primitive_type_res = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(
+                serde_json::to_vec(&SubmitEventRequest {
+                    signed_event_bytes: primitive_type_bytes,
+                })
+                .unwrap(),
+            ),
+        )
+        .await;
+        assert_eq!(primitive_type_res.status(), StatusCode::OK);
+
+        let union_type_module = Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                module_name: "union-types".into(),
+                module_description: "union type declarations".into(),
+                parent_commit_hash: None,
+                message: "composite type declarations are not supported yet".into(),
+                parts: vec![definy_event::event::ModulePartEntry {
+                    name: "maybe-number".into(),
+                    part_type: Some(definy_event::event::PartType::Type),
+                    description: "an optional number".into(),
+                    content_hash: None,
+                    expression: Some(definy_event::event::Expression::TypeUnion(
+                        definy_event::event::TypeUnionExpression {
+                            variants: vec![
+                                definy_event::event::TypeUnionVariant {
+                                    tag: "none".into(),
+                                    payload_type: None,
+                                },
+                                definy_event::event::TypeUnionVariant {
+                                    tag: "some".into(),
+                                    payload_type: Some(Box::new(
+                                        definy_event::event::Expression::TypeNumber,
+                                    )),
+                                },
+                            ],
+                        },
+                    )),
+                }],
+            }),
+        };
+        let union_type_bytes =
+            definy_event::sign_and_serialize(union_type_module, &signing_key).unwrap();
+        let union_type_res = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(
+                serde_json::to_vec(&SubmitEventRequest {
+                    signed_event_bytes: union_type_bytes,
+                })
+                .unwrap(),
+            ),
+        )
+        .await;
+        assert_eq!(union_type_res.status(), StatusCode::BAD_REQUEST);
+
         // 6. Test Diff Hash Negotiation
         let test_expr =
             definy_event::event::Expression::Number(definy_event::event::NumberExpression {

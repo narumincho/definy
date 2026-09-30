@@ -34,6 +34,10 @@ pub fn create_type_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
                 TypeUnionVariant {
+                    tag: "type".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
                     tag: "number".into(),
                     payload_type: None,
                 },
