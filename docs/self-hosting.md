@@ -23,6 +23,49 @@ definy
 4. **自己ホスト WebAssembly 生成**: definy 式から WebAssembly
    バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザ実行可能。
 
+### セルフホスティング全体アーキテクチャ
+
+```mermaid
+graph TD
+    ExpressionAST["core.expression (自己記述 AST)"]
+    PartDef["core.part-definition (パーツ定義)"]
+
+    subgraph "自己評価・解釈系 (Phase 1 & 4)"
+        Evaluator["core.eval-value / eval-ast<br/>(動的自己評価器)"]
+        Formatter["core.expression-to-source<br/>(ソースコード自己整形器)"]
+    end
+
+    subgraph "自己静的解析系 (Phase 2 & 5)"
+        TypeChecker["core.type-check<br/>(自己記述型チェッカー)"]
+        TypeEquals["core.type-equals<br/>(型等価性判定器)"]
+        Validator["core.validate-part<br/>(パーツ型妥当性自己検証器)"]
+    end
+
+    subgraph "自己コンパイラ系 (Phase 3)"
+        CompileInstr["core.compile-expr-instructions<br/>(Wasm スタック命令列生成)"]
+        CompileToWasm["core.compile-to-wasm<br/>(完全 Wasm モジュール生成器)"]
+    end
+
+    subgraph "実行基盤 (Runtime)"
+        WasmVM["definy-core Wasm VM<br/>(WebAssembly 実行)"]
+        MetaCircular["メタ循環評価 (Self-Hosting Execution)<br/>evaluate_expression"]
+    end
+
+    ExpressionAST --> Evaluator
+    ExpressionAST --> Formatter
+    ExpressionAST --> TypeChecker
+    ExpressionAST --> CompileInstr
+
+    TypeChecker --> TypeEquals
+    TypeChecker --> Validator
+    TypeEquals --> Validator
+    PartDef --> Validator
+
+    CompileInstr --> CompileToWasm
+    CompileToWasm -->|生成された Wasm バイト列| WasmVM
+    Evaluator --> MetaCircular
+```
+
 ---
 
 ## セルフホストのロードマップと到達状況
@@ -233,22 +276,57 @@ definy
 
 #### 2. 完全自己ホストコンパイル & メタ循環実行の実証
 
-definy のテストスイート（`self_hosting_tests.rs`）において、以下の end-to-end
-メタ循環実行が実証されています：
+definy
+のテストスイート（`definy-server/src/self_hosting_tests/`）において、以下の
+end-to-end メタ循環実行がすべて実証されています。 テストコードは責務に応じて
+`ast_structure_tests.rs`（静的構造検証）と
+`execution_tests.rs`（動的実行実証）、および共通ヘルパー `helpers.rs`
+に分割・整理されています。
 
-- **`test_self_hosted_compile_to_wasm_execution`**: `core.compile-to-wasm`
-  パーツを呼び出して WebAssembly
-  バイトコード（`list<number>`）を自己生成。その生成バイト列を Wasm VM
-  でロード・実行し、正しく `42` が算出されることを実証。
-- **`test_self_hosted_meta_circular_eval_value_execution`**: 完全動的値評価器
-  `core.eval-value`
-  を呼び出し、算術演算（`10 + 25 = 35`）が自己解釈実行されることを実証。
-- **`test_self_hosted_type_checker_execution`**: 静的型チェッカー
-  `core.type-check` を呼び出し、式 `10 + 20` に対して正しく `ok(number)`
-  が導出されることを実証。
-- **`test_self_hosted_validate_part_execution`**: パーツ検証器
-  `core.validate-part` を呼び出し、パーツ定義の型整合性が `true`
-  と正しく判定されることを実証。
+| テスト関数名                                          | 検証対象パーツ              | 入力・実行内容                                           | 実証された結果                             |
+| :---------------------------------------------------- | :-------------------------- | :------------------------------------------------------- | :----------------------------------------- |
+| `test_self_hosted_meta_circular_eval_ast_execution`   | `core.eval-ast`             | 多項式 AST `(100 - (10 * 3)) + (50 / 2)`                 | 自己評価値 `95`                            |
+| `test_self_hosted_expression_to_source_execution`     | `core.expression-to-source` | 加算式 AST `add(10, 20)`                                 | 整形文字列 `"((<number> + <number>))"`     |
+| `test_self_hosted_meta_circular_eval_value_execution` | `core.eval-value`           | 加算式 AST `add(10, 25)` と空環境 `[]`                   | 動的値 `number(35)`                        |
+| `test_self_hosted_type_checker_execution`             | `core.type-check`           | 加算式 AST `add(10, 20)` と空型環境 `[]`                 | 型推論結果 `ok(number)`                    |
+| `test_self_hosted_validate_part_execution`            | `core.validate-part`        | 正常なパーツ定義 `{ name, type: number, expr: 10 + 20 }` | 判定結果 `true`                            |
+| `test_self_hosted_compile_to_wasm_execution`          | `core.compile-to-wasm`      | 式 `15 + 27` から自己ホストで Wasm バイナリを生成        | 生成された Wasm を VM で実行し `42` を算出 |
+
+---
+
+## 実装アーキテクチャとノウハウ
+
+### 1. 型チェッカーにおける同種二項演算の共通化 (`binary_typed_op`)
+
+自己記述型チェッカー（`core.type-check`）では、算術演算（`add`, `subtract`,
+`multiply`, `divide`, `remainder`）と論理結合（`and`,
+`or`）が「左辺と右辺が同じ期待型であることを要求し、同じ型を返す」という共通の検査パターンを持ちます。
+内部で高階ファクトリクロージャ `binary_typed_op`
+を導入することで、型規則の直交性を保ちながらコード重複（DRY）を解消しています：
+
+```rust
+let binary_num_op = |tag, check_hash, var_id| {
+    binary_typed_op(tag, check_hash, var_id, type_num)
+};
+let binary_bool_op = |tag, check_hash, var_id| {
+    binary_typed_op(tag, check_hash, var_id, type_bool)
+};
+```
+
+### 2. テストスイートのモジュール分割と DRY 化
+
+セルフホスティングのテストが 1000
+行近くに達した際、以下の設計方針で分割・整理を行いました：
+
+- **`helpers.rs`**:
+  テスト用アカウント生成（`get_test_account_and_mod_id`）、イベントコミット生成（`create_test_module_events`）、AST
+  構築簡易ヘルパー（`ast_num`, `ast_add`）を集約。型エイリアス `TestEvents`
+  によりシグネチャの複雑さを抑制。
+- **`ast_structure_tests.rs`**:
+  ビルトインパーツの登録、および各パーツの式が意図通りの
+  AST（パターンマッチ分岐やタグの網羅性）を持つことを検証。
+- **`execution_tests.rs`**: 実際にパーツを definy
+  実行系に登録し、メタ循環評価を実行して期待通りの値が返ることを実証。
 
 ---
 

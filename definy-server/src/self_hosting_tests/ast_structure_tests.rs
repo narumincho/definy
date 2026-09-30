@@ -1,9 +1,15 @@
+//! セルフホスティング関連ビルトインパーツの登録および静的 AST 構造検証テスト。
+//!
+//! evaluator, type-checker, wasm-compiler, formatter, validator の
+//! 各パーツが正しいメタデータ、型アノテーション、および式 AST パターンマッチ構造を持つことを検証します。
+
 use std::collections::HashSet;
 
 use definy_event::event::{Expression, MatchArm};
 
 use super::helpers::get_dummy_core_id;
 
+/// 全セルフホスティング用パーツの重複なき登録、型定義、説明文の存在を検証します。
 #[test]
 fn test_self_hosting_parts_registration() {
     let core_id = get_dummy_core_id();

@@ -1,3 +1,8 @@
+//! セルフホスティング機能の動的実行・メタ循環評価（Meta-Circular Evaluation）実証テスト。
+//!
+//! definy 自身の式・パーツとして実装された評価器、型検査器、バリデータ、フォーマッタ、
+//! および WebAssembly コンパイラが実際に definy の実行系上で期待通りに動作することを検証します。
+
 use definy_core::expression_eval::Value;
 use definy_event::event::{
     CallExpression, Expression, ListLiteralExpression, PartReferenceExpression, StringExpression,
@@ -6,6 +11,7 @@ use definy_event::event::{
 
 use super::helpers::{ast_add, ast_num, create_test_module_events, get_test_account_and_mod_id};
 
+/// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
 #[test]
 fn test_self_hosted_meta_circular_eval_ast_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();

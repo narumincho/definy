@@ -1,3 +1,8 @@
+//! definy の式 AST (`core.expression`) および基礎的な自己評価器パーツを定義するモジュール。
+//!
+//! definy の構文木（AST）そのものを definy の直和型（`TypeUnion`）として定義し、
+//! メタプログラミングや自己評価（メタ循環評価）を可能にします。
+
 use definy_event::EventHashId;
 use definy_event::event::{
     AddExpression, CallExpression, Description, DivideExpression, EqualExpression, Expression,
@@ -8,6 +13,11 @@ use definy_event::event::{
     VariableExpression, VariantExpression, derive_module_part_id,
 };
 
+/// definy AST 式型 (`core.expression`) パーツを生成します。
+///
+/// 数値、文字列、真偽値、二項演算（算術・比較・論理）、関数定義、呼び出し、
+/// 変数参照、条件分岐、パターンマッチなどの definy 言語のすべての式構文を
+/// definy 自身の直和型として自己記述します。
 pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_def_hash = derive_module_part_id(core_module_id, "expression");
     let expr_ref = Expression::PartReference(PartReferenceExpression::new(expr_def_hash));
@@ -283,6 +293,10 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
     }
 }
 
+/// AST 式を評価して数値を計算する自己評価器パーツ (`core.eval-ast`) を生成します。
+///
+/// 引数として渡された `core.expression` 型の AST をパターンマッチで再帰的に巡回し、
+/// 算術演算や比較演算の結果を数値として評価・解釈実行します。
 pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
     let eval_ast_hash = derive_module_part_id(core_module_id, "eval-ast");
@@ -432,6 +446,10 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     }
 }
 
+/// `core.eval-ast` の自己評価動作を検証・実証するためのサンプル計算パーツ (`core.sample-ast-calc`) を生成します。
+///
+/// 多項式 `(100 - (10 * 3)) + (50 / 2) = 95` の AST を構築し、
+/// `core.eval-ast` に渡して自己解釈実行する呼び出し式を定義しています。
 pub fn create_sample_ast_calc_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
     let eval_ast_part_hash = derive_module_part_id(core_module_id, "eval-ast");
