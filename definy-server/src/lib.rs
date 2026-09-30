@@ -10,6 +10,7 @@ mod builtin_type_ast;
 mod builtin_type_checker;
 mod builtin_validator;
 mod builtin_value_type;
+pub mod builtin_wasi;
 mod builtin_wasm_compiler;
 mod connect_rpc;
 mod db;

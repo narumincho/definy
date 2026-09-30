@@ -80,7 +80,7 @@ callee にする即時適用は許可しません。関数の呼び出し先は�
 5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy compiler stage1 を作り、
   stage1 が同一 compiler と test suite を再生成できるか比較します。
 6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を capability-limited host API として公開し、
-  サーバーの純粋な業務ロジックから Definy へ移します。IO を持つサービス全体の移行は言語 runtime の拡張後です。
+  サーバーの純粋な業務ロジックから Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は [wasi-capability-io.md](file:///Users/narumi/Documents/GitHub/definy/docs/wasi-capability-io.md) を参照）。IO を持つサービス全体の移行は言語 runtime の拡張後です。
 
 ### セルフホスティング全体アーキテクチャ
 
