@@ -122,11 +122,22 @@ static ICON_ASSET: std::sync::LazyLock<ResolvedAsset> = std::sync::LazyLock::new
     }
 });
 
+#[derive(Clone)]
 pub struct ResolvedAsset {
     pub bytes: Vec<u8>,
     pub hash: String,
     pub content_type: &'static str,
 }
+
+#[derive(Clone)]
+struct CachedAsset {
+    path: std::path::PathBuf,
+    modified: std::time::SystemTime,
+    asset: ResolvedAsset,
+}
+
+static JS_CACHE: std::sync::RwLock<Option<CachedAsset>> = std::sync::RwLock::new(None);
+static WASM_CACHE: std::sync::RwLock<Option<CachedAsset>> = std::sync::RwLock::new(None);
 
 fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     let mut paths = Vec::new();
@@ -186,36 +197,60 @@ fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     paths
 }
 
-pub fn resolve_client_js() -> Option<ResolvedAsset> {
+fn resolve_cached_asset(
+    cache: &std::sync::RwLock<Option<CachedAsset>>,
+    sub_path: &str,
+    content_type: &'static str,
+) -> Option<ResolvedAsset> {
     for dir in get_public_dir_candidates() {
-        let p = dir.join("wasm").join("definy_client.js");
-        if let Ok(bytes) = std::fs::read(&p) {
-            let hash = sha2::Sha256::digest(&bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-            return Some(ResolvedAsset {
-                bytes,
-                hash: hash_hex,
-                content_type: "application/javascript; charset=utf-8",
-            });
+        let p = dir.join(sub_path);
+        if let Ok(metadata) = std::fs::metadata(&p)
+            && let Ok(modified) = metadata.modified()
+        {
+            if let Ok(guard) = cache.read()
+                && let Some(ref cached) = *guard
+                && cached.path == p
+                && cached.modified == modified
+            {
+                return Some(cached.asset.clone());
+            }
+
+            if let Ok(bytes) = std::fs::read(&p) {
+                let hash = sha2::Sha256::digest(&bytes);
+                let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+                let asset = ResolvedAsset {
+                    bytes,
+                    hash: hash_hex,
+                    content_type,
+                };
+                if let Ok(mut guard) = cache.write() {
+                    *guard = Some(CachedAsset {
+                        path: p,
+                        modified,
+                        asset: asset.clone(),
+                    });
+                }
+                return Some(asset);
+            }
         }
     }
     None
 }
 
+pub fn resolve_client_js() -> Option<ResolvedAsset> {
+    resolve_cached_asset(
+        &JS_CACHE,
+        "wasm/definy_client.js",
+        "application/javascript; charset=utf-8",
+    )
+}
+
 pub fn resolve_client_wasm() -> Option<ResolvedAsset> {
-    for dir in get_public_dir_candidates() {
-        let p = dir.join("wasm").join("definy_client_bg.wasm");
-        if let Ok(bytes) = std::fs::read(&p) {
-            let hash = sha2::Sha256::digest(&bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-            return Some(ResolvedAsset {
-                bytes,
-                hash: hash_hex,
-                content_type: "application/wasm",
-            });
-        }
-    }
-    None
+    resolve_cached_asset(
+        &WASM_CACHE,
+        "wasm/definy_client_bg.wasm",
+        "application/wasm",
+    )
 }
 
 pub fn resolve_icon() -> &'static ResolvedAsset {
@@ -273,7 +308,7 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
                 StatusCode::OK,
                 [
                     ("Content-Type", "application/javascript; charset=utf-8"),
-                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                    ("Cache-Control", "public, max-age=31536000, immutable"),
                 ],
                 Bytes::from(contents),
             )
@@ -290,16 +325,22 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
 
     if let Some(js) = resolve_client_js() {
         let js_file_with_ext = format!("{}.js", js.hash);
-        if clean_path == js.hash
+        let is_hashed = clean_path == js.hash || clean_path == js_file_with_ext;
+        if is_hashed
             || clean_path == "definy_client.js"
             || clean_path == js_file_with_ext
             || clean_path.ends_with("definy_client.js")
         {
+            let cache_control = if is_hashed {
+                "public, max-age=31536000, immutable"
+            } else {
+                "no-cache, must-revalidate"
+            };
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", js.content_type),
-                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                    ("Cache-Control", cache_control),
                 ],
                 Bytes::from(js.bytes),
             )
@@ -309,16 +350,22 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
 
     if let Some(wasm) = resolve_client_wasm() {
         let wasm_file_with_ext = format!("{}.wasm", wasm.hash);
-        if clean_path == wasm.hash
+        let is_hashed = clean_path == wasm.hash || clean_path == wasm_file_with_ext;
+        if is_hashed
             || clean_path == "definy_client_bg.wasm"
             || clean_path == wasm_file_with_ext
             || clean_path.ends_with("definy_client_bg.wasm")
         {
+            let cache_control = if is_hashed {
+                "public, max-age=31536000, immutable"
+            } else {
+                "no-cache, must-revalidate"
+            };
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", wasm.content_type),
-                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                    ("Cache-Control", cache_control),
                 ],
                 Bytes::from(wasm.bytes),
             )
@@ -328,11 +375,16 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
 
     let icon = resolve_icon();
     if clean_path == icon.hash || clean_path == "icon.png" {
+        let cache_control = if clean_path == icon.hash {
+            "public, max-age=31536000, immutable"
+        } else {
+            "no-cache, must-revalidate"
+        };
         return (
             StatusCode::OK,
             [
                 ("Content-Type", icon.content_type),
-                ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                ("Cache-Control", cache_control),
             ],
             Bytes::from(icon.bytes.clone()),
         )
