@@ -147,6 +147,30 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
                             tag: "type_boolean".into(),
                             variable_id: None,
                             variable_name: None,
+                            body: Box::new(check_type_expression.clone()),
+                        },
+                        MatchArm {
+                            tag: "type_list".into(),
+                            variable_id: Some(20),
+                            variable_name: None,
+                            body: Box::new(check_type_expression.clone()),
+                        },
+                        MatchArm {
+                            tag: "type_function".into(),
+                            variable_id: Some(21),
+                            variable_name: None,
+                            body: Box::new(check_type_expression.clone()),
+                        },
+                        MatchArm {
+                            tag: "type_record".into(),
+                            variable_id: Some(22),
+                            variable_name: None,
+                            body: Box::new(check_type_expression.clone()),
+                        },
+                        MatchArm {
+                            tag: "type_union".into(),
+                            variable_id: Some(23),
+                            variable_name: None,
                             body: Box::new(check_type_expression),
                         },
                         MatchArm {

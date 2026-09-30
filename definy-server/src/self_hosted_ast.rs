@@ -21,6 +21,11 @@ pub(crate) fn module_commit_to_self_hosted_ast(
                 .expression
                 .as_ref()
                 .ok_or_else(|| format!("part '{}' has no available expression", part.name))?;
+            let self_hosted_expression = if part_type == &PartType::Type {
+                type_declaration_to_self_hosted_ast(expression, expression_type_hash)?
+            } else {
+                expression_to_self_hosted_ast(expression, expression_type_hash)?
+            };
             record(vec![
                 ("name", Expression::String(string(&part.name))),
                 (
@@ -31,10 +36,7 @@ pub(crate) fn module_commit_to_self_hosted_ast(
                     "part_type",
                     part_type_to_self_hosted_ast(part_type, type_ast_hash)?,
                 ),
-                (
-                    "expression",
-                    expression_to_self_hosted_ast(expression, expression_type_hash)?,
-                ),
+                ("expression", self_hosted_expression),
             ])
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -302,6 +304,93 @@ pub(crate) fn expression_to_self_hosted_ast(
             Err("core.expression does not represent type declarations".into())
         }
         E::Compiler(_) => Err("core.expression does not represent compiler builtins".into()),
+    }
+}
+
+fn type_declaration_to_self_hosted_ast(
+    expression: &Expression,
+    expression_type_hash: &EventHashId,
+) -> Result<Expression, String> {
+    use Expression as E;
+
+    match expression {
+        E::TypeNumber | E::TypeString | E::TypeBoolean => {
+            expression_to_self_hosted_ast(expression, expression_type_hash)
+        }
+        E::TypeList(list) => record(vec![(
+            "item_type",
+            type_declaration_to_self_hosted_ast(&list.item_type, expression_type_hash)?,
+        )])
+        .map(|payload| expression_variant("type_list", Some(payload), expression_type_hash)),
+        E::TypeFunction(function) => record(vec![
+            (
+                "parameter",
+                type_declaration_to_self_hosted_ast(&function.parameter, expression_type_hash)?,
+            ),
+            (
+                "return_type",
+                type_declaration_to_self_hosted_ast(&function.return_type, expression_type_hash)?,
+            ),
+        ])
+        .map(|payload| expression_variant("type_function", Some(payload), expression_type_hash)),
+        E::TypeLiteral(record_type) => record_type
+            .items
+            .iter()
+            .map(|field| {
+                record(vec![
+                    ("key", E::String(string(&field.key))),
+                    (
+                        "value",
+                        type_declaration_to_self_hosted_ast(&field.value, expression_type_hash)?,
+                    ),
+                ])
+            })
+            .collect::<Result<Vec<_>, String>>()
+            .map(|fields| {
+                expression_variant(
+                    "type_record",
+                    Some(E::ListLiteral(definy_event::event::ListLiteralExpression {
+                        items: fields,
+                    })),
+                    expression_type_hash,
+                )
+            }),
+        E::TypeUnion(union_type) => union_type
+            .variants
+            .iter()
+            .map(|variant| {
+                let payload_type = match &variant.payload_type {
+                    Some(payload_type) => Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "some".into(),
+                        payload: Some(Box::new(type_declaration_to_self_hosted_ast(
+                            payload_type,
+                            expression_type_hash,
+                        )?)),
+                    }),
+                    None => Expression::Variant(VariantExpression {
+                        type_part_definition_event_hash: None,
+                        tag: "none".into(),
+                        payload: None,
+                    }),
+                };
+                record(vec![
+                    ("tag", E::String(string(&variant.tag))),
+                    ("payload_type", payload_type),
+                ])
+            })
+            .collect::<Result<Vec<_>, String>>()
+            .map(|variants| {
+                expression_variant(
+                    "type_union",
+                    Some(E::ListLiteral(definy_event::event::ListLiteralExpression {
+                        items: variants,
+                    })),
+                    expression_type_hash,
+                )
+            }),
+        E::PartReference(_) => Err("type declarations cannot reference parts yet".into()),
+        _ => Err("part_type 'type' requires a type declaration expression".into()),
     }
 }
 

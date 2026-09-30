@@ -36,6 +36,18 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
             ],
         })
     };
+    let optional_expression = Expression::TypeUnion(TypeUnionExpression {
+        variants: vec![
+            TypeUnionVariant {
+                tag: "none".into(),
+                payload_type: None,
+            },
+            TypeUnionVariant {
+                tag: "some".into(),
+                payload_type: Some(Box::new(expr_ref.clone())),
+            },
+        ],
+    });
 
     ModulePartEntry {
         name: "expression".into(),
@@ -58,6 +70,64 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
                 TypeUnionVariant {
                     tag: "type_boolean".into(),
                     payload_type: None,
+                },
+                TypeUnionVariant {
+                    tag: "type_list".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "item_type".into(),
+                            value: Box::new(expr_ref.clone()),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "type_function".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "parameter".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "return_type".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                        ],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "type_record".into(),
+                    payload_type: Some(Box::new(Expression::TypeList(TypeListExpression {
+                        item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![
+                                TypeLiteralItemExpression {
+                                    key: "key".into(),
+                                    value: Box::new(Expression::TypeString),
+                                },
+                                TypeLiteralItemExpression {
+                                    key: "value".into(),
+                                    value: Box::new(expr_ref.clone()),
+                                },
+                            ],
+                        })),
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "type_union".into(),
+                    payload_type: Some(Box::new(Expression::TypeList(TypeListExpression {
+                        item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![
+                                TypeLiteralItemExpression {
+                                    key: "tag".into(),
+                                    value: Box::new(Expression::TypeString),
+                                },
+                                TypeLiteralItemExpression {
+                                    key: "payload_type".into(),
+                                    value: Box::new(optional_expression),
+                                },
+                            ],
+                        })),
+                    }))),
                 },
                 TypeUnionVariant {
                     tag: "number".into(),

@@ -280,11 +280,15 @@ pub async fn save_content(
         content_bytes: content_bytes.to_vec(),
         created_at: chrono::Utc::now(),
     };
-    let _: Option<ContentRecord> = db
-        .create(("contents", content_hash))
-        .content(record)
-        .await?;
-    Ok(())
+    let result: Result<Option<ContentRecord>, surrealdb::Error> =
+        db.create(("contents", content_hash)).content(record).await;
+    match result {
+        Ok(_) => Ok(()),
+        Err(create_error) => match get_content(db, content_hash).await? {
+            Some(existing_bytes) if existing_bytes == content_bytes => Ok(()),
+            _ => Err(create_error.into()),
+        },
+    }
 }
 
 pub async fn get_content(
@@ -511,7 +515,13 @@ mod tests {
         assert_eq!(get_content(&db, &hash1).await.unwrap(), None);
 
         save_content(&db, &hash1, &bytes1).await.unwrap();
+        save_content(&db, &hash1, &bytes1).await.unwrap();
         assert_eq!(get_content(&db, &hash1).await.unwrap(), Some(bytes1));
+        assert!(save_content(&db, &hash1, &[4, 3, 2, 1]).await.is_err());
+        assert_eq!(
+            get_content(&db, &hash1).await.unwrap(),
+            Some(vec![1, 2, 3, 4])
+        );
 
         let missing = filter_missing_content_hashes(&db, &[hash1.clone(), hash2.clone()])
             .await

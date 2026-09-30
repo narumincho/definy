@@ -38,9 +38,10 @@ definy
   union 型も variant の順序と optional payload 型を含めて比較し、reference 型は part hash で比較します。
   record/union は定義順を含めて比較します。
 - `PartType::Type` は自己ホスト `type-ast` の kind `type` として扱います。通常の投稿経路では
-  `TypeNumber` / `TypeString` / `TypeBoolean` による primitive type part を検証できます。
-  `TypeList` / `TypeFunction` / `TypeLiteral` / `TypeUnion` などの composite type declaration は
-  まだ AST 変換・自己検査に未対応のため拒否します。
+  `TypeNumber` / `TypeString` / `TypeBoolean` と inline な `TypeList` / `TypeFunction` /
+  `TypeLiteral` / `TypeUnion` 宣言を検証できます。別パーツを参照する type declaration は
+  module type environment がないため、引き続き拒否します。現状は adapter が各 inline node を再帰変換し、
+  self-host checker が root の kind `type` を確認します。field/tag の重複などの意味検査は未完了です。
 - Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition` 値へ変換し、
   `core.validate-module` で検証してから保存します。式や型の変換に失敗した場合、または
   型チェッカーが拒否した場合は `400` を返します。
@@ -48,8 +49,11 @@ definy
   型チェッカーの入力表現や環境が未対応のため、これらを含む有効なモジュールも fail-closed
   で拒否される場合があります。
 
-実サービスで一般的なモジュールを受け入れるには、残る型 AST の構造比較を実装し、式 AST と
-パーツ参照を解決するモジュール型環境を型チェッカーへ渡す必要があります。
+一般的なモジュールを受け入れる次のブロッカーは、module 内外の part reference を解決する型環境と、
+リスト・レコード・構築子・パターンマッチを含む式検査です。
+
+Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash 衝突や既存 bytes
+と異なる内容は拒否します。ModuleCommit に同じ式が複数回現れても、投稿再試行が CAS 重複で失敗しません。
 
 #### Lambda の配置規則
 
@@ -60,6 +64,23 @@ callee にする即時適用は許可しません。関数の呼び出し先は�
 
 `number` などのパーツ形状も式 node ではなく、パーツ定義の `part_type` metadata に宣言します。
 その宣言型が式 root の期待型になり、`core.validate-part` が式全体を検査します。
+
+### 今後の実装方針
+
+以下の順で、通常の module 投稿を自己ホスト検証の対象へ広げます。
+
+1. **型宣言の意味検査**: record field 名と union tag の重複、空 variant 集合、再帰参照の規則を決め、
+  converter と self-host validator のテストを追加します。現状は別 part reference を含む型宣言を拒否します。
+2. **module type environment**: `ModuleCommitEvent` の全 part 名/hash と宣言型から環境を作り、
+  `PartReference`・構築子・相互参照を解決します。循環参照は明示的に検出し、無制限再帰を避けます。
+3. **式検査の拡張**: list/record の構築と field access、union constructor、match の網羅性を
+  `core.type-check` に追加します。self-host checker と UI diagnostics の共有ケースを conformance test します。
+4. **bootstrap の固定**: Rust migration が生成する core definitions を versioned seed として固定し、
+  空 DB から同じ hash の core が再構築できることを CI で検証します。
+5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy compiler stage1 を作り、
+  stage1 が同一 compiler と test suite を再生成できるか比較します。
+6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を capability-limited host API として公開し、
+  サーバーの純粋な業務ロジックから Definy へ移します。IO を持つサービス全体の移行は言語 runtime の拡張後です。
 
 ### セルフホスティング全体アーキテクチャ
 
@@ -139,7 +160,7 @@ graph TD
     `core.type-env`
   - 型等価性判定 `core.type-equals`
   - 静的型検査器 `core.type-check`: `expression -> type-env -> type-result`
-  - `core.type-check-against` による宣言型ベースの lambda 検査と primitive type part 検証
+  - `core.type-check-against` による宣言型ベースの lambda 検査と inline type declaration の kind 検証
 - [x] **Phase 3: 自己ホスト WebAssembly コンパイラ (Self-Hosted Wasm Compiler)**
   - 式スタック命令列コンパイラ `core.compile-expr-instructions`:
     `expression -> list<number>`

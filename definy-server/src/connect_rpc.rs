@@ -828,7 +828,94 @@ mod tests {
             ),
         )
         .await;
-        assert_eq!(union_type_res.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(union_type_res.status(), StatusCode::OK);
+
+        let composite_type_module = Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
+                module_name: "composite-types".into(),
+                module_description: "composite type declarations".into(),
+                parent_commit_hash: None,
+                message: "submit composite type declarations".into(),
+                parts: vec![
+                    definy_event::event::ModulePartEntry {
+                        name: "number-list".into(),
+                        part_type: Some(definy_event::event::PartType::Type),
+                        description: "a list of numbers".into(),
+                        content_hash: None,
+                        expression: Some(definy_event::event::Expression::TypeList(
+                            definy_event::event::TypeListExpression {
+                                item_type: Box::new(definy_event::event::Expression::TypeNumber),
+                            },
+                        )),
+                    },
+                    definy_event::event::ModulePartEntry {
+                        name: "number-to-string".into(),
+                        part_type: Some(definy_event::event::PartType::Type),
+                        description: "a number to string function".into(),
+                        content_hash: None,
+                        expression: Some(definy_event::event::Expression::TypeFunction(
+                            definy_event::event::TypeFunctionExpression {
+                                parameter: Box::new(definy_event::event::Expression::TypeNumber),
+                                return_type: Box::new(definy_event::event::Expression::TypeString),
+                            },
+                        )),
+                    },
+                    definy_event::event::ModulePartEntry {
+                        name: "number-record".into(),
+                        part_type: Some(definy_event::event::PartType::Type),
+                        description: "a record containing a number".into(),
+                        content_hash: None,
+                        expression: Some(definy_event::event::Expression::TypeLiteral(
+                            definy_event::event::TypeLiteralExpression {
+                                items: vec![definy_event::event::TypeLiteralItemExpression {
+                                    key: "value".into(),
+                                    value: Box::new(definy_event::event::Expression::TypeNumber),
+                                }],
+                            },
+                        )),
+                    },
+                    definy_event::event::ModulePartEntry {
+                        name: "optional-string".into(),
+                        part_type: Some(definy_event::event::PartType::Type),
+                        description: "an optional string".into(),
+                        content_hash: None,
+                        expression: Some(definy_event::event::Expression::TypeUnion(
+                            definy_event::event::TypeUnionExpression {
+                                variants: vec![
+                                    definy_event::event::TypeUnionVariant {
+                                        tag: "none".into(),
+                                        payload_type: None,
+                                    },
+                                    definy_event::event::TypeUnionVariant {
+                                        tag: "some".into(),
+                                        payload_type: Some(Box::new(
+                                            definy_event::event::Expression::TypeString,
+                                        )),
+                                    },
+                                ],
+                            },
+                        )),
+                    },
+                ],
+            }),
+        };
+        let composite_type_bytes =
+            definy_event::sign_and_serialize(composite_type_module, &signing_key).unwrap();
+        let composite_type_res = handle_submit_event(
+            database.clone(),
+            ConnectInfo(client_addr),
+            headers.clone(),
+            Bytes::from(
+                serde_json::to_vec(&SubmitEventRequest {
+                    signed_event_bytes: composite_type_bytes,
+                })
+                .unwrap(),
+            ),
+        )
+        .await;
+        assert_eq!(composite_type_res.status(), StatusCode::OK);
 
         // 6. Test Diff Hash Negotiation
         let test_expr =
