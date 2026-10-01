@@ -608,6 +608,35 @@ validate-module: module-definition -> boolean
 
 ---
 
+### Phase 11: 自己記述型チェッカーのモジュール化 & アーム分割アーキテクチャ
+
+自己記述型チェッカー（`builtin_type_checker`）は、言語機能の拡充（レコード・直和型・リスト）に伴いコードサイズが増加したため、評価器（`builtin_evaluator`）と完全に対称なアーム分割構成へリファクタリングされました（各ファイル
+100〜500 行程度）：
+
+- **`helpers.rs`**: AST 構築用の共通ヘルパー（`ok_type`, `error_mismatch`,
+  `error_not_a_function`, `error_unknown`, `type_num`, `type_str`, `type_bool`,
+  `call_part`, `record_get`,
+  `check_sub`）を集約し、各モジュール間での重複を排除。
+- **`basic_arms.rs`**: リテラル型（`number`, `string`,
+  `boolean`）、算術演算型（`add`, `subtract`, `multiply`, `divide`,
+  `remainder`）、比較演算型（`equal`, `less_than`）、論理演算型（`and`, `or`,
+  `not`）のマッチアーム生成。
+- **`control_arms.rs`**:
+  制御・関数適用（`call`）、変数参照（`variable`）、条件分岐（`if`）、let
+  束縛（`let`）のマッチアーム生成。
+- **`record_ops.rs`**:
+  レコード構築（`record`）およびフィールドアクセス（`record_get`）の型検査。
+- **`union_check.rs` & `union_lookup.rs`**:
+  バリアント構築（`variant`）および網羅的パターンマッチ（`match`）の型検査。
+- **`list_ops.rs`**: リストリテラル（`list`）の型検査および要素走査。
+- **`check.rs`**: 各アーム生成関数を合成してディスパッチする約 100
+  行のスリムなメインエントリポイント。
+- **`check_against.rs`**:
+  期待型主導の型検査（`type-check-against`）を行い、`helpers.rs`
+  を活用して簡潔化。
+
+---
+
 ### 完全自己ホストコンパイル & メタ循環実行の実証
 
 definy
