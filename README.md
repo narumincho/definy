@@ -70,7 +70,7 @@ Web クライアント (WASM)
 https://dioxuslabs.com/learn/0.7/getting_started/#install-the-dioxus-cli
 
 ```sh
-curl -sSL https://dioxus.dev/install.sh | bash
+cargo install dioxus-cli
 ```
 
 起動コマンド:
