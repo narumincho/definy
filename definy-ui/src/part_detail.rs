@@ -83,7 +83,7 @@ fn PartEditorCard(
     let expression = use_signal(|| snapshot.expression.clone());
     let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
     let mut commit_message = use_signal(String::new);
-    let mut eval_result = use_signal(|| None::<String>);
+    let eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
 
@@ -123,38 +123,6 @@ fn PartEditorCard(
         .and_then(definy_event::event::PartType::from_expression)
         .as_ref()
         .map(part_type_to_expression_type);
-
-    let on_evaluate = move |_| {
-        let state_sig = use_context::<Signal<AppState>>();
-        let events_vec = state_sig.read().events_with_hash();
-        let result = if let Some(expr) = &*expression.read() {
-            match evaluate_expression(expr, &events_vec) {
-                Ok(value) => {
-                    format!(
-                        "{} {}",
-                        language.label("Result:", "結果:", "Rezulto:"),
-                        value,
-                    )
-                }
-                Err(error) => {
-                    format!(
-                        "{} {}",
-                        language.label("Error:", "エラー:", "Eraro:"),
-                        error,
-                    )
-                }
-            }
-        } else {
-            language
-                .label(
-                    "No expression to evaluate",
-                    "評価する式がありません",
-                    "Neniu esprimo por taksi",
-                )
-                .to_string()
-        };
-        eval_result.set(Some(result));
-    };
 
     let on_save = {
         let definition_event_hash = definition_event_hash.clone();
@@ -355,7 +323,12 @@ fn PartEditorCard(
                         button {
                             r#type: "button",
                             class: "btn-secondary",
-                            onclick: on_evaluate,
+                            onclick: {
+                                let state = state.clone();
+                                move |_| {
+                                    evaluate_and_set_result(&*expression.read(), &state, language, eval_result);
+                                }
+                            },
                             span { style: "font-size: 0.9em;", "▶" }
                             span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
                         }
@@ -485,9 +458,29 @@ fn PartEditorCard(
             div {
                 class: "event-detail-card",
                 style: "display: grid; gap: 0.85rem; padding: 1.25rem 1.4rem;",
-                div { style: "display: flex; justify-content: space-between; align-items: center;",
-                    span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
-                        "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
+                div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: baseline; gap: 0.6rem;",
+                        span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
+                            "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
+                        }
+                        if !is_logged_in {
+                            span { style: "font-size: 0.74rem; color: var(--text-muted);",
+                                "{context.language.label(\"(Editable & Evaluatable without login)\", \"(未ログインでも自由に編集・評価可能)\", \"(Redaktebla kaj taksebla sen ensaluto)\")}"
+                            }
+                        }
+                    }
+                    button {
+                        r#type: "button",
+                        class: "btn-secondary",
+                        style: "padding: 0.25rem 0.65rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;",
+                        onclick: {
+                            let state = state.clone();
+                            move |_| {
+                                evaluate_and_set_result(&*expression.read(), &state, language, eval_result);
+                            }
+                        },
+                        span { "▶" }
+                        span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
                     }
                 }
                 crate::tree_layout::ExpressionTreeEditor {
@@ -745,5 +738,91 @@ fn PartCommitHistoryItem(
                 }
             }
         }
+    }
+}
+
+pub(crate) fn evaluate_and_set_result(
+    expression: &Option<definy_event::event::Expression>,
+    state_fallback: &AppState,
+    language: crate::language::Language,
+    mut eval_result: Signal<Option<String>>,
+) {
+    let events_vec = try_use_context::<Signal<AppState>>()
+        .map(|sig| sig.read().events_with_hash())
+        .unwrap_or_else(|| state_fallback.events_with_hash());
+    let result = if let Some(expr) = expression {
+        match evaluate_expression(expr, &events_vec) {
+            Ok(value) => {
+                format!(
+                    "{} {}",
+                    language.label("Result:", "結果:", "Rezulto:"),
+                    value,
+                )
+            }
+            Err(error) => {
+                format!(
+                    "{} {}",
+                    language.label("Error:", "エラー:", "Eraro:"),
+                    error,
+                )
+            }
+        }
+    } else {
+        language
+            .label(
+                "No expression to evaluate",
+                "評価する式がありません",
+                "Neniu esprimo por taksi",
+            )
+            .to_string()
+    };
+    eval_result.set(Some(result));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use definy_event::event::{AddExpression, Expression, NumberExpression};
+
+    #[test]
+    fn test_unauthenticated_expression_evaluation() {
+        let evaluated = std::sync::Arc::new(std::sync::Mutex::new(None));
+        let evaluated_clone = evaluated.clone();
+
+        let mut dom = VirtualDom::new_with_props(
+            move |eval_store: std::sync::Arc<std::sync::Mutex<Option<String>>>| {
+                let eval_result = use_signal(|| None::<String>);
+                let state = AppState {
+                    current_key: None,
+                    ..AppState::default()
+                };
+                let expr = Some(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Number(NumberExpression { value: 18 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 24 })),
+                }));
+
+                if eval_result().is_none() {
+                    evaluate_and_set_result(
+                        &expr,
+                        &state,
+                        crate::language::Language::Japanese,
+                        eval_result,
+                    );
+                }
+
+                let val = eval_result();
+                *eval_store.lock().unwrap() = val;
+
+                rsx! {
+                    div {}
+
+                }
+            },
+            evaluated_clone,
+        );
+
+        dom.rebuild_in_place();
+        let result = evaluated.lock().unwrap().clone();
+        assert_eq!(result, Some("結果: 42".to_string()));
     }
 }

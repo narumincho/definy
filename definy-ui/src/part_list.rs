@@ -83,12 +83,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                         r#type: "button",
                         style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                         onclick: move |_| {
-                            let state_sig = use_context::<Signal<AppState>>();
-                            if state_sig.read().current_key.is_none() {
-                                crate::login_or_create_account_dialog::dialog_open();
-                            } else {
-                                is_form_open.set(true);
-                            }
+                            is_form_open.set(true);
                         },
                         "{context.language.label(\"+ Create Part\", \"+ パーツを作成\", \"+ Krei parton\")}"
                     }
@@ -131,7 +126,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                     }
                 }
             }
-            if state.current_key.is_some() && is_form_open() {
+            if is_form_open() {
                 PartDefinitionFormView {
                     state: state.clone(),
                     context: context.clone(),

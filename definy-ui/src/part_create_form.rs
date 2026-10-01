@@ -5,7 +5,6 @@ use dioxus::prelude::*;
 
 use crate::app_state::AppState;
 use crate::expression_editor::part_type_to_expression_type;
-use crate::expression_eval::evaluate_expression;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 
@@ -22,41 +21,15 @@ pub fn PartDefinitionFormView(
     let mut part_type_expr = use_signal(|| None::<definy_event::event::Expression>);
     let module_hash = use_signal(|| None::<EventHashId>);
     let mut composing_expression = use_signal(|| None::<definy_event::event::Expression>);
-
-    let on_evaluate = move |_| {
-        let state_sig = use_context::<Signal<AppState>>();
-        let events_vec: Vec<_> = state_sig.read().events_with_hash();
-        let result = if let Some(expr) = &*composing_expression.read() {
-            match evaluate_expression(expr, &events_vec) {
-                Ok(value) => {
-                    format!(
-                        "{} {}",
-                        language.label("Result:", "結果:", "Rezulto:"),
-                        value,
-                    )
-                }
-                Err(error) => {
-                    format!(
-                        "{} {}",
-                        language.label("Error:", "エラー:", "Eraro:"),
-                        error,
-                    )
-                }
-            }
-        } else {
-            language
-                .label(
-                    "No expression to evaluate",
-                    "評価する式がありません",
-                    "Neniu esprimo por taksi",
-                )
-                .to_string()
-        };
-        eval_result.set(Some(result));
-    };
+    let is_logged_in = state.current_key.is_some()
+        || try_use_context::<Signal<AppState>>()
+            .map(|sig| sig.read().current_key.is_some())
+            .unwrap_or(false);
 
     let on_create = move |_| {
-        let state_sig = use_context::<Signal<AppState>>();
+        let Some(state_sig) = try_use_context::<Signal<AppState>>() else {
+            return;
+        };
         let state_val = state_sig.read().clone();
         let key = if let Some(key) = &state_val.current_key {
             key.clone()
@@ -65,7 +38,7 @@ pub fn PartDefinitionFormView(
                 language
                     .label(
                         "Error: log in to create parts",
-                        "エラー: パーツを作成するにはログインしてください",
+                        "エラー: パーツを作成・保存するにはログインしてください",
                         "Eraro: ensalutu por krei partojn",
                     )
                     .to_string(),
@@ -246,31 +219,58 @@ pub fn PartDefinitionFormView(
             }
             PartDescriptionInput { part_description }
             div { style: "display: grid; gap: 0.4rem; padding-top: 0.2rem;",
-                div { style: "display: flex; justify-content: space-between; align-items: center;",
-                    span { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);",
-                        {
-                            context
-                                .language
-                                .label(
-                                    "Expression (Initial Value)",
-                                    "式 (初期値)",
-                                    "Esprimo (Komenca Valoro)",
-                                )
-                        }
-                    }
-                    if composing_expression.read().is_some() {
-                        button {
-                            r#type: "button",
-                            style: "background: none; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer;",
-                            onclick: move |_| composing_expression.set(None),
+                div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: baseline; gap: 0.6rem;",
+                        span { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);",
                             {
                                 context
                                     .language
                                     .label(
-                                        "Clear (no expression)",
-                                        "クリア (式なし)",
-                                        "Forigi (sen esprimo)",
+                                        "Expression (Initial Value)",
+                                        "式 (初期値)",
+                                        "Esprimo (Komenca Valoro)",
                                     )
+                            }
+                        }
+                        if !is_logged_in {
+                            span { style: "font-size: 0.74rem; color: var(--text-muted);",
+                                "{context.language.label(\"(Editable & Evaluatable without login)\", \"(未ログインでも自由に編集・評価可能)\", \"(Redaktebla kaj taksebla sen ensaluto)\")}"
+                            }
+                        }
+                    }
+                    div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                        if composing_expression.read().is_some() {
+                            button {
+                                r#type: "button",
+                                class: "btn-secondary",
+                                style: "padding: 0.2rem 0.55rem; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 0.3rem;",
+                                onclick: {
+                                    let state = state.clone();
+                                    move |_| {
+                                        crate::part_detail::evaluate_and_set_result(
+                                            &*composing_expression.read(),
+                                            &state,
+                                            language,
+                                            eval_result,
+                                        );
+                                    }
+                                },
+                                span { "▶" }
+                                span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
+                            }
+                            button {
+                                r#type: "button",
+                                style: "background: none; border: none; color: var(--text-muted); font-size: 0.75rem; cursor: pointer;",
+                                onclick: move |_| composing_expression.set(None),
+                                {
+                                    context
+                                        .language
+                                        .label(
+                                            "Clear (no expression)",
+                                            "クリア (式なし)",
+                                            "Forigi (sen esprimo)",
+                                        )
+                                }
                             }
                         }
                     }
@@ -338,39 +338,80 @@ pub fn PartDefinitionFormView(
                         .as_ref()
                         .map(part_type_to_expression_type);
                     rsx! {
-                        crate::expression_editor::ExpressionEditorContainer {
+                        crate::tree_layout::ExpressionTreeEditor {
                             state: state.clone(),
                             context: context.clone(),
                             expression: composing_expression,
                             expected_type,
+                            max_width: 700.0,
                         }
                     }
                 }
-                crate::tree_layout::ExpressionTreeSummary {
-                    expression: composing_expression.read().clone(),
-                    initial_expanded: true,
-                    max_width: 700.0,
-                }
             }
-            if let Some(result) = eval_result() {
-                div { style: "padding: 0.45rem 0.75rem; font-size: 0.82rem; color: var(--error); background: rgb(255 0 0 / 0.08); border: 1px solid var(--error); border-radius: var(--radius-sm); word-break: break-word;",
-                    "{result}"
-                }
+            {
+                eval_result()
+                    .map(|result| {
+                        let is_error = result.starts_with("Error")
+                            || result.starts_with("エラー");
+                        let (bg, border, text_color) = if is_error {
+                            ("var(--error-bg)", "var(--error)", "#fca5a5")
+                        } else {
+                            ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
+                        }
+                        }
+                        rsx! {
+                            div {
+                                class: "mono",
+                                style: "padding: 0.5rem 0.8rem; font-size: 0.84rem; background: {bg}; border: 1px solid {border}; color: {text_color}; border-radius: var(--radius-sm); word-break: break-word;",
+                                "{result}"
+                            }
+                        }
+                    })
             }
-            div { style: "display: flex; gap: 0.45rem;",
-                if composing_expression.read().is_some() {
+            div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding-top: 0.3rem;",
+                div { style: "display: flex; gap: 0.45rem; align-items: center;",
+                    if composing_expression.read().is_some() {
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary",
+                            style: "padding: 0.35rem 0.75rem; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 0.35rem;",
+                            onclick: {
+                                let state = state.clone();
+                                move |_| {
+                                    crate::part_detail::evaluate_and_set_result(
+                                        &*composing_expression.read(),
+                                        &state,
+                                        language,
+                                        eval_result,
+                                    );
+                                }
+                            },
+                            span { "▶" }
+                            span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
+                        }
+                    }
                     button {
                         r#type: "button",
-                        style: "padding: 0.35rem 0.75rem; background: rgb(255 255 255 / 0.06); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
-                        onclick: on_evaluate,
-                        "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}"
+                        class: if is_logged_in { "btn-primary" } else { "btn-secondary" },
+                        style: "padding: 0.35rem 0.85rem; font-size: 0.84rem; font-weight: 600;",
+                        onclick: on_create,
+                        "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
                     }
                 }
-                button {
-                    r#type: "button",
-                    style: "padding: 0.35rem 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
-                    onclick: on_create,
-                    "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
+                if !is_logged_in {
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; color: var(--text-secondary);",
+                        span {
+                            "{context.language.label(\"Login required to save.\", \"保存にはログインが必要です。\", \"Ensaluto necesas por konservi.\")}"
+                        }
+                        button {
+                            r#type: "button",
+                            "commandfor": "login-or-create-account-dialog",
+                            "command": "show-modal",
+                            class: "btn-secondary",
+                            style: "padding: 0.2rem 0.55rem; font-size: 0.76rem; border-color: var(--primary); color: var(--primary);",
+                            "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
+                        }
+                    }
                 }
             }
         }
@@ -429,11 +470,12 @@ fn PartTypeInput(
                     }
                 }
             }
-            crate::expression_editor::ExpressionEditorContainer {
+            crate::tree_layout::ExpressionTreeEditor {
                 state: state.clone(),
                 context: context.clone(),
                 expression: part_type_expr,
                 expected_type: Some(crate::expression_editor::ExpressionType::Type),
+                max_width: 700.0,
             }
         }
     }
