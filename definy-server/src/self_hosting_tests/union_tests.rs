@@ -11,8 +11,8 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, call_part2, call_part3, create_test_module_events,
-    get_test_account_and_mod_id,
+    all_type_checker_parts, call_part2, call_part3, create_test_module_events, empty_type_env,
+    get_test_account_and_mod_id, type_env_single_var,
 };
 
 /// AST 式直和型ヘルパー: `variant({ tag, payload: some(expr) })`
@@ -208,7 +208,7 @@ fn test_self_hosted_variant_type_inference_and_subtyping() {
 
     // 1. Variant 式の型推論: variant("some", 42)
     let var_some_expr = ast_variant_some("some", expr_num(42));
-    let env_empty = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let env_empty = empty_type_env();
 
     let check_call = call_part2(type_check_hash, var_some_expr.clone(), env_empty.clone());
     let inferred = definy_core::evaluate_expression(&check_call, &events)
@@ -283,20 +283,7 @@ fn test_self_hosted_match_expression_type_checking() {
 
     // Option<number> = union([ ("none", none), ("some", some(number)) ])
     let option_num_type = ast_union_type(vec![("none", None), ("some", Some(type_num()))]);
-    let env_with_option = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "variable_id".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 100 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "var_type".into(),
-                    value: Box::new(option_num_type),
-                },
-            ],
-        })],
-    });
+    let env_with_option = type_env_single_var(100, option_num_type);
 
     // target: variable(100) (型は Option<number>)
     // match target { some(x) => x + 10, none => 0 }
@@ -341,20 +328,7 @@ fn test_self_hosted_match_expression_detects_type_mismatch() {
 
     // Option<number> = union([ ("none", none), ("some", some(number)) ])
     let option_num_type = ast_union_type(vec![("none", None), ("some", Some(type_num()))]);
-    let env_with_option = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "variable_id".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 100 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "var_type".into(),
-                    value: Box::new(option_num_type),
-                },
-            ],
-        })],
-    });
+    let env_with_option = type_env_single_var(100, option_num_type);
 
     // target: variable(100) (型は Option<number>)
     // match target { some(x) => x + 1, none => "hello" }
@@ -408,20 +382,7 @@ fn test_self_hosted_match_expression_detects_non_exhaustive_arms() {
     // 環境に target_var (Option<number> = union([none, some(number)])) を束縛
     // env = [ { variable_id: 100, var_type: Option<number> } ]
     let option_num_type = ast_union_type(vec![("none", None), ("some", Some(type_num()))]);
-    let env_with_option = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "variable_id".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 100 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "var_type".into(),
-                    value: Box::new(option_num_type),
-                },
-            ],
-        })],
-    });
+    let env_with_option = type_env_single_var(100, option_num_type);
 
     // target: variable(100) (型は Option<number>)
     // match target { some(x) => x + 1 }
@@ -472,20 +433,7 @@ fn test_self_hosted_match_expression_detects_unknown_variant() {
     let events = create_test_module_events(account, parts, 104);
 
     let option_num_type = ast_union_type(vec![("none", None), ("some", Some(type_num()))]);
-    let env_with_option = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "variable_id".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 100 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "var_type".into(),
-                    value: Box::new(option_num_type),
-                },
-            ],
-        })],
-    });
+    let env_with_option = type_env_single_var(100, option_num_type);
 
     // target: Option<number> (バリアントは some, none)
     // match target { some(x) => x + 1, invalid_tag => 0 }
@@ -538,7 +486,7 @@ fn test_self_hosted_variant_none_inference_and_against() {
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 
     let events = create_test_module_events(account, parts, 105);
-    let env_empty = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let env_empty = empty_type_env();
 
     // variant("none", none)
     let var_none_expr = ast_variant_none("none");

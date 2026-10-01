@@ -9,7 +9,7 @@ use super::helpers::{
     record_get, type_bool,
 };
 
-/// 関数適用 (call)、変数参照 (variable)、条件分岐 (if)、let 束縛 (let) の型検査 MatchArm リストを生成します。
+/// 関数適用 (call)、変数参照 (variable)、条件分岐 (if)、let 束縛 (let)、パーツ参照 (part_reference) の型検査 MatchArm リストを生成します。
 pub fn create_control_check_arms(
     type_check_hash: &EventHashId,
     type_check_against_hash: &EventHashId,
@@ -17,6 +17,7 @@ pub fn create_control_check_arms(
     type_equals_hash: &EventHashId,
     type_env_lookup_hash: &EventHashId,
     type_env_extend_hash: &EventHashId,
+    type_env_lookup_part_hash: &EventHashId,
 ) -> Vec<MatchArm> {
     let mut arms = Vec::new();
 
@@ -411,6 +412,33 @@ pub fn create_control_check_arms(
             variable_id: Some(let_var_id),
             variable_name: Some("let_e".into()),
             body: Box::new(let_match),
+        });
+    }
+
+    // 5. Part reference lookup: part_reference({ part_definition_event_hash })
+    {
+        let part_ref_var_id = 22;
+        let part_hash = record_get(
+            Expression::Variable(VariableExpression {
+                variable_id: part_ref_var_id,
+            }),
+            "part_definition_event_hash",
+        );
+        let lookup_call = Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    type_env_lookup_part_hash.clone(),
+                ))),
+                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            })),
+            argument: Box::new(part_hash),
+        });
+
+        arms.push(MatchArm {
+            tag: "part_reference".into(),
+            variable_id: Some(part_ref_var_id),
+            variable_name: Some("part_ref".into()),
+            body: Box::new(lookup_call),
         });
     }
 

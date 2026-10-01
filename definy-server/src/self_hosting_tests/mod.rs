@@ -8,6 +8,7 @@ mod ast_structure_tests;
 mod execution_tests;
 mod helpers;
 mod list_tests;
+mod part_reference_tests;
 mod record_tests;
 mod union_tests;
 mod wasi_tests;

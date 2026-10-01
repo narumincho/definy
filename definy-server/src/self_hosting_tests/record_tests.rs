@@ -11,7 +11,7 @@ use definy_event::event::{
 
 use super::helpers::{
     all_evaluator_parts, all_type_checker_parts, call_part1, call_part2, create_test_module_events,
-    get_test_account_and_mod_id,
+    empty_type_env, get_test_account_and_mod_id, type_env_single_var,
 };
 
 #[test]
@@ -75,7 +75,7 @@ fn test_self_hosted_record_type_checking_execution() {
         }))),
     });
 
-    let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let empty_env = empty_type_env();
     let check_call = call_part2(type_check_hash, record_ast, empty_env);
 
     let result = definy_core::evaluate_expression(&check_call, &events)
@@ -148,20 +148,7 @@ fn test_self_hosted_record_get_type_checking_execution() {
         }))),
     });
 
-    let env = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "variable_id".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "var_type".into(),
-                    value: Box::new(age_record_type),
-                },
-            ],
-        })],
-    });
+    let env = type_env_single_var(0, age_record_type);
 
     // 1. Success case: record_get({ record: variable(0), key: "age" }) -> ok(number)
     let var0_expr = Expression::Variant(VariantExpression {
@@ -270,7 +257,7 @@ fn test_self_hosted_record_get_type_checking_execution() {
         }))),
     });
 
-    let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let empty_env = empty_type_env();
     let check_not_record = call_part2(type_check_hash, record_get_on_num, empty_env);
     let res_not_record = definy_core::evaluate_expression(&check_not_record, &events)
         .expect("Failed to evaluate not a record type check");
@@ -777,20 +764,7 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
         }))),
     });
 
-    let env = Expression::ListLiteral(ListLiteralExpression {
-        items: vec![Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "variable_id".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "var_type".into(),
-                    value: Box::new(func_type),
-                },
-            ],
-        })],
-    });
+    let env = type_env_single_var(10, func_type);
 
     // 引数: record({ clock: 42, crypto: "secret", random: 99 })
     let make_value_expr = |k: &str, v: Expression| {

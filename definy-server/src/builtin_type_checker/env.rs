@@ -2,9 +2,9 @@ use definy_event::EventHashId;
 use definy_event::event::{
     CallExpression, Description, EqualExpression, Expression, FunctionExpression, IfExpression,
     LessThanExpression, ListAppendExpression, ListGetExpression, ListLengthExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordGetExpression,
-    SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
-    VariantExpression, derive_module_part_id,
+    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordFieldType,
+    RecordGetExpression, SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression,
+    VariableExpression, VariantExpression, derive_module_part_id,
 };
 
 /// `core.type-env-lookup`: `type-env -> number -> type-result`
@@ -12,6 +12,11 @@ pub fn create_type_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEn
     let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
     let type_result_part_hash = derive_module_part_id(core_module_id, "type-result");
     let inner_hash = derive_module_part_id(core_module_id, "type-env-lookup-inner");
+
+    let variables_expr = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+        key: "variables".into(),
+    });
 
     let body = Expression::Function(FunctionExpression {
         parameter_id: 0,
@@ -25,17 +30,13 @@ pub fn create_type_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEn
                         function: Box::new(Expression::PartReference(
                             PartReferenceExpression::new(inner_hash),
                         )),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
-                        })),
+                        argument: Box::new(variables_expr.clone()),
                     })),
                     argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 })),
                 argument: Box::new(Expression::Subtract(SubtractExpression {
                     left: Box::new(Expression::ListLength(ListLengthExpression {
-                        value: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
-                        })),
+                        value: Box::new(variables_expr),
                     })),
                     right: Box::new(Expression::Number(NumberExpression { value: 1 })),
                 })),
@@ -61,9 +62,9 @@ pub fn create_type_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEn
     }
 }
 
-/// `core.type-env-lookup-inner`: `type-env -> var_id -> idx -> type-result`
+/// `core.type-env-lookup-inner`: `list<{ variable_id, var_type }> -> var_id -> idx -> type-result`
 pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> ModulePartEntry {
-    let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
+    let type_ast_part_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_result_part_hash = derive_module_part_id(core_module_id, "type-result");
     let inner_hash = derive_module_part_id(core_module_id, "type-env-lookup-inner");
 
@@ -105,7 +106,7 @@ pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> Module
 
     let body = Expression::Function(FunctionExpression {
         parameter_id: 0,
-        parameter_name: "env".into(),
+        parameter_name: "variables".into(),
         body: Box::new(Expression::Function(FunctionExpression {
             parameter_id: 1,
             parameter_name: "var_id".into(),
@@ -143,10 +144,21 @@ pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> Module
         })),
     });
 
+    let var_entry_type = PartType::Record(vec![
+        RecordFieldType {
+            key: "variable_id".into(),
+            value: Box::new(PartType::Number),
+        },
+        RecordFieldType {
+            key: "var_type".into(),
+            value: Box::new(PartType::TypePart(type_ast_part_hash)),
+        },
+    ]);
+
     ModulePartEntry {
         name: "type-env-lookup-inner".into(),
         part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(type_env_part_hash)),
+            parameter: Box::new(PartType::List(Box::new(var_entry_type))),
             return_type: Box::new(PartType::Function {
                 parameter: Box::new(PartType::Number),
                 return_type: Box::new(PartType::Function {
@@ -182,6 +194,30 @@ pub fn create_type_env_extend_part(core_module_id: &EventHashId) -> ModulePartEn
         ],
     });
 
+    let updated_env = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "variables".into(),
+                value: Box::new(Expression::ListAppend(ListAppendExpression {
+                    list: Box::new(Expression::RecordGet(RecordGetExpression {
+                        record: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 0,
+                        })),
+                        key: "variables".into(),
+                    })),
+                    item: Box::new(new_entry),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+                    key: "parts".into(),
+                })),
+            },
+        ],
+    });
+
     let body = Expression::Function(FunctionExpression {
         parameter_id: 0,
         parameter_name: "env".into(),
@@ -191,10 +227,7 @@ pub fn create_type_env_extend_part(core_module_id: &EventHashId) -> ModulePartEn
             body: Box::new(Expression::Function(FunctionExpression {
                 parameter_id: 2,
                 parameter_name: "var_type".into(),
-                body: Box::new(Expression::ListAppend(ListAppendExpression {
-                    list: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-                    item: Box::new(new_entry),
-                })),
+                body: Box::new(updated_env),
             })),
         })),
     });

@@ -30,6 +30,12 @@ fn test_self_hosting_parts_registration() {
     let type_env_lookup_inner =
         crate::builtin_type_checker::create_type_env_lookup_inner_part(&core_id);
     let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&core_id);
+    let part_type_env = crate::builtin_type_checker::create_part_type_env_part(&core_id);
+    let part_type_lookup = crate::builtin_type_checker::create_part_type_lookup_part(&core_id);
+    let part_type_lookup_inner =
+        crate::builtin_type_checker::create_part_type_lookup_inner_part(&core_id);
+    let type_env_lookup_part =
+        crate::builtin_type_checker::create_type_env_lookup_part_part(&core_id);
     let type_equals = crate::builtin_type_checker::create_type_equals_part(&core_id);
     let type_equals_record_fields =
         crate::builtin_type_checker::create_type_equals_record_fields_part(&core_id);
@@ -110,6 +116,10 @@ fn test_self_hosting_parts_registration() {
         type_env_lookup,
         type_env_lookup_inner,
         type_env_extend,
+        part_type_env,
+        part_type_lookup,
+        part_type_lookup_inner,
+        type_env_lookup_part,
         type_equals,
         type_equals_record_fields,
         type_equals_union_variants,

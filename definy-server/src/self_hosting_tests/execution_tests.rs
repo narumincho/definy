@@ -11,8 +11,8 @@ use definy_event::event::{
 
 use super::helpers::{
     all_evaluator_parts, all_type_checker_parts, ast_add, ast_mul, ast_num, call_part1, call_part2,
-    call_part3, create_test_module_events, get_test_account_and_mod_id, test_val_bool,
-    test_val_num, test_val_str, value_list_to_u8_vec,
+    call_part3, create_test_module_events, empty_type_env, get_test_account_and_mod_id,
+    test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
 };
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
@@ -106,7 +106,7 @@ fn test_self_hosted_type_checker_execution() {
         ast_num(20, expr_type_opt.clone()),
         expr_type_opt,
     );
-    let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let empty_env = empty_type_env();
 
     let check_call = call_part2(type_check_hash, expr_to_check, empty_env);
 
@@ -699,7 +699,7 @@ fn test_self_hosted_validate_part_execution() {
     let callback_type_check = call_part3(
         derive_module_part_id(&mod_id, "type-check-against"),
         callback_consumer_expression.clone(),
-        Expression::ListLiteral(ListLiteralExpression { items: vec![] }),
+        empty_type_env(),
         callback_consumer_lambda_type.clone(),
     );
     let callback_type_check_result =

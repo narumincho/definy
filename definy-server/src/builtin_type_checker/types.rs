@@ -115,6 +115,15 @@ pub fn create_type_error_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     payload_type: None,
                 },
                 TypeUnionVariant {
+                    tag: "part_not_found".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "part_definition_event_hash".into(),
+                            value: Box::new(Expression::TypeString),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
                     tag: "unknown_error".into(),
                     payload_type: None,
                 },
@@ -157,7 +166,7 @@ pub fn create_type_result_part(core_module_id: &EventHashId) -> ModulePartEntry 
     }
 }
 
-/// 型環境型 (`core.type-env` = `list<{ variable_id: number, var_type: type-ast }>`)
+/// 型環境型 (`core.type-env` = `{ variables: list<{ variable_id: number, var_type: type-ast }>, parts: list<{ part_definition_event_hash: string, part_type: type-ast }> }`)
 pub fn create_type_env_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_ast_ref = Expression::PartReference(PartReferenceExpression::new(type_ast_hash));
@@ -168,24 +177,51 @@ pub fn create_type_env_part(core_module_id: &EventHashId) -> ModulePartEntry {
         description: Description::localized(vec![
             (
                 "en",
-                "Type checking environment mapping variable IDs to types",
+                "Type checking environment mapping variable IDs and part hashes to types",
             ),
-            ("ja", "変数 ID と型の対応を管理する型環境"),
+            (
+                "ja",
+                "変数 ID およびパーツ定義ハッシュと型の対応を管理する型環境",
+            ),
         ]),
         content_hash: None,
-        expression: Some(Expression::TypeList(TypeListExpression {
-            item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
-                items: vec![
-                    TypeLiteralItemExpression {
-                        key: "variable_id".into(),
-                        value: Box::new(Expression::TypeNumber),
-                    },
-                    TypeLiteralItemExpression {
-                        key: "var_type".into(),
-                        value: Box::new(type_ast_ref),
-                    },
-                ],
-            })),
+        expression: Some(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "variables".into(),
+                    value: Box::new(Expression::TypeList(TypeListExpression {
+                        item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![
+                                TypeLiteralItemExpression {
+                                    key: "variable_id".into(),
+                                    value: Box::new(Expression::TypeNumber),
+                                },
+                                TypeLiteralItemExpression {
+                                    key: "var_type".into(),
+                                    value: Box::new(type_ast_ref.clone()),
+                                },
+                            ],
+                        })),
+                    })),
+                },
+                TypeLiteralItemExpression {
+                    key: "parts".into(),
+                    value: Box::new(Expression::TypeList(TypeListExpression {
+                        item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![
+                                TypeLiteralItemExpression {
+                                    key: "part_definition_event_hash".into(),
+                                    value: Box::new(Expression::TypeString),
+                                },
+                                TypeLiteralItemExpression {
+                                    key: "part_type".into(),
+                                    value: Box::new(type_ast_ref),
+                                },
+                            ],
+                        })),
+                    })),
+                },
+            ],
         })),
     }
 }

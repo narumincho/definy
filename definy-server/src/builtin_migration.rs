@@ -352,6 +352,15 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(crate::builtin_type_checker::create_type_env_extend_part(
         &core_module_id,
     ));
+    core_parts.push(crate::builtin_type_checker::create_part_type_env_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_type_checker::create_part_type_lookup_part(
+        &core_module_id,
+    ));
+    core_parts
+        .push(crate::builtin_type_checker::create_part_type_lookup_inner_part(&core_module_id));
+    core_parts.push(crate::builtin_type_checker::create_type_env_lookup_part_part(&core_module_id));
     core_parts.push(crate::builtin_type_checker::create_type_equals_part(
         &core_module_id,
     ));

@@ -22,6 +22,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
     let type_env_lookup_hash = derive_module_part_id(core_module_id, "type-env-lookup");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
+    let type_env_lookup_part_hash = derive_module_part_id(core_module_id, "type-env-lookup-part");
     let record_field_type_lookup_hash =
         derive_module_part_id(core_module_id, "record-field-type-lookup");
     let check_record_fields_hash =
@@ -34,7 +35,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     // 1. Literal types, Arithmetic, Comparison, and Logical operations
     arms.extend(create_basic_check_arms(&type_check_hash, &type_equals_hash));
 
-    // 2. Function calls, Variable lookup, Conditionals, and Let bindings
+    // 2. Function calls, Variable lookup, Conditionals, Let bindings, and Part references
     arms.extend(create_control_check_arms(
         &type_check_hash,
         &type_check_against_hash,
@@ -42,6 +43,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
         &type_equals_hash,
         &type_env_lookup_hash,
         &type_env_extend_hash,
+        &type_env_lookup_part_hash,
     ));
 
     // 3. Record operations: record_get, record

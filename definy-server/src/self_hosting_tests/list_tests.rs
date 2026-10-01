@@ -12,7 +12,7 @@ use definy_event::event::{
 
 use super::helpers::{
     all_evaluator_parts, all_type_checker_parts, call_part2, call_part3, create_test_module_events,
-    get_test_account_and_mod_id,
+    empty_type_env, get_test_account_and_mod_id,
 };
 
 /// 式 AST の数値リテラル: `number(n)`
@@ -136,9 +136,9 @@ fn type_record(fields: Vec<(&str, Expression)>) -> Expression {
     })
 }
 
-/// 空の型環境 `[]`
+/// 空の型環境
 fn empty_env() -> Expression {
-    Expression::ListLiteral(ListLiteralExpression { items: vec![] })
+    empty_type_env()
 }
 
 fn get_field<'a>(fields: &'a [(String, Value)], key: &str) -> &'a Value {

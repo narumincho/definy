@@ -7,6 +7,8 @@ use definy_event::event::{
 };
 use definy_event::{EventHashId, VerifyAndDeserializeError};
 
+pub use crate::builtin_type_checker::{empty_type_env, type_env_single_var, type_env_with_parts};
+
 /// テスト用のダミー core モジュール ID を取得します。
 pub fn get_dummy_core_id() -> EventHashId {
     EventHashId::from_bytes(&[1u8; 32])
@@ -200,6 +202,10 @@ pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_type_checker::create_type_env_lookup_part(mod_id),
         crate::builtin_type_checker::create_type_env_lookup_inner_part(mod_id),
         crate::builtin_type_checker::create_type_env_extend_part(mod_id),
+        crate::builtin_type_checker::create_part_type_env_part(mod_id),
+        crate::builtin_type_checker::create_part_type_lookup_part(mod_id),
+        crate::builtin_type_checker::create_part_type_lookup_inner_part(mod_id),
+        crate::builtin_type_checker::create_type_env_lookup_part_part(mod_id),
         crate::builtin_type_checker::create_type_equals_part(mod_id),
         crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
         crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),

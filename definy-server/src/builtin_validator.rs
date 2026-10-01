@@ -2,9 +2,9 @@ use definy_event::EventHashId;
 use definy_event::event::{
     BooleanExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
     LessThanExpression, LessThanOrEqualExpression, ListGetExpression, ListLengthExpression,
-    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
-    PartReferenceExpression, PartType, RecordGetExpression, StringLengthExpression,
-    VariableExpression, derive_module_part_id,
+    MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartReferenceExpression,
+    PartType, RecordGetExpression, StringLengthExpression, VariableExpression,
+    derive_module_part_id,
 };
 
 /// パーツ妥当性検証器 `core.validate-part`: `part-definition -> boolean`
@@ -27,7 +27,7 @@ pub fn create_validate_part_part(core_module_id: &EventHashId) -> ModulePartEntr
         key: "part_type".into(),
     });
 
-    let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let empty_env = crate::builtin_type_checker::empty_type_env();
 
     // type-check-against(expr)([])(declared_type)
     let check_call = Expression::Call(CallExpression {

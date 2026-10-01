@@ -30,17 +30,19 @@ definy
 サービス全体のブートストラップが完了したことを意味しません。
 
 - `core.type-check`
-  は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、レコード構築（`record`）、フィールドアクセス（`record_get`）、型環境上の関数適用を扱います。
+  は、数値・文字列・真偽値、基本演算、変数、条件分岐、`let`、レコード構築（`record`）、フィールドアクセス（`record_get`）、直和型構築（`variant`）、パターンマッチ（`match`）、リスト式（`list`）、パーツ参照（`part_reference`）、型環境上の関数適用を扱います。
   宣言型を与える `core.type-check-against`
   は関数引数を型環境へ束縛して関数本体を検査します。 lambda
   はパーツ宣言型が要求する関数形に沿う位置か、関数型 parameter への Call
   引数でのみ受け入れます。 lambda を callee
   とする即時適用や、期待関数型のない位置の lambda は拒否します。
   `ModulePartEntry.part_type` はパーツ直下の宣言 metadata であり、式の中に置く型
-  marker ではありません。 リスト式やパーツ参照の検査は未対応です。
-  `core.type-equals` は基本型・リスト型・関数型・record 型を再帰比較します。
-  union 型も variant の順序と optional payload 型を含めて比較し、reference 型は
-  part hash で比較します。 record/union は定義順を含めて比較します。
+  marker ではありません。 モジュール内の他パーツ参照（`part_reference`）は
+  `type-env` 内の `parts`
+  リスト（`core.part-type-env`）を参照して自己解決します。 `core.type-equals`
+  は基本型・リスト型・関数型・record 型を再帰比較します。 union 型も variant
+  の順序と optional payload 型を含めて比較し、reference 型は part hash
+  で比較します。 record/union は定義順を含めて比較します。
 - `PartType::Type` は自己ホスト `type-ast` の kind `type`
   として扱います。通常の投稿経路では `TypeNumber` / `TypeString` / `TypeBoolean`
   と inline な `TypeList` / `TypeFunction` / `TypeLiteral` / `TypeUnion`
@@ -333,14 +335,27 @@ eval-value: expression -> env -> value
   - `type_mismatch({ expected: type-ast, actual: type-ast })`: 型の不一致
   - `undefined_variable({ variable_id: number })`: 未定義の変数参照
   - `condition_not_boolean({ actual: type-ast })`: 条件式の型が boolean 以外
+  - `part_not_found({ part_definition_event_hash: string })`:
+    モジュール型環境にパーツ定義が存在しない
+  - `cannot_infer_empty_list`: 期待型のない空リストの型推論失敗
   - `unknown_error`: 未知のエラー
 - `core.type-result`: `ok(type-ast) | error(type-error)`
 
-#### 2. 型環境型: `core.type-env`, `core.type-env-lookup`, `core.type-env-extend`
+#### 2. 型環境型: `core.type-env`, `core.part-type-env`, `core.type-env-lookup`, `core.type-env-extend`, `core.part-type-lookup`, `core.type-env-lookup-part`
 
-- `core.type-env`: `list<{ variable_id: number, var_type: type-ast }>`
-- 静的スコープにおける変数の型を追跡。
-- `core.type-env-extend` は関数引数や `let` 変数の束縛に使われます。
+- `core.part-type-env`:
+  `list<{ part_definition_event_hash: string, part_type: type-ast }>`
+  - モジュール内のパーツ定義ハッシュと宣言型の対応関係を保持する環境。
+- `core.type-env`:
+  `{ variables: list<{ variable_id: number, var_type: type-ast }>, parts: list<{ part_definition_event_hash: string, part_type: type-ast }> }`
+  - ローカル変数の静的スコープ束縛とモジュール内パーツ宣言型を統合した二層の型環境。
+- `core.type-env-lookup`: `type-env -> number -> type-result`（変数の型を検索）
+- `core.type-env-extend`:
+  `type-env -> number -> type-ast -> type-env`（変数の型束縛を追加）
+- `core.part-type-lookup`:
+  `part-type-env -> string -> type-result`（パーツ宣言型を検索）
+- `core.type-env-lookup-part`:
+  `type-env -> string -> type-result`（統合環境からパーツ宣言型を検索）
 
 #### 3. 型等価性判定: `core.type-equals`
 
