@@ -1,0 +1,397 @@
+{
+  "$schema": "./schemas/module-seed.schema.json",
+  "module_name": "std",
+  "module_description": [
+    {
+      "language": "en",
+      "text": "Definy standard utility functions (pure math, logic, list operations)"
+    },
+    {
+      "language": "ja",
+      "text": "definy の標準ユーティリティ関数群 (数学・論理・リスト操作)"
+    }
+  ],
+  "message": "Initial commit for std module",
+  "parts": [
+    {
+      "name": "abs",
+      "part_type": {
+        "function": {
+          "parameter": "number",
+          "return_type": "number"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Return absolute value of a number"
+        },
+        {
+          "language": "ja",
+          "text": "数値の絶対値を返します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "x",
+          "body": {
+            "If": {
+              "condition": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                }
+              },
+              "then_expr": {
+                "Subtract": {
+                  "left": {
+                    "Number": {
+                      "value": 0
+                    }
+                  },
+                  "right": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              },
+              "else_expr": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "min",
+      "part_type": {
+        "function": {
+          "parameter": "number",
+          "return_type": {
+            "function": {
+              "parameter": "number",
+              "return_type": "number"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Return the smaller of two numbers (curried)"
+        },
+        {
+          "language": "ja",
+          "text": "2つの数値のうち小さい方を返します (カリー化)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "a",
+          "body": {
+            "Function": {
+              "parameter_id": 2,
+              "parameter_name": "b",
+              "body": {
+                "If": {
+                  "condition": {
+                    "LessThan": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "right": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  },
+                  "then_expr": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "else_expr": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "max",
+      "part_type": {
+        "function": {
+          "parameter": "number",
+          "return_type": {
+            "function": {
+              "parameter": "number",
+              "return_type": "number"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Return the larger of two numbers (curried)"
+        },
+        {
+          "language": "ja",
+          "text": "2つの数値のうち大きい方を返します (カリー化)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "a",
+          "body": {
+            "Function": {
+              "parameter_id": 2,
+              "parameter_name": "b",
+              "body": {
+                "If": {
+                  "condition": {
+                    "GreaterThan": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "right": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  },
+                  "then_expr": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "else_expr": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "sign",
+      "part_type": {
+        "function": {
+          "parameter": "number",
+          "return_type": "number"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Return sign of a number: 1 if positive, -1 if negative, 0 if zero"
+        },
+        {
+          "language": "ja",
+          "text": "数値の符号を返します (正なら 1, 負なら -1, ゼロなら 0)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "x",
+          "body": {
+            "If": {
+              "condition": {
+                "GreaterThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                }
+              },
+              "then_expr": {
+                "Number": {
+                  "value": 1
+                }
+              },
+              "else_expr": {
+                "If": {
+                  "condition": {
+                    "LessThan": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  },
+                  "then_expr": {
+                    "Number": {
+                      "value": -1
+                    }
+                  },
+                  "else_expr": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bool-to-string",
+      "part_type": {
+        "function": {
+          "parameter": "boolean",
+          "return_type": "string"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Convert boolean to string (\"true\" or \"false\")"
+        },
+        {
+          "language": "ja",
+          "text": "真偽値を文字列 (\"true\" または \"false\") に変換します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "b",
+          "body": {
+            "If": {
+              "condition": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              },
+              "then_expr": {
+                "String": {
+                  "value": "true"
+                }
+              },
+              "else_expr": {
+                "String": {
+                  "value": "false"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "list-is-empty",
+      "description": [
+        {
+          "language": "en",
+          "text": "Check if a list is empty"
+        },
+        {
+          "language": "ja",
+          "text": "リストが空かどうかを判定します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "xs",
+          "body": {
+            "Equal": {
+              "left": {
+                "ListLength": {
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              },
+              "right": {
+                "Number": {
+                  "value": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "list-head",
+      "description": [
+        {
+          "language": "en",
+          "text": "Get the first item of a list"
+        },
+        {
+          "language": "ja",
+          "text": "リストの先頭要素を取得します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameter_id": 1,
+          "parameter_name": "xs",
+          "body": {
+            "ListGet": {
+              "list": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              },
+              "index": {
+                "Number": {
+                  "value": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

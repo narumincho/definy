@@ -1,10 +1,12 @@
+pub mod builtin_core_parts;
 mod builtin_eval_match;
 mod builtin_evaluator;
 mod builtin_expression_type;
 mod builtin_formatter;
 mod builtin_list_ops;
-mod builtin_migration;
+pub mod builtin_migration;
 mod builtin_optimizer;
+pub mod builtin_sample_parts;
 mod builtin_std_functions;
 mod builtin_type_ast;
 mod builtin_type_checker;
@@ -18,6 +20,7 @@ mod error;
 mod extractor;
 mod html;
 pub mod mcp;
+pub mod seed;
 mod self_hosted_ast;
 #[cfg(test)]
 mod self_hosting_tests;

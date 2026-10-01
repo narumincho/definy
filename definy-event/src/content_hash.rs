@@ -1,6 +1,7 @@
 use crate::event::{Expression, PartType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ContentHash([u8; 32]);
 
 impl ContentHash {

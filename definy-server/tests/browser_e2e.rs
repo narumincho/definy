@@ -292,11 +292,11 @@ async fn browser_login_dialog_toggle_password_and_error() -> Result<(), Box<dyn 
     "#;
     let mut opened = false;
     for _ in 0..40 {
-        if let Ok(res) = webdriver.execute_script(open_dialog_script, vec![]).await {
-            if res.as_bool().unwrap_or(false) {
-                opened = true;
-                break;
-            }
+        if let Ok(res) = webdriver.execute_script(open_dialog_script, vec![]).await
+            && res.as_bool().unwrap_or(false)
+        {
+            opened = true;
+            break;
         }
         sleep(Duration::from_millis(100)).await;
     }
@@ -689,13 +689,13 @@ impl WebDriverClient {
             selector.replace('\'', "\\'")
         );
         for _ in 0..40 {
-            if let Ok(val) = self.execute_script(&script, vec![]).await {
-                if let Some(arr) = val.as_array() {
-                    for item in arr {
-                        let text = item.as_str().unwrap_or_default();
-                        if candidates.iter().any(|c| text.contains(c)) {
-                            return Ok(text.to_string());
-                        }
+            if let Ok(val) = self.execute_script(&script, vec![]).await
+                && let Some(arr) = val.as_array()
+            {
+                for item in arr {
+                    let text = item.as_str().unwrap_or_default();
+                    if candidates.iter().any(|c| text.contains(c)) {
+                        return Ok(text.to_string());
                     }
                 }
             }

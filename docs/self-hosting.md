@@ -300,6 +300,22 @@ graph TD
   - 型代入適合性検査器 `core.type-assignable`
     にリスト型の共変サブタイピング（$ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$）を追加
   - 数値・文字列リストの型推論、空リスト推論拒否、期待型付き空リスト検査、異種要素不一致エラー検出、レコードリストの共変代入適合性のメタ循環実証完了
+- [x] **Phase 11: Seed データの分離・固定化と JSON Schema によるブートストラップ
+      (Self-Hosted Seed Decoupling & Schema Validation)**
+  - Rust コード内の手組み AST への依存を解消し、Git / GitHub
+    でバージョン管理しやすいテキスト形式の静的定義データ（`seeds/*.json`）を導入
+  - モジュール Seed 型 `definy_event::event::ModuleSeed` を新設し、`schemars`
+    による Draft-07 準拠の JSON
+    Schema（`seeds/schemas/module-seed.schema.json`）を自動生成
+  - `core.json`, `std.json`, `wasi.json`, `sample.json` を独立した Seed JSON
+    ファイルとして書き出し、エディタ（VSCode）での `$schema`
+    によるリアルタイム型補完・検証環境を整備
+  - `builtin_migration.rs` を約 870 行から約 150
+    行に大幅スリム化し、パーツ生成責務を
+    `builtin_core_parts.rs`、`builtin_sample_parts.rs`、`seed.rs`
+    に分離（1000行制限ルールを遵守）
+  - `seed_tests.rs`
+    テストスイートにより、スキーマ適合性、完全デシリアライズ性、および自己記述型チェッカー（`core.validate-module`）によるモジュール型妥当性検証の自動テスト実証完了
 
 ---
 

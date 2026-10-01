@@ -41,6 +41,7 @@ serde_urlencoded = "0.7.1"
 sha2 = "0.10.9"
 strum = "0.27.2"
 strum_macros = "0.27.2"
+schemars = { version = "0.8.22", features = ["chrono"] }
 tokio = "1.53"
 utoipa = "5.5"
 wasm-bindgen = "0.2.128"

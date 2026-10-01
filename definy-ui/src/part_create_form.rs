@@ -248,7 +248,7 @@ pub fn PartDefinitionFormView(
                                     let state = state.clone();
                                     move |_| {
                                         crate::part_detail::evaluate_and_set_result(
-                                            &*composing_expression.read(),
+                                            &composing_expression.read(),
                                             &state,
                                             language,
                                             eval_result,
@@ -379,7 +379,7 @@ pub fn PartDefinitionFormView(
                                 let state = state.clone();
                                 move |_| {
                                     crate::part_detail::evaluate_and_set_result(
-                                        &*composing_expression.read(),
+                                        &composing_expression.read(),
                                         &state,
                                         language,
                                         eval_result,

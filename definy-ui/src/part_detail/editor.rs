@@ -271,7 +271,7 @@ pub(crate) fn PartEditorCard(
                             onclick: {
                                 let state = state.clone();
                                 move |_| {
-                                    evaluate_and_set_result(&*expression.read(), &state, language, eval_result);
+                                    evaluate_and_set_result(&expression.read(), &state, language, eval_result);
                                 }
                             },
                             span { style: "font-size: 0.9em;", "▶" }
@@ -421,7 +421,7 @@ pub(crate) fn PartEditorCard(
                         onclick: {
                             let state = state.clone();
                             move |_| {
-                                evaluate_and_set_result(&*expression.read(), &state, language, eval_result);
+                                evaluate_and_set_result(&expression.read(), &state, language, eval_result);
                             }
                         },
                         span { "▶" }
