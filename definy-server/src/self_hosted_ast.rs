@@ -396,7 +396,11 @@ fn type_declaration_to_self_hosted_ast(
                     expression_type_hash,
                 )
             }),
-        E::PartReference(_) => Err("type declarations cannot reference parts yet".into()),
+        E::PartReference(value) => record(vec![(
+            "part_definition_event_hash",
+            E::String(string(&value.part_definition_event_hash.to_string())),
+        )])
+        .map(|payload| expression_variant("part_reference", Some(payload), expression_type_hash)),
         _ => Err("part_type 'type' requires a type declaration expression".into()),
     }
 }

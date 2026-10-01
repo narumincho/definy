@@ -43,13 +43,22 @@ definy
   は基本型・リスト型・関数型・record 型を再帰比較します。 union 型も variant
   の順序と optional payload 型を含めて比較し、reference 型は part hash
   で比較します。 record/union は定義順を含めて比較します。
-- `PartType::Type` は自己ホスト `type-ast` の kind `type`
-  として扱います。通常の投稿経路では `TypeNumber` / `TypeString` / `TypeBoolean`
-  と inline な `TypeList` / `TypeFunction` / `TypeLiteral` / `TypeUnion`
-  宣言を検証できます。別パーツを参照する type declaration は module type
-  environment がないため、引き続き拒否します。現状は adapter が各 inline node
-  を再帰変換し、 self-host checker が root の kind `type`
-  を確認します。field/tag の重複などの意味検査は未完了です。
+- `PartType::Type` は自己ホスト `type-ast` の kind `type` として扱います。
+  型定義パーツ内の型構築子（`type_list`, `type_function`, `type_record`,
+  `type_union`）は、 `core.type-check-against` により再帰的に型検証されます。
+  - **意味検査のセルフホスト化**: `core.list-contains-string`
+    を用い、レコード型宣言内の重複フィールドキー（`core.type-check-type-record-fields`）
+    およびユニオン型宣言内の重複バリアントタグ（`core.type-check-type-union-variants`）を検出して
+    `invalid_type_declaration` エラーとして拒否します。
+    また、ユニオン型の空バリアント集合も `invalid_type_declaration`
+    として拒否し、 型引数に値式が混入した場合は `type_mismatch` で拒否します。
+  - **型定義パーツ自体の相互参照**: 型宣言内の別パーツ参照（`PartReference`）は
+    self-hosted AST の `part_reference` 式として変換され、
+    モジュール型環境（`part-type-env`）を通じて参照先パーツが `type`
+    であるかを解決・検証します。 これにより、`core.validate-module`
+    において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
+    を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
+    `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
 - Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition`
   値へ変換し、各パーツ定義に `part_definition_event_hash` を付与したうえで
   `core.validate-module`

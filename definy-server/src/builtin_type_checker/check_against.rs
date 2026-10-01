@@ -1,10 +1,14 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    Description, Expression, FunctionExpression, MatchArm, MatchExpression, ModulePartEntry,
-    NumberExpression, PartType, VariableExpression, VariantExpression, derive_module_part_id,
+    Description, Expression, FunctionExpression, LessThanOrEqualExpression, ListLengthExpression,
+    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType,
+    StringExpression, VariableExpression, VariantExpression, derive_module_part_id,
 };
 
-use super::helpers::{call_part, error_mismatch, error_unknown, error_value, ok_type, record_get};
+use super::helpers::{
+    call_part, error_invalid_type_declaration, error_mismatch, error_unknown, error_value, ok_type,
+    record_get,
+};
 
 /// `core.type-check-against`: `expression -> type-env -> expected-type -> type-result`
 pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePartEntry {
@@ -18,6 +22,10 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
     let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
     let check_list_items_hash = derive_module_part_id(core_module_id, "type-check-list-items");
+    let type_check_type_record_fields_hash =
+        derive_module_part_id(core_module_id, "type-check-type-record-fields");
+    let type_check_type_union_variants_hash =
+        derive_module_part_id(core_module_id, "type-check-type-union-variants");
 
     let expected_type = Expression::Variable(VariableExpression { variable_id: 2 });
     let type_kind = Expression::Variant(VariantExpression {
@@ -30,8 +38,159 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
         vec![expected_type.clone(), type_kind.clone()],
     );
     let check_type_expression = Expression::If(definy_event::event::IfExpression {
-        condition: Box::new(type_kind_matches),
+        condition: Box::new(type_kind_matches.clone()),
         then_expr: Box::new(ok_type(type_kind.clone())),
+        else_expr: Box::new(error_mismatch(expected_type.clone(), type_kind.clone())),
+    });
+
+    // 1. type_list check
+    let list_payload = Expression::Variable(VariableExpression { variable_id: 20 });
+    let list_item_type = record_get(list_payload, "item_type");
+    let check_list_item = call_part(
+        &type_check_against_hash,
+        vec![
+            list_item_type,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+            type_kind.clone(),
+        ],
+    );
+    let check_list_item_match = Expression::Match(MatchExpression {
+        target: Box::new(check_list_item),
+        arms: vec![
+            MatchArm {
+                tag: "ok".into(),
+                variable_id: Some(25),
+                variable_name: Some("ok_type".into()),
+                body: Box::new(ok_type(type_kind.clone())),
+            },
+            MatchArm {
+                tag: "error".into(),
+                variable_id: Some(26),
+                variable_name: Some("err".into()),
+                body: Box::new(error_value(Expression::Variable(VariableExpression {
+                    variable_id: 26,
+                }))),
+            },
+        ],
+        default: Some(Box::new(error_unknown())),
+    });
+    let check_type_list = Expression::If(definy_event::event::IfExpression {
+        condition: Box::new(type_kind_matches.clone()),
+        then_expr: Box::new(check_list_item_match),
+        else_expr: Box::new(error_mismatch(expected_type.clone(), type_kind.clone())),
+    });
+
+    // 2. type_function check
+    let func_payload = Expression::Variable(VariableExpression { variable_id: 21 });
+    let func_param = record_get(func_payload.clone(), "parameter");
+    let func_ret = record_get(func_payload, "return_type");
+    let check_func_ret = call_part(
+        &type_check_against_hash,
+        vec![
+            func_ret,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+            type_kind.clone(),
+        ],
+    );
+    let check_func_ret_match = Expression::Match(MatchExpression {
+        target: Box::new(check_func_ret),
+        arms: vec![
+            MatchArm {
+                tag: "ok".into(),
+                variable_id: Some(27),
+                variable_name: Some("ok_type".into()),
+                body: Box::new(ok_type(type_kind.clone())),
+            },
+            MatchArm {
+                tag: "error".into(),
+                variable_id: Some(28),
+                variable_name: Some("err".into()),
+                body: Box::new(error_value(Expression::Variable(VariableExpression {
+                    variable_id: 28,
+                }))),
+            },
+        ],
+        default: Some(Box::new(error_unknown())),
+    });
+    let check_func_param = call_part(
+        &type_check_against_hash,
+        vec![
+            func_param,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+            type_kind.clone(),
+        ],
+    );
+    let check_func_param_match = Expression::Match(MatchExpression {
+        target: Box::new(check_func_param),
+        arms: vec![
+            MatchArm {
+                tag: "ok".into(),
+                variable_id: Some(25),
+                variable_name: Some("ok_type".into()),
+                body: Box::new(check_func_ret_match),
+            },
+            MatchArm {
+                tag: "error".into(),
+                variable_id: Some(26),
+                variable_name: Some("err".into()),
+                body: Box::new(error_value(Expression::Variable(VariableExpression {
+                    variable_id: 26,
+                }))),
+            },
+        ],
+        default: Some(Box::new(error_unknown())),
+    });
+    let check_type_function = Expression::If(definy_event::event::IfExpression {
+        condition: Box::new(type_kind_matches.clone()),
+        then_expr: Box::new(check_func_param_match),
+        else_expr: Box::new(error_mismatch(expected_type.clone(), type_kind.clone())),
+    });
+
+    // 3. type_record check
+    let record_fields = Expression::Variable(VariableExpression { variable_id: 22 });
+    let check_record_fields_call = call_part(
+        &type_check_type_record_fields_hash,
+        vec![
+            record_fields,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+            Expression::Number(NumberExpression { value: 0 }),
+            Expression::ListLiteral(ListLiteralExpression { items: vec![] }),
+        ],
+    );
+    let check_type_record = Expression::If(definy_event::event::IfExpression {
+        condition: Box::new(type_kind_matches.clone()),
+        then_expr: Box::new(check_record_fields_call),
+        else_expr: Box::new(error_mismatch(expected_type.clone(), type_kind.clone())),
+    });
+
+    // 4. type_union check
+    let union_variants = Expression::Variable(VariableExpression { variable_id: 23 });
+    let is_union_empty = Expression::LessThanOrEqual(LessThanOrEqualExpression {
+        left: Box::new(Expression::ListLength(ListLengthExpression {
+            value: Box::new(union_variants.clone()),
+        })),
+        right: Box::new(Expression::Number(NumberExpression { value: 0 })),
+    });
+    let empty_union_err = error_invalid_type_declaration(Expression::String(StringExpression {
+        value: "union type must have at least one variant".into(),
+    }));
+    let check_union_variants_call = call_part(
+        &type_check_type_union_variants_hash,
+        vec![
+            union_variants,
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+            Expression::Number(NumberExpression { value: 0 }),
+            Expression::ListLiteral(ListLiteralExpression { items: vec![] }),
+        ],
+    );
+    let check_union_inner = Expression::If(definy_event::event::IfExpression {
+        condition: Box::new(is_union_empty),
+        then_expr: Box::new(empty_union_err),
+        else_expr: Box::new(check_union_variants_call),
+    });
+    let check_type_union = Expression::If(definy_event::event::IfExpression {
+        condition: Box::new(type_kind_matches),
+        then_expr: Box::new(check_union_inner),
         else_expr: Box::new(error_mismatch(expected_type.clone(), type_kind)),
     });
     let function_payload = Expression::Variable(VariableExpression { variable_id: 15 });
@@ -181,26 +340,26 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
                         MatchArm {
                             tag: "type_list".into(),
                             variable_id: Some(20),
-                            variable_name: None,
-                            body: Box::new(check_type_expression.clone()),
+                            variable_name: Some("type_list_payload".into()),
+                            body: Box::new(check_type_list),
                         },
                         MatchArm {
                             tag: "type_function".into(),
                             variable_id: Some(21),
-                            variable_name: None,
-                            body: Box::new(check_type_expression.clone()),
+                            variable_name: Some("type_function_payload".into()),
+                            body: Box::new(check_type_function),
                         },
                         MatchArm {
                             tag: "type_record".into(),
                             variable_id: Some(22),
-                            variable_name: None,
-                            body: Box::new(check_type_expression.clone()),
+                            variable_name: Some("type_record_payload".into()),
+                            body: Box::new(check_type_record),
                         },
                         MatchArm {
                             tag: "type_union".into(),
                             variable_id: Some(23),
-                            variable_name: None,
-                            body: Box::new(check_type_expression),
+                            variable_name: Some("type_union_payload".into()),
+                            body: Box::new(check_type_union),
                         },
                         MatchArm {
                             tag: "function".into(),

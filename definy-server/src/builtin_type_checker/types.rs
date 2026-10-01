@@ -124,6 +124,15 @@ pub fn create_type_error_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     }))),
                 },
                 TypeUnionVariant {
+                    tag: "invalid_type_declaration".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "message".into(),
+                            value: Box::new(Expression::TypeString),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
                     tag: "unknown_error".into(),
                     payload_type: None,
                 },

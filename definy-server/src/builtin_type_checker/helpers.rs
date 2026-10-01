@@ -79,6 +79,29 @@ pub fn error_part_not_found(part_hash: Expression) -> Expression {
     }))
 }
 
+/// 不正な型宣言エラー `error(invalid_type_declaration { message })` を構築します。
+pub fn error_invalid_type_declaration(message: Expression) -> Expression {
+    error_value(Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "invalid_type_declaration".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![TypeLiteralItemExpression {
+                key: "message".into(),
+                value: Box::new(message),
+            }],
+        }))),
+    }))
+}
+
+/// 型 AST の型自身を表す型 `type` を構築します。
+pub fn type_type() -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "type".into(),
+        payload: None,
+    })
+}
+
 /// 型 AST の数値型 `number` を構築します。
 pub fn type_num() -> Expression {
     Expression::Variant(VariantExpression {

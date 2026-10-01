@@ -222,6 +222,9 @@ pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_type_checker::create_type_check_list_part(mod_id),
         crate::builtin_type_checker::create_type_assignable_part(mod_id),
         crate::builtin_type_checker::create_type_check_part(mod_id),
+        crate::builtin_type_checker::create_list_contains_string_part(mod_id),
+        crate::builtin_type_checker::create_type_check_type_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_check_type_union_variants_part(mod_id),
         crate::builtin_type_checker::create_type_check_against_part(mod_id),
     ]
 }
