@@ -698,7 +698,7 @@ definy
 のテストスイート（`definy-server/src/self_hosting_tests/`）において、以下の
 end-to-end メタ循環実行がすべて実証されています。 テストコードは責務に応じて
 `ast_structure_tests.rs`（静的構造検証）、`execution_tests.rs`（動的実行実証）、
-`record_tests.rs`（レコード検証）、`union_tests.rs`（直和型・パターンマッチ型検証）、`list_tests.rs`（リスト型検証）、`part_reference_tests.rs`（パーツ参照・モジュール検証）、および共通ヘルパー
+`record_tests.rs`（レコード検証）、`union_tests.rs`（直和型・パターンマッチ型検証）、`list_tests.rs`（リスト型検証）、`part_reference_tests.rs`（パーツ参照検証）、`validator_tests.rs`（バリデータ検証）、および共通ヘルパー
 `helpers.rs` に分割・整理されています。
 
 | テスト関数名                                                        | 検証対象パーツ                                      | 入力・実行内容                                                   | 実証された結果                                 |

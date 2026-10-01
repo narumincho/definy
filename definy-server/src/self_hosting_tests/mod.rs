@@ -11,4 +11,5 @@ mod list_tests;
 mod part_reference_tests;
 mod record_tests;
 mod union_tests;
+mod validator_tests;
 mod wasi_tests;
