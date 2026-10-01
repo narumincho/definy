@@ -245,3 +245,16 @@ pub fn all_evaluator_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_evaluator::create_eval_value_part(mod_id),
     ]
 }
+
+/// 自己検証器 `core.validate-module`, `core.validate-part` 等が必要とする全パーツを返却します。
+pub fn all_validator_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
+    vec![
+        crate::builtin_validator::create_collect_part_type_env_inner_part(mod_id),
+        crate::builtin_validator::create_collect_part_type_env_part(mod_id),
+        crate::builtin_validator::create_validate_part_in_env_part(mod_id),
+        crate::builtin_validator::create_validate_part_part(mod_id),
+        crate::builtin_validator::create_validate_parts_in_env_part(mod_id),
+        crate::builtin_validator::create_validate_parts_part(mod_id),
+        crate::builtin_validator::create_validate_module_part(mod_id),
+    ]
+}

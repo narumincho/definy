@@ -10,8 +10,8 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_evaluator_parts, all_type_checker_parts, call_part1, call_part2, create_test_module_events,
-    empty_type_env, get_test_account_and_mod_id, type_env_single_var,
+    all_evaluator_parts, all_type_checker_parts, all_validator_parts, call_part1, call_part2,
+    create_test_module_events, empty_type_env, get_test_account_and_mod_id, type_env_single_var,
 };
 
 #[test]
@@ -535,8 +535,7 @@ fn test_self_hosted_record_value_equals_execution() {
 fn test_self_hosted_validate_part_with_record_expression() {
     let (account, mod_id) = get_test_account_and_mod_id();
     let mut parts = all_type_checker_parts(&mod_id);
-    let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
-    parts.push(validate_part);
+    parts.extend(all_validator_parts(&mod_id));
 
     let validate_part_hash = derive_module_part_id(&mod_id, "validate-part");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");

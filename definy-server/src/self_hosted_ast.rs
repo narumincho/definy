@@ -6,6 +6,7 @@ use definy_event::event::{
 
 pub(crate) fn module_commit_to_self_hosted_ast(
     module_commit: &ModuleCommitEvent,
+    module_id: &EventHashId,
     expression_type_hash: &EventHashId,
     type_ast_hash: &EventHashId,
 ) -> Result<Expression, String> {
@@ -26,11 +27,17 @@ pub(crate) fn module_commit_to_self_hosted_ast(
             } else {
                 expression_to_self_hosted_ast(expression, expression_type_hash)?
             };
+            let part_id =
+                definy_event::event::derive_module_part_id(module_id, &part.name).to_string();
             record(vec![
                 ("name", Expression::String(string(&part.name))),
                 (
                     "description",
                     Expression::String(string(part.description.get("en").unwrap_or(""))),
+                ),
+                (
+                    "part_definition_event_hash",
+                    Expression::String(string(&part_id)),
                 ),
                 (
                     "part_type",

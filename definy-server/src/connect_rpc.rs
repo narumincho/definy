@@ -535,8 +535,13 @@ async fn validate_module_commit(
     let type_ast_hash = definy_event::event::derive_module_part_id(&core_module_id, "type-ast");
     let validate_module_hash =
         definy_event::event::derive_module_part_id(&core_module_id, "validate-module");
+    let module_id = definy_event::event::derive_module_id(
+        &candidate_event.account_id,
+        &hydrated_commit.module_name,
+    );
     let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
         &hydrated_commit,
+        &module_id,
         &expression_type_hash,
         &type_ast_hash,
     )?;

@@ -151,6 +151,10 @@ pub fn create_part_definition_part(core_module_id: &EventHashId) -> ModulePartEn
                     value: Box::new(Expression::TypeString),
                 },
                 TypeLiteralItemExpression {
+                    key: "part_definition_event_hash".into(),
+                    value: Box::new(Expression::TypeString),
+                },
+                TypeLiteralItemExpression {
                     key: "part_type".into(),
                     value: Box::new(type_ast_ref),
                 },

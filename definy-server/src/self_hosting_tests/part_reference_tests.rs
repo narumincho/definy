@@ -10,8 +10,8 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, call_part2, call_part3, create_test_module_events, empty_type_env,
-    get_test_account_and_mod_id, type_env_with_parts,
+    all_type_checker_parts, all_validator_parts, call_part1, call_part2, call_part3,
+    create_test_module_events, empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
 };
 use crate::builtin_type_checker::{type_num, type_str};
 
@@ -326,4 +326,232 @@ fn test_self_hosted_part_reference_check_against() {
         }
         other => panic!("expected error, got {:?}", other),
     }
+}
+
+/// `core.validate-module` において、パーツ参照を含む複数パーツから成るモジュールが
+/// `collect-part-type-env` によってモジュール型環境を自動構築し、相互参照を含むモジュール全体を
+/// 一括検証できることを実証します。
+#[test]
+fn test_self_hosted_validate_module_with_part_references() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+    let mut parts = all_type_checker_parts(&mod_id);
+    parts.extend(all_validator_parts(&mod_id));
+    let validate_module_hash = derive_module_part_id(&mod_id, "validate-module");
+
+    let events = create_test_module_events(account, parts, 115);
+
+    let base_val_hash = derive_module_part_id(&mod_id, "base_val").to_string();
+    let computed_val_hash = derive_module_part_id(&mod_id, "computed_val").to_string();
+
+    let base_part_def = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "base_val".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "base value definition".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_definition_event_hash".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: base_val_hash.clone().into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(type_num()),
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(expr_num(42)),
+            },
+        ],
+    });
+
+    // computed_val: base_val + 8 -> number
+    let computed_part_def = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "computed_val".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "computed value that references base_val".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_definition_event_hash".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: computed_val_hash.clone().into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(type_num()),
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(expr_add(expr_part_ref(&base_val_hash), expr_num(8))),
+            },
+        ],
+    });
+
+    // 1. 相互参照・パーツ参照を含む正常なモジュール -> true
+    let valid_mod = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "calc_module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "module with internal part reference".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![base_part_def.clone(), computed_part_def.clone()],
+                })),
+            },
+        ],
+    });
+
+    let call_valid = call_part1(validate_module_hash.clone(), valid_mod);
+    let valid_res = definy_core::evaluate_expression(&call_valid, &events)
+        .expect("evaluate validate-module on module with valid part_reference");
+    assert_eq!(valid_res, Value::Bool(true));
+
+    // 2. 存在しないパーツを参照しているパーツを含むモジュール -> false
+    let invalid_ref_part_def = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "broken_ref".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "references non-existent part".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_definition_event_hash".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: derive_module_part_id(&mod_id, "broken_ref")
+                        .to_string()
+                        .into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(type_num()),
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(expr_part_ref("unknown_part_hash")),
+            },
+        ],
+    });
+    let invalid_ref_mod = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "broken_module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "broken module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![base_part_def, invalid_ref_part_def],
+                })),
+            },
+        ],
+    });
+    let call_invalid_ref = call_part1(validate_module_hash.clone(), invalid_ref_mod);
+    let invalid_ref_res = definy_core::evaluate_expression(&call_invalid_ref, &events)
+        .expect("evaluate validate-module on module with unknown part_reference");
+    assert_eq!(invalid_ref_res, Value::Bool(false));
+
+    // 3. 参照先パーツと型の整合性が合わない（型不一致）パーツを含むモジュール -> false
+    let type_mismatch_part_def = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "type_mismatch".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "declares string but produces number".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_definition_event_hash".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: derive_module_part_id(&mod_id, "type_mismatch")
+                        .to_string()
+                        .into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_type".into(),
+                value: Box::new(type_str()), // 期待型: string だが式は number
+            },
+            TypeLiteralItemExpression {
+                key: "expression".into(),
+                value: Box::new(expr_add(expr_part_ref(&base_val_hash), expr_num(8))),
+            },
+        ],
+    });
+    let type_mismatch_mod = Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "mismatch_module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "description".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: "type mismatch module".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "parts".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![type_mismatch_part_def],
+                })),
+            },
+        ],
+    });
+    let call_type_mismatch = call_part1(validate_module_hash, type_mismatch_mod);
+    let type_mismatch_res = definy_core::evaluate_expression(&call_type_mismatch, &events)
+        .expect("evaluate validate-module on module with type mismatch");
+    assert_eq!(type_mismatch_res, Value::Bool(false));
 }

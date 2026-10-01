@@ -70,7 +70,14 @@ fn test_self_hosting_parts_registration() {
     let expr_to_source = crate::builtin_formatter::create_expression_to_source_part(&core_id);
 
     // Validator parts
+    let collect_part_type_env_inner =
+        crate::builtin_validator::create_collect_part_type_env_inner_part(&core_id);
+    let collect_part_type_env =
+        crate::builtin_validator::create_collect_part_type_env_part(&core_id);
+    let validate_part_in_env = crate::builtin_validator::create_validate_part_in_env_part(&core_id);
     let validate_part = crate::builtin_validator::create_validate_part_part(&core_id);
+    let validate_parts_in_env =
+        crate::builtin_validator::create_validate_parts_in_env_part(&core_id);
     let validate_parts = crate::builtin_validator::create_validate_parts_part(&core_id);
     let validate_module = crate::builtin_validator::create_validate_module_part(&core_id);
 
@@ -140,7 +147,11 @@ fn test_self_hosting_parts_registration() {
         compile_instr,
         compile_to_wasm,
         expr_to_source,
+        collect_part_type_env_inner,
+        collect_part_type_env,
+        validate_part_in_env,
         validate_part,
+        validate_parts_in_env,
         validate_parts,
         validate_module,
         optimize_expr,
@@ -479,19 +490,42 @@ fn test_validator_ast_structure() {
         .expression
         .expect("validate-part must have expression");
 
+    // validate-part: Function(part => Call(Call(validate-part-in-env, part), empty_type_env))
     match expr {
         Expression::Function(f) => {
             assert_eq!(f.parameter_id, 0);
             assert_eq!(&*f.parameter_name, "part");
-            match *f.body {
-                Expression::Match(m) => {
-                    let arm_tags: HashSet<String> =
-                        m.arms.into_iter().map(|a| a.tag.to_string()).collect();
-                    assert!(arm_tags.contains("ok"));
-                    assert!(arm_tags.contains("error"));
-                    assert!(arm_tags.contains("_"));
+            assert!(matches!(*f.body, Expression::Call(_)));
+        }
+        other => panic!("Expected Function, got: {:?}", other),
+    }
+
+    // validate-part-in-env: Function(part => Function(env => Match(...)))
+    let val_in_env_part = crate::builtin_validator::create_validate_part_in_env_part(&core_id);
+    let in_env_expr = val_in_env_part
+        .expression
+        .expect("validate-part-in-env must have expression");
+
+    match in_env_expr {
+        Expression::Function(f0) => {
+            assert_eq!(f0.parameter_id, 0);
+            assert_eq!(&*f0.parameter_name, "part");
+            match *f0.body {
+                Expression::Function(f1) => {
+                    assert_eq!(f1.parameter_id, 1);
+                    assert_eq!(&*f1.parameter_name, "env");
+                    match *f1.body {
+                        Expression::Match(m) => {
+                            let arm_tags: HashSet<String> =
+                                m.arms.into_iter().map(|a| a.tag.to_string()).collect();
+                            assert!(arm_tags.contains("ok"));
+                            assert!(arm_tags.contains("error"));
+                            assert!(arm_tags.contains("_"));
+                        }
+                        other => panic!("Expected Match in validate-part-in-env, got: {:?}", other),
+                    }
                 }
-                other => panic!("Expected Match in validate-part, got: {:?}", other),
+                other => panic!("Expected inner Function, got: {:?}", other),
             }
         }
         other => panic!("Expected Function, got: {:?}", other),

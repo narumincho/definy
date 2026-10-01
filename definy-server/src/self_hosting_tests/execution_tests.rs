@@ -10,9 +10,9 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_evaluator_parts, all_type_checker_parts, ast_add, ast_mul, ast_num, call_part1, call_part2,
-    call_part3, create_test_module_events, empty_type_env, get_test_account_and_mod_id,
-    test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
+    all_evaluator_parts, all_type_checker_parts, all_validator_parts, ast_add, ast_mul, ast_num,
+    call_part1, call_part2, call_part3, create_test_module_events, empty_type_env,
+    get_test_account_and_mod_id, test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
 };
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
@@ -422,7 +422,7 @@ fn test_self_hosted_validate_part_execution() {
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
     let mut parts = all_type_checker_parts(&mod_id);
-    parts.push(crate::builtin_validator::create_validate_part_part(&mod_id));
+    parts.extend(all_validator_parts(&mod_id));
 
     let events = create_test_module_events(account, parts, 127);
 
@@ -620,6 +620,7 @@ fn test_self_hosted_validate_part_execution() {
         type_part_definition_event_hash: expr_type_opt.clone(),
     });
     let make_part_definition = |name: &str, expression: Expression, part_type: Expression| {
+        let part_id = derive_module_part_id(&mod_id, name).to_string();
         Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![
                 TypeLiteralItemExpression {
@@ -630,6 +631,12 @@ fn test_self_hosted_validate_part_execution() {
                     key: "description".into(),
                     value: Box::new(Expression::String(StringExpression {
                         value: "higher order call test".into(),
+                    })),
+                },
+                TypeLiteralItemExpression {
+                    key: "part_definition_event_hash".into(),
+                    value: Box::new(Expression::String(StringExpression {
+                        value: part_id.into(),
                     })),
                 },
                 TypeLiteralItemExpression {
@@ -869,13 +876,7 @@ fn test_self_hosted_validate_module_execution() {
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
     let mut parts = all_type_checker_parts(&mod_id);
-    parts.push(crate::builtin_validator::create_validate_part_part(&mod_id));
-    parts.push(crate::builtin_validator::create_validate_parts_part(
-        &mod_id,
-    ));
-    parts.push(crate::builtin_validator::create_validate_module_part(
-        &mod_id,
-    ));
+    parts.extend(all_validator_parts(&mod_id));
 
     let events = create_test_module_events(account, parts, 130);
 
@@ -892,6 +893,14 @@ fn test_self_hosted_validate_module_execution() {
                 key: "description".into(),
                 value: Box::new(Expression::String(StringExpression {
                     value: "valid function".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_definition_event_hash".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: derive_module_part_id(&mod_id, "sample_fn")
+                        .to_string()
+                        .into(),
                 })),
             },
             TypeLiteralItemExpression {
@@ -983,6 +992,14 @@ fn test_self_hosted_validate_module_execution() {
                 key: "description".into(),
                 value: Box::new(Expression::String(StringExpression {
                     value: "invalid function".into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "part_definition_event_hash".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: derive_module_part_id(&mod_id, "invalid_fn")
+                        .to_string()
+                        .into(),
                 })),
             },
             TypeLiteralItemExpression {
