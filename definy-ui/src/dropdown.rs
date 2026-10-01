@@ -53,6 +53,28 @@ fn dom_show_popover_and_focus(_panel_id: &str, _search_input_name: &str) {
 
 pub type DropdownOnChange = Rc<dyn Fn(String)>;
 
+fn get_current_label(options: &[(String, String)], current_value: &str) -> String {
+    options
+        .iter()
+        .find_map(|(val, label)| {
+            if val == current_value {
+                let first = label.split('\t').next().unwrap_or(label.as_str());
+                Some(first.to_string())
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| "Select...".to_string())
+}
+
+fn initial_search_query_for_label(label: &str) -> String {
+    if label != "Select..." {
+        label.to_string()
+    } else {
+        String::new()
+    }
+}
+
 #[component]
 pub fn SearchableDropdown(
     name: String,
@@ -65,18 +87,7 @@ pub fn SearchableDropdown(
     let mut search_query = use_signal(String::new);
     let mut highlighted_index = use_signal(|| None::<usize>);
 
-    let current_label = options
-        .iter()
-        .find_map(|(val, label)| {
-            if *val == current_value {
-                let first = label.split('\t').next().unwrap_or(label.as_str());
-                Some(first.to_string())
-            } else {
-                None
-            }
-        })
-        .unwrap_or_else(|| "Select...".to_string());
-
+    let current_label = get_current_label(&options, &current_value);
     let panel_id = dropdown_panel_id(&name);
     let anchor_name = anchor_name_id(&name);
 
@@ -119,6 +130,17 @@ pub fn SearchableDropdown(
         "padding: 0.42rem 0.75rem;"
     };
 
+    let open_and_focus = {
+        let current_label = current_label.clone();
+        let panel_id = panel_id.clone();
+        let name = name.clone();
+        move || {
+            search_query.set(initial_search_query_for_label(&current_label));
+            highlighted_index.set(None);
+            dom_show_popover_and_focus(&panel_id, &format!("search-{}", name));
+        }
+    };
+
     rsx! {
         div { style: "{container_style}",
             button {
@@ -127,35 +149,15 @@ pub fn SearchableDropdown(
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "show",
                 onclick: {
-                    let current_label = current_label.clone();
-                    let panel_id = panel_id.clone();
-                    let name = name.clone();
-                    move |_| {
-                        let query = if current_label != "Select..." {
-                            current_label.clone()
-                        } else {
-                            String::new()
-                        };
-                        search_query.set(query);
-                        highlighted_index.set(None);
-                        dom_show_popover_and_focus(&panel_id, &format!("search-{}", name));
-                    }
+                    let mut open_and_focus = open_and_focus.clone();
+                    move |_| open_and_focus()
                 },
                 onkeydown: {
-                    let panel_id = panel_id.clone();
-                    let name = name.clone();
-                    let current_label = current_label.clone();
+                    let mut open_and_focus = open_and_focus.clone();
                     move |evt: KeyboardEvent| {
                         if evt.key() == Key::ArrowDown {
                             evt.prevent_default();
-                            let query = if current_label != "Select..." {
-                                current_label.clone()
-                            } else {
-                                String::new()
-                            };
-                            search_query.set(query);
-                            highlighted_index.set(None);
-                            dom_show_popover_and_focus(&panel_id, &format!("search-{}", name));
+                            open_and_focus();
                         }
                     }
                 },
@@ -181,8 +183,8 @@ pub fn SearchableDropdown(
                     onfocus: {
                         let current_label = current_label.clone();
                         move |_| {
-                            if search_query.read().is_empty() && current_label != "Select..." {
-                                search_query.set(current_label.clone());
+                            if search_query.read().is_empty() {
+                                search_query.set(initial_search_query_for_label(&current_label));
                             }
                         }
                     },
@@ -245,100 +247,123 @@ pub fn SearchableDropdown(
                 }
                 div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
                     for (idx, (opt_val, opt_label)) in filtered_options.iter().enumerate() {
-                        {
-                            let is_selected = opt_val == &current_value;
-                            let is_highlighted = effective_highlighted_index == Some(idx);
-                            let parts: Vec<&str> = opt_label.split('\t').collect();
-                            let opt_val_clone = opt_val.clone();
-                            let item_id = format!("{panel_id}-opt-{idx}");
-                            let bg = if is_highlighted {
-                                "rgb(124 192 216 / 0.18)"
-                            } else if is_selected {
-                                "rgb(255 255 255 / 0.08)"
-                            } else {
-                                "transparent"
-                            };
-                            let color = if is_selected || is_highlighted {
-                                "var(--text)"
-                            } else {
-                                "var(--text-secondary)"
-                            };
-
-                            let part_detail_url = resolve_part_detail_url(opt_val, &parts);
-                            let display_meta = if parts.len() > 1 {
-                                let meta_parts: Vec<&str> = parts
-                                    .iter()
-                                    .skip(1)
-                                    .filter(|p| !p.is_empty() && !is_hash_str(p))
-                                    .copied()
-                                    .collect();
-                                if meta_parts.is_empty() { None } else { Some(meta_parts.join(" · ")) }
-                            } else {
-                                None
-                            };
-                            rsx! {
-                                div {
-                                    key: "{opt_val}",
-                                    style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; transition: background 0.08s ease;",
-                                    onmouseenter: move |_| {
-                                        highlighted_index.set(Some(idx));
-                                    },
-                                    button {
-                                        id: "{item_id}",
-                                        r#type: "button",
-                                        style: "flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; background: transparent; cursor: pointer; color: {color}; font-family: inherit;",
-                                        "popovertarget": "{panel_id}",
-                                        "popovertargetaction": "hide",
-                                        onclick: {
-                                            let opt_val_clone = opt_val_clone.clone();
-                                            move |_| {
-                                                search_query.set(String::new());
-                                                highlighted_index.set(None);
-                                                on_change.call(opt_val_clone.clone());
-                                            }
-                                        },
-                                        div { style: "display: flex; align-items: center; gap: 0.4rem; overflow: hidden; min-width: 0;",
-                                            if is_selected {
-                                                span { style: "font-size: 0.75rem; color: var(--accent); flex-shrink: 0;",
-                                                    "✓"
-                                                }
-                                            } else {
-                                                span { style: "display: inline-block; width: 0.75rem; flex-shrink: 0;" }
-                                            }
-                                            div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
-                                                if parts.len() > 1 {
-                                                    "{parts[0]}"
-                                                } else {
-                                                    "{opt_label}"
-                                                }
-                                            }
-                                        }
-                                        if let Some(ref meta) = display_meta {
-                                            div {
-                                                class: "mono",
-                                                style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 0; white-space: nowrap; text-align: right;",
-                                                "{meta}"
-                                            }
-                                        }
-                                    }
-                                    if let Some(detail_url) = part_detail_url {
-                                        a {
-                                            href: "{detail_url}",
-                                            class: "dropdown-item-link",
-                                            title: "パーツ詳細画面を開く",
-                                            onclick: {
-                                                let panel_id_clone = panel_id.clone();
-                                                move |_| {
-                                                    dom_hide_popover(&panel_id_clone);
-                                                }
-                                            },
-                                            "↗"
-                                        }
-                                    }
+                        DropdownOptionItem {
+                            key: "{opt_val}",
+                            idx,
+                            opt_val: opt_val.clone(),
+                            opt_label: opt_label.clone(),
+                            panel_id: panel_id.clone(),
+                            is_selected: opt_val == &current_value,
+                            is_highlighted: effective_highlighted_index == Some(idx),
+                            on_highlight: move |i| highlighted_index.set(Some(i)),
+                            on_select: {
+                                let panel_id = panel_id.clone();
+                                move |val| {
+                                    search_query.set(String::new());
+                                    highlighted_index.set(None);
+                                    on_change.call(val);
+                                    dom_hide_popover(&panel_id);
                                 }
-                            }
+                            },
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn DropdownOptionItem(
+    idx: usize,
+    opt_val: String,
+    opt_label: String,
+    panel_id: String,
+    is_selected: bool,
+    is_highlighted: bool,
+    on_highlight: EventHandler<usize>,
+    on_select: EventHandler<String>,
+) -> Element {
+    let parts: Vec<&str> = opt_label.split('\t').collect();
+    let item_id = format!("{panel_id}-opt-{idx}");
+    let bg = if is_highlighted {
+        "rgb(124 192 216 / 0.18)"
+    } else if is_selected {
+        "rgb(255 255 255 / 0.08)"
+    } else {
+        "transparent"
+    };
+    let color = if is_selected || is_highlighted {
+        "var(--text)"
+    } else {
+        "var(--text-secondary)"
+    };
+
+    let part_detail_url = resolve_part_detail_url(&opt_val, &parts);
+    let display_meta = if parts.len() > 1 {
+        let meta_parts: Vec<&str> = parts
+            .iter()
+            .skip(1)
+            .filter(|p| !p.is_empty() && !is_hash_str(p))
+            .copied()
+            .collect();
+        if meta_parts.is_empty() {
+            None
+        } else {
+            Some(meta_parts.join(" · "))
+        }
+    } else {
+        None
+    };
+
+    rsx! {
+        div {
+            style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; transition: background 0.08s ease;",
+            onmouseenter: move |_| on_highlight.call(idx),
+            button {
+                id: "{item_id}",
+                r#type: "button",
+                style: "flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; background: transparent; cursor: pointer; color: {color}; font-family: inherit;",
+                "popovertarget": "{panel_id}",
+                "popovertargetaction": "hide",
+                onclick: {
+                    let opt_val = opt_val.clone();
+                    move |_| on_select.call(opt_val.clone())
+                },
+                div { style: "display: flex; align-items: center; gap: 0.4rem; overflow: hidden; min-width: 0;",
+                    if is_selected {
+                        span { style: "font-size: 0.75rem; color: var(--accent); flex-shrink: 0;",
+                            "✓"
+                        }
+                    } else {
+                        span { style: "display: inline-block; width: 0.75rem; flex-shrink: 0;" }
+                    }
+                    div { style: "font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
+                        if parts.len() > 1 {
+                            "{parts[0]}"
+                        } else {
+                            "{opt_label}"
+                        }
+                    }
+                }
+                if let Some(ref meta) = display_meta {
+                    div {
+                        class: "mono",
+                        style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 0; white-space: nowrap; text-align: right;",
+                        "{meta}"
+                    }
+                }
+            }
+            if let Some(detail_url) = part_detail_url {
+                a {
+                    href: "{detail_url}",
+                    class: "dropdown-item-link",
+                    title: "パーツ詳細画面を開く",
+                    onclick: {
+                        let panel_id = panel_id.clone();
+                        move |_| dom_hide_popover(&panel_id)
+                    },
+                    "↗"
                 }
             }
         }
