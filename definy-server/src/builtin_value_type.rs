@@ -497,6 +497,117 @@ pub fn create_value_equals_record_fields_part(core_module_id: &EventHashId) -> M
     }
 }
 
+/// リスト動的値の要素一覧を順序付きで再帰比較するパーツ (`core.value-equals-list-items`)
+pub fn create_value_equals_list_items_part(core_module_id: &EventHashId) -> ModulePartEntry {
+    let val_part_hash = derive_module_part_id(core_module_id, "value");
+    let val_equals_hash = derive_module_part_id(core_module_id, "value-equals");
+    let list_items_equals_hash = derive_module_part_id(core_module_id, "value-equals-list-items");
+
+    let left_items = Expression::Variable(VariableExpression { variable_id: 0 });
+    let right_items = Expression::Variable(VariableExpression { variable_id: 1 });
+    let index = Expression::Variable(VariableExpression { variable_id: 2 });
+
+    let left_done = Expression::LessThanOrEqual(LessThanOrEqualExpression {
+        left: Box::new(Expression::ListLength(ListLengthExpression {
+            value: Box::new(left_items.clone()),
+        })),
+        right: Box::new(index.clone()),
+    });
+    let right_done = Expression::LessThanOrEqual(LessThanOrEqualExpression {
+        left: Box::new(Expression::ListLength(ListLengthExpression {
+            value: Box::new(right_items.clone()),
+        })),
+        right: Box::new(index.clone()),
+    });
+
+    let left_item = Expression::ListGet(ListGetExpression {
+        list: Box::new(left_items.clone()),
+        index: Box::new(index.clone()),
+    });
+    let right_item = Expression::ListGet(ListGetExpression {
+        list: Box::new(right_items.clone()),
+        index: Box::new(index.clone()),
+    });
+
+    let values_equal = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                val_equals_hash,
+            ))),
+            argument: Box::new(left_item),
+        })),
+        argument: Box::new(right_item),
+    });
+
+    let next_index = Expression::Add(AddExpression {
+        left: Box::new(index),
+        right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+    });
+
+    let recurse = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    list_items_equals_hash,
+                ))),
+                argument: Box::new(left_items),
+            })),
+            argument: Box::new(right_items),
+        })),
+        argument: Box::new(next_index),
+    });
+
+    let current_equal = Expression::If(IfExpression {
+        condition: Box::new(values_equal),
+        then_expr: Box::new(recurse),
+        else_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
+    });
+
+    let body = Expression::If(IfExpression {
+        condition: Box::new(left_done),
+        then_expr: Box::new(right_done.clone()),
+        else_expr: Box::new(Expression::If(IfExpression {
+            condition: Box::new(right_done),
+            then_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
+            else_expr: Box::new(current_equal),
+        })),
+    });
+
+    ModulePartEntry {
+        name: "value-equals-list-items".into(),
+        part_type: Some(PartType::Function {
+            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(
+                val_part_hash.clone(),
+            )))),
+            return_type: Box::new(PartType::Function {
+                parameter: Box::new(PartType::List(Box::new(PartType::TypePart(val_part_hash)))),
+                return_type: Box::new(PartType::Function {
+                    parameter: Box::new(PartType::Number),
+                    return_type: Box::new(PartType::Boolean),
+                }),
+            }),
+        }),
+        description: Description::localized(vec![
+            ("en", "Recursively compare dynamic list value items"),
+            ("ja", "リスト動的値の要素一覧を順序付きで再帰比較"),
+        ]),
+        content_hash: None,
+        expression: Some(Expression::Function(FunctionExpression {
+            parameter_id: 0,
+            parameter_name: "left_items".into(),
+            body: Box::new(Expression::Function(FunctionExpression {
+                parameter_id: 1,
+                parameter_name: "right_items".into(),
+                body: Box::new(Expression::Function(FunctionExpression {
+                    parameter_id: 2,
+                    parameter_name: "index".into(),
+                    body: Box::new(body),
+                })),
+            })),
+        })),
+    }
+}
+
 /// 2つの動的値が等しいかを再帰的に判定する自己記述関数 (`core.value-equals`)
 /// `value -> value -> boolean` (カリー化関数)
 pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry {
@@ -504,6 +615,8 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
     let val_equals_hash = derive_module_part_id(core_module_id, "value-equals");
     let val_equals_record_fields_hash =
         derive_module_part_id(core_module_id, "value-equals-record-fields");
+    let val_equals_list_items_hash =
+        derive_module_part_id(core_module_id, "value-equals-list-items");
 
     // Helper: recursive call value-equals(a)(b)
     let recurse_eq = |a: Expression, b: Expression| {
@@ -641,6 +754,43 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
         default: None,
     });
 
+    // For list:
+    let list1_id = 16;
+    let list2_id = 26;
+    let list_body = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        arms: vec![
+            MatchArm {
+                tag: "list".into(),
+                variable_id: Some(list2_id),
+                variable_name: Some("l2".into()),
+                body: Box::new(Expression::Call(CallExpression {
+                    function: Box::new(Expression::Call(CallExpression {
+                        function: Box::new(Expression::Call(CallExpression {
+                            function: Box::new(Expression::PartReference(
+                                PartReferenceExpression::new(val_equals_list_items_hash),
+                            )),
+                            argument: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: list1_id,
+                            })),
+                        })),
+                        argument: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: list2_id,
+                        })),
+                    })),
+                    argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
+                })),
+            },
+            MatchArm {
+                tag: "_".into(),
+                variable_id: Some(99),
+                variable_name: Some("_".into()),
+                body: Box::new(false_expr.clone()),
+            },
+        ],
+        default: None,
+    });
+
     let arms = vec![
         primitive_eq_arm("number", 10, 20),
         primitive_eq_arm("string", 11, 21),
@@ -682,6 +832,13 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
             variable_id: Some(rec1_id),
             variable_name: Some("r1".into()),
             body: Box::new(record_body),
+        },
+        // list
+        MatchArm {
+            tag: "list".into(),
+            variable_id: Some(list1_id),
+            variable_name: Some("l1".into()),
+            body: Box::new(list_body),
         },
         // fallback
         MatchArm {

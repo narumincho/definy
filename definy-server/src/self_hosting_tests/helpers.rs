@@ -219,3 +219,23 @@ pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_type_checker::create_type_check_against_part(mod_id),
     ]
 }
+
+/// 汎用自己評価器 `core.eval-value` および `core.value-equals` が必要とする全パーツを返却します。
+pub fn all_evaluator_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
+    vec![
+        crate::builtin_value_type::create_value_type_part(mod_id),
+        crate::builtin_value_type::create_env_type_part(mod_id),
+        crate::builtin_value_type::create_env_lookup_part(mod_id),
+        crate::builtin_value_type::create_env_lookup_inner_part(mod_id),
+        crate::builtin_value_type::create_env_extend_part(mod_id),
+        crate::builtin_value_type::create_value_equals_part(mod_id),
+        crate::builtin_value_type::create_value_equals_record_fields_part(mod_id),
+        crate::builtin_value_type::create_value_equals_list_items_part(mod_id),
+        crate::builtin_evaluator::create_record_field_lookup_part(mod_id),
+        crate::builtin_evaluator::create_eval_record_fields_part(mod_id),
+        crate::builtin_evaluator::create_eval_list_items_part(mod_id),
+        crate::builtin_eval_match::create_eval_match_arms_part(mod_id),
+        crate::builtin_eval_match::create_eval_match_arms_inner_part(mod_id),
+        crate::builtin_evaluator::create_eval_value_part(mod_id),
+    ]
+}

@@ -606,6 +606,20 @@ validate-module: module-definition -> boolean
   $ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$
   要素型がレコードの幅サブタイピング（$Expected \subseteq Actual$）を満たす場合、リスト全体も自動的に代入適合となります。
 
+#### 3. リスト式の自己ホスト動的評価 & 等価比較 (`builtin_evaluator/list_eval.rs`, `builtin_value_type.rs`)
+
+- `core.eval-list-items`:
+  `list<expression> -> env -> number -> list<value> -> list<value>`
+  リスト式内の全要素式をインデックス順に `core.eval-value`
+  で動的評価し、累積リストへ追加して `list<value>` を構築。
+- `core.eval-value`: `list` アームにおいて `core.eval-list-items`
+  を呼び出し、評価結果を `value.list`（`Value::List`）として返却。
+- `core.value-equals-list-items`:
+  `list<value> -> list<value> -> number -> boolean`
+  2つのリスト値の長さおよび全要素を `core.value-equals` で再帰比較。
+- `core.value-equals`: `list` アームにおいて `core.value-equals-list-items`
+  を呼び出し、リスト値同士の同一性を検証。
+
 ---
 
 ### Phase 11: 自己記述型チェッカーのモジュール化 & アーム分割アーキテクチャ

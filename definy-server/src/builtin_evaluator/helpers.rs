@@ -81,3 +81,12 @@ pub fn val_record(fields: Expression) -> Expression {
         payload: Some(Box::new(fields)),
     })
 }
+
+/// リスト動的値 `Value::List` を生成する式です。
+pub fn val_list(items: Expression) -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "list".into(),
+        payload: Some(Box::new(items)),
+    })
+}

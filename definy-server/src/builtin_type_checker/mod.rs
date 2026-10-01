@@ -12,12 +12,9 @@ pub mod union_check;
 pub mod union_lookup;
 
 pub use assignable::*;
-pub use basic_arms::*;
 pub use check::*;
 pub use check_against::*;
-pub use control_arms::*;
 pub use env::*;
-pub use helpers::*;
 pub use list_ops::*;
 pub use record_ops::*;
 pub use types::*;

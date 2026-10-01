@@ -305,6 +305,8 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     ));
     core_parts
         .push(crate::builtin_value_type::create_value_equals_record_fields_part(&core_module_id));
+    core_parts
+        .push(crate::builtin_value_type::create_value_equals_list_items_part(&core_module_id));
     core_parts.push(crate::builtin_type_ast::create_type_ast_part(
         &core_module_id,
     ));
@@ -324,6 +326,9 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         &core_module_id,
     ));
     core_parts.push(crate::builtin_evaluator::create_eval_record_fields_part(
+        &core_module_id,
+    ));
+    core_parts.push(crate::builtin_evaluator::create_eval_list_items_part(
         &core_module_id,
     ));
     core_parts.push(crate::builtin_eval_match::create_eval_match_arms_part(

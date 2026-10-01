@@ -1,8 +1,7 @@
 use definy_event::EventHashId;
 use definy_event::event::{
     CallExpression, Expression, IfExpression, MatchArm, MatchExpression, PartReferenceExpression,
-    RecordGetExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
-    VariantExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
 };
 
 use super::helpers::{

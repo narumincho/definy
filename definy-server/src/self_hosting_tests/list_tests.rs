@@ -11,7 +11,7 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, call_part2, call_part3, create_test_module_events,
+    all_evaluator_parts, all_type_checker_parts, call_part2, call_part3, create_test_module_events,
     get_test_account_and_mod_id,
 };
 
@@ -409,4 +409,136 @@ fn test_self_hosted_list_covariant_subtyping() {
         }
         other => panic!("expected ok for record list against check, got {:?}", other),
     }
+}
+
+/// 式 AST の加算: `add({ left, right })`
+fn expr_add(left: Expression, right: Expression) -> Expression {
+    Expression::Variant(VariantExpression {
+        type_part_definition_event_hash: None,
+        tag: "add".into(),
+        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "left".into(),
+                    value: Box::new(left),
+                },
+                TypeLiteralItemExpression {
+                    key: "right".into(),
+                    value: Box::new(right),
+                },
+            ],
+        }))),
+    })
+}
+
+#[test]
+fn test_self_hosted_list_eval_value_execution() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+    let parts = all_evaluator_parts(&mod_id);
+    let eval_hash = derive_module_part_id(&mod_id, "eval-value");
+
+    let events = create_test_module_events(account, parts, 185);
+
+    // 1. 要素を含むリスト式: [ 10 + 20, 42 ]
+    let list_ast = ast_list(vec![expr_add(expr_num(10), expr_num(20)), expr_num(42)]);
+    let empty_env_val = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+    let eval_call = call_part2(eval_hash.clone(), list_ast, empty_env_val.clone());
+
+    let eval_res = definy_core::evaluate_expression(&eval_call, &events)
+        .expect("Failed to evaluate list literal expression");
+
+    let expected_list_val = Value::Variant {
+        tag: "list".into(),
+        payload: Some(Box::new(Value::List(vec![
+            Value::Variant {
+                tag: "number".into(),
+                payload: Some(Box::new(Value::Number(30))),
+            },
+            Value::Variant {
+                tag: "number".into(),
+                payload: Some(Box::new(Value::Number(42))),
+            },
+        ]))),
+    };
+    assert_eq!(eval_res, expected_list_val);
+
+    // 2. 空リスト式: []
+    let empty_list_ast = ast_list(vec![]);
+    let eval_empty_call = call_part2(eval_hash, empty_list_ast, empty_env_val);
+    let eval_empty_res = definy_core::evaluate_expression(&eval_empty_call, &events)
+        .expect("Failed to evaluate empty list literal expression");
+
+    let expected_empty_val = Value::Variant {
+        tag: "list".into(),
+        payload: Some(Box::new(Value::List(vec![]))),
+    };
+    assert_eq!(eval_empty_res, expected_empty_val);
+}
+
+#[test]
+fn test_self_hosted_list_value_equals_execution() {
+    let (account, mod_id) = get_test_account_and_mod_id();
+    let parts = all_evaluator_parts(&mod_id);
+    let val_equals_hash = derive_module_part_id(&mod_id, "value-equals");
+
+    let events = create_test_module_events(account, parts, 186);
+
+    let val_num = |n: i64| {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "number".into(),
+            payload: Some(Box::new(Expression::Number(NumberExpression { value: n }))),
+        })
+    };
+
+    let val_list = |items: Vec<Expression>| {
+        Expression::Variant(VariantExpression {
+            type_part_definition_event_hash: None,
+            tag: "list".into(),
+            payload: Some(Box::new(Expression::ListLiteral(ListLiteralExpression {
+                items,
+            }))),
+        })
+    };
+
+    // 1. 同一のリスト値: [1, 2] == [1, 2] -> true
+    let list_a = val_list(vec![val_num(1), val_num(2)]);
+    let list_b = val_list(vec![val_num(1), val_num(2)]);
+    let eq_call = call_part2(val_equals_hash.clone(), list_a, list_b);
+    let eq_res = definy_core::evaluate_expression(&eq_call, &events)
+        .expect("evaluate value-equals on identical lists");
+    assert_eq!(eq_res, Value::Bool(true));
+
+    // 2. 異なる要素を持つリスト値: [1, 2] == [1, 3] -> false
+    let list_c = val_list(vec![val_num(1), val_num(3)]);
+    let neq_call = call_part2(
+        val_equals_hash.clone(),
+        val_list(vec![val_num(1), val_num(2)]),
+        list_c,
+    );
+    let neq_res = definy_core::evaluate_expression(&neq_call, &events)
+        .expect("evaluate value-equals on different item lists");
+    assert_eq!(neq_res, Value::Bool(false));
+
+    // 3. 異なる長さのリスト値: [1] == [1, 2] -> false
+    let diff_len_call = call_part2(
+        val_equals_hash.clone(),
+        val_list(vec![val_num(1)]),
+        val_list(vec![val_num(1), val_num(2)]),
+    );
+    let diff_len_res = definy_core::evaluate_expression(&diff_len_call, &events)
+        .expect("evaluate value-equals on different length lists");
+    assert_eq!(diff_len_res, Value::Bool(false));
+
+    // 4. 空リスト同士: [] == [] -> true
+    let empty_eq_call = call_part2(val_equals_hash.clone(), val_list(vec![]), val_list(vec![]));
+    let empty_eq_res = definy_core::evaluate_expression(&empty_eq_call, &events)
+        .expect("evaluate value-equals on empty lists");
+    assert_eq!(empty_eq_res, Value::Bool(true));
+
+    // 5. 型違い: [] == 0 -> false
+    let type_mismatch_call = call_part2(val_equals_hash, val_list(vec![]), val_num(0));
+    let type_mismatch_res = definy_core::evaluate_expression(&type_mismatch_call, &events)
+        .expect("evaluate value-equals on type mismatch");
+    assert_eq!(type_mismatch_res, Value::Bool(false));
 }

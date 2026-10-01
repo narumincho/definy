@@ -10,26 +10,9 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, call_part1, call_part2, create_test_module_events,
+    all_evaluator_parts, all_type_checker_parts, call_part1, call_part2, create_test_module_events,
     get_test_account_and_mod_id,
 };
-
-fn all_evaluator_parts(
-    mod_id: &definy_event::EventHashId,
-) -> Vec<definy_event::event::ModulePartEntry> {
-    vec![
-        crate::builtin_value_type::create_value_type_part(mod_id),
-        crate::builtin_value_type::create_env_type_part(mod_id),
-        crate::builtin_value_type::create_env_lookup_part(mod_id),
-        crate::builtin_value_type::create_env_lookup_inner_part(mod_id),
-        crate::builtin_value_type::create_env_extend_part(mod_id),
-        crate::builtin_evaluator::create_record_field_lookup_part(mod_id),
-        crate::builtin_evaluator::create_eval_record_fields_part(mod_id),
-        crate::builtin_eval_match::create_eval_match_arms_part(mod_id),
-        crate::builtin_eval_match::create_eval_match_arms_inner_part(mod_id),
-        crate::builtin_evaluator::create_eval_value_part(mod_id),
-    ]
-}
 
 #[test]
 fn test_self_hosted_record_type_checking_execution() {
@@ -485,13 +468,12 @@ fn test_self_hosted_record_eval_value_and_get_execution() {
 #[test]
 fn test_self_hosted_record_value_equals_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let val_equals = crate::builtin_value_type::create_value_equals_part(&mod_id);
-    let val_equals_rec = crate::builtin_value_type::create_value_equals_record_fields_part(&mod_id);
+    let parts = all_evaluator_parts(&mod_id);
 
     let val_equals_hash = derive_module_part_id(&mod_id, "value-equals");
     let val_part_hash = derive_module_part_id(&mod_id, "value");
 
-    let events = create_test_module_events(account, vec![val_equals, val_equals_rec], 183);
+    let events = create_test_module_events(account, parts, 183);
 
     let make_val_num = |n: i64| {
         Expression::Variant(VariantExpression {

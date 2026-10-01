@@ -6,9 +6,11 @@
 mod arith_arms;
 mod control_arms;
 mod helpers;
+pub mod list_eval;
 mod logical_arms;
 pub mod record_eval;
 
+pub use list_eval::*;
 pub use record_eval::*;
 
 use definy_event::EventHashId;
@@ -75,6 +77,9 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
 
     // 17, 18. Record operations (record, record_get)
     create_record_eval_arms(core_module_id, &eval_value_hash, &mut arms);
+
+    // 19. List operations (list)
+    create_list_eval_arms(core_module_id, &eval_value_hash, &mut arms);
 
     // Default arm
     arms.push(MatchArm {

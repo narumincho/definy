@@ -10,9 +10,9 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, ast_add, ast_mul, ast_num, call_part1, call_part2, call_part3,
-    create_test_module_events, get_test_account_and_mod_id, test_val_bool, test_val_num,
-    test_val_str, value_list_to_u8_vec,
+    all_evaluator_parts, all_type_checker_parts, ast_add, ast_mul, ast_num, call_part1, call_part2,
+    call_part3, create_test_module_events, get_test_account_and_mod_id, test_val_bool,
+    test_val_num, test_val_str, value_list_to_u8_vec,
 };
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
@@ -62,37 +62,11 @@ fn test_self_hosted_expression_to_source_execution() {
 fn test_self_hosted_meta_circular_eval_value_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
-    let env_part = crate::builtin_value_type::create_env_type_part(&mod_id);
-    let env_lookup = crate::builtin_value_type::create_env_lookup_part(&mod_id);
-    let env_lookup_inner = crate::builtin_value_type::create_env_lookup_inner_part(&mod_id);
-    let env_extend = crate::builtin_value_type::create_env_extend_part(&mod_id);
-    let eval_value = crate::builtin_evaluator::create_eval_value_part(&mod_id);
-    let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&mod_id);
-    let eval_match_arms_inner =
-        crate::builtin_eval_match::create_eval_match_arms_inner_part(&mod_id);
-    let eval_rec_lookup = crate::builtin_evaluator::create_record_field_lookup_part(&mod_id);
-    let eval_rec_fields = crate::builtin_evaluator::create_eval_record_fields_part(&mod_id);
-
+    let parts = all_evaluator_parts(&mod_id);
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let events = create_test_module_events(
-        account,
-        vec![
-            val_part,
-            env_part,
-            env_lookup,
-            env_lookup_inner,
-            env_extend,
-            eval_value,
-            eval_match_arms,
-            eval_match_arms_inner,
-            eval_rec_lookup,
-            eval_rec_fields,
-        ],
-        125,
-    );
+    let events = create_test_module_events(account, parts, 125);
 
     let expr_type_opt = Some(expr_type_hash);
     // Expression: 10 + 25 = 35
@@ -1059,14 +1033,10 @@ fn test_self_hosted_validate_module_execution() {
 #[test]
 fn test_self_hosted_value_equals_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-
-    let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
-    let val_equals = crate::builtin_value_type::create_value_equals_part(&mod_id);
-    let val_equals_rec = crate::builtin_value_type::create_value_equals_record_fields_part(&mod_id);
+    let parts = all_evaluator_parts(&mod_id);
     let val_eq_hash = derive_module_part_id(&mod_id, "value-equals");
 
-    let events =
-        create_test_module_events(account, vec![val_part, val_equals, val_equals_rec], 201);
+    let events = create_test_module_events(account, parts, 201);
 
     let check_eq = |a: Expression, b: Expression| {
         let call = call_part2(val_eq_hash.clone(), a, b);
@@ -1110,36 +1080,10 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
 
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let val_part = crate::builtin_value_type::create_value_type_part(&mod_id);
-    let env_part = crate::builtin_value_type::create_env_type_part(&mod_id);
-    let env_lookup = crate::builtin_value_type::create_env_lookup_part(&mod_id);
-    let env_lookup_inner = crate::builtin_value_type::create_env_lookup_inner_part(&mod_id);
-    let env_extend = crate::builtin_value_type::create_env_extend_part(&mod_id);
-    let eval_value = crate::builtin_evaluator::create_eval_value_part(&mod_id);
-    let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&mod_id);
-    let eval_match_arms_inner =
-        crate::builtin_eval_match::create_eval_match_arms_inner_part(&mod_id);
-    let eval_rec_lookup = crate::builtin_evaluator::create_record_field_lookup_part(&mod_id);
-    let eval_rec_fields = crate::builtin_evaluator::create_eval_record_fields_part(&mod_id);
-
+    let parts = all_evaluator_parts(&mod_id);
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
 
-    let events = create_test_module_events(
-        account,
-        vec![
-            val_part,
-            env_part,
-            env_lookup,
-            env_lookup_inner,
-            env_extend,
-            eval_value,
-            eval_match_arms,
-            eval_match_arms_inner,
-            eval_rec_lookup,
-            eval_rec_fields,
-        ],
-        202,
-    );
+    let events = create_test_module_events(account, parts, 202);
 
     // Target AST: variant("some", 42)
     let target_ast = Expression::Variant(VariantExpression {
