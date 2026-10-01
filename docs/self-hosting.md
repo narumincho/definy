@@ -265,6 +265,23 @@ graph TD
     に直和型同士の部分型関係（サブタイピング）検証を追加
   - 1000行ルールに基づき `union_lookup.rs` と `union_check.rs` に責務を分離
   - 単体バリアント推論、双対的サブタイピング代入、全アーム型一致、網羅性欠落エラー検出、未知バリアントエラー検出のメタ循環実証完了
+- [x] **Phase 10: リスト式（List Literal）の自己ホスト型検査 &
+      共変サブタイピング (Self-Hosted List Type Checking & Covariant
+      Subtyping)**
+  - 型エラー型 `core.type-error` に `cannot_infer_empty_list` を追加
+  - リスト型検査パーツ群（`builtin_type_checker/list_ops.rs`）を新設
+    - `core.type-check-list-items`:
+      リストリテラルの各要素を期待される要素型に対して再帰検査し、全要素適合時に
+      `ok(list({ item_type }))` を返却
+    - `core.type-check-list`: リストリテラルの要素型を推論（空リスト時は
+      `cannot_infer_empty_list`
+      を返し、要素がある場合は先頭要素から型を推論して残りを検証）
+  - 静的型検査器 `core.type-check` に `list` 式の型検査アームを追加
+  - 期待型照合検査器 `core.type-check-against` に `list`
+    式アームを追加し、空リスト `[]` に対する期待型適合（双方向型推論）に対応
+  - 型代入適合性検査器 `core.type-assignable`
+    にリスト型の共変サブタイピング（$ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$）を追加
+  - 数値・文字列リストの型推論、空リスト推論拒否、期待型付き空リスト検査、異種要素不一致エラー検出、レコードリストの共変代入適合性のメタ循環実証完了
 
 ---
 
@@ -569,39 +586,67 @@ validate-module: module-definition -> boolean
 
 ---
 
+### Phase 10: リスト式（List Literal）の自己ホスト型検査 & 共変サブタイピング
+
+#### 1. リスト型検査パーツ群 (`builtin_type_checker/list_ops.rs`)
+
+- `core.type-check-list-items`:
+  `list<expression> -> type-env -> number -> type-ast -> type-result`
+  リスト要素を走査し、全要素が `expected_item_type`
+  に代入適合（`type-assignable`）するかを再帰検証。走査完了時に
+  `ok(list({ item_type }))` を返却。
+- `core.type-check-list`: `list<expression> -> type-env -> type-result`
+  要素が0個（空リスト）の場合は推論不能として `error(cannot_infer_empty_list)`
+  を返却し、1個以上の場合は先頭要素から型を推論して残りの要素を
+  `core.type-check-list-items` で検証。
+
+#### 2. リスト型の共変サブタイピング (`builtin_type_checker/assignable.rs`)
+
+- リスト型は要素型に関して共変（Covariant）です：
+  $ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$
+  要素型がレコードの幅サブタイピング（$Expected \subseteq Actual$）を満たす場合、リスト全体も自動的に代入適合となります。
+
+---
+
 ### 完全自己ホストコンパイル & メタ循環実行の実証
 
 definy
 のテストスイート（`definy-server/src/self_hosting_tests/`）において、以下の
 end-to-end メタ循環実行がすべて実証されています。 テストコードは責務に応じて
 `ast_structure_tests.rs`（静的構造検証）、`execution_tests.rs`（動的実行実証）、
-`record_tests.rs`（レコード検証）、`union_tests.rs`（直和型・パターンマッチ型検証）、および共通ヘルパー
+`record_tests.rs`（レコード検証）、`union_tests.rs`（直和型・パターンマッチ型検証）、`list_tests.rs`（リスト型検証）、および共通ヘルパー
 `helpers.rs` に分割・整理されています。
 
-| テスト関数名                                                    | 検証対象パーツ                                      | 入力・実行内容                                                   | 実証された結果                                |
-| :-------------------------------------------------------------- | :-------------------------------------------------- | :--------------------------------------------------------------- | :-------------------------------------------- |
-| `test_self_hosted_meta_circular_eval_ast_execution`             | `core.eval-ast`                                     | 多項式 AST `(100 - (10 * 3)) + (50 / 2)`                         | 自己評価値 `95`                               |
-| `test_self_hosted_expression_to_source_execution`               | `core.expression-to-source`                         | 加算式 AST `add(10, 20)`                                         | 整形文字列 `"((<number> + <number>))"`        |
-| `test_self_hosted_meta_circular_eval_value_execution`           | `core.eval-value`                                   | 加算式 AST `add(10, 25)` と空環境 `[]`                           | 動的値 `number(35)`                           |
-| `test_self_hosted_type_checker_execution`                       | `core.type-check`                                   | 加算式 AST `add(10, 20)` と空型環境 `[]`                         | 型推論結果 `ok(number)`                       |
-| `test_self_hosted_validate_part_execution`                      | `core.validate-part`                                | 正常なパーツ定義 `{ name, type: number, expr: 10 + 20 }`         | 判定結果 `true`                               |
-| `test_self_hosted_validate_module_execution`                    | `core.validate-module`                              | 正常なモジュール定義（`true`）と空名不正モジュール（`false`）    | 判定結果 `true` / `false`                     |
-| `test_self_hosted_compile_to_wasm_execution`                    | `core.compile-to-wasm`                              | 式 `15 + 27` から自己ホストで Wasm バイナリを生成                | 生成された Wasm を VM で実行し `42` を算出    |
-| `test_self_hosted_optimize_expression_execution`                | `core.optimize-expression` + `core.compile-to-wasm` | 多項式 `(10 * 3) + 12` を `42` に定数畳み込み最適化し Wasm 生成  | 最適化された Wasm を実行し `42` を算出        |
-| `test_self_hosted_value_equals_execution`                       | `core.value-equals`                                 | 数値・文字列・真偽値の動的値等価比較                             | 判定結果 `true` / `false`                     |
-| `test_self_hosted_eval_value_variant_and_match_execution`       | `core.eval-value` + `core.eval-match-arms`          | AST `match variant("some", 42) { some(x) => x + 8 }`             | パターンマッチ自己実行で `50` を算出          |
-| `test_self_hosted_list_map_and_fold_execution`                  | `core.list-map` + `core.list-fold`                  | `map (*2) [1,2,3]` および `fold (+) 0 [10,20,30]`                | `[2, 4, 6]` および `60` を算出                |
-| `test_self_hosted_record_type_checking_execution`               | `core.type-check`                                   | レコードリテラル `{ x: 10, y: "hello" }` の静的型検査            | 推論型 `ok(record({ x: number, y: str }))`    |
-| `test_self_hosted_record_get_type_checking_execution`           | `core.type-check`                                   | フィールドアクセス `{ a: 42 }.a` および不正アクセス時のエラー    | 成功型 `ok(number)` および `not_a_record`     |
-| `test_self_hosted_record_eval_value_and_get_execution`          | `core.eval-value`                                   | レコード評価およびフィールド抽出 `{ x: 20 + 22 }.x`              | 動的値 `number(42)`                           |
-| `test_self_hosted_record_value_equals_execution`                | `core.value-equals`                                 | レコード同士の等価比較 `{ a: 1, b: "ok" } == { a: 1, b: "ok" }`  | 判定結果 `true` / `false`                     |
-| `test_self_hosted_validate_part_with_record_expression`         | `core.validate-part`                                | レコード式を本体に持つパーツ定義の自己妥当性検証                 | 判定結果 `true`                               |
-| `test_self_hosted_variant_type_inference_and_subtyping`         | `core.type-check` + `core.type-assignable`          | `variant("some", 42)` 単体型推論と `Option<number>` への代入適合 | 推論型 `ok(union([some(num)]))` および `true` |
-| `test_self_hosted_variant_none_inference_and_against`           | `core.type-check` + `core.type-check-against`       | 引数なし `variant("none")` の型推論および期待型検査              | 推論型 `ok(union([none]))` および適合成功     |
-| `test_self_hosted_match_expression_type_checking`               | `core.type-check`                                   | `match variant("some", 42) { none => 0, some(n) => n + 1 }`      | 全アーム型一致・網羅性検証成功 `ok(number)`   |
-| `test_self_hosted_match_expression_detects_type_mismatch`       | `core.type-check`                                   | アーム間で戻り値型が異なる match 式（`0` と `"not zero"`）       | 型エラー `type_mismatch` 検出                 |
-| `test_self_hosted_match_expression_detects_non_exhaustive_arms` | `core.type-check`                                   | `some` アームのみで `none` を欠く match 式                       | 網羅性欠落エラー `non_exhaustive_match` 検出  |
-| `test_self_hosted_match_expression_detects_unknown_variant`     | `core.type-check`                                   | 対象直和型に存在しないタグ `other` を照合する match 式           | 未知タグエラー `variant_not_found` 検出       |
+| テスト関数名                                                        | 検証対象パーツ                                      | 入力・実行内容                                                   | 実証された結果                                |
+| :------------------------------------------------------------------ | :-------------------------------------------------- | :--------------------------------------------------------------- | :-------------------------------------------- |
+| `test_self_hosted_meta_circular_eval_ast_execution`                 | `core.eval-ast`                                     | 多項式 AST `(100 - (10 * 3)) + (50 / 2)`                         | 自己評価値 `95`                               |
+| `test_self_hosted_expression_to_source_execution`                   | `core.expression-to-source`                         | 加算式 AST `add(10, 20)`                                         | 整形文字列 `"((<number> + <number>))"`        |
+| `test_self_hosted_meta_circular_eval_value_execution`               | `core.eval-value`                                   | 加算式 AST `add(10, 25)` と空環境 `[]`                           | 動的値 `number(35)`                           |
+| `test_self_hosted_type_checker_execution`                           | `core.type-check`                                   | 加算式 AST `add(10, 20)` と空型環境 `[]`                         | 型推論結果 `ok(number)`                       |
+| `test_self_hosted_validate_part_execution`                          | `core.validate-part`                                | 正常なパーツ定義 `{ name, type: number, expr: 10 + 20 }`         | 判定結果 `true`                               |
+| `test_self_hosted_validate_module_execution`                        | `core.validate-module`                              | 正常なモジュール定義（`true`）と空名不正モジュール（`false`）    | 判定結果 `true` / `false`                     |
+| `test_self_hosted_compile_to_wasm_execution`                        | `core.compile-to-wasm`                              | 式 `15 + 27` から自己ホストで Wasm バイナリを生成                | 生成された Wasm を VM で実行し `42` を算出    |
+| `test_self_hosted_optimize_expression_execution`                    | `core.optimize-expression` + `core.compile-to-wasm` | 多項式 `(10 * 3) + 12` を `42` に定数畳み込み最適化し Wasm 生成  | 最適化された Wasm を実行し `42` を算出        |
+| `test_self_hosted_value_equals_execution`                           | `core.value-equals`                                 | 数値・文字列・真偽値の動的値等価比較                             | 判定結果 `true` / `false`                     |
+| `test_self_hosted_eval_value_variant_and_match_execution`           | `core.eval-value` + `core.eval-match-arms`          | AST `match variant("some", 42) { some(x) => x + 8 }`             | パターンマッチ自己実行で `50` を算出          |
+| `test_self_hosted_list_map_and_fold_execution`                      | `core.list-map` + `core.list-fold`                  | `map (*2) [1,2,3]` および `fold (+) 0 [10,20,30]`                | `[2, 4, 6]` および `60` を算出                |
+| `test_self_hosted_record_type_checking_execution`                   | `core.type-check`                                   | レコードリテラル `{ x: 10, y: "hello" }` の静的型検査            | 推論型 `ok(record({ x: number, y: str }))`    |
+| `test_self_hosted_record_get_type_checking_execution`               | `core.type-check`                                   | フィールドアクセス `{ a: 42 }.a` および不正アクセス時のエラー    | 成功型 `ok(number)` および `not_a_record`     |
+| `test_self_hosted_record_eval_value_and_get_execution`              | `core.eval-value`                                   | レコード評価およびフィールド抽出 `{ x: 20 + 22 }.x`              | 動的値 `number(42)`                           |
+| `test_self_hosted_record_value_equals_execution`                    | `core.value-equals`                                 | レコード同士の等価比較 `{ a: 1, b: "ok" } == { a: 1, b: "ok" }`  | 判定結果 `true` / `false`                     |
+| `test_self_hosted_validate_part_with_record_expression`             | `core.validate-part`                                | レコード式を本体に持つパーツ定義の自己妥当性検証                 | 判定結果 `true`                               |
+| `test_self_hosted_variant_type_inference_and_subtyping`             | `core.type-check` + `core.type-assignable`          | `variant("some", 42)` 単体型推論と `Option<number>` への代入適合 | 推論型 `ok(union([some(num)]))` および `true` |
+| `test_self_hosted_variant_none_inference_and_against`               | `core.type-check` + `core.type-check-against`       | 引数なし `variant("none")` の型推論および期待型検査              | 推論型 `ok(union([none]))` および適合成功     |
+| `test_self_hosted_match_expression_type_checking`                   | `core.type-check`                                   | `match variant("some", 42) { none => 0, some(n) => n + 1 }`      | 全アーム型一致・網羅性検証成功 `ok(number)`   |
+| `test_self_hosted_match_expression_detects_type_mismatch`           | `core.type-check`                                   | アーム間で戻り値型が異なる match 式（`0` と `"not zero"`）       | 型エラー `type_mismatch` 検出                 |
+| `test_self_hosted_match_expression_detects_non_exhaustive_arms`     | `core.type-check`                                   | `some` アームのみで `none` を欠く match 式                       | 網羅性欠落エラー `non_exhaustive_match` 検出  |
+| `test_self_hosted_match_expression_detects_unknown_variant`         | `core.type-check`                                   | 対象直和型に存在しないタグ `other` を照合する match 式           | 未知タグエラー `variant_not_found` 検出       |
+| `test_self_hosted_list_number_type_inference`                       | `core.type-check`                                   | 数値リスト `[10, 20, 30]` の型推論                               | 推論型 `ok(list({ item_type: number }))`      |
+| `test_self_hosted_list_string_type_inference`                       | `core.type-check`                                   | 文字列リスト `["hello", "world"]` の型推論                       | 推論型 `ok(list({ item_type: string }))`      |
+| `test_self_hosted_empty_list_inference_fails_without_expected_type` | `core.type-check`                                   | 期待型のない空リスト `[]` の推論拒否                             | エラー `cannot_infer_empty_list` 検出         |
+| `test_self_hosted_empty_list_checked_against_expected_type`         | `core.type-check-against`                           | 期待型 `list<number>` に対する空リスト `[]` の適合               | 期待型適合 `ok(list({ item_type: number }))`  |
+| `test_self_hosted_list_heterogeneous_items_detects_mismatch`        | `core.type-check`                                   | 異種要素リスト `[10, "string"]` の要素型検査                     | 要素型不一致 `type_mismatch` 検出             |
+| `test_self_hosted_list_covariant_subtyping`                         | `core.type-assignable` + `core.type-check-against`  | レコードリスト `list<{x, y}>` から `list<{x}>` への共変代入適合  | 共変代入適合 `true` および検査成功            |
 
 ---
 
@@ -714,6 +759,22 @@ AST 構築が必要です。 単一ファイルにまとめると 1200
 
 各モジュールを 500〜600
 行前後に抑えることで、可読性とメンテナンス性を大幅に高めています。
+
+### 9. リストの双方向型推論（Bidirectional Type Checking）と共変性
+
+リスト式（`list` リテラル）の型付けでは、空リスト `[]`
+の曖昧性を双方向型推論によりエレガントに解決しています：
+
+- **ボトムアップ推論（`core.type-check`）**: 式単体から型を導出します。要素が 1
+  個以上ある場合は先頭要素から型を推論し、後続要素が代入適合するかを検証します。期待型のない文脈での空リスト
+  `[]` は要素型が一意に定まらないため、明示的に `cannot_infer_empty_list`
+  エラーを返却して型安全性を担保します。
+- **トップダウン検査（`core.type-check-against`）**:
+  期待型（`list<T>`）が与えられている文脈では、空リスト `[]` であっても直ちに
+  `ok(list<T>)` として推論を完了します。
+- **共変サブタイピング（`core.type-assignable`）**: Definy
+  の不変リストは要素型に関して完全に共変（$ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$）です。これにより、余剰フィールドを持つレコードのリスト
+  `list<{x, y}>` を `list<{x}>` として透過的に関数引数等へ渡すことができます。
 
 ---
 

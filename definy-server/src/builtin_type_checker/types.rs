@@ -111,6 +111,10 @@ pub fn create_type_error_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     }))),
                 },
                 TypeUnionVariant {
+                    tag: "cannot_infer_empty_list".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
                     tag: "unknown_error".into(),
                     payload_type: None,
                 },

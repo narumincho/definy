@@ -10,37 +10,10 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    ast_add, ast_mul, ast_num, call_part1, call_part2, call_part3, create_test_module_events,
-    get_test_account_and_mod_id, test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
+    all_type_checker_parts, ast_add, ast_mul, ast_num, call_part1, call_part2, call_part3,
+    create_test_module_events, get_test_account_and_mod_id, test_val_bool, test_val_num,
+    test_val_str, value_list_to_u8_vec,
 };
-
-fn all_type_checker_parts(
-    mod_id: &definy_event::EventHashId,
-) -> Vec<definy_event::event::ModulePartEntry> {
-    vec![
-        crate::builtin_type_checker::create_type_error_part(mod_id),
-        crate::builtin_type_checker::create_type_result_part(mod_id),
-        crate::builtin_type_checker::create_type_env_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_env_extend_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_union_variant_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_find_tag_in_arms_part(mod_id),
-        crate::builtin_type_checker::create_check_union_exhaustiveness_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_type_check_match_arms_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_check_match_arms_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_part(mod_id),
-        crate::builtin_type_checker::create_type_check_part(mod_id),
-        crate::builtin_type_checker::create_type_check_against_part(mod_id),
-    ]
-}
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
 #[test]

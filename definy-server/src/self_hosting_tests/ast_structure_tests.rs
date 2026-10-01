@@ -48,6 +48,9 @@ fn test_self_hosting_parts_registration() {
         crate::builtin_type_checker::create_type_check_match_arms_inner_part(&core_id);
     let type_check_match_arms =
         crate::builtin_type_checker::create_type_check_match_arms_part(&core_id);
+    let type_check_list_items =
+        crate::builtin_type_checker::create_type_check_list_items_part(&core_id);
+    let type_check_list = crate::builtin_type_checker::create_type_check_list_part(&core_id);
     let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&core_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&core_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&core_id);
@@ -119,6 +122,8 @@ fn test_self_hosting_parts_registration() {
         type_assignable_union_variants,
         type_check_match_arms_inner,
         type_check_match_arms,
+        type_check_list_items,
+        type_check_list,
         type_assignable,
         type_check,
         type_check_against,
@@ -267,6 +272,9 @@ fn test_phase2_type_checker_ast_structure() {
         "let",
         "record",
         "record_get",
+        "variant",
+        "match",
+        "list",
         "not",
         "and",
         "or",

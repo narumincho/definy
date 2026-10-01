@@ -190,3 +190,32 @@ pub fn test_val_bool(b: bool) -> Expression {
         ))),
     })
 }
+
+/// 自己記述型チェッカーが必要とする全パーツ（レコード、直和型、リスト、基本演算）を返却します。
+pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
+    vec![
+        crate::builtin_type_checker::create_type_error_part(mod_id),
+        crate::builtin_type_checker::create_type_result_part(mod_id),
+        crate::builtin_type_checker::create_type_env_part(mod_id),
+        crate::builtin_type_checker::create_type_env_lookup_part(mod_id),
+        crate::builtin_type_checker::create_type_env_lookup_inner_part(mod_id),
+        crate::builtin_type_checker::create_type_env_extend_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
+        crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
+        crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_union_variant_type_lookup_part(mod_id),
+        crate::builtin_type_checker::create_find_tag_in_arms_part(mod_id),
+        crate::builtin_type_checker::create_check_union_exhaustiveness_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_union_variants_part(mod_id),
+        crate::builtin_type_checker::create_type_check_match_arms_inner_part(mod_id),
+        crate::builtin_type_checker::create_type_check_match_arms_part(mod_id),
+        crate::builtin_type_checker::create_type_check_list_items_part(mod_id),
+        crate::builtin_type_checker::create_type_check_list_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_part(mod_id),
+        crate::builtin_type_checker::create_type_check_part(mod_id),
+        crate::builtin_type_checker::create_type_check_against_part(mod_id),
+    ]
+}

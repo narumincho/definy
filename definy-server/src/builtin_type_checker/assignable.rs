@@ -271,7 +271,7 @@ pub fn create_type_assignable_part(core_module_id: &EventHashId) -> ModulePartEn
     let ret_subtyping = Expression::Call(CallExpression {
         function: Box::new(Expression::Call(CallExpression {
             function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_assignable_hash,
+                type_assignable_hash.clone(),
             ))),
             argument: Box::new(act_ret),
         })),
@@ -318,12 +318,51 @@ pub fn create_type_assignable_part(core_module_id: &EventHashId) -> ModulePartEn
     });
 
     let match_actual_for_union = Expression::Match(MatchExpression {
-        target: Box::new(actual_type),
+        target: Box::new(actual_type.clone()),
         arms: vec![MatchArm {
             tag: "union".into(),
             variable_id: Some(act_union_var),
             variable_name: Some("act_variants".into()),
             body: Box::new(check_union_subtyping),
+        }],
+        default: Some(Box::new(Expression::Boolean(BooleanExpression {
+            value: false,
+        }))),
+    });
+
+    // 5. リスト型（List）の共変サブタイピング照合
+    // 実際の要素型が期待される要素型へ代入適合することを検証
+    let exp_list_var = 26;
+    let act_list_var = 27;
+    let exp_item_type = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Variable(VariableExpression {
+            variable_id: exp_list_var,
+        })),
+        key: "item_type".into(),
+    });
+    let act_item_type = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(Expression::Variable(VariableExpression {
+            variable_id: act_list_var,
+        })),
+        key: "item_type".into(),
+    });
+    let check_list_subtyping = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                type_assignable_hash,
+            ))),
+            argument: Box::new(act_item_type),
+        })),
+        argument: Box::new(exp_item_type),
+    });
+
+    let match_actual_for_list = Expression::Match(MatchExpression {
+        target: Box::new(actual_type),
+        arms: vec![MatchArm {
+            tag: "list".into(),
+            variable_id: Some(act_list_var),
+            variable_name: Some("act_list".into()),
+            body: Box::new(check_list_subtyping),
         }],
         default: Some(Box::new(Expression::Boolean(BooleanExpression {
             value: false,
@@ -350,6 +389,12 @@ pub fn create_type_assignable_part(core_module_id: &EventHashId) -> ModulePartEn
                 variable_id: Some(exp_union_var),
                 variable_name: Some("exp_variants".into()),
                 body: Box::new(match_actual_for_union),
+            },
+            MatchArm {
+                tag: "list".into(),
+                variable_id: Some(exp_list_var),
+                variable_name: Some("exp_list".into()),
+                body: Box::new(match_actual_for_list),
             },
         ],
         default: Some(Box::new(Expression::Boolean(BooleanExpression {

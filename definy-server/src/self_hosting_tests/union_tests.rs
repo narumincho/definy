@@ -11,36 +11,9 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    call_part2, call_part3, create_test_module_events, get_test_account_and_mod_id,
+    all_type_checker_parts, call_part2, call_part3, create_test_module_events,
+    get_test_account_and_mod_id,
 };
-
-fn all_type_checker_parts_with_union(
-    mod_id: &definy_event::EventHashId,
-) -> Vec<definy_event::event::ModulePartEntry> {
-    vec![
-        crate::builtin_type_checker::create_type_error_part(mod_id),
-        crate::builtin_type_checker::create_type_result_part(mod_id),
-        crate::builtin_type_checker::create_type_env_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_env_extend_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_union_variant_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_find_tag_in_arms_part(mod_id),
-        crate::builtin_type_checker::create_check_union_exhaustiveness_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_type_check_match_arms_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_check_match_arms_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_part(mod_id),
-        crate::builtin_type_checker::create_type_check_part(mod_id),
-        crate::builtin_type_checker::create_type_check_against_part(mod_id),
-    ]
-}
 
 /// AST 式直和型ヘルパー: `variant({ tag, payload: some(expr) })`
 fn ast_variant_some(tag: &str, payload_expr: Expression) -> Expression {
@@ -226,7 +199,7 @@ fn expr_add(left: Expression, right: Expression) -> Expression {
 #[test]
 fn test_self_hosted_variant_type_inference_and_subtyping() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts_with_union(&mod_id);
+    let parts = all_type_checker_parts(&mod_id);
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
     let type_assignable_hash = derive_module_part_id(&mod_id, "type-assignable");
@@ -303,7 +276,7 @@ fn test_self_hosted_variant_type_inference_and_subtyping() {
 #[test]
 fn test_self_hosted_match_expression_type_checking() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts_with_union(&mod_id);
+    let parts = all_type_checker_parts(&mod_id);
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 101);
@@ -361,7 +334,7 @@ fn test_self_hosted_match_expression_type_checking() {
 #[test]
 fn test_self_hosted_match_expression_detects_type_mismatch() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts_with_union(&mod_id);
+    let parts = all_type_checker_parts(&mod_id);
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 102);
@@ -427,7 +400,7 @@ fn test_self_hosted_match_expression_detects_type_mismatch() {
 #[test]
 fn test_self_hosted_match_expression_detects_non_exhaustive_arms() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts_with_union(&mod_id);
+    let parts = all_type_checker_parts(&mod_id);
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 103);
@@ -493,7 +466,7 @@ fn test_self_hosted_match_expression_detects_non_exhaustive_arms() {
 #[test]
 fn test_self_hosted_match_expression_detects_unknown_variant() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts_with_union(&mod_id);
+    let parts = all_type_checker_parts(&mod_id);
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 104);
@@ -560,7 +533,7 @@ fn test_self_hosted_match_expression_detects_unknown_variant() {
 #[test]
 fn test_self_hosted_variant_none_inference_and_against() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts_with_union(&mod_id);
+    let parts = all_type_checker_parts(&mod_id);
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 

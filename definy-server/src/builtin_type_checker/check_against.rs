@@ -1,8 +1,9 @@
 use definy_event::EventHashId;
 use definy_event::event::{
     CallExpression, Description, Expression, FunctionExpression, MatchArm, MatchExpression,
-    ModulePartEntry, PartReferenceExpression, PartType, RecordGetExpression, TypeLiteralExpression,
-    TypeLiteralItemExpression, VariableExpression, VariantExpression, derive_module_part_id,
+    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordGetExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
 /// `core.type-check-against`: `expression -> type-env -> expected-type -> type-result`
@@ -16,6 +17,7 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
     let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
+    let check_list_items_hash = derive_module_part_id(core_module_id, "type-check-list-items");
 
     let expected_type = Expression::Variable(VariableExpression { variable_id: 2 });
     let type_kind = Expression::Variant(VariantExpression {
@@ -90,7 +92,7 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
     let check_inferred_type = Expression::If(definy_event::event::IfExpression {
         condition: Box::new(types_match),
         then_expr: Box::new(ok_type(expected_type.clone())),
-        else_expr: Box::new(error_mismatch(expected_type, inferred_type)),
+        else_expr: Box::new(error_mismatch(expected_type.clone(), inferred_type)),
     });
     let inferred_result = call_part(
         &type_check_hash,
@@ -118,6 +120,32 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
             },
         ],
         default: Some(Box::new(error_unknown())),
+    });
+
+    let list_items_var = 30;
+    let exp_list_payload = Expression::Variable(VariableExpression { variable_id: 31 });
+    let exp_item_type = record_get(exp_list_payload, "item_type");
+    let check_list_elements = call_part(
+        &check_list_items_hash,
+        vec![
+            Expression::Variable(VariableExpression {
+                variable_id: list_items_var,
+            }),
+            Expression::Variable(VariableExpression { variable_id: 1 }),
+            Expression::Number(NumberExpression { value: 0 }),
+            exp_item_type,
+        ],
+    );
+
+    let expected_list_match = Expression::Match(MatchExpression {
+        target: Box::new(expected_type.clone()),
+        arms: vec![MatchArm {
+            tag: "list".into(),
+            variable_id: Some(31),
+            variable_name: Some("list_type".into()),
+            body: Box::new(check_list_elements),
+        }],
+        default: Some(Box::new(check_non_function.clone())),
     });
 
     let body = Expression::Function(FunctionExpression {
@@ -179,6 +207,12 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
                             variable_id: Some(10),
                             variable_name: Some("function_expr".into()),
                             body: Box::new(expected_function_match),
+                        },
+                        MatchArm {
+                            tag: "list".into(),
+                            variable_id: Some(30),
+                            variable_name: Some("list_items".into()),
+                            body: Box::new(expected_list_match),
                         },
                     ],
                     default: Some(Box::new(check_non_function)),

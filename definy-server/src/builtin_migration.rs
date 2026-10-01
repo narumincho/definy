@@ -376,6 +376,11 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     );
     core_parts
         .push(crate::builtin_type_checker::create_type_check_match_arms_part(&core_module_id));
+    core_parts
+        .push(crate::builtin_type_checker::create_type_check_list_items_part(&core_module_id));
+    core_parts.push(crate::builtin_type_checker::create_type_check_list_part(
+        &core_module_id,
+    ));
     core_parts.push(crate::builtin_type_checker::create_type_assignable_part(
         &core_module_id,
     ));

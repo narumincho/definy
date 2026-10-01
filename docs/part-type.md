@@ -88,3 +88,31 @@ definy の自己記述型チェッカー（`core.type-check`,
   `type_mismatch` エラーとなります。
 - 直和型が持つすべてのバリアントがマッチアームに存在しているかを網羅性検査（`check-union-exhaustiveness`）で検証し、欠落時は
   `non_exhaustive_match` エラーとなります。
+
+## リスト型（List）の型検査仕様
+
+definy の自己記述型チェッカー（`core.type-check`, `core.type-check-against`,
+`core.type-assignable`）におけるリスト型の検査仕様：
+
+### 1. 要素型の推論と全要素の一致検査
+
+- リスト式（`list` リテラル）に 1 つ以上の要素がある場合、先頭要素から要素型 $T$
+  を推論し、後続の全要素が $T$
+  に代入適合（`type-assignable`）することを検証します。
+- 途中に異なる型の要素が含まれる場合（例: `[10, "string"]`）、`type_mismatch`
+  エラーとなります。
+
+### 2. 空リスト `[]` の双方向型推論
+
+- 期待型のないボトムアップ推論（`type-check`）では、空リストの要素型が一意に定まらないため、明示的に
+  `cannot_infer_empty_list` エラーを返却して不健全な `any` 化を防ぎます。
+- 期待型 $list<T>$
+  が与えられているトップダウン検査（`type-check-against`）では、空リストであっても直ちに期待型
+  $list<T>$ に適合すると判定されます。
+
+### 3. リスト型の共変サブタイピング（Covariant Subtyping）
+
+- リスト型は要素型に関して完全に共変です（$ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$）。
+- これにより、レコードの幅サブタイピング（$Expected \subseteq Actual$）を満たすレコードリスト（例:
+  `list<{x: number, y: string}>`）は、余剰フィールドを許容して
+  `list<{x: number}>` の期待型スロットへ安全に代入可能です。
