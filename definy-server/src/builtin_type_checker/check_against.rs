@@ -1,10 +1,10 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Description, Expression, FunctionExpression, MatchArm, MatchExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordGetExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
-    derive_module_part_id,
+    Description, Expression, FunctionExpression, MatchArm, MatchExpression, ModulePartEntry,
+    NumberExpression, PartType, VariableExpression, VariantExpression, derive_module_part_id,
 };
+
+use super::helpers::{call_part, error_mismatch, error_unknown, error_value, ok_type, record_get};
 
 /// `core.type-check-against`: `expression -> type-env -> expected-type -> type-result`
 pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePartEntry {
@@ -243,66 +243,4 @@ pub fn create_type_check_against_part(core_module_id: &EventHashId) -> ModulePar
         content_hash: None,
         expression: Some(body),
     }
-}
-
-fn call_part(part_hash: &EventHashId, args: Vec<Expression>) -> Expression {
-    args.into_iter().fold(
-        Expression::PartReference(PartReferenceExpression::new(part_hash.clone())),
-        |function, argument| {
-            Expression::Call(CallExpression {
-                function: Box::new(function),
-                argument: Box::new(argument),
-            })
-        },
-    )
-}
-
-fn record_get(record: Expression, key: &'static str) -> Expression {
-    Expression::RecordGet(RecordGetExpression {
-        record: Box::new(record),
-        key: key.into(),
-    })
-}
-
-fn ok_type(type_ast: Expression) -> Expression {
-    Expression::Variant(VariantExpression {
-        type_part_definition_event_hash: None,
-        tag: "ok".into(),
-        payload: Some(Box::new(type_ast)),
-    })
-}
-
-fn error_value(error: Expression) -> Expression {
-    Expression::Variant(VariantExpression {
-        type_part_definition_event_hash: None,
-        tag: "error".into(),
-        payload: Some(Box::new(error)),
-    })
-}
-
-fn error_mismatch(expected: Expression, actual: Expression) -> Expression {
-    error_value(Expression::Variant(VariantExpression {
-        type_part_definition_event_hash: None,
-        tag: "type_mismatch".into(),
-        payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "expected".into(),
-                    value: Box::new(expected),
-                },
-                TypeLiteralItemExpression {
-                    key: "actual".into(),
-                    value: Box::new(actual),
-                },
-            ],
-        }))),
-    }))
-}
-
-fn error_unknown() -> Expression {
-    error_value(Expression::Variant(VariantExpression {
-        type_part_definition_event_hash: None,
-        tag: "unknown_error".into(),
-        payload: None,
-    }))
 }

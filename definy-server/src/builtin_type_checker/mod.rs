@@ -1,7 +1,10 @@
 pub mod assignable;
+pub mod basic_arms;
 pub mod check;
 pub mod check_against;
+pub mod control_arms;
 pub mod env;
+pub mod helpers;
 pub mod list_ops;
 pub mod record_ops;
 pub mod types;
@@ -9,9 +12,12 @@ pub mod union_check;
 pub mod union_lookup;
 
 pub use assignable::*;
+pub use basic_arms::*;
 pub use check::*;
 pub use check_against::*;
+pub use control_arms::*;
 pub use env::*;
+pub use helpers::*;
 pub use list_ops::*;
 pub use record_ops::*;
 pub use types::*;
