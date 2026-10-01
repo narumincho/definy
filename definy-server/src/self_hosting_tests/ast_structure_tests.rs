@@ -37,6 +37,17 @@ fn test_self_hosting_parts_registration() {
         crate::builtin_type_checker::create_type_equals_union_variants_part(&core_id);
     let type_assignable_record_fields =
         crate::builtin_type_checker::create_type_assignable_record_fields_part(&core_id);
+    let union_variant_type_lookup =
+        crate::builtin_type_checker::create_union_variant_type_lookup_part(&core_id);
+    let find_tag_in_arms = crate::builtin_type_checker::create_find_tag_in_arms_part(&core_id);
+    let check_union_exhaustiveness =
+        crate::builtin_type_checker::create_check_union_exhaustiveness_part(&core_id);
+    let type_assignable_union_variants =
+        crate::builtin_type_checker::create_type_assignable_union_variants_part(&core_id);
+    let type_check_match_arms_inner =
+        crate::builtin_type_checker::create_type_check_match_arms_inner_part(&core_id);
+    let type_check_match_arms =
+        crate::builtin_type_checker::create_type_check_match_arms_part(&core_id);
     let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&core_id);
     let type_check = crate::builtin_type_checker::create_type_check_part(&core_id);
     let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&core_id);
@@ -102,6 +113,12 @@ fn test_self_hosting_parts_registration() {
         record_field_type_lookup,
         check_record_fields,
         type_assignable_record_fields,
+        union_variant_type_lookup,
+        find_tag_in_arms,
+        check_union_exhaustiveness,
+        type_assignable_union_variants,
+        type_check_match_arms_inner,
+        type_check_match_arms,
         type_assignable,
         type_check,
         type_check_against,

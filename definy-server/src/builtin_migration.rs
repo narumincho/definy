@@ -361,12 +361,28 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
     core_parts.push(
         crate::builtin_type_checker::create_type_assignable_record_fields_part(&core_module_id),
     );
+    core_parts
+        .push(crate::builtin_type_checker::create_union_variant_type_lookup_part(&core_module_id));
+    core_parts.push(crate::builtin_type_checker::create_find_tag_in_arms_part(
+        &core_module_id,
+    ));
+    core_parts
+        .push(crate::builtin_type_checker::create_check_union_exhaustiveness_part(&core_module_id));
+    core_parts.push(
+        crate::builtin_type_checker::create_type_assignable_union_variants_part(&core_module_id),
+    );
+    core_parts.push(
+        crate::builtin_type_checker::create_type_check_match_arms_inner_part(&core_module_id),
+    );
+    core_parts
+        .push(crate::builtin_type_checker::create_type_check_match_arms_part(&core_module_id));
     core_parts.push(crate::builtin_type_checker::create_type_assignable_part(
         &core_module_id,
     ));
     core_parts.push(crate::builtin_type_checker::create_type_check_part(
         &core_module_id,
     ));
+
     core_parts.push(crate::builtin_type_checker::create_type_check_against_part(
         &core_module_id,
     ));

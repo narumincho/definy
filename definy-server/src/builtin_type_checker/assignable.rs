@@ -179,6 +179,8 @@ pub fn create_type_assignable_part(core_module_id: &EventHashId) -> ModulePartEn
     let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
     let assignable_record_fields_hash =
         derive_module_part_id(core_module_id, "type-assignable-record-fields");
+    let assignable_union_variants_hash =
+        derive_module_part_id(core_module_id, "type-assignable-union-variants");
 
     let actual_type = Expression::Variable(VariableExpression { variable_id: 0 });
     let expected_type = Expression::Variable(VariableExpression { variable_id: 1 });
@@ -282,12 +284,46 @@ pub fn create_type_assignable_part(core_module_id: &EventHashId) -> ModulePartEn
     });
 
     let match_actual_for_fn = Expression::Match(MatchExpression {
-        target: Box::new(actual_type),
+        target: Box::new(actual_type.clone()),
         arms: vec![MatchArm {
             tag: "function".into(),
             variable_id: Some(act_fn_var),
             variable_name: Some("act_fn".into()),
             body: Box::new(fn_subtyping),
+        }],
+        default: Some(Box::new(Expression::Boolean(BooleanExpression {
+            value: false,
+        }))),
+    });
+
+    // 4. 直和型（Union）のサブタイピング照合
+    // 実際のバリアント群が期待されるバリアント群の部分集合であることを検証
+    let exp_union_var = 24;
+    let act_union_var = 25;
+    let check_union_subtyping = Expression::Call(CallExpression {
+        function: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::Call(CallExpression {
+                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                    assignable_union_variants_hash,
+                ))),
+                argument: Box::new(Expression::Variable(VariableExpression {
+                    variable_id: act_union_var,
+                })),
+            })),
+            argument: Box::new(Expression::Variable(VariableExpression {
+                variable_id: exp_union_var,
+            })),
+        })),
+        argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
+    });
+
+    let match_actual_for_union = Expression::Match(MatchExpression {
+        target: Box::new(actual_type),
+        arms: vec![MatchArm {
+            tag: "union".into(),
+            variable_id: Some(act_union_var),
+            variable_name: Some("act_variants".into()),
+            body: Box::new(check_union_subtyping),
         }],
         default: Some(Box::new(Expression::Boolean(BooleanExpression {
             value: false,
@@ -308,6 +344,12 @@ pub fn create_type_assignable_part(core_module_id: &EventHashId) -> ModulePartEn
                 variable_id: Some(exp_fn_var),
                 variable_name: Some("exp_fn".into()),
                 body: Box::new(match_actual_for_fn),
+            },
+            MatchArm {
+                tag: "union".into(),
+                variable_id: Some(exp_union_var),
+                variable_name: Some("exp_variants".into()),
+                body: Box::new(match_actual_for_union),
             },
         ],
         default: Some(Box::new(Expression::Boolean(BooleanExpression {

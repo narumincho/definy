@@ -14,6 +14,34 @@ use super::helpers::{
     get_test_account_and_mod_id, test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
 };
 
+fn all_type_checker_parts(
+    mod_id: &definy_event::EventHashId,
+) -> Vec<definy_event::event::ModulePartEntry> {
+    vec![
+        crate::builtin_type_checker::create_type_error_part(mod_id),
+        crate::builtin_type_checker::create_type_result_part(mod_id),
+        crate::builtin_type_checker::create_type_env_part(mod_id),
+        crate::builtin_type_checker::create_type_env_lookup_part(mod_id),
+        crate::builtin_type_checker::create_type_env_lookup_inner_part(mod_id),
+        crate::builtin_type_checker::create_type_env_extend_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
+        crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
+        crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_union_variant_type_lookup_part(mod_id),
+        crate::builtin_type_checker::create_find_tag_in_arms_part(mod_id),
+        crate::builtin_type_checker::create_check_union_exhaustiveness_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_union_variants_part(mod_id),
+        crate::builtin_type_checker::create_type_check_match_arms_inner_part(mod_id),
+        crate::builtin_type_checker::create_type_check_match_arms_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_part(mod_id),
+        crate::builtin_type_checker::create_type_check_part(mod_id),
+        crate::builtin_type_checker::create_type_check_against_part(mod_id),
+    ]
+}
+
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
 #[test]
 fn test_self_hosted_meta_circular_eval_ast_execution() {
@@ -119,53 +147,10 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
 #[test]
 fn test_self_hosted_type_checker_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-
-    let type_err = crate::builtin_type_checker::create_type_error_part(&mod_id);
-    let type_res = crate::builtin_type_checker::create_type_result_part(&mod_id);
-    let type_env = crate::builtin_type_checker::create_type_env_part(&mod_id);
-    let type_env_lookup = crate::builtin_type_checker::create_type_env_lookup_part(&mod_id);
-    let type_env_lookup_inner =
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
-    let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
-    let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
-    let type_equals_record_fields =
-        crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
-    let type_equals_union_variants =
-        crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
-    let type_assignable_record_fields =
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(&mod_id);
-    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&mod_id);
-    let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
-    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
-    let rec_type_lookup =
-        crate::builtin_type_checker::create_record_field_type_lookup_part(&mod_id);
-    let check_rec_fields =
-        crate::builtin_type_checker::create_type_check_record_fields_part(&mod_id);
-
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let events = create_test_module_events(
-        account,
-        vec![
-            type_err,
-            type_res,
-            type_env,
-            type_env_lookup,
-            type_env_lookup_inner,
-            type_env_extend,
-            type_equals,
-            type_equals_record_fields,
-            type_equals_union_variants,
-            type_assignable_record_fields,
-            type_assignable,
-            type_check,
-            type_check_against,
-            rec_type_lookup,
-            check_rec_fields,
-        ],
-        126,
-    );
+    let events = create_test_module_events(account, all_type_checker_parts(&mod_id), 126);
 
     let expr_type_opt = Some(expr_type_hash);
     // Expression: 10 + 20
@@ -486,55 +471,13 @@ fn test_self_hosted_type_checker_execution() {
 #[test]
 fn test_self_hosted_validate_part_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-
-    let type_err = crate::builtin_type_checker::create_type_error_part(&mod_id);
-    let type_res = crate::builtin_type_checker::create_type_result_part(&mod_id);
-    let type_env = crate::builtin_type_checker::create_type_env_part(&mod_id);
-    let type_env_lookup = crate::builtin_type_checker::create_type_env_lookup_part(&mod_id);
-    let type_env_lookup_inner =
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
-    let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
-    let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
-    let type_equals_record_fields =
-        crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
-    let type_equals_union_variants =
-        crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
-    let type_assignable_record_fields =
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(&mod_id);
-    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&mod_id);
-    let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
-    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
-    let rec_type_lookup =
-        crate::builtin_type_checker::create_record_field_type_lookup_part(&mod_id);
-    let check_rec_fields =
-        crate::builtin_type_checker::create_type_check_record_fields_part(&mod_id);
-    let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
-
     let validate_part_hash = derive_module_part_id(&mod_id, "validate-part");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let events = create_test_module_events(
-        account,
-        vec![
-            type_err,
-            type_res,
-            type_env,
-            type_env_lookup,
-            type_env_lookup_inner,
-            type_env_extend,
-            type_equals,
-            type_equals_record_fields,
-            type_equals_union_variants,
-            type_assignable_record_fields,
-            type_assignable,
-            type_check,
-            type_check_against,
-            rec_type_lookup,
-            check_rec_fields,
-            validate_part,
-        ],
-        127,
-    );
+    let mut parts = all_type_checker_parts(&mod_id);
+    parts.push(crate::builtin_validator::create_validate_part_part(&mod_id));
+
+    let events = create_test_module_events(account, parts, 127);
 
     let expr_type_opt = Some(expr_type_hash);
     let sample_expr = ast_add(
@@ -975,59 +918,19 @@ fn test_self_hosted_optimize_expression_execution() {
 #[test]
 fn test_self_hosted_validate_module_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-
-    let type_err = crate::builtin_type_checker::create_type_error_part(&mod_id);
-    let type_res = crate::builtin_type_checker::create_type_result_part(&mod_id);
-    let type_env = crate::builtin_type_checker::create_type_env_part(&mod_id);
-    let type_env_lookup = crate::builtin_type_checker::create_type_env_lookup_part(&mod_id);
-    let type_env_lookup_inner =
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(&mod_id);
-    let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&mod_id);
-    let type_equals = crate::builtin_type_checker::create_type_equals_part(&mod_id);
-    let type_equals_record_fields =
-        crate::builtin_type_checker::create_type_equals_record_fields_part(&mod_id);
-    let type_equals_union_variants =
-        crate::builtin_type_checker::create_type_equals_union_variants_part(&mod_id);
-    let type_assignable_record_fields =
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(&mod_id);
-    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&mod_id);
-    let type_check = crate::builtin_type_checker::create_type_check_part(&mod_id);
-    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&mod_id);
-    let rec_type_lookup =
-        crate::builtin_type_checker::create_record_field_type_lookup_part(&mod_id);
-    let check_rec_fields =
-        crate::builtin_type_checker::create_type_check_record_fields_part(&mod_id);
-    let validate_part = crate::builtin_validator::create_validate_part_part(&mod_id);
-    let validate_parts = crate::builtin_validator::create_validate_parts_part(&mod_id);
-    let validate_module = crate::builtin_validator::create_validate_module_part(&mod_id);
-
     let validate_module_hash = derive_module_part_id(&mod_id, "validate-module");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let events = create_test_module_events(
-        account,
-        vec![
-            type_err,
-            type_res,
-            type_env,
-            type_env_lookup,
-            type_env_lookup_inner,
-            type_env_extend,
-            type_equals,
-            type_equals_record_fields,
-            type_equals_union_variants,
-            type_assignable_record_fields,
-            type_assignable,
-            type_check,
-            type_check_against,
-            rec_type_lookup,
-            check_rec_fields,
-            validate_part,
-            validate_parts,
-            validate_module,
-        ],
-        130,
-    );
+    let mut parts = all_type_checker_parts(&mod_id);
+    parts.push(crate::builtin_validator::create_validate_part_part(&mod_id));
+    parts.push(crate::builtin_validator::create_validate_parts_part(
+        &mod_id,
+    ));
+    parts.push(crate::builtin_validator::create_validate_module_part(
+        &mod_id,
+    ));
+
+    let events = create_test_module_events(account, parts, 130);
 
     let expr_type_opt = Some(expr_type_hash.clone());
     let valid_part_def = Expression::TypeLiteral(TypeLiteralExpression {

@@ -70,7 +70,34 @@ pub fn create_type_error_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
                         items: vec![TypeLiteralItemExpression {
                             key: "actual".into(),
+                            value: Box::new(type_ast_ref.clone()),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "not_a_union".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "actual".into(),
                             value: Box::new(type_ast_ref),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "variant_not_found".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "tag".into(),
+                            value: Box::new(Expression::TypeString),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "non_exhaustive_match".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "missing_tag".into(),
+                            value: Box::new(Expression::TypeString),
                         }],
                     }))),
                 },

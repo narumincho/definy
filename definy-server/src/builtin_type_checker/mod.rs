@@ -4,6 +4,8 @@ pub mod check_against;
 pub mod env;
 pub mod record_ops;
 pub mod types;
+pub mod union_check;
+pub mod union_lookup;
 
 pub use assignable::*;
 pub use check::*;
@@ -11,3 +13,5 @@ pub use check_against::*;
 pub use env::*;
 pub use record_ops::*;
 pub use types::*;
+pub use union_check::*;
+pub use union_lookup::*;

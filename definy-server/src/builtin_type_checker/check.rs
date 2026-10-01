@@ -21,6 +21,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
         derive_module_part_id(core_module_id, "record-field-type-lookup");
     let check_record_fields_hash =
         derive_module_part_id(core_module_id, "type-check-record-fields");
+    let type_check_match_arms_hash = derive_module_part_id(core_module_id, "type-check-match-arms");
 
     fn ok_type(t: Expression) -> Expression {
         Expression::Variant(VariantExpression {
@@ -898,6 +899,12 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
         &type_check_hash,
         record_field_type_lookup_hash,
         check_record_fields_hash,
+    ));
+
+    // Union operations: variant, match
+    arms.extend(super::union_check::create_union_check_arms(
+        &type_check_hash,
+        &type_check_match_arms_hash,
     ));
 
     // Default arm: unknown_error
