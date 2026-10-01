@@ -126,12 +126,35 @@ pub fn SearchableDropdown(
                 style: "width: 100%; text-align: left; {button_padding} background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; anchor-name: {anchor_name}; box-sizing: border-box;",
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "show",
+                onclick: {
+                    let current_label = current_label.clone();
+                    let panel_id = panel_id.clone();
+                    let name = name.clone();
+                    move |_| {
+                        let query = if current_label != "Select..." {
+                            current_label.clone()
+                        } else {
+                            String::new()
+                        };
+                        search_query.set(query);
+                        highlighted_index.set(None);
+                        dom_show_popover_and_focus(&panel_id, &format!("search-{}", name));
+                    }
+                },
                 onkeydown: {
                     let panel_id = panel_id.clone();
                     let name = name.clone();
+                    let current_label = current_label.clone();
                     move |evt: KeyboardEvent| {
                         if evt.key() == Key::ArrowDown {
                             evt.prevent_default();
+                            let query = if current_label != "Select..." {
+                                current_label.clone()
+                            } else {
+                                String::new()
+                            };
+                            search_query.set(query);
+                            highlighted_index.set(None);
                             dom_show_popover_and_focus(&panel_id, &format!("search-{}", name));
                         }
                     }
@@ -155,6 +178,14 @@ pub fn SearchableDropdown(
                     name: "search-{name}",
                     value: "{search_query}",
                     style: "width: 100%; padding: 0.4rem 0.6rem; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); outline: none; box-sizing: border-box;",
+                    onfocus: {
+                        let current_label = current_label.clone();
+                        move |_| {
+                            if search_query.read().is_empty() && current_label != "Select..." {
+                                search_query.set(current_label.clone());
+                            }
+                        }
+                    },
                     oninput: move |evt: FormEvent| {
                         search_query.set(evt.value());
                         highlighted_index.set(Some(0));

@@ -472,11 +472,12 @@ fn PartEditorCard(
                         }
                     }
                 }
-                crate::expression_editor::ExpressionEditorContainer {
+                crate::tree_layout::ExpressionTreeEditor {
                     state: state.clone(),
                     context: context.clone(),
                     expression: part_type_expr,
                     expected_type: Some(crate::expression_editor::ExpressionType::Type),
+                    max_width: 800.0,
                 }
             }
 
@@ -489,15 +490,11 @@ fn PartEditorCard(
                         "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
                     }
                 }
-                crate::expression_editor::ExpressionEditorContainer {
+                crate::tree_layout::ExpressionTreeEditor {
                     state: state.clone(),
                     context: context.clone(),
                     expression,
                     expected_type,
-                }
-                crate::tree_layout::ExpressionTreeSummary {
-                    expression: expression.read().clone(),
-                    initial_expanded: true,
                     max_width: 800.0,
                 }
                 {
