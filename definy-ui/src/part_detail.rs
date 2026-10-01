@@ -502,7 +502,8 @@ fn PartEditorCard(
                             };
                             rsx! {
                                 div {
-                                    class: "mono",
+                                    class: "mono eval-result",
+                                    "data-eval-result": "true",
                                     style: "font-size: 0.86rem; word-break: break-word; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);",
                                     "{eval}"
                                 }

@@ -134,7 +134,7 @@ fn LoginView(context: PageContext) -> Element {
                     }
                     dialog_close();
                     error_msg.set(None);
-                }
+                } else {
                     error_msg
                         .set(
                             Some(

@@ -8,10 +8,13 @@ use crate::keyboard_nav;
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    dioxus_web::launch::launch_cfg(
-        AppRoot,
-        dioxus_web::Config::new().rootname("main").hydrate(true),
-    );
+    if let Some(main_el) = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id("main"))
+    {
+        main_el.set_inner_html("");
+    }
+    dioxus_web::launch::launch_cfg(AppRoot, dioxus_web::Config::new().rootname("main"));
 }
 
 static SSR_INITIAL_STATE_TEXT: std::sync::LazyLock<Option<String>> =
@@ -92,6 +95,12 @@ fn AppRoot() -> Element {
         setup_keydown_listener(tx.clone());
         setup_click_listener(tx.clone());
         setup_popstate_listener(tx.clone());
+
+        if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+            if let Some(body) = doc.body() {
+                let _ = body.set_attribute("data-client-ready", "true");
+            }
+        }
 
         spawn(async move {
             use futures_util::StreamExt;
@@ -248,9 +257,7 @@ async fn fetch_missing_events_async(
     context: &definy_ui::PageContext,
 ) {
     match &context.location {
-        Some(definy_ui::Location::Part(hash))
-        | Some(definy_ui::Location::Event(hash))
-        | Some(definy_ui::Location::Module(hash)) => {
+        Some(definy_ui::Location::Event(hash)) | Some(definy_ui::Location::Module(hash)) => {
             let hash = hash.clone();
             if let Ok(Some((event_hash, event))) = definy_ui::fetch::get_event(&hash).await {
                 state_signal.write().event_cache.insert(event_hash, event);

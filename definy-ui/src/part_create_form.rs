@@ -357,11 +357,11 @@ pub fn PartDefinitionFormView(
                             ("var(--error-bg)", "var(--error)", "#fca5a5")
                         } else {
                             ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
-                        }
-                        }
+                        };
                         rsx! {
                             div {
-                                class: "mono",
+                                class: "mono eval-result",
+                                "data-eval-result": "true",
                                 style: "padding: 0.5rem 0.8rem; font-size: 0.84rem; background: {bg}; border: 1px solid {border}; color: {text_color}; border-radius: var(--radius-sm); word-break: break-word;",
                                 "{result}"
                             }
