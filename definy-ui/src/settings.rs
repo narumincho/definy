@@ -380,7 +380,10 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
                                         onclick: move |_| {
                                             crate::navigator_credential::credential_clear();
                                             let mut dispatch = use_context::<Signal<AppState>>();
-                                            dispatch.write().current_key = None;
+                                            let mut next = dispatch.read().clone();
+                                            next.current_key = None;
+                                            next.is_auth_loading = false;
+                                            dispatch.set(next);
                                         },
                                         {context.language.label("Log Out", "ログアウト", "Elsaluti")}
                                     }

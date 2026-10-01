@@ -170,6 +170,7 @@ pub struct AppState {
         >,
     >,
     pub event_list_state: EventListState,
+    pub is_auth_loading: bool,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub force_offline: bool,
     pub local_event_queue: LocalEventQueueState,
@@ -198,6 +199,7 @@ impl Default for AppState {
                 filter_event_type: None,
             },
             focused_path: None,
+            is_auth_loading: true,
             current_key: None,
             force_offline: false,
             local_event_queue: LocalEventQueueState {
@@ -333,6 +335,7 @@ pub fn build_initial_state(
             has_more: event_list_has_more,
             filter_event_type,
         },
+        is_auth_loading: current_key.is_none(),
         current_key,
         force_offline: false,
         local_event_queue: LocalEventQueueState {

@@ -130,7 +130,10 @@ fn LoginView(context: PageContext) -> Element {
                         });
                     }
                     if let Some(mut state_sig) = try_use_context::<Signal<AppState>>() {
-                        state_sig.write().current_key = Some(signing_key);
+                        let mut next = state_sig.read().clone();
+                        next.current_key = Some(signing_key);
+                        next.is_auth_loading = false;
+                        state_sig.set(next);
                     }
                     dialog_close();
                     error_msg.set(None);
@@ -309,6 +312,7 @@ fn CreateAccountView(context: PageContext) -> Element {
                         };
                         let mut next = state_sig.read().clone();
                         next.current_key = Some(key.clone());
+                        next.is_auth_loading = false;
                         next.event_cache.insert(event_hash.clone(), decoded_event);
                         if !next.event_list_state.event_hashes.contains(&event_hash) {
                             next.event_list_state.event_hashes.insert(0, event_hash);

@@ -290,11 +290,17 @@ async fn browser_login_dialog_toggle_password_and_error() -> Result<(), Box<dyn 
         }
         return false;
     "#;
-    let opened = webdriver.execute_script(open_dialog_script, vec![]).await?;
-    assert!(
-        opened.as_bool().unwrap_or(false),
-        "Could not open login dialog"
-    );
+    let mut opened = false;
+    for _ in 0..40 {
+        if let Ok(res) = webdriver.execute_script(open_dialog_script, vec![]).await {
+            if res.as_bool().unwrap_or(false) {
+                opened = true;
+                break;
+            }
+        }
+        sleep(Duration::from_millis(100)).await;
+    }
+    assert!(opened, "Could not open login dialog");
     sleep(Duration::from_millis(400)).await;
 
     // password input の初期 type が "password" であることを確認

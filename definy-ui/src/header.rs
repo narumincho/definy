@@ -114,7 +114,15 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
             div { style: "display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0;",
                 ConnectionStatusIndicator { state: state.clone(), context: context.clone() }
                 LanguageDropdown { state: state.clone(), context: context.clone() }
-                if let Some(secret_key) = current_key_opt {
+                if state.is_auth_loading {
+                    div {
+                        class: "auth-loading-placeholder",
+                        style: "display: inline-flex; align-items: center; justify-content: center; height: 1.95rem; padding: 0 0.85rem; font-size: 0.8rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-sm); letter-spacing: 0.02em;",
+                        span {
+                            "{context.language.label(\"Checking...\", \"確認中...\", \"Kontrolante...\")}"
+                        }
+                    }
+                } else if let Some(secret_key) = current_key_opt {
                     {
                         let account_id = definy_event::event::AccountId(secret_key.verifying_key());
                         let account_name = state
@@ -433,10 +441,62 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
                 onclick: move |_| {
                     crate::navigator_credential::credential_clear();
                     let mut dispatch = use_context::<Signal<AppState>>();
-                    dispatch.write().current_key = None;
+                    let mut next = dispatch.read().clone();
+                    next.current_key = None;
+                    next.is_auth_loading = false;
+                    dispatch.set(next);
                 },
                 "{context.language.label(\"Log Out\", \"ログアウト\", \"Elsaluti\")}"
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_header_initial_state_shows_checking() {
+        let state = crate::build_initial_state(vec![], false, false, None, None, true);
+        assert!(state.is_auth_loading);
+        assert!(state.current_key.is_none());
+
+        let context = crate::PageContext::from_path_and_query("/", "", Some("ja"));
+        let mut renderer = dioxus_ssr::Renderer::new();
+        let html = renderer.render_element(rsx! {
+            HeaderView { state, context }
+        });
+
+        assert!(
+            html.contains("auth-loading-placeholder") || html.contains("確認中..."),
+            "Initial SSR header should display checking placeholder, got: {}",
+            html
+        );
+        assert!(
+            !html.contains("commandfor=\"login-or-create-account-dialog\""),
+            "Initial SSR header must not display login button immediately, got: {}",
+            html
+        );
+    }
+
+    #[test]
+    fn test_header_unauthenticated_shows_login_button() {
+        let mut state = crate::build_initial_state(vec![], false, false, None, None, true);
+        state.is_auth_loading = false;
+        state.current_key = None;
+
+        let context = crate::PageContext::from_path_and_query("/", "", Some("ja"));
+        let mut renderer = dioxus_ssr::Renderer::new();
+        let html = renderer.render_element(rsx! {
+            HeaderView { state, context }
+        });
+
+        assert!(
+            html.contains("ログイン")
+                && html.contains("commandfor=\"login-or-create-account-dialog\""),
+            "Resolved unauthenticated header should display login button, got: {}",
+            html
+        );
     }
 }

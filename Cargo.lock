@@ -1093,6 +1093,7 @@ dependencies = [
  "definy-core",
  "definy-event",
  "dioxus",
+ "dioxus-ssr",
  "ed25519-dalek",
  "hex",
  "js-sys",

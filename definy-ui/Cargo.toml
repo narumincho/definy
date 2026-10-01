@@ -56,3 +56,5 @@ serde_urlencoded = { workspace = true }
 sha2 = { workspace = true }
 prost = { workspace = true }
 
+[dev-dependencies]
+dioxus-ssr = { workspace = true }

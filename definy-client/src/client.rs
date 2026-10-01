@@ -113,10 +113,20 @@ fn AppRoot() -> Element {
             let query_params = definy_ui::query::parse_query(Some(search_query.as_str()));
             let filter_for_fetch = query_params.event_type;
 
-            if let Some(key) = definy_ui::navigator_credential::credential_get_sync() {
-                state_signal.write().current_key = Some(key);
+            let detected_key = if let Some(key) =
+                definy_ui::navigator_credential::credential_get_sync()
+            {
+                Some(key)
             } else if let Some(password) = definy_ui::navigator_credential::credential_get().await {
-                state_signal.write().current_key = Some(password);
+                Some(password)
+            } else {
+                None
+            };
+            {
+                let mut next = state_signal.read().clone();
+                next.current_key = detected_key;
+                next.is_auth_loading = false;
+                state_signal.set(next);
             }
 
             if let Some(decoded_ssr_state) = ssr_state.as_ref() {
