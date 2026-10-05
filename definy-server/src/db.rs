@@ -322,6 +322,7 @@ pub struct DeploymentRecord {
     pub app_url: String,
     pub region: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
+    pub wasm_hash: Option<String>,
 }
 
 pub async fn save_deployment(
@@ -586,6 +587,7 @@ mod tests {
             app_url: "https://definy.fly.dev".to_string(),
             region: "nrt".to_string(),
             created_at: chrono::Utc::now(),
+            wasm_hash: Some("wasm_hash_456".to_string()),
         };
 
         save_deployment(&db, rec.clone()).await.unwrap();
@@ -597,6 +599,7 @@ mod tests {
         assert_eq!(fetched.machine_id, rec.machine_id);
         assert_eq!(fetched.status, "started");
         assert_eq!(fetched.commit_hash, rec.commit_hash);
+        assert_eq!(fetched.wasm_hash, Some("wasm_hash_456".to_string()));
 
         let list = get_deployments(&db, Some(10)).await.unwrap();
         assert_eq!(list.len(), 1);

@@ -166,11 +166,25 @@ pub fn DeploymentsView(context: PageContext) -> Element {
 
                     div { style: "background: #090d16; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; font-family: monospace; font-size: 0.84rem; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap;",
                         {
-                            "curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployInstance \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"commitHash\": \"latest\", \"region\": \"nrt\"}'"
+                            "curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployInstance \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"wasmHash\": \"<hash>\", \"region\": \"nrt\"}'"
                         }
                     }
 
                     div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;",
+                        div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
+                            div { style: "font-weight: 600; color: #a855f7; margin-bottom: 0.25rem;",
+                                "wasmHash (recommended)"
+                            }
+                            div { style: "color: var(--text-secondary);",
+                                {
+                                    lang.label(
+                                        "Virtual Wasm hash served on-demand. Deploys in seconds without Docker builds.",
+                                        "オンデマンド仮想 Wasm ハッシュ。Docker ビルドなしで即座に数秒で起動。",
+                                        "Virtuala Wasm-hako sen Docker-konstruo.",
+                                    )
+                                }
+                            }
+                        }
                         div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
                             div { style: "font-weight: 600; color: #93c5fd; margin-bottom: 0.25rem;",
                                 "commitHash (optional)"

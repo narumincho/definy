@@ -28,6 +28,7 @@ DEFINE FIELD IF NOT EXISTS status ON TABLE deployments TYPE string;
 DEFINE FIELD IF NOT EXISTS url ON TABLE deployments TYPE string;
 DEFINE FIELD IF NOT EXISTS app_url ON TABLE deployments TYPE string;
 DEFINE FIELD IF NOT EXISTS region ON TABLE deployments TYPE string;
+DEFINE FIELD IF NOT EXISTS wasm_hash ON TABLE deployments TYPE option<string>;
 DEFINE FIELD IF NOT EXISTS created_at ON TABLE deployments TYPE datetime;
 
 DEFINE INDEX IF NOT EXISTS idx_deployments_created_at ON TABLE deployments COLUMNS created_at;

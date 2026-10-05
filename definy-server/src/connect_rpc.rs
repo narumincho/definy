@@ -522,17 +522,31 @@ pub async fn handle_deploy_instance(
         }
     };
 
-    let image =
-        std::env::var("FLY_IMAGE").unwrap_or_else(|_| "registry.fly.io/definy:latest".to_string());
-
-    let mut env_vars = std::collections::HashMap::new();
-    env_vars.insert("PORT".to_string(), "8000".to_string());
-    if let Some(ref commit_hash) = req.commit_hash {
-        env_vars.insert("DEFINY_COMMIT_HASH".to_string(), commit_hash.clone());
-    }
+    let (image, port, env_vars) = if let Some(ref wasm_hash) = req.wasm_hash {
+        // 仮想 Wasm 配信 & 共通 runner モード (Docker ビルド不要)
+        let runner_image = std::env::var("FLY_RUNNER_IMAGE")
+            .unwrap_or_else(|_| "ghcr.io/narumincho/definy-runner:latest".to_string());
+        let server_url =
+            std::env::var("DEFINY_SERVER_URL").unwrap_or_else(|_| fly_client.app_url());
+        let mut vars = std::collections::HashMap::new();
+        vars.insert("PORT".to_string(), "8080".to_string());
+        vars.insert("DEFINY_SERVER_URL".to_string(), server_url);
+        vars.insert("DEFINY_WASM_HASH".to_string(), wasm_hash.clone());
+        (runner_image, 8080, vars)
+    } else {
+        // 従来のコミットハッシュベースモード
+        let img = std::env::var("FLY_IMAGE")
+            .unwrap_or_else(|_| "registry.fly.io/definy:latest".to_string());
+        let mut vars = std::collections::HashMap::new();
+        vars.insert("PORT".to_string(), "8000".to_string());
+        if let Some(ref commit_hash) = req.commit_hash {
+            vars.insert("DEFINY_COMMIT_HASH".to_string(), commit_hash.clone());
+        }
+        (img, 8000, vars)
+    };
 
     let machine_config =
-        crate::fly_machines::create_default_definy_machine_config(&image, env_vars, 8000);
+        crate::fly_machines::create_default_definy_machine_config(&image, env_vars, port);
 
     let create_req = crate::fly_machines::CreateMachineRequest {
         name: req.machine_name.clone(),
@@ -553,6 +567,7 @@ pub async fn handle_deploy_instance(
                     app_url: app_url.clone(),
                     region: machine.region.clone(),
                     created_at: chrono::Utc::now(),
+                    wasm_hash: req.wasm_hash.clone(),
                 };
                 if let Err(e) = crate::db::save_deployment(&db, deployment_record).await {
                     eprintln!("Failed to save deployment to DB: {:?}", e);
@@ -700,6 +715,7 @@ pub async fn handle_list_deployments(
             app_url: r.app_url,
             region: r.region,
             created_at_rfc3339: r.created_at.to_rfc3339(),
+            wasm_hash: r.wasm_hash,
         })
         .collect();
 

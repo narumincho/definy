@@ -152,9 +152,10 @@ sequenceDiagram
   - [x] 外部から一度だけ取得した汎用 WASI ランタイム（Alpine + wasmtime
         等）が起動時に仮想 Wasm を取得して `wasmtime serve` で動く基盤を定義
         (`runner/`)。
-  - [ ] fly.io Machines API 呼び出し時に仮想 Wasm
+  - [x] fly.io Machines API 呼び出し時に仮想 Wasm
         のハッシュを環境変数として渡し、Docker
-        ビルドなしでミリ秒〜数秒での高速デプロイを実現。
+        ビルドなしでミリ秒〜数秒での高速デプロイを実現
+        (`handle_deploy_instance`)。
 
 ### Step 5: WASI 0.3 Capability I/O との統合 (自己記述化)
 

@@ -188,8 +188,12 @@ exec wasmtime serve /tmp/app.wasm --addr "0.0.0.0:${PORT:-8080}"
 
 ### Phase 3: fly.io Machines API とのパラメータ連携
 
-- [ ] `DeployInstanceRequest` のオプションに `wasm_hash` や `entrypoint_module`
-      を追加。
-- [ ] Machines API に渡す環境変数（`DEFINY_SERVER_URL`,
-      `DEFINY_WASM_HASH`）を自動設定し、共通ランタイムを起動。
-- [ ] UI 上で「Docker ビルドなしで即座に起動した子インスタンス」の URL を案内。
+- [x] `DeployInstanceRequest` および `DeploymentItem` に `wasm_hash` を追加
+      (`proto/definy/v1/deploy.proto`, `definy-event/src/rpc.rs`)。
+- [x] `handle_deploy_instance` にて `wasm_hash` 指定時に共通 runner
+      イメージ、ポート 8080、および環境変数（`DEFINY_SERVER_URL`,
+      `DEFINY_WASM_HASH`）を自動設定して Machine を起動し、SurrealDB に永続化。
+- [x] `definy-ui` (`/deployments`) 上で `wasmHash`
+      による推奨デプロイ例とパラメータ解説を案内。
+- [x] Connect-RPC 経由での仮想 Wasm デプロイ E2E テスト
+      (`test_connect_rpc_deploy_service_success`) にて検証・パス。

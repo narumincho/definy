@@ -21,6 +21,8 @@ message DeployInstanceRequest {
   optional string machine_name = 2;
   // Target region (e.g. "nrt", "iad", defaults to server region)
   optional string region = 3;
+  // Content hash of virtual WebAssembly binary to execute in generic runner
+  optional string wasm_hash = 4;
 }
 
 message DeployInstanceResponse {
@@ -53,6 +55,7 @@ message DeploymentItem {
   string app_url = 5;
   string region = 6;
   string created_at_rfc3339 = 7;
+  optional string wasm_hash = 8;
 }
 
 message ListDeploymentsRequest {

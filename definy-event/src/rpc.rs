@@ -276,6 +276,10 @@ pub struct DeployInstanceRequest {
     #[prost(string, optional, tag = "3")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+
+    #[prost(string, optional, tag = "4")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wasm_hash: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
@@ -364,6 +368,10 @@ pub struct DeploymentItem {
     #[prost(string, tag = "7")]
     #[serde(default)]
     pub created_at_rfc3339: String,
+
+    #[prost(string, optional, tag = "8")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wasm_hash: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
@@ -463,6 +471,7 @@ mod tests {
             commit_hash: Some("commit_abc123".into()),
             machine_name: Some("test-machine".into()),
             region: Some("nrt".into()),
+            wasm_hash: Some("wasm_hash_789".into()),
         };
         let mut buf = Vec::new();
         req.encode(&mut buf).unwrap();

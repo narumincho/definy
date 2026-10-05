@@ -468,6 +468,7 @@ async fn test_connect_rpc_deploy_service_not_configured() {
         commit_hash: Some("test_hash_123".into()),
         machine_name: None,
         region: None,
+        wasm_hash: None,
     };
     let body = Bytes::from(serde_json::to_vec(&deploy_req).unwrap());
     let res = handle_deploy_instance(State(state), headers, body).await;
@@ -488,8 +489,12 @@ async fn test_connect_rpc_deploy_service_success() {
                 |Path(app): Path<String>,
                  Json(body): Json<crate::fly_machines::CreateMachineRequest>| async move {
                     assert_eq!(app, "definy-test-app");
+                    let id = match body.name.as_deref() {
+                        Some("test-wasm-machine") => "m_test_wasm_1".to_string(),
+                        _ => "m_test_999".to_string(),
+                    };
                     let created = FlyMachine {
-                        id: "m_test_999".to_string(),
+                        id,
                         name: body.name.unwrap_or_else(|| "auto-machine".to_string()),
                         state: "started".to_string(),
                         region: body.region.unwrap_or_else(|| "nrt".to_string()),
@@ -556,6 +561,7 @@ async fn test_connect_rpc_deploy_service_success() {
         commit_hash: Some("commit_sha_abc".into()),
         machine_name: Some("test-machine-1".into()),
         region: Some("nrt".into()),
+        wasm_hash: None,
     };
     let deploy_body = Bytes::from(serde_json::to_vec(&deploy_req).unwrap());
     let deploy_res =
@@ -588,7 +594,19 @@ async fn test_connect_rpc_deploy_service_success() {
     assert_eq!(status_data.region, "nrt");
     assert_eq!(status_data.url, "https://definy-test-app.fly.dev");
 
-    // 4. ListDeployments (DB should have saved the deployment record!)
+    // 4. Deploy with wasm_hash (Phase 3: Virtual Wasm & Runner Mode)
+    let wasm_deploy_req = DeployInstanceRequest {
+        commit_hash: None,
+        machine_name: Some("test-wasm-machine".into()),
+        region: Some("nrt".into()),
+        wasm_hash: Some("virtual_wasm_sha256_xyz".into()),
+    };
+    let wasm_deploy_body = Bytes::from(serde_json::to_vec(&wasm_deploy_req).unwrap());
+    let wasm_deploy_res =
+        handle_deploy_instance(State(state.clone()), headers.clone(), wasm_deploy_body).await;
+    assert_eq!(wasm_deploy_res.status(), StatusCode::OK);
+
+    // 5. ListDeployments (DB should have saved both deployment records!)
     let list_req = ListDeploymentsRequest { limit: Some(10) };
     let list_body = Bytes::from(serde_json::to_vec(&list_req).unwrap());
     let list_res = handle_list_deployments(State(state), headers, list_body).await;
@@ -598,11 +616,16 @@ async fn test_connect_rpc_deploy_service_success() {
         .await
         .unwrap();
     let list_data: ListDeploymentsResponse = serde_json::from_slice(&list_bytes).unwrap();
-    assert_eq!(list_data.deployments.len(), 1);
-    assert_eq!(list_data.deployments[0].machine_id, "m_test_999");
+    assert_eq!(list_data.deployments.len(), 2);
+
+    let wasm_deployment = list_data
+        .deployments
+        .iter()
+        .find(|d| d.wasm_hash.as_deref() == Some("virtual_wasm_sha256_xyz"))
+        .expect("Virtual wasm deployment must be present in DB");
     assert_eq!(
-        list_data.deployments[0].commit_hash,
-        Some("commit_sha_abc".into())
+        wasm_deployment.wasm_hash,
+        Some("virtual_wasm_sha256_xyz".into())
     );
-    assert_eq!(list_data.deployments[0].status, "started");
+    assert_eq!(wasm_deployment.status, "started");
 }
