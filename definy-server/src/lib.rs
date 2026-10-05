@@ -25,6 +25,7 @@ pub mod seed;
 mod self_hosted_ast;
 #[cfg(test)]
 mod self_hosting_tests;
+pub mod virtual_file;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -45,14 +46,31 @@ use tower_http::cors::CorsLayer;
 pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
     pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
+    pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
+}
+
+impl AppState {
+    #[must_use]
+    pub fn new(
+        db: Option<Surreal<Any>>,
+        fly_client: Option<crate::fly_machines::FlyMachineClient>,
+    ) -> Self {
+        Self {
+            db: Arc::new(RwLock::new(db)),
+            fly_client,
+            virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
+        }
+    }
+
+    #[must_use]
+    pub fn test_state() -> Self {
+        Self::new(None, None)
+    }
 }
 
 pub async fn start_server() -> Result<(), anyhow::Error> {
     println!("Starting definy server (Axum)...");
-    let state = AppState {
-        db: Arc::new(RwLock::new(None)),
-        fly_client: crate::fly_machines::FlyMachineClient::from_env(),
-    };
+    let state = AppState::new(None, crate::fly_machines::FlyMachineClient::from_env());
     println!("Initializing database connection and schema...");
     match db::init_db().await {
         Ok(db) => {
@@ -120,6 +138,7 @@ pub fn create_router(state: AppState, mcp_session_manager: mcp::McpSessionManage
             <ApiDoc as utoipa::OpenApi>::openapi(),
         ))
         .merge(connect_rpc::router())
+        .merge(virtual_file::router())
         .merge(mcp::router(mcp_session_manager))
         .fallback(handle_fallback)
         .layer(cors)
@@ -127,20 +146,14 @@ pub fn create_router(state: AppState, mcp_session_manager: mcp::McpSessionManage
 }
 
 pub fn create_test_router() -> axum::Router {
-    let state = AppState {
-        db: Arc::new(RwLock::new(None)),
-        fly_client: None,
-    };
+    let state = AppState::test_state();
     let mcp_session_manager = mcp::McpSessionManager::new();
     create_router(state, mcp_session_manager)
 }
 
 pub async fn create_test_router_with_db() -> Result<axum::Router, anyhow::Error> {
     let db = db::init_db().await?;
-    let state = AppState {
-        db: Arc::new(RwLock::new(Some(db))),
-        fly_client: None,
-    };
+    let state = AppState::new(Some(db), None);
     let mcp_session_manager = mcp::McpSessionManager::new();
     Ok(create_router(state, mcp_session_manager))
 }
@@ -632,6 +645,7 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_deploy_instance,
         connect_rpc::handle_get_deploy_status,
         connect_rpc::handle_list_deployments,
+        virtual_file::handle_get_virtual_wasm,
     ),
     components(
         schemas(
@@ -660,7 +674,8 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         )
     ),
     tags(
-        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API")
+        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API"),
+        (name = "virtual-files", description = "Virtual Content-Addressed Wasm and File Serving")
     ),
     info(
         title = "definy API",
@@ -693,14 +708,12 @@ mod tests {
         assert!(json.contains("/definy.v1.DeployService/DeployInstance"));
         assert!(json.contains("/definy.v1.DeployService/GetDeployStatus"));
         assert!(json.contains("/definy.v1.DeployService/ListDeployments"));
+        assert!(json.contains("/virtual/wasm/{hash}"));
     }
 
     #[tokio::test]
     async fn test_handle_html_request_event_detail() {
-        let state = AppState {
-            db: Arc::new(RwLock::new(None)),
-            fly_client: None,
-        };
+        let state = AppState::test_state();
         let uri = axum::http::Uri::from_static(
             "/events/-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o?lang=ja",
         );

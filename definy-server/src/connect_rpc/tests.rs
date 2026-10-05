@@ -457,10 +457,7 @@ async fn test_connect_rpc_lifecycle() {
 
 #[tokio::test]
 async fn test_connect_rpc_deploy_service_not_configured() {
-    let state = AppState {
-        db: std::sync::Arc::new(tokio::sync::RwLock::new(None)),
-        fly_client: None,
-    };
+    let state = AppState::test_state();
     let mut headers = HeaderMap::new();
     headers.insert(
         axum::http::header::CONTENT_TYPE,
@@ -546,10 +543,7 @@ async fn test_connect_rpc_deploy_service_success() {
     let fly_client = FlyMachineClient::new(fly_config);
 
     let db = crate::db::init_db().await.unwrap();
-    let state = AppState {
-        db: std::sync::Arc::new(tokio::sync::RwLock::new(Some(db))),
-        fly_client: Some(fly_client),
-    };
+    let state = AppState::new(Some(db), Some(fly_client));
 
     let mut headers = HeaderMap::new();
     headers.insert(

@@ -146,8 +146,9 @@ sequenceDiagram
 - **外部依存を「wasmtime などの汎用 WASI 実行バイナリ」1つに絞り込み、他は
   definy サーバー内で完結させる**（詳細は
   [wasm-virtual-deployment.md](wasm-virtual-deployment.md) 参照）：
-  - [ ] `definy-server` に仮想 Wasm
-        ファイル配信エンドポイント（`GET /virtual/wasm/{hash}.wasm`）を実装。
+  - [x] `definy-server` に仮想 Wasm
+        ファイル配信エンドポイント（`GET /virtual/wasm/{hash}`）を実装
+        (`virtual_file.rs`)。
   - [ ] 外部から一度だけ取得した汎用 WASI ランタイム（Alpine + wasmtime
         等）が起動時に仮想 Wasm を取得して `wasmtime serve` で動く基盤を定義。
   - [ ] fly.io Machines API 呼び出し時に仮想 Wasm

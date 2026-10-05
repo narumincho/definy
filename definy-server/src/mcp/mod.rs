@@ -610,10 +610,7 @@ mod tests {
         use http_body_util::BodyExt;
         use tower::ServiceExt;
 
-        let state = AppState {
-            db: Arc::new(RwLock::new(None)),
-            fly_client: None,
-        };
+        let state = AppState::test_state();
         let app = router(McpSessionManager::new()).with_state(state);
 
         let req = axum::http::Request::builder()
@@ -645,10 +642,7 @@ mod tests {
     #[tokio::test]
     async fn test_mcp_sse_session_cleanup_on_drop() {
         let session_manager = McpSessionManager::new();
-        let state = AppState {
-            db: Arc::new(RwLock::new(None)),
-            fly_client: None,
-        };
+        let state = AppState::test_state();
 
         assert_eq!(session_manager.session_count().await, 0);
 

@@ -169,10 +169,13 @@ exec wasmtime serve /tmp/app.wasm --addr "0.0.0.0:${PORT:-8080}"
 
 ### Phase 1: definy-server での仮想 Wasm 配信エンドポイントの実装
 
-- [ ] `definy-server` のルーティングに `/virtual/wasm/:hash.wasm` を新設。
-- [ ] メモリ上または SurrealDB にキャッシュされた Wasm バイナリを
-      `application/wasm` として HTTP 配信するハンドラを実装。
-- [ ] 単体・結合テストで仮想ファイル取得が機能することを確認。
+- [x] `definy-server` のルーティングに `/virtual/wasm/{hash}` を新設
+      (`definy-server/src/virtual_file.rs`)。
+- [x] メモリ上の `VirtualFileStore` および `definy_client` フォールバックから
+      Wasm バイナリを `application/wasm` および不変キャッシュヘッダー付きで HTTP
+      配信するハンドラ (`handle_get_virtual_wasm`) を実装。
+- [x] 単体・結合テスト (`virtual_file::tests`)
+      で仮想ファイル取得が機能することを確認、OpenAPI (`ApiDoc`) に統合。
 
 ### Phase 2: wasmtime / wasi-http runner の疎通検証
 
