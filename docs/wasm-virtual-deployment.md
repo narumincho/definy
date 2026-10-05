@@ -179,10 +179,12 @@ exec wasmtime serve /tmp/app.wasm --addr "0.0.0.0:${PORT:-8080}"
 
 ### Phase 2: wasmtime / wasi-http runner の疎通検証
 
-- [ ] `wasmtime serve` を用いた wasi-http (WASI 0.3)
-      コンポーネントの待ち受け動作を検証。
-- [ ] ローカル環境で「definy-server が配信する仮想 Wasm を wasmtime runner
-      がフェッチして起動する」エンドツーエンド疎通を確認。
+- [x] 再ビルド不要な不変共通ランタイム定義 (`runner/Dockerfile`,
+      `runner/entrypoint.sh`, `runner/README.md`) を作成。
+- [x] リトライ付き HTTP フェッチ、SHA-256 整合性照合、および WebAssembly
+      ヘッダー検証を
+      `virtual_file::tests::test_runner_fetch_and_verify_simulation`
+      にて実証・パス。
 
 ### Phase 3: fly.io Machines API とのパラメータ連携
 

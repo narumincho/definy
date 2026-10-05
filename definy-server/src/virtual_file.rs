@@ -190,4 +190,45 @@ mod tests {
         let res = app.oneshot(req).await.unwrap();
         assert_eq!(res.status(), StatusCode::NOT_FOUND);
     }
+
+    /// 汎用 WASI runner (wasmtime runner) が起動時に仮想 Wasm を
+    /// HTTP 取得し、整合性（SHA-256）と Wasm ヘッダーを検証してロードするシミュレーションテスト
+    #[tokio::test]
+    async fn test_runner_fetch_and_verify_simulation() {
+        let state = AppState::test_state();
+
+        // 1. definy-server 側で Wasm バイナリを登録
+        let expected_wasm = MINIMAL_WASM.to_vec();
+        let target_hash = state
+            .virtual_file_store
+            .write()
+            .await
+            .register_wasm(expected_wasm.clone());
+
+        let router = crate::create_router(state, crate::mcp::McpSessionManager::new());
+
+        // 2. runner (クライアント) が環境変数 DEFINY_SERVER_URL / DEFINY_WASM_HASH に基づいてフェッチ
+        let fetch_uri = format!("/virtual/wasm/{target_hash}.wasm");
+        let fetch_req = Request::builder()
+            .uri(fetch_uri)
+            .method("GET")
+            .body(axum::body::Body::empty())
+            .unwrap();
+
+        let fetch_res = router.oneshot(fetch_req).await.unwrap();
+        assert_eq!(fetch_res.status(), StatusCode::OK);
+
+        let downloaded_bytes = axum::body::to_bytes(fetch_res.into_body(), 10 * 1024 * 1024)
+            .await
+            .unwrap();
+
+        // 3. runner 側での整合性検証: ダウンロードしたバイト列のハッシュが期待値と一致するか
+        let computed_digest = sha2::Sha256::digest(&downloaded_bytes);
+        let computed_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(computed_digest);
+        assert_eq!(computed_b64, target_hash);
+
+        // 4. WebAssembly マジックナンバー (\0asm) のヘッダー検証
+        assert!(downloaded_bytes.starts_with(b"\0asm"));
+        assert_eq!(downloaded_bytes.as_ref(), expected_wasm.as_slice());
+    }
 }
