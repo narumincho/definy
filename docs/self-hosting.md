@@ -116,7 +116,9 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
    [wasi-capability-io.md](file:///Users/narumi/Documents/GitHub/definy/docs/wasi-capability-io.md)
-   を参照）。IO を持つサービス全体の移行は言語 runtime の拡張後です。
+   を参照）。fly.io を活用したサービス自身のデプロイ・運用ブートストラップ構想は
+   [deployment-bootstrapping.md](file:///Users/narumi/Documents/GitHub/definy/docs/deployment-bootstrapping.md)
+   を参照。IO を持つサービス全体の移行は言語 runtime の拡張後です。
 
 ### セルフホスティング全体アーキテクチャ
 
