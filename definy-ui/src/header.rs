@@ -93,6 +93,13 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
                 NavLink {
                     context: context.clone(),
+                    target: Location::Deployments,
+                    label: "Deploy",
+                    label_ja: "デプロイ",
+                    label_eo: "Deplojo",
+                }
+                NavLink {
+                    context: context.clone(),
                     target: Location::Settings,
                     label: "Settings",
                     label_ja: "設定",

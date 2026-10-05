@@ -545,8 +545,9 @@ async fn test_connect_rpc_deploy_service_success() {
         .with_base_url(format!("http://{local_addr}"));
     let fly_client = FlyMachineClient::new(fly_config);
 
+    let db = crate::db::init_db().await.unwrap();
     let state = AppState {
-        db: std::sync::Arc::new(tokio::sync::RwLock::new(None)),
+        db: std::sync::Arc::new(tokio::sync::RwLock::new(Some(db))),
         fly_client: Some(fly_client),
     };
 
@@ -580,7 +581,8 @@ async fn test_connect_rpc_deploy_service_success() {
         machine_id: "m_test_999".into(),
     };
     let status_body = Bytes::from(serde_json::to_vec(&status_req).unwrap());
-    let status_res = handle_get_deploy_status(State(state), headers, status_body).await;
+    let status_res =
+        handle_get_deploy_status(State(state.clone()), headers.clone(), status_body).await;
     assert_eq!(status_res.status(), StatusCode::OK);
 
     let status_bytes = axum::body::to_bytes(status_res.into_body(), 1024 * 1024)
@@ -591,4 +593,22 @@ async fn test_connect_rpc_deploy_service_success() {
     assert_eq!(status_data.status, "started");
     assert_eq!(status_data.region, "nrt");
     assert_eq!(status_data.url, "https://definy-test-app.fly.dev");
+
+    // 4. ListDeployments (DB should have saved the deployment record!)
+    let list_req = ListDeploymentsRequest { limit: Some(10) };
+    let list_body = Bytes::from(serde_json::to_vec(&list_req).unwrap());
+    let list_res = handle_list_deployments(State(state), headers, list_body).await;
+    assert_eq!(list_res.status(), StatusCode::OK);
+
+    let list_bytes = axum::body::to_bytes(list_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let list_data: ListDeploymentsResponse = serde_json::from_slice(&list_bytes).unwrap();
+    assert_eq!(list_data.deployments.len(), 1);
+    assert_eq!(list_data.deployments[0].machine_id, "m_test_999");
+    assert_eq!(
+        list_data.deployments[0].commit_hash,
+        Some("commit_sha_abc".into())
+    );
+    assert_eq!(list_data.deployments[0].status, "started");
 }

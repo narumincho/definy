@@ -631,6 +631,7 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_get_content,
         connect_rpc::handle_deploy_instance,
         connect_rpc::handle_get_deploy_status,
+        connect_rpc::handle_list_deployments,
     ),
     components(
         schemas(
@@ -652,6 +653,9 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::DeployInstanceResponse,
             definy_event::rpc::GetDeployStatusRequest,
             definy_event::rpc::GetDeployStatusResponse,
+            definy_event::rpc::DeploymentItem,
+            definy_event::rpc::ListDeploymentsRequest,
+            definy_event::rpc::ListDeploymentsResponse,
             definy_event::rpc::ConnectError,
         )
     ),
@@ -688,6 +692,7 @@ mod tests {
         assert!(json.contains("/definy.v1.EventService/GetContent"));
         assert!(json.contains("/definy.v1.DeployService/DeployInstance"));
         assert!(json.contains("/definy.v1.DeployService/GetDeployStatus"));
+        assert!(json.contains("/definy.v1.DeployService/ListDeployments"));
     }
 
     #[tokio::test]

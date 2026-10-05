@@ -20,6 +20,7 @@ enum RouteId {
     ApiMethod(crate::app_state::ApiMethod),
     ApiArchitecture,
     About,
+    Deployments,
     NotFound,
 }
 
@@ -34,6 +35,7 @@ impl RouteId {
             Some(Location::TreeLayout) => Self::TreeLayout,
             Some(Location::Settings) => Self::Settings,
             Some(Location::About) => Self::About,
+            Some(Location::Deployments) => Self::Deployments,
             Some(Location::ApiOverview) => Self::ApiOverview,
             Some(Location::ApiArchitecture) => Self::ApiArchitecture,
             Some(Location::ApiMethod(method, _)) => Self::ApiMethod(*method),
@@ -54,6 +56,10 @@ impl RouteId {
             Self::About => context
                 .language
                 .label("About definy", "definy について", "Pri definy")
+                .to_string(),
+            Self::Deployments => context
+                .language
+                .label("Deployments", "デプロイ", "Deplojoj")
                 .to_string(),
             Self::AccountList | Self::AccountDetail => context
                 .language
@@ -119,6 +125,7 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::TreeLayout)
         | Some(Location::Settings)
         | Some(Location::About)
+        | Some(Location::Deployments)
         | Some(Location::ApiOverview)
         | Some(Location::ApiArchitecture)
         | Some(Location::ApiMethod(_, _))
@@ -198,6 +205,14 @@ pub fn document_description_text(state: &AppState, context: &PageContext) -> Str
                 "Learn about definy, its content-addressed architecture, purely functional AST, and self-hosting vision.",
                 "definy の思想、コンテンツ指向アーキテクチャ、純粋関数型 AST、自己記述のロードマップについて紹介します。",
                 "Lernu pri definy, ĝia enhav-adresebla arkitekturo, pure funkcia AST kaj memgastiga vizio.",
+            )
+            .to_string(),
+        Some(Location::Deployments) => context
+            .language
+            .label(
+                "Deploy definy instances to fly.io and monitor operational bootstrapping status.",
+                "definy インスタンスの fly.io へのデプロイと運用ブートストラップ状況の確認。",
+                "Deploji definy-aplikaĵojn al fly.io kaj kontroli memgastigan staton.",
             )
             .to_string(),
         Some(Location::Part(definition_event_hash)) => {

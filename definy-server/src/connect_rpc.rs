@@ -543,6 +543,22 @@ pub async fn handle_deploy_instance(
     match fly_client.create_machine(&create_req).await {
         Ok(machine) => {
             let app_url = fly_client.app_url();
+
+            if let Some(db) = crate::ensure_db(&state).await {
+                let deployment_record = crate::db::DeploymentRecord {
+                    machine_id: machine.id.clone(),
+                    commit_hash: req.commit_hash.clone(),
+                    status: machine.state.clone(),
+                    url: app_url.clone(),
+                    app_url: app_url.clone(),
+                    region: machine.region.clone(),
+                    created_at: chrono::Utc::now(),
+                };
+                if let Err(e) = crate::db::save_deployment(&db, deployment_record).await {
+                    eprintln!("Failed to save deployment to DB: {:?}", e);
+                }
+            }
+
             let response = DeployInstanceResponse {
                 machine_id: machine.id,
                 status: machine.state,
@@ -612,11 +628,85 @@ pub async fn handle_get_deploy_status(
             }
         }
         Err(err) => {
+            if let Some(db) = crate::ensure_db(&state).await
+                && let Ok(Some(cached)) = crate::db::get_deployment(&db, &req.machine_id).await
+            {
+                let response = GetDeployStatusResponse {
+                    machine_id: cached.machine_id,
+                    status: cached.status,
+                    region: cached.region,
+                    url: cached.url,
+                };
+                return match encode_response(codec, &response) {
+                    Ok(res) => res,
+                    Err(err) => error_to_response(err),
+                };
+            }
             eprintln!("Failed to get fly.io machine: {:?}", err);
             error_to_response(ConnectError::internal(format!(
                 "Get deploy status failed: {err}"
             )))
         }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/ListDeployments",
+    tag = "connect-rpc",
+    request_body(
+        content = ListDeploymentsRequest,
+        content_type = "application/json",
+        description = "Connect-RPC ListDeployments request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC ListDeployments response", body = ListDeploymentsResponse, content_type = "application/json"),
+        (status = 503, description = "Database Unavailable", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_list_deployments(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: ListDeploymentsRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let db = match crate::ensure_db(&state).await {
+        Some(db) => db,
+        None => {
+            return error_to_response(ConnectError::unavailable("Database is unavailable"));
+        }
+    };
+
+    let records = match crate::db::get_deployments(&db, req.limit.map(|v| v as usize)).await {
+        Ok(recs) => recs,
+        Err(e) => {
+            eprintln!("Failed to get deployments from DB: {:?}", e);
+            return error_to_response(ConnectError::internal("Failed to retrieve deployments"));
+        }
+    };
+
+    let items = records
+        .into_iter()
+        .map(|r| DeploymentItem {
+            machine_id: r.machine_id,
+            commit_hash: r.commit_hash,
+            status: r.status,
+            url: r.url,
+            app_url: r.app_url,
+            region: r.region,
+            created_at_rfc3339: r.created_at.to_rfc3339(),
+        })
+        .collect();
+
+    let response = ListDeploymentsResponse { deployments: items };
+    match encode_response(codec, &response) {
+        Ok(res) => res,
+        Err(err) => error_to_response(err),
     }
 }
 
@@ -641,6 +731,10 @@ pub fn router() -> axum::Router<AppState> {
         .route(
             PATH_GET_DEPLOY_STATUS,
             axum::routing::post(handle_get_deploy_status),
+        )
+        .route(
+            PATH_LIST_DEPLOYMENTS,
+            axum::routing::post(handle_list_deployments),
         )
 }
 

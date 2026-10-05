@@ -313,6 +313,50 @@ pub async fn filter_missing_content_hashes(
     Ok(missing)
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+pub struct DeploymentRecord {
+    pub machine_id: String,
+    pub commit_hash: Option<String>,
+    pub status: String,
+    pub url: String,
+    pub app_url: String,
+    pub region: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+pub async fn save_deployment(
+    db: &Surreal<Any>,
+    record: DeploymentRecord,
+) -> Result<(), anyhow::Error> {
+    let machine_id = record.machine_id.clone();
+    let _: Option<DeploymentRecord> = db
+        .upsert(("deployments", machine_id.as_str()))
+        .content(record)
+        .await?;
+    Ok(())
+}
+
+pub async fn get_deployments(
+    db: &Surreal<Any>,
+    limit: Option<usize>,
+) -> Result<Vec<DeploymentRecord>, anyhow::Error> {
+    let limit = limit.unwrap_or(20);
+    let mut response = db
+        .query("SELECT * FROM deployments ORDER BY created_at DESC LIMIT $limit")
+        .bind(("limit", limit))
+        .await?;
+    let records: Vec<DeploymentRecord> = response.take(0)?;
+    Ok(records)
+}
+
+pub async fn get_deployment(
+    db: &Surreal<Any>,
+    machine_id: &str,
+) -> Result<Option<DeploymentRecord>, anyhow::Error> {
+    let record: Option<DeploymentRecord> = db.select(("deployments", machine_id)).await?;
+    Ok(record)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -528,5 +572,34 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(missing, vec![hash2]);
+    }
+
+    #[tokio::test]
+    async fn test_save_and_get_deployment() {
+        let db = init_db().await.unwrap();
+
+        let rec = DeploymentRecord {
+            machine_id: "m_test_deploy_1".to_string(),
+            commit_hash: Some("commit_abc123".to_string()),
+            status: "started".to_string(),
+            url: "https://definy.fly.dev".to_string(),
+            app_url: "https://definy.fly.dev".to_string(),
+            region: "nrt".to_string(),
+            created_at: chrono::Utc::now(),
+        };
+
+        save_deployment(&db, rec.clone()).await.unwrap();
+
+        let fetched = get_deployment(&db, "m_test_deploy_1")
+            .await
+            .unwrap()
+            .expect("Deployment should exist");
+        assert_eq!(fetched.machine_id, rec.machine_id);
+        assert_eq!(fetched.status, "started");
+        assert_eq!(fetched.commit_hash, rec.commit_hash);
+
+        let list = get_deployments(&db, Some(10)).await.unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].machine_id, "m_test_deploy_1");
     }
 }

@@ -4,6 +4,7 @@ mod account_list;
 pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
+mod deployments;
 pub mod dom;
 pub mod dropdown;
 mod event_detail;
@@ -162,6 +163,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::About) => {
             rsx! {
                 about::AboutView { context: context.clone() }
+            }
+        }
+        Some(Location::Deployments) => {
+            rsx! {
+                deployments::DeploymentsView { context: context.clone() }
             }
         }
         Some(Location::ApiOverview) => {

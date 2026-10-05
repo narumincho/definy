@@ -9,6 +9,9 @@ service DeployService {
 
   // GetDeployStatus retrieves the status and machine information of a deployment.
   rpc GetDeployStatus(GetDeployStatusRequest) returns (GetDeployStatusResponse);
+
+  // ListDeployments retrieves recent deployment records.
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
 }
 
 message DeployInstanceRequest {
@@ -40,4 +43,22 @@ message GetDeployStatusResponse {
   string status = 2;
   string region = 3;
   string url = 4;
+}
+
+message DeploymentItem {
+  string machine_id = 1;
+  optional string commit_hash = 2;
+  string status = 3;
+  string url = 4;
+  string app_url = 5;
+  string region = 6;
+  string created_at_rfc3339 = 7;
+}
+
+message ListDeploymentsRequest {
+  optional uint64 limit = 1;
+}
+
+message ListDeploymentsResponse {
+  repeated DeploymentItem deployments = 1;
 }

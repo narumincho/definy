@@ -130,10 +130,15 @@ sequenceDiagram
 
 ### Step 3: デプロイ済みコンテナ URL の永続化と UI 案内
 
-- [ ] デプロイしたマシンの状態（`machine_id`, `url`, `commit_hash`, `status`,
-      `created_at`）を SurrealDB に保存するスキーマを追加。
-- [ ] `definy-ui`
-      上にデプロイ状況一覧と、新インスタンスへの遷移リンクを表示するコンポーネントを作成。
+- [x] デプロイしたマシンの状態（`machine_id`, `url`, `commit_hash`, `status`,
+      `created_at`）を SurrealDB に保存するスキーマ (`schema.surql`) および DB
+      アクセス関数 (`db::save_deployment`, `db::get_deployments`,
+      `db::get_deployment`) を追加。
+- [x] `DeployService` に `ListDeployments` RPC を追加し、Connect-RPC
+      経由でデプロイ履歴一覧を取得可能に実装。
+- [x] `definy-ui` 上に `/deployments` 画面（`DeploymentsView`
+      コンポーネント）を新設し、 ブートストラップ3階層の説明、Connect-RPC
+      呼び出し cURL 例、稼働中インスタンスへの案内リンクを統合。
 
 ### Step 4: Docker イメージの供給方針の策定
 

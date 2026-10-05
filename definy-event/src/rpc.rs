@@ -22,9 +22,11 @@ pub const PATH_GET_CONTENT: &str = "/definy.v1.EventService/GetContent";
 pub const DEPLOY_SERVICE_NAME: &str = "definy.v1.DeployService";
 pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
 pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
+pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
 
 pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
 pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
+pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
 
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
@@ -328,6 +330,60 @@ pub struct GetDeployStatusResponse {
     #[prost(string, tag = "4")]
     #[serde(default)]
     pub url: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DeploymentItem {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub machine_id: String,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commit_hash: Option<String>,
+
+    #[prost(string, tag = "3")]
+    #[serde(default)]
+    pub status: String,
+
+    #[prost(string, tag = "4")]
+    #[serde(default)]
+    pub url: String,
+
+    #[prost(string, tag = "5")]
+    #[serde(default)]
+    pub app_url: String,
+
+    #[prost(string, tag = "6")]
+    #[serde(default)]
+    pub region: String,
+
+    #[prost(string, tag = "7")]
+    #[serde(default)]
+    pub created_at_rfc3339: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListDeploymentsRequest {
+    #[prost(uint64, optional, tag = "1")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u64>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListDeploymentsResponse {
+    #[prost(message, repeated, tag = "1")]
+    #[serde(default)]
+    pub deployments: Vec<DeploymentItem>,
 }
 
 /// Connect-RPC standard error format
