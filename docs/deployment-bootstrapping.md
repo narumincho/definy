@@ -110,11 +110,12 @@ sequenceDiagram
 
 ### Step 1: fly.io Machines API の疎通・動作検証 (最小プロトタイプ)
 
-- [ ] `FLY_API_TOKEN` および `FLY_APP_NAME` を `definy-server`
-      の環境変数として定義・読み込み可能にする。
-- [ ] Rust コード内（`reqwest` 等）から fly.io Machines API
-      のエンドポイント（`/apps/{app}/machines` 一覧取得）を叩いて疎通確認する
-      CLI または管理テストを追加する。
+- [x] `FLY_API_TOKEN` および `FLY_APP_NAME` を `definy-server`
+      の環境変数として定義・読み込み可能にする (`fly_machines::FlyConfig`)。
+- [x] Rust コード内 (`definy-server/src/fly_machines.rs`) から fly.io Machines
+      API クライアント (`FlyMachineClient`)
+      を実装し、マシンのリスト取得・作成・停止・破棄およびモック検証テストを完了。
+- [x] 実環境疎通用のライブテスト (`test_live_fly_machines_api`) を追加。
 
 ### Step 2: デプロイ実行用の RPC / エンドポイント新設
 

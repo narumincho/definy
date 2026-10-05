@@ -18,6 +18,7 @@ mod connect_rpc;
 mod db;
 mod error;
 mod extractor;
+pub mod fly_machines;
 mod html;
 pub mod mcp;
 pub mod seed;
