@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package definy.v1;
+
+// DeployService provides Connect-RPC APIs for bootstrapping and deploying definy instances to cloud providers (e.g. fly.io).
+service DeployService {
+  // DeployInstance deploys a definy instance for a given commit/state to fly.io.
+  rpc DeployInstance(DeployInstanceRequest) returns (DeployInstanceResponse);
+
+  // GetDeployStatus retrieves the status and machine information of a deployment.
+  rpc GetDeployStatus(GetDeployStatusRequest) returns (GetDeployStatusResponse);
+}
+
+message DeployInstanceRequest {
+  // Target commit hash or module event hash to deploy
+  optional string commit_hash = 1;
+  // Optional custom name for the machine
+  optional string machine_name = 2;
+  // Target region (e.g. "nrt", "iad", defaults to server region)
+  optional string region = 3;
+}
+
+message DeployInstanceResponse {
+  // Unique machine ID created on fly.io
+  string machine_id = 1;
+  // Deployment status (e.g. "created", "started", "failed")
+  string status = 2;
+  // URL to access the deployed instance (e.g. "https://definy.fly.dev" or instance URL)
+  string url = 3;
+  // Public app URL
+  string app_url = 4;
+}
+
+message GetDeployStatusRequest {
+  string machine_id = 1;
+}
+
+message GetDeployStatusResponse {
+  string machine_id = 1;
+  string status = 2;
+  string region = 3;
+  string url = 4;
+}

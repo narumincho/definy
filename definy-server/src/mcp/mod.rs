@@ -612,6 +612,7 @@ mod tests {
 
         let state = AppState {
             db: Arc::new(RwLock::new(None)),
+            fly_client: None,
         };
         let app = router(McpSessionManager::new()).with_state(state);
 
@@ -646,6 +647,7 @@ mod tests {
         let session_manager = McpSessionManager::new();
         let state = AppState {
             db: Arc::new(RwLock::new(None)),
+            fly_client: None,
         };
 
         assert_eq!(session_manager.session_count().await, 0);

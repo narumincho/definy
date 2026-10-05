@@ -454,3 +454,141 @@ async fn test_connect_rpc_lifecycle() {
     assert_eq!(submit_res2.status, "ok");
     assert!(submit_res2.missing_content_hashes.is_empty());
 }
+
+#[tokio::test]
+async fn test_connect_rpc_deploy_service_not_configured() {
+    let state = AppState {
+        db: std::sync::Arc::new(tokio::sync::RwLock::new(None)),
+        fly_client: None,
+    };
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        axum::http::header::CONTENT_TYPE,
+        axum::http::HeaderValue::from_static("application/json"),
+    );
+
+    let deploy_req = DeployInstanceRequest {
+        commit_hash: Some("test_hash_123".into()),
+        machine_name: None,
+        region: None,
+    };
+    let body = Bytes::from(serde_json::to_vec(&deploy_req).unwrap());
+    let res = handle_deploy_instance(State(state), headers, body).await;
+    assert_eq!(res.status(), StatusCode::SERVICE_UNAVAILABLE);
+}
+
+#[tokio::test]
+async fn test_connect_rpc_deploy_service_success() {
+    use crate::fly_machines::{FlyConfig, FlyMachine, FlyMachineClient, FlyMachineConfig};
+    use axum::extract::{Json, Path};
+    use tokio::net::TcpListener;
+
+    // 1. Mock fly.io Machines API
+    let mock_app = axum::Router::new()
+        .route(
+            "/apps/{app}/machines",
+            axum::routing::post(
+                |Path(app): Path<String>,
+                 Json(body): Json<crate::fly_machines::CreateMachineRequest>| async move {
+                    assert_eq!(app, "definy-test-app");
+                    let created = FlyMachine {
+                        id: "m_test_999".to_string(),
+                        name: body.name.unwrap_or_else(|| "auto-machine".to_string()),
+                        state: "started".to_string(),
+                        region: body.region.unwrap_or_else(|| "nrt".to_string()),
+                        instance_id: Some("inst_test_999".to_string()),
+                        private_ip: Some("fdaa::test".to_string()),
+                        created_at: Some("2026-10-05T12:00:00Z".to_string()),
+                        updated_at: Some("2026-10-05T12:00:00Z".to_string()),
+                        config: body.config,
+                    };
+                    (StatusCode::CREATED, Json(created))
+                },
+            ),
+        )
+        .route(
+            "/apps/{app}/machines/{id}",
+            axum::routing::get(|Path((app, id)): Path<(String, String)>| async move {
+                assert_eq!(app, "definy-test-app");
+                assert_eq!(id, "m_test_999");
+                let machine = FlyMachine {
+                    id,
+                    name: "auto-machine".to_string(),
+                    state: "started".to_string(),
+                    region: "nrt".to_string(),
+                    instance_id: Some("inst_test_999".to_string()),
+                    private_ip: Some("fdaa::test".to_string()),
+                    created_at: Some("2026-10-05T12:00:00Z".to_string()),
+                    updated_at: Some("2026-10-05T12:00:00Z".to_string()),
+                    config: FlyMachineConfig {
+                        image: "registry.fly.io/definy:latest".to_string(),
+                        env: std::collections::HashMap::new(),
+                        services: vec![],
+                        guest: None,
+                        auto_destroy: Some(false),
+                    },
+                };
+                (StatusCode::OK, Json(machine))
+            }),
+        );
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("Failed to bind ephemeral port");
+    let local_addr = listener.local_addr().unwrap();
+
+    tokio::spawn(async move {
+        axum::serve(listener, mock_app).await.unwrap();
+    });
+
+    let fly_config = FlyConfig::new("mock_token", "definy-test-app")
+        .with_base_url(format!("http://{local_addr}"));
+    let fly_client = FlyMachineClient::new(fly_config);
+
+    let state = AppState {
+        db: std::sync::Arc::new(tokio::sync::RwLock::new(None)),
+        fly_client: Some(fly_client),
+    };
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        axum::http::header::CONTENT_TYPE,
+        axum::http::HeaderValue::from_static("application/json"),
+    );
+
+    // 2. DeployInstance
+    let deploy_req = DeployInstanceRequest {
+        commit_hash: Some("commit_sha_abc".into()),
+        machine_name: Some("test-machine-1".into()),
+        region: Some("nrt".into()),
+    };
+    let deploy_body = Bytes::from(serde_json::to_vec(&deploy_req).unwrap());
+    let deploy_res =
+        handle_deploy_instance(State(state.clone()), headers.clone(), deploy_body).await;
+    assert_eq!(deploy_res.status(), StatusCode::OK);
+
+    let res_bytes = axum::body::to_bytes(deploy_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let deploy_data: DeployInstanceResponse = serde_json::from_slice(&res_bytes).unwrap();
+    assert_eq!(deploy_data.machine_id, "m_test_999");
+    assert_eq!(deploy_data.status, "started");
+    assert_eq!(deploy_data.app_url, "https://definy-test-app.fly.dev");
+
+    // 3. GetDeployStatus
+    let status_req = GetDeployStatusRequest {
+        machine_id: "m_test_999".into(),
+    };
+    let status_body = Bytes::from(serde_json::to_vec(&status_req).unwrap());
+    let status_res = handle_get_deploy_status(State(state), headers, status_body).await;
+    assert_eq!(status_res.status(), StatusCode::OK);
+
+    let status_bytes = axum::body::to_bytes(status_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let status_data: GetDeployStatusResponse = serde_json::from_slice(&status_bytes).unwrap();
+    assert_eq!(status_data.machine_id, "m_test_999");
+    assert_eq!(status_data.status, "started");
+    assert_eq!(status_data.region, "nrt");
+    assert_eq!(status_data.url, "https://definy-test-app.fly.dev");
+}

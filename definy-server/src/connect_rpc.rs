@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 
 use axum::body::Bytes;
-use axum::extract::ConnectInfo;
+use axum::extract::{ConnectInfo, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use definy_event::EventHashId;
@@ -487,6 +487,139 @@ pub async fn handle_get_content(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/DeployInstance",
+    tag = "connect-rpc",
+    request_body(
+        content = DeployInstanceRequest,
+        content_type = "application/json",
+        description = "Connect-RPC DeployInstance request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC DeployInstance response", body = DeployInstanceResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable / Not Configured", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_deploy_instance(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: DeployInstanceRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let fly_client = match &state.fly_client {
+        Some(client) => client,
+        None => {
+            return error_to_response(ConnectError::unavailable(
+                "fly.io is not configured: FLY_API_TOKEN is missing on server",
+            ));
+        }
+    };
+
+    let image =
+        std::env::var("FLY_IMAGE").unwrap_or_else(|_| "registry.fly.io/definy:latest".to_string());
+
+    let mut env_vars = std::collections::HashMap::new();
+    env_vars.insert("PORT".to_string(), "8000".to_string());
+    if let Some(ref commit_hash) = req.commit_hash {
+        env_vars.insert("DEFINY_COMMIT_HASH".to_string(), commit_hash.clone());
+    }
+
+    let machine_config =
+        crate::fly_machines::create_default_definy_machine_config(&image, env_vars, 8000);
+
+    let create_req = crate::fly_machines::CreateMachineRequest {
+        name: req.machine_name.clone(),
+        region: req.region.clone(),
+        config: machine_config,
+    };
+
+    match fly_client.create_machine(&create_req).await {
+        Ok(machine) => {
+            let app_url = fly_client.app_url();
+            let response = DeployInstanceResponse {
+                machine_id: machine.id,
+                status: machine.state,
+                url: app_url.clone(),
+                app_url,
+            };
+            match encode_response(codec, &response) {
+                Ok(res) => res,
+                Err(err) => error_to_response(err),
+            }
+        }
+        Err(err) => {
+            eprintln!("Failed to create fly.io machine: {:?}", err);
+            error_to_response(ConnectError::internal(format!("Deploy failed: {err}")))
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/GetDeployStatus",
+    tag = "connect-rpc",
+    request_body(
+        content = GetDeployStatusRequest,
+        content_type = "application/json",
+        description = "Connect-RPC GetDeployStatus request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC GetDeployStatus response", body = GetDeployStatusResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 404, description = "Machine Not Found", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable / Not Configured", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_get_deploy_status(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: GetDeployStatusRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let fly_client = match &state.fly_client {
+        Some(client) => client,
+        None => {
+            return error_to_response(ConnectError::unavailable(
+                "fly.io is not configured: FLY_API_TOKEN is missing on server",
+            ));
+        }
+    };
+
+    match fly_client.get_machine(&req.machine_id).await {
+        Ok(machine) => {
+            let app_url = fly_client.app_url();
+            let response = GetDeployStatusResponse {
+                machine_id: machine.id,
+                status: machine.state,
+                region: machine.region,
+                url: app_url,
+            };
+            match encode_response(codec, &response) {
+                Ok(res) => res,
+                Err(err) => error_to_response(err),
+            }
+        }
+        Err(err) => {
+            eprintln!("Failed to get fly.io machine: {:?}", err);
+            error_to_response(ConnectError::internal(format!(
+                "Get deploy status failed: {err}"
+            )))
+        }
+    }
+}
+
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
         .route(PATH_GET_EVENTS, axum::routing::post(handle_get_events))
@@ -501,6 +634,14 @@ pub fn router() -> axum::Router<AppState> {
             axum::routing::post(handle_upload_content),
         )
         .route(PATH_GET_CONTENT, axum::routing::post(handle_get_content))
+        .route(
+            PATH_DEPLOY_INSTANCE,
+            axum::routing::post(handle_deploy_instance),
+        )
+        .route(
+            PATH_GET_DEPLOY_STATUS,
+            axum::routing::post(handle_get_deploy_status),
+        )
 }
 
 async fn validate_module_commit(

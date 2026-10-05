@@ -44,12 +44,14 @@ use tower_http::cors::CorsLayer;
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
+    pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
 }
 
 pub async fn start_server() -> Result<(), anyhow::Error> {
     println!("Starting definy server (Axum)...");
     let state = AppState {
         db: Arc::new(RwLock::new(None)),
+        fly_client: crate::fly_machines::FlyMachineClient::from_env(),
     };
     println!("Initializing database connection and schema...");
     match db::init_db().await {
@@ -127,6 +129,7 @@ pub fn create_router(state: AppState, mcp_session_manager: mcp::McpSessionManage
 pub fn create_test_router() -> axum::Router {
     let state = AppState {
         db: Arc::new(RwLock::new(None)),
+        fly_client: None,
     };
     let mcp_session_manager = mcp::McpSessionManager::new();
     create_router(state, mcp_session_manager)
@@ -136,6 +139,7 @@ pub async fn create_test_router_with_db() -> Result<axum::Router, anyhow::Error>
     let db = db::init_db().await?;
     let state = AppState {
         db: Arc::new(RwLock::new(Some(db))),
+        fly_client: None,
     };
     let mcp_session_manager = mcp::McpSessionManager::new();
     Ok(create_router(state, mcp_session_manager))
@@ -625,6 +629,8 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_check_missing_hashes,
         connect_rpc::handle_upload_content,
         connect_rpc::handle_get_content,
+        connect_rpc::handle_deploy_instance,
+        connect_rpc::handle_get_deploy_status,
     ),
     components(
         schemas(
@@ -642,6 +648,10 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::UploadContentResponse,
             definy_event::rpc::GetContentRequest,
             definy_event::rpc::GetContentResponse,
+            definy_event::rpc::DeployInstanceRequest,
+            definy_event::rpc::DeployInstanceResponse,
+            definy_event::rpc::GetDeployStatusRequest,
+            definy_event::rpc::GetDeployStatusResponse,
             definy_event::rpc::ConnectError,
         )
     ),
@@ -676,12 +686,15 @@ mod tests {
         assert!(json.contains("/definy.v1.EventService/CheckMissingHashes"));
         assert!(json.contains("/definy.v1.EventService/UploadContent"));
         assert!(json.contains("/definy.v1.EventService/GetContent"));
+        assert!(json.contains("/definy.v1.DeployService/DeployInstance"));
+        assert!(json.contains("/definy.v1.DeployService/GetDeployStatus"));
     }
 
     #[tokio::test]
     async fn test_handle_html_request_event_detail() {
         let state = AppState {
             db: Arc::new(RwLock::new(None)),
+            fly_client: None,
         };
         let uri = axum::http::Uri::from_static(
             "/events/-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o?lang=ja",

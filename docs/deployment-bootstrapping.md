@@ -119,9 +119,14 @@ sequenceDiagram
 
 ### Step 2: デプロイ実行用の RPC / エンドポイント新設
 
-- [ ] Connect-RPC または内部 API に `DeployInstance` メソッドを追加。
-- [ ] リクエストパラメータ（対象のコミットハッシュ、起動設定など）を定義。
-- [ ] サーバー側で Machines API の `create machine` を呼び出す処理を実装。
+- [x] Protocol Buffers (`proto/definy/v1/deploy.proto`) および
+      `definy-event/src/rpc.rs` に `DeployService` (`DeployInstance`,
+      `GetDeployStatus`) のインターフェースとメッセージ型を定義。
+- [x] Connect-RPC ハンドラ (`handle_deploy_instance`,
+      `handle_get_deploy_status`) を `definy-server/src/connect_rpc.rs`
+      に実装し、OpenAPI (`ApiDoc`) に統合。
+- [x] モック fly.io Machines API と Connect-RPC を結合した E2E テスト
+      (`test_connect_rpc_deploy_service_success`) を完了。
 
 ### Step 3: デプロイ済みコンテナ URL の永続化と UI 案内
 
