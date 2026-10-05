@@ -140,14 +140,19 @@ sequenceDiagram
       コンポーネント）を新設し、 ブートストラップ3階層の説明、Connect-RPC
       呼び出し cURL 例、稼働中インスタンスへの案内リンクを統合。
 
-### Step 4: Docker イメージの供給方針の策定
+### Step 4: 仮想ファイル配信と汎用 WASI ランタイム (wasmtime) による自己完結デプロイ
 
-- 起動するコンテナの Docker イメージをどう提供するか決定・構築する：
-  - **方針A (短期・現実的)**: GitHub Actions でビルドした Docker イメージを
-    GitHub Container Registry (GHCR) または Fly Registry に push
-    し、タグ（コミットハッシュ）を指定して起動する。
-  - **方針B (中期)**: Docker Remote Build API や Fly
-    のリモートビルダーを利用して、definy-server から直接ビルドを要求する。
+- Docker イメージをコミットごとに都度ビルド・push する方式を廃止。
+- **外部依存を「wasmtime などの汎用 WASI 実行バイナリ」1つに絞り込み、他は
+  definy サーバー内で完結させる**（詳細は
+  [wasm-virtual-deployment.md](wasm-virtual-deployment.md) 参照）：
+  - [ ] `definy-server` に仮想 Wasm
+        ファイル配信エンドポイント（`GET /virtual/wasm/{hash}.wasm`）を実装。
+  - [ ] 外部から一度だけ取得した汎用 WASI ランタイム（Alpine + wasmtime
+        等）が起動時に仮想 Wasm を取得して `wasmtime serve` で動く基盤を定義。
+  - [ ] fly.io Machines API 呼び出し時に仮想 Wasm
+        のハッシュを環境変数として渡し、Docker
+        ビルドなしでミリ秒〜数秒での高速デプロイを実現。
 
 ### Step 5: WASI 0.3 Capability I/O との統合 (自己記述化)
 
