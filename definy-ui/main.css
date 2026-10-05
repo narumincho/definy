@@ -72,6 +72,8 @@
 
 body {
   background-color: var(--background);
+  /* グリッドの子要素が中身の幅で広がって横スクロールが発生しないようにする */
+  grid-template-columns: minmax(0, 1fr);
   background-image:
     radial-gradient(ellipse 65% 50% at 20% 10%, rgba(56, 189, 248, 0.09) 0%, transparent 60%),
     radial-gradient(ellipse 60% 45% at 85% 20%, rgba(129, 140, 248, 0.08) 0%, transparent 60%),
@@ -133,18 +135,22 @@ button:disabled {
   transform: none !important;
 }
 
-button[type='button'],
+/*
+ * type="button" のボタンの既定スタイル.
+ * :where() で詳細度を 0 にし, .btn-primary などのクラス指定が必ず勝つようにする
+ */
+:where(button[type='button']),
 .btn-secondary {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0.42rem 0.85rem;
+  padding: 0.42rem 0.9rem;
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(8px);
 }
 
-button[type='button']:hover,
+:where(button[type='button']):hover,
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.09);
   border-color: var(--border-strong);
@@ -153,7 +159,7 @@ button[type='button']:hover,
   box-shadow: var(--shadow-md);
 }
 
-button[type='button']:active,
+:where(button[type='button']):active,
 .btn-secondary:active {
   transform: translateY(0);
 }
@@ -161,9 +167,9 @@ button[type='button']:active,
 .btn-primary {
   background: var(--brand-gradient);
   color: var(--primary-content);
-  border: none;
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 0.45rem 1rem;
+  padding: 0.42rem 0.9rem;
   font-weight: 600;
   box-shadow: 0 4px 14px rgba(56, 189, 248, 0.32);
 }
@@ -176,6 +182,26 @@ button[type='button']:active,
 
 .btn-primary:active {
   transform: translateY(0);
+}
+
+.btn-primary,
+.btn-secondary {
+  font-size: 0.88rem;
+  line-height: 1.25;
+  min-height: 2.15rem;
+  white-space: nowrap;
+}
+
+.btn-sm {
+  font-size: 0.78rem;
+  min-height: 1.75rem;
+  padding: 0.22rem 0.6rem;
+}
+
+.btn-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
 }
 
 button:focus-visible,
@@ -334,10 +360,100 @@ textarea {
 }
 
 .app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.6rem;
+  padding: 0.55rem 1.4rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(20px) saturate(180%);
-  background: rgba(11, 15, 23, 0.82) !important;
+  background: rgba(11, 15, 23, 0.82);
+}
+
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.app-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.header-title-container {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.header-title {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  padding-left: 0.85rem;
+  border-left: 1px solid var(--border-strong);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ヘッダー右側のコントロール (言語・ログインなど) の高さと文字サイズを揃える */
+.header-actions .btn-primary,
+.header-actions .btn-secondary,
+.header-control {
+  height: 2.1rem;
+  min-height: 2.1rem;
+  font-size: 0.84rem;
+}
+
+.header-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.header-control-caret {
+  opacity: 0.5;
+  font-size: 0.65rem;
+}
+
+.connection-status-button {
+  height: 1.8rem;
+  padding: 0 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  color: var(--text-secondary);
 }
 
 .logo-text {
@@ -367,6 +483,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  border: 1px solid transparent;
 }
 
 .nav-link:hover {
@@ -389,6 +508,7 @@ textarea {
   padding: 1.4rem 1.1rem 2.5rem;
   animation: fade-up 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
 }
 
@@ -558,6 +678,80 @@ textarea {
   color: var(--badge-func-text);
 }
 
+/* イベント種別などのセマンティックバッジ */
+.badge-primary {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  color: #7dd3fc;
+}
+
+.badge-success {
+  background: var(--success-bg);
+  border: 1px solid rgba(52, 211, 153, 0.32);
+  color: #6ee7b7;
+}
+
+.badge-accent {
+  background: rgba(129, 140, 248, 0.14);
+  border: 1px solid rgba(129, 140, 248, 0.34);
+  color: #c7d2fe;
+}
+
+/* コンテンツハッシュなどの短いハッシュ表示チップ */
+.hash-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+/* アイコン付き検索入力欄 */
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-field-icon {
+  position: absolute;
+  left: 0.75rem;
+  z-index: 1;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-field input {
+  padding: 0.5rem 2.2rem 0.5rem 2.2rem;
+  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+}
+
+.search-field:focus-within .search-field-icon {
+  color: var(--primary);
+}
+
+.search-field-clear {
+  position: absolute;
+  right: 0.4rem;
+  z-index: 1;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--text-secondary);
+  padding: 0.15rem 0.4rem;
+  font-size: 0.75rem;
+}
+
 /* Pulsing live connection dot */
 .connection-dot {
   width: 7px;
@@ -567,6 +761,41 @@ textarea {
   box-shadow: 0 0 10px var(--success);
   display: inline-block;
   animation: pulse-glow 2s infinite ease-in-out;
+}
+
+/* SearchableDropdown Styles */
+.dropdown-item-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-left: 0.35rem;
+  margin-right: 0.45rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.dropdown-item-link:hover {
+  color: var(--primary) !important;
+  background: rgba(56, 189, 248, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+  transform: scale(1.08);
+}
+
+/* 中くらいの幅ではヘッダー中央のページタイトルを隠してナビを優先する */
+@media (max-width: 1100px) {
+  .header-title-container {
+    display: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -595,57 +824,59 @@ textarea {
     width: 100%;
   }
 
+  /* 1行目: ロゴ + 右側コントロール, 2行目: 横スクロール可能なナビ */
   .app-header {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    row-gap: 0.4rem;
+    padding: 0.5rem 0.75rem 0.4rem;
   }
 
-  .header-title-container {
-    display: none !important;
+  .app-logo {
+    order: 1;
+  }
+
+  .header-actions {
+    order: 2;
+    gap: 0.35rem;
   }
 
   .app-nav {
-    overflow-x: auto;
+    order: 3;
+    flex-basis: 100%;
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    max-width: 65vw;
-  }
-
-  .app-nav::-webkit-scrollbar {
-    display: none;
+    mask-image: linear-gradient(90deg, transparent 0, #000 0.75rem, #000 calc(100% - 1.5rem), transparent 100%);
   }
 
   .nav-link {
     font-size: 0.82rem;
-    padding: 0.28rem 0.55rem;
+    padding: 0.28rem 0.6rem;
   }
-/* SearchableDropdown Styles */
-.dropdown-item-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.6rem;
-  height: 1.6rem;
-  margin-left: 0.35rem;
-  margin-right: 0.45rem;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  text-decoration: none;
-  font-size: 0.8rem;
-  line-height: 1;
-  transition: all 0.15s ease;
-}
 
-.dropdown-item-link:hover {
-  color: var(--primary) !important;
-  background: rgba(56, 189, 248, 0.16) !important;
-  border-color: rgba(56, 189, 248, 0.4) !important;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
-  transform: scale(1.08);
+  .logo-text {
+    font-size: 1.25rem;
+  }
+
+  /* 狭い画面では接続ステータスはドットのみ表示 */
+  .connection-status-label {
+    display: none;
+  }
+
+  .connection-status-button {
+    width: 1.8rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .header-actions .btn-primary,
+  .header-actions .btn-secondary,
+  .header-control {
+    height: 1.95rem;
+    min-height: 1.95rem;
+    font-size: 0.8rem;
+    padding: 0 0.6rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -5,12 +5,12 @@ use crate::{AppState, Location};
 
 #[component]
 pub fn HeaderView(state: AppState, context: PageContext) -> Element {
+    // ラッパー要素を挟むと position: sticky の包含ブロックがヘッダーの高さだけになり
+    // 追従しなくなるため, フラグメントで返す
     rsx! {
-        div {
-            HeaderMain { state: state.clone(), context: context.clone() }
-            if state.current_key.is_some() {
-                HeaderPopover { state, context }
-            }
+        HeaderMain { state: state.clone(), context: context.clone() }
+        if state.current_key.is_some() {
+            HeaderPopover { state, context }
         }
     }
 }
@@ -49,17 +49,13 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
     };
 
     rsx! {
-        header {
-            class: "app-header",
-            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.4rem; left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; box-sizing: border-box;",
-            div {
-                class: "app-nav",
-                style: "display: flex; align-items: center; gap: 0.4rem; overflow-x: auto; scrollbar-width: none;",
-                a {
-                    href: context.href_with_lang(Location::Home),
-                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.4rem; flex-shrink: 0;",
-                    h1 { class: "logo-text", "definy" }
-                }
+        header { class: "app-header",
+            a {
+                class: "app-logo",
+                href: context.href_with_lang(Location::Home),
+                h1 { class: "logo-text", "definy" }
+            }
+            nav { class: "app-nav",
                 NavLink {
                     context: context.clone(),
                     target: Location::Home,
@@ -104,20 +100,16 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                     badge: local_events_badge,
                 }
             }
-            div {
-                class: "header-title-container",
-                style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
-                div { style: "font-size: 0.84rem; font-weight: 500; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.01em;",
-                    "{title_text}"
-                }
+            div { class: "header-title-container",
+                div { class: "header-title", "{title_text}" }
             }
-            div { style: "display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0;",
+            div { class: "header-actions",
                 ConnectionStatusIndicator { state: state.clone(), context: context.clone() }
                 LanguageDropdown { state: state.clone(), context: context.clone() }
                 if state.is_auth_loading {
                     div {
-                        class: "auth-loading-placeholder",
-                        style: "display: inline-flex; align-items: center; justify-content: center; height: 1.95rem; padding: 0 0.85rem; font-size: 0.8rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-sm); letter-spacing: 0.02em;",
+                        class: "auth-loading-placeholder header-control",
+                        style: "color: var(--text-muted); letter-spacing: 0.02em;",
                         span {
                             "{context.language.label(\"Checking...\", \"確認中...\", \"Kontrolante...\")}"
                         }
@@ -142,8 +134,8 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                                 class: "btn-secondary",
                                 "popovertarget": "header-popover",
                                 "popovertargetaction": "show",
-                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
-                                "{account_name}"
+                                style: "max-width: min(40vw, 360px); anchor-name: --header-popover-button;",
+                                span { style: "overflow: hidden; text-overflow: ellipsis;", "{account_name}" }
                             }
                         }
                     }
@@ -202,7 +194,7 @@ fn NavLink(
         a {
             class: "{class_name}",
             href: context.href_with_lang(target),
-            style: "display: inline-flex; align-items: center; gap: 0.35rem;",
+            "aria-current": if is_active { "page" } else { "false" },
             span { "{context.language.label(label, label_ja, label_eo)}" }
             if let Some(b) = badge {
                 {b}
@@ -277,15 +269,21 @@ fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
             // 接続ステータスドット＆ラベル
             button {
                 r#type: "button",
-                style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.65rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;",
+                class: "connection-status-button",
+                style: "gap: 0.4rem; background: rgba(255, 255, 255, 0.04); font-weight: 500;",
                 title: "{tooltip}",
+                "aria-label": "{tooltip}",
                 onclick: move |_| {
                     let mut dispatch = use_context::<Signal<AppState>>();
                     let cur = dispatch.read().force_offline;
                     dispatch.write().force_offline = !cur;
                 },
                 span { style: "display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {dot_color}; box-shadow: 0 0 8px {dot_color}; flex-shrink: 0; animation: pulse-glow 2s infinite ease-in-out;" }
-                span { style: "white-space: nowrap;", "{status_text}" }
+                span {
+                    class: "connection-status-label",
+                    style: "white-space: nowrap;",
+                    "{status_text}"
+                }
             }
             // 未送信ローカルイベントがある場合のチップ表示
             if queued_count > 0 || failed_count > 0 {
@@ -348,13 +346,12 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
             div {
                 button {
                     r#type: "button",
+                    class: "header-control",
                     "popovertarget": "dropdown-panel-language",
                     "popovertargetaction": "show",
-                    style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; anchor-name: --dropdown-language;",
+                    style: "anchor-name: --dropdown-language;",
                     "{current_native}"
-                    div { style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
-                        "▼"
-                    }
+                    span { class: "header-control-caret", "▼" }
                 }
                 div {
                     id: "dropdown-panel-language",

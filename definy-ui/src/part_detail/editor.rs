@@ -240,13 +240,7 @@ pub(crate) fn PartEditorCard(
                                     format!("#{}", hash_str)
                                 };
                                 rsx! {
-                                    span {
-                                        class: "mono",
-                                        style: "font-size: 0.76rem; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.15rem 0.5rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.25rem;",
-                                        title: "ContentHash: {hash_str}",
-                                        span { "📌" }
-                                        span { "{short_h}" }
-                                    }
+                                    span { class: "hash-chip", title: "ContentHash: {hash_str}", "{short_h}" }
                                 }
                             }
                         }
@@ -254,13 +248,14 @@ pub(crate) fn PartEditorCard(
                             "{updated_at_label}"
                         }
                     }
-                    div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
                         button {
                             r#type: "button",
                             class: "btn-secondary",
+                            "aria-pressed": if show_wasm_inspector() { "true" } else { "false" },
                             style: if show_wasm_inspector() { "background: rgba(56, 189, 248, 0.16); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);" } else { "" },
                             onclick: move |_| show_wasm_inspector.toggle(),
-                            span { style: "font-size: 0.9em;", "🔍" }
+                            crate::icon::SearchIcon {}
                             span {
                                 "{context.language.label(\"Wasm Inspector\", \"Wasm インスペクタ\", \"Wasm-inspektilo\")}"
                             }
@@ -274,7 +269,7 @@ pub(crate) fn PartEditorCard(
                                     evaluate_and_set_result(&expression.read(), &state, language, eval_result);
                                 }
                             },
-                            span { style: "font-size: 0.9em;", "▶" }
+                            crate::icon::PlayIcon {}
                             span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
                         }
                         button {
@@ -360,7 +355,7 @@ pub(crate) fn PartEditorCard(
                 }
                 if !is_logged_in {
                     div { style: "font-size: 0.78rem; color: var(--text-secondary); background: rgb(255 255 255 / 0.03); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
-                        "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por表保存i ŝanĝojn.\")}"
+                        "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por konservi ŝanĝojn.\")}"
                     }
                 }
                 if let Some(result) = submit_result() {
@@ -383,8 +378,7 @@ pub(crate) fn PartEditorCard(
                     if part_type_expr.read().is_some() {
                         button {
                             r#type: "button",
-                            class: "btn-secondary",
-                            style: "padding: 0.2rem 0.55rem; font-size: 0.76rem;",
+                            class: "btn-secondary btn-sm",
                             onclick: move |_| part_type_expr.set(None),
                             "{context.language.label(\"Clear (no type)\", \"クリア (型指定なし)\", \"Forigi (sen tipo)\")}"
                         }
@@ -416,15 +410,14 @@ pub(crate) fn PartEditorCard(
                     }
                     button {
                         r#type: "button",
-                        class: "btn-secondary",
-                        style: "padding: 0.25rem 0.65rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.35rem;",
+                        class: "btn-secondary btn-sm",
                         onclick: {
                             let state = state.clone();
                             move |_| {
                                 evaluate_and_set_result(&expression.read(), &state, language, eval_result);
                             }
                         },
-                        span { "▶" }
+                        crate::icon::PlayIcon {}
                         span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
                     }
                 }

@@ -14,6 +14,7 @@ pub mod event_submit;
 pub mod expression_editor;
 pub mod fetch;
 mod header;
+mod icon;
 pub mod indexed_db;
 pub mod language;
 mod layout;
@@ -226,11 +227,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
 
     rsx! {
         style { {include_str!("../main.css")} }
-        div { style: "display: grid; gap: 0.8rem; align-content: start; padding-top: 4.2rem; padding-bottom: 5rem;",
+        div { style: "display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; align-content: start; padding-bottom: 5rem;",
             header::HeaderView { state: state.clone(), context: context.clone() }
             div {
                 key: "main-wrapper",
-                style: "display: grid; gap: 0.8rem; width: 100%;",
+                style: "display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; width: 100%;",
                 if state.connection_status != app_state::ConnectionStatus::Connected {
                     ConnectionWarningBanner {
                         context: context.clone(),

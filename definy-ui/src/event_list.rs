@@ -332,19 +332,19 @@ fn event_type_badge_info(content: &EventContent, context: &PageContext) -> (Stri
                 .language
                 .label("Create Account", "アカウント作成", "Krei konton")
                 .to_string(),
-            "badge badge-string",
+            "badge badge-success",
         ),
         EventContent::ChangeProfile(_) => (
             context
                 .language
                 .label("Change Profile", "プロフィール変更", "Ŝanĝi profilon")
                 .to_string(),
-            "badge badge-string",
+            "badge badge-accent",
         ),
         EventContent::ModuleCommit(_) => (
             context
                 .language
-                .label("Module Commit", "モジュールコミット", "Modula enmeto")
+                .label("Module Commit", "モジュールコミット", "Modulo-enmeto")
                 .to_string(),
             "badge badge-primary",
         ),
