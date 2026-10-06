@@ -47,6 +47,7 @@ pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
     pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
     pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
+    pub last_db_failure: Arc<RwLock<Option<std::time::Instant>>>,
 }
 
 impl AppState {
@@ -59,6 +60,7 @@ impl AppState {
             db: Arc::new(RwLock::new(db)),
             fly_client,
             virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
+            last_db_failure: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -78,12 +80,14 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
             println!("Database initialized successfully on startup.");
         }
         Err(err) => {
+            *state.last_db_failure.write().await = Some(std::time::Instant::now());
             eprintln!(
                 "WARNING: Failed to initialize database on startup ({:?}). Will retry on demand.",
                 err
             );
         }
     }
+
     let mcp_session_manager = mcp::McpSessionManager::new();
 
     let port: u16 = std::env::var("PORT")
@@ -192,6 +196,17 @@ fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     let mut paths = Vec::new();
     if let Ok(custom) = std::env::var("DEFINY_PUBLIC_DIR") {
         paths.push(std::path::PathBuf::from(custom));
+    }
+
+    // Docker container standard paths
+    paths.push(std::path::PathBuf::from("/app/public"));
+
+    // Executable-relative paths (e.g. if running as /app/definy_server, checks /app/public)
+    if let Ok(exe_path) = std::env::current_exe()
+        && let Some(exe_dir) = exe_path.parent()
+    {
+        paths.push(exe_dir.join("public"));
+        paths.push(exe_dir.join("../public"));
     }
 
     // Direct relative paths from current directory
@@ -350,18 +365,35 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
         return Some(db);
     }
 
+    // Cooldown check: if DB initialization failed recently (within 5 seconds),
+    // skip retrying immediately to prevent request latency and server overload.
+    if let Some(last_failure) = *state.last_db_failure.read().await
+        && last_failure.elapsed() < std::time::Duration::from_secs(5)
+    {
+        return None;
+    }
+
     let mut guard = state.db.write().await;
     if let Some(existing_db) = guard.clone() {
         return Some(existing_db);
     }
 
+    // Re-check failure cooldown after acquiring write lock
+    if let Some(last_failure) = *state.last_db_failure.read().await
+        && last_failure.elapsed() < std::time::Duration::from_secs(5)
+    {
+        return None;
+    }
+
     match db::init_db().await {
         Ok(db) => {
             *guard = Some(db.clone());
+            *state.last_db_failure.write().await = None;
             println!("Database is available. API requests will use the database.");
             Some(db)
         }
         Err(error) => {
+            *state.last_db_failure.write().await = Some(std::time::Instant::now());
             eprintln!(
                 "Failed to connect to database while handling request: {:?}",
                 error
@@ -729,6 +761,83 @@ mod tests {
         assert_ne!(body_str, "todo");
         assert!(body_str.contains("<!DOCTYPE html>"));
         assert!(body_str.contains("-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_html_request_home() {
+        let state = AppState::test_state();
+        let uri = axum::http::Uri::from_static("/?lang=en");
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
+
+        let response = handle_html_request(&state, &uri, &headers).await;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
+        assert!(body_str.contains("<!DOCTYPE html>"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_html_request_home_with_db() {
+        let db = db::init_db().await.unwrap();
+        let state = AppState::new(Some(db), None);
+        let uri = axum::http::Uri::from_static("/?lang=en");
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
+
+        let response = handle_html_request(&state, &uri, &headers).await;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
+        assert!(body_str.contains("<!DOCTYPE html>"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_requests_with_broken_db() {
+        let state = AppState::new(None, None);
+        // Simulate that DB connection attempt just failed
+        *state.last_db_failure.write().await = Some(std::time::Instant::now());
+        let app = create_router(state, mcp::McpSessionManager::new());
+
+        // 1. GET /?lang=en (returns fallback offline HTML without crashing)
+        use tower::ServiceExt;
+        let req = axum::http::Request::builder()
+            .uri("/?lang=en")
+            .header("accept", "text/html")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let res = app.clone().oneshot(req).await.unwrap();
+        assert_eq!(res.status(), axum::http::StatusCode::OK);
+
+        // 2. POST Connect-RPC GetEvents (returns SERVICE_UNAVAILABLE)
+        let req_rpc = axum::http::Request::builder()
+            .method("POST")
+            .uri("/definy.v1.EventService/GetEvents")
+            .header("content-type", "application/json")
+            .body(axum::body::Body::from("{}"))
+            .unwrap();
+        let res_rpc = app.clone().oneshot(req_rpc).await.unwrap();
+        assert_eq!(
+            res_rpc.status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+
+        // 3. POST Connect-RPC CheckMissingHashes (returns SERVICE_UNAVAILABLE)
+        let req_cmh = axum::http::Request::builder()
+            .method("POST")
+            .uri("/definy.v1.EventService/CheckMissingHashes")
+            .header("content-type", "application/json")
+            .body(axum::body::Body::from(r#"{"contentHashes":[]}"#))
+            .unwrap();
+        let res_cmh = app.clone().oneshot(req_cmh).await.unwrap();
+        assert_eq!(
+            res_cmh.status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
     }
 
     #[test]

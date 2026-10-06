@@ -98,8 +98,12 @@ const SCHEMA_SQL: &str = include_str!("../schema.surql");
 pub use crate::builtin_migration::migrate_builtin_data;
 
 pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
-    let db = match load_db_config_from_env() {
-        Some(config) => {
+    init_db_with_config(load_db_config_from_env()).await
+}
+
+pub async fn init_db_with_config(config: Option<DbConfig>) -> Result<Surreal<Any>, anyhow::Error> {
+    let db = match config {
+        Some(config) => tokio::time::timeout(std::time::Duration::from_secs(10), async {
             println!("Connecting to SurrealDB at {}...", config.endpoint);
             let db = surrealdb::engine::any::connect(&config.endpoint).await?;
             println!("Connected to SurrealDB via {}.", config.endpoint);
@@ -144,8 +148,10 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
                 }
                 println!("Signed in successfully.");
             }
-            db
-        }
+            Ok::<_, anyhow::Error>(db)
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!("Timed out connecting to SurrealDB (10s timeout)"))??,
         None => {
             eprintln!(
                 "WARNING: DATABASE_URL environment variable is not set. Using in-memory SurrealDB (mem://). Data will NOT be persisted across server restarts."
@@ -604,5 +610,33 @@ mod tests {
         let list = get_deployments(&db, Some(10)).await.unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].machine_id, "m_test_deploy_1");
+    }
+
+    #[tokio::test]
+    async fn test_surreal_connect_invalid() {
+        let res = surrealdb::engine::any::connect("ws://127.0.0.1:59999").await;
+        println!("connect ws result: {:?}", res.is_err());
+        assert!(res.is_err());
+
+        let res_http = surrealdb::engine::any::connect("http://127.0.0.1:59999").await;
+        println!("connect http result: {:?}", res_http.is_err());
+
+        let res_pg =
+            surrealdb::engine::any::connect("postgres://user:pass@localhost:5432/db").await;
+        println!("connect pg result: {:?}", res_pg);
+        assert!(res_pg.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_init_db_with_invalid_config() {
+        let config = DbConfig {
+            endpoint: "ws://127.0.0.1:59999".to_string(),
+            namespace: "test".to_string(),
+            database: "test".to_string(),
+            auth: None,
+        };
+        let res = init_db_with_config(Some(config)).await;
+        println!("init_db invalid result: {:?}", res.is_err());
+        assert!(res.is_err());
     }
 }

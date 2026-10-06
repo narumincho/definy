@@ -14,3 +14,15 @@ dockerfile = "Dockerfile.flyio-deploy"
     type = "requests"
     soft_limit = 200
     hard_limit = 250
+
+  [[http_service.checks]]
+    grace_period = "5s"
+    interval = "15s"
+    method = "GET"
+    timeout = "2s"
+    path = "/api-docs/openapi.json"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
