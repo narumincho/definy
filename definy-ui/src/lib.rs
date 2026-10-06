@@ -5,6 +5,7 @@ pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
 mod deployments;
+mod deployments_flow;
 pub mod dom;
 pub mod dropdown;
 mod event_detail;
