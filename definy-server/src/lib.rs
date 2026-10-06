@@ -71,6 +71,7 @@ impl AppState {
 }
 
 pub async fn start_server() -> Result<(), anyhow::Error> {
+    let _ = rustls::crypto::ring::default_provider().install_default();
     println!("Starting definy server (Axum)...");
     let state = AppState::new(None, crate::fly_machines::FlyMachineClient::from_env());
     println!("Initializing database connection and schema...");

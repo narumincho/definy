@@ -61,10 +61,12 @@ url = "2.5.8"
 utoipa-axum = "0.2"
 utoipa-swagger-ui = "9.0"
 tokio-stream = "0.1"
+rustls = { version = "0.23", features = ["ring"] }
 
 [profile.release]
 opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "unwind"
-strip = true
+strip = false
+debug = false
