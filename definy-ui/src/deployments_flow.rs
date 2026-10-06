@@ -12,23 +12,6 @@ pub enum DeploymentDiagramTab {
 pub fn DeploymentsFlowDiagram(language: Language) -> Element {
     let mut selected_tab = use_signal(|| DeploymentDiagramTab::HtmlRequestFlow);
 
-    let tab_btn = |tab: DeploymentDiagramTab, label: &'static str| {
-        let is_active = selected_tab() == tab;
-        rsx! {
-            button {
-                style: format!(
-                    "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid {}; background: {}; color: {}; font-size: 0.84rem; font-weight: {}; cursor: pointer; transition: all 0.15s ease;",
-                    if is_active { "#c084fc" } else { "var(--border)" },
-                    if is_active { "rgba(192, 132, 252, 0.15)" } else { "transparent" },
-                    if is_active { "#e9d5ff" } else { "var(--text-secondary)" },
-                    if is_active { "600" } else { "400" },
-                ),
-                onclick: move |_| selected_tab.set(tab),
-                "{label}"
-            }
-        }
-    };
-
     rsx! {
         div {
             class: "event-detail-card",
@@ -64,27 +47,31 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
 
                 // タブ切り替えボタン
                 div { style: "display: flex; gap: 0.5rem; flex-wrap: wrap;",
-                    {
-                        tab_btn(
-                            DeploymentDiagramTab::HtmlRequestFlow,
+                    button {
+                        r#type: "button",
+                        style: if selected_tab() == DeploymentDiagramTab::HtmlRequestFlow { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid #c084fc; background: rgba(192, 132, 252, 0.15); color: #e9d5ff; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
+                        onclick: move |_| selected_tab.set(DeploymentDiagramTab::HtmlRequestFlow),
+                        {
                             language
                                 .label(
                                     "1. HTML Request & Serving Flow",
                                     "1. HTML リクエスト & 配信フロー",
                                     "1. HTML-Peto & Servado",
-                                ),
-                        )
+                                )
+                        }
                     }
-                    {
-                        tab_btn(
-                            DeploymentDiagramTab::DeployPipelineFlow,
+                    button {
+                        r#type: "button",
+                        style: if selected_tab() == DeploymentDiagramTab::DeployPipelineFlow { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid #c084fc; background: rgba(192, 132, 252, 0.15); color: #e9d5ff; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
+                        onclick: move |_| selected_tab.set(DeploymentDiagramTab::DeployPipelineFlow),
+                        {
                             language
                                 .label(
                                     "2. CI/CD Deployment Pipeline",
                                     "2. CI/CD デプロイパイプライン",
                                     "2. CI/CD Deploja Dukto",
-                                ),
-                        )
+                                )
+                        }
                     }
                 }
             }
