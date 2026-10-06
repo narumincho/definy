@@ -2,6 +2,7 @@
 
 members = [
   "definy-client",
+  "definy-core",
   "definy-event",
   "definy-server",
   "definy-ui"
@@ -12,6 +13,7 @@ resolver = "3"
 [workspace.dependencies]
 # Internal workspace crates
 definy-client = { path = "definy-client" }
+definy-core = { path = "definy-core" }
 definy-event = { path = "definy-event" }
 definy-server = { path = "definy-server" }
 definy-ui = { path = "definy-ui" }
@@ -32,6 +34,7 @@ hyper = "1.11"
 hyper-util = "0.1.20"
 js-sys = "0.3.105"
 rand_core = "0.6.4"
+reqwest = { version = "0.13.5", features = ["json"] }
 serde = "1.0.229"
 serde_cbor = "0.11.2"
 serde_json = "1.0.151"
@@ -39,16 +42,29 @@ serde_urlencoded = "0.7.1"
 sha2 = "0.10.9"
 strum = "0.27.2"
 strum_macros = "0.27.2"
+schemars = { version = "0.8.22", features = ["chrono"] }
 tokio = "1.53"
 utoipa = "5.5"
 wasm-bindgen = "0.2.128"
 wasm-bindgen-futures = "0.4.78"
 web-sys = "0.3.105"
 prost = "0.13"
+axum = "0.8"
+console_error_panic_hook = "0.1.7"
+futures-channel = "0.3.34"
+futures-util = "0.3.34"
+rand = "0.8.8"
+surrealdb = "3.2.4"
+tower = "0.5"
+tower-http = "0.6"
+url = "2.5.8"
+utoipa-axum = "0.2"
+utoipa-swagger-ui = "9.0"
+tokio-stream = "0.1"
 
 [profile.release]
 opt-level = "z"
 lto = true
 codegen-units = 1
-panic = "abort"
+panic = "unwind"
 strip = true

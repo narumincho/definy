@@ -98,8 +98,12 @@ const SCHEMA_SQL: &str = include_str!("../schema.surql");
 pub use crate::builtin_migration::migrate_builtin_data;
 
 pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
-    let db = match load_db_config_from_env() {
-        Some(config) => {
+    init_db_with_config(load_db_config_from_env()).await
+}
+
+pub async fn init_db_with_config(config: Option<DbConfig>) -> Result<Surreal<Any>, anyhow::Error> {
+    let db = match config {
+        Some(config) => tokio::time::timeout(std::time::Duration::from_secs(10), async {
             println!("Connecting to SurrealDB at {}...", config.endpoint);
             let db = surrealdb::engine::any::connect(&config.endpoint).await?;
             println!("Connected to SurrealDB via {}.", config.endpoint);
@@ -144,8 +148,10 @@ pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
                 }
                 println!("Signed in successfully.");
             }
-            db
-        }
+            Ok::<_, anyhow::Error>(db)
+        })
+        .await
+        .map_err(|_| anyhow::anyhow!("Timed out connecting to SurrealDB (10s timeout)"))??,
         None => {
             eprintln!(
                 "WARNING: DATABASE_URL environment variable is not set. Using in-memory SurrealDB (mem://). Data will NOT be persisted across server restarts."
@@ -280,11 +286,15 @@ pub async fn save_content(
         content_bytes: content_bytes.to_vec(),
         created_at: chrono::Utc::now(),
     };
-    let _: Option<ContentRecord> = db
-        .create(("contents", content_hash))
-        .content(record)
-        .await?;
-    Ok(())
+    let result: Result<Option<ContentRecord>, surrealdb::Error> =
+        db.create(("contents", content_hash)).content(record).await;
+    match result {
+        Ok(_) => Ok(()),
+        Err(create_error) => match get_content(db, content_hash).await? {
+            Some(existing_bytes) if existing_bytes == content_bytes => Ok(()),
+            _ => Err(create_error.into()),
+        },
+    }
 }
 
 pub async fn get_content(
@@ -307,6 +317,51 @@ pub async fn filter_missing_content_hashes(
         }
     }
     Ok(missing)
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+pub struct DeploymentRecord {
+    pub machine_id: String,
+    pub commit_hash: Option<String>,
+    pub status: String,
+    pub url: String,
+    pub app_url: String,
+    pub region: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub wasm_hash: Option<String>,
+}
+
+pub async fn save_deployment(
+    db: &Surreal<Any>,
+    record: DeploymentRecord,
+) -> Result<(), anyhow::Error> {
+    let machine_id = record.machine_id.clone();
+    let _: Option<DeploymentRecord> = db
+        .upsert(("deployments", machine_id.as_str()))
+        .content(record)
+        .await?;
+    Ok(())
+}
+
+pub async fn get_deployments(
+    db: &Surreal<Any>,
+    limit: Option<usize>,
+) -> Result<Vec<DeploymentRecord>, anyhow::Error> {
+    let limit = limit.unwrap_or(20);
+    let mut response = db
+        .query("SELECT * FROM deployments ORDER BY created_at DESC LIMIT $limit")
+        .bind(("limit", limit))
+        .await?;
+    let records: Vec<DeploymentRecord> = response.take(0)?;
+    Ok(records)
+}
+
+pub async fn get_deployment(
+    db: &Surreal<Any>,
+    machine_id: &str,
+) -> Result<Option<DeploymentRecord>, anyhow::Error> {
+    let record: Option<DeploymentRecord> = db.select(("deployments", machine_id)).await?;
+    Ok(record)
 }
 
 #[cfg(test)]
@@ -350,8 +405,8 @@ mod tests {
         let db = init_db().await.unwrap();
 
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 1 CreateAccount + 3 ModuleCommit (core, sample, std) = 4 events
-        assert_eq!(events.len(), 4);
+        // 1 CreateAccount + 4 ModuleCommit (core, sample, std, wasi) = 5 events
+        assert_eq!(events.len(), 5);
 
         let mut part_names = Vec::new();
         let mut module_names = Vec::new();
@@ -376,6 +431,7 @@ mod tests {
         assert!(module_names.contains(&"core".to_string()));
         assert!(module_names.contains(&"sample".to_string()));
         assert!(module_names.contains(&"std".to_string()));
+        assert!(module_names.contains(&"wasi".to_string()));
         assert!(part_names.contains(&"let".to_string()));
         assert!(part_names.contains(&"plus".to_string()));
         assert!(part_names.contains(&"number-literal".to_string()));
@@ -415,20 +471,22 @@ mod tests {
         assert!(part_names.contains(&"prime-numbers".to_string()));
         assert!(part_names.contains(&"option-number".to_string()));
         assert!(part_names.contains(&"match-option-sample".to_string()));
+        assert!(part_names.contains(&"validate-module".to_string()));
+        assert!(part_names.contains(&"optimize-expression".to_string()));
 
         // Idempotency check: running init_db / migration again shouldn't duplicate records
         migrate_builtin_data(&db).await.unwrap();
         let events_after = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_after.len(), 4);
+        assert_eq!(events_after.len(), 5);
     }
 
     #[tokio::test]
     async fn test_cleanup_outdated_builtin_events() {
         let db = init_db().await.unwrap();
 
-        // Check initially 4 events
+        // Check initially 5 events (1 account + 4 module commits)
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events.len(), 4);
+        assert_eq!(events.len(), 5);
 
         // Insert an outdated/unexpected event created by the definy system account
         let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
@@ -458,9 +516,9 @@ mod tests {
             .await
             .unwrap();
 
-        // Verify that there are now 5 events
+        // Verify that there are now 6 events
         let events_with_outdated = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_with_outdated.len(), 5);
+        assert_eq!(events_with_outdated.len(), 6);
 
         // Also insert a user event (not definy system account) to verify user data is NEVER deleted
         let user_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
@@ -480,16 +538,16 @@ mod tests {
             .await
             .unwrap();
 
-        // Total 6 events (4 builtin + 1 outdated builtin + 1 normal user)
+        // Total 7 events (5 builtin + 1 outdated builtin + 1 normal user)
         let events_total = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_total.len(), 6);
+        assert_eq!(events_total.len(), 7);
 
         // Run migrate_builtin_data - it should delete the outdated builtin part, but keep normal_user event!
         migrate_builtin_data(&db).await.unwrap();
 
         let events_cleaned = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 4 built-in events + 1 user event = 5 events (outdated builtin deleted)
-        assert_eq!(events_cleaned.len(), 5);
+        // 5 built-in events + 1 user event = 6 events (outdated builtin deleted)
+        assert_eq!(events_cleaned.len(), 6);
 
         let user_event_hash = sha2::Sha256::digest(&user_binary);
         assert!(get_event(&db, &user_event_hash).await.unwrap().is_some());
@@ -509,11 +567,76 @@ mod tests {
         assert_eq!(get_content(&db, &hash1).await.unwrap(), None);
 
         save_content(&db, &hash1, &bytes1).await.unwrap();
+        save_content(&db, &hash1, &bytes1).await.unwrap();
         assert_eq!(get_content(&db, &hash1).await.unwrap(), Some(bytes1));
+        assert!(save_content(&db, &hash1, &[4, 3, 2, 1]).await.is_err());
+        assert_eq!(
+            get_content(&db, &hash1).await.unwrap(),
+            Some(vec![1, 2, 3, 4])
+        );
 
         let missing = filter_missing_content_hashes(&db, &[hash1.clone(), hash2.clone()])
             .await
             .unwrap();
         assert_eq!(missing, vec![hash2]);
+    }
+
+    #[tokio::test]
+    async fn test_save_and_get_deployment() {
+        let db = init_db().await.unwrap();
+
+        let rec = DeploymentRecord {
+            machine_id: "m_test_deploy_1".to_string(),
+            commit_hash: Some("commit_abc123".to_string()),
+            status: "started".to_string(),
+            url: "https://definy.fly.dev".to_string(),
+            app_url: "https://definy.fly.dev".to_string(),
+            region: "nrt".to_string(),
+            created_at: chrono::Utc::now(),
+            wasm_hash: Some("wasm_hash_456".to_string()),
+        };
+
+        save_deployment(&db, rec.clone()).await.unwrap();
+
+        let fetched = get_deployment(&db, "m_test_deploy_1")
+            .await
+            .unwrap()
+            .expect("Deployment should exist");
+        assert_eq!(fetched.machine_id, rec.machine_id);
+        assert_eq!(fetched.status, "started");
+        assert_eq!(fetched.commit_hash, rec.commit_hash);
+        assert_eq!(fetched.wasm_hash, Some("wasm_hash_456".to_string()));
+
+        let list = get_deployments(&db, Some(10)).await.unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].machine_id, "m_test_deploy_1");
+    }
+
+    #[tokio::test]
+    async fn test_surreal_connect_invalid() {
+        let res = surrealdb::engine::any::connect("ws://127.0.0.1:59999").await;
+        println!("connect ws result: {:?}", res.is_err());
+        assert!(res.is_err());
+
+        let res_http = surrealdb::engine::any::connect("http://127.0.0.1:59999").await;
+        println!("connect http result: {:?}", res_http.is_err());
+
+        let res_pg =
+            surrealdb::engine::any::connect("postgres://user:pass@localhost:5432/db").await;
+        println!("connect pg result: {:?}", res_pg);
+        assert!(res_pg.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_init_db_with_invalid_config() {
+        let config = DbConfig {
+            endpoint: "ws://127.0.0.1:59999".to_string(),
+            namespace: "test".to_string(),
+            database: "test".to_string(),
+            auth: None,
+        };
+        let res = init_db_with_config(Some(config)).await;
+        println!("init_db invalid result: {:?}", res.is_err());
+        assert!(res.is_err());
     }
 }

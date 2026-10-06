@@ -1,19 +1,31 @@
+pub mod builtin_core_parts;
+mod builtin_eval_match;
 mod builtin_evaluator;
 mod builtin_expression_type;
-mod builtin_migration;
+mod builtin_formatter;
+mod builtin_list_ops;
+pub mod builtin_migration;
+mod builtin_optimizer;
+pub mod builtin_sample_parts;
 mod builtin_std_functions;
 mod builtin_type_ast;
 mod builtin_type_checker;
+mod builtin_validator;
 mod builtin_value_type;
+pub mod builtin_wasi;
 mod builtin_wasm_compiler;
 mod connect_rpc;
 mod db;
 mod error;
 mod extractor;
+pub mod fly_machines;
 mod html;
 pub mod mcp;
+pub mod seed;
+mod self_hosted_ast;
 #[cfg(test)]
 mod self_hosting_tests;
+pub mod virtual_file;
 
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -33,13 +45,49 @@ use tower_http::cors::CorsLayer;
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
+    pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
+    pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
+    pub last_db_failure: Arc<RwLock<Option<std::time::Instant>>>,
+}
+
+impl AppState {
+    #[must_use]
+    pub fn new(
+        db: Option<Surreal<Any>>,
+        fly_client: Option<crate::fly_machines::FlyMachineClient>,
+    ) -> Self {
+        Self {
+            db: Arc::new(RwLock::new(db)),
+            fly_client,
+            virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
+            last_db_failure: Arc::new(RwLock::new(None)),
+        }
+    }
+
+    #[must_use]
+    pub fn test_state() -> Self {
+        Self::new(None, None)
+    }
 }
 
 pub async fn start_server() -> Result<(), anyhow::Error> {
     println!("Starting definy server (Axum)...");
-    let state = AppState {
-        db: Arc::new(RwLock::new(None)),
-    };
+    let state = AppState::new(None, crate::fly_machines::FlyMachineClient::from_env());
+    println!("Initializing database connection and schema...");
+    match db::init_db().await {
+        Ok(db) => {
+            *state.db.write().await = Some(db);
+            println!("Database initialized successfully on startup.");
+        }
+        Err(err) => {
+            *state.last_db_failure.write().await = Some(std::time::Instant::now());
+            eprintln!(
+                "WARNING: Failed to initialize database on startup ({:?}). Will retry on demand.",
+                err
+            );
+        }
+    }
+
     let mcp_session_manager = mcp::McpSessionManager::new();
 
     let port: u16 = std::env::var("PORT")
@@ -57,6 +105,21 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
 
     let addr = SocketAddr::from((ip, port));
 
+    let app = create_router(state, mcp_session_manager);
+
+    let listener = TcpListener::bind(addr).await?;
+    println!("Listening on http://{}", addr);
+
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub fn create_router(state: AppState, mcp_session_manager: mcp::McpSessionManager) -> axum::Router {
     let cors = CorsLayer::new()
         .allow_origin(tower_http::cors::Any)
         .allow_methods([
@@ -73,27 +136,30 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
         ])
         .max_age(std::time::Duration::from_secs(86400));
 
-    let app = axum::Router::new()
+    axum::Router::new()
         .merge(utoipa_swagger_ui::SwaggerUi::new("/swagger-ui").url(
             "/api-docs/openapi.json",
             <ApiDoc as utoipa::OpenApi>::openapi(),
         ))
         .merge(connect_rpc::router())
+        .merge(virtual_file::router())
         .merge(mcp::router(mcp_session_manager))
         .fallback(handle_fallback)
         .layer(cors)
-        .with_state(state);
+        .with_state(state)
+}
 
-    let listener = TcpListener::bind(addr).await?;
-    println!("Listening on http://{}", addr);
+pub fn create_test_router() -> axum::Router {
+    let state = AppState::test_state();
+    let mcp_session_manager = mcp::McpSessionManager::new();
+    create_router(state, mcp_session_manager)
+}
 
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .await?;
-
-    Ok(())
+pub async fn create_test_router_with_db() -> Result<axum::Router, anyhow::Error> {
+    let db = db::init_db().await?;
+    let state = AppState::new(Some(db), None);
+    let mcp_session_manager = mcp::McpSessionManager::new();
+    Ok(create_router(state, mcp_session_manager))
 }
 
 const ICON_CONTENT: &[u8] = include_bytes!("../../assets/icon.png");
@@ -109,16 +175,38 @@ static ICON_ASSET: std::sync::LazyLock<ResolvedAsset> = std::sync::LazyLock::new
     }
 });
 
+#[derive(Clone)]
 pub struct ResolvedAsset {
     pub bytes: Vec<u8>,
     pub hash: String,
     pub content_type: &'static str,
 }
 
+#[derive(Clone)]
+struct CachedAsset {
+    path: std::path::PathBuf,
+    modified: std::time::SystemTime,
+    asset: ResolvedAsset,
+}
+
+static JS_CACHE: std::sync::RwLock<Option<CachedAsset>> = std::sync::RwLock::new(None);
+static WASM_CACHE: std::sync::RwLock<Option<CachedAsset>> = std::sync::RwLock::new(None);
+
 fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     let mut paths = Vec::new();
     if let Ok(custom) = std::env::var("DEFINY_PUBLIC_DIR") {
         paths.push(std::path::PathBuf::from(custom));
+    }
+
+    // Docker container standard paths
+    paths.push(std::path::PathBuf::from("/app/public"));
+
+    // Executable-relative paths (e.g. if running as /app/definy_server, checks /app/public)
+    if let Ok(exe_path) = std::env::current_exe()
+        && let Some(exe_dir) = exe_path.parent()
+    {
+        paths.push(exe_dir.join("public"));
+        paths.push(exe_dir.join("../public"));
     }
 
     // Direct relative paths from current directory
@@ -173,36 +261,60 @@ fn get_public_dir_candidates() -> Vec<std::path::PathBuf> {
     paths
 }
 
-pub fn resolve_client_js() -> Option<ResolvedAsset> {
+fn resolve_cached_asset(
+    cache: &std::sync::RwLock<Option<CachedAsset>>,
+    sub_path: &str,
+    content_type: &'static str,
+) -> Option<ResolvedAsset> {
     for dir in get_public_dir_candidates() {
-        let p = dir.join("wasm").join("definy_client.js");
-        if let Ok(bytes) = std::fs::read(&p) {
-            let hash = sha2::Sha256::digest(&bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-            return Some(ResolvedAsset {
-                bytes,
-                hash: hash_hex,
-                content_type: "application/javascript; charset=utf-8",
-            });
+        let p = dir.join(sub_path);
+        if let Ok(metadata) = std::fs::metadata(&p)
+            && let Ok(modified) = metadata.modified()
+        {
+            if let Ok(guard) = cache.read()
+                && let Some(ref cached) = *guard
+                && cached.path == p
+                && cached.modified == modified
+            {
+                return Some(cached.asset.clone());
+            }
+
+            if let Ok(bytes) = std::fs::read(&p) {
+                let hash = sha2::Sha256::digest(&bytes);
+                let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+                let asset = ResolvedAsset {
+                    bytes,
+                    hash: hash_hex,
+                    content_type,
+                };
+                if let Ok(mut guard) = cache.write() {
+                    *guard = Some(CachedAsset {
+                        path: p,
+                        modified,
+                        asset: asset.clone(),
+                    });
+                }
+                return Some(asset);
+            }
         }
     }
     None
 }
 
+pub fn resolve_client_js() -> Option<ResolvedAsset> {
+    resolve_cached_asset(
+        &JS_CACHE,
+        "wasm/definy_client.js",
+        "application/javascript; charset=utf-8",
+    )
+}
+
 pub fn resolve_client_wasm() -> Option<ResolvedAsset> {
-    for dir in get_public_dir_candidates() {
-        let p = dir.join("wasm").join("definy_client_bg.wasm");
-        if let Ok(bytes) = std::fs::read(&p) {
-            let hash = sha2::Sha256::digest(&bytes);
-            let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-            return Some(ResolvedAsset {
-                bytes,
-                hash: hash_hex,
-                content_type: "application/wasm",
-            });
-        }
-    }
-    None
+    resolve_cached_asset(
+        &WASM_CACHE,
+        "wasm/definy_client_bg.wasm",
+        "application/wasm",
+    )
 }
 
 pub fn resolve_icon() -> &'static ResolvedAsset {
@@ -219,23 +331,69 @@ pub fn resolve_snippet(snippet_path: &str) -> Option<Vec<u8>> {
     None
 }
 
+pub fn resolve_snippets_list() -> Vec<String> {
+    let mut list = Vec::new();
+    for dir in get_public_dir_candidates() {
+        let snippets_dir = dir.join("wasm").join("snippets");
+        if snippets_dir.is_dir() {
+            let mut stack = vec![(snippets_dir.clone(), String::new())];
+            while let Some((curr, prefix)) = stack.pop() {
+                if let Ok(entries) = std::fs::read_dir(curr) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        let rel = if prefix.is_empty() {
+                            name.clone()
+                        } else {
+                            format!("{prefix}/{name}")
+                        };
+                        if path.is_dir() {
+                            stack.push((path, rel));
+                        } else if !list.contains(&rel) {
+                            list.push(rel);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    list
+}
+
 pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
     if let Some(db) = state.db.read().await.clone() {
         return Some(db);
     }
 
+    // Cooldown check: if DB initialization failed recently (within 5 seconds),
+    // skip retrying immediately to prevent request latency and server overload.
+    if let Some(last_failure) = *state.last_db_failure.read().await
+        && last_failure.elapsed() < std::time::Duration::from_secs(5)
+    {
+        return None;
+    }
+
+    let mut guard = state.db.write().await;
+    if let Some(existing_db) = guard.clone() {
+        return Some(existing_db);
+    }
+
+    // Re-check failure cooldown after acquiring write lock
+    if let Some(last_failure) = *state.last_db_failure.read().await
+        && last_failure.elapsed() < std::time::Duration::from_secs(5)
+    {
+        return None;
+    }
+
     match db::init_db().await {
         Ok(db) => {
-            let mut guard = state.db.write().await;
-            if let Some(existing_db) = guard.clone() {
-                return Some(existing_db);
-            }
             *guard = Some(db.clone());
-            drop(guard);
+            *state.last_db_failure.write().await = None;
             println!("Database is available. API requests will use the database.");
             Some(db)
         }
         Err(error) => {
+            *state.last_db_failure.write().await = Some(std::time::Instant::now());
             eprintln!(
                 "Failed to connect to database while handling request: {:?}",
                 error
@@ -260,7 +418,7 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
                 StatusCode::OK,
                 [
                     ("Content-Type", "application/javascript; charset=utf-8"),
-                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                    ("Cache-Control", "public, max-age=31536000, immutable"),
                 ],
                 Bytes::from(contents),
             )
@@ -277,16 +435,22 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
 
     if let Some(js) = resolve_client_js() {
         let js_file_with_ext = format!("{}.js", js.hash);
-        if clean_path == js.hash
+        let is_hashed = clean_path == js.hash || clean_path == js_file_with_ext;
+        if is_hashed
             || clean_path == "definy_client.js"
             || clean_path == js_file_with_ext
             || clean_path.ends_with("definy_client.js")
         {
+            let cache_control = if is_hashed {
+                "public, max-age=31536000, immutable"
+            } else {
+                "no-cache, must-revalidate"
+            };
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", js.content_type),
-                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                    ("Cache-Control", cache_control),
                 ],
                 Bytes::from(js.bytes),
             )
@@ -296,16 +460,22 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
 
     if let Some(wasm) = resolve_client_wasm() {
         let wasm_file_with_ext = format!("{}.wasm", wasm.hash);
-        if clean_path == wasm.hash
+        let is_hashed = clean_path == wasm.hash || clean_path == wasm_file_with_ext;
+        if is_hashed
             || clean_path == "definy_client_bg.wasm"
             || clean_path == wasm_file_with_ext
             || clean_path.ends_with("definy_client_bg.wasm")
         {
+            let cache_control = if is_hashed {
+                "public, max-age=31536000, immutable"
+            } else {
+                "no-cache, must-revalidate"
+            };
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", wasm.content_type),
-                    ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                    ("Cache-Control", cache_control),
                 ],
                 Bytes::from(wasm.bytes),
             )
@@ -315,11 +485,16 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
 
     let icon = resolve_icon();
     if clean_path == icon.hash || clean_path == "icon.png" {
+        let cache_control = if clean_path == icon.hash {
+            "public, max-age=31536000, immutable"
+        } else {
+            "no-cache, must-revalidate"
+        };
         return (
             StatusCode::OK,
             [
                 ("Content-Type", icon.content_type),
-                ("Cache-Control", "no-cache, no-store, must-revalidate"),
+                ("Cache-Control", cache_control),
             ],
             Bytes::from(icon.bytes.clone()),
         )
@@ -499,6 +674,10 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_check_missing_hashes,
         connect_rpc::handle_upload_content,
         connect_rpc::handle_get_content,
+        connect_rpc::handle_deploy_instance,
+        connect_rpc::handle_get_deploy_status,
+        connect_rpc::handle_list_deployments,
+        virtual_file::handle_get_virtual_wasm,
     ),
     components(
         schemas(
@@ -516,11 +695,19 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::UploadContentResponse,
             definy_event::rpc::GetContentRequest,
             definy_event::rpc::GetContentResponse,
+            definy_event::rpc::DeployInstanceRequest,
+            definy_event::rpc::DeployInstanceResponse,
+            definy_event::rpc::GetDeployStatusRequest,
+            definy_event::rpc::GetDeployStatusResponse,
+            definy_event::rpc::DeploymentItem,
+            definy_event::rpc::ListDeploymentsRequest,
+            definy_event::rpc::ListDeploymentsResponse,
             definy_event::rpc::ConnectError,
         )
     ),
     tags(
-        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API")
+        (name = "connect-rpc", description = "Definy Connect-RPC (Protobuf / JSON over HTTP) API"),
+        (name = "virtual-files", description = "Virtual Content-Addressed Wasm and File Serving")
     ),
     info(
         title = "definy API",
@@ -550,13 +737,15 @@ mod tests {
         assert!(json.contains("/definy.v1.EventService/CheckMissingHashes"));
         assert!(json.contains("/definy.v1.EventService/UploadContent"));
         assert!(json.contains("/definy.v1.EventService/GetContent"));
+        assert!(json.contains("/definy.v1.DeployService/DeployInstance"));
+        assert!(json.contains("/definy.v1.DeployService/GetDeployStatus"));
+        assert!(json.contains("/definy.v1.DeployService/ListDeployments"));
+        assert!(json.contains("/virtual/wasm/{hash}"));
     }
 
     #[tokio::test]
     async fn test_handle_html_request_event_detail() {
-        let state = AppState {
-            db: Arc::new(RwLock::new(None)),
-        };
+        let state = AppState::test_state();
         let uri = axum::http::Uri::from_static(
             "/events/-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o?lang=ja",
         );
@@ -572,6 +761,83 @@ mod tests {
         assert_ne!(body_str, "todo");
         assert!(body_str.contains("<!DOCTYPE html>"));
         assert!(body_str.contains("-5jktaWRZlN9SqpDYOvNnfSZ6_rz_tUMAzlZVCk0r6o"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_html_request_home() {
+        let state = AppState::test_state();
+        let uri = axum::http::Uri::from_static("/?lang=en");
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
+
+        let response = handle_html_request(&state, &uri, &headers).await;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
+        assert!(body_str.contains("<!DOCTYPE html>"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_html_request_home_with_db() {
+        let db = db::init_db().await.unwrap();
+        let state = AppState::new(Some(db), None);
+        let uri = axum::http::Uri::from_static("/?lang=en");
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
+
+        let response = handle_html_request(&state, &uri, &headers).await;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
+        assert!(body_str.contains("<!DOCTYPE html>"));
+    }
+
+    #[tokio::test]
+    async fn test_handle_requests_with_broken_db() {
+        let state = AppState::new(None, None);
+        // Simulate that DB connection attempt just failed
+        *state.last_db_failure.write().await = Some(std::time::Instant::now());
+        let app = create_router(state, mcp::McpSessionManager::new());
+
+        // 1. GET /?lang=en (returns fallback offline HTML without crashing)
+        use tower::ServiceExt;
+        let req = axum::http::Request::builder()
+            .uri("/?lang=en")
+            .header("accept", "text/html")
+            .body(axum::body::Body::empty())
+            .unwrap();
+        let res = app.clone().oneshot(req).await.unwrap();
+        assert_eq!(res.status(), axum::http::StatusCode::OK);
+
+        // 2. POST Connect-RPC GetEvents (returns SERVICE_UNAVAILABLE)
+        let req_rpc = axum::http::Request::builder()
+            .method("POST")
+            .uri("/definy.v1.EventService/GetEvents")
+            .header("content-type", "application/json")
+            .body(axum::body::Body::from("{}"))
+            .unwrap();
+        let res_rpc = app.clone().oneshot(req_rpc).await.unwrap();
+        assert_eq!(
+            res_rpc.status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+
+        // 3. POST Connect-RPC CheckMissingHashes (returns SERVICE_UNAVAILABLE)
+        let req_cmh = axum::http::Request::builder()
+            .method("POST")
+            .uri("/definy.v1.EventService/CheckMissingHashes")
+            .header("content-type", "application/json")
+            .body(axum::body::Body::from(r#"{"contentHashes":[]}"#))
+            .unwrap();
+        let res_cmh = app.clone().oneshot(req_cmh).await.unwrap();
+        assert_eq!(
+            res_cmh.status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
     }
 
     #[test]

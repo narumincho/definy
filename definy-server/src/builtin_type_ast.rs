@@ -10,6 +10,18 @@ use definy_event::event::{
 pub fn create_type_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_def_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_ast_ref = Expression::PartReference(PartReferenceExpression::new(type_ast_def_hash));
+    let optional_type_ast = Expression::TypeUnion(TypeUnionExpression {
+        variants: vec![
+            TypeUnionVariant {
+                tag: "none".into(),
+                payload_type: None,
+            },
+            TypeUnionVariant {
+                tag: "some".into(),
+                payload_type: Some(Box::new(type_ast_ref.clone())),
+            },
+        ],
+    });
 
     ModulePartEntry {
         name: "type-ast".into(),
@@ -21,6 +33,10 @@ pub fn create_type_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
         content_hash: None,
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
+                TypeUnionVariant {
+                    tag: "type".into(),
+                    payload_type: None,
+                },
                 TypeUnionVariant {
                     tag: "number".into(),
                     payload_type: None,
@@ -85,7 +101,7 @@ pub fn create_type_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
                                 },
                                 TypeLiteralItemExpression {
                                     key: "payload_type".into(),
-                                    value: Box::new(type_ast_ref.clone()),
+                                    value: Box::new(optional_type_ast),
                                 },
                             ],
                         })),
@@ -132,6 +148,10 @@ pub fn create_part_definition_part(core_module_id: &EventHashId) -> ModulePartEn
                 },
                 TypeLiteralItemExpression {
                     key: "description".into(),
+                    value: Box::new(Expression::TypeString),
+                },
+                TypeLiteralItemExpression {
+                    key: "part_definition_event_hash".into(),
                     value: Box::new(Expression::TypeString),
                 },
                 TypeLiteralItemExpression {

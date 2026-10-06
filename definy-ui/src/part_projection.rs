@@ -121,3 +121,82 @@ pub fn collect_related_part_events(
     related.reverse();
     related
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use definy_event::event::*;
+
+    #[test]
+    fn test_part_snapshots_with_multiple_parts_in_same_commit() {
+        let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0; 32]).unwrap();
+        let dummy_account = AccountId(dummy_key);
+        let commit_hash = definy_event::EventHashId::from_bytes(&[51u8; 32]);
+        let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+
+        let add_ten_expr = Expression::Function(FunctionExpression {
+            parameter_id: 1,
+            parameter_name: "x".into(),
+            body: Box::new(Expression::Add(AddExpression {
+                left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                right: Box::new(Expression::Number(NumberExpression { value: 10 })),
+            })),
+        });
+        let add_ten_content_hash =
+            definy_event::ContentHash::from_expression(&add_ten_expr).unwrap();
+
+        let commit_event = Event {
+            account_id: dummy_account,
+            time: chrono::DateTime::UNIX_EPOCH,
+            content: EventContent::ModuleCommit(ModuleCommitEvent {
+                module_name: "math".into(),
+                module_description: "".into(),
+                parent_commit_hash: None,
+                message: "Initial commit with math functions".into(),
+                parts: vec![
+                    ModulePartEntry {
+                        name: "add_ten".into(),
+                        part_type: Some(PartType::Function {
+                            parameter: Box::new(PartType::Number),
+                            return_type: Box::new(PartType::Number),
+                        }),
+                        description: Description::Plain("adds 10 to input".into()),
+                        content_hash: Some(add_ten_content_hash.clone()),
+                        expression: Some(add_ten_expr),
+                    },
+                    ModulePartEntry {
+                        name: "forty_two".into(),
+                        part_type: Some(PartType::Number),
+                        description: Description::Plain("the answer".into()),
+                        content_hash: None,
+                        expression: Some(Expression::Number(NumberExpression { value: 42 })),
+                    },
+                ],
+            }),
+        };
+
+        let mut state = AppState::default();
+        state
+            .event_cache
+            .insert(commit_hash, Ok((dummy_sig, commit_event)));
+
+        let snapshots = collect_part_snapshots(&state);
+        assert_eq!(snapshots.len(), 2);
+        let s_add_ten = snapshots.iter().find(|s| s.part_name == "add_ten").unwrap();
+        let s_forty_two = snapshots
+            .iter()
+            .find(|s| s.part_name == "forty_two")
+            .unwrap();
+
+        assert_eq!(s_add_ten.content_hash, Some(add_ten_content_hash));
+        assert_eq!(
+            s_forty_two.content_hash,
+            Some(
+                definy_event::ContentHash::from_expression(&Expression::Number(NumberExpression {
+                    value: 42
+                }))
+                .unwrap()
+            )
+        );
+    }
+}

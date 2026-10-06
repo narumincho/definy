@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct EventHashId([u8; 32]);
 
 impl EventHashId {

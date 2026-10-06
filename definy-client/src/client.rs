@@ -8,11 +8,11 @@ use crate::keyboard_nav;
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    if let Some(window) = web_sys::window()
-        && let Some(document) = window.document()
-        && let Some(main) = document.get_element_by_id("main")
+    if let Some(main_el) = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id("main"))
     {
-        main.set_inner_html("");
+        main_el.set_inner_html("");
     }
     dioxus_web::launch::launch_cfg(AppRoot, dioxus_web::Config::new().rootname("main"));
 }
@@ -96,6 +96,12 @@ fn AppRoot() -> Element {
         setup_click_listener(tx.clone());
         setup_popstate_listener(tx.clone());
 
+        if let Some(doc) = web_sys::window().and_then(|w| w.document()) {
+            if let Some(body) = doc.body() {
+                let _ = body.set_attribute("data-client-ready", "true");
+            }
+        }
+
         spawn(async move {
             use futures_util::StreamExt;
 
@@ -107,10 +113,20 @@ fn AppRoot() -> Element {
             let query_params = definy_ui::query::parse_query(Some(search_query.as_str()));
             let filter_for_fetch = query_params.event_type;
 
-            if let Some(key) = definy_ui::navigator_credential::credential_get_sync() {
-                state_signal.write().current_key = Some(key);
+            let detected_key = if let Some(key) =
+                definy_ui::navigator_credential::credential_get_sync()
+            {
+                Some(key)
             } else if let Some(password) = definy_ui::navigator_credential::credential_get().await {
-                state_signal.write().current_key = Some(password);
+                Some(password)
+            } else {
+                None
+            };
+            {
+                let mut next = state_signal.read().clone();
+                next.current_key = detected_key;
+                next.is_auth_loading = false;
+                state_signal.set(next);
             }
 
             if let Some(decoded_ssr_state) = ssr_state.as_ref() {
@@ -251,9 +267,7 @@ async fn fetch_missing_events_async(
     context: &definy_ui::PageContext,
 ) {
     match &context.location {
-        Some(definy_ui::Location::Part(hash))
-        | Some(definy_ui::Location::Event(hash))
-        | Some(definy_ui::Location::Module(hash)) => {
+        Some(definy_ui::Location::Event(hash)) | Some(definy_ui::Location::Module(hash)) => {
             let hash = hash.clone();
             if let Ok(Some((event_hash, event))) = definy_ui::fetch::get_event(&hash).await {
                 state_signal.write().event_cache.insert(event_hash, event);

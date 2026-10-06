@@ -1,0 +1,1600 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ModuleSeed",
+  "description": "Seed データファイル（JSON / YAML）用のモジュール表現。 バージョン管理・ブートストラップ用の静的定義データ。",
+  "type": "object",
+  "required": [
+    "module_name",
+    "parts"
+  ],
+  "properties": {
+    "$schema": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "message": {
+      "default": "",
+      "type": "string"
+    },
+    "module_description": {
+      "default": "",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Description"
+        }
+      ]
+    },
+    "module_name": {
+      "type": "string"
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ModulePartEntry"
+      }
+    }
+  },
+  "definitions": {
+    "AddExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "AndExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "BitAndExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "BitOrExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "BitXorExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "BooleanExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "type": "boolean"
+        }
+      }
+    },
+    "CallExpression": {
+      "type": "object",
+      "required": [
+        "argument",
+        "function"
+      ],
+      "properties": {
+        "argument": {
+          "$ref": "#/definitions/Expression"
+        },
+        "function": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "CompilerBuiltin": {
+      "type": "string",
+      "enum": [
+        "let",
+        "plus",
+        "minus",
+        "multiply",
+        "divide",
+        "remainder",
+        "less_than",
+        "less_than_or_equal",
+        "greater_than",
+        "greater_than_or_equal",
+        "equal",
+        "not_equal",
+        "not",
+        "and",
+        "or",
+        "string_concat",
+        "string_length",
+        "string_slice",
+        "list_length",
+        "list_concat",
+        "list_get",
+        "list_append",
+        "number_literal",
+        "if",
+        "function",
+        "call",
+        "bit_and",
+        "bit_or",
+        "bit_xor",
+        "shift_left",
+        "shift_right"
+      ]
+    },
+    "ConstructorExpression": {
+      "type": "object",
+      "required": [
+        "type_part_definition_event_hash",
+        "value"
+      ],
+      "properties": {
+        "type_part_definition_event_hash": {
+          "$ref": "#/definitions/EventHashId"
+        },
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ContentHash": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "format": "uint8",
+        "minimum": 0.0
+      },
+      "maxItems": 32,
+      "minItems": 32
+    },
+    "Description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LocalizedText"
+          }
+        }
+      ]
+    },
+    "DivideExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "EqualExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "EventHashId": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "format": "uint8",
+        "minimum": 0.0
+      },
+      "maxItems": 32,
+      "minItems": 32
+    },
+    "Expression": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "TypeNumber",
+            "TypeString",
+            "TypeBoolean"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "Number"
+          ],
+          "properties": {
+            "Number": {
+              "$ref": "#/definitions/NumberExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "String"
+          ],
+          "properties": {
+            "String": {
+              "$ref": "#/definitions/StringExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "TypeList"
+          ],
+          "properties": {
+            "TypeList": {
+              "$ref": "#/definitions/TypeListExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ListLiteral"
+          ],
+          "properties": {
+            "ListLiteral": {
+              "$ref": "#/definitions/ListLiteralExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Add"
+          ],
+          "properties": {
+            "Add": {
+              "$ref": "#/definitions/AddExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Subtract"
+          ],
+          "properties": {
+            "Subtract": {
+              "$ref": "#/definitions/SubtractExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Multiply"
+          ],
+          "properties": {
+            "Multiply": {
+              "$ref": "#/definitions/MultiplyExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Divide"
+          ],
+          "properties": {
+            "Divide": {
+              "$ref": "#/definitions/DivideExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Remainder"
+          ],
+          "properties": {
+            "Remainder": {
+              "$ref": "#/definitions/RemainderExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "BitAnd"
+          ],
+          "properties": {
+            "BitAnd": {
+              "$ref": "#/definitions/BitAndExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "BitOr"
+          ],
+          "properties": {
+            "BitOr": {
+              "$ref": "#/definitions/BitOrExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "BitXor"
+          ],
+          "properties": {
+            "BitXor": {
+              "$ref": "#/definitions/BitXorExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ShiftLeft"
+          ],
+          "properties": {
+            "ShiftLeft": {
+              "$ref": "#/definitions/ShiftLeftExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ShiftRight"
+          ],
+          "properties": {
+            "ShiftRight": {
+              "$ref": "#/definitions/ShiftRightExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "LessThan"
+          ],
+          "properties": {
+            "LessThan": {
+              "$ref": "#/definitions/LessThanExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "LessThanOrEqual"
+          ],
+          "properties": {
+            "LessThanOrEqual": {
+              "$ref": "#/definitions/LessThanOrEqualExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "GreaterThan"
+          ],
+          "properties": {
+            "GreaterThan": {
+              "$ref": "#/definitions/GreaterThanExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "GreaterThanOrEqual"
+          ],
+          "properties": {
+            "GreaterThanOrEqual": {
+              "$ref": "#/definitions/GreaterThanOrEqualExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "NotEqual"
+          ],
+          "properties": {
+            "NotEqual": {
+              "$ref": "#/definitions/NotEqualExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Not"
+          ],
+          "properties": {
+            "Not": {
+              "$ref": "#/definitions/NotExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "And"
+          ],
+          "properties": {
+            "And": {
+              "$ref": "#/definitions/AndExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Or"
+          ],
+          "properties": {
+            "Or": {
+              "$ref": "#/definitions/OrExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "StringConcat"
+          ],
+          "properties": {
+            "StringConcat": {
+              "$ref": "#/definitions/StringConcatExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "StringLength"
+          ],
+          "properties": {
+            "StringLength": {
+              "$ref": "#/definitions/StringLengthExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "StringSlice"
+          ],
+          "properties": {
+            "StringSlice": {
+              "$ref": "#/definitions/StringSliceExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ListLength"
+          ],
+          "properties": {
+            "ListLength": {
+              "$ref": "#/definitions/ListLengthExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ListConcat"
+          ],
+          "properties": {
+            "ListConcat": {
+              "$ref": "#/definitions/ListConcatExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ListGet"
+          ],
+          "properties": {
+            "ListGet": {
+              "$ref": "#/definitions/ListGetExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "ListAppend"
+          ],
+          "properties": {
+            "ListAppend": {
+              "$ref": "#/definitions/ListAppendExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "PartReference"
+          ],
+          "properties": {
+            "PartReference": {
+              "$ref": "#/definitions/PartReferenceExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Boolean"
+          ],
+          "properties": {
+            "Boolean": {
+              "$ref": "#/definitions/BooleanExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "If"
+          ],
+          "properties": {
+            "If": {
+              "$ref": "#/definitions/IfExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Equal"
+          ],
+          "properties": {
+            "Equal": {
+              "$ref": "#/definitions/EqualExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Let"
+          ],
+          "properties": {
+            "Let": {
+              "$ref": "#/definitions/LetExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Variable"
+          ],
+          "properties": {
+            "Variable": {
+              "$ref": "#/definitions/VariableExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "TypeLiteral"
+          ],
+          "properties": {
+            "TypeLiteral": {
+              "$ref": "#/definitions/TypeLiteralExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "RecordGet"
+          ],
+          "properties": {
+            "RecordGet": {
+              "$ref": "#/definitions/RecordGetExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Constructor"
+          ],
+          "properties": {
+            "Constructor": {
+              "$ref": "#/definitions/ConstructorExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Function"
+          ],
+          "properties": {
+            "Function": {
+              "$ref": "#/definitions/FunctionExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Call"
+          ],
+          "properties": {
+            "Call": {
+              "$ref": "#/definitions/CallExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "TypeFunction"
+          ],
+          "properties": {
+            "TypeFunction": {
+              "$ref": "#/definitions/TypeFunctionExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "TypeUnion"
+          ],
+          "properties": {
+            "TypeUnion": {
+              "$ref": "#/definitions/TypeUnionExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Variant"
+          ],
+          "properties": {
+            "Variant": {
+              "$ref": "#/definitions/VariantExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Match"
+          ],
+          "properties": {
+            "Match": {
+              "$ref": "#/definitions/MatchExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Compiler"
+          ],
+          "properties": {
+            "Compiler": {
+              "$ref": "#/definitions/CompilerBuiltin"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FunctionExpression": {
+      "type": "object",
+      "required": [
+        "body",
+        "parameter_id",
+        "parameter_name"
+      ],
+      "properties": {
+        "body": {
+          "$ref": "#/definitions/Expression"
+        },
+        "parameter_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "parameter_name": {
+          "type": "string"
+        }
+      }
+    },
+    "GreaterThanExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "GreaterThanOrEqualExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "IfExpression": {
+      "type": "object",
+      "required": [
+        "condition",
+        "else_expr",
+        "then_expr"
+      ],
+      "properties": {
+        "condition": {
+          "$ref": "#/definitions/Expression"
+        },
+        "else_expr": {
+          "$ref": "#/definitions/Expression"
+        },
+        "then_expr": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "LessThanExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "LessThanOrEqualExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "LetExpression": {
+      "type": "object",
+      "required": [
+        "body",
+        "value",
+        "variable_id",
+        "variable_name"
+      ],
+      "properties": {
+        "body": {
+          "$ref": "#/definitions/Expression"
+        },
+        "value": {
+          "$ref": "#/definitions/Expression"
+        },
+        "variable_id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "variable_name": {
+          "type": "string"
+        }
+      }
+    },
+    "ListAppendExpression": {
+      "type": "object",
+      "required": [
+        "item",
+        "list"
+      ],
+      "properties": {
+        "item": {
+          "$ref": "#/definitions/Expression"
+        },
+        "list": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ListConcatExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ListGetExpression": {
+      "type": "object",
+      "required": [
+        "index",
+        "list"
+      ],
+      "properties": {
+        "index": {
+          "$ref": "#/definitions/Expression"
+        },
+        "list": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ListLengthExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ListLiteralExpression": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Expression"
+          }
+        }
+      }
+    },
+    "LocalizedText": {
+      "type": "object",
+      "required": [
+        "language",
+        "text"
+      ],
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "MatchArm": {
+      "type": "object",
+      "required": [
+        "body",
+        "tag"
+      ],
+      "properties": {
+        "body": {
+          "$ref": "#/definitions/Expression"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "variable_id": {
+          "default": null,
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "variable_name": {
+          "default": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "MatchExpression": {
+      "type": "object",
+      "required": [
+        "arms",
+        "target"
+      ],
+      "properties": {
+        "arms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MatchArm"
+          }
+        },
+        "default": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Expression"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ModulePartEntry": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "content_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": {
+          "$ref": "#/definitions/Description"
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Expression"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "part_type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "MultiplyExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "NotEqualExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "NotExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "NumberExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "OrExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "PartReferenceExpression": {
+      "type": "object",
+      "required": [
+        "part_definition_event_hash"
+      ],
+      "properties": {
+        "content_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "part_definition_event_hash": {
+          "$ref": "#/definitions/EventHashId"
+        }
+      }
+    },
+    "PartType": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "number",
+            "string",
+            "boolean",
+            "type"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "type_part"
+          ],
+          "properties": {
+            "type_part": {
+              "$ref": "#/definitions/EventHashId"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "list"
+          ],
+          "properties": {
+            "list": {
+              "$ref": "#/definitions/PartType"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "function"
+          ],
+          "properties": {
+            "function": {
+              "type": "object",
+              "required": [
+                "parameter",
+                "return_type"
+              ],
+              "properties": {
+                "parameter": {
+                  "$ref": "#/definitions/PartType"
+                },
+                "return_type": {
+                  "$ref": "#/definitions/PartType"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "record"
+          ],
+          "properties": {
+            "record": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RecordFieldType"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "union"
+          ],
+          "properties": {
+            "union": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/UnionVariantType"
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "RecordFieldType": {
+      "type": "object",
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/PartType"
+        }
+      }
+    },
+    "RecordGetExpression": {
+      "type": "object",
+      "required": [
+        "key",
+        "record"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "record": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "RemainderExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ShiftLeftExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "ShiftRightExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "StringConcatExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "StringExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "StringLengthExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "StringSliceExpression": {
+      "type": "object",
+      "required": [
+        "end",
+        "start",
+        "value"
+      ],
+      "properties": {
+        "end": {
+          "$ref": "#/definitions/Expression"
+        },
+        "start": {
+          "$ref": "#/definitions/Expression"
+        },
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "SubtractExpression": {
+      "type": "object",
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/definitions/Expression"
+        },
+        "right": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "TypeFunctionExpression": {
+      "type": "object",
+      "required": [
+        "parameter",
+        "return_type"
+      ],
+      "properties": {
+        "parameter": {
+          "$ref": "#/definitions/Expression"
+        },
+        "return_type": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "TypeListExpression": {
+      "type": "object",
+      "required": [
+        "item_type"
+      ],
+      "properties": {
+        "item_type": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "TypeLiteralExpression": {
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TypeLiteralItemExpression"
+          }
+        }
+      }
+    },
+    "TypeLiteralItemExpression": {
+      "type": "object",
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "TypeUnionExpression": {
+      "type": "object",
+      "required": [
+        "variants"
+      ],
+      "properties": {
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TypeUnionVariant"
+          }
+        }
+      }
+    },
+    "TypeUnionVariant": {
+      "type": "object",
+      "required": [
+        "tag"
+      ],
+      "properties": {
+        "payload_type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Expression"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "UnionVariantType": {
+      "type": "object",
+      "required": [
+        "tag"
+      ],
+      "properties": {
+        "payload": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PartType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "VariableExpression": {
+      "type": "object",
+      "required": [
+        "variable_id"
+      ],
+      "properties": {
+        "variable_id": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "VariantExpression": {
+      "type": "object",
+      "required": [
+        "tag"
+      ],
+      "properties": {
+        "payload": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Expression"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tag": {
+          "type": "string"
+        },
+        "type_part_definition_event_hash": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EventHashId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

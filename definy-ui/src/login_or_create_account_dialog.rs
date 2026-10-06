@@ -107,6 +107,7 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
 fn LoginView(context: PageContext) -> Element {
     let mut password_val = use_signal(String::new);
     let mut error_msg = use_signal(|| None::<String>);
+    let mut show_password = use_signal(|| false);
 
     rsx! {
         form {
@@ -117,10 +118,25 @@ fn LoginView(context: PageContext) -> Element {
                 if let Some(signing_key) = crate::navigator_credential::parse_password(
                     password,
                 ) {
+                    crate::navigator_credential::credential_save_sync(&signing_key);
+                    {
+                        let key_clone = signing_key.clone();
+                        spawn(async move {
+                            let _ = crate::navigator_credential::credential_store(
+                                    "user",
+                                    &key_clone,
+                                )
+                                .await;
+                        });
+                    }
+                    if let Some(mut state_sig) = try_use_context::<Signal<AppState>>() {
+                        let mut next = state_sig.read().clone();
+                        next.current_key = Some(signing_key);
+                        next.is_auth_loading = false;
+                        state_sig.set(next);
+                    }
                     dialog_close();
                     error_msg.set(None);
-                    let mut state_sig = use_context::<Signal<AppState>>();
-                    state_sig.write().current_key = Some(signing_key);
                 } else {
                     error_msg
                         .set(
@@ -139,16 +155,36 @@ fn LoginView(context: PageContext) -> Element {
             },
             div { class: "form-group", style: "display: grid; gap: 0.4rem;",
                 label { "{context.language.label(\"Secret Key\", \"秘密鍵\", \"Sekreta ŝlosilo\")}" }
-                input {
-                    r#type: "password",
-                    name: "password",
-                    autocomplete: "current-password",
-                    required: true,
-                    style: "padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text);",
-                    oninput: move |evt: FormEvent| {
-                        password_val.set(evt.value());
-                        error_msg.set(None);
-                    },
+                div { style: "display: flex; gap: 0.4rem; align-items: center;",
+                    input {
+                        r#type: if show_password() { "text" } else { "password" },
+                        name: "password",
+                        autocomplete: "current-password",
+                        required: true,
+                        placeholder: context
+                            .language
+                            .label(
+                                "Paste base64 secret key...",
+                                "Base64秘密鍵を貼り付け...",
+                                "Algluu base64 sekretan ŝlosilon...",
+                            ),
+                        style: "flex: 1; padding: 0.4rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: monospace; font-size: 0.85rem;",
+                        value: "{password_val}",
+                        oninput: move |evt: FormEvent| {
+                            password_val.set(evt.value());
+                            error_msg.set(None);
+                        },
+                    }
+                    button {
+                        r#type: "button",
+                        style: "padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; font-size: 0.82rem;",
+                        onclick: move |_| show_password.toggle(),
+                        if show_password() {
+                            "🙈"
+                        } else {
+                            "👁"
+                        }
+                    }
                 }
             }
             if let Some(msg) = error_msg() {
@@ -276,6 +312,7 @@ fn CreateAccountView(context: PageContext) -> Element {
                         };
                         let mut next = state_sig.read().clone();
                         next.current_key = Some(key.clone());
+                        next.is_auth_loading = false;
                         next.event_cache.insert(event_hash.clone(), decoded_event);
                         if !next.event_list_state.event_hashes.contains(&event_hash) {
                             next.event_list_state.event_hashes.insert(0, event_hash);
@@ -411,6 +448,7 @@ fn CreateAccountView(context: PageContext) -> Element {
     }
 }
 
+#[allow(dead_code)]
 pub fn dialog_open() {
     #[cfg(target_arch = "wasm32")]
     if let Some(dlg) = web_sys::window()
@@ -422,6 +460,7 @@ pub fn dialog_open() {
     }
 }
 
+#[allow(dead_code)]
 pub fn dialog_close() {
     #[cfg(target_arch = "wasm32")]
     if let Some(dlg) = web_sys::window()

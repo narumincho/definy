@@ -6,12 +6,13 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - name: Install Dioxus CLI
         run: curl -sSL https://dioxus.dev/install.sh | bash
       - run: cargo fmt --check
       - run: dx fmt --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Setup ChromeDriver
         run: |
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
@@ -33,5 +34,5 @@ jobs:
           done
           WEBDRIVER_URL=http://localhost:4444 \
           E2E_BROWSER=chrome \
-          cargo test -p definy-ui --test browser_e2e -- --ignored
+          cargo test -p definy-server --test browser_e2e -- --ignored
       - run: cargo build -p definy-server --release

@@ -1,0 +1,870 @@
+use std::collections::HashMap;
+
+use definy_event::event::*;
+
+use super::{bytecode::*, function_ops::PendingFunction};
+
+pub(crate) struct CompileContext<'a> {
+    events: &'a [crate::EventWithHash],
+    static_data: Vec<u8>,
+    current_static_offset: u32,
+    visited_parts: Vec<(definy_event::EventHashId, Option<definy_event::ContentHash>)>,
+    pub(crate) pending_functions: Vec<PendingFunction>,
+    pub(crate) part_functions:
+        HashMap<(definy_event::EventHashId, Option<definy_event::ContentHash>), u32>,
+}
+
+impl<'a> CompileContext<'a> {
+    fn new(events: &'a [crate::EventWithHash]) -> Self {
+        Self {
+            events,
+            static_data: Vec::new(),
+            current_static_offset: 1024,
+            visited_parts: Vec::new(),
+            pending_functions: Vec::new(),
+            part_functions: HashMap::new(),
+        }
+    }
+
+    fn alloc_static_bytes(&mut self, bytes: &[u8]) -> u32 {
+        let offset = self.current_static_offset;
+        self.static_data.extend_from_slice(bytes);
+        self.current_static_offset += bytes.len() as u32;
+        // Align to 8 bytes
+        while !self.current_static_offset.is_multiple_of(8) {
+            self.static_data.push(0);
+            self.current_static_offset += 1;
+        }
+        offset
+    }
+
+    pub(crate) fn alloc_static_string(&mut self, s: &str) -> u32 {
+        let mut buf = Vec::new();
+        buf.push(2); // Tag 2: String
+        buf.extend_from_slice(&[0, 0, 0]); // 3 bytes padding
+        buf.extend_from_slice(&(s.len() as u32).to_le_bytes()); // len
+        buf.extend_from_slice(s.as_bytes()); // bytes
+        self.alloc_static_bytes(&buf)
+    }
+
+    pub(crate) fn alloc_static_number(&mut self, n: i64) -> u32 {
+        let mut buf = Vec::new();
+        buf.push(0); // Tag 0: Number
+        buf.extend_from_slice(&[0; 7]); // 7 bytes padding
+        buf.extend_from_slice(&n.to_le_bytes()); // 8 bytes i64
+        self.alloc_static_bytes(&buf)
+    }
+
+    pub(crate) fn alloc_static_bool(&mut self, b: bool) -> u32 {
+        let mut buf = Vec::new();
+        buf.push(1); // Tag 1: Bool
+        buf.extend_from_slice(&[0; 7]); // 7 bytes padding
+        buf.push(if b { 1 } else { 0 }); // 1 byte value
+        self.alloc_static_bytes(&buf)
+    }
+}
+
+pub fn compile_expression_to_wasm(
+    expression: &Expression,
+    events: &[crate::EventWithHash],
+) -> Result<Vec<u8>, String> {
+    let mut ctx = CompileContext::new(events);
+    let mut code_bytes = Vec::new();
+    // Local 0 is reserved as an i64 scratch local for number arithmetic.
+    // Locals starting at index 1 are i32 (used for pointers, temps, variables).
+    let mut next_local_idx = 1;
+    let env = HashMap::new();
+
+    emit_expression(
+        expression,
+        &mut code_bytes,
+        &env,
+        &mut next_local_idx,
+        &mut ctx,
+    )?;
+
+    // Append function end
+    code_bytes.push(END);
+
+    // Compile pending functions
+    let mut compiled_function_bodies = Vec::new();
+    let mut func_idx = 0;
+    while func_idx < ctx.pending_functions.len() {
+        let pending = ctx.pending_functions[func_idx].clone();
+        func_idx += 1;
+
+        let func_body = super::function_ops::compile_pending_function(&pending, &mut ctx)?;
+        compiled_function_bodies.push(func_body);
+    }
+
+    // Assemble full Wasm binary module using module_builder
+    let locals_count = count_locals(expression) + next_local_idx + 64;
+    let module = super::module_builder::assemble_wasm_module(
+        &code_bytes,
+        locals_count,
+        &compiled_function_bodies,
+        &ctx.static_data,
+    );
+
+    Ok(module)
+}
+
+pub(crate) fn emit_expression(
+    expression: &Expression,
+    out: &mut Vec<u8>,
+    env: &HashMap<i64, u32>,
+    next_local_idx: &mut u32,
+    ctx: &mut CompileContext,
+) -> Result<(), String> {
+    match expression {
+        Expression::Number(NumberExpression { value }) => {
+            let ptr = ctx.alloc_static_number(*value);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, ptr as i32);
+        }
+        Expression::Boolean(BooleanExpression { value }) => {
+            let ptr = ctx.alloc_static_bool(*value);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, ptr as i32);
+        }
+        Expression::String(StringExpression { value }) => {
+            let ptr = ctx.alloc_static_string(value);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, ptr as i32);
+        }
+        Expression::ListLiteral(ListLiteralExpression { items }) => {
+            // Allocate list in heap at runtime
+            let count = items.len() as u32;
+            let list_ptr_local = *next_local_idx;
+            *next_local_idx += 1;
+
+            // Get heap ptr
+            out.push(GLOBAL_GET);
+            out.push(0);
+            out.push(LOCAL_SET);
+            encode_u32_leb128(out, list_ptr_local);
+
+            // Store tag 3 at list_ptr
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, list_ptr_local);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, 3);
+            out.push(I32_STORE8);
+            encode_mem_arg(out, 0, 0);
+
+            // Store length at list_ptr + 4
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, list_ptr_local);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, count as i32);
+            out.push(I32_STORE);
+            encode_mem_arg(out, 2, 4);
+
+            // Update heap ptr: list_ptr + 8 + count * 4 (aligned to 8)
+            let total_size = (8 + count * 4).div_ceil(8) * 8;
+            out.push(GLOBAL_GET);
+            out.push(0);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, total_size as i32);
+            out.push(I32_ADD);
+            out.push(GLOBAL_SET);
+            out.push(0);
+
+            // Emit items and store their pointers
+            for (idx, item) in items.iter().enumerate() {
+                emit_expression(item, out, env, next_local_idx, ctx)?;
+                let elem_ptr_local = *next_local_idx;
+                *next_local_idx += 1;
+                out.push(LOCAL_SET);
+                encode_u32_leb128(out, elem_ptr_local);
+
+                out.push(LOCAL_GET);
+                encode_u32_leb128(out, list_ptr_local);
+                out.push(LOCAL_GET);
+                encode_u32_leb128(out, elem_ptr_local);
+                out.push(I32_STORE);
+                encode_mem_arg(out, 2, 8 + (idx as u32) * 4);
+            }
+
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, list_ptr_local);
+        }
+        Expression::TypeLiteral(TypeLiteralExpression { items }) => {
+            // Allocate record in heap
+            let count = items.len() as u32;
+            let record_ptr_local = *next_local_idx;
+            *next_local_idx += 1;
+
+            out.push(GLOBAL_GET);
+            out.push(0);
+            out.push(LOCAL_SET);
+            encode_u32_leb128(out, record_ptr_local);
+
+            // Store tag 4
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, record_ptr_local);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, 4);
+            out.push(I32_STORE8);
+            encode_mem_arg(out, 0, 0);
+
+            // Store count at record_ptr + 4
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, record_ptr_local);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, count as i32);
+            out.push(I32_STORE);
+            encode_mem_arg(out, 2, 4);
+
+            let total_size = (8 + count * 8).div_ceil(8) * 8;
+            out.push(GLOBAL_GET);
+            out.push(0);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, total_size as i32);
+            out.push(I32_ADD);
+            out.push(GLOBAL_SET);
+            out.push(0);
+
+            for (idx, item) in items.iter().enumerate() {
+                let key_ptr = ctx.alloc_static_string(&item.key);
+                emit_expression(&item.value, out, env, next_local_idx, ctx)?;
+                let val_ptr_local = *next_local_idx;
+                *next_local_idx += 1;
+                out.push(LOCAL_SET);
+                encode_u32_leb128(out, val_ptr_local);
+
+                // Store key ptr at record_ptr + 8 + idx * 8
+                out.push(LOCAL_GET);
+                encode_u32_leb128(out, record_ptr_local);
+                out.push(I32_CONST);
+                encode_i32_sleb128(out, key_ptr as i32);
+                out.push(I32_STORE);
+                encode_mem_arg(out, 2, 8 + (idx as u32) * 8);
+
+                // Store val ptr at record_ptr + 12 + idx * 8
+                out.push(LOCAL_GET);
+                encode_u32_leb128(out, record_ptr_local);
+                out.push(LOCAL_GET);
+                encode_u32_leb128(out, val_ptr_local);
+                out.push(I32_STORE);
+                encode_mem_arg(out, 2, 12 + (idx as u32) * 8);
+            }
+
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, record_ptr_local);
+        }
+        Expression::RecordGet(rg) => {
+            super::record_ops::emit_record_get(rg, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Constructor(ConstructorExpression { value, .. }) => {
+            emit_expression(value, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Add(AddExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_ADD,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "overflow in addition",
+            )?;
+        }
+        Expression::Subtract(SubtractExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SUB,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "overflow in subtraction",
+            )?;
+        }
+        Expression::Multiply(MultiplyExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_MUL,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "overflow in multiplication",
+            )?;
+        }
+        Expression::Divide(DivideExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_DIV_S,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "division by zero",
+            )?;
+        }
+        Expression::Remainder(RemainderExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_REM_S,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "remainder by zero",
+            )?;
+        }
+        Expression::BitAnd(BitAndExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_AND,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "bit and",
+            )?;
+        }
+        Expression::BitOr(BitOrExpression { left, right }) => {
+            emit_binary_arithmetic(left, right, I64_OR, out, env, next_local_idx, ctx, "bit or")?;
+        }
+        Expression::BitXor(BitXorExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_XOR,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "bit xor",
+            )?;
+        }
+        Expression::ShiftLeft(ShiftLeftExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SHL,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "shift left",
+            )?;
+        }
+        Expression::ShiftRight(ShiftRightExpression { left, right }) => {
+            emit_binary_arithmetic(
+                left,
+                right,
+                I64_SHR_U,
+                out,
+                env,
+                next_local_idx,
+                ctx,
+                "shift right",
+            )?;
+        }
+        Expression::Equal(EqualExpression { left, right }) => {
+            emit_binary_comparison(left, right, I64_EQ, out, env, next_local_idx, ctx)?;
+        }
+        Expression::NotEqual(NotEqualExpression { left, right }) => {
+            emit_binary_comparison(left, right, I64_NE, out, env, next_local_idx, ctx)?;
+        }
+        Expression::LessThan(LessThanExpression { left, right }) => {
+            emit_binary_comparison(left, right, I64_LT_S, out, env, next_local_idx, ctx)?;
+        }
+        Expression::LessThanOrEqual(LessThanOrEqualExpression { left, right }) => {
+            emit_binary_comparison(left, right, I64_LE_S, out, env, next_local_idx, ctx)?;
+        }
+        Expression::GreaterThan(GreaterThanExpression { left, right }) => {
+            emit_binary_comparison(left, right, I64_GT_S, out, env, next_local_idx, ctx)?;
+        }
+        Expression::GreaterThanOrEqual(GreaterThanOrEqualExpression { left, right }) => {
+            emit_binary_comparison(left, right, I64_GE_S, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Not(NotExpression { value }) => {
+            emit_expression(value, out, env, next_local_idx, ctx)?;
+            // Load boolean byte from ptr + 8
+            out.push(I32_LOAD8_U);
+            encode_mem_arg(out, 0, 8);
+            out.push(I32_EQZ);
+            emit_alloc_bool_from_stack(out, next_local_idx);
+        }
+        Expression::And(AndExpression { left, right }) => {
+            emit_expression(left, out, env, next_local_idx, ctx)?;
+            out.push(I32_LOAD8_U);
+            encode_mem_arg(out, 0, 8);
+            out.push(IF);
+            out.push(BLOCK_TYPE_I32);
+            emit_expression(right, out, env, next_local_idx, ctx)?;
+            out.push(ELSE);
+            let false_ptr = ctx.alloc_static_bool(false);
+            out.push(I32_CONST);
+            encode_i32_sleb128(out, false_ptr as i32);
+            out.push(END);
+        }
+        Expression::Or(OrExpression { left, right }) => {
+            emit_expression(left, out, env, next_local_idx, ctx)?;
+            let left_local = *next_local_idx;
+            *next_local_idx += 1;
+            out.push(LOCAL_TEE);
+            encode_u32_leb128(out, left_local);
+            out.push(I32_LOAD8_U);
+            encode_mem_arg(out, 0, 8);
+            out.push(IF);
+            out.push(BLOCK_TYPE_I32);
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, left_local);
+            out.push(ELSE);
+            emit_expression(right, out, env, next_local_idx, ctx)?;
+            out.push(END);
+        }
+        Expression::StringLength(StringLengthExpression { value }) => {
+            super::string_ops::emit_string_length(value, out, env, next_local_idx, ctx)?;
+        }
+        Expression::StringConcat(StringConcatExpression { left, right }) => {
+            super::string_ops::emit_string_concat(left, right, out, env, next_local_idx, ctx)?;
+        }
+        Expression::StringSlice(StringSliceExpression { value, start, end }) => {
+            super::string_ops::emit_string_slice(value, start, end, out, env, next_local_idx, ctx)?;
+        }
+        Expression::ListLength(ListLengthExpression { value }) => {
+            super::list_ops::emit_list_length(value, out, env, next_local_idx, ctx)?;
+        }
+        Expression::ListConcat(ListConcatExpression { left, right }) => {
+            super::list_ops::emit_list_concat(left, right, out, env, next_local_idx, ctx)?;
+        }
+        Expression::ListGet(ListGetExpression { list, index }) => {
+            super::list_ops::emit_list_get(list, index, out, env, next_local_idx, ctx)?;
+        }
+        Expression::ListAppend(ListAppendExpression { list, item }) => {
+            super::list_ops::emit_list_append(list, item, out, env, next_local_idx, ctx)?;
+        }
+        Expression::If(IfExpression {
+            condition,
+            then_expr,
+            else_expr,
+        }) => {
+            emit_expression(condition, out, env, next_local_idx, ctx)?;
+            // Load bool from cond_ptr + 8
+            out.push(I32_LOAD8_U);
+            encode_mem_arg(out, 0, 8);
+
+            out.push(IF);
+            out.push(BLOCK_TYPE_I32);
+
+            emit_expression(then_expr, out, env, next_local_idx, ctx)?;
+
+            out.push(ELSE);
+
+            emit_expression(else_expr, out, env, next_local_idx, ctx)?;
+
+            out.push(END);
+        }
+        Expression::Let(LetExpression {
+            variable_id,
+            value,
+            body,
+            ..
+        }) => {
+            emit_expression(value, out, env, next_local_idx, ctx)?;
+            let current_idx = *next_local_idx;
+            *next_local_idx += 1;
+
+            out.push(LOCAL_SET);
+            encode_u32_leb128(out, current_idx);
+
+            let mut new_env = env.clone();
+            new_env.insert(*variable_id, current_idx);
+
+            emit_expression(body, out, &new_env, next_local_idx, ctx)?;
+        }
+        Expression::Variable(VariableExpression { variable_id }) => {
+            let idx = env
+                .get(variable_id)
+                .ok_or_else(|| format!("Variable not found: {}", variable_id))?;
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, *idx);
+        }
+        Expression::PartReference(PartReferenceExpression {
+            part_definition_event_hash,
+            content_hash,
+        }) => {
+            let part_key = (part_definition_event_hash.clone(), content_hash.clone());
+            if let Some(&table_idx) = ctx.part_functions.get(&part_key) {
+                super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
+                return Ok(());
+            }
+
+            if let Some(target_expr) = resolve_part_expression(
+                ctx.events,
+                part_definition_event_hash,
+                content_hash.as_ref(),
+            ) {
+                if let Expression::Function(f) = target_expr {
+                    let table_idx = ctx.pending_functions.len() as u32;
+                    ctx.part_functions.insert(part_key, table_idx);
+                    ctx.pending_functions
+                        .push(super::function_ops::PendingFunction {
+                            captured_vars: Vec::new(),
+                            parameter_id: f.parameter_id,
+                            body: (*f.body).clone(),
+                        });
+                    super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
+                } else {
+                    if ctx.visited_parts.contains(&part_key) {
+                        return Err(
+                            "Circular reference detected while compiling PartReference to Wasm"
+                                .into(),
+                        );
+                    }
+                    if ctx.visited_parts.len() > 100 {
+                        return Err("Maximum part reference recursion depth exceeded".into());
+                    }
+
+                    ctx.visited_parts.push(part_key);
+                    let empty_env = HashMap::new();
+                    let res = emit_expression(target_expr, out, &empty_env, next_local_idx, ctx);
+                    ctx.visited_parts.pop();
+                    res?;
+                }
+            } else {
+                return Err(format!(
+                    "Part not found or has no expression: {}",
+                    part_definition_event_hash
+                ));
+            }
+        }
+        Expression::Function(f) => {
+            super::function_ops::emit_function(f, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Call(c) => {
+            super::function_ops::emit_call(c, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Variant(v) => {
+            super::adt_ops::emit_variant(v, out, env, next_local_idx, ctx)?;
+        }
+        Expression::Match(m) => {
+            super::adt_ops::emit_match(m, out, env, next_local_idx, ctx)?;
+        }
+        Expression::TypeNumber
+        | Expression::TypeString
+        | Expression::TypeBoolean
+        | Expression::TypeList(_)
+        | Expression::TypeFunction(_)
+        | Expression::TypeUnion(_) => {
+            return Err("Type expressions cannot be evaluated at runtime".into());
+        }
+        Expression::Compiler(_) => {
+            return Err("Compiler built-in cannot be evaluated directly as value".into());
+        }
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn emit_binary_arithmetic(
+    left: &Expression,
+    right: &Expression,
+    opcode: u8,
+    out: &mut Vec<u8>,
+    env: &HashMap<i64, u32>,
+    next_local_idx: &mut u32,
+    ctx: &mut CompileContext,
+    _err_msg: &str,
+) -> Result<(), String> {
+    emit_expression(left, out, env, next_local_idx, ctx)?;
+    out.push(I64_LOAD);
+    encode_mem_arg(out, 3, 8); // load i64 at offset 8
+
+    emit_expression(right, out, env, next_local_idx, ctx)?;
+    out.push(I64_LOAD);
+    encode_mem_arg(out, 3, 8); // load i64 at offset 8
+
+    out.push(opcode); // execute opcode (add, sub, mul, div_s, rem_s)
+
+    emit_alloc_number_from_stack(out, next_local_idx);
+    Ok(())
+}
+
+fn emit_binary_comparison(
+    left: &Expression,
+    right: &Expression,
+    opcode: u8,
+    out: &mut Vec<u8>,
+    env: &HashMap<i64, u32>,
+    next_local_idx: &mut u32,
+    ctx: &mut CompileContext,
+) -> Result<(), String> {
+    if opcode == I64_EQ || opcode == I64_NE {
+        let left_ptr_local = *next_local_idx;
+        *next_local_idx += 1;
+        let right_ptr_local = *next_local_idx;
+        *next_local_idx += 1;
+
+        emit_expression(left, out, env, next_local_idx, ctx)?;
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, left_ptr_local);
+
+        emit_expression(right, out, env, next_local_idx, ctx)?;
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, right_ptr_local);
+
+        // Check if both operands are strings (Tag 2: String at offset 0)
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, left_ptr_local);
+        out.push(I32_LOAD8_U);
+        encode_mem_arg(out, 0, 0);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 2);
+        out.push(I32_EQ);
+
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, right_ptr_local);
+        out.push(I32_LOAD8_U);
+        encode_mem_arg(out, 0, 0);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 2);
+        out.push(I32_EQ);
+
+        out.push(I32_AND);
+
+        out.push(IF);
+        out.push(BLOCK_TYPE_I32);
+        super::adt_ops::emit_string_eq(left_ptr_local, right_ptr_local, out, next_local_idx);
+        if opcode == I64_NE {
+            out.push(I32_EQZ);
+        }
+        out.push(ELSE);
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, left_ptr_local);
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, right_ptr_local);
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        out.push(opcode);
+        out.push(END);
+    } else {
+        emit_expression(left, out, env, next_local_idx, ctx)?;
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        emit_expression(right, out, env, next_local_idx, ctx)?;
+        out.push(I64_LOAD);
+        encode_mem_arg(out, 3, 8);
+
+        out.push(opcode); // comparison returns i32
+    }
+
+    emit_alloc_bool_from_stack(out, next_local_idx);
+    Ok(())
+}
+
+pub(crate) fn emit_alloc_number_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
+    const TEMP_I64_LOCAL: u32 = 0;
+
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, TEMP_I64_LOCAL);
+
+    let res_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
+
+    out.push(GLOBAL_GET);
+    out.push(0);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, res_ptr_local);
+
+    // Bump global heap by 16
+    out.push(GLOBAL_GET);
+    out.push(0);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 16);
+    out.push(I32_ADD);
+    out.push(GLOBAL_SET);
+    out.push(0);
+
+    // Store tag 0
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, res_ptr_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 0);
+    out.push(I32_STORE8);
+    encode_mem_arg(out, 0, 0);
+
+    // Store i64 value at res_ptr + 8
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, res_ptr_local);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, TEMP_I64_LOCAL);
+    out.push(I64_STORE);
+    encode_mem_arg(out, 3, 8);
+
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, res_ptr_local);
+}
+
+fn emit_alloc_bool_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
+    let bool_local = *next_local_idx;
+    *next_local_idx += 1;
+    let res_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
+
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, bool_local);
+
+    out.push(GLOBAL_GET);
+    out.push(0);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, res_ptr_local);
+
+    out.push(GLOBAL_GET);
+    out.push(0);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 16);
+    out.push(I32_ADD);
+    out.push(GLOBAL_SET);
+    out.push(0);
+
+    // Store tag 1
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, res_ptr_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 1);
+    out.push(I32_STORE8);
+    encode_mem_arg(out, 0, 0);
+
+    // Store bool byte at res_ptr + 8
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, res_ptr_local);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, bool_local);
+    out.push(I32_STORE8);
+    encode_mem_arg(out, 0, 8);
+
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, res_ptr_local);
+}
+
+pub(crate) fn encode_mem_arg(out: &mut Vec<u8>, align: u32, offset: u32) {
+    encode_u32_leb128(out, align);
+    encode_u32_leb128(out, offset);
+}
+
+pub(crate) fn count_locals(expr: &Expression) -> u32 {
+    match expr {
+        Expression::Let(LetExpression { value, body, .. }) => {
+            8 + count_locals(value) + count_locals(body)
+        }
+        Expression::Add(a) => 4 + count_locals(&a.left) + count_locals(&a.right),
+        Expression::Subtract(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
+        Expression::Multiply(m) => 4 + count_locals(&m.left) + count_locals(&m.right),
+        Expression::Divide(d) => 4 + count_locals(&d.left) + count_locals(&d.right),
+        Expression::Remainder(r) => 4 + count_locals(&r.left) + count_locals(&r.right),
+        Expression::BitAnd(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::BitOr(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::BitXor(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
+        Expression::ShiftLeft(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
+        Expression::ShiftRight(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
+        Expression::Equal(e) => 10 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::NotEqual(e) => 10 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::LessThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::LessThanOrEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::GreaterThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::GreaterThanOrEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
+        Expression::Not(n) => 4 + count_locals(&n.value),
+        Expression::And(a) => 4 + count_locals(&a.left) + count_locals(&a.right),
+        Expression::Or(o) => 4 + count_locals(&o.left) + count_locals(&o.right),
+        Expression::StringLength(s) => 4 + count_locals(&s.value),
+        Expression::StringConcat(s) => 8 + count_locals(&s.left) + count_locals(&s.right),
+        Expression::StringSlice(s) => {
+            10 + count_locals(&s.value) + count_locals(&s.start) + count_locals(&s.end)
+        }
+        Expression::ListLength(l) => 4 + count_locals(&l.value),
+        Expression::ListConcat(l) => 8 + count_locals(&l.left) + count_locals(&l.right),
+        Expression::ListGet(l) => 6 + count_locals(&l.list) + count_locals(&l.index),
+        Expression::ListAppend(l) => 8 + count_locals(&l.list) + count_locals(&l.item),
+        Expression::If(i) => {
+            4 + count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
+        }
+        Expression::ListLiteral(list) => 4 + list.items.iter().map(count_locals).sum::<u32>(),
+        Expression::TypeLiteral(record) => {
+            4 + record
+                .items
+                .iter()
+                .map(|item| count_locals(item.value.as_ref()))
+                .sum::<u32>()
+        }
+        Expression::RecordGet(r) => 12 + count_locals(&r.record),
+        Expression::Constructor(c) => count_locals(c.value.as_ref()),
+        Expression::Variant(v) => {
+            4 + v
+                .payload
+                .as_ref()
+                .map(|p| count_locals(p.as_ref()))
+                .unwrap_or(0)
+        }
+        Expression::Match(m) => {
+            12 + count_locals(&m.target)
+                + m.arms
+                    .iter()
+                    .map(|arm| 4 + count_locals(&arm.body))
+                    .sum::<u32>()
+                + m.default
+                    .as_ref()
+                    .map(|d| count_locals(d.as_ref()))
+                    .unwrap_or(0)
+        }
+        Expression::Function(f) => 6 + count_locals(&f.body),
+        Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
+        _ => 2,
+    }
+}
+
+pub fn resolve_part_expression<'a>(
+    events: &'a [crate::EventWithHash],
+    target_part_hash: &definy_event::EventHashId,
+    target_content_hash: Option<&definy_event::ContentHash>,
+) -> Option<&'a Expression> {
+    for (_event_hash, event_result) in events.iter().rev() {
+        let Ok((_, event)) = event_result else {
+            continue;
+        };
+        let definy_event::event::EventContent::ModuleCommit(module_commit) = &event.content else {
+            continue;
+        };
+        let module_id =
+            definy_event::event::derive_module_id(&event.account_id, &module_commit.module_name);
+        for part in &module_commit.parts {
+            let part_id = definy_event::event::derive_module_part_id(&module_id, &part.name);
+            if &part_id != target_part_hash {
+                continue;
+            }
+            let Some(expr) = part.expression.as_ref() else {
+                continue;
+            };
+            match target_content_hash {
+                Some(desired_hash) => {
+                    if definy_event::ContentHash::from_expression(expr)
+                        .ok()
+                        .as_ref()
+                        == Some(desired_hash)
+                    {
+                        return Some(expr);
+                    }
+                }
+                None => return Some(expr),
+            }
+        }
+    }
+    None
+}

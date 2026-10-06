@@ -9,6 +9,7 @@ base64 = { workspace = true }
 hex = { workspace = true }
 ed25519-dalek = { workspace = true, features = ["rand_core"] }
 definy-event = { workspace = true }
+definy-core = { workspace = true }
 web-sys = { workspace = true, features = [
   "console",
   "Window",
@@ -57,8 +58,3 @@ prost = { workspace = true }
 
 [dev-dependencies]
 dioxus-ssr = { workspace = true }
-hyper = { workspace = true, features = ["http1", "server"] }
-hyper-util = { workspace = true, features = ["client-legacy", "http1"] }
-http-body-util = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "time"] }
-serde_json = { workspace = true }

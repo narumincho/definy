@@ -50,12 +50,47 @@ impl McpSessionManager {
         self.sessions.write().await.remove(session_id);
     }
 
+    pub async fn session_count(&self) -> usize {
+        self.sessions.read().await.len()
+    }
+
     pub async fn send_to_session(&self, session_id: &str, msg: String) -> bool {
         if let Some(tx) = self.sessions.read().await.get(session_id) {
             tx.send(msg).await.is_ok()
         } else {
             false
         }
+    }
+}
+
+struct SessionGuard {
+    session_id: String,
+    session_manager: McpSessionManager,
+}
+
+impl Drop for SessionGuard {
+    fn drop(&mut self) {
+        let session_id = self.session_id.clone();
+        let session_manager = self.session_manager.clone();
+        tokio::spawn(async move {
+            session_manager.remove_session(&session_id).await;
+        });
+    }
+}
+
+struct GuardedStream<S> {
+    stream: S,
+    _guard: Arc<SessionGuard>,
+}
+
+impl<S: tokio_stream::Stream + Unpin> tokio_stream::Stream for GuardedStream<S> {
+    type Item = S::Item;
+
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        std::pin::Pin::new(&mut self.stream).poll_next(cx)
     }
 }
 
@@ -275,13 +310,26 @@ pub async fn handle_mcp_sse(
     let (session_id, rx) = session_manager.create_session().await;
     let endpoint_url = format!("/mcp/messages?sessionId={}", session_id);
 
+    let guard = Arc::new(SessionGuard {
+        session_id,
+        session_manager,
+    });
+
     let initial_event = Ok(Event::default().event("endpoint").data(endpoint_url));
     let initial_stream = tokio_stream::once(initial_event);
 
-    let message_stream =
-        ReceiverStream::new(rx).map(|msg| Ok(Event::default().event("message").data(msg)));
+    let message_stream = ReceiverStream::new(rx).map({
+        let _guard = guard.clone();
+        move |msg| {
+            let _ = &_guard;
+            Ok(Event::default().event("message").data(msg))
+        }
+    });
 
-    let full_stream = initial_stream.chain(message_stream);
+    let full_stream = GuardedStream {
+        stream: initial_stream.chain(message_stream),
+        _guard: guard,
+    };
 
     Sse::new(full_stream).keep_alive(
         KeepAlive::new()
@@ -562,9 +610,7 @@ mod tests {
         use http_body_util::BodyExt;
         use tower::ServiceExt;
 
-        let state = AppState {
-            db: Arc::new(RwLock::new(None)),
-        };
+        let state = AppState::test_state();
         let app = router(McpSessionManager::new()).with_state(state);
 
         let req = axum::http::Request::builder()
@@ -591,5 +637,23 @@ mod tests {
             body_json["result"]["protocolVersion"],
             LATEST_PROTOCOL_VERSION
         );
+    }
+
+    #[tokio::test]
+    async fn test_mcp_sse_session_cleanup_on_drop() {
+        let session_manager = McpSessionManager::new();
+        let state = AppState::test_state();
+
+        assert_eq!(session_manager.session_count().await, 0);
+
+        let sse_response =
+            handle_mcp_sse(session_manager.clone(), axum::extract::State(state)).await;
+        assert_eq!(session_manager.session_count().await, 1);
+
+        drop(sse_response);
+
+        tokio::time::sleep(Duration::from_millis(50)).await;
+
+        assert_eq!(session_manager.session_count().await, 0);
     }
 }

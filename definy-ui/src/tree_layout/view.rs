@@ -1,6 +1,7 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::app_state::PathStep;
+use crate::expression_editor::{ExpressionType, TypeDiagnostic};
 use dioxus::prelude::*;
 
 use super::types::{LayoutMode, LayoutNode, NodeKind};
@@ -10,6 +11,8 @@ struct RenderContext {
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
     collapsed_node_ids: Signal<HashSet<String>>,
+    diagnostics: Option<Signal<Vec<TypeDiagnostic>>>,
+    expected_types: Option<Signal<HashMap<Vec<PathStep>, ExpressionType>>>,
     editable: bool,
     on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
@@ -23,6 +26,8 @@ pub fn TreeLayoutRenderer(
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
     #[props(default = None)] collapsed_node_ids: Option<Signal<HashSet<String>>>,
+    #[props(default = None)] diagnostics: Option<Signal<Vec<TypeDiagnostic>>>,
+    #[props(default = None)] expected_types: Option<Signal<HashMap<Vec<PathStep>, ExpressionType>>>,
     #[props(default = false)] editable: bool,
     #[props(default = None)] on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     #[props(default = None)] on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
@@ -36,6 +41,8 @@ pub fn TreeLayoutRenderer(
         selected_node_id,
         hovered_node_id,
         collapsed_node_ids: effective_collapsed,
+        diagnostics,
+        expected_types,
         editable,
         on_select_node,
         on_change_number,
@@ -50,14 +57,44 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node_id);
     let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node_id);
 
+    let (has_error, error_message) = if let Some(sig) = ctx.diagnostics {
+        let diags = sig.read();
+        if let Some(d) = diags.iter().find(|d| d.path == node.path) {
+            (true, Some(d.message.clone()))
+        } else {
+            (false, None)
+        }
+    } else {
+        (false, None)
+    };
+
+    let expected_type_str = if let Some(sig) = ctx.expected_types {
+        sig.read().get(&node.path).map(|t| t.text())
+    } else {
+        None
+    };
+
+    let mut tooltip_parts = Vec::new();
+    if let Some(err) = &error_message {
+        tooltip_parts.push(format!("⚠ 型エラー: {}", err));
+    }
+    if let Some(exp) = &expected_type_str {
+        tooltip_parts.push(format!("期待する型: {}", exp));
+    }
+    tooltip_parts.push(format!(
+        "ID: {} ({:.0}x{:.0}px)",
+        node.id, node.computed_width, node.computed_height
+    ));
+    let tooltip = tooltip_parts.join("\n");
+
     // テーブル（スプレッドシート型）の場合は専用レンダラー
     if node.kind == NodeKind::Table {
-        return render_table_node(node, ctx);
+        return render_table_node(node, ctx, has_error, &tooltip);
     }
 
     // 葉ノード（子要素なし：数値・文字列・識別子など）
     if node.children.is_empty() {
-        let badge_style = node_badge_style(&node.kind, is_selected, is_hovered);
+        let badge_style = node_badge_style(&node.kind, is_selected, is_hovered, has_error);
         let id_for_click = node.id.clone();
         let id_for_enter = node.id.clone();
         let path_for_click = node.path.clone();
@@ -132,9 +169,12 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                     let mut hov = ctx.hovered_node_id;
                     hov.set(None);
                 },
-                div {
-                    style: "{badge_style}",
-                    title: "ID: {node.id} ({node.computed_width:.0}x{node.computed_height:.0}px)",
+                div { style: "{badge_style}", title: "{tooltip}",
+                    if has_error {
+                        span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
+                            "⚠"
+                        }
+                    }
                     {inner_element}
                 }
             }
@@ -143,8 +183,8 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
 
     // 子要素がある複合ノード（Operator, Group, Block）
     let is_multiline = node.layout_mode == LayoutMode::Multiline;
-    let badge_style = node_badge_style(&node.kind, is_selected, false);
-    let container_style = capsule_container_style(is_multiline, is_selected, is_hovered);
+    let badge_style = node_badge_style(&node.kind, is_selected, false, has_error);
+    let container_style = capsule_container_style(is_multiline, is_selected, is_hovered, has_error);
 
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
@@ -200,9 +240,12 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                             "▾"
                         }
                     }
-                    div {
-                        style: "{badge_style}",
-                        title: "ID: {node.id} ({node.computed_width:.0}x{node.computed_height:.0}px)",
+                    div { style: "{badge_style}", title: "{tooltip}",
+                        if has_error {
+                            span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
+                                "⚠"
+                            }
+                        }
                         "{node.label}"
                     }
                     if is_collapsed {
@@ -255,9 +298,12 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                     let mut hov = ctx.hovered_node_id;
                     hov.set(None);
                 },
-                div {
-                    style: "{badge_style}",
-                    title: "ID: {node.id} ({node.computed_width:.0}x{node.computed_height:.0}px)",
+                div { style: "{badge_style}", title: "{tooltip}",
+                    if has_error {
+                        span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
+                            "⚠"
+                        }
+                    }
                     "{node.label}"
                 }
                 for child in &node.children {
@@ -268,13 +314,22 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     }
 }
 
-fn render_table_node(node: &LayoutNode, ctx: RenderContext) -> Element {
+fn render_table_node(
+    node: &LayoutNode,
+    ctx: RenderContext,
+    has_error: bool,
+    tooltip: &str,
+) -> Element {
     let headers = &node.table_headers;
     let col_widths = &node.columns_width;
     let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node.id);
     let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node.id);
 
-    let border_color = if is_selected {
+    let border_color = if has_error && is_selected {
+        "#ef4444"
+    } else if has_error {
+        "rgb(239 68 68 / 0.8)"
+    } else if is_selected {
         "var(--primary)"
     } else if is_hovered {
         "var(--border-strong)"
@@ -289,7 +344,8 @@ fn render_table_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     rsx! {
         div {
             class: "tree-node-table-wrapper",
-            style: "display: flex; flex-direction: column; border: 1px solid {border_color}; border-radius: var(--radius-md); background: rgb(0 0 0 / 0.25); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);",
+            style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-md); background: rgb(0 0 0 / 0.25); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);",
+            title: "{tooltip}",
             onclick: move |evt: MouseEvent| {
                 evt.stop_propagation();
                 let mut sel = ctx.selected_node_id;
@@ -312,7 +368,11 @@ fn render_table_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                 // Table Header Row
                 div { style: "display: flex; background: rgb(255 255 255 / 0.06); border-bottom: 1px solid var(--border); padding: 0.4rem 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);",
                     div { style: "width: 2.2rem; min-width: 2.2rem; color: var(--text-secondary); text-align: center; opacity: 0.7;",
-                        "#"
+                        if has_error {
+                            "⚠"
+                        } else {
+                            "#"
+                        }
                     }
                     for (i, header) in headers.iter().enumerate() {
                         div {
@@ -344,57 +404,70 @@ fn render_table_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     }
 }
 
-pub fn node_badge_style(kind: &NodeKind, is_selected: bool, is_hovered: bool) -> String {
-    let (bg, text_color, border) = match kind {
-        NodeKind::LiteralNumber => (
-            "rgb(180 215 255 / 0.14)",
-            "#93c5fd",
-            "1px solid rgb(147 197 253 / 0.3)",
-        ),
-        NodeKind::LiteralString => (
-            "rgb(134 239 172 / 0.14)",
-            "#86efac",
-            "1px solid rgb(134 239 172 / 0.3)",
-        ),
-        NodeKind::LiteralBoolean => (
-            "rgb(244 114 182 / 0.14)",
-            "#f472b6",
-            "1px solid rgb(244 114 182 / 0.3)",
-        ),
-        NodeKind::Identifier => (
-            "rgb(255 255 255 / 0.08)",
-            "#e2e8f0",
-            "1px solid rgb(255 255 255 / 0.2)",
-        ),
-        NodeKind::Keyword => (
-            "rgb(192 132 252 / 0.16)",
-            "#c084fc",
-            "1px solid rgb(192 132 252 / 0.38)",
-        ),
-        NodeKind::Operator => (
-            "rgb(251 191 36 / 0.16)",
-            "#fbbf24",
-            "1px solid rgb(251 191 36 / 0.38)",
-        ),
-        NodeKind::Delimiter => ("transparent", "#94a3b8", "none"),
-        NodeKind::Group => (
-            "rgb(124 192 216 / 0.1)",
-            "#7cc0d8",
-            "1px solid rgb(124 192 216 / 0.3)",
-        ),
-        NodeKind::Block => (
-            "rgb(148 163 184 / 0.14)",
-            "#cbd5e1",
-            "1px solid rgb(148 163 184 / 0.32)",
-        ),
-        NodeKind::Table => (
-            "rgb(167 139 250 / 0.14)",
-            "#c4b5fd",
-            "1px solid rgb(167 139 250 / 0.32)",
-        ),
+pub fn node_badge_style(
+    kind: &NodeKind,
+    is_selected: bool,
+    is_hovered: bool,
+    has_error: bool,
+) -> String {
+    let (bg, text_color, border) = if has_error {
+        ("rgb(239 68 68 / 0.22)", "#fca5a5", "1.5px solid #ef4444")
+    } else {
+        match kind {
+            NodeKind::LiteralNumber => (
+                "rgb(180 215 255 / 0.14)",
+                "#93c5fd",
+                "1px solid rgb(147 197 253 / 0.3)",
+            ),
+            NodeKind::LiteralString => (
+                "rgb(134 239 172 / 0.14)",
+                "#86efac",
+                "1px solid rgb(134 239 172 / 0.3)",
+            ),
+            NodeKind::LiteralBoolean => (
+                "rgb(244 114 182 / 0.14)",
+                "#f472b6",
+                "1px solid rgb(244 114 182 / 0.3)",
+            ),
+            NodeKind::Identifier => (
+                "rgb(255 255 255 / 0.08)",
+                "#e2e8f0",
+                "1px solid rgb(255 255 255 / 0.2)",
+            ),
+            NodeKind::Keyword => (
+                "rgb(192 132 252 / 0.16)",
+                "#c084fc",
+                "1px solid rgb(192 132 252 / 0.38)",
+            ),
+            NodeKind::Operator => (
+                "rgb(251 191 36 / 0.16)",
+                "#fbbf24",
+                "1px solid rgb(251 191 36 / 0.38)",
+            ),
+            NodeKind::Delimiter => ("transparent", "#94a3b8", "none"),
+            NodeKind::Group => (
+                "rgb(124 192 216 / 0.1)",
+                "#7cc0d8",
+                "1px solid rgb(124 192 216 / 0.3)",
+            ),
+            NodeKind::Block => (
+                "rgb(148 163 184 / 0.14)",
+                "#cbd5e1",
+                "1px solid rgb(148 163 184 / 0.32)",
+            ),
+            NodeKind::Table => (
+                "rgb(167 139 250 / 0.14)",
+                "#c4b5fd",
+                "1px solid rgb(167 139 250 / 0.32)",
+            ),
+        }
     };
 
-    let focus_style = if is_selected {
+    let focus_style = if has_error && is_selected {
+        "box-shadow: 0 0 0 2px #ef4444, 0 2px 8px rgb(239 68 68 / 0.4); border-color: #ef4444;"
+    } else if has_error {
+        "box-shadow: 0 0 0 1px #ef4444;"
+    } else if is_selected {
         "box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgb(124 192 216 / 0.3); border-color: var(--accent);"
     } else if is_hovered {
         "box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.4); border-color: #fff;"
@@ -408,8 +481,17 @@ pub fn node_badge_style(kind: &NodeKind, is_selected: bool, is_hovered: bool) ->
     )
 }
 
-fn capsule_container_style(is_multiline: bool, is_selected: bool, is_hovered: bool) -> String {
-    let (bg, border) = if is_selected {
+fn capsule_container_style(
+    is_multiline: bool,
+    is_selected: bool,
+    is_hovered: bool,
+    has_error: bool,
+) -> String {
+    let (bg, border) = if has_error && is_selected {
+        ("rgb(239 68 68 / 0.16)", "2px solid #ef4444")
+    } else if has_error {
+        ("rgb(239 68 68 / 0.08)", "1.5px solid #ef4444")
+    } else if is_selected {
         ("rgb(124 192 216 / 0.1)", "1.5px solid var(--accent)")
     } else if is_hovered {
         (

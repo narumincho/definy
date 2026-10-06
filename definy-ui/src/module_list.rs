@@ -21,7 +21,7 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
                 if !is_form_open() {
                     button {
                         r#type: "button",
-                        style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
+                        class: "btn-primary",
                         onclick: move |_| {
                             let state_sig = use_context::<Signal<AppState>>();
                             if state_sig.read().current_key.is_none() {

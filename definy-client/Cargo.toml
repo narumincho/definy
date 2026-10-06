@@ -23,8 +23,8 @@ chrono = { workspace = true, features = ["alloc", "serde", "wasmbind", "now"] }
 anyhow = { workspace = true }
 serde_cbor = { workspace = true, features = ["std", "tags"] }
 sha2 = { workspace = true }
-futures-channel = "0.3.34"
-futures-util = "0.3.34"
+futures-channel = { workspace = true }
+futures-util = { workspace = true }
 
 # サーバー用依存 (Native 専用: WASM には一切含まれない)
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -39,4 +39,4 @@ web-sys = { workspace = true, features = ["console", "Window", "Document", "Elem
 dioxus-web = { workspace = true }
 getrandom = { workspace = true, features = ["js"] }
 wasm-bindgen-futures = { workspace = true }
-console_error_panic_hook = "0.1.7"
+console_error_panic_hook = { workspace = true }

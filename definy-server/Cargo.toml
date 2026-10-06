@@ -12,14 +12,17 @@ name = "definy_server"
 path = "src/main.rs"
 
 [dependencies]
-axum = "0.8"
+axum = { workspace = true }
 hyper = { workspace = true, features = ["full"] }
 tokio = { workspace = true, features = ["full"] }
-tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-stream = { workspace = true, features = ["sync"] }
 http-body-util = { workspace = true }
 hyper-util = { workspace = true, features = ["full"] }
+reqwest = { workspace = true }
 definy-ui = { workspace = true }
-definy-event = { workspace = true, features = ["utoipa"] }
+definy-core = { workspace = true }
+definy-event = { workspace = true, features = ["utoipa", "schemars"] }
+schemars = { workspace = true }
 dioxus = { workspace = true, features = ["macro", "hooks"] }
 dioxus-fullstack = { workspace = true }
 dioxus-ssr = { workspace = true }
@@ -28,7 +31,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_cbor = { workspace = true }
 prost = { workspace = true }
-surrealdb = { version = "3.2.4", features = [
+surrealdb = { workspace = true, features = [
   "kv-mem",
   "protocol-ws",
   "protocol-http",
@@ -36,16 +39,16 @@ surrealdb = { version = "3.2.4", features = [
 ] }
 anyhow = { workspace = true }
 ed25519-dalek = { workspace = true }
-hex = "0.4.3"
+hex = { workspace = true }
 base64 = { workspace = true }
 serde_urlencoded = { workspace = true }
 strum = { workspace = true, features = ["derive"] }
 strum_macros = { workspace = true }
-url = "2.5.8"
+url = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-rand = "0.8.8"
-tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.6", features = ["cors"] }
+rand = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+tower-http = { workspace = true, features = ["cors"] }
 utoipa = { workspace = true, features = ["axum_extras", "chrono"] }
-utoipa-swagger-ui = { version = "9.0", features = ["axum"] }
-utoipa-axum = "0.2"
+utoipa-swagger-ui = { workspace = true, features = ["axum"] }
+utoipa-axum = { workspace = true }

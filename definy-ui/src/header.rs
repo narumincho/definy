@@ -5,12 +5,12 @@ use crate::{AppState, Location};
 
 #[component]
 pub fn HeaderView(state: AppState, context: PageContext) -> Element {
+    // ラッパー要素を挟むと position: sticky の包含ブロックがヘッダーの高さだけになり
+    // 追従しなくなるため, フラグメントで返す
     rsx! {
-        div {
-            HeaderMain { state: state.clone(), context: context.clone() }
-            if state.current_key.is_some() {
-                HeaderPopover { state, context }
-            }
+        HeaderMain { state: state.clone(), context: context.clone() }
+        if state.current_key.is_some() {
+            HeaderPopover { state, context }
         }
     }
 }
@@ -49,17 +49,13 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
     };
 
     rsx! {
-        header {
-            class: "app-header",
-            style: "display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 1.4rem; left: 0; right: 0; width: 100%; position: fixed; top: 0; z-index: 10; box-sizing: border-box;",
-            div {
-                class: "app-nav",
-                style: "display: flex; align-items: center; gap: 0.4rem; overflow-x: auto; scrollbar-width: none;",
-                a {
-                    href: context.href_with_lang(Location::Home),
-                    style: "text-decoration: none; display: inline-flex; align-items: center; margin-right: 0.4rem; flex-shrink: 0;",
-                    h1 { class: "logo-text", "definy" }
-                }
+        header { class: "app-header",
+            a {
+                class: "app-logo",
+                href: context.href_with_lang(Location::Home),
+                h1 { class: "logo-text", "definy" }
+            }
+            nav { class: "app-nav",
                 NavLink {
                     context: context.clone(),
                     target: Location::Home,
@@ -97,6 +93,13 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 }
                 NavLink {
                     context: context.clone(),
+                    target: Location::Deployments,
+                    label: "Deploy",
+                    label_ja: "デプロイ",
+                    label_eo: "Deplojo",
+                }
+                NavLink {
+                    context: context.clone(),
                     target: Location::Settings,
                     label: "Settings",
                     label_ja: "設定",
@@ -104,17 +107,21 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                     badge: local_events_badge,
                 }
             }
-            div {
-                class: "header-title-container",
-                style: "flex-grow: 1; display: flex; justify-content: center; padding: 0 0.8rem;",
-                div { style: "font-size: 0.84rem; font-weight: 500; color: var(--text-secondary); max-width: 36vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.01em;",
-                    "{title_text}"
-                }
+            div { class: "header-title-container",
+                div { class: "header-title", "{title_text}" }
             }
-            div { style: "display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0;",
+            div { class: "header-actions",
                 ConnectionStatusIndicator { state: state.clone(), context: context.clone() }
                 LanguageDropdown { state: state.clone(), context: context.clone() }
-                if let Some(secret_key) = current_key_opt {
+                if state.is_auth_loading {
+                    div {
+                        class: "auth-loading-placeholder header-control",
+                        style: "color: var(--text-muted); letter-spacing: 0.02em;",
+                        span {
+                            "{context.language.label(\"Checking...\", \"確認中...\", \"Kontrolante...\")}"
+                        }
+                    }
+                } else if let Some(secret_key) = current_key_opt {
                     {
                         let account_id = definy_event::event::AccountId(secret_key.verifying_key());
                         let account_name = state
@@ -134,8 +141,8 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                                 class: "btn-secondary",
                                 "popovertarget": "header-popover",
                                 "popovertargetaction": "show",
-                                style: "font-family: 'JetBrains Mono', monospace; font-size: 0.76rem; max-width: min(46vw, 360px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; anchor-name: --header-popover-button;",
-                                "{account_name}"
+                                style: "max-width: min(40vw, 360px); anchor-name: --header-popover-button;",
+                                span { style: "overflow: hidden; text-overflow: ellipsis;", "{account_name}" }
                             }
                         }
                     }
@@ -194,7 +201,7 @@ fn NavLink(
         a {
             class: "{class_name}",
             href: context.href_with_lang(target),
-            style: "display: inline-flex; align-items: center; gap: 0.35rem;",
+            "aria-current": if is_active { "page" } else { "false" },
             span { "{context.language.label(label, label_ja, label_eo)}" }
             if let Some(b) = badge {
                 {b}
@@ -269,15 +276,21 @@ fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
             // 接続ステータスドット＆ラベル
             button {
                 r#type: "button",
-                style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.65rem; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); border-radius: var(--radius-full); font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease;",
+                class: "connection-status-button",
+                style: "gap: 0.4rem; background: rgba(255, 255, 255, 0.04); font-weight: 500;",
                 title: "{tooltip}",
+                "aria-label": "{tooltip}",
                 onclick: move |_| {
                     let mut dispatch = use_context::<Signal<AppState>>();
                     let cur = dispatch.read().force_offline;
                     dispatch.write().force_offline = !cur;
                 },
                 span { style: "display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: {dot_color}; box-shadow: 0 0 8px {dot_color}; flex-shrink: 0; animation: pulse-glow 2s infinite ease-in-out;" }
-                span { style: "white-space: nowrap;", "{status_text}" }
+                span {
+                    class: "connection-status-label",
+                    style: "white-space: nowrap;",
+                    "{status_text}"
+                }
             }
             // 未送信ローカルイベントがある場合のチップ表示
             if queued_count > 0 || failed_count > 0 {
@@ -340,13 +353,12 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
             div {
                 button {
                     r#type: "button",
+                    class: "header-control",
                     "popovertarget": "dropdown-panel-language",
                     "popovertargetaction": "show",
-                    style: "width: 100%; text-align: left; padding: 0.4rem 0.6rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; anchor-name: --dropdown-language;",
+                    style: "anchor-name: --dropdown-language;",
                     "{current_native}"
-                    div { style: "opacity: 0.5; font-size: 0.8rem; margin-left: 0.5rem;",
-                        "▼"
-                    }
+                    span { class: "header-control-caret", "▼" }
                 }
                 div {
                     id: "dropdown-panel-language",
@@ -433,10 +445,62 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
                 onclick: move |_| {
                     crate::navigator_credential::credential_clear();
                     let mut dispatch = use_context::<Signal<AppState>>();
-                    dispatch.write().current_key = None;
+                    let mut next = dispatch.read().clone();
+                    next.current_key = None;
+                    next.is_auth_loading = false;
+                    dispatch.set(next);
                 },
                 "{context.language.label(\"Log Out\", \"ログアウト\", \"Elsaluti\")}"
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_header_initial_state_shows_checking() {
+        let state = crate::build_initial_state(vec![], false, false, None, None, true);
+        assert!(state.is_auth_loading);
+        assert!(state.current_key.is_none());
+
+        let context = crate::PageContext::from_path_and_query("/", "", Some("ja"));
+        let mut renderer = dioxus_ssr::Renderer::new();
+        let html = renderer.render_element(rsx! {
+            HeaderView { state, context }
+        });
+
+        assert!(
+            html.contains("auth-loading-placeholder") || html.contains("確認中..."),
+            "Initial SSR header should display checking placeholder, got: {}",
+            html
+        );
+        assert!(
+            !html.contains("commandfor=\"login-or-create-account-dialog\""),
+            "Initial SSR header must not display login button immediately, got: {}",
+            html
+        );
+    }
+
+    #[test]
+    fn test_header_unauthenticated_shows_login_button() {
+        let mut state = crate::build_initial_state(vec![], false, false, None, None, true);
+        state.is_auth_loading = false;
+        state.current_key = None;
+
+        let context = crate::PageContext::from_path_and_query("/", "", Some("ja"));
+        let mut renderer = dioxus_ssr::Renderer::new();
+        let html = renderer.render_element(rsx! {
+            HeaderView { state, context }
+        });
+
+        assert!(
+            html.contains("ログイン")
+                && html.contains("commandfor=\"login-or-create-account-dialog\""),
+            "Resolved unauthenticated header should display login button, got: {}",
+            html
+        );
     }
 }

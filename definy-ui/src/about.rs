@@ -44,7 +44,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         {
                             lang.label(
                                 "definy rethinks software development from first principles. Instead of storing text files with syntax errors and fragile dependency versioning, definy treats syntax trees as first-class cryptographic objects and connects distributed developers through zero-trust event sourcing.",
-                                "definy（デフィニー）は、従来の「テキストファイルと壊れやすい依存管理」からプログラミングを根本的に再構築するプロジェクトです。コードを文字列ではなく純粋な構文木（AST）として扱い、SHA-256 のコンテンツハッシュで厳密にバージョン固定。さらに決定論的 CBOR と暗号署名によるイベントソーシングにより、安全で分散協調可能な開発を実現します。",
+                                "definy（デファイニー）は、従来の「テキストファイルと壊れやすい依存管理」からプログラミングを根本的に再構築するプロジェクトです。コードを文字列ではなく純粋な構文木（AST）として扱い、SHA-256 のコンテンツハッシュで厳密にバージョン固定。さらに決定論的 CBOR と暗号署名によるイベントソーシングにより、安全で分散協調可能な開発を実現します。",
                                 "definy rekonsideras programadon. Anstataŭ tekstaj dosieroj kun sintaksaj eraroj, definy traktas sintaksarbojn kiel kriptografiajn objektojn.",
                             )
                         }

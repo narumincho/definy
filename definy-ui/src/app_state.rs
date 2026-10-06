@@ -3,11 +3,7 @@ use definy_event::{
     event::{AccountId, EventType},
 };
 
-pub type DecodedEvent = Result<
-    (ed25519_dalek::Signature, definy_event::event::Event),
-    definy_event::VerifyAndDeserializeError,
->;
-pub type EventWithHash = (EventHashId, DecodedEvent);
+pub use definy_core::{DecodedEvent, EventWithHash};
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum PathStep {
@@ -174,6 +170,7 @@ pub struct AppState {
         >,
     >,
     pub event_list_state: EventListState,
+    pub is_auth_loading: bool,
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub force_offline: bool,
     pub local_event_queue: LocalEventQueueState,
@@ -202,6 +199,7 @@ impl Default for AppState {
                 filter_event_type: None,
             },
             focused_path: None,
+            is_auth_loading: true,
             current_key: None,
             force_offline: false,
             local_event_queue: LocalEventQueueState {
@@ -337,6 +335,7 @@ pub fn build_initial_state(
             has_more: event_list_has_more,
             filter_event_type,
         },
+        is_auth_loading: current_key.is_none(),
         current_key,
         force_offline: false,
         local_event_queue: LocalEventQueueState {
@@ -508,6 +507,7 @@ pub enum Location {
     TreeLayout,
     Settings,
     About,
+    Deployments,
     ApiOverview,
     ApiMethod(ApiMethod, Option<definy_event::EventHashId>),
     ApiArchitecture,
@@ -524,6 +524,7 @@ impl Location {
             Location::TreeLayout => "/tree-layout".to_string(),
             Location::Settings => "/settings".to_string(),
             Location::About => "/about".to_string(),
+            Location::Deployments => "/deployments".to_string(),
             Location::ApiOverview => "/api".to_string(),
             Location::ApiArchitecture => "/api/architecture".to_string(),
             Location::ApiMethod(method, None) => format!("/api/{}", method.slug()),
@@ -546,6 +547,7 @@ impl Location {
             ["tree-layout"] => Some(Location::TreeLayout),
             ["settings"] => Some(Location::Settings),
             ["about"] => Some(Location::About),
+            ["deployments"] => Some(Location::Deployments),
             ["api"] => Some(Location::ApiOverview),
             ["api", "architecture"] => Some(Location::ApiArchitecture),
             ["api", method_or_hash] => {
@@ -593,6 +595,7 @@ mod tests {
             Location::TreeLayout,
             Location::Settings,
             Location::About,
+            Location::Deployments,
             Location::ApiOverview,
             Location::ApiArchitecture,
             Location::ApiMethod(super::ApiMethod::GetEvents, None),

@@ -29,6 +29,7 @@ pub enum EventContent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct LocalizedText {
     pub language: Box<str>,
     pub text: Box<str>,
@@ -44,6 +45,7 @@ impl LocalizedText {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(untagged)]
 pub enum Description {
     Plain(Box<str>),
@@ -135,6 +137,7 @@ impl std::fmt::Display for Description {
 /// 初回コミット (`parent_commit_hash == None`) ではモジュールの作成を兼ね、そのコミットハッシュがモジュールIDとなります。
 /// 2回目以降のコミット (`parent_commit_hash == Some(...)`) では、モジュールの更新を表します。
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ModuleCommitEvent {
     pub module_name: Box<str>,
     #[serde(default)]
@@ -144,6 +147,48 @@ pub struct ModuleCommitEvent {
     #[serde(default)]
     pub message: Box<str>,
     pub parts: Vec<ModulePartEntry>,
+}
+
+/// Seed データファイル（JSON / YAML）用のモジュール表現。
+/// バージョン管理・ブートストラップ用の静的定義データ。
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ModuleSeed {
+    #[serde(default, rename = "$schema", skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
+    pub module_name: Box<str>,
+    #[serde(default)]
+    pub module_description: Description,
+    #[serde(default)]
+    pub message: Box<str>,
+    pub parts: Vec<ModulePartEntry>,
+}
+
+impl ModuleSeed {
+    pub fn new(
+        module_name: impl Into<Box<str>>,
+        module_description: Description,
+        message: impl Into<Box<str>>,
+        parts: Vec<ModulePartEntry>,
+    ) -> Self {
+        Self {
+            schema: Some("./schemas/module-seed.schema.json".to_string()),
+            module_name: module_name.into(),
+            module_description,
+            message: message.into(),
+            parts,
+        }
+    }
+
+    pub fn to_module_commit_event(&self) -> ModuleCommitEvent {
+        ModuleCommitEvent {
+            module_name: self.module_name.clone(),
+            module_description: self.module_description.clone(),
+            parent_commit_hash: None,
+            message: self.message.clone(),
+            parts: self.parts.clone(),
+        }
+    }
 }
 
 impl ModuleCommitEvent {
@@ -179,15 +224,16 @@ pub fn derive_module_part_id(module_id: &EventHashId, part_name: &str) -> EventH
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ModulePartEntry {
     pub name: Box<str>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub part_type: Option<PartType>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Description::is_empty")]
     pub description: Description,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content_hash: Option<crate::content_hash::ContentHash>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expression: Option<Expression>,
 }
 
@@ -203,6 +249,7 @@ impl ModulePartEntry {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum PartType {
     Number,
@@ -220,12 +267,14 @@ pub enum PartType {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct RecordFieldType {
     pub key: Box<str>,
     pub value: Box<PartType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct UnionVariantType {
     pub tag: Box<str>,
     pub payload: Option<Box<PartType>>,
@@ -367,6 +416,7 @@ impl PartType {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Expression {
     Number(NumberExpression),
     String(StringExpression),
@@ -420,6 +470,7 @@ pub enum Expression {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(rename_all = "snake_case")]
 pub enum CompilerBuiltin {
     Let,
@@ -456,124 +507,145 @@ pub enum CompilerBuiltin {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct AddExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct SubtractExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct MultiplyExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct DivideExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct RemainderExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BitAndExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BitOrExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BitXorExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ShiftLeftExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ShiftRightExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct LessThanExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct LessThanOrEqualExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct GreaterThanExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct GreaterThanOrEqualExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct NotEqualExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct NotExpression {
     pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct AndExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct OrExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct StringConcatExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct StringLengthExpression {
     pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct StringSliceExpression {
     pub value: Box<Expression>,
     pub start: Box<Expression>,
@@ -581,49 +653,58 @@ pub struct StringSliceExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ListLengthExpression {
     pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ListConcatExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ListGetExpression {
     pub list: Box<Expression>,
     pub index: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ListAppendExpression {
     pub list: Box<Expression>,
     pub item: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct NumberExpression {
     pub value: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct StringExpression {
     pub value: Box<str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ListLiteralExpression {
     pub items: Vec<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeListExpression {
     pub item_type: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct PartReferenceExpression {
     pub part_definition_event_hash: EventHashId,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -650,11 +731,13 @@ impl PartReferenceExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BooleanExpression {
     pub value: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct IfExpression {
     pub condition: Box<Expression>,
     pub then_expr: Box<Expression>,
@@ -662,12 +745,14 @@ pub struct IfExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct EqualExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct LetExpression {
     pub variable_id: i64,
     pub variable_name: Box<str>,
@@ -676,22 +761,26 @@ pub struct LetExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct VariableExpression {
     pub variable_id: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeLiteralExpression {
     pub items: Vec<TypeLiteralItemExpression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeLiteralItemExpression {
     pub key: Box<str>,
     pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct RecordGetExpression {
     pub record: Box<Expression>,
     #[serde(alias = "field_name")]
@@ -699,12 +788,14 @@ pub struct RecordGetExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct ConstructorExpression {
     pub type_part_definition_event_hash: EventHashId,
     pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct FunctionExpression {
     pub parameter_id: i64,
     pub parameter_name: Box<str>,
@@ -712,29 +803,34 @@ pub struct FunctionExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct CallExpression {
     pub function: Box<Expression>,
     pub argument: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeFunctionExpression {
     pub parameter: Box<Expression>,
     pub return_type: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeUnionExpression {
     pub variants: Vec<TypeUnionVariant>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeUnionVariant {
     pub tag: Box<str>,
     pub payload_type: Option<Box<Expression>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct VariantExpression {
     pub tag: Box<str>,
     pub payload: Option<Box<Expression>>,
@@ -743,6 +839,7 @@ pub struct VariantExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct MatchExpression {
     pub target: Box<Expression>,
     pub arms: Vec<MatchArm>,
@@ -751,6 +848,7 @@ pub struct MatchExpression {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct MatchArm {
     pub tag: Box<str>,
     #[serde(default)]

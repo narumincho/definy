@@ -1,0 +1,782 @@
+{
+  "$schema": "./schemas/module-seed.schema.json",
+  "module_name": "sample",
+  "module_description": [
+    {
+      "language": "en",
+      "text": "Sample programs showcasing definy expressions and computations"
+    },
+    {
+      "language": "ja",
+      "text": "definy の計算式や機能を体験できるサンプルプログラム集"
+    }
+  ],
+  "message": "Initial commit for sample module",
+  "parts": [
+    {
+      "name": "triangle-area",
+      "part_type": "number",
+      "description": [
+        {
+          "language": "en",
+          "text": "Calculate the area of a triangle (base 10, height 5)"
+        },
+        {
+          "language": "ja",
+          "text": "三角形の面積を計算するサンプルプログラム (底辺 10, 高さ 5)"
+        }
+      ],
+      "expression": {
+        "Let": {
+          "variable_id": 1,
+          "variable_name": "base",
+          "value": {
+            "Number": {
+              "value": 10
+            }
+          },
+          "body": {
+            "Let": {
+              "variable_id": 2,
+              "variable_name": "height",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              },
+              "body": {
+                "Divide": {
+                  "left": {
+                    "Multiply": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "right": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "greet",
+      "part_type": "string",
+      "description": [
+        {
+          "language": "en",
+          "text": "Greeting message using string concatenation"
+        },
+        {
+          "language": "ja",
+          "text": "文字列結合を使った挨拶メッセージの生成サンプル"
+        }
+      ],
+      "expression": {
+        "StringConcat": {
+          "left": {
+            "String": {
+              "value": "Hello, "
+            }
+          },
+          "right": {
+            "String": {
+              "value": "definy!"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "is-even-sample",
+      "part_type": "string",
+      "description": [
+        {
+          "language": "en",
+          "text": "Check if a number is even using conditional expression"
+        },
+        {
+          "language": "ja",
+          "text": "剰余算と条件分岐による偶数・奇数判定サンプル (n = 4)"
+        }
+      ],
+      "expression": {
+        "Let": {
+          "variable_id": 1,
+          "variable_name": "n",
+          "value": {
+            "Number": {
+              "value": 4
+            }
+          },
+          "body": {
+            "If": {
+              "condition": {
+                "Equal": {
+                  "left": {
+                    "Remainder": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 2
+                        }
+                      }
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                }
+              },
+              "then_expr": {
+                "String": {
+                  "value": "even"
+                }
+              },
+              "else_expr": {
+                "String": {
+                  "value": "odd"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "prime-numbers",
+      "part_type": {
+        "list": "number"
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "List literal containing prime numbers"
+        },
+        {
+          "language": "ja",
+          "text": "素数のリストリテラルサンプル [2, 3, 5, 7, 11]"
+        }
+      ],
+      "expression": {
+        "ListLiteral": {
+          "items": [
+            {
+              "Number": {
+                "value": 2
+              }
+            },
+            {
+              "Number": {
+                "value": 3
+              }
+            },
+            {
+              "Number": {
+                "value": 5
+              }
+            },
+            {
+              "Number": {
+                "value": 7
+              }
+            },
+            {
+              "Number": {
+                "value": 11
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "option-number",
+      "part_type": "type",
+      "description": [
+        {
+          "language": "en",
+          "text": "Option type for numbers (none or some(number))"
+        },
+        {
+          "language": "ja",
+          "text": "数値用の Option 型 (none または some(number))"
+        }
+      ],
+      "expression": {
+        "TypeUnion": {
+          "variants": [
+            {
+              "tag": "none",
+              "payload_type": null
+            },
+            {
+              "tag": "some",
+              "payload_type": "TypeNumber"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "match-option-sample",
+      "part_type": "number",
+      "description": [
+        {
+          "language": "en",
+          "text": "Pattern match sample: unwrap some(100) and add 23"
+        },
+        {
+          "language": "ja",
+          "text": "パターンマッチのサンプル: some(100) を分解して 23 を加算 (結果: 123)"
+        }
+      ],
+      "expression": {
+        "Match": {
+          "target": {
+            "Variant": {
+              "tag": "some",
+              "payload": {
+                "Number": {
+                  "value": 100
+                }
+              },
+              "type_part_definition_event_hash": null
+            }
+          },
+          "arms": [
+            {
+              "tag": "some",
+              "variable_id": 1,
+              "variable_name": "val",
+              "body": {
+                "Add": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 23
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "tag": "none",
+              "variable_id": 0,
+              "variable_name": null,
+              "body": {
+                "Number": {
+                  "value": 0
+                }
+              }
+            }
+          ],
+          "default": null
+        }
+      }
+    },
+    {
+      "name": "sample-ast-calc",
+      "part_type": "number",
+      "description": [
+        {
+          "language": "en",
+          "text": "Evaluates AST expression (100 - (10 * 3)) + (50 / 2) = 95 using core::eval-ast"
+        },
+        {
+          "language": "ja",
+          "text": "core::eval-ast を用いて AST 式 (100 - (10 * 3)) + (50 / 2) = 95 を評価するサンプル"
+        }
+      ],
+      "expression": {
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": [
+                25,
+                99,
+                12,
+                139,
+                116,
+                101,
+                1,
+                233,
+                31,
+                183,
+                248,
+                19,
+                238,
+                62,
+                247,
+                124,
+                207,
+                83,
+                185,
+                177,
+                189,
+                187,
+                142,
+                214,
+                13,
+                73,
+                204,
+                176,
+                160,
+                197,
+                27,
+                47
+              ]
+            }
+          },
+          "argument": {
+            "Variant": {
+              "tag": "add",
+              "payload": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "left",
+                      "value": {
+                        "Variant": {
+                          "tag": "subtract",
+                          "payload": {
+                            "TypeLiteral": {
+                              "items": [
+                                {
+                                  "key": "left",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "number",
+                                      "payload": {
+                                        "Number": {
+                                          "value": 100
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": [
+                                        226,
+                                        152,
+                                        190,
+                                        120,
+                                        223,
+                                        182,
+                                        49,
+                                        197,
+                                        160,
+                                        124,
+                                        239,
+                                        125,
+                                        90,
+                                        18,
+                                        38,
+                                        73,
+                                        99,
+                                        119,
+                                        93,
+                                        144,
+                                        161,
+                                        86,
+                                        73,
+                                        81,
+                                        50,
+                                        160,
+                                        52,
+                                        241,
+                                        252,
+                                        70,
+                                        16,
+                                        39
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "right",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "multiply",
+                                      "payload": {
+                                        "TypeLiteral": {
+                                          "items": [
+                                            {
+                                              "key": "left",
+                                              "value": {
+                                                "Variant": {
+                                                  "tag": "number",
+                                                  "payload": {
+                                                    "Number": {
+                                                      "value": 10
+                                                    }
+                                                  },
+                                                  "type_part_definition_event_hash": [
+                                                    226,
+                                                    152,
+                                                    190,
+                                                    120,
+                                                    223,
+                                                    182,
+                                                    49,
+                                                    197,
+                                                    160,
+                                                    124,
+                                                    239,
+                                                    125,
+                                                    90,
+                                                    18,
+                                                    38,
+                                                    73,
+                                                    99,
+                                                    119,
+                                                    93,
+                                                    144,
+                                                    161,
+                                                    86,
+                                                    73,
+                                                    81,
+                                                    50,
+                                                    160,
+                                                    52,
+                                                    241,
+                                                    252,
+                                                    70,
+                                                    16,
+                                                    39
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "right",
+                                              "value": {
+                                                "Variant": {
+                                                  "tag": "number",
+                                                  "payload": {
+                                                    "Number": {
+                                                      "value": 3
+                                                    }
+                                                  },
+                                                  "type_part_definition_event_hash": [
+                                                    226,
+                                                    152,
+                                                    190,
+                                                    120,
+                                                    223,
+                                                    182,
+                                                    49,
+                                                    197,
+                                                    160,
+                                                    124,
+                                                    239,
+                                                    125,
+                                                    90,
+                                                    18,
+                                                    38,
+                                                    73,
+                                                    99,
+                                                    119,
+                                                    93,
+                                                    144,
+                                                    161,
+                                                    86,
+                                                    73,
+                                                    81,
+                                                    50,
+                                                    160,
+                                                    52,
+                                                    241,
+                                                    252,
+                                                    70,
+                                                    16,
+                                                    39
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": [
+                                        226,
+                                        152,
+                                        190,
+                                        120,
+                                        223,
+                                        182,
+                                        49,
+                                        197,
+                                        160,
+                                        124,
+                                        239,
+                                        125,
+                                        90,
+                                        18,
+                                        38,
+                                        73,
+                                        99,
+                                        119,
+                                        93,
+                                        144,
+                                        161,
+                                        86,
+                                        73,
+                                        81,
+                                        50,
+                                        160,
+                                        52,
+                                        241,
+                                        252,
+                                        70,
+                                        16,
+                                        39
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "type_part_definition_event_hash": [
+                            226,
+                            152,
+                            190,
+                            120,
+                            223,
+                            182,
+                            49,
+                            197,
+                            160,
+                            124,
+                            239,
+                            125,
+                            90,
+                            18,
+                            38,
+                            73,
+                            99,
+                            119,
+                            93,
+                            144,
+                            161,
+                            86,
+                            73,
+                            81,
+                            50,
+                            160,
+                            52,
+                            241,
+                            252,
+                            70,
+                            16,
+                            39
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "key": "right",
+                      "value": {
+                        "Variant": {
+                          "tag": "divide",
+                          "payload": {
+                            "TypeLiteral": {
+                              "items": [
+                                {
+                                  "key": "left",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "number",
+                                      "payload": {
+                                        "Number": {
+                                          "value": 50
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": [
+                                        226,
+                                        152,
+                                        190,
+                                        120,
+                                        223,
+                                        182,
+                                        49,
+                                        197,
+                                        160,
+                                        124,
+                                        239,
+                                        125,
+                                        90,
+                                        18,
+                                        38,
+                                        73,
+                                        99,
+                                        119,
+                                        93,
+                                        144,
+                                        161,
+                                        86,
+                                        73,
+                                        81,
+                                        50,
+                                        160,
+                                        52,
+                                        241,
+                                        252,
+                                        70,
+                                        16,
+                                        39
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "right",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "number",
+                                      "payload": {
+                                        "Number": {
+                                          "value": 2
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": [
+                                        226,
+                                        152,
+                                        190,
+                                        120,
+                                        223,
+                                        182,
+                                        49,
+                                        197,
+                                        160,
+                                        124,
+                                        239,
+                                        125,
+                                        90,
+                                        18,
+                                        38,
+                                        73,
+                                        99,
+                                        119,
+                                        93,
+                                        144,
+                                        161,
+                                        86,
+                                        73,
+                                        81,
+                                        50,
+                                        160,
+                                        52,
+                                        241,
+                                        252,
+                                        70,
+                                        16,
+                                        39
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "type_part_definition_event_hash": [
+                            226,
+                            152,
+                            190,
+                            120,
+                            223,
+                            182,
+                            49,
+                            197,
+                            160,
+                            124,
+                            239,
+                            125,
+                            90,
+                            18,
+                            38,
+                            73,
+                            99,
+                            119,
+                            93,
+                            144,
+                            161,
+                            86,
+                            73,
+                            81,
+                            50,
+                            160,
+                            52,
+                            241,
+                            252,
+                            70,
+                            16,
+                            39
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "type_part_definition_event_hash": [
+                226,
+                152,
+                190,
+                120,
+                223,
+                182,
+                49,
+                197,
+                160,
+                124,
+                239,
+                125,
+                90,
+                18,
+                38,
+                73,
+                99,
+                119,
+                93,
+                144,
+                161,
+                86,
+                73,
+                81,
+                50,
+                160,
+                52,
+                241,
+                252,
+                70,
+                16,
+                39
+              ]
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -68,7 +68,7 @@ pub fn ExpressionTreeSummary(
                 ) },
 
                 // ルートノードのバッジ（外枠の骨格）
-                div { style: "{node_badge_style(&root_layout_node.kind, false, false)}",
+                div { style: "{node_badge_style(&root_layout_node.kind, false, false, false)}",
                     "{root_layout_node.label}"
                 }
 
@@ -113,22 +113,6 @@ pub fn ExpressionTreeSummary(
                 div {
                     class: "expression-tree-expanded-card",
                     style: "margin-top: 0.25rem; padding: 0.6rem 0.8rem; background: rgba(0, 0, 0, 0.3); border: 1.5px solid rgba(124, 192, 216, 0.35); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.45rem; width: 100%; box-sizing: border-box; overflow-x: auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);",
-                    div { style: "display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; color: var(--text-secondary); border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 0.35rem;",
-                        div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                            span { style: "color: #86efac; font-weight: 600;", "🌲 木構造詳細" }
-                            span { style: "font-family: monospace; opacity: 0.75;",
-                                "({node_count} nodes, depth {max_depth})"
-                            }
-                        }
-                        button {
-                            onclick: move |evt: MouseEvent| {
-                                evt.stop_propagation();
-                                is_expanded.set(false);
-                            },
-                            style: "background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.72rem; padding: 0; display: inline-flex; align-items: center; gap: 0.2rem;",
-                            "▲ 外側のみ表示に縮小"
-                        }
-                    }
                     div { style: "padding: 0.2rem 0; width: 100%; box-sizing: border-box; overflow-x: auto;",
                         TreeLayoutRenderer {
                             node: layout_result.root,
@@ -147,7 +131,7 @@ fn render_child_summary_chip(child: &LayoutNode) -> Element {
     let child_is_leaf = child.children.is_empty();
 
     if child_is_leaf {
-        let badge = node_badge_style(child_kind, false, false);
+        let badge = node_badge_style(child_kind, false, false, false);
         rsx! {
             div {
                 key: "{child.id}",

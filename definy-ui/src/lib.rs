@@ -4,6 +4,7 @@ mod account_list;
 pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
+mod deployments;
 pub mod dom;
 pub mod dropdown;
 mod event_detail;
@@ -12,9 +13,9 @@ mod event_list;
 pub mod event_presenter;
 pub mod event_submit;
 pub mod expression_editor;
-pub mod expression_eval;
 pub mod fetch;
 mod header;
+mod icon;
 pub mod indexed_db;
 pub mod language;
 mod layout;
@@ -38,7 +39,7 @@ mod rpc_architecture;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
-pub mod wasm_emitter;
+pub use definy_core::{expression_eval, wasm_emitter};
 pub mod wasm_inspector;
 
 pub use app_state::*;
@@ -47,7 +48,7 @@ pub use event_submit::*;
 pub use local_event::*;
 pub use message::Message;
 pub use page_context::PageContext;
-pub use page_title::document_title_text;
+pub use page_title::{document_description_text, document_title_text};
 
 pub use crate::app_state::Location;
 use dioxus::prelude::*;
@@ -164,6 +165,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
                 about::AboutView { context: context.clone() }
             }
         }
+        Some(Location::Deployments) => {
+            rsx! {
+                deployments::DeploymentsView { context: context.clone() }
+            }
+        }
         Some(Location::ApiOverview) => {
             rsx! {
                 api_pages::ApiOverviewPageView { context: context.clone() }
@@ -227,11 +233,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
 
     rsx! {
         style { {include_str!("../main.css")} }
-        div { style: "display: grid; gap: 0.8rem; align-content: start; padding-top: 4.2rem; padding-bottom: 5rem;",
+        div { style: "display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; align-content: start; padding-bottom: 5rem;",
             header::HeaderView { state: state.clone(), context: context.clone() }
             div {
                 key: "main-wrapper",
-                style: "display: grid; gap: 0.8rem; width: 100%;",
+                style: "display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; width: 100%;",
                 if state.connection_status != app_state::ConnectionStatus::Connected {
                     ConnectionWarningBanner {
                         context: context.clone(),

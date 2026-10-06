@@ -1,3 +1,8 @@
+//! definy の式 AST (`core.expression`) および基礎的な自己評価器パーツを定義するモジュール。
+//!
+//! definy の構文木（AST）そのものを definy の直和型（`TypeUnion`）として定義し、
+//! メタプログラミングや自己評価（メタ循環評価）を可能にします。
+
 use definy_event::EventHashId;
 use definy_event::event::{
     AddExpression, CallExpression, Description, DivideExpression, EqualExpression, Expression,
@@ -8,6 +13,11 @@ use definy_event::event::{
     VariableExpression, VariantExpression, derive_module_part_id,
 };
 
+/// definy AST 式型 (`core.expression`) パーツを生成します。
+///
+/// 数値、文字列、真偽値、二項演算（算術・比較・論理）、関数定義、呼び出し、
+/// 変数参照、条件分岐、パターンマッチなどの definy 言語のすべての式構文を
+/// definy 自身の直和型として自己記述します。
 pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_def_hash = derive_module_part_id(core_module_id, "expression");
     let expr_ref = Expression::PartReference(PartReferenceExpression::new(expr_def_hash));
@@ -26,6 +36,18 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
             ],
         })
     };
+    let optional_expression = Expression::TypeUnion(TypeUnionExpression {
+        variants: vec![
+            TypeUnionVariant {
+                tag: "none".into(),
+                payload_type: None,
+            },
+            TypeUnionVariant {
+                tag: "some".into(),
+                payload_type: Some(Box::new(expr_ref.clone())),
+            },
+        ],
+    });
 
     ModulePartEntry {
         name: "expression".into(),
@@ -37,6 +59,76 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
         content_hash: None,
         expression: Some(Expression::TypeUnion(TypeUnionExpression {
             variants: vec![
+                TypeUnionVariant {
+                    tag: "type_number".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
+                    tag: "type_string".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
+                    tag: "type_boolean".into(),
+                    payload_type: None,
+                },
+                TypeUnionVariant {
+                    tag: "type_list".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "item_type".into(),
+                            value: Box::new(expr_ref.clone()),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "type_function".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "parameter".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "return_type".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                        ],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "type_record".into(),
+                    payload_type: Some(Box::new(Expression::TypeList(TypeListExpression {
+                        item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![
+                                TypeLiteralItemExpression {
+                                    key: "key".into(),
+                                    value: Box::new(Expression::TypeString),
+                                },
+                                TypeLiteralItemExpression {
+                                    key: "value".into(),
+                                    value: Box::new(expr_ref.clone()),
+                                },
+                            ],
+                        })),
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "type_union".into(),
+                    payload_type: Some(Box::new(Expression::TypeList(TypeListExpression {
+                        item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                            items: vec![
+                                TypeLiteralItemExpression {
+                                    key: "tag".into(),
+                                    value: Box::new(Expression::TypeString),
+                                },
+                                TypeLiteralItemExpression {
+                                    key: "payload_type".into(),
+                                    value: Box::new(optional_expression),
+                                },
+                            ],
+                        })),
+                    }))),
+                },
                 TypeUnionVariant {
                     tag: "number".into(),
                     payload_type: Some(Box::new(Expression::TypeNumber)),
@@ -223,11 +315,70 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
                         }],
                     }))),
                 },
+                TypeUnionVariant {
+                    tag: "if".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "condition".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "then_expr".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "else_expr".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                        ],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "let".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![
+                            TypeLiteralItemExpression {
+                                key: "variable_id".into(),
+                                value: Box::new(Expression::TypeNumber),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "value".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                            TypeLiteralItemExpression {
+                                key: "body".into(),
+                                value: Box::new(expr_ref.clone()),
+                            },
+                        ],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "not".into(),
+                    payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                        items: vec![TypeLiteralItemExpression {
+                            key: "value".into(),
+                            value: Box::new(expr_ref.clone()),
+                        }],
+                    }))),
+                },
+                TypeUnionVariant {
+                    tag: "and".into(),
+                    payload_type: Some(Box::new(binary_op_payload("left", "right"))),
+                },
+                TypeUnionVariant {
+                    tag: "or".into(),
+                    payload_type: Some(Box::new(binary_op_payload("left", "right"))),
+                },
             ],
         })),
     }
 }
 
+/// AST 式を評価して数値を計算する自己評価器パーツ (`core.eval-ast`) を生成します。
+///
+/// 引数として渡された `core.expression` 型の AST をパターンマッチで再帰的に巡回し、
+/// 算術演算や比較演算の結果を数値として評価・解釈実行します。
 pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
     let eval_ast_hash = derive_module_part_id(core_module_id, "eval-ast");
@@ -377,6 +528,10 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     }
 }
 
+/// `core.eval-ast` の自己評価動作を検証・実証するためのサンプル計算パーツ (`core.sample-ast-calc`) を生成します。
+///
+/// 多項式 `(100 - (10 * 3)) + (50 / 2) = 95` の AST を構築し、
+/// `core.eval-ast` に渡して自己解釈実行する呼び出し式を定義しています。
 pub fn create_sample_ast_calc_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
     let eval_ast_part_hash = derive_module_part_id(core_module_id, "eval-ast");

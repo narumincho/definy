@@ -19,6 +19,15 @@ pub const PATH_CHECK_MISSING_HASHES: &str = "/definy.v1.EventService/CheckMissin
 pub const PATH_UPLOAD_CONTENT: &str = "/definy.v1.EventService/UploadContent";
 pub const PATH_GET_CONTENT: &str = "/definy.v1.EventService/GetContent";
 
+pub const DEPLOY_SERVICE_NAME: &str = "definy.v1.DeployService";
+pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
+pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
+pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
+
+pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
+pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
+pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
+
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
 
@@ -251,6 +260,140 @@ pub struct GetContentResponse {
     pub item: Option<ContentItem>,
 }
 
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DeployInstanceRequest {
+    #[prost(string, optional, tag = "1")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commit_hash: Option<String>,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub machine_name: Option<String>,
+
+    #[prost(string, optional, tag = "3")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region: Option<String>,
+
+    #[prost(string, optional, tag = "4")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wasm_hash: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DeployInstanceResponse {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub machine_id: String,
+
+    #[prost(string, tag = "2")]
+    #[serde(default)]
+    pub status: String,
+
+    #[prost(string, tag = "3")]
+    #[serde(default)]
+    pub url: String,
+
+    #[prost(string, tag = "4")]
+    #[serde(default)]
+    pub app_url: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct GetDeployStatusRequest {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub machine_id: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct GetDeployStatusResponse {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub machine_id: String,
+
+    #[prost(string, tag = "2")]
+    #[serde(default)]
+    pub status: String,
+
+    #[prost(string, tag = "3")]
+    #[serde(default)]
+    pub region: String,
+
+    #[prost(string, tag = "4")]
+    #[serde(default)]
+    pub url: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DeploymentItem {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub machine_id: String,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commit_hash: Option<String>,
+
+    #[prost(string, tag = "3")]
+    #[serde(default)]
+    pub status: String,
+
+    #[prost(string, tag = "4")]
+    #[serde(default)]
+    pub url: String,
+
+    #[prost(string, tag = "5")]
+    #[serde(default)]
+    pub app_url: String,
+
+    #[prost(string, tag = "6")]
+    #[serde(default)]
+    pub region: String,
+
+    #[prost(string, tag = "7")]
+    #[serde(default)]
+    pub created_at_rfc3339: String,
+
+    #[prost(string, optional, tag = "8")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wasm_hash: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListDeploymentsRequest {
+    #[prost(uint64, optional, tag = "1")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u64>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListDeploymentsResponse {
+    #[prost(message, repeated, tag = "1")]
+    #[serde(default)]
+    pub deployments: Vec<DeploymentItem>,
+}
+
 /// Connect-RPC standard error format
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
@@ -320,5 +463,30 @@ mod tests {
         upload_req.encode(&mut buf2).unwrap();
         let decoded_upload = UploadContentRequest::decode(&buf2[..]).unwrap();
         assert_eq!(upload_req, decoded_upload);
+    }
+
+    #[test]
+    fn test_deploy_messages_roundtrip() {
+        let req = DeployInstanceRequest {
+            commit_hash: Some("commit_abc123".into()),
+            machine_name: Some("test-machine".into()),
+            region: Some("nrt".into()),
+            wasm_hash: Some("wasm_hash_789".into()),
+        };
+        let mut buf = Vec::new();
+        req.encode(&mut buf).unwrap();
+        let decoded = DeployInstanceRequest::decode(&buf[..]).unwrap();
+        assert_eq!(req, decoded);
+
+        let res = DeployInstanceResponse {
+            machine_id: "m_123".into(),
+            status: "created".into(),
+            url: "https://definy.fly.dev".into(),
+            app_url: "https://definy.fly.dev".into(),
+        };
+        let mut buf_res = Vec::new();
+        res.encode(&mut buf_res).unwrap();
+        let decoded_res = DeployInstanceResponse::decode(&buf_res[..]).unwrap();
+        assert_eq!(res, decoded_res);
     }
 }

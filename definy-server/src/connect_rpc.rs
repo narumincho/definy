@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use std::str::FromStr;
 
 use axum::body::Bytes;
-use axum::extract::ConnectInfo;
+use axum::extract::{ConnectInfo, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use definy_event::EventHashId;
@@ -276,22 +276,20 @@ pub async fn handle_submit_event(
 
     // Check if event is a ModuleCommit
     if let definy_event::event::EventContent::ModuleCommit(module_commit) = &data.content {
-        // Automatically save any embedded expressions to CAS
-        for part in &module_commit.parts {
-            if let Some(ref expr) = part.expression {
-                if let Ok(ch) = definy_event::ContentHash::from_expression(expr) {
-                    if let Ok(bytes) = serde_cbor::to_vec(expr) {
-                        let _ = crate::db::save_content(&db, &ch.to_string(), &bytes).await;
-                    }
-                }
-            }
-        }
+        let embedded_content_hashes: std::collections::HashSet<String> = module_commit
+            .parts
+            .iter()
+            .filter_map(|part| part.expression.as_ref())
+            .filter_map(|expr| definy_event::ContentHash::from_expression(expr).ok())
+            .map(|hash| hash.to_string())
+            .collect();
 
         // Collect all referenced content hashes (from parts that may have only content_hash)
         let referenced_hashes: Vec<String> = module_commit
             .referenced_content_hashes()
             .into_iter()
             .map(|h| h.to_string())
+            .filter(|hash| !embedded_content_hashes.contains(hash))
             .collect();
 
         // Check if any referenced content hashes are missing
@@ -310,6 +308,25 @@ pub async fn handle_submit_event(
                 Ok(res) => res,
                 Err(err) => error_to_response(err),
             };
+        }
+
+        if let Err(error) =
+            validate_module_commit(&db, module_commit, &data, &signature, &event_hash).await
+        {
+            return error_to_response(ConnectError::invalid_argument(error));
+        }
+
+        // Persist embedded expressions only after the self-hosted validation succeeds.
+        for part in &module_commit.parts {
+            if let Some(ref expr) = part.expression
+                && let Ok(hash) = definy_event::ContentHash::from_expression(expr)
+                && let Ok(bytes) = serde_cbor::to_vec(expr)
+                && let Err(error) = crate::db::save_content(&db, &hash.to_string(), &bytes).await
+            {
+                return error_to_response(ConnectError::internal(format!(
+                    "Failed to save module expression: {error}"
+                )));
+            }
         }
     }
 
@@ -470,6 +487,245 @@ pub async fn handle_get_content(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/DeployInstance",
+    tag = "connect-rpc",
+    request_body(
+        content = DeployInstanceRequest,
+        content_type = "application/json",
+        description = "Connect-RPC DeployInstance request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC DeployInstance response", body = DeployInstanceResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable / Not Configured", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_deploy_instance(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: DeployInstanceRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let fly_client = match &state.fly_client {
+        Some(client) => client,
+        None => {
+            return error_to_response(ConnectError::unavailable(
+                "fly.io is not configured: FLY_API_TOKEN is missing on server",
+            ));
+        }
+    };
+
+    let (image, port, env_vars) = if let Some(ref wasm_hash) = req.wasm_hash {
+        // 仮想 Wasm 配信 & 共通 runner モード (Docker ビルド不要)
+        let runner_image = std::env::var("FLY_RUNNER_IMAGE")
+            .unwrap_or_else(|_| "ghcr.io/narumincho/definy-runner:latest".to_string());
+        let server_url =
+            std::env::var("DEFINY_SERVER_URL").unwrap_or_else(|_| fly_client.app_url());
+        let mut vars = std::collections::HashMap::new();
+        vars.insert("PORT".to_string(), "8080".to_string());
+        vars.insert("DEFINY_SERVER_URL".to_string(), server_url);
+        vars.insert("DEFINY_WASM_HASH".to_string(), wasm_hash.clone());
+        (runner_image, 8080, vars)
+    } else {
+        // 従来のコミットハッシュベースモード
+        let img = std::env::var("FLY_IMAGE")
+            .unwrap_or_else(|_| "registry.fly.io/definy:latest".to_string());
+        let mut vars = std::collections::HashMap::new();
+        vars.insert("PORT".to_string(), "8000".to_string());
+        if let Some(ref commit_hash) = req.commit_hash {
+            vars.insert("DEFINY_COMMIT_HASH".to_string(), commit_hash.clone());
+        }
+        (img, 8000, vars)
+    };
+
+    let machine_config =
+        crate::fly_machines::create_default_definy_machine_config(&image, env_vars, port);
+
+    let create_req = crate::fly_machines::CreateMachineRequest {
+        name: req.machine_name.clone(),
+        region: req.region.clone(),
+        config: machine_config,
+    };
+
+    match fly_client.create_machine(&create_req).await {
+        Ok(machine) => {
+            let app_url = fly_client.app_url();
+
+            if let Some(db) = crate::ensure_db(&state).await {
+                let deployment_record = crate::db::DeploymentRecord {
+                    machine_id: machine.id.clone(),
+                    commit_hash: req.commit_hash.clone(),
+                    status: machine.state.clone(),
+                    url: app_url.clone(),
+                    app_url: app_url.clone(),
+                    region: machine.region.clone(),
+                    created_at: chrono::Utc::now(),
+                    wasm_hash: req.wasm_hash.clone(),
+                };
+                if let Err(e) = crate::db::save_deployment(&db, deployment_record).await {
+                    eprintln!("Failed to save deployment to DB: {:?}", e);
+                }
+            }
+
+            let response = DeployInstanceResponse {
+                machine_id: machine.id,
+                status: machine.state,
+                url: app_url.clone(),
+                app_url,
+            };
+            match encode_response(codec, &response) {
+                Ok(res) => res,
+                Err(err) => error_to_response(err),
+            }
+        }
+        Err(err) => {
+            eprintln!("Failed to create fly.io machine: {:?}", err);
+            error_to_response(ConnectError::internal(format!("Deploy failed: {err}")))
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/GetDeployStatus",
+    tag = "connect-rpc",
+    request_body(
+        content = GetDeployStatusRequest,
+        content_type = "application/json",
+        description = "Connect-RPC GetDeployStatus request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC GetDeployStatus response", body = GetDeployStatusResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 404, description = "Machine Not Found", body = ConnectError, content_type = "application/json"),
+        (status = 503, description = "Service Unavailable / Not Configured", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_get_deploy_status(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: GetDeployStatusRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let fly_client = match &state.fly_client {
+        Some(client) => client,
+        None => {
+            return error_to_response(ConnectError::unavailable(
+                "fly.io is not configured: FLY_API_TOKEN is missing on server",
+            ));
+        }
+    };
+
+    match fly_client.get_machine(&req.machine_id).await {
+        Ok(machine) => {
+            let app_url = fly_client.app_url();
+            let response = GetDeployStatusResponse {
+                machine_id: machine.id,
+                status: machine.state,
+                region: machine.region,
+                url: app_url,
+            };
+            match encode_response(codec, &response) {
+                Ok(res) => res,
+                Err(err) => error_to_response(err),
+            }
+        }
+        Err(err) => {
+            if let Some(db) = crate::ensure_db(&state).await
+                && let Ok(Some(cached)) = crate::db::get_deployment(&db, &req.machine_id).await
+            {
+                let response = GetDeployStatusResponse {
+                    machine_id: cached.machine_id,
+                    status: cached.status,
+                    region: cached.region,
+                    url: cached.url,
+                };
+                return match encode_response(codec, &response) {
+                    Ok(res) => res,
+                    Err(err) => error_to_response(err),
+                };
+            }
+            eprintln!("Failed to get fly.io machine: {:?}", err);
+            error_to_response(ConnectError::internal(format!(
+                "Get deploy status failed: {err}"
+            )))
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/ListDeployments",
+    tag = "connect-rpc",
+    request_body(
+        content = ListDeploymentsRequest,
+        content_type = "application/json",
+        description = "Connect-RPC ListDeployments request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC ListDeployments response", body = ListDeploymentsResponse, content_type = "application/json"),
+        (status = 503, description = "Database Unavailable", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_list_deployments(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: ListDeploymentsRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let db = match crate::ensure_db(&state).await {
+        Some(db) => db,
+        None => {
+            return error_to_response(ConnectError::unavailable("Database is unavailable"));
+        }
+    };
+
+    let records = match crate::db::get_deployments(&db, req.limit.map(|v| v as usize)).await {
+        Ok(recs) => recs,
+        Err(e) => {
+            eprintln!("Failed to get deployments from DB: {:?}", e);
+            return error_to_response(ConnectError::internal("Failed to retrieve deployments"));
+        }
+    };
+
+    let items = records
+        .into_iter()
+        .map(|r| DeploymentItem {
+            machine_id: r.machine_id,
+            commit_hash: r.commit_hash,
+            status: r.status,
+            url: r.url,
+            app_url: r.app_url,
+            region: r.region,
+            created_at_rfc3339: r.created_at.to_rfc3339(),
+            wasm_hash: r.wasm_hash,
+        })
+        .collect();
+
+    let response = ListDeploymentsResponse { deployments: items };
+    match encode_response(codec, &response) {
+        Ok(res) => res,
+        Err(err) => error_to_response(err),
+    }
+}
+
 pub fn router() -> axum::Router<AppState> {
     axum::Router::new()
         .route(PATH_GET_EVENTS, axum::routing::post(handle_get_events))
@@ -484,217 +740,97 @@ pub fn router() -> axum::Router<AppState> {
             axum::routing::post(handle_upload_content),
         )
         .route(PATH_GET_CONTENT, axum::routing::post(handle_get_content))
+        .route(
+            PATH_DEPLOY_INSTANCE,
+            axum::routing::post(handle_deploy_instance),
+        )
+        .route(
+            PATH_GET_DEPLOY_STATUS,
+            axum::routing::post(handle_get_deploy_status),
+        )
+        .route(
+            PATH_LIST_DEPLOYMENTS,
+            axum::routing::post(handle_list_deployments),
+        )
+}
+
+async fn validate_module_commit(
+    db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
+    module_commit: &definy_event::event::ModuleCommitEvent,
+    candidate_event: &definy_event::event::Event,
+    candidate_signature: &ed25519_dalek::Signature,
+    candidate_hash: &EventHashId,
+) -> Result<(), String> {
+    let mut hydrated_commit = module_commit.clone();
+    for part in &mut hydrated_commit.parts {
+        if part.expression.is_none() {
+            let content_hash = part
+                .resolve_content_hash()
+                .ok_or_else(|| format!("part '{}' has no expression", part.name))?;
+            let content = crate::db::get_content(db, &content_hash.to_string())
+                .await
+                .map_err(|error| format!("failed to load part '{}': {error}", part.name))?
+                .ok_or_else(|| format!("part '{}' expression is unavailable", part.name))?;
+            part.expression = Some(serde_cbor::from_slice(&content).map_err(|error| {
+                format!("part '{}' has invalid expression data: {error}", part.name)
+            })?);
+        }
+    }
+
+    let system_key =
+        ed25519_dalek::SigningKey::from_bytes(&crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED);
+    let system_account = definy_event::event::AccountId(system_key.verifying_key());
+    let core_module_id = definy_event::event::derive_module_id(&system_account, "core");
+    let expression_type_hash =
+        definy_event::event::derive_module_part_id(&core_module_id, "expression");
+    let type_ast_hash = definy_event::event::derive_module_part_id(&core_module_id, "type-ast");
+    let validate_module_hash =
+        definy_event::event::derive_module_part_id(&core_module_id, "validate-module");
+    let module_id = definy_event::event::derive_module_id(
+        &candidate_event.account_id,
+        &hydrated_commit.module_name,
+    );
+    let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
+        &hydrated_commit,
+        &module_id,
+        &expression_type_hash,
+        &type_ast_hash,
+    )?;
+
+    let event_binaries = crate::db::get_events(db, None, None, None)
+        .await
+        .map_err(|error| format!("failed to load events for type checking: {error}"))?;
+    let mut events: Vec<definy_core::EventWithHash> = event_binaries
+        .into_vec()
+        .into_iter()
+        .map(|binary| {
+            let hash = EventHashId::from_bytes(&binary);
+            (hash, definy_event::verify_and_deserialize(&binary))
+        })
+        .collect();
+    events.push((
+        candidate_hash.clone(),
+        Ok((*candidate_signature, candidate_event.clone())),
+    ));
+
+    let validation_call =
+        definy_event::event::Expression::Call(definy_event::event::CallExpression {
+            function: Box::new(definy_event::event::Expression::PartReference(
+                definy_event::event::PartReferenceExpression::new(validate_module_hash),
+            )),
+            argument: Box::new(module_value),
+        });
+    match definy_core::evaluate_expression(&validation_call, &events) {
+        Ok(definy_core::Value::Bool(true)) => Ok(()),
+        Ok(definy_core::Value::Bool(false)) => {
+            Err("self-hosted type checker rejected the module".into())
+        }
+        Ok(value) => Err(format!(
+            "self-hosted validator returned unexpected value: {value}"
+        )),
+        Err(error) => Err(format!("self-hosted module validation failed: {error}")),
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use definy_event::event::{AccountId, CreateAccountEvent, Event, EventContent};
-
-    #[tokio::test]
-    async fn test_connect_rpc_lifecycle() {
-        let db = crate::db::init_db().await.unwrap();
-        let database = Database(db);
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            axum::http::header::CONTENT_TYPE,
-            axum::http::HeaderValue::from_static("application/json"),
-        );
-        headers.insert(
-            axum::http::HeaderName::from_static("connect-protocol-version"),
-            axum::http::HeaderValue::from_static("1"),
-        );
-
-        // 1. Initial GetEvents
-        let res = handle_get_events(database.clone(), headers.clone(), Bytes::from("{}")).await;
-        assert_eq!(res.status(), StatusCode::OK);
-
-        // 2. Create signed event
-        let signing_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
-        let account_id = AccountId(signing_key.verifying_key());
-        let event = Event {
-            account_id: account_id.clone(),
-            time: chrono::Utc::now(),
-            content: EventContent::CreateAccount(CreateAccountEvent {
-                account_name: "TestUser".into(),
-            }),
-        };
-        let signed_bytes = definy_event::sign_and_serialize(event, &signing_key).unwrap();
-        let expected_hash = EventHashId::from_bytes(&signed_bytes);
-
-        // 3. SubmitEvent via Connect-RPC
-        let submit_req = SubmitEventRequest {
-            signed_event_bytes: signed_bytes.clone(),
-        };
-        let submit_body = serde_json::to_vec(&submit_req).unwrap();
-        let client_addr = "127.0.0.1:8000".parse().unwrap();
-        let submit_res = handle_submit_event(
-            database.clone(),
-            ConnectInfo(client_addr),
-            headers.clone(),
-            Bytes::from(submit_body),
-        )
-        .await;
-        assert_eq!(submit_res.status(), StatusCode::OK);
-        let submit_bytes = axum::body::to_bytes(submit_res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let submit_data: SubmitEventResponse = serde_json::from_slice(&submit_bytes).unwrap();
-        assert_eq!(submit_data.event_hash, expected_hash.to_string());
-        assert_eq!(submit_data.status, "ok");
-
-        // 4. GetEvent via Connect-RPC
-        let get_req = GetEventRequest {
-            event_hash: expected_hash.to_string(),
-        };
-        let get_body = serde_json::to_vec(&get_req).unwrap();
-        let get_res =
-            handle_get_event(database.clone(), headers.clone(), Bytes::from(get_body)).await;
-        assert_eq!(get_res.status(), StatusCode::OK);
-        let get_bytes = axum::body::to_bytes(get_res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let get_data: GetEventResponse = serde_json::from_slice(&get_bytes).unwrap();
-        let item = get_data.event.expect("Event should exist");
-        assert_eq!(item.event_hash, expected_hash.to_string());
-        assert_eq!(item.account_id, account_id.to_string());
-        assert_eq!(item.event_type, "create_account");
-        assert_eq!(item.signed_event_bytes, signed_bytes);
-
-        // 5. Submit invalid event (tampered)
-        let mut tampered = signed_bytes.clone();
-        if let Some(last) = tampered.last_mut() {
-            *last ^= 0xFF;
-        }
-        let bad_submit_req = SubmitEventRequest {
-            signed_event_bytes: tampered,
-        };
-        let bad_body = serde_json::to_vec(&bad_submit_req).unwrap();
-        let bad_res = handle_submit_event(
-            database.clone(),
-            ConnectInfo(client_addr),
-            headers.clone(),
-            Bytes::from(bad_body),
-        )
-        .await;
-        assert_eq!(bad_res.status(), StatusCode::BAD_REQUEST);
-
-        // 6. Test Diff Hash Negotiation
-        let test_expr =
-            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                value: 999,
-            });
-        let test_content_bytes = serde_cbor::to_vec(&test_expr).unwrap();
-        let test_content_hash = definy_event::ContentHash::from_expression(&test_expr).unwrap();
-        let test_hash_str = test_content_hash.to_string();
-
-        let commit_event = Event {
-            account_id: account_id.clone(),
-            time: chrono::Utc::now(),
-            content: EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
-                module_name: "test-negotiation".into(),
-                module_description: "test".into(),
-                parent_commit_hash: None,
-                message: "test negotiation".into(),
-                parts: vec![definy_event::event::ModulePartEntry {
-                    name: "test-part".into(),
-                    part_type: Some(definy_event::event::PartType::Number),
-                    description: "test".into(),
-                    content_hash: Some(test_content_hash),
-                    expression: None, // Only content_hash, expression not embedded
-                }],
-            }),
-        };
-        let commit_binary = definy_event::sign_and_serialize(commit_event, &signing_key).unwrap();
-
-        // 6-a. SubmitEvent should return missing_content
-        let submit_req = SubmitEventRequest {
-            signed_event_bytes: commit_binary.clone(),
-        };
-        let res = handle_submit_event(
-            database.clone(),
-            ConnectInfo(client_addr),
-            headers.clone(),
-            Bytes::from(serde_json::to_vec(&submit_req).unwrap()),
-        )
-        .await;
-        assert_eq!(res.status(), StatusCode::OK);
-        let bytes = axum::body::to_bytes(res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let submit_res: SubmitEventResponse = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(submit_res.status, "missing_content");
-        assert_eq!(
-            submit_res.missing_content_hashes,
-            vec![test_hash_str.clone()]
-        );
-
-        // 6-b. CheckMissingHashes
-        let check_req = CheckMissingHashesRequest {
-            content_hashes: vec![test_hash_str.clone()],
-        };
-        let check_res = handle_check_missing_hashes(
-            database.clone(),
-            headers.clone(),
-            Bytes::from(serde_json::to_vec(&check_req).unwrap()),
-        )
-        .await;
-        assert_eq!(check_res.status(), StatusCode::OK);
-        let check_bytes = axum::body::to_bytes(check_res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let check_data: CheckMissingHashesResponse = serde_json::from_slice(&check_bytes).unwrap();
-        assert_eq!(
-            check_data.missing_content_hashes,
-            vec![test_hash_str.clone()]
-        );
-
-        // 6-c. UploadContent
-        let upload_req = UploadContentRequest {
-            items: vec![ContentItem {
-                content_hash: test_hash_str.clone(),
-                content_bytes: test_content_bytes.clone(),
-            }],
-        };
-        let upload_res = handle_upload_content(
-            database.clone(),
-            headers.clone(),
-            Bytes::from(serde_json::to_vec(&upload_req).unwrap()),
-        )
-        .await;
-        assert_eq!(upload_res.status(), StatusCode::OK);
-
-        // 6-d. GetContent
-        let get_content_req = GetContentRequest {
-            content_hash: test_hash_str.clone(),
-        };
-        let get_c_res = handle_get_content(
-            database.clone(),
-            headers.clone(),
-            Bytes::from(serde_json::to_vec(&get_content_req).unwrap()),
-        )
-        .await;
-        assert_eq!(get_c_res.status(), StatusCode::OK);
-        let get_c_bytes = axum::body::to_bytes(get_c_res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let get_c_data: GetContentResponse = serde_json::from_slice(&get_c_bytes).unwrap();
-        assert_eq!(get_c_data.item.unwrap().content_bytes, test_content_bytes);
-
-        // 6-e. Re-submit: should now succeed with status "ok"
-        let res2 = handle_submit_event(
-            database.clone(),
-            ConnectInfo(client_addr),
-            headers.clone(),
-            Bytes::from(serde_json::to_vec(&submit_req).unwrap()),
-        )
-        .await;
-        assert_eq!(res2.status(), StatusCode::OK);
-        let bytes2 = axum::body::to_bytes(res2.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let submit_res2: SubmitEventResponse = serde_json::from_slice(&bytes2).unwrap();
-        assert_eq!(submit_res2.status, "ok");
-        assert!(submit_res2.missing_content_hashes.is_empty());
-    }
-}
+mod tests;

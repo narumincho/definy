@@ -147,21 +147,21 @@ pub fn RpcMethodDetailView(
                             }
                         }
                         ApiMethod::GetEvent => {
-                            if let Ok(res) = serde_json::from_str::<GetEventResponse>(&text) {
-                                if let Some(item) = res.event {
-                                    decoded_events
-                                        .set(vec![decode_signed_bytes(&item.signed_event_bytes)]);
-                                }
+                            if let Ok(res) = serde_json::from_str::<GetEventResponse>(&text)
+                                && let Some(item) = res.event
+                            {
+                                decoded_events
+                                    .set(vec![decode_signed_bytes(&item.signed_event_bytes)]);
                             }
                         }
                         ApiMethod::SubmitEvent => {
-                            if let Ok(res) = serde_json::from_str::<SubmitEventResponse>(&text) {
-                                if res.status == "missing_content" {
-                                    error_text.set(Some(format!(
-                                        "Negotiation Notice: Server is missing {} content items. Upload required before commit can be saved.",
-                                        res.missing_content_hashes.len()
-                                    )));
-                                }
+                            if let Ok(res) = serde_json::from_str::<SubmitEventResponse>(&text)
+                                && res.status == "missing_content"
+                            {
+                                error_text.set(Some(format!(
+                                    "Negotiation Notice: Server is missing {} content items. Upload required before commit can be saved.",
+                                    res.missing_content_hashes.len()
+                                )));
                             }
                         }
                         _ => {}

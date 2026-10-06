@@ -89,7 +89,7 @@ pub async fn read_resource(uri: &str, db: &Surreal<Any>) -> Result<ResourceConte
             let source = p
                 .expression
                 .as_ref()
-                .map(definy_ui::expression_eval::expression_to_source)
+                .map(definy_core::expression_eval::expression_to_source)
                 .unwrap_or_else(|| "<no expression>".to_string());
             let text = format!(
                 "Part: {}\nHash: {}\nDescription: {}\n\nSource:\n{}",

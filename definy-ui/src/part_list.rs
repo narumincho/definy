@@ -81,57 +81,51 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                 if !is_form_open() {
                     button {
                         r#type: "button",
-                        style: "padding: 0.35rem 0.75rem; font-size: 0.85rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
+                        class: "btn-primary",
                         onclick: move |_| {
-                            let state_sig = use_context::<Signal<AppState>>();
-                            if state_sig.read().current_key.is_none() {
-                                crate::login_or_create_account_dialog::dialog_open();
-                            } else {
-                                is_form_open.set(true);
-                            }
+                            is_form_open.set(true);
                         },
                         "{context.language.label(\"+ Create Part\", \"+ パーツを作成\", \"+ Krei parton\")}"
                     }
                 }
             }
             // 検索入力バー
-            div { style: "position: relative; width: 100%; display: flex; align-items: center;",
-                span { style: "position: absolute; left: 0.7rem; color: var(--text-secondary); font-size: 0.82rem; pointer-events: none;",
-                    "🔍"
-                }
+            div { class: "search-field",
+                crate::icon::SearchIcon { class: "search-field-icon" }
                 input {
-                    r#type: "text",
+                    r#type: "search",
+                    "aria-label": "{context.language.label(\"Search parts\", \"パーツを検索\", \"Serĉi partojn\")}",
                     placeholder: "{context.language.label(\"Search parts by name, module, type...\", \"パーツ名・モジュール名・型で検索...\", \"Serĉi partojn laŭ nomo, modulo, tipo...\")}",
                     value: "{search_query()}",
                     oninput: move |evt: FormEvent| {
                         search_query.set(evt.value());
                     },
-                    style: "width: 100%; padding: 0.4rem 2rem 0.4rem 2.1rem; font-size: 0.84rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text);",
                 }
                 if !search_query().is_empty() {
                     button {
                         r#type: "button",
-                        style: "position: absolute; right: 0.5rem; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.15rem 0.35rem; font-size: 0.75rem;",
+                        class: "search-field-clear",
+                        "aria-label": "{context.language.label(\"Clear search\", \"検索をクリア\", \"Vakigi serĉon\")}",
                         onclick: move |_| search_query.set(String::new()),
                         "✕"
                     }
                 }
             }
             if state.current_key.is_none() && !is_form_open() {
-                div { style: "padding: 0.5rem 0.8rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;",
+                div { style: "padding: 0.5rem 0.6rem 0.5rem 0.9rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;",
                     span {
                         "{context.language.label(\"Log in or sign up to create and edit parts.\", \"パーツの作成や編集を行うにはログインまたはサインアップが必要です。\", \"Ensalutu aŭ registriĝu por krei kaj redakti partojn.\")}"
                     }
                     button {
                         r#type: "button",
+                        class: "btn-primary btn-sm",
                         "commandfor": "login-or-create-account-dialog",
                         "command": "show-modal",
-                        style: "padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); cursor: pointer;",
                         "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
                     }
                 }
             }
-            if state.current_key.is_some() && is_form_open() {
+            if is_form_open() {
                 PartDefinitionFormView {
                     state: state.clone(),
                     context: context.clone(),

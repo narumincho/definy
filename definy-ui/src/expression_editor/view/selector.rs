@@ -280,13 +280,22 @@ pub fn selector_options(
             .as_ref()
             .map(ToString::to_string)
             .unwrap_or_else(|| "Part".to_string());
-        global_part_options.push((
-            format!("ref:global:{}", snapshot.definition_event_hash),
-            format!(
-                "{}\t{}\t{}",
-                snapshot.part_name, type_text, snapshot.definition_event_hash
-            ),
-        ));
+        let is_inline_function_builtin = matches!(
+            snapshot.expression.as_ref(),
+            Some(definy_event::event::Expression::Compiler(
+                definy_event::event::CompilerBuiltin::Function
+                    | definy_event::event::CompilerBuiltin::Call
+            ))
+        );
+        if !is_inline_function_builtin {
+            global_part_options.push((
+                format!("ref:global:{}", snapshot.definition_event_hash),
+                format!(
+                    "{}\t{}\t{}",
+                    snapshot.part_name, type_text, snapshot.definition_event_hash
+                ),
+            ));
+        }
     }
 
     if seen_variant_tags.insert("none".to_string()) {
@@ -332,6 +341,10 @@ pub fn selector_options(
         ("expr:type:union".to_string(), "union\ttype\t".to_string()),
     ]);
 
+    if !matches!(expected_type, Some(ExpressionType::Function { .. })) {
+        options.retain(|(value, _)| value != "expr:function");
+    }
+
     if let Some(expected) = expected_type {
         options.sort_by_cached_key(|(val, _)| {
             let opt_type = classify_option_type(val, &part_type_map, variable_types);
@@ -360,7 +373,7 @@ fn classify_option_type(
         return Some(ExpressionType::List(Box::new(ExpressionType::Unknown)));
     }
     if opt_val == "expr:type_literal" {
-        return Some(ExpressionType::Record);
+        return Some(ExpressionType::Record(vec![]));
     }
     if matches!(
         opt_val,
@@ -461,7 +474,7 @@ fn option_match_rank(
             (ExpressionType::Type, ExpressionType::Type) => true,
             (ExpressionType::TypePart(h1), ExpressionType::TypePart(h2)) => h1 == h2,
             (ExpressionType::List(_), ExpressionType::List(_)) => true,
-            (ExpressionType::Record, ExpressionType::Record) => true,
+            (ExpressionType::Record(_), ExpressionType::Record(_)) => true,
             (ExpressionType::Union, ExpressionType::Union) => true,
             (ExpressionType::Function { .. }, ExpressionType::Function { .. }) => true,
             _ => false,
@@ -724,16 +737,8 @@ pub(crate) fn current_selection_value(
             "expr:constructor:{}",
             constructor_expression.type_part_definition_event_hash
         ),
-        definy_event::event::Expression::Function(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Function)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:function".to_string())
-        }
-        definy_event::event::Expression::Call(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Call)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:call".to_string())
-        }
+        definy_event::event::Expression::Function(_) => "expr:function".to_string(),
+        definy_event::event::Expression::Call(_) => "expr:call".to_string(),
         definy_event::event::Expression::TypeFunction(_) => "expr:type:function".to_string(),
         definy_event::event::Expression::TypeUnion(_) => "expr:type:union".to_string(),
         definy_event::event::Expression::Variant(variant_expr) => {

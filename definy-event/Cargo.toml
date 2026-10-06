@@ -6,9 +6,11 @@ edition = "2024"
 [features]
 default = []
 utoipa = ["dep:utoipa"]
+schemars = ["dep:schemars"]
 
 [dependencies]
 utoipa = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["alloc", "serde", "wasmbind", "now"] }
 serde = { workspace = true, features = ["derive"] }
 serde_cbor = { workspace = true, features = ["std", "tags"] }
@@ -23,3 +25,4 @@ prost = { workspace = true }
 [dev-dependencies]
 rand_core = { workspace = true, features = ["getrandom"] }
 serde_json = { workspace = true }
+schemars = { workspace = true }

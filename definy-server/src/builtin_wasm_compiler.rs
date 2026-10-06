@@ -207,6 +207,35 @@ pub fn create_compile_expr_instructions_part(core_module_id: &EventHashId) -> Mo
         });
     }
 
+    // 6. Logical operators
+    arms.push(binary_op("and", &compile_instr_hash, 20, 0x71));
+    arms.push(binary_op("or", &compile_instr_hash, 21, 0x72));
+
+    // 7. Logical not: value + i64.const 0 (0x42, 0) + i64.eq (0x51)
+    {
+        let not_var_id = 22;
+        let val_expr = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: not_var_id,
+            })),
+            key: "value".into(),
+        });
+        let val_code = compile_sub(&compile_instr_hash, val_expr);
+        let eq_zero = Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                Expression::Number(NumberExpression { value: 0x42 }),
+                Expression::Number(NumberExpression { value: 0x00 }),
+                Expression::Number(NumberExpression { value: 0x51 }),
+            ],
+        });
+        arms.push(MatchArm {
+            tag: "not".into(),
+            variable_id: Some(not_var_id),
+            variable_name: Some("not_e".into()),
+            body: Box::new(concat2(val_code, eq_zero)),
+        });
+    }
+
     // Default: i64.const 0
     arms.push(MatchArm {
         tag: "_".into(),

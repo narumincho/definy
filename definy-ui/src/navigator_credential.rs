@@ -17,10 +17,24 @@ extern "C" {
 
 const STORAGE_KEY: &str = "definy_current_key";
 
+pub fn credential_save_sync(key: &ed25519_dalek::SigningKey) {
+    if let Some(window) = web_sys::window()
+        && let Ok(Some(storage)) = window.local_storage()
+    {
+        let encoded = base64::Engine::encode(
+            &base64::engine::general_purpose::URL_SAFE_NO_PAD,
+            key.to_bytes(),
+        );
+        let _ = storage.set_item(STORAGE_KEY, &encoded);
+    }
+}
+
 pub async fn credential_store(
     username: &str,
     key: &ed25519_dalek::SigningKey,
 ) -> Result<(), wasm_bindgen::JsValue> {
+    credential_save_sync(key);
+
     let password_str = base64::Engine::encode(
         &base64::engine::general_purpose::URL_SAFE_NO_PAD,
         key.to_bytes(),
@@ -63,7 +77,10 @@ pub async fn credential_store(
 }
 
 pub fn credential_get_sync() -> Option<ed25519_dalek::SigningKey> {
-    None
+    let window = web_sys::window()?;
+    let storage = window.local_storage().ok()??;
+    let stored = storage.get_item(STORAGE_KEY).ok()??;
+    parse_password(stored)
 }
 
 pub async fn credential_get() -> Option<ed25519_dalek::SigningKey> {
@@ -83,7 +100,9 @@ pub async fn credential_get() -> Option<ed25519_dalek::SigningKey> {
         .ok()?;
     let password =
         js_sys::Reflect::get(&credential, &wasm_bindgen::JsValue::from_str("password")).ok()?;
-    parse_password(password.as_string()?)
+    let key = parse_password(password.as_string()?)?;
+    credential_save_sync(&key);
+    Some(key)
 }
 
 pub fn credential_clear() {
@@ -95,10 +114,59 @@ pub fn credential_clear() {
 }
 
 pub fn parse_password(password: String) -> Option<ed25519_dalek::SigningKey> {
-    let password_as_bytes =
-        &base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, password)
-            .ok()?;
-    let secret_key =
-        ed25519_dalek::SigningKey::from_bytes(password_as_bytes.as_slice().try_into().ok()?);
-    Some(secret_key)
+    let trimmed = password.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    // 1. URL_SAFE_NO_PAD
+    if let Ok(bytes) =
+        base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, trimmed)
+        && let Ok(key) = try_bytes_to_signing_key(&bytes)
+    {
+        return Some(key);
+    }
+
+    // 2. URL_SAFE (with padding)
+    if let Ok(bytes) = base64::Engine::decode(&base64::engine::general_purpose::URL_SAFE, trimmed)
+        && let Ok(key) = try_bytes_to_signing_key(&bytes)
+    {
+        return Some(key);
+    }
+
+    // 3. STANDARD_NO_PAD
+    if let Ok(bytes) =
+        base64::Engine::decode(&base64::engine::general_purpose::STANDARD_NO_PAD, trimmed)
+        && let Ok(key) = try_bytes_to_signing_key(&bytes)
+    {
+        return Some(key);
+    }
+
+    // 4. STANDARD
+    if let Ok(bytes) = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, trimmed)
+        && let Ok(key) = try_bytes_to_signing_key(&bytes)
+    {
+        return Some(key);
+    }
+
+    // 5. Hex representation (64 hex characters = 32 bytes)
+    if let Ok(bytes) = hex::decode(trimmed)
+        && let Ok(key) = try_bytes_to_signing_key(&bytes)
+    {
+        return Some(key);
+    }
+
+    None
+}
+
+fn try_bytes_to_signing_key(bytes: &[u8]) -> Result<ed25519_dalek::SigningKey, ()> {
+    if bytes.len() == 32 {
+        let arr: [u8; 32] = bytes.try_into().map_err(|_| ())?;
+        Ok(ed25519_dalek::SigningKey::from_bytes(&arr))
+    } else if bytes.len() == 64 {
+        let arr: [u8; 32] = bytes[0..32].try_into().map_err(|_| ())?;
+        Ok(ed25519_dalek::SigningKey::from_bytes(&arr))
+    } else {
+        Err(())
+    }
 }

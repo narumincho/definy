@@ -50,8 +50,11 @@ pub fn ModuleDetailView(
                     module_snapshot,
                     author_label,
                 }
-                div { style: "margin-top: 1rem; font-weight: 600;",
+                h3 { style: "margin-top: 0.8rem; font-size: 1.05rem; font-weight: 700; display: flex; align-items: baseline; gap: 0.5rem;",
                     "{context.language.label(\"Parts in this module\", \"このモジュールのパーツ\", \"Partoj en ĉi tiu modulo\")}"
+                    span { style: "font-size: 0.78rem; font-weight: 500; color: var(--text-muted);",
+                        "{parts_in_module.len()}"
+                    }
                 }
                 if parts_in_module.is_empty() {
                     div {
@@ -103,12 +106,8 @@ fn ModulePartItem(
 ) -> Element {
     let def_hash = part.definition_event_hash.clone();
     let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
-    let author_label = format!(
-        "{} {account_name}",
-        context
-            .language
-            .label("latest author:", "最新の投稿者:", "lasta aŭtoro:")
-    );
+    let type_str = definy_event::event::PartType::optional_to_string(&part.part_type);
+    let type_badge_cls = crate::event_list::part_type_badge_class(&type_str);
 
     let (ch_str, short_ch) = if let Some(ch) = &part.content_hash {
         let s = ch.to_string();
@@ -123,23 +122,32 @@ fn ModulePartItem(
     };
 
     rsx! {
-        div {
-            class: "event-card",
-            style: "display: grid; gap: 0.5rem; padding: 0.85rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
-            div { style: "font-size: 0.85rem; color: var(--text-secondary);", "{time_str}" }
-            div { style: "display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;",
-                a {
-                    href: context.href_with_lang(Location::Part(def_hash)),
-                    style: "font-size: 0.98rem; font-weight: 600; color: var(--text); text-decoration: none;",
-                    "{part.part_name}"
+        div { class: "event-card", style: "display: grid; gap: 0.4rem;",
+            // Row 1: パーツ名 型 作成者 ... 更新日時 ハッシュ
+            div { style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;",
+                div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; min-width: 0;",
+                    a {
+                        href: context.href_with_lang(Location::Part(def_hash)),
+                        style: "font-size: 1rem; font-weight: 700; color: var(--text-primary); text-decoration: none;",
+                        "{part.part_name}"
+                    }
+                    span { class: "{type_badge_cls}", "{type_str}" }
+                    a {
+                        href: context.href_with_lang(Location::Account(part.account_id.clone())),
+                        style: "color: var(--text-muted); font-size: 0.78rem; text-decoration: none; margin-left: 0.15rem;",
+                        "{account_name}"
+                    }
                 }
-                if let (Some(full_ch), Some(short_ch)) = (ch_str, short_ch) {
-                    span {
-                        class: "mono",
-                        style: "font-size: 0.72rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
-                        title: "ContentHash: {full_ch}",
-                        span { "📌" }
-                        span { "{short_ch}" }
+                div { style: "display: flex; align-items: center; gap: 0.5rem; margin-left: auto;",
+                    span { style: "color: var(--text-secondary); font-size: 0.74rem; opacity: 0.75; white-space: nowrap;",
+                        "{time_str}"
+                    }
+                    if let (Some(full_ch), Some(short_ch)) = (ch_str, short_ch) {
+                        span {
+                            class: "hash-chip",
+                            title: "ContentHash: {full_ch}",
+                            "{short_ch}"
+                        }
                     }
                 }
             }
@@ -147,7 +155,7 @@ fn ModulePartItem(
                 let desc = part.description_for(context.language);
                 if !desc.is_empty() {
                     rsx! {
-                        div { style: "white-space: pre-wrap; font-size: 0.88rem; color: var(--text-secondary);",
+                        div { style: "white-space: pre-wrap; font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45;",
                             "{desc}"
                         }
                     }
@@ -155,7 +163,6 @@ fn ModulePartItem(
                     rsx! {}
                 }
             }
-            div { style: "font-size: 0.85rem; color: var(--primary);", "{author_label}" }
         }
     }
 }
@@ -266,7 +273,7 @@ fn ModuleEditorCard(
                 button {
                     r#type: "button",
                     disabled: !is_logged_in,
-                    style: if is_logged_in { "padding: 0.5rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;" } else { "padding: 0.5rem 1.2rem; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; cursor: not-allowed; opacity: 0.6;" },
+                    class: if is_logged_in { "btn-primary" } else { "btn-secondary" },
                     onclick: move |_| {
                         let state_sig = use_context::<Signal<AppState>>();
                         let state_val = state_sig.read().clone();
