@@ -1073,6 +1073,7 @@ dependencies = [
  "prost 0.13.5",
  "rand 0.8.8",
  "reqwest 0.13.5",
+ "rustls",
  "schemars",
  "serde",
  "serde_cbor",

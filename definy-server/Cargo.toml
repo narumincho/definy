@@ -52,3 +52,4 @@ tower-http = { workspace = true, features = ["cors"] }
 utoipa = { workspace = true, features = ["axum_extras", "chrono"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipa-axum = { workspace = true }
+rustls = { workspace = true }
