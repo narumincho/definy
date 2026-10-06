@@ -249,12 +249,18 @@ async fn browser_unauthenticated_can_edit_and_evaluate_part_detail() -> Result<(
     assert!(!result_text.is_empty(), "Evaluation result is empty");
 
     // 未ログイン表示バッジが存在することを検証
-    let page_source = webdriver.page_source().await?;
-    let has_badge = page_source.contains("未ログインでも自由に編集・評価可能")
-        || page_source.contains("Editable & Evaluatable without login")
-        || page_source.contains("Redaktebla kaj taksebla sen ensaluto");
+    let badge_text = webdriver
+        .wait_for_text_contains(
+            "[data-unauthenticated-badge=\"true\"]",
+            &[
+                "Editable & Evaluatable without login",
+                "未ログインでも自由に編集・評価可能",
+                "Redaktebla kaj taksebla sen ensaluto",
+            ],
+        )
+        .await?;
     assert!(
-        has_badge,
+        !badge_text.is_empty(),
         "Badge indicating editable/evaluatable without login was not found"
     );
 
