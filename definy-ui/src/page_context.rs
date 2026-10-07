@@ -9,6 +9,7 @@ pub struct PageContext {
     pub language: Language,
     pub language_requested_code: Option<String>,
     pub filter_event_type: Option<EventType>,
+    pub tab: Option<String>,
 }
 
 impl PageContext {
@@ -21,12 +22,14 @@ impl PageContext {
         let location = Location::from_url(path);
         let query_params = parse_query(query_opt);
         let filter_event_type = query_params.event_type;
+        let tab = query_params.tab;
         let language_resolution = resolve_language(query_opt, accept_or_browser_language);
         Self {
             location,
             language: language_resolution.language,
             language_requested_code: language_resolution.unsupported_query_lang,
             filter_event_type,
+            tab,
         }
     }
 
@@ -43,6 +46,7 @@ impl PageContext {
             } else {
                 None
             },
+            tab: None,
         });
         if let Some(query) = query {
             url.push('?');

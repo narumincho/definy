@@ -249,6 +249,34 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
 async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
     let path = uri.path();
     let trimmed_path = path.trim_start_matches('/');
+
+    // 1. Direct static file serving from public directory candidates
+    for dir in assets::get_public_dir_candidates() {
+        let candidate = dir.join(trimmed_path);
+        if candidate.is_file()
+            && let Ok(bytes) = std::fs::read(&candidate)
+        {
+            let content_type = mime_type_from_path(&candidate);
+            let is_hashed = trimmed_path.contains("-dxh")
+                || trimmed_path.starts_with("assets/")
+                || trimmed_path.ends_with(".wasm");
+            let cache_control = if is_hashed {
+                "public, max-age=31536000, immutable"
+            } else {
+                "no-cache, must-revalidate"
+            };
+            return (
+                StatusCode::OK,
+                [
+                    ("Content-Type", content_type),
+                    ("Cache-Control", cache_control),
+                ],
+                Bytes::from(bytes),
+            )
+                .into_response();
+        }
+    }
+
     let clean_path = trimmed_path
         .strip_prefix("pkg/")
         .or_else(|| trimmed_path.strip_prefix("wasm/"))
@@ -478,6 +506,16 @@ async fn handle_html(
         .as_ref()
         .map(|w| w.hash.as_str())
         .unwrap_or(&default_hash);
+    let js_url = match js.as_ref() {
+        Some(j) => {
+            if j.relative_path.contains(&j.hash) || j.relative_path.contains("-dxh") {
+                format!("/{}", j.relative_path)
+            } else {
+                format!("/{}?v={}", j.relative_path, j.hash)
+            }
+        }
+        None => "/wasm/definy_client.js?v=latest".to_string(),
+    };
     let html = html::render_to_html(
         &initial_state,
         &context,
@@ -485,6 +523,7 @@ async fn handle_html(
             js: js_hash,
             wasm: wasm_hash,
             icon: &icon.hash,
+            js_url: &js_url,
         },
         &ssr_initial_state_json,
     );
@@ -495,6 +534,21 @@ async fn handle_html(
         html,
     )
         .into_response()
+}
+
+fn mime_type_from_path(p: &std::path::Path) -> &'static str {
+    match p.extension().and_then(|ext| ext.to_str()) {
+        Some("js" | "mjs") => "application/javascript; charset=utf-8",
+        Some("wasm") => "application/wasm",
+        Some("png") => "image/png",
+        Some("svg") => "image/svg+xml",
+        Some("css") => "text/css; charset=utf-8",
+        Some("json") => "application/json",
+        Some("html") => "text/html; charset=utf-8",
+        Some("ico") => "image/x-icon",
+        Some("txt") => "text/plain; charset=utf-8",
+        _ => "application/octet-stream",
+    }
 }
 
 fn lang_redirect_url(uri: &Uri, headers: &HeaderMap) -> Option<String> {
