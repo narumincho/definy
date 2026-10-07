@@ -138,6 +138,9 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                     }
                 }
 
+                // フロー図セクション (HTML リクエスト & デプロイ ライフサイクル)
+                crate::deployments_flow::DeploymentsFlowDiagram { language: lang }
+
                 // Connect-RPC デプロイ実行ガイド
                 div {
                     class: "event-detail-card",

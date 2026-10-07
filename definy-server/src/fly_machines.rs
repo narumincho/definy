@@ -85,12 +85,23 @@ pub struct FlyMachineGuest {
     pub memory_mb: Option<u32>,
 }
 
+/// fly.io Machine にデプロイ時に直接注入するファイル設定
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FlyMachineFile {
+    /// マシン内の絶対パス (例: `/app/definy_core.wasm`)
+    pub guest_path: String,
+    /// ファイル内容 (Base64 エンコード文字列)
+    pub raw_value: String,
+}
+
 /// fly.io Machine のコンフィグ
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FlyMachineConfig {
     pub image: String,
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub env: HashMap<String, String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<FlyMachineFile>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub services: Vec<FlyMachineService>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -320,6 +331,7 @@ pub fn create_default_definy_machine_config(
     FlyMachineConfig {
         image: image.to_string(),
         env: env_vars,
+        files: vec![],
         services: vec![FlyMachineService {
             protocol: "tcp".to_string(),
             internal_port,
@@ -407,6 +419,7 @@ mod tests {
                         config: FlyMachineConfig {
                             image: "registry.fly.io/definy:latest".to_string(),
                             env: HashMap::new(),
+                            files: vec![],
                             services: vec![],
                             guest: None,
                             auto_destroy: Some(false),

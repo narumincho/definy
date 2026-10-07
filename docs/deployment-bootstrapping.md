@@ -163,3 +163,85 @@ sequenceDiagram
       を呼び出すロジックを definy の式（`Expression`）およびパーツとして再定義。
 - [ ] definy
       言語自身が「自分自身の新しいインスタンスをデプロイする」完全な自己記述コードとして動作させる。
+
+---
+
+## 5. Fly.io to Fly.io 自己デプロイと完全な自己表現 (Self-Hosting Loop)
+
+### 「definy で definy を表現する」とはどういうことか？
+
+プログラミング言語・開発プラットフォームの歴史において、最も重要なマイルストーンが「セルフホスティング（自己記述・ブートストラップ）」です。
+definy
+におけるブートストラップとは、単にコンパイラが自言語で書かれていることにとどまらず、**「UI、AST・型検査、コンパイラ、HTTP
+配信、そしてクラウドへの自己プロビジョニング運用に至るすべてのライフサイクルが
+definy 言語のパーツとして記述され、definy 自身が次世代の definy
+をデプロイして世代交代する」** という完全な閉ループを意味します。
+
+```mermaid
+graph TD
+    subgraph DefinyPlatform["definy 閉ループ (自己表現・自己進化)"]
+        Source["definy 言語パーツ (UI / AST / 型 / コンパイラ / サーバー)"]
+        Compiler["自己記述コンパイラ (core.compile-to-wasm)"]
+        WasmBytecode["Wasm バイナリ (/app/definy_core.wasm)"]
+        MachinesAPI["Capability I/O: Fly.io Machines REST 呼び出し (config.files 注入)"]
+        NextGenVM["次世代 Fly.io MicroVM (完全自律起動・親依存ゼロ)"]
+
+        Source -->|コンパイル| Compiler
+        Compiler -->|バイトコード生成| WasmBytecode
+        Source -->|運用ロジック記述| MachinesAPI
+        WasmBytecode -->|config.files に直接埋め込み| MachinesAPI
+        MachinesAPI -->|新インスタンス起動 & ディスク注入| NextGenVM
+        NextGenVM -.->|次世代の definy として完全自律稼働| Source
+    end
+```
+
+### Fly.io to Fly.io 自己デプロイの動作ステップ
+
+稼働中の definy サーバー（親）から新しい definy
+サーバー（子）を起動する流れは以下の通りです：
+
+1. **デプロイ要求の受付**:
+   - ユーザーまたはクライアントが親サーバーに対し
+     `DeployInstance(wasm_hash, region: "nrt")` RPC を送信。
+2. **SurrealDB へのメタデータ記録**:
+   - 親サーバーは対象ハッシュ、要求日時、ステータスを `deployments`
+     テーブルに保存。
+3. **親サーバーが Fly.io Machines REST API を直接呼び出し
+   (デプロイ時直接注入)**:
+   - ターミナルや外部 CI を一切介さず、親サーバーが内部環境変数 `FLY_API_TOKEN`
+     を用いて `POST https://api.machines.dev/v1/apps/{app}/machines` を発行。
+   - `config.files` に Wasm バイナリを Base64
+     エンコードして埋め込み（`guest_path: /app/definy_core.wasm`）。環境変数として
+     `WASM_FILE=/app/definy_core.wasm` を注入。
+4. **Fly.io が Firecracker MicroVM を瞬時にプロビジョニング (201 Created)**:
+   - Wasm バイナリがディスクに配置された状態で MicroVM
+     が起動。数秒以内に新しい子マシンの ID および URL（例:
+     `https://definy-<id>.fly.dev`）が確定。
+5. **子マシンが注入されたローカルディスクから即座に起動
+   (親への起動時通信ゼロ)**:
+   - 子マシン内の汎用 WASI
+     ランナーが起動し、ネットワーク経由のダウンロードを一切行うことなく、ローカルに注入された
+     `/app/definy_core.wasm` を使って即座に `wasmtime serve`
+     を開始。親サーバーが直後に停止しても 100% 自律起動可能。
+6. **新世代へのトラフィック案内（世代交代）**:
+   - 親サーバーがクライアントへ子マシンの URL を返却し、ユーザーは次世代の
+     definy へとスムーズに移行。
+
+### ブートストラップ完了時の姿
+
+| 階層                          | 現在の実装 (Rust / Axum / Dioxus)               | ブートストラップ完成時の姿 (definy 言語)                     |
+| :---------------------------- | :---------------------------------------------- | :----------------------------------------------------------- |
+| **運用層 (Layer 1)**          | `fly_machines.rs` (reqwest による REST 呼出)    | definy の純粋パーツ式（Machines API 呼出パーツ）             |
+| **ビルド層 (Layer 2)**        | `cargo build`, `dx build` (Rust ツールチェイン) | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
+| **I/O・サーバー層 (Layer 3)** | `axum`, `tokio` (Rust 非同期ランタイム)         | `wasi:http/outgoing-handler` Capability 注入パーツ           |
+| **UI・エディタ層**            | Rust Dioxus コンポーネント (`definy-ui`)        | definy の UI 表現パーツ・ツリーレイアウト                    |
+
+この 4 階層がすべて definy の式・パーツとして表現された時、definy
+は外部のあらゆる開発環境（Rust, Cargo, Docker, GitHub Actions,
+ローカルターミナル）から完全に独立し、**「definy で書かれた definy
+が、クラウド上で自分自身の次の世代を生み出し続ける」**
+という究極の自己ホスティングが達成されます。
+
+現在、この完全なシーケンスは definy UI の `/deployments` 画面の「3. Fly.io
+自己デプロイ
+(運用ブートストラップ)」タブにて多言語で視覚的に閲覧できるようになっています。
