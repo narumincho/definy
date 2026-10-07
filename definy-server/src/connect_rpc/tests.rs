@@ -525,6 +525,7 @@ async fn test_connect_rpc_deploy_service_success() {
                     config: FlyMachineConfig {
                         image: "registry.fly.io/definy:latest".to_string(),
                         env: std::collections::HashMap::new(),
+                        files: vec![],
                         services: vec![],
                         guest: None,
                         auto_destroy: Some(false),
