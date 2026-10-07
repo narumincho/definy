@@ -127,7 +127,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         label: "2. Record deployment pending in DB",
                     }
 
-                    // Step 3: Call fly.io Machines REST API
+                    // Step 3: Call fly.io Machines REST API with directly injected Wasm file
                     SequenceArrow {
                         x1: 320,
                         y1: 170,
@@ -136,20 +136,20 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#fb923c",
                         marker: "self-arrow-orange",
                         dashed: false,
-                        label: "3. REST POST /v1/apps/:app/machines",
+                        label: "3. REST POST /machines (config.files: Base64 injected Wasm)",
                     }
 
-                    // Machine creation in progress
+                    // Machine creation with direct injection
                     ActionBox {
-                        x: 680,
+                        x: 670,
                         y: 195,
-                        width: 140,
+                        width: 160,
                         height: 38,
                         bg: "#1c1917",
                         border: "#fb923c",
                         text_color: "#fdba74",
-                        line1: "Spawning MicroVM",
-                        line2: Some("Attach env: WASM_URL"),
+                        line1: "Direct File Injection",
+                        line2: Some("guest_path: /app/definy_core.wasm"),
                     }
 
                     // Step 4: Machine Created (201 Created)
@@ -161,80 +161,56 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#fb923c",
                         marker: "self-arrow-orange",
                         dashed: true,
-                        label: "4. 201 Created (machine_id, child_url)",
+                        label: "4. 201 Created (MicroVM configured with Wasm on disk)",
                     }
 
                     // Step 5: Save container URL to SurrealDB
                     SequenceArrow {
                         x1: 320,
-                        y1: 285,
+                        y1: 290,
                         x2: 530,
-                        y2: 285,
+                        y2: 290,
                         color: "#c084fc",
                         marker: "self-arrow-purple",
                         dashed: false,
                         label: "5. Save URL to deployments table",
                     }
 
-                    // Step 6: Child VM fetches virtual Wasm bytecode from parent
-                    SequenceArrow {
-                        x1: 970,
-                        y1: 325,
-                        x2: 325,
-                        y2: 325,
-                        color: "#38bdf8",
-                        marker: "self-arrow-blue",
-                        dashed: false,
-                        label: "6. GET /virtual/wasm/:hash",
-                    }
-
-                    // Step 7: Parent returns compiled Wasm
-                    SequenceArrow {
-                        x1: 320,
-                        y1: 360,
-                        x2: 965,
-                        y2: 360,
-                        color: "#34d399",
-                        marker: "self-arrow-green",
-                        dashed: true,
-                        label: "7. 200 OK (Wasm bytecode bytes)",
-                    }
-
-                    // Child VM boots with wasmtime
+                    // Child VM boots directly from local injected file (No HTTP fetch required!)
                     ActionBox {
-                        x: 900,
-                        y: 385,
-                        width: 140,
-                        height: 38,
+                        x: 885,
+                        y: 325,
+                        width: 170,
+                        height: 42,
                         bg: "#064e3b",
                         border: "#34d399",
                         text_color: "#a7f3d0",
-                        line1: "wasmtime serve",
-                        line2: Some("Listen on [::]:8000"),
+                        line1: "wasmtime serve (Local Disk)",
+                        line2: Some("Zero Parent Fetch Dependency"),
                     }
 
-                    // Step 8: Return child URL to client
+                    // Step 6: Return child URL to client
                     SequenceArrow {
                         x1: 320,
-                        y1: 440,
+                        y1: 395,
                         x2: 110,
-                        y2: 440,
+                        y2: 395,
                         color: "#34d399",
                         marker: "self-arrow-green",
                         dashed: true,
-                        label: "8. Deploy OK: https://definy-<id>.fly.dev",
+                        label: "6. Deploy OK: https://definy-<id>.fly.dev",
                     }
 
-                    // Step 9: User visits next-generation instance
+                    // Step 7: User visits next-generation instance
                     SequenceArrow {
                         x1: 105,
-                        y1: 480,
+                        y1: 445,
                         x2: 965,
-                        y2: 480,
+                        y2: 445,
                         color: "#38bdf8",
                         marker: "self-arrow-blue",
                         dashed: false,
-                        label: "9. Access Next-Gen definy instance (Generational Shift) ★",
+                        label: "7. Access Next-Gen definy instance (Generational Shift) ★",
                     }
                 }
             }
@@ -258,19 +234,19 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         ),
                 }
                 StepDetailCard {
-                    step_number: "Layer 2: ビルド層",
+                    step_number: "Layer 2: ビルド・注入層",
                     title: language
                         .label(
-                            "Compiler Bootstrapping",
-                            "仮想 Wasm 配信 (Dockerレス即時起動)",
-                            "Kompilila Memgastigo",
+                            "Direct Bytecode Injection",
+                            "デプロイ時直接注入 (親依存ゼロ起動)",
+                            "Rekta Bajtokoda Injekto",
                         ),
                     color: "#a855f7",
                     description: language
                         .label(
-                            "Instead of heavy Docker builds, the child instance boots a generic WASI runner and fetches compiled bytecode directly via '/virtual/wasm/:hash' in milliseconds.",
-                            "時間のかかる Docker ビルドを全廃。汎用 WASI ランナーが親サーバーの '/virtual/wasm/:hash' から直接バイトコードを取得し数秒で即座に起動。",
-                            "Lanĉas rekte el Wasm-bajtokodo senpeza Docker-konstruado.",
+                            "Instead of slow Docker builds or runtime HTTP fetching, Fly.io's 'config.files' directly writes the Wasm binary into '/app/definy_core.wasm', achieving immediate autonomous startup.",
+                            "重い Docker ビルドや起動時の HTTP フェッチを全廃。Fly.io の 'config.files' で Wasm バイナリをゲストディスク (/app/definy_core.wasm) へ直接注入し、親サーバー依存なしで即座に自律起動。",
+                            "Rekte injektas Wasm-dosieron per 'config.files' sen bezono de HTTP-elŝuto dum lanĉo.",
                         ),
                 }
                 StepDetailCard {

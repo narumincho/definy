@@ -197,3 +197,13 @@ exec wasmtime serve /tmp/app.wasm --addr "0.0.0.0:${PORT:-8080}"
       による推奨デプロイ例とパラメータ解説を案内。
 - [x] Connect-RPC 経由での仮想 Wasm デプロイ E2E テスト
       (`test_connect_rpc_deploy_service_success`) にて検証・パス。
+
+### Phase 4: Fly.io `config.files` によるデプロイ時直接注入 (親依存ゼロ化)
+
+- [x] 親サーバーから子サーバーを起動する際、起動時 HTTP フェッチではなく Fly.io
+      Machines API の `config.files` を用いて Wasm バイナリを
+      `/app/definy_core.wasm` へ Base64 直接注入。
+- [x] `runner/entrypoint.sh` を改修し、注入されたローカルディスク上の Wasm
+      （`/app/definy_core.wasm` または `$WASM_FILE`）から直接即時起動。
+- [x] 親サーバーが直後に停止しても、子サーバーが 100%
+      自律起動・稼働を継続する運用ブートストラップ閉ループを確立。

@@ -489,6 +489,14 @@ async fn test_connect_rpc_deploy_service_success() {
                 |Path(app): Path<String>,
                  Json(body): Json<crate::fly_machines::CreateMachineRequest>| async move {
                     assert_eq!(app, "definy-test-app");
+                    if body.name.as_deref() == Some("test-wasm-machine") {
+                        assert_eq!(body.config.files.len(), 1);
+                        assert_eq!(body.config.files[0].guest_path, "/app/definy_core.wasm");
+                        assert_eq!(
+                            body.config.env.get("WASM_FILE"),
+                            Some(&"/app/definy_core.wasm".to_string())
+                        );
+                    }
                     let id = match body.name.as_deref() {
                         Some("test-wasm-machine") => "m_test_wasm_1".to_string(),
                         _ => "m_test_999".to_string(),
@@ -595,12 +603,18 @@ async fn test_connect_rpc_deploy_service_success() {
     assert_eq!(status_data.region, "nrt");
     assert_eq!(status_data.url, "https://definy-test-app.fly.dev");
 
-    // 4. Deploy with wasm_hash (Phase 3: Virtual Wasm & Runner Mode)
+    // 4. Deploy with wasm_hash (Phase 3: Direct Wasm Injection via config.files)
+    let test_wasm_bytes = b"\0asm\x01\0\0\0".to_vec();
+    let wasm_hash = {
+        let mut store = state.virtual_file_store.write().await;
+        store.register_wasm(test_wasm_bytes.clone())
+    };
+
     let wasm_deploy_req = DeployInstanceRequest {
         commit_hash: None,
         machine_name: Some("test-wasm-machine".into()),
         region: Some("nrt".into()),
-        wasm_hash: Some("virtual_wasm_sha256_xyz".into()),
+        wasm_hash: Some(wasm_hash.clone()),
     };
     let wasm_deploy_body = Bytes::from(serde_json::to_vec(&wasm_deploy_req).unwrap());
     let wasm_deploy_res =
@@ -622,11 +636,8 @@ async fn test_connect_rpc_deploy_service_success() {
     let wasm_deployment = list_data
         .deployments
         .iter()
-        .find(|d| d.wasm_hash.as_deref() == Some("virtual_wasm_sha256_xyz"))
+        .find(|d| d.wasm_hash.as_deref() == Some(&wasm_hash))
         .expect("Virtual wasm deployment must be present in DB");
-    assert_eq!(
-        wasm_deployment.wasm_hash,
-        Some("virtual_wasm_sha256_xyz".into())
-    );
+    assert_eq!(wasm_deployment.wasm_hash, Some(wasm_hash));
     assert_eq!(wasm_deployment.status, "started");
 }

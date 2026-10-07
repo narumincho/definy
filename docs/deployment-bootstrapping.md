@@ -182,16 +182,16 @@ graph TD
     subgraph DefinyPlatform["definy 閉ループ (自己表現・自己進化)"]
         Source["definy 言語パーツ (UI / AST / 型 / コンパイラ / サーバー)"]
         Compiler["自己記述コンパイラ (core.compile-to-wasm)"]
-        VirtualWasm["仮想 Wasm バイトコード (/virtual/wasm/:hash)"]
-        MachinesAPI["Capability I/O: Fly.io Machines REST 呼び出し"]
-        NextGenVM["次世代 Fly.io MicroVM (子インスタンス)"]
+        WasmBytecode["Wasm バイナリ (/app/definy_core.wasm)"]
+        MachinesAPI["Capability I/O: Fly.io Machines REST 呼び出し (config.files 注入)"]
+        NextGenVM["次世代 Fly.io MicroVM (完全自律起動・親依存ゼロ)"]
 
         Source -->|コンパイル| Compiler
-        Compiler -->|出力| VirtualWasm
+        Compiler -->|バイトコード生成| WasmBytecode
         Source -->|運用ロジック記述| MachinesAPI
-        MachinesAPI -->|新インスタンス起動| NextGenVM
-        NextGenVM -->|オンデマンド取得| VirtualWasm
-        NextGenVM -.->|次世代の definy として稼働| Source
+        WasmBytecode -->|config.files に直接埋め込み| MachinesAPI
+        MachinesAPI -->|新インスタンス起動 & ディスク注入| NextGenVM
+        NextGenVM -.->|次世代の definy として完全自律稼働| Source
     end
 ```
 
@@ -206,21 +206,24 @@ graph TD
 2. **SurrealDB へのメタデータ記録**:
    - 親サーバーは対象ハッシュ、要求日時、ステータスを `deployments`
      テーブルに保存。
-3. **親サーバーが Fly.io Machines REST API を直接呼び出し**:
+3. **親サーバーが Fly.io Machines REST API を直接呼び出し
+   (デプロイ時直接注入)**:
    - ターミナルや外部 CI を一切介さず、親サーバーが内部環境変数 `FLY_API_TOKEN`
      を用いて `POST https://api.machines.dev/v1/apps/{app}/machines` を発行。
-   - コンテナ環境変数として `WASM_URL=https://parent.fly.dev/virtual/wasm/:hash`
-     を注入。
+   - `config.files` に Wasm バイナリを Base64
+     エンコードして埋め込み（`guest_path: /app/definy_core.wasm`）。環境変数として
+     `WASM_FILE=/app/definy_core.wasm` を注入。
 4. **Fly.io が Firecracker MicroVM を瞬時にプロビジョニング (201 Created)**:
-   - 数秒以内に新しい子マシンの ID および URL（例:
+   - Wasm バイナリがディスクに配置された状態で MicroVM
+     が起動。数秒以内に新しい子マシンの ID および URL（例:
      `https://definy-<id>.fly.dev`）が確定。
-5. **子マシンが親から仮想 Wasm をオンデマンド取得**:
-   - 子マシン内の汎用 WASI ランナー（Alpine + wasmtime）が起動し、親サーバーの
-     `GET /virtual/wasm/:hash` から Wasm バイトコードを取得。
-6. **Wasmtime がポート 8000 でリッスン・稼働開始**:
-   - Docker ビルドを待つことなく、ミリ秒〜数秒で新世代の definy
-     が立ち上がり、ヘルスチェックを通過。
-7. **新世代へのトラフィック案内（世代交代）**:
+5. **子マシンが注入されたローカルディスクから即座に起動
+   (親への起動時通信ゼロ)**:
+   - 子マシン内の汎用 WASI
+     ランナーが起動し、ネットワーク経由のダウンロードを一切行うことなく、ローカルに注入された
+     `/app/definy_core.wasm` を使って即座に `wasmtime serve`
+     を開始。親サーバーが直後に停止しても 100% 自律起動可能。
+6. **新世代へのトラフィック案内（世代交代）**:
    - 親サーバーがクライアントへ子マシンの URL を返却し、ユーザーは次世代の
      definy へとスムーズに移行。
 

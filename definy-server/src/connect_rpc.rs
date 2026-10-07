@@ -5,6 +5,7 @@ use axum::body::Bytes;
 use axum::extract::{ConnectInfo, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
+use base64::Engine;
 use definy_event::EventHashId;
 use definy_event::rpc::*;
 use prost::Message;
@@ -522,8 +523,8 @@ pub async fn handle_deploy_instance(
         }
     };
 
-    let (image, port, env_vars) = if let Some(ref wasm_hash) = req.wasm_hash {
-        // 仮想 Wasm 配信 & 共通 runner モード (Docker ビルド不要)
+    let (image, port, env_vars, files) = if let Some(ref wasm_hash) = req.wasm_hash {
+        // 仮想 Wasm 配信 & 共通 runner モード (Docker ビルド不要 / デプロイ時直接注入)
         let runner_image = std::env::var("FLY_RUNNER_IMAGE")
             .unwrap_or_else(|_| "ghcr.io/narumincho/definy-runner:latest".to_string());
         let server_url =
@@ -532,7 +533,55 @@ pub async fn handle_deploy_instance(
         vars.insert("PORT".to_string(), "8080".to_string());
         vars.insert("DEFINY_SERVER_URL".to_string(), server_url);
         vars.insert("DEFINY_WASM_HASH".to_string(), wasm_hash.clone());
-        (runner_image, 8080, vars)
+
+        // 1. VirtualFileStore から検索
+        let wasm_bytes = {
+            let store = state.virtual_file_store.read().await;
+            store.get_wasm(wasm_hash)
+        };
+
+        // 2. DB (ContentStore) からフォールバック検索
+        let wasm_bytes = match wasm_bytes {
+            Some(bytes) => Some(bytes),
+            None => {
+                if let Some(db) = crate::ensure_db(&state).await {
+                    crate::db::get_content(&db, wasm_hash).await.ok().flatten()
+                } else {
+                    None
+                }
+            }
+        };
+
+        // 3. resolve_client_wasm からフォールバック検索
+        let wasm_bytes = match wasm_bytes {
+            Some(bytes) => Some(bytes),
+            None => {
+                if let Some(client_wasm) = crate::resolve_client_wasm() {
+                    if wasm_hash == &client_wasm.hash
+                        || wasm_hash == "definy_client_bg"
+                        || wasm_hash == "definy_client"
+                    {
+                        Some(client_wasm.bytes)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+        };
+
+        let files = if let Some(bytes) = wasm_bytes {
+            vars.insert("WASM_FILE".to_string(), "/app/definy_core.wasm".to_string());
+            vec![crate::fly_machines::FlyMachineFile {
+                guest_path: "/app/definy_core.wasm".to_string(),
+                raw_value: base64::engine::general_purpose::STANDARD.encode(bytes),
+            }]
+        } else {
+            vec![]
+        };
+
+        (runner_image, 8080, vars, files)
     } else {
         // 従来のコミットハッシュベースモード
         let img = std::env::var("FLY_IMAGE")
@@ -542,11 +591,12 @@ pub async fn handle_deploy_instance(
         if let Some(ref commit_hash) = req.commit_hash {
             vars.insert("DEFINY_COMMIT_HASH".to_string(), commit_hash.clone());
         }
-        (img, 8000, vars)
+        (img, 8000, vars, vec![])
     };
 
-    let machine_config =
+    let mut machine_config =
         crate::fly_machines::create_default_definy_machine_config(&image, env_vars, port);
+    machine_config.files = files;
 
     let create_req = crate::fly_machines::CreateMachineRequest {
         name: req.machine_name.clone(),
