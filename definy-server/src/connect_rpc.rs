@@ -85,6 +85,16 @@ fn encode_response<M: Message + serde::Serialize>(
         .into_response())
 }
 
+fn encode_response_or_error<M: Message + serde::Serialize>(
+    codec: ContentCodec,
+    msg: &M,
+) -> Response {
+    match encode_response(codec, msg) {
+        Ok(response) => response,
+        Err(error) => error_to_response(error),
+    }
+}
+
 fn error_to_response(err: ConnectError) -> Response {
     let status = match err.code.as_str() {
         "invalid_argument" => StatusCode::BAD_REQUEST,
@@ -161,10 +171,7 @@ pub async fn handle_get_events(
     }
 
     let response = GetEventsResponse { events };
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 #[utoipa::path(
@@ -223,10 +230,7 @@ pub async fn handle_get_event(Database(db): Database, headers: HeaderMap, body: 
     };
 
     let response = GetEventResponse { event: Some(item) };
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 #[utoipa::path(
@@ -305,10 +309,7 @@ pub async fn handle_submit_event(
                 status: "missing_content".to_string(),
                 missing_content_hashes: missing,
             };
-            return match encode_response(codec, &response) {
-                Ok(res) => res,
-                Err(err) => error_to_response(err),
-            };
+            return encode_response_or_error(codec, &response);
         }
 
         if let Err(error) =
@@ -347,10 +348,7 @@ pub async fn handle_submit_event(
         missing_content_hashes: vec![],
     };
 
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 #[utoipa::path(
@@ -387,10 +385,7 @@ pub async fn handle_check_missing_hashes(
         missing_content_hashes: missing,
     };
 
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 #[utoipa::path(
@@ -440,10 +435,7 @@ pub async fn handle_upload_content(
         stored_content_hashes: stored,
     };
 
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 #[utoipa::path(
@@ -482,10 +474,7 @@ pub async fn handle_get_content(
 
     let response = GetContentResponse { item };
 
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 #[utoipa::path(
@@ -630,10 +619,7 @@ pub async fn handle_deploy_instance(
                 url: app_url.clone(),
                 app_url,
             };
-            match encode_response(codec, &response) {
-                Ok(res) => res,
-                Err(err) => error_to_response(err),
-            }
+            encode_response_or_error(codec, &response)
         }
         Err(err) => {
             eprintln!("Failed to create fly.io machine: {:?}", err);
@@ -687,10 +673,7 @@ pub async fn handle_get_deploy_status(
                 region: machine.region,
                 url: app_url,
             };
-            match encode_response(codec, &response) {
-                Ok(res) => res,
-                Err(err) => error_to_response(err),
-            }
+            encode_response_or_error(codec, &response)
         }
         Err(err) => {
             if let Some(db) = crate::ensure_db(&state).await
@@ -702,10 +685,7 @@ pub async fn handle_get_deploy_status(
                     region: cached.region,
                     url: cached.url,
                 };
-                return match encode_response(codec, &response) {
-                    Ok(res) => res,
-                    Err(err) => error_to_response(err),
-                };
+                return encode_response_or_error(codec, &response);
             }
             eprintln!("Failed to get fly.io machine: {:?}", err);
             error_to_response(ConnectError::internal(format!(
@@ -770,10 +750,7 @@ pub async fn handle_list_deployments(
         .collect();
 
     let response = ListDeploymentsResponse { deployments: items };
-    match encode_response(codec, &response) {
-        Ok(res) => res,
-        Err(err) => error_to_response(err),
-    }
+    encode_response_or_error(codec, &response)
 }
 
 pub fn router() -> axum::Router<AppState> {
