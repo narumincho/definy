@@ -1,10 +1,12 @@
 use definy_ui::{AppState, PageContext};
 
 pub struct ResourceHash<'a> {
+    #[allow(dead_code)]
     pub js: &'a str,
     #[allow(dead_code)]
     pub wasm: &'a str,
     pub icon: &'a str,
+    pub js_url: &'a str,
 }
 
 fn escape_html_attr(s: &str) -> String {
@@ -28,8 +30,8 @@ pub fn render_to_html(
     let css = std::fs::read_to_string("definy-ui/main.css")
         .unwrap_or_else(|_| include_str!("../../definy-ui/main.css").to_string());
     let ssr_id = definy_ui::SSR_INITIAL_STATE_ELEMENT_ID;
-    let js_path = resource_hash.js;
     let icon_href = resource_hash.icon;
+    let js_url = resource_hash.js_url;
 
     let mut renderer = dioxus_ssr::Renderer::new();
     renderer.pre_render = true;
@@ -52,7 +54,7 @@ pub fn render_to_html(
 <link rel="icon" href="{icon_href}">
 <style>{css}</style>
 <script id="{ssr_id}" type="application/json">{ssr_initial_state_base64}</script>
-<script type="module" src="/wasm/definy_client.js?v={js_path}"></script>
+<script type="module" src="{js_url}"></script>
 </head>
 <body>
 <div id="main">{body_html}</div>

@@ -172,3 +172,53 @@ UI（`/deployments` 画面の「fly.io デプロイ & HTML リクエスト
      SPA（`client.rs`）において、初期化中や接続待機状態の場合はバックグラウンドで定期再試行を行い、サーバー側の
      DB
      初期化完了を検知した時点で自動的に「接続中」ステータスへ移行し、最新イベントを読み込む。
+
+---
+
+## 7. Dioxus release ビルドのアセットパス差異と Wasm/JS Hydration 失敗の解決
+
+### 発生した事象
+
+- 本番環境（`https://definy.fly.dev/api/architecture?lang=ja`
+  等）で、タブ切り替えボタンをクリックしても他のフロー図や画面へ切り替わらない。
+- ブラウザ側で JavaScript / WebAssembly が実行されず、静的な SSR HTML
+  のまま停止していた。
+
+### 原因
+
+1. **debug ビルドと release ビルドでの Dioxus 出力パスの差異**:
+   - ローカル（debug ビルド）: `public/wasm/definy_client.js`,
+     `public/wasm/definy_client_bg.wasm`
+   - 本番 CI（`dx build --release`）: `public/assets/definy_client-<hash>.js`,
+     `public/assets/definy_client_bg-<hash>.wasm`
+2. **サーバー側の固定パス探索とスクリプトタグ不一致**:
+   - サーバー（`html.rs`）が
+     `<script type="module" src="/wasm/definy_client.js?v=..."></script>`
+     をハードコードしていた。
+   - `assets.rs` も `wasm/definy_client.js`
+     固定でファイルを探していたため、release 版の `assets/definy_client-*.js`
+     を見つけられず `resolve_client_js()` が `None` を返していた。
+   - ブラウザがスクリプトを取得しようとすると、サーバーは言語なしリクエストとして
+     `307 Temporary Redirect` を経て **HTML（770KB）**
+     を返してしまい、ブラウザ側で構文エラーとなって Hydration が 100%
+     失敗していた。
+
+### 恒久対策
+
+1. **アセットの動的探索 (`find_client_js` / `find_client_wasm`)**:
+   - `index.html` 内の `<script>` タグの参照、`assets/` ディレクトリ、`wasm/`
+     ディレクトリ、ルート直下を順に走査し、debug / release を問わず正確な JS /
+     Wasm ファイルおよび相対パスを検出。
+2. **HTML スクリプトタグの動的埋め込み**:
+   - 検出された実際のパス（例: `/assets/definy_client-dxh....js`）を
+     `<script type="module" src="{js_url}"></script>` に埋め込み。
+3. **`public/` 直下ファイルの汎用静的配信**:
+   - `handle_fallback` において、`public/` 配下に実在する静的ファイル（`assets/`
+     以下のハッシュ付き JS/Wasm 含む）を適切な Content-Type
+     およびキャッシュヘッダーで直接配信。
+4. **No-JS / SSR フォールバック対応（アーキテクチャ図 UI）**:
+   - タブ切り替えボタンを `a` リンク化し、URL クエリ（例:
+     `?tab=submit&lang=ja`）に対応。Wasm
+     が動作していない環境でもリンク遷移で目的の図を表示可能に。
+   - さらに「5. すべての図を一覧表示 (全展開)」タブを追加し、全フロー図を 1
+     ページで一気にスクロール閲覧できるように改善。

@@ -6,6 +6,8 @@ pub struct QueryParams {
     pub lang: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub event_type: Option<EventType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tab: Option<String>,
 }
 
 pub fn parse_query(query: Option<&str>) -> QueryParams {
@@ -27,6 +29,13 @@ pub fn parse_query(query: Option<&str>) -> QueryParams {
             }
             "event_type" => {
                 params.event_type = parse_event_type_value(value.as_str());
+            }
+            "tab" => {
+                if value.trim().is_empty() {
+                    params.tab = None;
+                } else {
+                    params.tab = Some(value);
+                }
             }
             _ => {}
         }
@@ -73,5 +82,12 @@ mod tests {
         let params = parse_query(Some("lang=ja&event_type=module_commit"));
         assert_eq!(params.lang.as_deref(), Some("ja"));
         assert_eq!(params.event_type, Some(EventType::ModuleCommit));
+    }
+
+    #[test]
+    fn parse_query_parses_tab_parameter() {
+        let params = parse_query(Some("tab=submit&lang=ja"));
+        assert_eq!(params.tab.as_deref(), Some("submit"));
+        assert_eq!(params.lang.as_deref(), Some("ja"));
     }
 }

@@ -12,5 +12,6 @@ pub fn event_filter_query_string(event_type: Option<EventType>) -> Option<String
     crate::query::build_query(crate::query::QueryParams {
         lang: None,
         event_type,
+        tab: None,
     })
 }
