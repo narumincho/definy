@@ -66,6 +66,8 @@ struct SsrStateInternal {
     has_more: bool,
     #[serde(default = "default_true")]
     is_db_connected: bool,
+    #[serde(default)]
+    is_db_initializing: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -73,6 +75,7 @@ pub struct SsrState {
     pub event_binaries: Vec<Vec<u8>>,
     pub has_more: bool,
     pub is_db_connected: bool,
+    pub is_db_initializing: bool,
 }
 
 pub fn encode_ssr_state(ssr_state: SsrState) -> Option<String> {
@@ -89,6 +92,7 @@ pub fn encode_ssr_state(ssr_state: SsrState) -> Option<String> {
             .collect(),
         has_more: ssr_state.has_more,
         is_db_connected: ssr_state.is_db_connected,
+        is_db_initializing: ssr_state.is_db_initializing,
     })
     .ok()
     .map(|vec| base64::Engine::encode(&base64::engine::general_purpose::URL_SAFE_NO_PAD, &vec))
@@ -112,6 +116,7 @@ pub fn decode_ssr_state(json: &str) -> Option<SsrState> {
                 .collect(),
             has_more: state.has_more,
             is_db_connected: state.is_db_connected,
+            is_db_initializing: state.is_db_initializing,
         })
 }
 
@@ -278,6 +283,33 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
                 },
             )
         }
+        app_state::ConnectionStatus::DatabaseInitializing => {
+            let msg = context.language.label(
+                "Database is initializing. Please wait a moment. Local and offline features are available. Retrying connection...",
+                "データベースを初期化中です。しばらくお待ちください。ローカル機能・式の計算は利用可能です。接続を再試行しています...",
+                "Datumbazo estas inicializiĝanta. Bonvolu atendi momenton. Lokaj funkcioj disponeblas. Rekonektante...",
+            );
+            let api_ok_text =
+                context
+                    .language
+                    .label("API: Connected", "API: 接続中", "API: Konektita");
+            let db_init_text = context.language.label(
+                "Database: Initializing",
+                "DB: 初期化中",
+                "Datumbazo: Inicializiĝanta",
+            );
+            (
+                msg,
+                rsx! {
+                    span { style: "background: rgb(34 197 94 / 0.15); border: 1px solid rgb(34 197 94 / 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #86efac; margin-right: 0.3rem;",
+                        "{api_ok_text}"
+                    }
+                    span { style: "background: rgb(59 130 246 / 0.2); border: 1px solid rgb(59 130 246 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #93c5fd;",
+                        "{db_init_text}"
+                    }
+                },
+            )
+        }
         app_state::ConnectionStatus::DatabaseUnavailable => {
             let msg = context.language.label(
                 "Connected to API server, but database is unavailable. Local and offline features are available. Retrying connection...",
@@ -319,5 +351,24 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             }
             div { style: "font-size: 0.75rem; opacity: 0.8; white-space: nowrap;", "{retrying_text}" }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_connection_warning_banner_shows_db_initializing() {
+        let context = PageContext::from_path_and_query("/", "", Some("ja"));
+        let mut renderer = dioxus_ssr::Renderer::new();
+        let html = renderer.render_element(rsx! {
+            ConnectionWarningBanner {
+                context,
+                status: app_state::ConnectionStatus::DatabaseInitializing,
+            }
+        });
+        assert!(html.contains("データベースを初期化中です"));
+        assert!(html.contains("DB: 初期化中"));
     }
 }
