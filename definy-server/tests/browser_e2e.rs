@@ -42,11 +42,13 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
         );
     }
 
+    let _ = webdriver.wait_for_client_ready().await;
     sleep(Duration::from_millis(500)).await;
     webdriver.click("a.cta-link").await?;
     webdriver
         .wait_for_url(&format!("{}/", test_server.base_url()))
         .await?;
+    let _ = webdriver.wait_for_client_ready().await;
 
     let title = webdriver.text_content_of("header h1").await?;
     assert_eq!(title, "definy");
@@ -526,29 +528,72 @@ impl WebDriverClient {
     }
 
     async fn click(&self, selector: &str) -> Result<(), Box<dyn Error>> {
-        let element_id = self.find_element(selector).await?;
-        let path = format!("/session/{}/element/{}/click", self.session_id, element_id);
-        webdriver_request(
-            &self.client,
-            &self.base_url,
-            Method::POST,
-            &path,
-            Some(serde_json::json!({})),
+        for attempt in 0..15 {
+            let element_id = match self.find_element(selector).await {
+                Ok(id) => id,
+                Err(_) if attempt < 14 => {
+                    sleep(Duration::from_millis(100)).await;
+                    continue;
+                }
+                Err(err) => return Err(err),
+            };
+            let path = format!("/session/{}/element/{}/click", self.session_id, element_id);
+            match webdriver_request(
+                &self.client,
+                &self.base_url,
+                Method::POST,
+                &path,
+                Some(serde_json::json!({})),
+            )
+            .await
+            {
+                Ok(_) => return Ok(()),
+                Err(err) if err.to_string().contains("stale element reference") && attempt < 14 => {
+                    sleep(Duration::from_millis(150)).await;
+                    continue;
+                }
+                Err(err) => return Err(err),
+            }
+        }
+        Err(format!(
+            "failed to click {} due to persistent stale element",
+            selector
         )
-        .await?;
-        Ok(())
+        .into())
     }
 
     async fn text_content_of(&self, selector: &str) -> Result<String, Box<dyn Error>> {
-        let element_id = self.find_element(selector).await?;
-        let path = format!("/session/{}/element/{}/text", self.session_id, element_id);
-        let res = webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await?;
-        let text = res
-            .get("value")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        Ok(text)
+        for attempt in 0..15 {
+            let element_id = match self.find_element(selector).await {
+                Ok(id) => id,
+                Err(_) if attempt < 14 => {
+                    sleep(Duration::from_millis(100)).await;
+                    continue;
+                }
+                Err(err) => return Err(err),
+            };
+            let path = format!("/session/{}/element/{}/text", self.session_id, element_id);
+            match webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await {
+                Ok(res) => {
+                    let text = res
+                        .get("value")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or_default()
+                        .to_string();
+                    return Ok(text);
+                }
+                Err(err) if err.to_string().contains("stale element reference") && attempt < 14 => {
+                    sleep(Duration::from_millis(150)).await;
+                    continue;
+                }
+                Err(err) => return Err(err),
+            }
+        }
+        Err(format!(
+            "failed to get text of {} due to persistent stale element",
+            selector
+        )
+        .into())
     }
 
     async fn find_element(&self, selector: &str) -> Result<String, Box<dyn Error>> {
