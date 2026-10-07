@@ -259,6 +259,17 @@ fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
                     "Servilo malkonektita",
                 ),
             ),
+            crate::app_state::ConnectionStatus::DatabaseInitializing => (
+                "#60a5fa",
+                context
+                    .language
+                    .label("DB Initializing", "DB初期化中", "DB Inicializiĝas"),
+                context.language.label(
+                    "Database is initializing",
+                    "データベースを初期化中です",
+                    "Datumbazo estas inicializiĝanta",
+                ),
+            ),
             crate::app_state::ConnectionStatus::DatabaseUnavailable => (
                 "#f87171",
                 context.language.label("DB Error", "DB停止", "DB Eraro"),
@@ -462,7 +473,7 @@ mod tests {
 
     #[test]
     fn test_header_initial_state_shows_checking() {
-        let state = crate::build_initial_state(vec![], false, false, None, None, true);
+        let state = crate::build_initial_state(vec![], false, false, None, None, true, false);
         assert!(state.is_auth_loading);
         assert!(state.current_key.is_none());
 
@@ -486,7 +497,7 @@ mod tests {
 
     #[test]
     fn test_header_unauthenticated_shows_login_button() {
-        let mut state = crate::build_initial_state(vec![], false, false, None, None, true);
+        let mut state = crate::build_initial_state(vec![], false, false, None, None, true, false);
         state.is_auth_loading = false;
         state.current_key = None;
 

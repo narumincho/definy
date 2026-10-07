@@ -156,6 +156,7 @@ pub enum ConnectionStatus {
     Connected,
     ServerDisconnected,
     DatabaseUnavailable,
+    DatabaseInitializing,
 }
 
 #[derive(Clone)]
@@ -308,6 +309,7 @@ pub fn build_initial_state(
     current_key: Option<ed25519_dalek::SigningKey>,
     filter_event_type: Option<definy_event::event::EventType>,
     is_db_connected: bool,
+    is_db_initializing: bool,
 ) -> AppState {
     let mut event_cache = HashMap::new();
     let events_len = events.len();
@@ -319,6 +321,8 @@ pub fn build_initial_state(
 
     let connection_status = if is_db_connected {
         ConnectionStatus::Connected
+    } else if is_db_initializing {
+        ConnectionStatus::DatabaseInitializing
     } else {
         ConnectionStatus::DatabaseUnavailable
     };

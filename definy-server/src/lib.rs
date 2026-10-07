@@ -45,12 +45,20 @@ use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower_http::cors::CorsLayer;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DbInitStatus {
+    Initializing,
+    Ready,
+    Failed,
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
     pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
     pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
     pub last_db_failure: Arc<RwLock<Option<std::time::Instant>>>,
+    pub db_init_status: Arc<RwLock<DbInitStatus>>,
 }
 
 impl AppState {
@@ -59,17 +67,29 @@ impl AppState {
         db: Option<Surreal<Any>>,
         fly_client: Option<crate::fly_machines::FlyMachineClient>,
     ) -> Self {
+        let db_init_status = if db.is_some() {
+            DbInitStatus::Ready
+        } else {
+            DbInitStatus::Initializing
+        };
         Self {
             db: Arc::new(RwLock::new(db)),
             fly_client,
             virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
             last_db_failure: Arc::new(RwLock::new(None)),
+            db_init_status: Arc::new(RwLock::new(db_init_status)),
         }
     }
 
     #[must_use]
     pub fn test_state() -> Self {
-        Self::new(None, None)
+        Self {
+            db: Arc::new(RwLock::new(None)),
+            fly_client: None,
+            virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
+            last_db_failure: Arc::new(RwLock::new(None)),
+            db_init_status: Arc::new(RwLock::new(DbInitStatus::Ready)),
+        }
     }
 }
 
@@ -77,20 +97,27 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     println!("Starting definy server (Axum)...");
     let state = AppState::new(None, crate::fly_machines::FlyMachineClient::from_env());
-    println!("Initializing database connection and schema...");
-    match db::init_db().await {
-        Ok(db) => {
-            *state.db.write().await = Some(db);
-            println!("Database initialized successfully on startup.");
+
+    let state_for_db = state.clone();
+    tokio::spawn(async move {
+        println!("Initializing database connection and schema in background...");
+        match db::init_db().await {
+            Ok(db) => {
+                *state_for_db.db.write().await = Some(db);
+                *state_for_db.db_init_status.write().await = DbInitStatus::Ready;
+                *state_for_db.last_db_failure.write().await = None;
+                println!("Database initialized successfully on startup.");
+            }
+            Err(err) => {
+                *state_for_db.db_init_status.write().await = DbInitStatus::Failed;
+                *state_for_db.last_db_failure.write().await = Some(std::time::Instant::now());
+                eprintln!(
+                    "WARNING: Failed to initialize database on startup ({:?}). Will retry on demand.",
+                    err
+                );
+            }
         }
-        Err(err) => {
-            *state.last_db_failure.write().await = Some(std::time::Instant::now());
-            eprintln!(
-                "WARNING: Failed to initialize database on startup ({:?}). Will retry on demand.",
-                err
-            );
-        }
-    }
+    });
 
     let mcp_session_manager = mcp::McpSessionManager::new();
 
@@ -171,6 +198,11 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
         return Some(db);
     }
 
+    // If background initialization is currently in progress, do not start concurrent init_db!
+    if *state.db_init_status.read().await == DbInitStatus::Initializing {
+        return None;
+    }
+
     // Cooldown check: if DB initialization failed recently (within 5 seconds),
     // skip retrying immediately to prevent request latency and server overload.
     if let Some(last_failure) = *state.last_db_failure.read().await
@@ -184,7 +216,10 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
         return Some(existing_db);
     }
 
-    // Re-check failure cooldown after acquiring write lock
+    // Re-check failure cooldown and initializing status after acquiring write lock
+    if *state.db_init_status.read().await == DbInitStatus::Initializing {
+        return None;
+    }
     if let Some(last_failure) = *state.last_db_failure.read().await
         && last_failure.elapsed() < std::time::Duration::from_secs(5)
     {
@@ -194,11 +229,13 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
     match db::init_db().await {
         Ok(db) => {
             *guard = Some(db.clone());
+            *state.db_init_status.write().await = DbInitStatus::Ready;
             *state.last_db_failure.write().await = None;
             println!("Database is available. API requests will use the database.");
             Some(db)
         }
         Err(error) => {
+            *state.db_init_status.write().await = DbInitStatus::Failed;
             *state.last_db_failure.write().await = Some(std::time::Instant::now());
             eprintln!(
                 "Failed to connect to database while handling request: {:?}",
@@ -337,13 +374,22 @@ pub(crate) async fn handle_html_request(
         .and_then(|value| value.to_str().ok());
     let language_resolution = definy_ui::language::resolve_language(uri.query(), accept_language);
     let db = ensure_db(state).await;
-    handle_html(uri, db.as_ref(), language_resolution.language).await
+    let is_initializing =
+        db.is_none() && *state.db_init_status.read().await == DbInitStatus::Initializing;
+    handle_html(
+        uri,
+        db.as_ref(),
+        language_resolution.language,
+        is_initializing,
+    )
+    .await
 }
 
 async fn handle_html(
     uri: &Uri,
     db: Option<&Surreal<Any>>,
     language: definy_ui::language::Language,
+    is_db_initializing: bool,
 ) -> Response {
     let path = uri.path();
     let query = uri.query();
@@ -402,6 +448,7 @@ async fn handle_html(
         event_binaries: event_binary_vec,
         has_more,
         is_db_connected,
+        is_db_initializing,
     })
     .unwrap();
 
@@ -417,6 +464,7 @@ async fn handle_html(
         None,
         filter_event_type,
         is_db_connected,
+        is_db_initializing,
     );
     let js = resolve_client_js();
     let wasm = resolve_client_wasm();
@@ -644,6 +692,40 @@ mod tests {
             res_cmh.status(),
             axum::http::StatusCode::SERVICE_UNAVAILABLE
         );
+    }
+
+    #[tokio::test]
+    async fn test_handle_html_request_when_db_is_initializing() {
+        let state = AppState::new(None, None);
+        // AppState::new(None, None) defaults db_init_status to DbInitStatus::Initializing
+        assert_eq!(
+            *state.db_init_status.read().await,
+            DbInitStatus::Initializing
+        );
+
+        let uri = axum::http::Uri::from_static("/?lang=ja");
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
+
+        let response = handle_html_request(&state, &uri, &headers).await;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
+        assert!(body_str.contains("<!DOCTYPE html>"));
+        assert!(body_str.contains("データベースを初期化中です"));
+        assert!(body_str.contains("DB: 初期化中"));
+
+        // Also test English
+        let uri_en = axum::http::Uri::from_static("/?lang=en");
+        let response_en = handle_html_request(&state, &uri_en, &headers).await;
+        let body_bytes_en = axum::body::to_bytes(response_en.into_body(), 1024 * 1024)
+            .await
+            .expect("Failed to read body");
+        let body_str_en = String::from_utf8(body_bytes_en.to_vec()).expect("Body is not UTF-8");
+        assert!(body_str_en.contains("Database is initializing"));
+        assert!(body_str_en.contains("Database: Initializing"));
     }
 
     #[test]

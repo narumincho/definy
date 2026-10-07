@@ -42,7 +42,7 @@ pub async fn build_ui_app_state(db: &Surreal<Any>) -> Result<UiAppState, String>
         .collect::<Vec<_>>();
 
     Ok(definy_ui::build_initial_state(
-        events, false, false, None, None, true,
+        events, false, false, None, None, true, false,
     ))
 }
 

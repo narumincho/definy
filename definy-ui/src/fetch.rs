@@ -7,6 +7,8 @@ pub enum FetchError {
     ServerDisconnected(String),
     /// API server is connected, but database is unavailable (HTTP 503)
     DatabaseUnavailable,
+    /// API server is connected, but database is initializing (HTTP 503)
+    DatabaseInitializing,
     /// Other HTTP error
     HttpError(u16),
     /// Failed to deserialize CBOR response
@@ -20,6 +22,7 @@ impl std::fmt::Display for FetchError {
         match self {
             Self::ServerDisconnected(e) => write!(f, "Cannot connect to API server: {e}"),
             Self::DatabaseUnavailable => write!(f, "Database is unavailable"),
+            Self::DatabaseInitializing => write!(f, "Database is initializing"),
             Self::HttpError(status) => write!(f, "HTTP error: status {status}"),
             Self::DeserializeError(e) => write!(f, "Deserialize error: {e}"),
             Self::Other(e) => write!(f, "{e}"),
@@ -34,6 +37,7 @@ impl FetchError {
         match self {
             Self::ServerDisconnected(_) => crate::app_state::ConnectionStatus::ServerDisconnected,
             Self::DatabaseUnavailable => crate::app_state::ConnectionStatus::DatabaseUnavailable,
+            Self::DatabaseInitializing => crate::app_state::ConnectionStatus::DatabaseInitializing,
             _ => crate::app_state::ConnectionStatus::ServerDisconnected,
         }
     }
@@ -120,6 +124,15 @@ async fn connect_rpc_post<Req: serde::Serialize, Res: serde::de::DeserializeOwne
     };
 
     if response.status() == 503 {
+        let text_promise = response.text().ok();
+        if let Some(tp) = text_promise
+            && let Ok(text_val) = wasm_bindgen_futures::JsFuture::from(tp).await
+            && let Some(txt) = text_val.as_string()
+            && let Ok(connect_err) = serde_json::from_str::<ConnectError>(&txt)
+            && connect_err.message.to_lowercase().contains("initializing")
+        {
+            return Err(FetchError::DatabaseInitializing);
+        }
         return Err(FetchError::DatabaseUnavailable);
     }
 
@@ -311,7 +324,7 @@ pub async fn post_event(signated_event: &[u8]) -> Result<u16, anyhow::Error> {
             Ok(200)
         }
         Err(FetchError::HttpError(status)) => Ok(status),
-        Err(FetchError::DatabaseUnavailable) => Ok(503),
+        Err(FetchError::DatabaseUnavailable | FetchError::DatabaseInitializing) => Ok(503),
         Err(err) => Err(anyhow::anyhow!(err.to_string())),
     }
 }

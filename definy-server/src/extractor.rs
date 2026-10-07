@@ -16,9 +16,12 @@ impl FromRequestParts<AppState> for Database {
         _parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let db = crate::ensure_db(state)
-            .await
-            .ok_or(ApiError::DatabaseUnavailable)?;
-        Ok(Self(db))
+        if let Some(db) = crate::ensure_db(state).await {
+            Ok(Self(db))
+        } else if *state.db_init_status.read().await == crate::DbInitStatus::Initializing {
+            Err(ApiError::DatabaseInitializing)
+        } else {
+            Err(ApiError::DatabaseUnavailable)
+        }
     }
 }

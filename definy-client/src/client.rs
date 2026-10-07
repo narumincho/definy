@@ -62,6 +62,7 @@ fn AppRoot() -> Element {
         let ssr_state = read_ssr_state();
         let has_more = ssr_state.as_ref().is_none_or(|s| s.has_more);
         let is_db_connected = ssr_state.as_ref().is_none_or(|s| s.is_db_connected);
+        let is_db_initializing = ssr_state.as_ref().is_some_and(|s| s.is_db_initializing);
         let has_ssr_state = ssr_state.is_some();
 
         definy_ui::build_initial_state(
@@ -82,6 +83,7 @@ fn AppRoot() -> Element {
             None,
             filter_for_fetch,
             is_db_connected,
+            is_db_initializing,
         )
     });
 
@@ -178,6 +180,31 @@ fn AppRoot() -> Element {
                     next.set_connection_status(err.to_connection_status());
                     next.event_list_state.is_loading = false;
                     state_signal.set(next);
+
+                    let mut retry_signal = state_signal;
+                    spawn(async move {
+                        loop {
+                            sleep_ms(3000).await;
+                            if retry_signal.read().connection_status
+                                == definy_ui::ConnectionStatus::Connected
+                            {
+                                break;
+                            }
+                            if let Ok(events) =
+                                definy_ui::fetch::get_events(filter_for_fetch, Some(100), Some(0))
+                                    .await
+                            {
+                                let events_count = events.len();
+                                let mut next = retry_signal.read().clone();
+                                next.set_connection_status(definy_ui::ConnectionStatus::Connected);
+                                next.apply_latest_events(events, filter_for_fetch);
+                                next.event_list_state.is_loading = false;
+                                next.event_list_state.has_more = events_count == 100;
+                                retry_signal.set(next);
+                                break;
+                            }
+                        }
+                    });
                 }
             }
 
@@ -441,4 +468,20 @@ fn setup_popstate_listener(tx: futures_channel::mpsc::UnboundedSender<ClientMsg>
             .add_event_listener_with_callback("popstate", on_popstate.as_ref().unchecked_ref());
     }
     on_popstate.forget();
+}
+
+async fn sleep_ms(ms: i32) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let promise = js_sys::Promise::new(&mut |resolve, _| {
+            if let Some(window) = web_sys::window() {
+                let _ = window.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms);
+            }
+        });
+        let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = ms;
+    }
 }

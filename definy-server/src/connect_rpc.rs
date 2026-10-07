@@ -723,7 +723,12 @@ pub async fn handle_list_deployments(
     let db = match crate::ensure_db(&state).await {
         Some(db) => db,
         None => {
-            return error_to_response(ConnectError::unavailable("Database is unavailable"));
+            let msg = if *state.db_init_status.read().await == crate::DbInitStatus::Initializing {
+                "Database is initializing"
+            } else {
+                "Database is unavailable"
+            };
+            return error_to_response(ConnectError::unavailable(msg));
         }
     };
 
