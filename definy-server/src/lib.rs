@@ -253,27 +253,27 @@ async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: Heade
     // 1. Direct static file serving from public directory candidates
     for dir in assets::get_public_dir_candidates() {
         let candidate = dir.join(trimmed_path);
-        if candidate.is_file() {
-            if let Ok(bytes) = std::fs::read(&candidate) {
-                let content_type = mime_type_from_path(&candidate);
-                let is_hashed = trimmed_path.contains("-dxh")
-                    || trimmed_path.starts_with("assets/")
-                    || trimmed_path.ends_with(".wasm");
-                let cache_control = if is_hashed {
-                    "public, max-age=31536000, immutable"
-                } else {
-                    "no-cache, must-revalidate"
-                };
-                return (
-                    StatusCode::OK,
-                    [
-                        ("Content-Type", content_type),
-                        ("Cache-Control", cache_control),
-                    ],
-                    Bytes::from(bytes),
-                )
-                    .into_response();
-            }
+        if candidate.is_file()
+            && let Ok(bytes) = std::fs::read(&candidate)
+        {
+            let content_type = mime_type_from_path(&candidate);
+            let is_hashed = trimmed_path.contains("-dxh")
+                || trimmed_path.starts_with("assets/")
+                || trimmed_path.ends_with(".wasm");
+            let cache_control = if is_hashed {
+                "public, max-age=31536000, immutable"
+            } else {
+                "no-cache, must-revalidate"
+            };
+            return (
+                StatusCode::OK,
+                [
+                    ("Content-Type", content_type),
+                    ("Cache-Control", cache_control),
+                ],
+                Bytes::from(bytes),
+            )
+                .into_response();
         }
     }
 

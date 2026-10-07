@@ -126,10 +126,11 @@ fn find_client_js(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     if let Ok(entries) = std::fs::read_dir(&assets_dir) {
         for entry in entries.flatten() {
             let p = entry.path();
-            if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with("definy_client") && name.ends_with(".js") {
-                    return Some(p);
-                }
+            if let Some(name) = p.file_name().and_then(|n| n.to_str())
+                && name.starts_with("definy_client")
+                && name.ends_with(".js")
+            {
+                return Some(p);
             }
         }
     }
@@ -152,10 +153,11 @@ fn find_client_wasm(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     if let Ok(entries) = std::fs::read_dir(&assets_dir) {
         for entry in entries.flatten() {
             let p = entry.path();
-            if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with("definy_client") && name.ends_with(".wasm") {
-                    return Some(p);
-                }
+            if let Some(name) = p.file_name().and_then(|n| n.to_str())
+                && name.starts_with("definy_client")
+                && name.ends_with(".wasm")
+            {
+                return Some(p);
             }
         }
     }
@@ -186,45 +188,44 @@ where
     F: Fn(&std::path::Path) -> Option<std::path::PathBuf>,
 {
     for dir in get_public_dir_candidates() {
-        if let Some(p) = finder(&dir) {
-            if let Ok(metadata) = std::fs::metadata(&p)
-                && let Ok(modified) = metadata.modified()
+        if let Some(p) = finder(&dir)
+            && let Ok(metadata) = std::fs::metadata(&p)
+            && let Ok(modified) = metadata.modified()
+        {
+            if let Ok(guard) = cache.read()
+                && let Some(ref cached) = *guard
+                && cached.path == p
+                && cached.modified == modified
             {
-                if let Ok(guard) = cache.read()
-                    && let Some(ref cached) = *guard
-                    && cached.path == p
-                    && cached.modified == modified
-                {
-                    return Some(cached.asset.clone());
-                }
+                return Some(cached.asset.clone());
+            }
 
-                if let Ok(bytes) = std::fs::read(&p) {
-                    let hash = sha2::Sha256::digest(&bytes);
-                    let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-                    let rel_path = p
-                        .strip_prefix(&dir)
-                        .ok()
-                        .map(|rp| rp.to_string_lossy().replace('\\', "/"))
-                        .unwrap_or_else(|| {
-                            p.file_name()
-                                .map(|n| n.to_string_lossy().to_string())
-                                .unwrap_or_default()
-                        });
-                    let asset = ResolvedAsset {
-                        bytes,
-                        hash: hash_hex,
-                        content_type,
-                        relative_path: rel_path,
-                    };
-                    if let Ok(mut guard) = cache.write() {
-                        *guard = Some(CachedAsset {
-                            path: p,
-                            modified,
-                            asset: asset.clone(),
-                        });
-                    }
-                    return Some(asset);
+            if let Ok(bytes) = std::fs::read(&p) {
+                let hash = sha2::Sha256::digest(&bytes);
+                let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+                let rel_path = p
+                    .strip_prefix(&dir)
+                    .ok()
+                    .map(|rp| rp.to_string_lossy().replace('\\', "/"))
+                    .unwrap_or_else(|| {
+                        p.file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_default()
+                    });
+                let asset = ResolvedAsset {
+                    bytes,
+                    hash: hash_hex,
+                    content_type,
+                    relative_path: rel_path,
+                };
+                if let Ok(mut guard) = cache.write() {
+                    *guard = Some(CachedAsset {
+                        path: p,
+                        modified,
+                        asset: asset.clone(),
+                    });
                 }
+                return Some(asset);
             }
         }
     }
