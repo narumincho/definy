@@ -607,6 +607,7 @@ pub async fn handle_deploy_instance(
                     region: machine.region.clone(),
                     created_at: chrono::Utc::now(),
                     wasm_hash: req.wasm_hash.clone(),
+                    provider: Some("flyio".to_string()),
                 };
                 if let Err(e) = crate::db::save_deployment(&db, deployment_record).await {
                     eprintln!("Failed to save deployment to DB: {:?}", e);
@@ -751,11 +752,147 @@ pub async fn handle_list_deployments(
             region: r.region,
             created_at_rfc3339: r.created_at.to_rfc3339(),
             wasm_hash: r.wasm_hash,
+            provider: r.provider,
         })
         .collect();
 
     let response = ListDeploymentsResponse { deployments: items };
     encode_response_or_error(codec, &response)
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/DeployDeno",
+    tag = "connect-rpc",
+    request_body(
+        content = DeployDenoRequest,
+        content_type = "application/json",
+        description = "Connect-RPC DeployDeno request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC DeployDeno response", body = DeployDenoResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 500, description = "Internal Server Error", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_deploy_deno(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: DeployDenoRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let token = if !req.org_token.trim().is_empty() {
+        req.org_token.trim().to_string()
+    } else if let Ok(env_token) = std::env::var("DENO_DEPLOY_TOKEN") {
+        env_token.trim().to_string()
+    } else {
+        return error_to_response(ConnectError::invalid_argument(
+            "Deno Deploy token (org_token) is required",
+        ));
+    };
+
+    if token.is_empty() {
+        return error_to_response(ConnectError::invalid_argument(
+            "Deno Deploy token cannot be empty",
+        ));
+    }
+
+    let mut config = crate::deno_deploy::DenoDeployConfig::new(token);
+    if let Ok(base_url) = std::env::var("DENO_DEPLOY_API_URL")
+        && !base_url.trim().is_empty()
+    {
+        config = config.with_base_url(base_url.trim());
+    }
+
+    let client = crate::deno_deploy::DenoDeployClient::new(config);
+
+    let wasm_bytes = if let Some(ref wasm_hash) = req.wasm_hash {
+        // 1. VirtualFileStore から検索
+        let bytes = {
+            let store = state.virtual_file_store.read().await;
+            store.get_wasm(wasm_hash)
+        };
+
+        // 2. DB (ContentStore) からフォールバック検索
+        let bytes = match bytes {
+            Some(b) => Some(b),
+            None => {
+                if let Some(db) = crate::ensure_db(&state).await {
+                    crate::db::get_content(&db, wasm_hash).await.ok().flatten()
+                } else {
+                    None
+                }
+            }
+        };
+
+        // 3. resolve_client_wasm からフォールバック検索
+        match bytes {
+            Some(b) => Some(b),
+            None => {
+                if let Some(client_wasm) = crate::resolve_client_wasm() {
+                    if wasm_hash == &client_wasm.hash
+                        || wasm_hash == "definy_client_bg"
+                        || wasm_hash == "definy_client"
+                    {
+                        Some(client_wasm.bytes)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+        }
+    } else {
+        None
+    };
+
+    match client
+        .deploy(
+            req.app_slug.as_deref(),
+            wasm_bytes.as_deref(),
+            req.custom_script.as_deref(),
+        )
+        .await
+    {
+        Ok(result) => {
+            if let Some(db) = crate::ensure_db(&state).await {
+                let deployment_record = crate::db::DeploymentRecord {
+                    machine_id: format!("deno:{}", result.revision_id),
+                    commit_hash: None,
+                    status: result.status.clone(),
+                    url: result.url.clone(),
+                    app_url: result.url.clone(),
+                    region: "global-edge".to_string(),
+                    created_at: chrono::Utc::now(),
+                    wasm_hash: req.wasm_hash.clone(),
+                    provider: Some("deno_deploy".to_string()),
+                };
+                if let Err(e) = crate::db::save_deployment(&db, deployment_record).await {
+                    eprintln!("Failed to save Deno deployment to DB: {:?}", e);
+                }
+            }
+
+            let response = DeployDenoResponse {
+                app_id: result.app_id,
+                app_slug: result.app_slug,
+                revision_id: result.revision_id,
+                status: result.status,
+                url: result.url,
+                hostnames: result.hostnames,
+            };
+            encode_response_or_error(codec, &response)
+        }
+        Err(err) => {
+            eprintln!("Failed to deploy to Deno Deploy: {:?}", err);
+            error_to_response(ConnectError::internal(format!("Deno Deploy failed: {err}")))
+        }
+    }
 }
 
 pub fn router() -> axum::Router<AppState> {
@@ -784,6 +921,7 @@ pub fn router() -> axum::Router<AppState> {
             PATH_LIST_DEPLOYMENTS,
             axum::routing::post(handle_list_deployments),
         )
+        .route(PATH_DEPLOY_DENO, axum::routing::post(handle_deploy_deno))
 }
 
 async fn validate_module_commit(

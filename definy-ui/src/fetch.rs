@@ -75,9 +75,10 @@ pub fn api_base_url() -> String {
 
 use definy_event::rpc::{
     CONNECT_HEADER_PROTOCOL_VERSION, CONNECT_PROTOCOL_VERSION, CheckMissingHashesRequest,
-    CheckMissingHashesResponse, ConnectError, ContentItem, GetContentRequest, GetContentResponse,
-    GetEventRequest, GetEventResponse, GetEventsRequest, GetEventsResponse,
-    PATH_CHECK_MISSING_HASHES, PATH_GET_CONTENT, PATH_GET_EVENT, PATH_GET_EVENTS,
+    CheckMissingHashesResponse, ConnectError, ContentItem, DeployDenoRequest, DeployDenoResponse,
+    GetContentRequest, GetContentResponse, GetEventRequest, GetEventResponse, GetEventsRequest,
+    GetEventsResponse, ListDeploymentsRequest, ListDeploymentsResponse, PATH_CHECK_MISSING_HASHES,
+    PATH_DEPLOY_DENO, PATH_GET_CONTENT, PATH_GET_EVENT, PATH_GET_EVENTS, PATH_LIST_DEPLOYMENTS,
     PATH_SUBMIT_EVENT, PATH_UPLOAD_CONTENT, SubmitEventRequest, SubmitEventResponse,
     UploadContentRequest, UploadContentResponse,
 };
@@ -379,4 +380,13 @@ fn js_error_to_string(value: JsValue) -> String {
 
 fn js_error_to_anyhow(value: JsValue) -> anyhow::Error {
     anyhow::anyhow!(js_error_to_string(value))
+}
+
+pub async fn deploy_deno(req: &DeployDenoRequest) -> Result<DeployDenoResponse, FetchError> {
+    connect_rpc_post(PATH_DEPLOY_DENO, req).await
+}
+
+pub async fn list_deployments(limit: Option<u64>) -> Result<ListDeploymentsResponse, FetchError> {
+    let req = ListDeploymentsRequest { limit };
+    connect_rpc_post(PATH_LIST_DEPLOYMENTS, &req).await
 }

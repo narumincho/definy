@@ -12,6 +12,35 @@ service DeployService {
 
   // ListDeployments retrieves recent deployment records.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+
+  // DeployDeno deploys a definy instance or Wasm edge service directly to Deno Deploy via REST API v2.
+  rpc DeployDeno(DeployDenoRequest) returns (DeployDenoResponse);
+}
+
+message DeployDenoRequest {
+  // Deno Deploy Organization or Personal Access Token
+  string org_token = 1;
+  // Target app slug (optional; created if omitted or non-existent)
+  optional string app_slug = 2;
+  // Content hash of virtual WebAssembly binary to execute in edge runtime (optional)
+  optional string wasm_hash = 3;
+  // Custom main.ts TypeScript entrypoint (optional)
+  optional string custom_script = 4;
+}
+
+message DeployDenoResponse {
+  // Deno Deploy App ID
+  string app_id = 1;
+  // Deno Deploy App Slug
+  string app_slug = 2;
+  // Created Revision ID
+  string revision_id = 3;
+  // Deployment status (e.g. "succeeded", "queued", "building")
+  string status = 4;
+  // Primary URL to access the deployed instance
+  string url = 5;
+  // All assigned hostnames
+  repeated string hostnames = 6;
 }
 
 message DeployInstanceRequest {
@@ -56,6 +85,8 @@ message DeploymentItem {
   string region = 6;
   string created_at_rfc3339 = 7;
   optional string wasm_hash = 8;
+  // Cloud provider (e.g. "flyio", "deno_deploy")
+  optional string provider = 9;
 }
 
 message ListDeploymentsRequest {

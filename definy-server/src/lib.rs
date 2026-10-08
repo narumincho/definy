@@ -17,6 +17,7 @@ pub mod builtin_wasi;
 mod builtin_wasm_compiler;
 mod connect_rpc;
 mod db;
+pub mod deno_deploy;
 mod error;
 mod extractor;
 pub mod fly_machines;
