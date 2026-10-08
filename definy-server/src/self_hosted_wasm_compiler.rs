@@ -174,6 +174,12 @@ pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
             is_supported_by_self_hosted_compiler(&e.left)
                 && is_supported_by_self_hosted_compiler(&e.right)
         }
+        Expression::TypeLiteral(e) => {
+            e.items.len() <= 2
+                && e.items
+                    .iter()
+                    .all(|item| is_supported_by_self_hosted_compiler(&item.value))
+        }
         Expression::Not(e) => is_supported_by_self_hosted_compiler(&e.value),
         _ => false,
     }

@@ -1,10 +1,10 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, DivideExpression, Expression, FunctionExpression,
-    IfExpression, LessThanExpression, LetExpression, ListAppendExpression, ListConcatExpression,
+    AddExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
+    LessThanExpression, LetExpression, ListAppendExpression, ListConcatExpression,
     ListLengthExpression, ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry,
-    NumberExpression, PartReferenceExpression, PartType, RecordGetExpression, RemainderExpression,
-    StringToBytesExpression, VariableExpression, derive_module_part_id,
+    NumberExpression, PartReferenceExpression, PartType, RecordGetExpression, VariableExpression,
+    derive_module_part_id,
 };
 
 /// WebAssembly 式命令列コンパイラ (`core.compile-expr-instructions`):
@@ -149,6 +149,24 @@ pub fn create_compile_expr_instructions_part(core_module_id: &EventHashId) -> Mo
             tag: "string".into(),
             variable_id: Some(str_var_id),
             variable_name: Some("s".into()),
+            body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                items: vec![
+                    Expression::Number(NumberExpression { value: 0x41 }),
+                    Expression::Number(NumberExpression { value: 0x80 }),
+                    Expression::Number(NumberExpression { value: 0x08 }),
+                ],
+            })),
+        });
+    }
+
+    // 3.5 Record literal: i32.const 1024 (points to static record object in linear memory)
+    // [0x41, 0x80, 0x08]
+    {
+        let rec_var_id = 24;
+        arms.push(MatchArm {
+            tag: "record".into(),
+            variable_id: Some(rec_var_id),
+            variable_name: Some("rec".into()),
             body: Box::new(Expression::ListLiteral(ListLiteralExpression {
                 items: vec![
                     Expression::Number(NumberExpression { value: 0x41 }),
@@ -349,6 +367,23 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 })),
             },
             MatchArm {
+                tag: "record".into(),
+                variable_id: Some(201),
+                variable_name: Some("_r".into()),
+                // Type Section (1): 1 type, () -> i32 (0x7f)
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x05 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x60 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x7f }),
+                    ],
+                })),
+            },
+            MatchArm {
                 tag: "_".into(),
                 variable_id: Some(21),
                 variable_name: Some("_".into()),
@@ -388,6 +423,21 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 })),
             },
             MatchArm {
+                tag: "record".into(),
+                variable_id: Some(221),
+                variable_name: Some("_r".into()),
+                // Memory Section (5): 1 memory, min 2 pages (128KB)
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x05 }),
+                        Expression::Number(NumberExpression { value: 0x03 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                    ],
+                })),
+            },
+            MatchArm {
                 tag: "_".into(),
                 variable_id: Some(23),
                 variable_name: Some("_".into()),
@@ -406,6 +456,49 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 tag: "string".into(),
                 variable_id: Some(24),
                 variable_name: Some("_s".into()),
+                // Export Section (7): 3 exports: "evaluate" (func 0), "memory" (mem 0), "main" (func 0)
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x07 }),
+                        Expression::Number(NumberExpression { value: 0x1c }),
+                        Expression::Number(NumberExpression { value: 0x03 }),
+                        // Export 1: "evaluate" (func 0)
+                        Expression::Number(NumberExpression { value: 0x08 }),
+                        Expression::Number(NumberExpression { value: 0x65 }),
+                        Expression::Number(NumberExpression { value: 0x76 }),
+                        Expression::Number(NumberExpression { value: 0x61 }),
+                        Expression::Number(NumberExpression { value: 0x6c }),
+                        Expression::Number(NumberExpression { value: 0x75 }),
+                        Expression::Number(NumberExpression { value: 0x61 }),
+                        Expression::Number(NumberExpression { value: 0x74 }),
+                        Expression::Number(NumberExpression { value: 0x65 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        // Export 2: "memory" (mem 0)
+                        Expression::Number(NumberExpression { value: 0x06 }),
+                        Expression::Number(NumberExpression { value: 0x6d }),
+                        Expression::Number(NumberExpression { value: 0x65 }),
+                        Expression::Number(NumberExpression { value: 0x6d }),
+                        Expression::Number(NumberExpression { value: 0x6f }),
+                        Expression::Number(NumberExpression { value: 0x72 }),
+                        Expression::Number(NumberExpression { value: 0x79 }),
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        // Export 3: "main" (func 0)
+                        Expression::Number(NumberExpression { value: 0x04 }),
+                        Expression::Number(NumberExpression { value: 0x6d }),
+                        Expression::Number(NumberExpression { value: 0x61 }),
+                        Expression::Number(NumberExpression { value: 0x69 }),
+                        Expression::Number(NumberExpression { value: 0x6e }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                    ],
+                })),
+            },
+            MatchArm {
+                tag: "record".into(),
+                variable_id: Some(241),
+                variable_name: Some("_r".into()),
                 // Export Section (7): 3 exports: "evaluate" (func 0), "memory" (mem 0), "main" (func 0)
                 body: Box::new(Expression::ListLiteral(ListLiteralExpression {
                     items: vec![
@@ -482,163 +575,6 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
         item: Box::new(Expression::Number(NumberExpression { value: 0x0b })),
     });
 
-    fn leb128_expr(val_expr: Expression) -> Expression {
-        Expression::If(IfExpression {
-            condition: Box::new(Expression::LessThan(LessThanExpression {
-                left: Box::new(val_expr.clone()),
-                right: Box::new(Expression::Number(NumberExpression { value: 128 })),
-            })),
-            then_expr: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                items: vec![val_expr.clone()],
-            })),
-            else_expr: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                items: vec![
-                    Expression::Add(AddExpression {
-                        left: Box::new(Expression::Remainder(RemainderExpression {
-                            left: Box::new(val_expr.clone()),
-                            right: Box::new(Expression::Number(NumberExpression { value: 128 })),
-                        })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 128 })),
-                    }),
-                    Expression::Divide(DivideExpression {
-                        left: Box::new(val_expr),
-                        right: Box::new(Expression::Number(NumberExpression { value: 128 })),
-                    }),
-                ],
-            })),
-        })
-    }
-
-    fn create_data_section_for_string(s_expr: Expression) -> Expression {
-        let bytes_expr = Expression::StringToBytes(StringToBytesExpression {
-            value: Box::new(s_expr),
-        });
-
-        Expression::Let(LetExpression {
-            variable_id: 30,
-            variable_name: "bytes".into(),
-            value: Box::new(bytes_expr),
-            body: Box::new(Expression::Let(LetExpression {
-                variable_id: 31,
-                variable_name: "str_len".into(),
-                value: Box::new(Expression::ListLength(ListLengthExpression {
-                    value: Box::new(Expression::Variable(VariableExpression { variable_id: 30 })),
-                })),
-                body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 32,
-                    variable_name: "data_len".into(),
-                    value: Box::new(Expression::Add(AddExpression {
-                        left: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 31,
-                        })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 8 })),
-                    })),
-                    body: Box::new({
-                        let len_bytes_expr = Expression::ListLiteral(ListLiteralExpression {
-                            items: vec![
-                                Expression::Remainder(RemainderExpression {
-                                    left: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 31,
-                                    })),
-                                    right: Box::new(Expression::Number(NumberExpression {
-                                        value: 256,
-                                    })),
-                                }),
-                                Expression::Remainder(RemainderExpression {
-                                    left: Box::new(Expression::Divide(DivideExpression {
-                                        left: Box::new(Expression::Variable(VariableExpression {
-                                            variable_id: 31,
-                                        })),
-                                        right: Box::new(Expression::Number(NumberExpression {
-                                            value: 256,
-                                        })),
-                                    })),
-                                    right: Box::new(Expression::Number(NumberExpression {
-                                        value: 256,
-                                    })),
-                                }),
-                                Expression::Number(NumberExpression { value: 0 }),
-                                Expression::Number(NumberExpression { value: 0 }),
-                            ],
-                        });
-
-                        let static_header = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                                items: vec![
-                                    Expression::Number(NumberExpression { value: 0x02 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                ],
-                            })),
-                            right: Box::new(len_bytes_expr),
-                        });
-                        let data_body = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(static_header),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 30,
-                            })),
-                        });
-
-                        let seg_prefix = Expression::ListLiteral(ListLiteralExpression {
-                            items: vec![
-                                Expression::Number(NumberExpression { value: 0x00 }),
-                                Expression::Number(NumberExpression { value: 0x41 }),
-                                Expression::Number(NumberExpression { value: 0x80 }),
-                                Expression::Number(NumberExpression { value: 0x08 }),
-                                Expression::Number(NumberExpression { value: 0x0b }),
-                            ],
-                        });
-                        let seg_header = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(seg_prefix),
-                            right: Box::new(leb128_expr(Expression::Variable(
-                                VariableExpression { variable_id: 32 },
-                            ))),
-                        });
-                        let full_segment = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(seg_header),
-                            right: Box::new(data_body),
-                        });
-
-                        let sec_payload = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                                items: vec![Expression::Number(NumberExpression { value: 0x01 })],
-                            })),
-                            right: Box::new(full_segment),
-                        });
-
-                        Expression::Let(LetExpression {
-                            variable_id: 33,
-                            variable_name: "sec_payload".into(),
-                            value: Box::new(sec_payload),
-                            body: Box::new(Expression::ListConcat(ListConcatExpression {
-                                left: Box::new(Expression::ListConcat(ListConcatExpression {
-                                    left: Box::new(Expression::ListLiteral(
-                                        ListLiteralExpression {
-                                            items: vec![Expression::Number(NumberExpression {
-                                                value: 0x0b,
-                                            })],
-                                        },
-                                    )),
-                                    right: Box::new(leb128_expr(Expression::ListLength(
-                                        ListLengthExpression {
-                                            value: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 33 },
-                                            )),
-                                        },
-                                    ))),
-                                })),
-                                right: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 33,
-                                })),
-                            })),
-                        })
-                    }),
-                })),
-            })),
-        })
-    }
-
     let data_section_expr = Expression::Match(MatchExpression {
         target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
         arms: vec![
@@ -646,9 +582,21 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 tag: "string".into(),
                 variable_id: Some(10),
                 variable_name: Some("s".into()),
-                body: Box::new(create_data_section_for_string(Expression::Variable(
-                    VariableExpression { variable_id: 10 },
-                ))),
+                body: Box::new(
+                    crate::builtin_wasm_data_section::create_data_section_for_string(
+                        Expression::Variable(VariableExpression { variable_id: 10 }),
+                    ),
+                ),
+            },
+            MatchArm {
+                tag: "record".into(),
+                variable_id: Some(11),
+                variable_name: Some("items".into()),
+                body: Box::new(
+                    crate::builtin_wasm_data_section::create_data_section_for_record(
+                        Expression::Variable(VariableExpression { variable_id: 11 }),
+                    ),
+                ),
             },
             MatchArm {
                 tag: "_".into(),
