@@ -290,6 +290,69 @@ pub fn create_compile_expr_instructions_part(core_module_id: &EventHashId) -> Mo
         });
     }
 
+    // 8. Let binding: value_code ++ local.set <var_id> (0x21 <var_id>) ++ body_code
+    {
+        let let_var_id = 26;
+        let value_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "value".into(),
+        });
+        let body_sub = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "body".into(),
+        });
+        let target_var_id = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: let_var_id,
+            })),
+            key: "variable_id".into(),
+        });
+
+        let value_code = compile_sub(&compile_instr_hash, value_sub);
+        let body_code = compile_sub(&compile_instr_hash, body_sub);
+
+        let set_code = Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                Expression::Number(NumberExpression { value: 0x21 }),
+                target_var_id,
+            ],
+        });
+
+        arms.push(MatchArm {
+            tag: "let".into(),
+            variable_id: Some(let_var_id),
+            variable_name: Some("let_e".into()),
+            body: Box::new(concat3(value_code, set_code, body_code)),
+        });
+    }
+
+    // 9. Variable reference: local.get <var_id> (0x20 <var_id>)
+    {
+        let var_ref_id = 27;
+        let target_var_id = Expression::RecordGet(RecordGetExpression {
+            record: Box::new(Expression::Variable(VariableExpression {
+                variable_id: var_ref_id,
+            })),
+            key: "variable_id".into(),
+        });
+
+        arms.push(MatchArm {
+            tag: "variable".into(),
+            variable_id: Some(var_ref_id),
+            variable_name: Some("var_e".into()),
+            body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                items: vec![
+                    Expression::Number(NumberExpression { value: 0x20 }),
+                    target_var_id,
+                ],
+            })),
+        });
+    }
+
     // Default: i64.const 0
     arms.push(MatchArm {
         tag: "_".into(),
@@ -742,7 +805,7 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                                         variable_id: 1,
                                     })),
                                 })),
-                                right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                                right: Box::new(Expression::Number(NumberExpression { value: 3 })),
                             })),
                             body: Box::new(Expression::Let(LetExpression {
                                 variable_id: 3,
@@ -752,7 +815,9 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                                         items: vec![
                                             Expression::Number(NumberExpression { value: 0x01 }),
                                             Expression::Variable(VariableExpression { variable_id: 2 }),
-                                            Expression::Number(NumberExpression { value: 0x00 }),
+                                            Expression::Number(NumberExpression { value: 0x01 }), // 1 local group
+                                            Expression::Number(NumberExpression { value: 0x40 }), // 64 locals
+                                            Expression::Number(NumberExpression { value: 0x7e }), // i64
                                         ],
                                     })),
                                     right: Box::new(Expression::Variable(VariableExpression {

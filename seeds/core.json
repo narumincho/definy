@@ -32752,6 +32752,170 @@
                   }
                 },
                 {
+                  "tag": "let",
+                  "variable_id": 26,
+                  "variable_name": "let_e",
+                  "body": {
+                    "ListConcat": {
+                      "left": {
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": [
+                                    126,
+                                    210,
+                                    191,
+                                    133,
+                                    2,
+                                    143,
+                                    95,
+                                    54,
+                                    155,
+                                    119,
+                                    102,
+                                    105,
+                                    140,
+                                    6,
+                                    139,
+                                    254,
+                                    208,
+                                    202,
+                                    185,
+                                    190,
+                                    215,
+                                    203,
+                                    149,
+                                    41,
+                                    74,
+                                    226,
+                                    91,
+                                    6,
+                                    54,
+                                    157,
+                                    146,
+                                    245
+                                  ]
+                                }
+                              },
+                              "argument": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 26
+                                    }
+                                  },
+                                  "key": "value"
+                                }
+                              }
+                            }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 33
+                                  }
+                                },
+                                {
+                                  "RecordGet": {
+                                    "record": {
+                                      "Variable": {
+                                        "variable_id": 26
+                                      }
+                                    },
+                                    "key": "variable_id"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "right": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": [
+                                126,
+                                210,
+                                191,
+                                133,
+                                2,
+                                143,
+                                95,
+                                54,
+                                155,
+                                119,
+                                102,
+                                105,
+                                140,
+                                6,
+                                139,
+                                254,
+                                208,
+                                202,
+                                185,
+                                190,
+                                215,
+                                203,
+                                149,
+                                41,
+                                74,
+                                226,
+                                91,
+                                6,
+                                54,
+                                157,
+                                146,
+                                245
+                              ]
+                            }
+                          },
+                          "argument": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 26
+                                }
+                              },
+                              "key": "body"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "variable",
+                  "variable_id": 27,
+                  "variable_name": "var_e",
+                  "body": {
+                    "ListLiteral": {
+                      "items": [
+                        {
+                          "Number": {
+                            "value": 32
+                          }
+                        },
+                        {
+                          "RecordGet": {
+                            "record": {
+                              "Variable": {
+                                "variable_id": 27
+                              }
+                            },
+                            "key": "variable_id"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
                   "tag": "_",
                   "variable_id": 99,
                   "variable_name": "_",
@@ -44309,7 +44473,7 @@
                                       },
                                       "right": {
                                         "Number": {
-                                          "value": 1
+                                          "value": 3
                                         }
                                       }
                                     }
@@ -44335,7 +44499,17 @@
                                                 },
                                                 {
                                                   "Number": {
-                                                    "value": 0
+                                                    "value": 1
+                                                  }
+                                                },
+                                                {
+                                                  "Number": {
+                                                    "value": 64
+                                                  }
+                                                },
+                                                {
+                                                  "Number": {
+                                                    "value": 126
                                                   }
                                                 }
                                               ]

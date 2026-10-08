@@ -185,6 +185,11 @@ pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
             .as_ref()
             .map(|p| is_supported_by_self_hosted_compiler(p))
             .unwrap_or(true),
+        Expression::Let(e) => {
+            is_supported_by_self_hosted_compiler(&e.value)
+                && is_supported_by_self_hosted_compiler(&e.body)
+        }
+        Expression::Variable(_) => true,
         Expression::Not(e) => is_supported_by_self_hosted_compiler(&e.value),
         _ => false,
     }
@@ -517,5 +522,38 @@ mod tests {
                 payload: None,
             }
         );
+    }
+
+    #[test]
+    fn test_compile_let_and_variable_expression() {
+        // let a = 10;
+        // let b = 25;
+        // a + b = 35
+        let expr = Expression::Let(definy_event::event::LetExpression {
+            variable_id: 0,
+            variable_name: "a".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+            body: Box::new(Expression::Let(definy_event::event::LetExpression {
+                variable_id: 1,
+                variable_name: "b".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 25 })),
+                body: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(
+                        definy_event::event::VariableExpression { variable_id: 0 },
+                    )),
+                    right: Box::new(Expression::Variable(
+                        definy_event::event::VariableExpression { variable_id: 1 },
+                    )),
+                })),
+            })),
+        });
+
+        let wasm_bytes = compile_expression_to_wasm(&expr)
+            .expect("Should compile let and variable expression to Wasm");
+        assert!(!wasm_bytes.is_empty());
+
+        let result =
+            execute_compiled_wasm(&wasm_bytes).expect("Should execute compiled Wasm and return 35");
+        assert_eq!(result, 35);
     }
 }
