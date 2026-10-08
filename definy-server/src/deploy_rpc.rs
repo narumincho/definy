@@ -349,7 +349,41 @@ pub async fn handle_deploy_deno(
 
     // 自己記述コンパイラ (core.compile-to-wasm) によるオンデマンド Wasm 生成、
     // または指定された wasm_hash からバイナリを取得
-    let (wasm_bytes, evaluated_result) = if req.compile_self_hosted.unwrap_or(false) {
+    let (wasm_bytes, evaluated_result) = if let Some(ref part_id) = req.part_id {
+        // 1. 指定された definy パーツ (Part) の式を自己記述コンパイラでオンデマンドコンパイル
+        let db = crate::ensure_db(&state).await;
+        let event_binaries = if let Some(db) = db {
+            crate::db::get_events(&db, None, Some(1000), Some(0))
+                .await
+                .unwrap_or_default()
+        } else {
+            Box::new([])
+        };
+
+        match crate::self_hosted_wasm_compiler::find_part_expression_in_signed_events(
+            part_id,
+            &event_binaries,
+        ) {
+            Ok(expr) => match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&expr) {
+                Ok(bytes) => {
+                    let eval_val = crate::self_hosted_wasm_compiler::execute_compiled_wasm(&bytes)
+                        .ok()
+                        .map(|v| v.to_string());
+                    (Some(bytes), eval_val)
+                }
+                Err(err) => {
+                    return error_to_response(ConnectError::internal(format!(
+                        "Failed to compile part '{part_id}' to Wasm: {err}"
+                    )));
+                }
+            },
+            Err(err) => {
+                return error_to_response(ConnectError::not_found(format!(
+                    "Part '{part_id}' was not found in commits: {err}"
+                )));
+            }
+        }
+    } else if req.compile_self_hosted.unwrap_or(false) {
         match crate::self_hosted_wasm_compiler::compile_sample_to_wasm() {
             Ok(bytes) => {
                 let eval_val = crate::self_hosted_wasm_compiler::execute_compiled_wasm(&bytes)

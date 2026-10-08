@@ -162,6 +162,14 @@ pub fn DeploymentsView(context: PageContext) -> Element {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DeployTargetMode {
+    CustomScript,
+    DefinyPart,
+    SelfHostedSample,
+    WasmHash,
+}
+
 #[component]
 fn DenoDeployCard(context: PageContext) -> Element {
     let lang = context.language;
@@ -169,8 +177,13 @@ fn DenoDeployCard(context: PageContext) -> Element {
     let mut token = use_signal(String::new);
     let mut show_token = use_signal(|| false);
     let mut app_slug = use_signal(String::new);
+    let mut target_mode = use_signal(|| DeployTargetMode::CustomScript);
+    let mut custom_script_content = use_signal(|| {
+        "Deno.serve((_req: Request) => {\n  return Response.json({\n    service: \"edge-service\",\n    message: \"Hello from Deno Deploy Edge!\",\n    timestamp: new Date().toISOString(),\n  });\n});"
+            .to_string()
+    });
+    let mut part_id = use_signal(String::new);
     let mut wasm_hash = use_signal(String::new);
-    let mut compile_self_hosted = use_signal(|| true);
     let mut deploy_state = use_signal(|| DeployStatusState::Idle);
 
     let on_submit = move |_| {
@@ -192,12 +205,21 @@ fn DenoDeployCard(context: PageContext) -> Element {
             if s.is_empty() { None } else { Some(s) }
         };
 
-        let current_wasm_hash = {
-            let s = wasm_hash.read().trim().to_string();
-            if s.is_empty() { None } else { Some(s) }
+        let (c_script, c_part_id, c_self_hosted, c_wasm_hash) = match *target_mode.read() {
+            DeployTargetMode::CustomScript => {
+                let s = custom_script_content.read().trim().to_string();
+                (if s.is_empty() { None } else { Some(s) }, None, None, None)
+            }
+            DeployTargetMode::DefinyPart => {
+                let p = part_id.read().trim().to_string();
+                (None, if p.is_empty() { None } else { Some(p) }, None, None)
+            }
+            DeployTargetMode::SelfHostedSample => (None, None, Some(true), None),
+            DeployTargetMode::WasmHash => {
+                let w = wasm_hash.read().trim().to_string();
+                (None, None, None, if w.is_empty() { None } else { Some(w) })
+            }
         };
-
-        let is_compile_self_hosted = *compile_self_hosted.read();
 
         deploy_state.set(DeployStatusState::Deploying);
 
@@ -205,9 +227,10 @@ fn DenoDeployCard(context: PageContext) -> Element {
             let req = definy_event::rpc::DeployDenoRequest {
                 org_token: current_token,
                 app_slug: current_app_slug,
-                wasm_hash: current_wasm_hash,
-                custom_script: None,
-                compile_self_hosted: Some(is_compile_self_hosted),
+                wasm_hash: c_wasm_hash,
+                custom_script: c_script,
+                compile_self_hosted: c_self_hosted,
+                part_id: c_part_id,
             };
             match crate::fetch::deploy_deno(&req).await {
                 Ok(res) => {
@@ -244,9 +267,9 @@ fn DenoDeployCard(context: PageContext) -> Element {
             p { style: "font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
                 {
                     lang.label(
-                        "Enter your Deno Deploy Access Token (Organization or Personal). The token is used in-memory for this deployment request and is never persisted to databases or local storage.",
-                        "Deno Deploy の Access Token (Org Token / Personal Token) を入力してください。入力されたトークンはデプロイ API 呼び出し時のみメモリ上で使用され、DB やローカルストレージには保存されません。",
-                        "Enmetu vian Deno Deploy Access Token. La ĵetono neniam estas konservita en datumbazo.",
+                        "Deploy any Web application, custom TypeScript script, definy Part, or WebAssembly binary directly to global edge isolates.",
+                        "definy に限らず任意の TypeScript スクリプトや Web アプリ、あるいは definy 上で作成したパーツ (Part) を Wasm に動的コンパイルしてグローバルエッジにデプロイできます。",
+                        "Deploju ajnan TypeScript-skripton, definy-parton, aŭ WebAssembly-binaron al tutmondaj izolitoj.",
                     )
                 }
             }
@@ -304,111 +327,203 @@ fn DenoDeployCard(context: PageContext) -> Element {
                     }
                 }
 
-                // 2列グリッド: App Slug & Wasm Hash
-                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;",
-
-                    // App Slug
-                    div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
-                        label { style: "font-size: 0.84rem; font-weight: 600; color: var(--text-primary);",
-                            {
-                                lang.label(
-                                    "App Slug (optional)",
-                                    "App Slug (アプリケーション識別名・任意)",
-                                    "App Slug (nedeviga)",
-                                )
-                            }
-                        }
-                        input {
-                            r#type: "text",
-                            placeholder: lang.label(
-                                "e.g. definy-sample-edge",
-                                "例: definy-sample-edge",
-                                "ekz. definy-sample-edge",
-                            ),
-                            value: "{app_slug.read()}",
-                            oninput: move |e| app_slug.set(e.value()),
-                            style: "padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #090d16; color: #f8fafc; font-size: 0.9rem; font-family: monospace; outline: none;",
-                        }
-                        span { style: "font-size: 0.74rem; color: var(--text-secondary);",
-                            {
-                                lang.label(
-                                    "Omit to generate a random unique app slug automatically.",
-                                    "省略時は一意なランダム slug が自動生成されます。",
-                                    "Preterlasi por generi hazardan slug.",
-                                )
-                            }
+                // App Slug 入力
+                div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+                    label { style: "font-size: 0.84rem; font-weight: 600; color: var(--text-primary);",
+                        {
+                            lang.label(
+                                "App Slug (optional)",
+                                "App Slug (アプリケーション識別名・任意)",
+                                "App Slug (nedeviga)",
+                            )
                         }
                     }
-
-                    // Wasm Hash
-                    div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
-                        label { style: "font-size: 0.84rem; font-weight: 600; color: var(--text-primary);",
-                            {
-                                lang.label(
-                                    "Virtual Wasm Hash (optional)",
-                                    "仮想 Wasm ハッシュ (任意)",
-                                    "Virtuala Wasm-hako (nedeviga)",
-                                )
-                            }
-                        }
-                        input {
-                            r#type: "text",
-                            placeholder: lang.label(
-                                "e.g. definy_client_bg",
-                                "例: definy_client_bg",
-                                "ekz. definy_client_bg",
-                            ),
-                            value: "{wasm_hash.read()}",
-                            oninput: move |e| wasm_hash.set(e.value()),
-                            style: "padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #090d16; color: #f8fafc; font-size: 0.9rem; font-family: monospace; outline: none;",
-                        }
-                        span { style: "font-size: 0.74rem; color: var(--text-secondary);",
-                            {
-                                lang.label(
-                                    "Bundle a compiled definy WebAssembly binary into edge assets.",
-                                    "コンパイル済みの WebAssembly バイナリをエッジアセットに同梱します。",
-                                    "Paki Wasm-binaron en randajn havaĵojn.",
-                                )
-                            }
+                    input {
+                        r#type: "text",
+                        placeholder: lang.label("e.g. my-edge-service", "例: my-edge-service", "ekz. my-edge-service"),
+                        value: "{app_slug.read()}",
+                        oninput: move |e| app_slug.set(e.value()),
+                        style: "padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #090d16; color: #f8fafc; font-size: 0.9rem; font-family: monospace; outline: none;",
+                    }
+                    span { style: "font-size: 0.74rem; color: var(--text-secondary);",
+                        {
+                            lang.label(
+                                "Omit to generate a random unique app slug automatically.",
+                                "省略時は一意なランダム slug が自動生成されます。",
+                                "Preterlasi por generi hazardan slug.",
+                            )
                         }
                     }
                 }
 
-                // 自己記述コンパイラ (core.compile-to-wasm) オプション
-                div { style: "display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1rem; border-radius: var(--radius-sm); background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25);",
-                    input {
-                        r#type: "checkbox",
-                        id: "compile-self-hosted-check",
-                        checked: *compile_self_hosted.read(),
-                        onchange: move |_| {
-                            let cur = *compile_self_hosted.read();
-                            compile_self_hosted.set(!cur);
-                        },
-                        style: "margin-top: 0.2rem; cursor: pointer; accent-color: #a855f7; width: 1.15rem; height: 1.15rem;",
+                // デプロイ対象ソースの選択 (タブ風ボタングループ)
+                div { style: "display: flex; flex-direction: column; gap: 0.5rem;",
+                    label { style: "font-size: 0.84rem; font-weight: 600; color: var(--text-primary);",
+                        {
+                            lang.label(
+                                "Deployment Source Target",
+                                "デプロイ対象ソースの選択",
+                                "Deploja Fonto",
+                            )
+                        }
                     }
-                    label {
-                        r#for: "compile-self-hosted-check",
-                        style: "cursor: pointer; display: flex; flex-direction: column; gap: 0.25rem;",
-                        span { style: "font-weight: 700; font-size: 0.88rem; color: #d8b4fe; display: flex; align-items: center; gap: 0.5rem;",
-                            span { "🧩" }
+                    div { style: "display: flex; gap: 0.5rem; flex-wrap: wrap;",
+                        button {
+                            r#type: "button",
+                            onclick: move |_| target_mode.set(DeployTargetMode::CustomScript),
+                            style: if *target_mode.read() == DeployTargetMode::CustomScript { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; cursor: pointer;" } else { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;" },
+                            "📄 "
+                            {lang.label("TypeScript Script", "TypeScript スクリプト", "TypeScript")}
+                        }
+                        button {
+                            r#type: "button",
+                            onclick: move |_| target_mode.set(DeployTargetMode::DefinyPart),
+                            style: if *target_mode.read() == DeployTargetMode::DefinyPart { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; background: rgba(168, 85, 247, 0.2); border: 1px solid #a855f7; color: #c084fc; cursor: pointer;" } else { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;" },
+                            "🧩 "
+                            {lang.label("definy Part", "definy パーツ", "definy Parto")}
+                        }
+                        button {
+                            r#type: "button",
+                            onclick: move |_| target_mode.set(DeployTargetMode::SelfHostedSample),
+                            style: if *target_mode.read() == DeployTargetMode::SelfHostedSample { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; cursor: pointer;" } else { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;" },
+                            "🧪 "
                             {
                                 lang.label(
-                                    "Compile with Self-Hosted Compiler (core.compile-to-wasm)",
-                                    "自己記述コンパイラ (core.compile-to-wasm) で即時ビルド",
-                                    "Kompili per Mem-gastigita Kompililo (core.compile-to-wasm)",
+                                    "Self-Hosted Sample",
+                                    "自己コンパイラ検証サンプル",
+                                    "Specimeno",
                                 )
                             }
                         }
-                        span { style: "font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;",
-                            {
-                                lang.label(
-                                    "Compiles definy expressions into an executable WebAssembly binary on-the-fly and deploys it to the edge isolate.",
-                                    "definy の式 AST を自分自身の WebAssembly コンパイラで動的にバイナリ化し、エッジ上で即時実行可能な app.wasm として配備します。",
-                                    "Dinamike kompilas definy-esprimon al Wasm kaj deplojas al rando.",
-                                )
-                            }
+                        button {
+                            r#type: "button",
+                            onclick: move |_| target_mode.set(DeployTargetMode::WasmHash),
+                            style: if *target_mode.read() == DeployTargetMode::WasmHash { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 700; background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; color: #facc15; cursor: pointer;" } else { "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;" },
+                            "📦 "
+                            {lang.label("Wasm Hash", "Wasm ハッシュ", "Wasm-Hako")}
                         }
                     }
+                }
+
+                // 選択されたソースに応じた入力フォーム
+                match *target_mode.read() {
+                    DeployTargetMode::CustomScript => rsx! {
+                        div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+                            label { style: "font-size: 0.84rem; font-weight: 600; color: #38bdf8;",
+                                {
+                                    lang.label(
+                                        "Custom TypeScript / JavaScript Script (main.ts)",
+                                        "カスタム TypeScript / JavaScript スクリプト (main.ts)",
+                                        "Propra Skripto (main.ts)",
+                                    )
+                                }
+                            }
+                            textarea {
+                                rows: "7",
+                                value: "{custom_script_content.read()}",
+                                oninput: move |e| custom_script_content.set(e.value()),
+                                style: "padding: 0.75rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid rgba(56, 189, 248, 0.3); background: #090d16; color: #f8fafc; font-size: 0.85rem; font-family: monospace; outline: none; line-height: 1.45; resize: vertical;",
+                            }
+                            span { style: "font-size: 0.74rem; color: var(--text-secondary);",
+                                {
+                                    lang.label(
+                                        "Deploys directly as main.ts on Deno Deploy. Completely agnostic of definy.",
+                                        "definy に依存せず、任意の Web サービスや API をそのまま Deno Deploy にデプロイできます。",
+                                        "Deploji rekte kiel main.ts sur Deno Deploy.",
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    DeployTargetMode::DefinyPart => rsx! {
+                        div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+                            label { style: "font-size: 0.84rem; font-weight: 600; color: #c084fc;",
+                                {
+                                    lang.label(
+                                        "definy Part ID or Part Name",
+                                        "definy パーツ ID またはパーツ名",
+                                        "definy Parto-ID aŭ Nomo",
+                                    )
+                                }
+                            }
+                            input {
+                                r#type: "text",
+                                placeholder: lang.label(
+                                    "e.g. calculate_answer or 32-byte hex ID",
+                                    "例: calculate_answer または 32バイト hex パーツID",
+                                    "ekz. calculate_answer",
+                                ),
+                                value: "{part_id.read()}",
+                                oninput: move |e| part_id.set(e.value()),
+                                style: "padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid rgba(168, 85, 247, 0.4); background: #090d16; color: #f8fafc; font-size: 0.9rem; font-family: monospace; outline: none;",
+                            }
+                            span { style: "font-size: 0.74rem; color: var(--text-secondary);",
+                                {
+                                    lang.label(
+                                        "Compiles the specified definy part's expression to WebAssembly on-the-fly via core.compile-to-wasm.",
+                                        "指定された definy パーツの式を core.compile-to-wasm でオンデマンドに Wasm 化してエッジに配備します。",
+                                        "Kompilas la esprimon de definy-parto al Wasm.",
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    DeployTargetMode::SelfHostedSample => rsx! {
+                        div { style: "padding: 0.85rem 1rem; border-radius: var(--radius-sm); background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.25); display: flex; flex-direction: column; gap: 0.3rem;",
+                            span { style: "font-weight: 700; font-size: 0.88rem; color: #4ade80;",
+                                "🧩 "
+                                {
+                                    lang.label(
+                                        "Arithmetic Sample (15 + 27 = 42)",
+                                        "計算サンプル式 (15 + 27 = 42)",
+                                        "Specimena Esprimo (15 + 27)",
+                                    )
+                                }
+                            }
+                            span { style: "font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;",
+                                {
+                                    lang.label(
+                                        "Tests the self-hosted compiler pipeline by compiling an arithmetic expression AST into WebAssembly.",
+                                        "definy の自己記述コンパイラパイプラインを即時テストするため、式 AST (15 + 27) を WebAssembly にコンパイルして配備します。",
+                                        "Testas la mem-gastigitan kompililon per specimena esprimo.",
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    DeployTargetMode::WasmHash => rsx! {
+                        div { style: "display: flex; flex-direction: column; gap: 0.4rem;",
+                            label { style: "font-size: 0.84rem; font-weight: 600; color: #facc15;",
+                                {
+                                    lang.label(
+                                        "Virtual WebAssembly Content Hash",
+                                        "仮想 WebAssembly コンテンツハッシュ",
+                                        "Virtuala Wasm-hako",
+                                    )
+                                }
+                            }
+                            input {
+                                r#type: "text",
+                                placeholder: lang.label(
+                                    "e.g. definy_client_bg",
+                                    "例: definy_client_bg",
+                                    "ekz. definy_client_bg",
+                                ),
+                                value: "{wasm_hash.read()}",
+                                oninput: move |e| wasm_hash.set(e.value()),
+                                style: "padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid rgba(234, 179, 8, 0.4); background: #090d16; color: #f8fafc; font-size: 0.9rem; font-family: monospace; outline: none;",
+                            }
+                            span { style: "font-size: 0.74rem; color: var(--text-secondary);",
+                                {
+                                    lang.label(
+                                        "Bundles an existing WebAssembly binary from content store into edge assets.",
+                                        "コンテンツストアに存在する任意の WebAssembly バイナリをエッジアセットに同梱します。",
+                                        "Pakas ekzistantan Wasm-binaron.",
+                                    )
+                                }
+                            }
+                        }
+                    },
                 }
 
                 // デプロイ実行ボタン

@@ -13,7 +13,7 @@ service DeployService {
   // ListDeployments retrieves recent deployment records.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
 
-  // DeployDeno deploys a definy instance or Wasm edge service directly to Deno Deploy via REST API v2.
+  // DeployDeno deploys any web application, custom TypeScript script, or WebAssembly service directly to Deno Deploy via REST API v2.
   rpc DeployDeno(DeployDenoRequest) returns (DeployDenoResponse);
 }
 
@@ -24,10 +24,12 @@ message DeployDenoRequest {
   optional string app_slug = 2;
   // Content hash of virtual WebAssembly binary to execute in edge runtime (optional)
   optional string wasm_hash = 3;
-  // Custom main.ts TypeScript entrypoint (optional)
+  // Custom main.ts TypeScript/JavaScript entrypoint script (optional; executes any web service or API)
   optional string custom_script = 4;
-  // Compile expression using self-hosted compiler core.compile-to-wasm (optional)
+  // Compile expression using self-hosted compiler core.compile-to-wasm (optional fallback)
   optional bool compile_self_hosted = 5;
+  // ID of a definy Part whose expression should be compiled to WebAssembly (optional)
+  optional string part_id = 6;
 }
 
 message DeployDenoResponse {

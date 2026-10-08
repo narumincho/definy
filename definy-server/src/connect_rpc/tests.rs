@@ -749,6 +749,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
+        part_id: None,
     };
     let empty_res = handle_deploy_deno(
         State(state.clone()),
@@ -765,6 +766,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
+        part_id: None,
     };
     let deploy_res = handle_deploy_deno(
         State(state.clone()),
@@ -813,6 +815,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: Some(true),
+        part_id: None,
     };
     let self_hosted_res = handle_deploy_deno(
         State(state.clone()),
@@ -827,4 +830,28 @@ async fn test_connect_rpc_deploy_deno_success() {
         .unwrap();
     let sh_data: DeployDenoResponse = serde_json::from_slice(&sh_bytes).unwrap();
     assert_eq!(sh_data.evaluated_result, Some("42".to_string()));
+
+    // 6. 任意の TypeScript スクリプト (definy に依存しない汎用デプロイ)
+    let custom_script_req = DeployDenoRequest {
+        org_token: "test_deno_token_123".to_string(),
+        app_slug: Some("generic-edge-app".to_string()),
+        wasm_hash: None,
+        custom_script: Some("Deno.serve(() => new Response('Hello Pure Edge'));".to_string()),
+        compile_self_hosted: None,
+        part_id: None,
+    };
+    let custom_res = handle_deploy_deno(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&custom_script_req).unwrap()),
+    )
+    .await;
+    assert_eq!(custom_res.status(), StatusCode::OK);
+    let custom_bytes = axum::body::to_bytes(custom_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let custom_data: DeployDenoResponse = serde_json::from_slice(&custom_bytes).unwrap();
+    assert_eq!(custom_data.status, "succeeded");
+    assert_eq!(custom_data.app_slug, "generic-edge-app");
+    assert_eq!(custom_data.evaluated_result, None);
 }

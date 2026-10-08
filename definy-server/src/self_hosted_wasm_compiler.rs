@@ -18,6 +18,8 @@ pub enum SelfHostedCompileError {
     InvalidOutput(Value),
     InvalidByteValue(i64),
     WasmExecution(String),
+    PartNotFound(String),
+    PartHasNoExpression(String),
 }
 
 impl std::fmt::Display for SelfHostedCompileError {
@@ -37,11 +39,19 @@ impl std::fmt::Display for SelfHostedCompileError {
                 write!(f, "Invalid byte value emitted by compiler: {byte}")
             }
             Self::WasmExecution(msg) => write!(f, "Failed to execute generated Wasm binary: {msg}"),
+            Self::PartNotFound(id) => write!(f, "Part not found: {id}"),
+            Self::PartHasNoExpression(id) => write!(f, "Part '{id}' does not have an expression"),
         }
     }
 }
 
 impl std::error::Error for SelfHostedCompileError {}
+
+/// 検証済みのコミットイベント
+pub type VerifiedCommitEvent = (
+    EventHashId,
+    Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
+);
 
 /// 任意の definy 式 (`Expression`) を、definy 自身の自己記述コンパイラパーツ
 /// (`core.compile-to-wasm`) をメタ循環評価することによって WebAssembly バイナリ (`Vec<u8>`) にコンパイルします。
@@ -69,11 +79,6 @@ pub fn compile_expression_to_wasm(
         crate::builtin_wasm_compiler::create_compile_to_wasm_part(&core_module_id);
 
     let parts = vec![compile_instr_part, compile_to_wasm_part];
-
-    type VerifiedCommitEvent = (
-        EventHashId,
-        Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
-    );
 
     // 評価器で直接参照可能なコミットイベント列を構築
     let dummy_commit_hash = EventHashId::from_bytes(&[200u8; 32]);
@@ -125,6 +130,60 @@ pub fn compile_expression_to_wasm(
     }
 
     Ok(wasm_bytes)
+}
+
+/// コミットイベント群から指定されたパーツ ID (hex 文字列、またはパーツ名) に一致する Expression を探索します。
+pub fn find_part_expression_in_events(
+    part_id: &str,
+    events: &[VerifiedCommitEvent],
+) -> Result<Expression, SelfHostedCompileError> {
+    for (_hash, res) in events.iter().rev() {
+        if let Ok((_sig, event)) = res
+            && let EventContent::ModuleCommit(ref mc) = event.content
+        {
+            let module_id = derive_module_id(&event.account_id, &mc.module_name);
+            for part in &mc.parts {
+                let derived_part_id = derive_module_part_id(&module_id, &part.name);
+                if derived_part_id.to_string() == part_id || part.name.as_ref() == part_id {
+                    if let Some(ref expr) = part.expression {
+                        return Ok(expr.clone());
+                    } else {
+                        return Err(SelfHostedCompileError::PartHasNoExpression(
+                            part_id.to_string(),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    Err(SelfHostedCompileError::PartNotFound(part_id.to_string()))
+}
+
+/// シリアライズされた署名付きイベント列バイトからパーツの Expression を探索します。
+pub fn find_part_expression_in_signed_events(
+    part_id: &str,
+    event_binaries: &[Vec<u8>],
+) -> Result<Expression, SelfHostedCompileError> {
+    for bytes in event_binaries.iter().rev() {
+        if let Ok((_sig, event)) = definy_event::verify_and_deserialize(bytes)
+            && let EventContent::ModuleCommit(ref mc) = event.content
+        {
+            let module_id = derive_module_id(&event.account_id, &mc.module_name);
+            for part in &mc.parts {
+                let derived_part_id = derive_module_part_id(&module_id, &part.name);
+                if derived_part_id.to_string() == part_id || part.name.as_ref() == part_id {
+                    if let Some(ref expr) = part.expression {
+                        return Ok(expr.clone());
+                    } else {
+                        return Err(SelfHostedCompileError::PartHasNoExpression(
+                            part_id.to_string(),
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    Err(SelfHostedCompileError::PartNotFound(part_id.to_string()))
 }
 
 /// 自己記述コンパイラのデフォルト検証用サンプル式 (`15 + 27 = 42`) を生成します。
@@ -226,5 +285,58 @@ mod tests {
         assert_eq!(eval_res["status"], "success");
         assert_eq!(eval_res["result"], "42");
         assert_eq!(eval_res["wasmLoaded"], true);
+    }
+
+    #[test]
+    fn test_find_and_compile_part_expression() {
+        let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[1u8; 32]).unwrap();
+        let dummy_account = AccountId(dummy_key);
+        let mod_id = derive_module_id(&dummy_account, "math_module");
+
+        let part_name = "calculate_answer";
+        let part_id = derive_module_part_id(&mod_id, part_name);
+
+        let part_expr = Expression::Multiply(definy_event::event::MultiplyExpression {
+            left: Box::new(Expression::Number(NumberExpression { value: 6 })),
+            right: Box::new(Expression::Number(NumberExpression { value: 7 })),
+        });
+
+        let part = definy_event::event::ModulePartEntry {
+            name: part_name.into(),
+            part_type: None,
+            description: Description::Plain("Calculate 6 * 7".into()),
+            content_hash: None,
+            expression: Some(part_expr),
+        };
+
+        let event = Event {
+            account_id: dummy_account,
+            time: DateTime::UNIX_EPOCH,
+            content: EventContent::ModuleCommit(ModuleCommitEvent {
+                module_name: "math_module".into(),
+                module_description: Description::Plain("Math utilities".into()),
+                parent_commit_hash: None,
+                message: "Initial commit".into(),
+                parts: vec![part],
+            }),
+        };
+
+        let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+        let events = vec![(EventHashId::from_bytes(&[10u8; 32]), Ok((dummy_sig, event)))];
+
+        // 1. By derived part ID
+        let found_expr = find_part_expression_in_events(&part_id.to_string(), &events)
+            .expect("Should find expression by part_id");
+        let wasm_bytes = compile_expression_to_wasm(&found_expr)
+            .expect("Should compile found expression to Wasm");
+        assert_eq!(execute_compiled_wasm(&wasm_bytes).unwrap(), 42);
+
+        // 2. By part name
+        let found_by_name = find_part_expression_in_events(part_name, &events)
+            .expect("Should find expression by part name");
+        assert_eq!(found_expr, found_by_name);
+
+        // 3. Not found case
+        assert!(find_part_expression_in_events("non_existent_part", &events).is_err());
     }
 }

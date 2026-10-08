@@ -574,8 +574,8 @@ Deno.serve((req: Request) => {{
 <body>
   <div class="card">
     <div class="badge">Deno Deploy Edge Instance</div>
-    <h1>🚀 definy Edge Instance</h1>
-    <p>This definy instance was deployed deterministically via Deno Deploy REST API v2 without container or OS overhead.</p>
+    <h1>🚀 Edge Instance</h1>
+    <p>This edge instance was deployed deterministically via Deno Deploy REST API v2 without container or OS overhead.</p>
     <div class="status-row">
       <span class="status-label">Runtime Engine</span>
       <span style="font-weight:600;color:#38bdf8">Deno Deploy V8 Isolate</span>
@@ -585,7 +585,7 @@ Deno.serve((req: Request) => {{
       <span>${{wasmBadge}}</span>
     </div>
     <div class="status-row">
-      <span class="status-label">Self-Hosted Wasm Result</span>
+      <span class="status-label">Execution / Eval Result</span>
       <span>${{evalResultBadge}}</span>
     </div>
     <div style="margin-top:1.5rem;display:flex;gap:0.75rem;justify-content:center;">
