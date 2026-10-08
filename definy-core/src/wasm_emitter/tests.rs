@@ -777,3 +777,24 @@ fn test_compile_and_execute_string_equal_and_not_equal() {
     });
     assert_eq!(eval(&ne_false), Value::Bool(false));
 }
+
+#[test]
+fn test_string_to_bytes() {
+    let expr = Expression::StringToBytes(StringToBytesExpression {
+        value: Box::new(Expression::String(StringExpression {
+            value: "Hello".into(),
+        })),
+    });
+    let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
+    let val = execute_wasm(&wasm).unwrap();
+    assert_eq!(
+        val,
+        Value::List(vec![
+            Value::Number(72),
+            Value::Number(101),
+            Value::Number(108),
+            Value::Number(108),
+            Value::Number(111),
+        ])
+    );
+}

@@ -404,6 +404,10 @@ pub struct DeployDenoRequest {
     #[prost(bool, optional, tag = "5")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compile_self_hosted: Option<bool>,
+
+    #[prost(string, optional, tag = "6")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part_id: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]

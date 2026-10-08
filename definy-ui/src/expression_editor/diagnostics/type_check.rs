@@ -443,6 +443,16 @@ fn check_expression_type_with_context(
             );
             ExpressionType::String
         }
+        definy_event::event::Expression::StringToBytes(stb_expr) => {
+            let mut val_path = path.to_vec();
+            val_path.push(PathStep::Condition);
+            ctx.check(
+                stb_expr.value.as_ref(),
+                &val_path,
+                Some(ExpressionType::String),
+            );
+            ExpressionType::List(Box::new(ExpressionType::Number))
+        }
         definy_event::event::Expression::ListLength(len_expr) => {
             let mut val_path = path.to_vec();
             val_path.push(PathStep::Condition);

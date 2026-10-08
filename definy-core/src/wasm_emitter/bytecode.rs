@@ -13,10 +13,33 @@ pub const ELEMENT_SECTION: u8 = 9;
 pub const CODE_SECTION: u8 = 10;
 pub const DATA_SECTION: u8 = 11;
 
-// ValTypes
+// ValTypes & Packed Storage Types
 pub const I32: u8 = 0x7F;
 pub const I64: u8 = 0x7E;
+pub const I8: u8 = 0x78;
+pub const I16: u8 = 0x77;
 pub const FUNCREF: u8 = 0x70;
+pub const EXTERNREF: u8 = 0x6F;
+
+// Heap Types
+pub const HEAP_TYPE_ANY: u8 = 0x6E;
+pub const HEAP_TYPE_EQ: u8 = 0x6D;
+pub const HEAP_TYPE_I31: u8 = 0x6C;
+pub const HEAP_TYPE_STRUCT: u8 = 0x6B;
+pub const HEAP_TYPE_ARRAY: u8 = 0x6A;
+pub const HEAP_TYPE_FUNC: u8 = 0x70;
+pub const HEAP_TYPE_EXTERN: u8 = 0x6F;
+
+// Reference Type Prefixes
+pub const REF_NULL_PREFIX: u8 = 0x63;
+pub const REF_EXACT_PREFIX: u8 = 0x64;
+
+// GC Composite Type Tags
+pub const FUNC_TYPE: u8 = 0x60;
+pub const STRUCT_TYPE: u8 = 0x5F;
+pub const ARRAY_TYPE: u8 = 0x5E;
+pub const MUT_CONST: u8 = 0x00;
+pub const MUT_VAR: u8 = 0x01;
 
 // Opcodes
 pub const BLOCK: u8 = 0x02;
@@ -26,6 +49,7 @@ pub const ELSE: u8 = 0x05;
 pub const END: u8 = 0x0B;
 pub const BR: u8 = 0x0C;
 pub const BR_IF: u8 = 0x0D;
+pub const RETURN: u8 = 0x0F;
 pub const CALL: u8 = 0x10;
 pub const CALL_INDIRECT: u8 = 0x11;
 pub const LOCAL_GET: u8 = 0x20;
@@ -53,8 +77,8 @@ pub const I64_EQ: u8 = 0x51;
 pub const I64_NE: u8 = 0x52;
 pub const I64_LT_S: u8 = 0x53;
 pub const I64_GT_S: u8 = 0x55;
-pub const I64_LE_S: u8 = 0x54;
-pub const I64_GE_S: u8 = 0x56;
+pub const I64_LE_S: u8 = 0x57;
+pub const I64_GE_S: u8 = 0x59;
 pub const I32_ADD: u8 = 0x6A;
 pub const I32_SUB: u8 = 0x6B;
 pub const I32_MUL: u8 = 0x6C;
@@ -75,6 +99,30 @@ pub const I64_EXTEND_I32_U: u8 = 0xAD;
 
 pub const BLOCK_TYPE_EMPTY: u8 = 0x40;
 pub const BLOCK_TYPE_I32: u8 = 0x7F;
+
+// Reference opcodes
+pub const REF_NULL: u8 = 0xD0;
+
+// WASM GC Opcodes (prefixed with GC_PREFIX = 0xFB)
+pub const GC_PREFIX: u8 = 0xFB;
+pub const STRUCT_NEW: u8 = 0x00;
+pub const STRUCT_NEW_DEFAULT: u8 = 0x01;
+pub const STRUCT_GET: u8 = 0x02;
+pub const STRUCT_GET_S: u8 = 0x03;
+pub const STRUCT_GET_U: u8 = 0x04;
+pub const STRUCT_SET: u8 = 0x05;
+pub const ARRAY_NEW: u8 = 0x06;
+pub const ARRAY_NEW_DEFAULT: u8 = 0x07;
+pub const ARRAY_NEW_FIXED: u8 = 0x08;
+pub const ARRAY_NEW_DATA: u8 = 0x09;
+pub const ARRAY_NEW_ELEM: u8 = 0x0A;
+pub const ARRAY_GET: u8 = 0x0B;
+pub const ARRAY_GET_S: u8 = 0x0C;
+pub const ARRAY_GET_U: u8 = 0x0D;
+pub const ARRAY_SET: u8 = 0x0E;
+pub const ARRAY_LEN: u8 = 0x0F;
+pub const REF_TEST: u8 = 0x14;
+pub const REF_CAST: u8 = 0x16;
 
 // Value tag definitions in Wasm memory:
 // Tag 0 = Number:  [tag: u8, padding: 7 bytes, val: i64 (8 bytes)] => total 16 bytes
@@ -111,6 +159,22 @@ pub fn encode_u32_leb128(out: &mut Vec<u8>, mut value: u32) {
 }
 
 pub fn encode_i32_sleb128(out: &mut Vec<u8>, mut value: i32) {
+    let mut more = true;
+    while more {
+        let mut byte = (value & 0x7F) as u8;
+        value >>= 7;
+        let sign_bit = (byte & 0x40) != 0;
+
+        if (value == 0 && !sign_bit) || (value == -1 && sign_bit) {
+            more = false;
+        } else {
+            byte |= 0x80;
+        }
+        out.push(byte);
+    }
+}
+
+pub fn encode_i64_sleb128(out: &mut Vec<u8>, mut value: i64) {
     let mut more = true;
     while more {
         let mut byte = (value & 0x7F) as u8;

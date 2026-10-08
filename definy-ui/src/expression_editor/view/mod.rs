@@ -383,6 +383,28 @@ pub fn render_expression_editor(
                     definy_event::event::Expression::StringSlice(slice_expr) => {
                         render_string_slice(state, &context, &path, slice_expr)
                     }
+                    definy_event::event::Expression::StringToBytes(stb_expr) => {
+                        let mut val_path = path.clone();
+                        val_path.push(PathStep::Condition);
+                        rsx! {
+                            div { style: "display: grid; gap: 0.3rem;",
+                                "{language.label(\"String\", \"文字列\", \"Ĉeno\")}"
+                                {
+                                    render_expression_editor(
+                                        state,
+                                        stb_expr.value.as_ref(),
+                                        context
+                                            .child(
+                                                val_path,
+                                                scope_variables.clone(),
+                                                structure_locked,
+                                                allow_kind_change,
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                    }
                     definy_event::event::Expression::ListLength(len_expr) => {
                         let mut val_path = path.clone();
                         val_path.push(PathStep::Condition);

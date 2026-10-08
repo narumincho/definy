@@ -62,6 +62,7 @@ utoipa-axum = "0.2"
 utoipa-swagger-ui = "9.0"
 tokio-stream = "0.1"
 rustls = { version = "0.23", features = ["ring"] }
+wasmtime = "49.0.2"
 
 [profile.release]
 opt-level = "z"

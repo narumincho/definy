@@ -730,7 +730,7 @@ async fn test_connect_rpc_deploy_deno_success() {
     }
 
     let db = crate::db::init_db().await.unwrap();
-    let state = AppState::new(Some(db), None);
+    let state = AppState::new(Some(db.clone()), None);
 
     let mut headers = HeaderMap::new();
     headers.insert(
@@ -749,6 +749,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
+        part_id: None,
     };
     let empty_res = handle_deploy_deno(
         State(state.clone()),
@@ -765,6 +766,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
+        part_id: None,
     };
     let deploy_res = handle_deploy_deno(
         State(state.clone()),
@@ -813,6 +815,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: Some(true),
+        part_id: None,
     };
     let self_hosted_res = handle_deploy_deno(
         State(state.clone()),
@@ -827,4 +830,86 @@ async fn test_connect_rpc_deploy_deno_success() {
         .unwrap();
     let sh_data: DeployDenoResponse = serde_json::from_slice(&sh_bytes).unwrap();
     assert_eq!(sh_data.evaluated_result, Some("42".to_string()));
+
+    // 6. 任意の TypeScript スクリプト (definy に依存しない汎用デプロイ)
+    let custom_script_req = DeployDenoRequest {
+        org_token: "test_deno_token_123".to_string(),
+        app_slug: Some("generic-edge-app".to_string()),
+        wasm_hash: None,
+        custom_script: Some("Deno.serve(() => new Response('Hello Pure Edge'));".to_string()),
+        compile_self_hosted: None,
+        part_id: None,
+    };
+    let custom_res = handle_deploy_deno(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&custom_script_req).unwrap()),
+    )
+    .await;
+    assert_eq!(custom_res.status(), StatusCode::OK);
+    let custom_bytes = axum::body::to_bytes(custom_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let custom_data: DeployDenoResponse = serde_json::from_slice(&custom_bytes).unwrap();
+    assert_eq!(custom_data.status, "succeeded");
+    assert_eq!(custom_data.app_slug, "generic-edge-app");
+    assert_eq!(custom_data.evaluated_result, None);
+
+    // 7. Web/HTTP ハンドラーパーツ (HTML 文字列) をデプロイ
+    let web_part_name = "render_home_html";
+    let html_content = "<h1>Hello from definy Web Handler!</h1>";
+    let web_part = definy_event::event::ModulePartEntry {
+        name: web_part_name.into(),
+        part_type: None,
+        description: definy_event::event::Description::Plain("Render Home Page".into()),
+        content_hash: None,
+        expression: Some(definy_event::event::Expression::String(
+            definy_event::event::StringExpression {
+                value: html_content.into(),
+            },
+        )),
+    };
+    let dummy_key = ed25519_dalek::SigningKey::generate(&mut rand::rngs::OsRng);
+    let web_event = definy_event::event::Event {
+        account_id: definy_event::event::AccountId(dummy_key.verifying_key()),
+        time: chrono::DateTime::UNIX_EPOCH,
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_event::event::ModuleCommitEvent {
+                module_name: "web_server".into(),
+                module_description: definy_event::event::Description::Plain("Web server".into()),
+                parent_commit_hash: None,
+                message: "Add web handler".into(),
+                parts: vec![web_part],
+            },
+        ),
+    };
+    let signed_bytes = definy_event::sign_and_serialize(web_event.clone(), &dummy_key).unwrap();
+    let (sig, _) = definy_event::verify_and_deserialize(&signed_bytes).unwrap();
+    let client_addr = "127.0.0.1:8080".parse().unwrap();
+    crate::db::save_event(&web_event, &sig, &signed_bytes, client_addr, &db)
+        .await
+        .unwrap();
+
+    let web_deploy_req = DeployDenoRequest {
+        org_token: "test_deno_token_123".to_string(),
+        app_slug: Some("definy-web-service".to_string()),
+        wasm_hash: None,
+        custom_script: None,
+        compile_self_hosted: None,
+        part_id: Some(web_part_name.to_string()),
+    };
+    let web_res = handle_deploy_deno(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&web_deploy_req).unwrap()),
+    )
+    .await;
+    assert_eq!(web_res.status(), StatusCode::OK);
+    let web_bytes = axum::body::to_bytes(web_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let web_data: DeployDenoResponse = serde_json::from_slice(&web_bytes).unwrap();
+    assert_eq!(web_data.status, "succeeded");
+    assert_eq!(web_data.app_slug, "definy-web-service");
+    assert_eq!(web_data.evaluated_result, Some(html_content.to_string()));
 }

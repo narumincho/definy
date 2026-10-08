@@ -251,6 +251,10 @@ pub fn selector_options(
                 definy_event::event::CompilerBuiltin::StringConcat
                 | definy_event::event::CompilerBuiltin::StringSlice => Some(ExpressionType::String),
 
+                definy_event::event::CompilerBuiltin::StringToBytes => {
+                    Some(ExpressionType::List(Box::new(ExpressionType::Number)))
+                }
+
                 definy_event::event::CompilerBuiltin::ListConcat
                 | definy_event::event::CompilerBuiltin::ListAppend => {
                     Some(ExpressionType::List(Box::new(ExpressionType::Unknown)))
@@ -622,6 +626,11 @@ pub(crate) fn current_selection_value(
                 .map(|h| format!("ref:global:{}", h))
                 .unwrap_or_else(|| "expr:string_slice".to_string())
         }
+        definy_event::event::Expression::StringToBytes(_) => {
+            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringToBytes)
+                .map(|h| format!("ref:global:{}", h))
+                .unwrap_or_else(|| "expr:string_to_bytes".to_string())
+        }
         definy_event::event::Expression::ListLength(_) => {
             find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListLength)
                 .map(|h| format!("ref:global:{}", h))
@@ -689,6 +698,9 @@ pub(crate) fn current_selection_value(
                     }
                     definy_event::event::CompilerBuiltin::StringSlice => {
                         "expr:string_slice".to_string()
+                    }
+                    definy_event::event::CompilerBuiltin::StringToBytes => {
+                        "expr:string_to_bytes".to_string()
                     }
                     definy_event::event::CompilerBuiltin::ListLength => {
                         "expr:list_length".to_string()

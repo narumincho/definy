@@ -15,6 +15,7 @@ mod builtin_validator;
 mod builtin_value_type;
 pub mod builtin_wasi;
 mod builtin_wasm_compiler;
+mod builtin_wasm_data_section;
 mod connect_rpc;
 mod db;
 pub mod deno_deploy;

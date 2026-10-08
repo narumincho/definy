@@ -209,6 +209,16 @@ pub fn expression_to_layout_node_with_path(
                 .with_path(p)
                 .with_children(vec![target, start, end])
         }
+        Expression::StringToBytes(stb) => {
+            let child = expression_to_layout_node_with_path(
+                &stb.value,
+                &format!("{}.value", id_prefix),
+                &child_path(current_path, PathStep::Condition),
+            );
+            LayoutNode::new(id_prefix, "string_to_bytes", NodeKind::Identifier)
+                .with_path(p)
+                .with_children(vec![child])
+        }
         Expression::ListGet(get_expr) => {
             let list = expression_to_layout_node_with_path(
                 &get_expr.list,

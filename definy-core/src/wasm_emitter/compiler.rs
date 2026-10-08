@@ -12,6 +12,7 @@ pub(crate) struct CompileContext<'a> {
     pub(crate) pending_functions: Vec<PendingFunction>,
     pub(crate) part_functions:
         HashMap<(definy_event::EventHashId, Option<definy_event::ContentHash>), u32>,
+    pub(crate) temp_i64_local: u32,
 }
 
 impl<'a> CompileContext<'a> {
@@ -23,6 +24,7 @@ impl<'a> CompileContext<'a> {
             visited_parts: Vec::new(),
             pending_functions: Vec::new(),
             part_functions: HashMap::new(),
+            temp_i64_local: 0,
         }
     }
 
@@ -434,6 +436,9 @@ pub(crate) fn emit_expression(
         Expression::StringSlice(StringSliceExpression { value, start, end }) => {
             super::string_ops::emit_string_slice(value, start, end, out, env, next_local_idx, ctx)?;
         }
+        Expression::StringToBytes(StringToBytesExpression { value }) => {
+            super::string_ops::emit_string_to_bytes(value, out, env, next_local_idx, ctx)?;
+        }
         Expression::ListLength(ListLengthExpression { value }) => {
             super::list_ops::emit_list_length(value, out, env, next_local_idx, ctx)?;
         }
@@ -589,7 +594,7 @@ fn emit_binary_arithmetic(
 
     out.push(opcode); // execute opcode (add, sub, mul, div_s, rem_s)
 
-    emit_alloc_number_from_stack(out, next_local_idx);
+    emit_alloc_number_from_stack(out, next_local_idx, ctx);
     Ok(())
 }
 
@@ -670,11 +675,15 @@ fn emit_binary_comparison(
     Ok(())
 }
 
-pub(crate) fn emit_alloc_number_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
-    const TEMP_I64_LOCAL: u32 = 0;
+pub(crate) fn emit_alloc_number_from_stack(
+    out: &mut Vec<u8>,
+    next_local_idx: &mut u32,
+    ctx: &CompileContext,
+) {
+    let temp_i64_local = ctx.temp_i64_local;
 
     out.push(LOCAL_SET);
-    encode_u32_leb128(out, TEMP_I64_LOCAL);
+    encode_u32_leb128(out, temp_i64_local);
 
     let res_ptr_local = *next_local_idx;
     *next_local_idx += 1;
@@ -705,7 +714,7 @@ pub(crate) fn emit_alloc_number_from_stack(out: &mut Vec<u8>, next_local_idx: &m
     out.push(LOCAL_GET);
     encode_u32_leb128(out, res_ptr_local);
     out.push(LOCAL_GET);
-    encode_u32_leb128(out, TEMP_I64_LOCAL);
+    encode_u32_leb128(out, temp_i64_local);
     out.push(I64_STORE);
     encode_mem_arg(out, 3, 8);
 
@@ -789,6 +798,7 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::StringSlice(s) => {
             10 + count_locals(&s.value) + count_locals(&s.start) + count_locals(&s.end)
         }
+        Expression::StringToBytes(s) => 8 + count_locals(&s.value),
         Expression::ListLength(l) => 4 + count_locals(&l.value),
         Expression::ListConcat(l) => 8 + count_locals(&l.left) + count_locals(&l.right),
         Expression::ListGet(l) => 6 + count_locals(&l.list) + count_locals(&l.index),

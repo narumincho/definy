@@ -286,6 +286,7 @@ pub(crate) fn expression_to_self_hosted_ast(
         E::StringConcat(_) => Err("core.expression does not represent string_concat".into()),
         E::StringLength(_) => Err("core.expression does not represent string_length".into()),
         E::StringSlice(_) => Err("core.expression does not represent string_slice".into()),
+        E::StringToBytes(_) => Err("core.expression does not represent string_to_bytes".into()),
         E::ListLength(_) => Err("core.expression does not represent list_length".into()),
         E::ListConcat(_) => Err("core.expression does not represent list_concat".into()),
         E::ListGet(_) => Err("core.expression does not represent list_get".into()),
