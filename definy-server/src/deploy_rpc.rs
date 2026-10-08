@@ -366,9 +366,12 @@ pub async fn handle_deploy_deno(
         ) {
             Ok(expr) => match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&expr) {
                 Ok(bytes) => {
-                    let eval_val = crate::self_hosted_wasm_compiler::execute_compiled_wasm(&bytes)
+                    let eval_val = crate::self_hosted_wasm_compiler::evaluate_compiled_wasm(&bytes)
                         .ok()
-                        .map(|v| v.to_string());
+                        .map(|val| match val {
+                            definy_core::expression_eval::Value::String(s) => s,
+                            other => other.to_string(),
+                        });
                     (Some(bytes), eval_val)
                 }
                 Err(err) => {

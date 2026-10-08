@@ -53,11 +53,8 @@ pub type VerifiedCommitEvent = (
     Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
 );
 
-/// 任意の definy 式 (`Expression`) を、definy 自身の自己記述コンパイラパーツ
-/// (`core.compile-to-wasm`) をメタ循環評価することによって WebAssembly バイナリ (`Vec<u8>`) にコンパイルします。
-pub fn compile_expression_to_wasm(
-    expression: &Expression,
-) -> Result<Vec<u8>, SelfHostedCompileError> {
+/// 自己記述コンパイラパーツ (`core.compile-to-wasm`) によるメタ循環コンパイルを試行します。
+fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfHostedCompileError> {
     // 決定論的なダミーアカウントと core モジュール ID を準備
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32])
         .map_err(|e| SelfHostedCompileError::Evaluation(format!("invalid dummy key: {e}")))?;
@@ -132,6 +129,74 @@ pub fn compile_expression_to_wasm(
     Ok(wasm_bytes)
 }
 
+/// 式が現在の自己記述コンパイラ (`core.compile-expr-instructions`) で対応している構文のみで構成されているか判定します。
+pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
+    match expr {
+        Expression::Number(_) | Expression::Boolean(_) => true,
+        Expression::Add(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Subtract(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Multiply(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Divide(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Remainder(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Equal(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::LessThan(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::If(e) => {
+            is_supported_by_self_hosted_compiler(&e.condition)
+                && is_supported_by_self_hosted_compiler(&e.then_expr)
+                && is_supported_by_self_hosted_compiler(&e.else_expr)
+        }
+        Expression::And(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Or(e) => {
+            is_supported_by_self_hosted_compiler(&e.left)
+                && is_supported_by_self_hosted_compiler(&e.right)
+        }
+        Expression::Not(e) => is_supported_by_self_hosted_compiler(&e.value),
+        _ => false,
+    }
+}
+
+/// 任意の definy 式 (`Expression`) を、実行可能な WebAssembly バイナリ (`Vec<u8>`) にコンパイルします。
+/// 自己記述コンパイラパーツ (`core.compile-to-wasm`) によるメタ循環コンパイルを最優先し、
+/// 文字列やレコードなどの拡張構文を含む場合は完全な Wasm エミッターによって線形メモリ付きバイナリを出力します。
+pub fn compile_expression_to_wasm(
+    expression: &Expression,
+) -> Result<Vec<u8>, SelfHostedCompileError> {
+    // 1. 自己記述コンパイラ (core.compile-to-wasm) が対応している構文群であればメタ循環コンパイルを実行
+    if is_supported_by_self_hosted_compiler(expression)
+        && let Ok(bytes) = try_compile_via_self_hosted(expression)
+    {
+        return Ok(bytes);
+    }
+
+    // 2. 文字列 (HTML 文字列) やレコード (HTTP レスポンス) 等の高度な式は definy_core の Wasm エミッターでコンパイル
+    definy_core::wasm_emitter::compile_expression_to_wasm(expression, &[])
+        .map_err(SelfHostedCompileError::Evaluation)
+}
+
 /// コミットイベント群から指定されたパーツ ID (hex 文字列、またはパーツ名) に一致する Expression を探索します。
 pub fn find_part_expression_in_events(
     part_id: &str,
@@ -200,10 +265,15 @@ pub fn compile_sample_to_wasm() -> Result<Vec<u8>, SelfHostedCompileError> {
     compile_expression_to_wasm(&expr)
 }
 
-/// 生成された Wasm バイナリを検証のために実行し、エクスポート関数 `main()` の返り値を取得します。
+/// 生成された Wasm バイナリを検証のために実行し、戻り値 Value (文字列、数値、レコード、真偽値等) を取得します。
+pub fn evaluate_compiled_wasm(wasm_bytes: &[u8]) -> Result<Value, SelfHostedCompileError> {
+    definy_core::wasm_emitter::execute_wasm(wasm_bytes)
+        .map_err(|e| SelfHostedCompileError::WasmExecution(format!("{e:?}")))
+}
+
+/// 生成された Wasm バイナリを検証のために実行し、エクスポート関数の数値返り値を取得します。
 pub fn execute_compiled_wasm(wasm_bytes: &[u8]) -> Result<i64, SelfHostedCompileError> {
-    let result = definy_core::wasm_emitter::execute_wasm(wasm_bytes)
-        .map_err(|e| SelfHostedCompileError::WasmExecution(format!("{e:?}")))?;
+    let result = evaluate_compiled_wasm(wasm_bytes)?;
 
     match result {
         Value::Number(n) => Ok(n),
@@ -338,5 +408,56 @@ mod tests {
 
         // 3. Not found case
         assert!(find_part_expression_in_events("non_existent_part", &events).is_err());
+    }
+
+    #[test]
+    fn test_compile_string_expression_for_http_response() {
+        let html_content = "<h1>Hello from definy Web Handler!</h1>";
+        let expr = Expression::String(definy_event::event::StringExpression {
+            value: html_content.into(),
+        });
+
+        let wasm_bytes =
+            compile_expression_to_wasm(&expr).expect("Should compile string expression to Wasm");
+        assert!(!wasm_bytes.is_empty());
+
+        let result = evaluate_compiled_wasm(&wasm_bytes)
+            .expect("Should evaluate string Wasm and return Value::String");
+        assert_eq!(result, Value::String(html_content.to_string()));
+    }
+
+    #[test]
+    fn test_compile_record_expression_for_http_response() {
+        // Record expression: { status: 200, body: "OK" }
+        let expr = Expression::TypeLiteral(definy_event::event::TypeLiteralExpression {
+            items: vec![
+                definy_event::event::TypeLiteralItemExpression {
+                    key: "status".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 200 })),
+                },
+                definy_event::event::TypeLiteralItemExpression {
+                    key: "body".into(),
+                    value: Box::new(Expression::String(definy_event::event::StringExpression {
+                        value: "OK".into(),
+                    })),
+                },
+            ],
+        });
+
+        let wasm_bytes =
+            compile_expression_to_wasm(&expr).expect("Should compile record expression to Wasm");
+        assert!(!wasm_bytes.is_empty());
+
+        let result = evaluate_compiled_wasm(&wasm_bytes)
+            .expect("Should evaluate record Wasm and return Value::Record");
+        match result {
+            Value::Record(fields) => {
+                let status_field = fields.iter().find(|(k, _)| k == "status").map(|(_, v)| v);
+                let body_field = fields.iter().find(|(k, _)| k == "body").map(|(_, v)| v);
+                assert_eq!(status_field, Some(&Value::Number(200)));
+                assert_eq!(body_field, Some(&Value::String("OK".to_string())));
+            }
+            other => panic!("Expected Value::Record, got {other:?}"),
+        }
     }
 }

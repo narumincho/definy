@@ -61,10 +61,20 @@ definy のデプロイ基盤は、**「definy プログラムだけを特別扱�
 - `custom_script` 指定時: ユーザーのカスタムスクリプトがそのまま動作。
 - 省略時: 汎用エッジランナー（Wasm が同梱されていればロードして `main()` を実行、なければ純粋なエッジ HTTP サービスとして応答）。
 
-### 2.4 デフォルトエッジランタイム (`default_deno_serve_script`)
+### 2.4 デフォルトエッジランタイム (`default_deno_serve_script`) と Wasm 線形メモリ
 `custom_script` が指定されない場合に使用される汎用エッジ HTTP サーバー:
 - 起動時に同梱 `app.wasm` をロード・コンパイルし、インスタンス化。
-- エクスポート関数 `main()` を実行して結果をメモリ上に保持。
+- **線形メモリデコーダ (`readDefinyValue`)**:
+  - Wasm インスタンスの線形メモリ（`exports.memory`）から definy の複合データ構造を直接デコード:
+    - **Tag 0 (Number)**: 64-bit 整数値
+    - **Tag 1 (Bool)**: 真偽値
+    - **Tag 2 (String)**: 長さプレフィックス付き UTF-8 文字列
+    - **Tag 3 (List)**: ポインタ配列による要素リスト
+    - **Tag 4 (Record)**: キー文字列ポインタと値ポインタのペアによる連想配列
+- **Web / HTTP ハンドラーの自動解決**:
+  - パーツが HTML 文字列（例: `<!DOCTYPE html>...` または `<html...`）を返す場合、ルートパス（`GET /`）で直接 `text/html; charset=utf-8` として配信。
+  - パーツが HTTP レスポンス構造レコード（`{ status: 200, body: "...", contentType: "..." }`）を返す場合、対応する HTTP ステータスコードおよびヘッダーでブラウザへ応答。
+  - 上記以外の場合は、リッチなレスポンシブダッシュボードと JSON API (`/api/eval`) を自動構成。
 - エンドポイント:
   - `GET /healthz`: ヘルスチェック (`ok`)
   - `GET /api/eval`: Wasm の実行結果 JSON:
@@ -80,12 +90,18 @@ definy のデプロイ基盤は、**「definy プログラムだけを特別扱�
     }
     ```
   - `GET /api/info`: ランタイム情報と評価結果
-  - `GET /`: レスポンシブ HTML ダッシュボード（Wasm ステータスおよび実行結果バッジ、JSON API へのクイックリンクを表示）
+  - `GET /`: HTML ハンドラー出力、またはレスポンシブダッシュボード
 
-### 2.5 Web UI (`definy-ui/src/deployments.rs`)
+### 2.5 自己記述コンパイラと Wasm エミッターのハイブリッドパイプライン
+- `definy-server/src/self_hosted_wasm_compiler.rs`:
+  - `is_supported_by_self_hosted_compiler(expr)`: 四則演算・数値・真偽値・If 文等の基本式は自己記述コンパイラパーツ（`core.compile-to-wasm`）で優先メタ循環コンパイル。
+  - 文字列やレコード等の高度な Web ハンドラー構文は、definy の完全な Wasm エミッター（線形メモリアロケータ付き）でコンパイル。
+  - コンパイルしたバイナリはサーバー側でも `evaluate_compiled_wasm` により即座に値（`Value::String`, `Value::Record` 等）として検証。
+
+### 2.6 Web UI (`definy-ui/src/deployments.rs`)
 - Deno Deploy カードにて以下の 4 つのソースモードを切り替え可能:
   1. **TypeScript スクリプト**: 任意の TypeScript/JavaScript コードを直接記述して配備。
-  2. **definy パーツ**: 指定したパーツの式をオンデマンドで Wasm 化して配備。
+  2. **definy パーツ**: 指定したパーツ（数値演算だけでなく HTML 文字列や HTTP レスポンスを返すパーツも含む）の式をオンデマンドで Wasm 化して配備。
   3. **自己コンパイラ検証サンプル**: サンプル式（`15 + 27 = 42`）を動的ビルドして配備。
   4. **Wasm ハッシュ**: 既存の Wasm ハッシュを指定して配備。
 - デプロイ成功時に `Public URL` に加え、`Eval Result` および `Edge JSON (/api/eval) ↗` へのダイレクトリンクを表示。
@@ -95,7 +111,17 @@ definy のデプロイ基盤は、**「definy プログラムだけを特別扱�
 ## 3. 動作確認・テスト
 
 - 単体テスト:
-  - `definy-server/src/self_hosted_wasm_compiler.rs` (`test_compile_sample_expression_pipeline`, `test_compile_custom_arithmetic_expression`, `test_find_and_compile_part_expression`)
+  - `definy-server/src/self_hosted_wasm_compiler.rs`:
+    - `test_compile_sample_expression_pipeline`: 自己記述コンパイラパイプラインの検証
+    - `test_compile_custom_arithmetic_expression`: カスタム算術式のコンパイル
+    - `test_find_and_compile_part_expression`: コミットイベントからのパーツ抽出とコンパイル
+    - `test_compile_string_expression_for_http_response`: HTML 文字列式のエミットと Wasm 実行
+    - `test_compile_record_expression_for_http_response`: HTTP レスポンスレコード式のエミットと Wasm 実行
 - 結合テスト:
-  - `definy-server/src/connect_rpc/tests.rs` (`DeployDenoRequest` でのトークン検証、通常デプロイ、自己記述コンパイラ動的ビルド、カスタムスクリプト汎用デプロイ)
+  - `definy-server/src/connect_rpc/tests.rs` (`test_connect_rpc_deploy_deno_success`):
+    - トークン検証
+    - 通常デプロイ
+    - 自己記述コンパイラ動的ビルド（数値）
+    - 外部 TypeScript 汎用デプロイ
+    - Web / HTTP ハンドラーパーツ（HTML 文字列）の登録から Deno Deploy 配備およびエッジレスポンス検証までのエンドツーエンドテスト
 - 全ワークスペーステスト: `cargo test --workspace` にて 100% パスを確認。

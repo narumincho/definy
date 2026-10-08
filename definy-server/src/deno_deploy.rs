@@ -406,7 +406,53 @@ pub fn default_deno_serve_script(has_wasm: bool) -> String {
     let wasm_load_block = if has_wasm {
         r#"
 let wasmInstance: WebAssembly.Instance | null = null;
-let evalResult: bigint | number | null = null;
+let evalResult: unknown = null;
+let httpResponsePayload: { status: number; contentType: string; body: string } | null = null;
+
+function readDefinyValue(mem: Uint8Array, ptr: number): unknown {
+  if (ptr < 0 || ptr >= mem.length) return null;
+  const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+  const tag = mem[ptr];
+  if (tag === 0) {
+    // Number (i64 at ptr + 8)
+    return Number(view.getBigInt64(ptr + 8, true));
+  }
+  if (tag === 1) {
+    // Bool (u8 at ptr + 8)
+    return mem[ptr + 8] !== 0;
+  }
+  if (tag === 2) {
+    // String (len at ptr + 4, bytes at ptr + 8)
+    const len = view.getUint32(ptr + 4, true);
+    return new TextDecoder().decode(mem.subarray(ptr + 8, ptr + 8 + len));
+  }
+  if (tag === 3) {
+    // List (count at ptr + 4, elem_ptrs at ptr + 8)
+    const count = view.getUint32(ptr + 4, true);
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
+      items.push(readDefinyValue(mem, elemPtr));
+    }
+    return items;
+  }
+  if (tag === 4) {
+    // Record (count at ptr + 4, items at ptr + 8)
+    const count = view.getUint32(ptr + 4, true);
+    const obj: Record<string, unknown> = {};
+    for (let i = 0; i < count; i++) {
+      const keyPtr = view.getUint32(ptr + 8 + i * 8, true);
+      const valPtr = view.getUint32(ptr + 8 + i * 8 + 4, true);
+      const key = readDefinyValue(mem, keyPtr);
+      if (typeof key === "string") {
+        obj[key] = readDefinyValue(mem, valPtr);
+      }
+    }
+    return obj;
+  }
+  return null;
+}
+
 try {
   const wasmUrl = new URL("./app.wasm", import.meta.url);
   const wasmBytes = await Deno.readFile(wasmUrl);
@@ -415,9 +461,34 @@ try {
   console.log("Wasm binary loaded and instantiated successfully.");
 
   const exports = wasmInstance.exports as Record<string, unknown>;
-  if (typeof exports.main === "function") {
+  const memory = exports.memory instanceof WebAssembly.Memory ? new Uint8Array(exports.memory.buffer) : null;
+
+  if (typeof exports.evaluate === "function" && memory) {
+    const ptr = (exports.evaluate as () => number)();
+    evalResult = readDefinyValue(memory, ptr);
+    console.log("Wasm evaluate() executed via memory. Decoded result:", evalResult);
+  } else if (typeof exports.main === "function") {
     evalResult = (exports.main as () => bigint | number)();
-    console.log("Self-hosted compiled Wasm main() executed. Result:", evalResult);
+    console.log("Wasm main() executed. Result:", evalResult);
+  }
+
+  // HTTP レスポンス構造の自動判定
+  if (typeof evalResult === "string") {
+    const isHtml = evalResult.trim().startsWith("<") && evalResult.includes(">");
+    httpResponsePayload = {
+      status: 200,
+      contentType: isHtml ? "text/html; charset=utf-8" : "text/plain; charset=utf-8",
+      body: evalResult,
+    };
+  } else if (evalResult && typeof evalResult === "object" && !Array.isArray(evalResult)) {
+    const rec = evalResult as Record<string, unknown>;
+    if ("body" in rec || "status" in rec) {
+      const status = typeof rec.status === "number" ? rec.status : 200;
+      const body = typeof rec.body === "string" ? rec.body : JSON.stringify(rec.body ?? rec);
+      const isHtml = body.trim().startsWith("<") && body.includes(">");
+      const contentType = typeof rec.contentType === "string" ? rec.contentType : (isHtml ? "text/html; charset=utf-8" : "application/json; charset=utf-8");
+      httpResponsePayload = { status, contentType, body };
+    }
   }
 } catch (err) {
   console.warn("Wasm load/execution notice:", err);
@@ -426,7 +497,8 @@ try {
     } else {
         r#"
 const wasmInstance: WebAssembly.Instance | null = null;
-const evalResult: bigint | number | null = null;
+const evalResult: unknown = null;
+const httpResponsePayload: { status: number; contentType: string; body: string } | null = null;
 "#
     };
 
@@ -444,14 +516,24 @@ Deno.serve((req: Request) => {{
     }});
   }}
 
+  // Wasm が HTTP レスポンス (HTML や JSON) を生成しており、ルート / へのリクエストの場合
+  if ((url.pathname === "/" || url.pathname === "/app") && httpResponsePayload) {{
+    return new Response(httpResponsePayload.body, {{
+      status: httpResponsePayload.status,
+      headers: {{
+        "Content-Type": httpResponsePayload.contentType,
+        "X-Powered-By": "definy-wasm-edge",
+      }},
+    }});
+  }}
+
   if (url.pathname === "/api/eval") {{
     return Response.json({{
       service: "definy",
-      compiler: "core.compile-to-wasm",
-      entrypoint: "main",
       wasmLoaded: Boolean(wasmInstance),
-      result: evalResult !== null ? evalResult.toString() : null,
-      status: evalResult !== null ? "success" : "no_wasm_or_failed",
+      result: evalResult !== null && evalResult !== undefined ? (typeof evalResult === "object" ? evalResult : String(evalResult)) : null,
+      httpResponseConfigured: Boolean(httpResponsePayload),
+      status: evalResult !== null && evalResult !== undefined ? "success" : "no_wasm_or_failed",
       timestamp: new Date().toISOString(),
     }});
   }}
@@ -460,9 +542,9 @@ Deno.serve((req: Request) => {{
     return Response.json({{
       service: "definy",
       runtime: "deno-deploy",
-      compiler: "core.compile-to-wasm",
       wasmLoaded: Boolean(wasmInstance),
-      evalResult: evalResult !== null ? evalResult.toString() : null,
+      evalResult: evalResult !== null && evalResult !== undefined ? (typeof evalResult === "object" ? evalResult : String(evalResult)) : null,
+      httpResponsePayload,
       timestamp: new Date().toISOString(),
       url: req.url,
     }});
@@ -472,8 +554,12 @@ Deno.serve((req: Request) => {{
     ? `<span style="color:#4ade80;font-weight:600">Active (Injected & Ready)</span>`
     : `<span style="color:#38bdf8;font-weight:600">Pure Edge Handler</span>`;
 
-  const evalResultBadge = evalResult !== null
-    ? `<span style="font-weight:700;color:#c084fc;font-family:monospace;font-size:1.1rem">${{evalResult}}</span>`
+  const evalResultText = evalResult !== null && evalResult !== undefined
+    ? (typeof evalResult === "object" ? JSON.stringify(evalResult) : String(evalResult))
+    : "None";
+
+  const evalResultBadge = evalResult !== null && evalResult !== undefined
+    ? `<span style="font-weight:700;color:#c084fc;font-family:monospace;font-size:1.1rem">${{evalResultText}}</span>`
     : `<span style="color:#94a3b8;font-style:italic">None</span>`;
 
   const html = `<!DOCTYPE html>
