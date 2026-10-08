@@ -286,6 +286,26 @@ impl DenoDeployClient {
         Ok(revision)
     }
 
+    /// リビジョン情報を取得する (GET /v2/revisions/{revision})
+    pub async fn get_revision(&self, revision_id: &str) -> Result<DenoRevision, DenoDeployError> {
+        let url = format!("{}/revisions/{}", self.config.api_base_url, revision_id);
+        let resp = self
+            .client
+            .get(&url)
+            .bearer_auth(&self.config.api_token)
+            .send()
+            .await?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let message = resp.text().await.unwrap_or_default();
+            return Err(DenoDeployError::ApiError { status, message });
+        }
+
+        let revision = resp.json::<DenoRevision>().await?;
+        Ok(revision)
+    }
+
     /// definy の標準アセット一式を構築し、Deno Deploy へデプロイする
     pub async fn deploy(
         &self,
@@ -332,9 +352,27 @@ impl DenoDeployClient {
             }),
         };
 
-        let revision = self.deploy_revision(&app.id, &deploy_req).await?;
+        let mut revision = self.deploy_revision(&app.id, &deploy_req).await?;
 
-        // 4. URL および hostnames の導出
+        // 4. hostnames が確定するまで最大 5 秒間ポーリング
+        for _ in 0..10 {
+            let has_hostnames = revision
+                .timelines
+                .as_ref()
+                .map(|tl| tl.iter().any(|t| !t.hostnames.is_empty()))
+                .unwrap_or(false);
+
+            if has_hostnames || revision.status == "failed" {
+                break;
+            }
+
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            if let Ok(updated) = self.get_revision(&revision.id).await {
+                revision = updated;
+            }
+        }
+
+        // 5. URL および hostnames の導出
         let mut hostnames = Vec::new();
         if let Some(ref timelines) = revision.timelines {
             for timeline in timelines {
@@ -349,7 +387,7 @@ impl DenoDeployClient {
         let primary_url = if let Some(first_host) = hostnames.first() {
             format!("https://{first_host}")
         } else {
-            format!("https://{}.deno.dev", app.slug)
+            format!("https://{}.deno.net", app.slug)
         };
 
         Ok(DenoDeployResult {
@@ -368,19 +406,27 @@ pub fn default_deno_serve_script(has_wasm: bool) -> String {
     let wasm_load_block = if has_wasm {
         r#"
 let wasmInstance: WebAssembly.Instance | null = null;
+let evalResult: bigint | number | null = null;
 try {
   const wasmUrl = new URL("./app.wasm", import.meta.url);
   const wasmBytes = await Deno.readFile(wasmUrl);
   const wasmModule = await WebAssembly.compile(wasmBytes);
   wasmInstance = await WebAssembly.instantiate(wasmModule, {});
   console.log("Wasm binary loaded and instantiated successfully.");
+
+  const exports = wasmInstance.exports as Record<string, unknown>;
+  if (typeof exports.main === "function") {
+    evalResult = (exports.main as () => bigint | number)();
+    console.log("Self-hosted compiled Wasm main() executed. Result:", evalResult);
+  }
 } catch (err) {
-  console.warn("Wasm load notice:", err);
+  console.warn("Wasm load/execution notice:", err);
 }
 "#
     } else {
         r#"
 const wasmInstance: WebAssembly.Instance | null = null;
+const evalResult: bigint | number | null = null;
 "#
     };
 
@@ -398,11 +444,25 @@ Deno.serve((req: Request) => {{
     }});
   }}
 
+  if (url.pathname === "/api/eval") {{
+    return Response.json({{
+      service: "definy",
+      compiler: "core.compile-to-wasm",
+      entrypoint: "main",
+      wasmLoaded: Boolean(wasmInstance),
+      result: evalResult !== null ? evalResult.toString() : null,
+      status: evalResult !== null ? "success" : "no_wasm_or_failed",
+      timestamp: new Date().toISOString(),
+    }});
+  }}
+
   if (url.pathname === "/api/info") {{
     return Response.json({{
       service: "definy",
       runtime: "deno-deploy",
+      compiler: "core.compile-to-wasm",
       wasmLoaded: Boolean(wasmInstance),
+      evalResult: evalResult !== null ? evalResult.toString() : null,
       timestamp: new Date().toISOString(),
       url: req.url,
     }});
@@ -411,6 +471,10 @@ Deno.serve((req: Request) => {{
   const wasmBadge = wasmInstance
     ? `<span style="color:#4ade80;font-weight:600">Active (Injected & Ready)</span>`
     : `<span style="color:#38bdf8;font-weight:600">Pure Edge Handler</span>`;
+
+  const evalResultBadge = evalResult !== null
+    ? `<span style="font-weight:700;color:#c084fc;font-family:monospace;font-size:1.1rem">${{evalResult}}</span>`
+    : `<span style="color:#94a3b8;font-style:italic">None</span>`;
 
   const html = `<!DOCTYPE html>
 <html lang="ja">
@@ -478,6 +542,7 @@ Deno.serve((req: Request) => {{
     .status-row {{
       display: flex;
       justify-content: space-between;
+      align-items: center;
       padding: 0.6rem 0.8rem;
       background: rgba(255, 255, 255, 0.04);
       border-radius: 0.5rem;
@@ -485,6 +550,25 @@ Deno.serve((req: Request) => {{
       font-size: 0.85rem;
     }}
     .status-label {{ color: var(--subtext); }}
+    .btn {{
+      display: inline-block;
+      padding: 0.45rem 1rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }}
+    .btn-primary {{
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }}
+    .btn-secondary {{
+      background: rgba(255, 255, 255, 0.06);
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }}
   </style>
 </head>
 <body>
@@ -499,6 +583,14 @@ Deno.serve((req: Request) => {{
     <div class="status-row">
       <span class="status-label">Wasm Capability</span>
       <span>${{wasmBadge}}</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label">Self-Hosted Wasm Result</span>
+      <span>${{evalResultBadge}}</span>
+    </div>
+    <div style="margin-top:1.5rem;display:flex;gap:0.75rem;justify-content:center;">
+      <a class="btn btn-primary" href="/api/eval">JSON: /api/eval</a>
+      <a class="btn btn-secondary" href="/api/info">JSON: /api/info</a>
     </div>
   </div>
 </body>
@@ -569,6 +661,21 @@ mod tests {
                         })
                     },
                 ),
+            )
+            .route(
+                "/revisions/{revision}",
+                get(|Path(revision): Path<String>| async move {
+                    axum::Json(DenoRevision {
+                        id: revision,
+                        status: "succeeded".to_string(),
+                        failure_reason: None,
+                        timelines: Some(vec![DenoRevisionTimeline {
+                            name: "Production".to_string(),
+                            context: "production".to_string(),
+                            hostnames: vec!["existing-app-123.deno.net".to_string()],
+                        }]),
+                    })
+                }),
             );
 
         let listener = TcpListener::bind("127.0.0.1:0")

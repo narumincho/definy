@@ -1,4 +1,6 @@
 use super::*;
+use crate::deploy_rpc::*;
+use axum::extract::State;
 use definy_event::event::{AccountId, CreateAccountEvent, Event, EventContent};
 
 #[tokio::test]
@@ -697,6 +699,21 @@ async fn test_connect_rpc_deploy_deno_success() {
                     })
                 },
             ),
+        )
+        .route(
+            "/revisions/{revision}",
+            axum::routing::get(|Path(revision): Path<String>| async move {
+                Json(DenoRevision {
+                    id: revision,
+                    status: "succeeded".to_string(),
+                    failure_reason: None,
+                    timelines: Some(vec![DenoRevisionTimeline {
+                        name: "Production".to_string(),
+                        context: "production".to_string(),
+                        hostnames: vec!["auto-definy-edge-xyz.deno.net".to_string()],
+                    }]),
+                })
+            }),
         );
 
     let listener = TcpListener::bind("127.0.0.1:0")
@@ -731,6 +748,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         app_slug: None,
         wasm_hash: None,
         custom_script: None,
+        compile_self_hosted: None,
     };
     let empty_res = handle_deploy_deno(
         State(state.clone()),
@@ -746,6 +764,7 @@ async fn test_connect_rpc_deploy_deno_success() {
         app_slug: Some("auto-definy-edge".to_string()),
         wasm_hash: None,
         custom_script: None,
+        compile_self_hosted: None,
     };
     let deploy_res = handle_deploy_deno(
         State(state.clone()),
@@ -769,8 +788,8 @@ async fn test_connect_rpc_deploy_deno_success() {
     // 4. ListDeployments で Deno Deploy のレコードが provider: "deno_deploy" で保存されていることを確認
     let list_req = ListDeploymentsRequest { limit: Some(10) };
     let list_res = handle_list_deployments(
-        State(state),
-        headers,
+        State(state.clone()),
+        headers.clone(),
         Bytes::from(serde_json::to_vec(&list_req).unwrap()),
     )
     .await;
@@ -786,4 +805,26 @@ async fn test_connect_rpc_deploy_deno_success() {
         Some("deno_deploy")
     );
     assert_eq!(list_data.deployments[0].machine_id, "deno:rev_deno_123");
+
+    // 5. 自己記述コンパイラ (core.compile-to-wasm) による動的ビルドデプロイ
+    let self_hosted_deploy_req = DeployDenoRequest {
+        org_token: "test_deno_token_123".to_string(),
+        app_slug: Some("self-hosted-wasm-edge".to_string()),
+        wasm_hash: None,
+        custom_script: None,
+        compile_self_hosted: Some(true),
+    };
+    let self_hosted_res = handle_deploy_deno(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&self_hosted_deploy_req).unwrap()),
+    )
+    .await;
+    assert_eq!(self_hosted_res.status(), StatusCode::OK);
+
+    let sh_bytes = axum::body::to_bytes(self_hosted_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let sh_data: DeployDenoResponse = serde_json::from_slice(&sh_bytes).unwrap();
+    assert_eq!(sh_data.evaluated_result, Some("42".to_string()));
 }

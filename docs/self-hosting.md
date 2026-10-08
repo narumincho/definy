@@ -20,8 +20,8 @@ definy
    によるコンテンツ指向ハッシュで管理され、バージョンロックと不変性が保証される。
 3. **安全なマクロ・メタプログラミング**:
    式をデータとして受け取り、式を返す関数を通常パーツとして安全に定義可能。
-4. **自己ホスト WebAssembly 生成**: definy 式から WebAssembly
-   バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザ実行可能。
+4. **自己ホスト WebAssembly 生成とエッジ配備**: definy 式から WebAssembly
+   バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザおよび Deno Deploy エッジ上で即時実行可能（詳細は [自己記述コンパイラと Deno Deploy エッジ直結パイプライン](file:///Users/narumi/Documents/GitHub/definy/docs/self-hosting-compiler-deno-deploy.md) を参照）。
 
 ### 実サービスとの接続状況
 

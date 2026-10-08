@@ -37,7 +37,7 @@ sequenceDiagram
     DenoAPI-->>Server: Revision オブジェクト (status: "succeeded", hostnames: ["...deno.net"])
     Server->>DB: deployments テーブルに履歴保存 (provider: "deno_deploy")
     Server-->>UI: DeployDenoResponse (URL, hostnames, revision_id)
-    UI-->>User: デプロイ完了URL (https://<app>.deno.dev) を表示
+    UI-->>User: デプロイ完了URL (https://<app>.<org>.deno.net) を表示
     User->>Edge: ブラウザでアクセス (V8 Isolate 上でミリ秒起動)
 ```
 
@@ -87,3 +87,15 @@ curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployDeno \
     "appSlug": "my-definy-edge"
   }'
 ```
+
+---
+
+## 6. Deno Deploy v2 運用の技術知見
+
+1. **ドメイン体系の変更 (`*.deno.dev` の廃止と `*.deno.net`)**:
+   - Deno Deploy Classic（旧サービス）は 2026 年 7 月 20 日に sunset され、`*.deno.dev` にアクセスすると `404 DEPLOYMENT_NOT_FOUND` が返却されます。
+   - 新 Deno Deploy（REST API v2）の正式な公開ドメインは、Organization ごとに割り当てられる `https://<app>.<org>.deno.net` です。
+2. **非同期ビルドと hostnames の確定タイミング**:
+   - `POST /v2/apps/{app}/deploy` を呼び出した直後は `status: "building"` となり、レスポンス内の `hostnames` が一時的に空配列になる場合があります。
+   - 数秒（通常 1〜2 秒以内）でビルドが完了し `status: "succeeded"` に移行するため、API クライアント側で `GET /v2/revisions/{revision}` による短時間ポーリングを行うことで確定したホスト名を確実に取得・返却できます。
+

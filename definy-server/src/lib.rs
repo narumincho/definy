@@ -18,6 +18,7 @@ mod builtin_wasm_compiler;
 mod connect_rpc;
 mod db;
 pub mod deno_deploy;
+pub mod deploy_rpc;
 mod error;
 mod extractor;
 pub mod fly_machines;
@@ -25,6 +26,7 @@ mod html;
 pub mod mcp;
 pub mod seed;
 mod self_hosted_ast;
+pub mod self_hosted_wasm_compiler;
 #[cfg(test)]
 mod self_hosting_tests;
 pub mod virtual_file;
@@ -583,9 +585,10 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_check_missing_hashes,
         connect_rpc::handle_upload_content,
         connect_rpc::handle_get_content,
-        connect_rpc::handle_deploy_instance,
-        connect_rpc::handle_get_deploy_status,
-        connect_rpc::handle_list_deployments,
+        deploy_rpc::handle_deploy_instance,
+        deploy_rpc::handle_get_deploy_status,
+        deploy_rpc::handle_list_deployments,
+        deploy_rpc::handle_deploy_deno,
         virtual_file::handle_get_virtual_wasm,
     ),
     components(
@@ -608,6 +611,8 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::DeployInstanceResponse,
             definy_event::rpc::GetDeployStatusRequest,
             definy_event::rpc::GetDeployStatusResponse,
+            definy_event::rpc::DeployDenoRequest,
+            definy_event::rpc::DeployDenoResponse,
             definy_event::rpc::DeploymentItem,
             definy_event::rpc::ListDeploymentsRequest,
             definy_event::rpc::ListDeploymentsResponse,
