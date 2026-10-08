@@ -379,7 +379,10 @@ pub(crate) fn compile_pending_function(
         encode_u32_leb128(&mut func_code, var_local);
     }
 
+    let prev_temp_i64 = ctx.temp_i64_local;
+    ctx.temp_i64_local = 2; // local 0,1 are params (i32), local 2 is i64 scratch
     emit_expression(&pending.body, &mut func_code, &f_env, &mut f_local_idx, ctx)?;
+    ctx.temp_i64_local = prev_temp_i64;
     func_code.push(END);
 
     let locals_count = count_locals(&pending.body) + f_local_idx + 64;

@@ -16,7 +16,7 @@ pub(crate) fn emit_list_length(
     out.push(I32_LOAD);
     encode_mem_arg(out, 2, 4); // load count at offset 4
     out.push(I64_EXTEND_I32_U);
-    emit_alloc_number_from_stack(out, next_local_idx);
+    emit_alloc_number_from_stack(out, next_local_idx, ctx);
     Ok(())
 }
 
