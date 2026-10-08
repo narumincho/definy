@@ -730,3 +730,215 @@ pub fn create_data_section_for_record(items_expr: Expression) -> Expression {
         else_expr: Box::new(two_items_payload),
     })
 }
+
+/// 直和型式 (Variant) の Data Section (Section 11) を生成
+pub fn create_data_section_for_variant(var_record_expr: Expression) -> Expression {
+    // var_record は { tag: string, payload: Variant("some", expr) | Variant("none") }
+    let tag_str_expr = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(var_record_expr.clone()),
+        key: "tag".into(),
+    });
+    let payload_var_expr = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(var_record_expr),
+        key: "payload".into(),
+    });
+
+    let (tag_block, tag_size) = encode_record_key(tag_str_expr);
+
+    let match_payload = Expression::Match(MatchExpression {
+        target: Box::new(payload_var_expr),
+        arms: vec![
+            MatchArm {
+                tag: "some".into(),
+                variable_id: Some(90),
+                variable_name: Some("sub_expr".into()),
+                body: Box::new({
+                    let (p_block, p_size) =
+                        encode_record_field_val(Expression::Variable(VariableExpression {
+                            variable_id: 90,
+                        }));
+                    Expression::Let(LetExpression {
+                        variable_id: 91,
+                        variable_name: "p_b".into(),
+                        value: Box::new(p_block),
+                        body: Box::new(Expression::Let(LetExpression {
+                            variable_id: 92,
+                            variable_name: "p_ptr".into(),
+                            value: Box::new(Expression::Add(AddExpression {
+                                left: Box::new(Expression::Number(NumberExpression {
+                                    value: 1040,
+                                })),
+                                right: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 88,
+                                })),
+                            })),
+                            body: Box::new(Expression::Let(LetExpression {
+                                variable_id: 93,
+                                variable_name: "total_len".into(),
+                                value: Box::new(Expression::Subtract(SubtractExpression {
+                                    left: Box::new(Expression::Add(AddExpression {
+                                        left: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 92,
+                                        })),
+                                        right: Box::new(p_size),
+                                    })),
+                                    right: Box::new(Expression::Number(NumberExpression {
+                                        value: 1024,
+                                    })),
+                                })),
+                                body: Box::new({
+                                    let var_header = Expression::ListConcat(ListConcatExpression {
+                                        left: Box::new(Expression::ListLiteral(
+                                            ListLiteralExpression {
+                                                items: vec![
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x06,
+                                                    }),
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x00,
+                                                    }),
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x00,
+                                                    }),
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x00,
+                                                    }),
+                                                    // tag_ptr: 1040 (0x10, 0x04, 0x00, 0x00)
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x10,
+                                                    }),
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x04,
+                                                    }),
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x00,
+                                                    }),
+                                                    Expression::Number(NumberExpression {
+                                                        value: 0x00,
+                                                    }),
+                                                ],
+                                            },
+                                        )),
+                                        right: Box::new(Expression::ListConcat(
+                                            ListConcatExpression {
+                                                left: Box::new(encode_u32_le_expr(
+                                                    Expression::Variable(VariableExpression {
+                                                        variable_id: 92,
+                                                    }),
+                                                )),
+                                                right: Box::new(Expression::ListLiteral(
+                                                    ListLiteralExpression {
+                                                        items: vec![
+                                                            Expression::Number(NumberExpression {
+                                                                value: 0x00,
+                                                            }),
+                                                            Expression::Number(NumberExpression {
+                                                                value: 0x00,
+                                                            }),
+                                                            Expression::Number(NumberExpression {
+                                                                value: 0x00,
+                                                            }),
+                                                            Expression::Number(NumberExpression {
+                                                                value: 0x00,
+                                                            }),
+                                                        ],
+                                                    },
+                                                )),
+                                            },
+                                        )),
+                                    });
+                                    let full_body = Expression::ListConcat(ListConcatExpression {
+                                        left: Box::new(var_header),
+                                        right: Box::new(Expression::ListConcat(
+                                            ListConcatExpression {
+                                                left: Box::new(Expression::Variable(
+                                                    VariableExpression { variable_id: 89 },
+                                                )),
+                                                right: Box::new(Expression::Variable(
+                                                    VariableExpression { variable_id: 91 },
+                                                )),
+                                            },
+                                        )),
+                                    });
+                                    wrap_in_active_data_section(
+                                        Expression::Variable(VariableExpression {
+                                            variable_id: 93,
+                                        }),
+                                        full_body,
+                                    )
+                                }),
+                            })),
+                        })),
+                    })
+                }),
+            },
+            MatchArm {
+                tag: "none".into(),
+                variable_id: Some(94),
+                variable_name: Some("_".into()),
+                body: Box::new({
+                    let var_header = Expression::ListLiteral(ListLiteralExpression {
+                        items: vec![
+                            Expression::Number(NumberExpression { value: 0x06 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            // tag_ptr: 1040 (0x10, 0x04, 0x00, 0x00)
+                            Expression::Number(NumberExpression { value: 0x10 }),
+                            Expression::Number(NumberExpression { value: 0x04 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            // payload_ptr: 0
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            // padding
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                            Expression::Number(NumberExpression { value: 0x00 }),
+                        ],
+                    });
+                    let full_body = Expression::ListConcat(ListConcatExpression {
+                        left: Box::new(var_header),
+                        right: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 89,
+                        })),
+                    });
+                    let total_len = Expression::Subtract(SubtractExpression {
+                        left: Box::new(Expression::Add(AddExpression {
+                            left: Box::new(Expression::Number(NumberExpression { value: 1040 })),
+                            right: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 88,
+                            })),
+                        })),
+                        right: Box::new(Expression::Number(NumberExpression { value: 1024 })),
+                    });
+                    wrap_in_active_data_section(total_len, full_body)
+                }),
+            },
+            MatchArm {
+                tag: "_".into(),
+                variable_id: Some(95),
+                variable_name: Some("_".into()),
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![],
+                })),
+            },
+        ],
+        default: None,
+    });
+
+    Expression::Let(LetExpression {
+        variable_id: 88,
+        variable_name: "tag_sz".into(),
+        value: Box::new(tag_size),
+        body: Box::new(Expression::Let(LetExpression {
+            variable_id: 89,
+            variable_name: "tag_b".into(),
+            value: Box::new(tag_block),
+            body: Box::new(match_payload),
+        })),
+    })
+}

@@ -450,6 +450,14 @@ function readDefinyValue(mem: Uint8Array, ptr: number): unknown {
     }
     return obj;
   }
+  if (tag === 6) {
+    // Variant (tag_ptr at ptr + 4, payload_ptr at ptr + 8)
+    const tagPtr = view.getUint32(ptr + 4, true);
+    const payloadPtr = view.getUint32(ptr + 8, true);
+    const tagName = readDefinyValue(mem, tagPtr);
+    const payload = payloadPtr !== 0 ? readDefinyValue(mem, payloadPtr) : null;
+    return { tag: tagName, payload };
+  }
   return null;
 }
 
@@ -482,7 +490,16 @@ try {
     };
   } else if (evalResult && typeof evalResult === "object" && !Array.isArray(evalResult)) {
     const rec = evalResult as Record<string, unknown>;
-    if ("body" in rec || "status" in rec) {
+    if ("tag" in rec && rec.payload && typeof rec.payload === "object" && !Array.isArray(rec.payload)) {
+      const p = rec.payload as Record<string, unknown>;
+      if ("body" in p || "status" in p) {
+        const status = typeof p.status === "number" ? p.status : 200;
+        const body = typeof p.body === "string" ? p.body : JSON.stringify(p.body ?? p);
+        const isHtml = body.trim().startsWith("<") && body.includes(">");
+        const contentType = typeof p.contentType === "string" ? p.contentType : (isHtml ? "text/html; charset=utf-8" : "application/json; charset=utf-8");
+        httpResponsePayload = { status, contentType, body };
+      }
+    } else if ("body" in rec || "status" in rec) {
       const status = typeof rec.status === "number" ? rec.status : 200;
       const body = typeof rec.body === "string" ? rec.body : JSON.stringify(rec.body ?? rec);
       const isHtml = body.trim().startsWith("<") && body.includes(">");

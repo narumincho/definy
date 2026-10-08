@@ -180,6 +180,11 @@ pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
                     .iter()
                     .all(|item| is_supported_by_self_hosted_compiler(&item.value))
         }
+        Expression::Variant(e) => e
+            .payload
+            .as_ref()
+            .map(|p| is_supported_by_self_hosted_compiler(p))
+            .unwrap_or(true),
         Expression::Not(e) => is_supported_by_self_hosted_compiler(&e.value),
         _ => false,
     }
@@ -465,5 +470,52 @@ mod tests {
             }
             other => panic!("Expected Value::Record, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_compile_variant_expression_for_http_response() {
+        // 1. Variant with payload: Result::Ok(200) -> Variant { tag: "ok", payload: Some(Number(200)) }
+        let ok_expr = Expression::Variant(definy_event::event::VariantExpression {
+            tag: "ok".into(),
+            payload: Some(Box::new(Expression::Number(NumberExpression {
+                value: 200,
+            }))),
+            type_part_definition_event_hash: None,
+        });
+
+        let wasm_bytes = compile_expression_to_wasm(&ok_expr)
+            .expect("Should compile variant with payload to Wasm");
+        assert!(!wasm_bytes.is_empty());
+
+        let result = evaluate_compiled_wasm(&wasm_bytes)
+            .expect("Should evaluate variant Wasm and return Value::Variant");
+        assert_eq!(
+            result,
+            Value::Variant {
+                tag: "ok".to_string(),
+                payload: Some(Box::new(Value::Number(200))),
+            }
+        );
+
+        // 2. Variant without payload: Option::None -> Variant { tag: "none", payload: None }
+        let none_expr = Expression::Variant(definy_event::event::VariantExpression {
+            tag: "none".into(),
+            payload: None,
+            type_part_definition_event_hash: None,
+        });
+
+        let wasm_bytes = compile_expression_to_wasm(&none_expr)
+            .expect("Should compile variant without payload to Wasm");
+        assert!(!wasm_bytes.is_empty());
+
+        let result = evaluate_compiled_wasm(&wasm_bytes)
+            .expect("Should evaluate variant Wasm and return Value::Variant");
+        assert_eq!(
+            result,
+            Value::Variant {
+                tag: "none".to_string(),
+                payload: None,
+            }
+        );
     }
 }

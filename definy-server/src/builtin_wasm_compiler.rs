@@ -177,6 +177,24 @@ pub fn create_compile_expr_instructions_part(core_module_id: &EventHashId) -> Mo
         });
     }
 
+    // 3.6 Variant literal: i32.const 1024 (points to static variant object in linear memory)
+    // [0x41, 0x80, 0x08]
+    {
+        let var_var_id = 25;
+        arms.push(MatchArm {
+            tag: "variant".into(),
+            variable_id: Some(var_var_id),
+            variable_name: Some("var".into()),
+            body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                items: vec![
+                    Expression::Number(NumberExpression { value: 0x41 }),
+                    Expression::Number(NumberExpression { value: 0x80 }),
+                    Expression::Number(NumberExpression { value: 0x08 }),
+                ],
+            })),
+        });
+    }
+
     // 4. Arithmetic operations
     arms.push(binary_op("add", &compile_instr_hash, 12, 0x7c));
     arms.push(binary_op("subtract", &compile_instr_hash, 13, 0x7d));
@@ -384,6 +402,23 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 })),
             },
             MatchArm {
+                tag: "variant".into(),
+                variable_id: Some(202),
+                variable_name: Some("_v".into()),
+                // Type Section (1): 1 type, () -> i32 (0x7f)
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x05 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x60 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x7f }),
+                    ],
+                })),
+            },
+            MatchArm {
                 tag: "_".into(),
                 variable_id: Some(21),
                 variable_name: Some("_".into()),
@@ -426,6 +461,21 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 tag: "record".into(),
                 variable_id: Some(221),
                 variable_name: Some("_r".into()),
+                // Memory Section (5): 1 memory, min 2 pages (128KB)
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x05 }),
+                        Expression::Number(NumberExpression { value: 0x03 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                    ],
+                })),
+            },
+            MatchArm {
+                tag: "variant".into(),
+                variable_id: Some(222),
+                variable_name: Some("_v".into()),
                 // Memory Section (5): 1 memory, min 2 pages (128KB)
                 body: Box::new(Expression::ListLiteral(ListLiteralExpression {
                     items: vec![
@@ -539,6 +589,49 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 })),
             },
             MatchArm {
+                tag: "variant".into(),
+                variable_id: Some(242),
+                variable_name: Some("_v".into()),
+                // Export Section (7): 3 exports: "evaluate" (func 0), "memory" (mem 0), "main" (func 0)
+                body: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x07 }),
+                        Expression::Number(NumberExpression { value: 0x1c }),
+                        Expression::Number(NumberExpression { value: 0x03 }),
+                        // Export 1: "evaluate" (func 0)
+                        Expression::Number(NumberExpression { value: 0x08 }),
+                        Expression::Number(NumberExpression { value: 0x65 }),
+                        Expression::Number(NumberExpression { value: 0x76 }),
+                        Expression::Number(NumberExpression { value: 0x61 }),
+                        Expression::Number(NumberExpression { value: 0x6c }),
+                        Expression::Number(NumberExpression { value: 0x75 }),
+                        Expression::Number(NumberExpression { value: 0x61 }),
+                        Expression::Number(NumberExpression { value: 0x74 }),
+                        Expression::Number(NumberExpression { value: 0x65 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        // Export 2: "memory" (mem 0)
+                        Expression::Number(NumberExpression { value: 0x06 }),
+                        Expression::Number(NumberExpression { value: 0x6d }),
+                        Expression::Number(NumberExpression { value: 0x65 }),
+                        Expression::Number(NumberExpression { value: 0x6d }),
+                        Expression::Number(NumberExpression { value: 0x6f }),
+                        Expression::Number(NumberExpression { value: 0x72 }),
+                        Expression::Number(NumberExpression { value: 0x79 }),
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        // Export 3: "main" (func 0)
+                        Expression::Number(NumberExpression { value: 0x04 }),
+                        Expression::Number(NumberExpression { value: 0x6d }),
+                        Expression::Number(NumberExpression { value: 0x61 }),
+                        Expression::Number(NumberExpression { value: 0x69 }),
+                        Expression::Number(NumberExpression { value: 0x6e }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                    ],
+                })),
+            },
+            MatchArm {
                 tag: "_".into(),
                 variable_id: Some(25),
                 variable_name: Some("_".into()),
@@ -595,6 +688,16 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
                 body: Box::new(
                     crate::builtin_wasm_data_section::create_data_section_for_record(
                         Expression::Variable(VariableExpression { variable_id: 11 }),
+                    ),
+                ),
+            },
+            MatchArm {
+                tag: "variant".into(),
+                variable_id: Some(12),
+                variable_name: Some("var".into()),
+                body: Box::new(
+                    crate::builtin_wasm_data_section::create_data_section_for_variant(
+                        Expression::Variable(VariableExpression { variable_id: 12 }),
                     ),
                 ),
             },
