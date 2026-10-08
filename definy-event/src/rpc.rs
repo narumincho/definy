@@ -23,10 +23,12 @@ pub const DEPLOY_SERVICE_NAME: &str = "definy.v1.DeployService";
 pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
 pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
 pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
+pub const METHOD_DEPLOY_DENO: &str = "DeployDeno";
 
 pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
 pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
 pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
+pub const PATH_DEPLOY_DENO: &str = "/definy.v1.DeployService/DeployDeno";
 
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
@@ -372,6 +374,62 @@ pub struct DeploymentItem {
     #[prost(string, optional, tag = "8")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub wasm_hash: Option<String>,
+
+    #[prost(string, optional, tag = "9")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DeployDenoRequest {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub org_token: String,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub app_slug: Option<String>,
+
+    #[prost(string, optional, tag = "3")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wasm_hash: Option<String>,
+
+    #[prost(string, optional, tag = "4")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_script: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DeployDenoResponse {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub app_id: String,
+
+    #[prost(string, tag = "2")]
+    #[serde(default)]
+    pub app_slug: String,
+
+    #[prost(string, tag = "3")]
+    #[serde(default)]
+    pub revision_id: String,
+
+    #[prost(string, tag = "4")]
+    #[serde(default)]
+    pub status: String,
+
+    #[prost(string, tag = "5")]
+    #[serde(default)]
+    pub url: String,
+
+    #[prost(string, repeated, tag = "6")]
+    #[serde(default)]
+    pub hostnames: Vec<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]

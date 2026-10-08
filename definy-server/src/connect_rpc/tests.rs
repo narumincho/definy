@@ -641,3 +641,149 @@ async fn test_connect_rpc_deploy_service_success() {
     assert_eq!(wasm_deployment.wasm_hash, Some(wasm_hash));
     assert_eq!(wasm_deployment.status, "started");
 }
+
+#[tokio::test]
+async fn test_connect_rpc_deploy_deno_success() {
+    use crate::deno_deploy::{
+        CreateAppRequest, CreateRevisionRequest, DenoApp, DenoRevision, DenoRevisionTimeline,
+    };
+    use axum::extract::{Json, Path};
+    use axum::response::IntoResponse;
+    use tokio::net::TcpListener;
+
+    // 1. Mock Deno Deploy REST API v2
+    let mock_deno_app = axum::Router::new()
+        .route(
+            "/apps/{app}",
+            axum::routing::get(|Path(app): Path<String>| async move {
+                if app == "existing-definy-edge" {
+                    Json(DenoApp {
+                        id: "app_id_999".to_string(),
+                        slug: "existing-definy-edge".to_string(),
+                    })
+                    .into_response()
+                } else {
+                    StatusCode::NOT_FOUND.into_response()
+                }
+            }),
+        )
+        .route(
+            "/apps",
+            axum::routing::post(|Json(req): Json<CreateAppRequest>| async move {
+                let slug = req.slug.unwrap_or_else(|| "auto-definy-edge".to_string());
+                Json(DenoApp {
+                    id: "app_id_created".to_string(),
+                    slug,
+                })
+            }),
+        )
+        .route(
+            "/apps/{app}/deploy",
+            axum::routing::post(
+                |Path(app): Path<String>, Json(req): Json<CreateRevisionRequest>| async move {
+                    assert!(req.assets.contains_key("main.ts"));
+                    assert!(req.assets.contains_key("deno.json"));
+                    assert_eq!(app, "app_id_created");
+
+                    Json(DenoRevision {
+                        id: "rev_deno_123".to_string(),
+                        status: "succeeded".to_string(),
+                        failure_reason: None,
+                        timelines: Some(vec![DenoRevisionTimeline {
+                            name: "Production".to_string(),
+                            context: "production".to_string(),
+                            hostnames: vec!["auto-definy-edge-xyz.deno.net".to_string()],
+                        }]),
+                    })
+                },
+            ),
+        );
+
+    let listener = TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("Failed to bind ephemeral port");
+    let local_addr = listener.local_addr().unwrap();
+
+    tokio::spawn(async move {
+        axum::serve(listener, mock_deno_app).await.unwrap();
+    });
+
+    unsafe {
+        std::env::set_var("DENO_DEPLOY_API_URL", format!("http://{local_addr}"));
+    }
+
+    let db = crate::db::init_db().await.unwrap();
+    let state = AppState::new(Some(db), None);
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        axum::http::header::CONTENT_TYPE,
+        axum::http::HeaderValue::from_static("application/json"),
+    );
+    headers.insert(
+        axum::http::HeaderName::from_static("connect-protocol-version"),
+        axum::http::HeaderValue::from_static("1"),
+    );
+
+    // 2. Token が空の場合は BadRequest
+    let empty_token_req = DeployDenoRequest {
+        org_token: "".to_string(),
+        app_slug: None,
+        wasm_hash: None,
+        custom_script: None,
+    };
+    let empty_res = handle_deploy_deno(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&empty_token_req).unwrap()),
+    )
+    .await;
+    assert_eq!(empty_res.status(), StatusCode::BAD_REQUEST);
+
+    // 3. 有効なトークンでデプロイ成功
+    let deploy_req = DeployDenoRequest {
+        org_token: "test_deno_token_123".to_string(),
+        app_slug: Some("auto-definy-edge".to_string()),
+        wasm_hash: None,
+        custom_script: None,
+    };
+    let deploy_res = handle_deploy_deno(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&deploy_req).unwrap()),
+    )
+    .await;
+    assert_eq!(deploy_res.status(), StatusCode::OK);
+
+    let deploy_bytes = axum::body::to_bytes(deploy_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let deploy_data: DeployDenoResponse = serde_json::from_slice(&deploy_bytes).unwrap();
+    assert_eq!(deploy_data.app_id, "app_id_created");
+    assert_eq!(deploy_data.app_slug, "auto-definy-edge");
+    assert_eq!(deploy_data.revision_id, "rev_deno_123");
+    assert_eq!(deploy_data.status, "succeeded");
+    assert_eq!(deploy_data.url, "https://auto-definy-edge-xyz.deno.net");
+    assert_eq!(deploy_data.hostnames, vec!["auto-definy-edge-xyz.deno.net"]);
+
+    // 4. ListDeployments で Deno Deploy のレコードが provider: "deno_deploy" で保存されていることを確認
+    let list_req = ListDeploymentsRequest { limit: Some(10) };
+    let list_res = handle_list_deployments(
+        State(state),
+        headers,
+        Bytes::from(serde_json::to_vec(&list_req).unwrap()),
+    )
+    .await;
+    assert_eq!(list_res.status(), StatusCode::OK);
+
+    let list_bytes = axum::body::to_bytes(list_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let list_data: ListDeploymentsResponse = serde_json::from_slice(&list_bytes).unwrap();
+    assert_eq!(list_data.deployments.len(), 1);
+    assert_eq!(
+        list_data.deployments[0].provider.as_deref(),
+        Some("deno_deploy")
+    );
+    assert_eq!(list_data.deployments[0].machine_id, "deno:rev_deno_123");
+}

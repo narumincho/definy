@@ -329,6 +329,8 @@ pub struct DeploymentRecord {
     pub region: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub wasm_hash: Option<String>,
+    #[serde(default)]
+    pub provider: Option<String>,
 }
 
 pub async fn save_deployment(
@@ -594,6 +596,7 @@ mod tests {
             region: "nrt".to_string(),
             created_at: chrono::Utc::now(),
             wasm_hash: Some("wasm_hash_456".to_string()),
+            provider: Some("flyio".to_string()),
         };
 
         save_deployment(&db, rec.clone()).await.unwrap();
