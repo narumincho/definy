@@ -13,16 +13,24 @@ pub const ELEMENT_SECTION: u8 = 9;
 pub const CODE_SECTION: u8 = 10;
 pub const DATA_SECTION: u8 = 11;
 
-// ValTypes
+// ValTypes & Packed Storage Types
 pub const I32: u8 = 0x7F;
 pub const I64: u8 = 0x7E;
+pub const I8: u8 = 0x78;
+pub const I16: u8 = 0x77;
 pub const FUNCREF: u8 = 0x70;
-pub const ANYREF: u8 = 0x6F;
-pub const EQREF: u8 = 0x6D;
-pub const STRUCTREF: u8 = 0x6B;
-pub const ARRAYREF: u8 = 0x6A;
-pub const I31REF: u8 = 0x6C;
-pub const NULLREF: u8 = 0x71;
+pub const EXTERNREF: u8 = 0x6F;
+
+// Heap Types
+pub const HEAP_TYPE_ANY: u8 = 0x6E;
+pub const HEAP_TYPE_EQ: u8 = 0x6D;
+pub const HEAP_TYPE_I31: u8 = 0x6C;
+pub const HEAP_TYPE_STRUCT: u8 = 0x6B;
+pub const HEAP_TYPE_ARRAY: u8 = 0x6A;
+pub const HEAP_TYPE_FUNC: u8 = 0x70;
+pub const HEAP_TYPE_EXTERN: u8 = 0x6F;
+
+// Reference Type Prefixes
 pub const REF_NULL_PREFIX: u8 = 0x63;
 pub const REF_EXACT_PREFIX: u8 = 0x64;
 
