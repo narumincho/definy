@@ -400,6 +400,10 @@ pub struct DeployDenoRequest {
     #[prost(string, optional, tag = "4")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub custom_script: Option<String>,
+
+    #[prost(bool, optional, tag = "5")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compile_self_hosted: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
@@ -430,6 +434,10 @@ pub struct DeployDenoResponse {
     #[prost(string, repeated, tag = "6")]
     #[serde(default)]
     pub hostnames: Vec<String>,
+
+    #[prost(string, optional, tag = "7")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evaluated_result: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]

@@ -170,6 +170,7 @@ fn DenoDeployCard(context: PageContext) -> Element {
     let mut show_token = use_signal(|| false);
     let mut app_slug = use_signal(String::new);
     let mut wasm_hash = use_signal(String::new);
+    let mut compile_self_hosted = use_signal(|| true);
     let mut deploy_state = use_signal(|| DeployStatusState::Idle);
 
     let on_submit = move |_| {
@@ -196,6 +197,8 @@ fn DenoDeployCard(context: PageContext) -> Element {
             if s.is_empty() { None } else { Some(s) }
         };
 
+        let is_compile_self_hosted = *compile_self_hosted.read();
+
         deploy_state.set(DeployStatusState::Deploying);
 
         spawn(async move {
@@ -204,6 +207,7 @@ fn DenoDeployCard(context: PageContext) -> Element {
                 app_slug: current_app_slug,
                 wasm_hash: current_wasm_hash,
                 custom_script: None,
+                compile_self_hosted: Some(is_compile_self_hosted),
             };
             match crate::fetch::deploy_deno(&req).await {
                 Ok(res) => {
@@ -370,6 +374,43 @@ fn DenoDeployCard(context: PageContext) -> Element {
                     }
                 }
 
+                // 自己記述コンパイラ (core.compile-to-wasm) オプション
+                div { style: "display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 1rem; border-radius: var(--radius-sm); background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25);",
+                    input {
+                        r#type: "checkbox",
+                        id: "compile-self-hosted-check",
+                        checked: *compile_self_hosted.read(),
+                        onchange: move |_| {
+                            let cur = *compile_self_hosted.read();
+                            compile_self_hosted.set(!cur);
+                        },
+                        style: "margin-top: 0.2rem; cursor: pointer; accent-color: #a855f7; width: 1.15rem; height: 1.15rem;",
+                    }
+                    label {
+                        r#for: "compile-self-hosted-check",
+                        style: "cursor: pointer; display: flex; flex-direction: column; gap: 0.25rem;",
+                        span { style: "font-weight: 700; font-size: 0.88rem; color: #d8b4fe; display: flex; align-items: center; gap: 0.5rem;",
+                            span { "🧩" }
+                            {
+                                lang.label(
+                                    "Compile with Self-Hosted Compiler (core.compile-to-wasm)",
+                                    "自己記述コンパイラ (core.compile-to-wasm) で即時ビルド",
+                                    "Kompili per Mem-gastigita Kompililo (core.compile-to-wasm)",
+                                )
+                            }
+                        }
+                        span { style: "font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4;",
+                            {
+                                lang.label(
+                                    "Compiles definy expressions into an executable WebAssembly binary on-the-fly and deploys it to the edge isolate.",
+                                    "definy の式 AST を自分自身の WebAssembly コンパイラで動的にバイナリ化し、エッジ上で即時実行可能な app.wasm として配備します。",
+                                    "Dinamike kompilas definy-esprimon al Wasm kaj deplojas al rando.",
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // デプロイ実行ボタン
                 div { style: "display: flex; align-items: center; gap: 1rem; margin-top: 0.4rem;",
                     button {
@@ -442,6 +483,21 @@ fn DenoDeployCard(context: PageContext) -> Element {
                                     rel: "noopener noreferrer",
                                     style: "color: #38bdf8; font-weight: 700; font-size: 0.95rem; text-decoration: underline;",
                                     "{res.url} ↗"
+                                }
+                            }
+                            if let Some(ref eval_val) = res.evaluated_result {
+                                div { style: "display: flex; gap: 0.5rem; align-items: baseline;",
+                                    span { style: "color: #c084fc; font-weight: 600; width: 85px;", "Eval Result:" }
+                                    span { style: "font-family: monospace; color: #c084fc; font-weight: 700; font-size: 1rem;",
+                                        "{eval_val}"
+                                    }
+                                    a {
+                                        href: "{res.url}/api/eval",
+                                        target: "_blank",
+                                        rel: "noopener noreferrer",
+                                        style: "margin-left: 0.6rem; font-size: 0.78rem; color: #38bdf8; text-decoration: underline;",
+                                        "Edge JSON (/api/eval) ↗"
+                                    }
                                 }
                             }
                             div { style: "display: flex; gap: 0.5rem;",

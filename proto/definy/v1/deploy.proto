@@ -26,6 +26,8 @@ message DeployDenoRequest {
   optional string wasm_hash = 3;
   // Custom main.ts TypeScript entrypoint (optional)
   optional string custom_script = 4;
+  // Compile expression using self-hosted compiler core.compile-to-wasm (optional)
+  optional bool compile_self_hosted = 5;
 }
 
 message DeployDenoResponse {
@@ -41,6 +43,8 @@ message DeployDenoResponse {
   string url = 5;
   // All assigned hostnames
   repeated string hostnames = 6;
+  // Result evaluated by self-hosted compiler WebAssembly binary (optional)
+  optional string evaluated_result = 7;
 }
 
 message DeployInstanceRequest {
