@@ -113,6 +113,9 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                     .max(max_local_variable_id(slice_expr.start.as_ref()))
                     .max(max_local_variable_id(slice_expr.end.as_ref()))
             }
+            definy_event::event::Expression::StringToBytes(stb_expr) => {
+                max_local_variable_id(stb_expr.value.as_ref())
+            }
             definy_event::event::Expression::ListLength(len_expr) => {
                 max_local_variable_id(len_expr.value.as_ref())
             }

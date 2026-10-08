@@ -441,3 +441,144 @@ pub(crate) fn emit_string_slice(
     encode_u32_leb128(out, new_str_ptr_local);
     Ok(())
 }
+
+pub(crate) fn emit_string_to_bytes(
+    value: &Expression,
+    out: &mut Vec<u8>,
+    env: &HashMap<i64, u32>,
+    next_local_idx: &mut u32,
+    ctx: &mut CompileContext,
+) -> Result<(), String> {
+    emit_expression(value, out, env, next_local_idx, ctx)?;
+    let str_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, str_ptr_local);
+
+    let len_local = *next_local_idx;
+    *next_local_idx += 1;
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, str_ptr_local);
+    out.push(I32_LOAD);
+    encode_mem_arg(out, 2, 4);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, len_local);
+
+    let list_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
+    out.push(GLOBAL_GET);
+    out.push(0);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, list_ptr_local);
+
+    // Store tag 3 at list_ptr
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, list_ptr_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 3);
+    out.push(I32_STORE8);
+    encode_mem_arg(out, 0, 0);
+
+    // Store length at list_ptr + 4
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, list_ptr_local);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, len_local);
+    out.push(I32_STORE);
+    encode_mem_arg(out, 2, 4);
+
+    // Bump global 0 by: ((8 + len * 4 + 7) / 8) * 8
+    out.push(GLOBAL_GET);
+    out.push(0);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, len_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 4);
+    out.push(I32_MUL);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 15);
+    out.push(I32_ADD);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, -8);
+    out.push(I32_AND);
+    out.push(I32_ADD);
+    out.push(GLOBAL_SET);
+    out.push(0);
+
+    // Loop through each byte in string and alloc number
+    let idx_local = *next_local_idx;
+    *next_local_idx += 1;
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 0);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, idx_local);
+
+    let num_ptr_local = *next_local_idx;
+    *next_local_idx += 1;
+
+    out.push(BLOCK);
+    out.push(BLOCK_TYPE_EMPTY);
+    out.push(LOOP);
+    out.push(BLOCK_TYPE_EMPTY);
+
+    // Condition: idx >= len -> break
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, idx_local);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, len_local);
+    out.push(I32_GE_S);
+    out.push(BR_IF);
+    encode_u32_leb128(out, 1);
+
+    // Load byte at str_ptr + 8 + idx
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, str_ptr_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 8);
+    out.push(I32_ADD);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, idx_local);
+    out.push(I32_ADD);
+    out.push(I32_LOAD8_U);
+    encode_mem_arg(out, 0, 0);
+    out.push(I64_EXTEND_I32_U);
+
+    emit_alloc_number_from_stack(out, next_local_idx);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, num_ptr_local);
+
+    // Store num_ptr at list_ptr + 8 + idx * 4
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, list_ptr_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 8);
+    out.push(I32_ADD);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, idx_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 4);
+    out.push(I32_MUL);
+    out.push(I32_ADD);
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, num_ptr_local);
+    out.push(I32_STORE);
+    encode_mem_arg(out, 2, 0);
+
+    // idx += 1
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, idx_local);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 1);
+    out.push(I32_ADD);
+    out.push(LOCAL_SET);
+    encode_u32_leb128(out, idx_local);
+
+    out.push(BR);
+    encode_u32_leb128(out, 0);
+    out.push(END);
+    out.push(END);
+
+    out.push(LOCAL_GET);
+    encode_u32_leb128(out, list_ptr_local);
+    Ok(())
+}

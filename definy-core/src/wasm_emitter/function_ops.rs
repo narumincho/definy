@@ -118,6 +118,9 @@ pub(crate) fn collect_free_variables(
             collect_free_variables(&ss.start, bound, free);
             collect_free_variables(&ss.end, bound, free);
         }
+        Expression::StringToBytes(stb) => {
+            collect_free_variables(&stb.value, bound, free);
+        }
         Expression::ListLength(ll) => {
             collect_free_variables(&ll.value, bound, free);
         }

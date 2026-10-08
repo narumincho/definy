@@ -160,6 +160,12 @@ pub fn get_mut_expression_at_path<'a>(
             PathStep::End => get_mut_expression_at_path(slice_expr.end.as_mut(), &path[1..]),
             _ => None,
         },
+        definy_event::event::Expression::StringToBytes(stb_expr) => match path[0] {
+            PathStep::Condition | PathStep::Left => {
+                get_mut_expression_at_path(stb_expr.value.as_mut(), &path[1..])
+            }
+            _ => None,
+        },
         definy_event::event::Expression::ListLength(len_expr) => match path[0] {
             PathStep::Condition | PathStep::Left => {
                 get_mut_expression_at_path(len_expr.value.as_mut(), &path[1..])

@@ -434,6 +434,9 @@ pub(crate) fn emit_expression(
         Expression::StringSlice(StringSliceExpression { value, start, end }) => {
             super::string_ops::emit_string_slice(value, start, end, out, env, next_local_idx, ctx)?;
         }
+        Expression::StringToBytes(StringToBytesExpression { value }) => {
+            super::string_ops::emit_string_to_bytes(value, out, env, next_local_idx, ctx)?;
+        }
         Expression::ListLength(ListLengthExpression { value }) => {
             super::list_ops::emit_list_length(value, out, env, next_local_idx, ctx)?;
         }
@@ -789,6 +792,7 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::StringSlice(s) => {
             10 + count_locals(&s.value) + count_locals(&s.start) + count_locals(&s.end)
         }
+        Expression::StringToBytes(s) => 8 + count_locals(&s.value),
         Expression::ListLength(l) => 4 + count_locals(&l.value),
         Expression::ListConcat(l) => 8 + count_locals(&l.left) + count_locals(&l.right),
         Expression::ListGet(l) => 6 + count_locals(&l.list) + count_locals(&l.index),

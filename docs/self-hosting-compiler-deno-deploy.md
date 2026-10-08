@@ -92,10 +92,12 @@ definy のデプロイ基盤は、**「definy プログラムだけを特別扱�
   - `GET /api/info`: ランタイム情報と評価結果
   - `GET /`: HTML ハンドラー出力、またはレスポンシブダッシュボード
 
-### 2.5 自己記述コンパイラと Wasm エミッターのハイブリッドパイプライン
-- `definy-server/src/self_hosted_wasm_compiler.rs`:
-  - `is_supported_by_self_hosted_compiler(expr)`: 四則演算・数値・真偽値・If 文等の基本式は自己記述コンパイラパーツ（`core.compile-to-wasm`）で優先メタ循環コンパイル。
-  - 文字列やレコード等の高度な Web ハンドラー構文は、definy の完全な Wasm エミッター（線形メモリアロケータ付き）でコンパイル。
+### 2.5 自己記述コンパイラ (`core.compile-to-wasm`) の線形メモリ・文字列対応拡張
+- `definy-server/src/builtin_wasm_compiler.rs` & `self_hosted_wasm_compiler.rs`:
+  - **`StringToBytes` 式の追加**: definy 言語コア式として文字列から UTF-8 バイト列（`list<number>`）を取得する式を追加。
+  - **Data Section (Section 11) の自己記述生成**: 自己記述コンパイラパーツ自身が、文字列式を検知した際に Data Section を動的生成し、線形メモリの 1024 番地に Tag 2（String）+ 長さ + UTF-8 バイト列を配置。
+  - **Memory Section (Section 5) & 動的 Export Section**: 文字列式の場合は 1 メモリ（最小 2 ページ = 128KB）を宣言し、関数型を `() -> i32`（ポインタ戻り値）に切り替え、`evaluate` (func 0), `memory` (mem 0), `main` (func 0) をエクスポート。数値計算等の式の場合は従来の `() -> i64` と `main` をエクスポート。
+  - **メタ循環文字列コンパイル**: `Expression::String` も自己記述コンパイラパーツ（`core.compile-to-wasm`）で優先メタ循環コンパイルされ、Deno Deploy およびテスト環境の Wasm VM 上で `Value::String`（HTML 等）として解決可能。
   - コンパイルしたバイナリはサーバー側でも `evaluate_compiled_wasm` により即座に値（`Value::String`, `Value::Record` 等）として検証。
 
 ### 2.6 Web UI (`definy-ui/src/deployments.rs`)

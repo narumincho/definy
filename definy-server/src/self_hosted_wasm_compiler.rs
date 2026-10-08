@@ -132,7 +132,7 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
 /// 式が現在の自己記述コンパイラ (`core.compile-expr-instructions`) で対応している構文のみで構成されているか判定します。
 pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
     match expr {
-        Expression::Number(_) | Expression::Boolean(_) => true,
+        Expression::Number(_) | Expression::Boolean(_) | Expression::String(_) => true,
         Expression::Add(e) => {
             is_supported_by_self_hosted_compiler(&e.left)
                 && is_supported_by_self_hosted_compiler(&e.right)

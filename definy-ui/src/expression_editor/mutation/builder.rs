@@ -129,6 +129,9 @@ pub(crate) fn default_expression_for_compiler_builtin(
             start: num(0),
             end: num(0),
         }),
+        CompilerBuiltin::StringToBytes => Expression::StringToBytes(StringToBytesExpression {
+            value: str_expr(""),
+        }),
         CompilerBuiltin::ListLength => Expression::ListLength(ListLengthExpression {
             value: empty_list(),
         }),
@@ -199,6 +202,7 @@ pub(crate) fn build_expression_from_selection(
         "expr:string_concat" => Some(CompilerBuiltin::StringConcat),
         "expr:string_length" => Some(CompilerBuiltin::StringLength),
         "expr:string_slice" => Some(CompilerBuiltin::StringSlice),
+        "expr:string_to_bytes" => Some(CompilerBuiltin::StringToBytes),
         "expr:list_length" => Some(CompilerBuiltin::ListLength),
         "expr:list_concat" => Some(CompilerBuiltin::ListConcat),
         "expr:list_get" => Some(CompilerBuiltin::ListGet),

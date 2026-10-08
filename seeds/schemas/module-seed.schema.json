@@ -159,6 +159,7 @@
         "string_concat",
         "string_length",
         "string_slice",
+        "string_to_bytes",
         "list_length",
         "list_concat",
         "list_get",
@@ -558,6 +559,18 @@
           "properties": {
             "StringSlice": {
               "$ref": "#/definitions/StringSliceExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "StringToBytes"
+          ],
+          "properties": {
+            "StringToBytes": {
+              "$ref": "#/definitions/StringToBytesExpression"
             }
           },
           "additionalProperties": false
@@ -1421,6 +1434,17 @@
         "start": {
           "$ref": "#/definitions/Expression"
         },
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "StringToBytesExpression": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
         "value": {
           "$ref": "#/definitions/Expression"
         }

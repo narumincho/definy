@@ -109,6 +109,9 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 definy_event::event::CompilerBuiltin::StringSlice => {
                     "[compiler string slice]".to_string()
                 }
+                definy_event::event::CompilerBuiltin::StringToBytes => {
+                    "[compiler string to bytes]".to_string()
+                }
                 definy_event::event::CompilerBuiltin::ListLength => {
                     "[compiler list length]".to_string()
                 }
@@ -419,6 +422,17 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     render(slice_expr.value.as_ref(), true, scope),
                     render(slice_expr.start.as_ref(), true, scope),
                     render(slice_expr.end.as_ref(), true, scope)
+                );
+                if is_child {
+                    format!("({})", source)
+                } else {
+                    source
+                }
+            }
+            definy_event::event::Expression::StringToBytes(stb_expr) => {
+                let source = format!(
+                    "string_to_bytes {}",
+                    render(stb_expr.value.as_ref(), true, scope)
                 );
                 if is_child {
                     format!("({})", source)
