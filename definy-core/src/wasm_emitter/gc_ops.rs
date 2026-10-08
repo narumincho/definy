@@ -106,6 +106,26 @@ pub fn emit_array_len(out: &mut Vec<u8>) {
     out.push(ARRAY_LEN);
 }
 
+/// array.get_u <type_idx> 命令を出力 (packed i8/i16 用)
+pub fn emit_array_get_u(out: &mut Vec<u8>, type_idx: u32) {
+    out.push(GC_PREFIX);
+    out.push(ARRAY_GET_U);
+    encode_u32_leb128(out, type_idx);
+}
+
+/// ref.cast <type_idx> 命令を出力
+pub fn emit_ref_cast(out: &mut Vec<u8>, type_idx: u32) {
+    out.push(GC_PREFIX);
+    out.push(REF_CAST);
+    encode_u32_leb128(out, type_idx);
+}
+
+/// ref.null <heap_type> 命令を出力
+pub fn emit_ref_null(out: &mut Vec<u8>, heap_type: u8) {
+    out.push(REF_NULL);
+    out.push(heap_type);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

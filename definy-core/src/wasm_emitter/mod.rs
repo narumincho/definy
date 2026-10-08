@@ -3,6 +3,7 @@ pub mod bytecode;
 pub mod compiler;
 pub mod executor;
 pub mod function_ops;
+pub mod gc_compiler;
 pub mod gc_ops;
 pub mod list_ops;
 pub mod memory;
@@ -10,6 +11,8 @@ pub mod module_builder;
 pub mod record_ops;
 pub mod string_ops;
 
+#[cfg(test)]
+mod gc_compiler_tests;
 #[cfg(test)]
 mod tests;
 

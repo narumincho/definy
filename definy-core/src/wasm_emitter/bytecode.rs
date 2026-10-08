@@ -49,6 +49,7 @@ pub const ELSE: u8 = 0x05;
 pub const END: u8 = 0x0B;
 pub const BR: u8 = 0x0C;
 pub const BR_IF: u8 = 0x0D;
+pub const RETURN: u8 = 0x0F;
 pub const CALL: u8 = 0x10;
 pub const CALL_INDIRECT: u8 = 0x11;
 pub const LOCAL_GET: u8 = 0x20;
@@ -98,6 +99,9 @@ pub const I64_EXTEND_I32_U: u8 = 0xAD;
 
 pub const BLOCK_TYPE_EMPTY: u8 = 0x40;
 pub const BLOCK_TYPE_I32: u8 = 0x7F;
+
+// Reference opcodes
+pub const REF_NULL: u8 = 0xD0;
 
 // WASM GC Opcodes (prefixed with GC_PREFIX = 0xFB)
 pub const GC_PREFIX: u8 = 0xFB;
