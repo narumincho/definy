@@ -697,6 +697,21 @@ async fn test_connect_rpc_deploy_deno_success() {
                     })
                 },
             ),
+        )
+        .route(
+            "/revisions/{revision}",
+            axum::routing::get(|Path(revision): Path<String>| async move {
+                Json(DenoRevision {
+                    id: revision,
+                    status: "succeeded".to_string(),
+                    failure_reason: None,
+                    timelines: Some(vec![DenoRevisionTimeline {
+                        name: "Production".to_string(),
+                        context: "production".to_string(),
+                        hostnames: vec!["auto-definy-edge-xyz.deno.net".to_string()],
+                    }]),
+                })
+            }),
         );
 
     let listener = TcpListener::bind("127.0.0.1:0")

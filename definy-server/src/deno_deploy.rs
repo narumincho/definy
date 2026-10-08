@@ -286,6 +286,26 @@ impl DenoDeployClient {
         Ok(revision)
     }
 
+    /// リビジョン情報を取得する (GET /v2/revisions/{revision})
+    pub async fn get_revision(&self, revision_id: &str) -> Result<DenoRevision, DenoDeployError> {
+        let url = format!("{}/revisions/{}", self.config.api_base_url, revision_id);
+        let resp = self
+            .client
+            .get(&url)
+            .bearer_auth(&self.config.api_token)
+            .send()
+            .await?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let message = resp.text().await.unwrap_or_default();
+            return Err(DenoDeployError::ApiError { status, message });
+        }
+
+        let revision = resp.json::<DenoRevision>().await?;
+        Ok(revision)
+    }
+
     /// definy の標準アセット一式を構築し、Deno Deploy へデプロイする
     pub async fn deploy(
         &self,
@@ -332,9 +352,27 @@ impl DenoDeployClient {
             }),
         };
 
-        let revision = self.deploy_revision(&app.id, &deploy_req).await?;
+        let mut revision = self.deploy_revision(&app.id, &deploy_req).await?;
 
-        // 4. URL および hostnames の導出
+        // 4. hostnames が確定するまで最大 5 秒間ポーリング
+        for _ in 0..10 {
+            let has_hostnames = revision
+                .timelines
+                .as_ref()
+                .map(|tl| tl.iter().any(|t| !t.hostnames.is_empty()))
+                .unwrap_or(false);
+
+            if has_hostnames || revision.status == "failed" {
+                break;
+            }
+
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            if let Ok(updated) = self.get_revision(&revision.id).await {
+                revision = updated;
+            }
+        }
+
+        // 5. URL および hostnames の導出
         let mut hostnames = Vec::new();
         if let Some(ref timelines) = revision.timelines {
             for timeline in timelines {
@@ -349,7 +387,7 @@ impl DenoDeployClient {
         let primary_url = if let Some(first_host) = hostnames.first() {
             format!("https://{first_host}")
         } else {
-            format!("https://{}.deno.dev", app.slug)
+            format!("https://{}.deno.net", app.slug)
         };
 
         Ok(DenoDeployResult {
@@ -569,6 +607,21 @@ mod tests {
                         })
                     },
                 ),
+            )
+            .route(
+                "/revisions/{revision}",
+                get(|Path(revision): Path<String>| async move {
+                    axum::Json(DenoRevision {
+                        id: revision,
+                        status: "succeeded".to_string(),
+                        failure_reason: None,
+                        timelines: Some(vec![DenoRevisionTimeline {
+                            name: "Production".to_string(),
+                            context: "production".to_string(),
+                            hostnames: vec!["existing-app-123.deno.net".to_string()],
+                        }]),
+                    })
+                }),
             );
 
         let listener = TcpListener::bind("127.0.0.1:0")
