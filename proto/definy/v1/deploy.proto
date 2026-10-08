@@ -15,6 +15,9 @@ service DeployService {
 
   // DeployDeno deploys any web application, custom TypeScript script, or WebAssembly service directly to Deno Deploy via REST API v2.
   rpc DeployDeno(DeployDenoRequest) returns (DeployDenoResponse);
+
+  // ListDenoApps lists applications associated with the given Deno Deploy organization token.
+  rpc ListDenoApps(ListDenoAppsRequest) returns (ListDenoAppsResponse);
 }
 
 message DeployDenoRequest {
@@ -101,4 +104,20 @@ message ListDeploymentsRequest {
 
 message ListDeploymentsResponse {
   repeated DeploymentItem deployments = 1;
+}
+
+message ListDenoAppsRequest {
+  // Deno Deploy Organization or Personal Access Token
+  string org_token = 1;
+}
+
+message DenoAppItem {
+  string id = 1;
+  string slug = 2;
+  optional string updated_at = 3;
+  optional string created_at = 4;
+}
+
+message ListDenoAppsResponse {
+  repeated DenoAppItem apps = 1;
 }

@@ -590,6 +590,7 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         deploy_rpc::handle_get_deploy_status,
         deploy_rpc::handle_list_deployments,
         deploy_rpc::handle_deploy_deno,
+        deploy_rpc::handle_list_deno_apps,
         virtual_file::handle_get_virtual_wasm,
     ),
     components(
@@ -614,6 +615,9 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::GetDeployStatusResponse,
             definy_event::rpc::DeployDenoRequest,
             definy_event::rpc::DeployDenoResponse,
+            definy_event::rpc::ListDenoAppsRequest,
+            definy_event::rpc::ListDenoAppsResponse,
+            definy_event::rpc::DenoAppItem,
             definy_event::rpc::DeploymentItem,
             definy_event::rpc::ListDeploymentsRequest,
             definy_event::rpc::ListDeploymentsResponse,

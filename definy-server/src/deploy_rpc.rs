@@ -485,3 +485,81 @@ pub async fn handle_deploy_deno(
         }
     }
 }
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/ListDenoApps",
+    tag = "connect-rpc",
+    request_body(
+        content = ListDenoAppsRequest,
+        content_type = "application/json",
+        description = "Connect-RPC ListDenoApps request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC ListDenoApps response", body = ListDenoAppsResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 401, description = "Unauthorized", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_list_deno_apps(headers: HeaderMap, body: Bytes) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: ListDenoAppsRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let token = if !req.org_token.trim().is_empty() {
+        req.org_token.trim().to_string()
+    } else if let Ok(env_token) = std::env::var("DENO_DEPLOY_TOKEN") {
+        env_token.trim().to_string()
+    } else {
+        return error_to_response(ConnectError::invalid_argument(
+            "Deno Deploy token (org_token) is required",
+        ));
+    };
+
+    if token.is_empty() {
+        return error_to_response(ConnectError::invalid_argument(
+            "Deno Deploy token cannot be empty",
+        ));
+    }
+
+    let mut config = crate::deno_deploy::DenoDeployConfig::new(token);
+    if let Ok(base_url) = std::env::var("DENO_DEPLOY_API_URL")
+        && !base_url.trim().is_empty()
+    {
+        config = config.with_base_url(base_url.trim());
+    }
+
+    let client = crate::deno_deploy::DenoDeployClient::new(config);
+
+    match client.list_apps().await {
+        Ok(apps) => {
+            let response = ListDenoAppsResponse {
+                apps: apps
+                    .into_iter()
+                    .map(|app| DenoAppItem {
+                        id: app.id,
+                        slug: app.slug,
+                        updated_at: app.updated_at,
+                        created_at: app.created_at,
+                    })
+                    .collect(),
+            };
+            encode_response_or_error(codec, &response)
+        }
+        Err(crate::deno_deploy::DenoDeployError::ApiError { status, message })
+            if status == axum::http::StatusCode::UNAUTHORIZED =>
+        {
+            error_to_response(ConnectError::unauthenticated(format!(
+                "Invalid Deno Deploy token: {message}"
+            )))
+        }
+        Err(err) => {
+            eprintln!("Failed to list Deno Deploy apps: {:?}", err);
+            error_to_response(ConnectError::internal(format!(
+                "Failed to list Deno Deploy apps: {err}"
+            )))
+        }
+    }
+}

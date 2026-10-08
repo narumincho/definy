@@ -115,10 +115,25 @@ pub struct CreateAppRequest {
 }
 
 /// Deno Deploy アプリ情報
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct DenoApp {
     pub id: String,
     pub slug: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+}
+
+impl DenoApp {
+    pub fn new(id: impl Into<String>, slug: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            slug: slug.into(),
+            updated_at: None,
+            created_at: None,
+        }
+    }
 }
 
 /// POST /v2/apps/{app}/deploy リクエスト
@@ -180,6 +195,29 @@ impl DenoDeployClient {
 
     pub fn config(&self) -> &DenoDeployConfig {
         &self.config
+    }
+
+    /// アプリ一覧を取得する (GET /v2/apps)
+    pub async fn list_apps(&self) -> Result<Vec<DenoApp>, DenoDeployError> {
+        if self.config.api_token.trim().is_empty() {
+            return Err(DenoDeployError::InvalidToken);
+        }
+        let url = format!("{}/apps", self.config.api_base_url);
+        let resp = self
+            .client
+            .get(&url)
+            .bearer_auth(&self.config.api_token)
+            .send()
+            .await?;
+
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let message = resp.text().await.unwrap_or_default();
+            return Err(DenoDeployError::ApiError { status, message });
+        }
+
+        let apps = resp.json::<Vec<DenoApp>>().await?;
+        Ok(apps)
     }
 
     /// アプリ情報を取得する (GET /v2/apps/{app})
@@ -724,11 +762,7 @@ mod tests {
                 "/apps/{app}",
                 get(|Path(app): Path<String>| async move {
                     if app == "existing-app" {
-                        axum::Json(DenoApp {
-                            id: "app-id-123".to_string(),
-                            slug: "existing-app".to_string(),
-                        })
-                        .into_response()
+                        axum::Json(DenoApp::new("app-id-123", "existing-app")).into_response()
                     } else {
                         StatusCode::NOT_FOUND.into_response()
                     }
@@ -738,10 +772,7 @@ mod tests {
                 "/apps",
                 post(|Json(req): Json<CreateAppRequest>| async move {
                     let slug = req.slug.unwrap_or_else(|| "random-app-slug".to_string());
-                    axum::Json(DenoApp {
-                        id: "app-id-new".to_string(),
-                        slug,
-                    })
+                    axum::Json(DenoApp::new("app-id-new", slug))
                 }),
             )
             .route(
@@ -812,6 +843,59 @@ mod tests {
     async fn test_empty_token_returns_error() {
         let client = DenoDeployClient::with_token("");
         let err = client.deploy(None, None, None).await.unwrap_err();
+        match err {
+            DenoDeployError::InvalidToken => {}
+            other => panic!("Expected InvalidToken error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_list_apps_mock() {
+        let app = Router::new().route(
+            "/apps",
+            get(|| async {
+                axum::Json(vec![
+                    DenoApp {
+                        id: "app-id-1".to_string(),
+                        slug: "app-one".to_string(),
+                        updated_at: Some("2026-10-09T00:00:00Z".to_string()),
+                        created_at: Some("2026-10-08T00:00:00Z".to_string()),
+                    },
+                    DenoApp {
+                        id: "app-id-2".to_string(),
+                        slug: "app-two".to_string(),
+                        updated_at: None,
+                        created_at: None,
+                    },
+                ])
+            }),
+        );
+
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("Failed to bind ephemeral port");
+        let local_addr = listener.local_addr().unwrap();
+
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let config =
+            DenoDeployConfig::new("dummy_org_token").with_base_url(format!("http://{local_addr}"));
+        let client = DenoDeployClient::new(config);
+
+        let apps = client.list_apps().await.expect("list_apps should succeed");
+        assert_eq!(apps.len(), 2);
+        assert_eq!(apps[0].id, "app-id-1");
+        assert_eq!(apps[0].slug, "app-one");
+        assert_eq!(apps[1].id, "app-id-2");
+        assert_eq!(apps[1].slug, "app-two");
+    }
+
+    #[tokio::test]
+    async fn test_list_apps_empty_token() {
+        let client = DenoDeployClient::with_token("");
+        let err = client.list_apps().await.unwrap_err();
         match err {
             DenoDeployError::InvalidToken => {}
             other => panic!("Expected InvalidToken error, got: {:?}", other),

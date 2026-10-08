@@ -100,6 +100,7 @@ pub(crate) fn error_to_response(err: ConnectError) -> Response {
         "not_found" => StatusCode::NOT_FOUND,
         "already_exists" => StatusCode::CONFLICT,
         "unavailable" => StatusCode::SERVICE_UNAVAILABLE,
+        "unauthenticated" => StatusCode::UNAUTHORIZED,
         _ => StatusCode::INTERNAL_SERVER_ERROR,
     };
 
@@ -505,6 +506,10 @@ pub fn router() -> axum::Router<AppState> {
         .route(
             PATH_DEPLOY_DENO,
             axum::routing::post(crate::deploy_rpc::handle_deploy_deno),
+        )
+        .route(
+            PATH_LIST_DENO_APPS,
+            axum::routing::post(crate::deploy_rpc::handle_list_deno_apps),
         )
 }
 

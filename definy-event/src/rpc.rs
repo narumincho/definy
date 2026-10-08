@@ -24,11 +24,13 @@ pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
 pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
 pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
 pub const METHOD_DEPLOY_DENO: &str = "DeployDeno";
+pub const METHOD_LIST_DENO_APPS: &str = "ListDenoApps";
 
 pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
 pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
 pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
 pub const PATH_DEPLOY_DENO: &str = "/definy.v1.DeployService/DeployDeno";
+pub const PATH_LIST_DENO_APPS: &str = "/definy.v1.DeployService/ListDenoApps";
 
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
@@ -464,6 +466,48 @@ pub struct ListDeploymentsResponse {
     pub deployments: Vec<DeploymentItem>,
 }
 
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListDenoAppsRequest {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub org_token: String,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct DenoAppItem {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub id: String,
+
+    #[prost(string, tag = "2")]
+    #[serde(default)]
+    pub slug: String,
+
+    #[prost(string, optional, tag = "3")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+
+    #[prost(string, optional, tag = "4")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListDenoAppsResponse {
+    #[prost(message, repeated, tag = "1")]
+    #[serde(default)]
+    pub apps: Vec<DenoAppItem>,
+}
+
 /// Connect-RPC standard error format
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
@@ -490,6 +534,10 @@ impl ConnectError {
 
     pub fn unavailable(message: impl Into<String>) -> Self {
         Self::new("unavailable", message)
+    }
+
+    pub fn unauthenticated(message: impl Into<String>) -> Self {
+        Self::new("unauthenticated", message)
     }
 
     pub fn internal(message: impl Into<String>) -> Self {
@@ -557,6 +605,38 @@ mod tests {
         let mut buf_res = Vec::new();
         res.encode(&mut buf_res).unwrap();
         let decoded_res = DeployInstanceResponse::decode(&buf_res[..]).unwrap();
+        assert_eq!(res, decoded_res);
+    }
+
+    #[test]
+    fn test_deno_apps_messages_roundtrip() {
+        let req = ListDenoAppsRequest {
+            org_token: "ddp_test123".to_string(),
+        };
+        let mut buf = Vec::new();
+        req.encode(&mut buf).unwrap();
+        let decoded = ListDenoAppsRequest::decode(&buf[..]).unwrap();
+        assert_eq!(req, decoded);
+
+        let res = ListDenoAppsResponse {
+            apps: vec![
+                DenoAppItem {
+                    id: "app-id-1".to_string(),
+                    slug: "my-first-app".to_string(),
+                    updated_at: Some("2026-10-09T00:00:00Z".to_string()),
+                    created_at: Some("2026-10-08T00:00:00Z".to_string()),
+                },
+                DenoAppItem {
+                    id: "app-id-2".to_string(),
+                    slug: "my-second-app".to_string(),
+                    updated_at: None,
+                    created_at: None,
+                },
+            ],
+        };
+        let mut res_buf = Vec::new();
+        res.encode(&mut res_buf).unwrap();
+        let decoded_res = ListDenoAppsResponse::decode(&res_buf[..]).unwrap();
         assert_eq!(res, decoded_res);
     }
 }

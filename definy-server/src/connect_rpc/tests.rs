@@ -659,11 +659,7 @@ async fn test_connect_rpc_deploy_deno_success() {
             "/apps/{app}",
             axum::routing::get(|Path(app): Path<String>| async move {
                 if app == "existing-definy-edge" {
-                    Json(DenoApp {
-                        id: "app_id_999".to_string(),
-                        slug: "existing-definy-edge".to_string(),
-                    })
-                    .into_response()
+                    Json(DenoApp::new("app_id_999", "existing-definy-edge")).into_response()
                 } else {
                     StatusCode::NOT_FOUND.into_response()
                 }
@@ -671,12 +667,15 @@ async fn test_connect_rpc_deploy_deno_success() {
         )
         .route(
             "/apps",
-            axum::routing::post(|Json(req): Json<CreateAppRequest>| async move {
+            axum::routing::get(|| async {
+                Json(vec![
+                    DenoApp::new("app_id_999", "existing-definy-edge"),
+                    DenoApp::new("app_id_created", "auto-definy-edge"),
+                ])
+            })
+            .post(|Json(req): Json<CreateAppRequest>| async move {
                 let slug = req.slug.unwrap_or_else(|| "auto-definy-edge".to_string());
-                Json(DenoApp {
-                    id: "app_id_created".to_string(),
-                    slug,
-                })
+                Json(DenoApp::new("app_id_created", slug))
             }),
         )
         .route(
@@ -912,4 +911,35 @@ async fn test_connect_rpc_deploy_deno_success() {
     assert_eq!(web_data.status, "succeeded");
     assert_eq!(web_data.app_slug, "definy-web-service");
     assert_eq!(web_data.evaluated_result, Some(html_content.to_string()));
+
+    // 6. ListDenoApps RPC - 空のトークン
+    let empty_list_req = ListDenoAppsRequest {
+        org_token: "".to_string(),
+    };
+    let empty_list_res = handle_list_deno_apps(
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&empty_list_req).unwrap()),
+    )
+    .await;
+    assert_eq!(empty_list_res.status(), StatusCode::BAD_REQUEST);
+
+    // 7. ListDenoApps RPC - 有効なトークン
+    let list_req = ListDenoAppsRequest {
+        org_token: "test_deno_token_123".to_string(),
+    };
+    let list_res = handle_list_deno_apps(
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&list_req).unwrap()),
+    )
+    .await;
+    assert_eq!(list_res.status(), StatusCode::OK);
+    let list_bytes = axum::body::to_bytes(list_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let list_data: ListDenoAppsResponse = serde_json::from_slice(&list_bytes).unwrap();
+    assert_eq!(list_data.apps.len(), 2);
+    assert_eq!(list_data.apps[0].id, "app_id_999");
+    assert_eq!(list_data.apps[0].slug, "existing-definy-edge");
+    assert_eq!(list_data.apps[1].id, "app_id_created");
+    assert_eq!(list_data.apps[1].slug, "auto-definy-edge");
 }
