@@ -162,7 +162,10 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
         // 6. list-is-empty: リストが空かどうか判定
         ModulePartEntry {
             name: "list-is-empty".into(),
-            part_type: None,
+            part_type: Some(fn_type(
+                &[("xs", PartType::List(Box::new(PartType::Number)))],
+                PartType::Boolean,
+            )),
             description: Description::localized(vec![
                 ("en", "Check if a list is empty"),
                 ("ja", "リストが空かどうかを判定します"),
@@ -183,7 +186,10 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
         // 7. list-head: リストの先頭要素を取得
         ModulePartEntry {
             name: "list-head".into(),
-            part_type: None,
+            part_type: Some(fn_type(
+                &[("xs", PartType::List(Box::new(PartType::Number)))],
+                PartType::Number,
+            )),
             description: Description::localized(vec![
                 ("en", "Get the first item of a list"),
                 ("ja", "リストの先頭要素を取得します"),

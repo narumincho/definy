@@ -364,6 +364,19 @@
     },
     {
       "name": "list-is-empty",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "xs",
+              "type": {
+                "list": "number"
+              }
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
       "description": [
         {
           "language": "en",
@@ -405,6 +418,19 @@
     },
     {
       "name": "list-head",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "xs",
+              "type": {
+                "list": "number"
+              }
+            }
+          ],
+          "return_type": "number"
+        }
+      },
       "description": [
         {
           "language": "en",
