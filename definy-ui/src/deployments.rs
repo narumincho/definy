@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::Location;
-use crate::deployments_deno::DenoDeployCard;
+use crate::deployments_cloudflare::CloudflareWorkersCard;
 use crate::page_context::PageContext;
 
 #[component]
@@ -18,29 +18,29 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                     class: "event-detail-card",
                     style: "background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.2rem 1.8rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.1rem; position: relative; overflow: hidden;",
 
-                    div { style: "position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
+                    div { style: "position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(249, 115, 22, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
                     div { style: "position: absolute; bottom: -40px; left: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
 
-                    div { style: "display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); font-size: 2rem;",
-                        "🦕"
+                    div { style: "display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); font-size: 2rem;",
+                        "⚡"
                     }
 
-                    h1 { style: "font-size: 2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;",
+                    h1 { style: "font-size: 2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, #ffffff 30%, #fb923c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;",
                         {
                             lang.label(
-                                "Operational Bootstrapping (Deno Deploy & Edge Runtime)",
-                                "運用ブートストラップ (Deno Deploy & エッジランタイム)",
-                                "Operacia Memgastigado (Deno Deploy)",
+                                "Operational Bootstrapping (Cloudflare Workers & Edge Runtime)",
+                                "運用ブートストラップ (Cloudflare Workers & エッジランタイム)",
+                                "Operacia Memgastigado (Cloudflare Workers)",
                             )
                         }
                     }
 
-                    p { style: "font-size: 1.05rem; font-weight: 600; color: #38bdf8; margin: 0; max-width: 680px; line-height: 1.45;",
+                    p { style: "font-size: 1.05rem; font-weight: 600; color: #fb923c; margin: 0; max-width: 680px; line-height: 1.45;",
                         {
                             lang.label(
-                                "Zero OS, Zero Containers: Deploying next-generation definy instances directly onto V8 isolates via Deno Deploy REST API v2.",
-                                "OS層・コンテナ層の完全撤廃: Deno Deploy REST API v2 を通じて、V8 Isolate 上にミリ秒で次世代 definy インスタンスを展開・自律運用。",
-                                "Nula operaciumo: Deploji definy rekte sur V8-izolitojn per Deno Deploy REST API v2.",
+                                "Zero OS, Zero Containers: Deploying next-generation definy instances directly onto V8 isolates via Cloudflare Workers REST API v4.",
+                                "OS層・コンテナ層の完全撤廃: Cloudflare Workers REST API v4 を通じて、V8 Isolate 上にミリ秒で次世代 definy インスタンスを展開・自律運用。",
+                                "Nula operaciumo: Deploji definy rekte sur V8-izolitojn per Cloudflare Workers REST API v4.",
                             )
                         }
                     }
@@ -48,24 +48,24 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                     p { style: "font-size: 0.9rem; color: var(--text-secondary); margin: 0; max-width: 720px; line-height: 1.6;",
                         {
                             lang.label(
-                                "Unlike traditional heavy VM environments, Deno Deploy executes WebAssembly and TypeScript natively on the global edge with deterministic revision pinning and instant routing.",
-                                "重厚な VM や Docker ビルドを必要とせず、UI から Org Token を渡すだけで世界中のエッジに Wasm / Web 標準コードを即座にプロビジョニングし、恒久的なリビジョン URL を発行します。",
-                                "Sen pezaj VM-medioj, Deno Deploy rulas WebAssembly kaj TypeScript rekte sur la tutmonda rando.",
+                                "Unlike traditional heavy VM environments, Cloudflare Workers executes WebAssembly and ES Modules natively on global edge locations with deterministic routing and sub-millisecond cold starts.",
+                                "重厚な VM や Docker ビルドを必要とせず、UI から API Token を渡すだけで世界中のエッジに Wasm / ES Modules コードを即座にプロビジョニングし、workers.dev サブドメインを即時有効化します。",
+                                "Sen pezaj VM-medioj, Cloudflare Workers rulas WebAssembly kaj ES Modules rekte sur la tutmonda rando.",
                             )
                         }
                     }
 
                     div { style: "display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-top: 0.4rem;",
                         a {
-                            href: "https://api.deno.com/v2/docs",
+                            href: "https://developers.cloudflare.com/api/resources/workers/",
                             target: "_blank",
                             rel: "noopener noreferrer",
                             style: "padding: 0.6rem 1.4rem; background: var(--primary); color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: opacity 0.15s ease;",
                             {
                                 lang.label(
-                                    "Deno Deploy API v2 Docs ↗",
-                                    "Deno Deploy API v2 仕様 ↗",
-                                    "Deno Deploy API v2 Dokumento ↗",
+                                    "Cloudflare Workers API Docs ↗",
+                                    "Cloudflare Workers API 仕様 ↗",
+                                    "Cloudflare Workers API Dokumento ↗",
                                 )
                             }
                         }
@@ -83,8 +83,8 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                     }
                 }
 
-                // Deno Deploy インタラクティブ実行フォーム
-                DenoDeployCard { context: context.clone() }
+                // Cloudflare Workers インタラクティブ実行フォーム
+                CloudflareWorkersCard { context: context.clone() }
 
                 // 3つのブートストラップ階層
                 div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;",
@@ -92,16 +92,16 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                         context: context.clone(),
                         step_num: "Layer 1",
                         status_badge: lang.label("Active / V8 Isolate", "稼働中 / V8 Isolate", "Aktiva / V8 Izolito"),
-                        status_color: "#38bdf8",
+                        status_color: "#fb923c",
                         title: lang.label(
                             "Edge Bootstrapping",
                             "運用・エッジ層の自己完結",
                             "Randa Memgastigo",
                         ),
                         description: lang.label(
-                            "definy provisions child edge instances on Deno Deploy REST API v2 without Docker builds, achieving near-zero millisecond cold starts.",
-                            "Docker や Linux VM なしで Deno Deploy REST API v2 を直接叩き、子インスタンスをミリ秒で起動。履歴を SurrealDB に記録。",
-                            "definy provizas randajn instancojn per Deno Deploy REST API v2 sen Docker.",
+                            "definy provisions child edge instances on Cloudflare Workers REST API v4 without Docker builds, achieving near-zero millisecond cold starts.",
+                            "Docker や Linux VM なしで Cloudflare Workers REST API v4 を直接叩き、子インスタンスをミリ秒で起動。履歴を SurrealDB に記録。",
+                            "definy provizas randajn instancojn per Cloudflare Workers REST API v4 sen Docker.",
                         ),
                     }
                     BootstrappingLayerCard {
@@ -179,57 +179,71 @@ fn DeployCommandGuideCard(context: PageContext) -> Element {
                 {
                     lang.label(
                         "You can trigger edge deployment directly from any Connect-RPC client, CI/CD pipeline, or cURL command:",
-                        "Connect-RPC クライアントや CI/CD、cURL コマンドから直接 Deno Deploy を実行できます:",
+                        "Connect-RPC クライアントや CI/CD、cURL コマンドから直接 Cloudflare Workers へのデプロイを実行できます:",
                         "Vi povas deploji rekte per Connect-RPC aŭ cURL:",
                     )
                 }
             }
 
-            // Connect-RPC DeployDeno cURL 例
+            // Connect-RPC DeployCloudflare cURL 例
             div { style: "background: #090d16; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; font-family: monospace; font-size: 0.84rem; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap;",
                 {
-                    "curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployDeno \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"orgToken\": \"$DENO_DEPLOY_TOKEN\", \"appSlug\": \"my-definy-edge\"}'"
+                    "curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployCloudflare \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"apiToken\": \"$CLOUDFLARE_API_TOKEN\", \"scriptName\": \"my-definy-edge\"}'"
                 }
             }
 
             div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;",
                 div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
-                    div { style: "font-weight: 600; color: #38bdf8; margin-bottom: 0.25rem;",
-                        "orgToken (required)"
+                    div { style: "font-weight: 600; color: #fb923c; margin-bottom: 0.25rem;",
+                        "apiToken (required)"
                     }
                     div { style: "color: var(--text-secondary);",
                         {
                             lang.label(
-                                "Deno Deploy Access Token. Resolved against organization scope.",
-                                "Deno Deploy のアクセストークン。組織スコープで処理されます。",
-                                "Deno Deploy Access Token.",
+                                "Cloudflare API Token with Workers Scripts Edit permissions.",
+                                "Workers 編集権限を持つ Cloudflare API トークン。",
+                                "Cloudflare API ĵetono.",
                             )
                         }
                     }
                 }
                 div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
                     div { style: "font-weight: 600; color: #93c5fd; margin-bottom: 0.25rem;",
-                        "appSlug (optional)"
+                        "scriptName (required)"
                     }
                     div { style: "color: var(--text-secondary);",
                         {
                             lang.label(
-                                "Target app name. Created automatically if it does not exist.",
-                                "対象のアプリ名。存在しない場合は自動作成されます。",
-                                "Cela aplikaĵnomo.",
+                                "Target Worker script name. Created or updated on Cloudflare.",
+                                "デプロイ対象の Worker スクリプト名。自動作成または更新されます。",
+                                "Cela Worker-nomo.",
                             )
                         }
                     }
                 }
                 div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
                     div { style: "font-weight: 600; color: #a855f7; margin-bottom: 0.25rem;",
+                        "accountId (optional)"
+                    }
+                    div { style: "color: var(--text-secondary);",
+                        {
+                            lang.label(
+                                "Cloudflare Account ID. Automatically detected from token if omitted.",
+                                "Cloudflare Account ID。省略した場合はトークンから自動解決されます。",
+                                "Cloudflare Konto ID.",
+                            )
+                        }
+                    }
+                }
+                div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
+                    div { style: "font-weight: 600; color: #facc15; margin-bottom: 0.25rem;",
                         "wasmHash (optional)"
                     }
                     div { style: "color: var(--text-secondary);",
                         {
                             lang.label(
-                                "Virtual WebAssembly hash bundled directly into edge assets.",
-                                "エッジアセットに同梱する仮想 WebAssembly のハッシュ。",
+                                "Virtual WebAssembly hash bundled directly into edge worker.",
+                                "エッジ Worker に同梱する仮想 WebAssembly のハッシュ。",
                                 "Virtuala Wasm-hako.",
                             )
                         }
@@ -333,8 +347,10 @@ fn DeploymentsHistoryCard(context: PageContext) -> Element {
 
                             div { style: "display: flex; flex-direction: column; gap: 0.2rem;",
                                 div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                                    span { style: if item.provider.as_deref() == Some("deno_deploy") { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);" } else { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);" },
-                                        if item.provider.as_deref() == Some("deno_deploy") {
+                                    span { style: if item.provider.as_deref() == Some("cloudflare_workers") { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);" } else if item.provider.as_deref() == Some("deno_deploy") { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);" } else { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);" },
+                                        if item.provider.as_deref() == Some("cloudflare_workers") {
+                                            "⚡ Cloudflare"
+                                        } else if item.provider.as_deref() == Some("deno_deploy") {
                                             "🦕 Deno Deploy"
                                         } else {
                                             "🪰 fly.io"

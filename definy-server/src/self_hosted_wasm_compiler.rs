@@ -342,38 +342,37 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live DENO_DEPLOY_TOKEN"]
-    async fn test_live_self_hosted_compiler_deploy_to_deno() {
-        let token = std::env::var("DENO_DEPLOY_TOKEN").expect("DENO_DEPLOY_TOKEN required");
+    #[ignore = "requires live CLOUDFLARE_API_TOKEN"]
+    async fn test_live_self_hosted_compiler_deploy_to_cloudflare() {
+        let token = std::env::var("CLOUDFLARE_API_TOKEN")
+            .or_else(|_| std::env::var("CF_API_TOKEN"))
+            .expect("CLOUDFLARE_API_TOKEN required");
         let wasm_bytes = compile_sample_to_wasm().expect("Self-hosted compiler failed");
         assert_eq!(execute_compiled_wasm(&wasm_bytes).unwrap(), 42);
 
-        let config = crate::deno_deploy::DenoDeployConfig::new(token);
-        let client = crate::deno_deploy::DenoDeployClient::new(config);
+        let config = crate::cloudflare_workers::CloudflareWorkersConfig::new(token);
+        let client = crate::cloudflare_workers::CloudflareWorkersClient::new(config);
 
         let res = client
             .deploy(Some("definy-self-hosted-edge"), Some(&wasm_bytes), None)
             .await
-            .expect("Live deploy to Deno Deploy should succeed");
+            .expect("Live deploy to Cloudflare Workers should succeed");
 
         println!("Deployed successfully! URL: {}", res.url);
-        println!("Hostnames: {:?}", res.hostnames);
 
         let http_client = reqwest::Client::new();
-        let eval_url = format!("{}/api/eval", res.url);
         let eval_res: serde_json::Value = http_client
-            .get(&eval_url)
+            .get(&res.url)
             .send()
             .await
-            .expect("Failed to query edge /api/eval")
+            .expect("Failed to query worker endpoint")
             .json()
             .await
-            .expect("Failed to parse JSON from /api/eval");
+            .expect("Failed to parse JSON from worker");
 
-        println!("Edge /api/eval response: {:?}", eval_res);
-        assert_eq!(eval_res["status"], "success");
-        assert_eq!(eval_res["result"], "42");
-        assert_eq!(eval_res["wasmLoaded"], true);
+        println!("Worker response: {:?}", eval_res);
+        assert_eq!(eval_res["service"], "definy-cloudflare-workers");
+        assert_eq!(eval_res["evaluatedResult"], 42);
     }
 
     #[test]

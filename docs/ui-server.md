@@ -26,4 +26,6 @@
 
 # 結論
 
-Deno Deploy, たくさん使われるようになったら Cloudflare Workers?
+Deno Deploy が Cloudflare Workers
+への統合・移行方針となったため（https://deno.com/blog/cloudflare）、Cloudflare
+Workers を標準デプロイ基盤として採用。

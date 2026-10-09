@@ -23,14 +23,14 @@ pub const DEPLOY_SERVICE_NAME: &str = "definy.v1.DeployService";
 pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
 pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
 pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
-pub const METHOD_DEPLOY_DENO: &str = "DeployDeno";
-pub const METHOD_LIST_DENO_APPS: &str = "ListDenoApps";
+pub const METHOD_DEPLOY_CLOUDFLARE: &str = "DeployCloudflare";
+pub const METHOD_LIST_CLOUDFLARE_WORKERS: &str = "ListCloudflareWorkers";
 
 pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
 pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
 pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
-pub const PATH_DEPLOY_DENO: &str = "/definy.v1.DeployService/DeployDeno";
-pub const PATH_LIST_DENO_APPS: &str = "/definy.v1.DeployService/ListDenoApps";
+pub const PATH_DEPLOY_CLOUDFLARE: &str = "/definy.v1.DeployService/DeployCloudflare";
+pub const PATH_LIST_CLOUDFLARE_WORKERS: &str = "/definy.v1.DeployService/ListCloudflareWorkers";
 
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
@@ -386,29 +386,45 @@ pub struct DeploymentItem {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DeployDenoRequest {
+pub struct DeployCloudflareRequest {
     #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub org_token: String,
+    #[serde(default, alias = "api_token")]
+    pub api_token: String,
 
     #[prost(string, optional, tag = "2")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub app_slug: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "account_id")]
+    pub account_id: Option<String>,
 
     #[prost(string, optional, tag = "3")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub wasm_hash: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "script_name"
+    )]
+    pub script_name: Option<String>,
 
     #[prost(string, optional, tag = "4")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "wasm_hash")]
+    pub wasm_hash: Option<String>,
+
+    #[prost(string, optional, tag = "5")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "custom_script"
+    )]
     pub custom_script: Option<String>,
 
-    #[prost(bool, optional, tag = "5")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[prost(bool, optional, tag = "6")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "compile_self_hosted"
+    )]
     pub compile_self_hosted: Option<bool>,
 
-    #[prost(string, optional, tag = "6")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[prost(string, optional, tag = "7")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "part_id")]
     pub part_id: Option<String>,
 }
 
@@ -416,33 +432,25 @@ pub struct DeployDenoRequest {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DeployDenoResponse {
+pub struct DeployCloudflareResponse {
     #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub app_id: String,
+    #[serde(default, alias = "script_name")]
+    pub script_name: String,
 
     #[prost(string, tag = "2")]
     #[serde(default)]
-    pub app_slug: String,
+    pub status: String,
 
     #[prost(string, tag = "3")]
     #[serde(default)]
-    pub revision_id: String,
-
-    #[prost(string, tag = "4")]
-    #[serde(default)]
-    pub status: String,
-
-    #[prost(string, tag = "5")]
-    #[serde(default)]
     pub url: String,
 
-    #[prost(string, repeated, tag = "6")]
-    #[serde(default)]
-    pub hostnames: Vec<String>,
-
-    #[prost(string, optional, tag = "7")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[prost(string, optional, tag = "4")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "evaluated_result"
+    )]
     pub evaluated_result: Option<String>,
 }
 
@@ -470,42 +478,46 @@ pub struct ListDeploymentsResponse {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct ListDenoAppsRequest {
+pub struct ListCloudflareWorkersRequest {
     #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub org_token: String,
+    #[serde(default, alias = "api_token")]
+    pub api_token: String,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "account_id")]
+    pub account_id: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DenoAppItem {
+pub struct CloudflareWorkerItem {
     #[prost(string, tag = "1")]
     #[serde(default)]
     pub id: String,
 
-    #[prost(string, tag = "2")]
-    #[serde(default)]
-    pub slug: String,
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "created_on")]
+    pub created_on: Option<String>,
 
     #[prost(string, optional, tag = "3")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
-
-    #[prost(string, optional, tag = "4")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "modified_on"
+    )]
+    pub modified_on: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct ListDenoAppsResponse {
+pub struct ListCloudflareWorkersResponse {
     #[prost(message, repeated, tag = "1")]
     #[serde(default)]
-    pub apps: Vec<DenoAppItem>,
+    pub workers: Vec<CloudflareWorkerItem>,
 }
 
 /// Connect-RPC standard error format
@@ -609,34 +621,33 @@ mod tests {
     }
 
     #[test]
-    fn test_deno_apps_messages_roundtrip() {
-        let req = ListDenoAppsRequest {
-            org_token: "ddp_test123".to_string(),
+    fn test_cloudflare_workers_messages_roundtrip() {
+        let req = ListCloudflareWorkersRequest {
+            api_token: "cf_test123".to_string(),
+            account_id: Some("acc-id-123".to_string()),
         };
         let mut buf = Vec::new();
         req.encode(&mut buf).unwrap();
-        let decoded = ListDenoAppsRequest::decode(&buf[..]).unwrap();
+        let decoded = ListCloudflareWorkersRequest::decode(&buf[..]).unwrap();
         assert_eq!(req, decoded);
 
-        let res = ListDenoAppsResponse {
-            apps: vec![
-                DenoAppItem {
-                    id: "app-id-1".to_string(),
-                    slug: "my-first-app".to_string(),
-                    updated_at: Some("2026-10-09T00:00:00Z".to_string()),
-                    created_at: Some("2026-10-08T00:00:00Z".to_string()),
+        let res = ListCloudflareWorkersResponse {
+            workers: vec![
+                CloudflareWorkerItem {
+                    id: "worker-1".to_string(),
+                    created_on: Some("2026-10-09T00:00:00Z".to_string()),
+                    modified_on: Some("2026-10-10T00:00:00Z".to_string()),
                 },
-                DenoAppItem {
-                    id: "app-id-2".to_string(),
-                    slug: "my-second-app".to_string(),
-                    updated_at: None,
-                    created_at: None,
+                CloudflareWorkerItem {
+                    id: "worker-2".to_string(),
+                    created_on: None,
+                    modified_on: None,
                 },
             ],
         };
         let mut res_buf = Vec::new();
         res.encode(&mut res_buf).unwrap();
-        let decoded_res = ListDenoAppsResponse::decode(&res_buf[..]).unwrap();
+        let decoded_res = ListCloudflareWorkersResponse::decode(&res_buf[..]).unwrap();
         assert_eq!(res, decoded_res);
     }
 }

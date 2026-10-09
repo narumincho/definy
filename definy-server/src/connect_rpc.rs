@@ -504,12 +504,12 @@ pub fn router() -> axum::Router<AppState> {
             axum::routing::post(crate::deploy_rpc::handle_list_deployments),
         )
         .route(
-            PATH_DEPLOY_DENO,
-            axum::routing::post(crate::deploy_rpc::handle_deploy_deno),
+            PATH_DEPLOY_CLOUDFLARE,
+            axum::routing::post(crate::deploy_rpc::handle_deploy_cloudflare),
         )
         .route(
-            PATH_LIST_DENO_APPS,
-            axum::routing::post(crate::deploy_rpc::handle_list_deno_apps),
+            PATH_LIST_CLOUDFLARE_WORKERS,
+            axum::routing::post(crate::deploy_rpc::handle_list_cloudflare_workers),
         )
 }
 

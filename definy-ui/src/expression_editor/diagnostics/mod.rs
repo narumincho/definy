@@ -14,7 +14,6 @@ use crate::part_projection::{PartSnapshot, collect_part_snapshots};
 
 use super::types::{ExpressionType, FunctionParameterTypeInfo, TypeDiagnostic};
 
-pub(crate) use assignable::*;
 pub use constructor::*;
 pub(crate) use type_check::*;
 
