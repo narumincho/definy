@@ -1,12 +1,12 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, BooleanExpression, CallExpression, Description, EqualExpression, Expression,
-    FunctionExpression, IfExpression, LessThanExpression, LessThanOrEqualExpression,
-    ListAppendExpression, ListGetExpression, ListLengthExpression, MatchArm, MatchExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordFieldType,
-    RecordGetExpression, SubtractExpression, TypeListExpression, TypeLiteralExpression,
-    TypeLiteralItemExpression, TypeUnionExpression, TypeUnionVariant, VariableExpression,
-    VariantExpression, derive_module_part_id,
+    AddExpression, BooleanExpression, Description, EqualExpression, Expression, IfExpression,
+    LessThanExpression, LessThanOrEqualExpression, ListAppendExpression, ListGetExpression,
+    ListLengthExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
+    PartReferenceExpression, PartType, RecordFieldType, RecordGetExpression, SubtractExpression,
+    TypeListExpression, TypeLiteralExpression, TypeLiteralItemExpression, TypeUnionExpression,
+    TypeUnionVariant, VariableExpression, VariantExpression, derive_module_part_id,
 };
 
 /// definy のランタイム値を表す自己記述型 (`core.value`)
@@ -94,8 +94,23 @@ pub fn create_value_type_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
                         items: vec![
                             TypeLiteralItemExpression {
-                                key: "parameter_variable_id".into(),
-                                value: Box::new(Expression::TypeNumber),
+                                key: "parameters".into(),
+                                value: Box::new(Expression::TypeList(TypeListExpression {
+                                    item_type: Box::new(Expression::TypeLiteral(
+                                        TypeLiteralExpression {
+                                            items: vec![
+                                                TypeLiteralItemExpression {
+                                                    key: "parameter_id".into(),
+                                                    value: Box::new(Expression::TypeNumber),
+                                                },
+                                                TypeLiteralItemExpression {
+                                                    key: "parameter_name".into(),
+                                                    value: Box::new(Expression::TypeString),
+                                                },
+                                            ],
+                                        },
+                                    )),
+                                })),
                             },
                             TypeLiteralItemExpression {
                                 key: "body".into(),
@@ -153,52 +168,50 @@ pub fn create_env_type_part(core_module_id: &EventHashId) -> ModulePartEntry {
 }
 
 /// 環境から変数IDを検索して値を返す関数 (`core.env-lookup`)
-/// `env -> number -> value` (カリー化関数)
+/// `(env: env, var_id: Number) -> value`
 pub fn create_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let val_part_hash = derive_module_part_id(core_module_id, "value");
     let env_part_hash = derive_module_part_id(core_module_id, "env");
     let env_lookup_inner_hash = derive_module_part_id(core_module_id, "env-lookup-inner");
 
-    // env-lookup(env)(var_id) = env-lookup-inner(env)(var_id)(list_length(env) - 1)
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "var_id".into(),
-            body: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(env_lookup_inner_hash),
-                        )),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
+    // env-lookup(env, var_id) = env-lookup-inner(env, var_id, list_length(env) - 1)
+    let body = fn_expr(
+        &[("env", 0), ("var_id", 1)],
+        call_part(
+            &env_lookup_inner_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 0 }),
+                ),
+                (
+                    "var_id",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                (
+                    "idx",
+                    Expression::Subtract(SubtractExpression {
+                        left: Box::new(Expression::ListLength(ListLengthExpression {
+                            value: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 0,
+                            })),
                         })),
-                    })),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(Expression::Subtract(SubtractExpression {
-                    left: Box::new(Expression::ListLength(ListLengthExpression {
-                        value: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
-                        })),
-                    })),
-                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                })),
-            })),
-        })),
-    });
+                        right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                    }),
+                ),
+            ],
+        ),
+    );
 
     ModulePartEntry {
         name: "env-lookup".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(env_part_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::TypePart(val_part_hash)),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(env_part_hash)),
+                ("var_id", PartType::Number),
+            ],
+            PartType::TypePart(val_part_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Lookup a variable in the environment"),
             ("ja", "環境から変数を探索して値を返却"),
@@ -208,7 +221,7 @@ pub fn create_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEntry {
     }
 }
 
-/// `core.env-lookup-inner`: `env -> var_id -> idx -> value`
+/// `core.env-lookup-inner`: `(env: env, var_id: Number, idx: Number) -> value`
 pub fn create_env_lookup_inner_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let val_part_hash = derive_module_part_id(core_module_id, "value");
     let env_part_hash = derive_module_part_id(core_module_id, "env");
@@ -220,75 +233,67 @@ pub fn create_env_lookup_inner_part(core_module_id: &EventHashId) -> ModulePartE
         payload: None,
     });
 
-    let recurse_prev = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    env_lookup_inner_hash,
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        })),
-        argument: Box::new(Expression::Subtract(SubtractExpression {
-            left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-        })),
-    });
+    let recurse_prev = call_part(
+        &env_lookup_inner_hash,
+        &[
+            (
+                "env",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            (
+                "var_id",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+            (
+                "idx",
+                Expression::Subtract(SubtractExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                }),
+            ),
+        ],
+    );
 
     let current_item = Expression::ListGet(ListGetExpression {
         list: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
         index: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "var_id".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "idx".into(),
-                body: Box::new(Expression::If(IfExpression {
-                    condition: Box::new(Expression::LessThan(LessThanExpression {
-                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                    })),
-                    then_expr: Box::new(unit_val),
-                    else_expr: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::Equal(EqualExpression {
-                            left: Box::new(Expression::RecordGet(RecordGetExpression {
-                                record: Box::new(current_item.clone()),
-                                key: "variable_id".into(),
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 1,
-                            })),
-                        })),
-                        then_expr: Box::new(Expression::RecordGet(RecordGetExpression {
-                            record: Box::new(current_item),
-                            key: "value".into(),
-                        })),
-                        else_expr: Box::new(recurse_prev),
-                    })),
-                })),
+    let body = fn_expr(
+        &[("env", 0), ("var_id", 1), ("idx", 2)],
+        Expression::If(IfExpression {
+            condition: Box::new(Expression::LessThan(LessThanExpression {
+                left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+                right: Box::new(Expression::Number(NumberExpression { value: 0 })),
             })),
-        })),
-    });
+            then_expr: Box::new(unit_val),
+            else_expr: Box::new(Expression::If(IfExpression {
+                condition: Box::new(Expression::Equal(EqualExpression {
+                    left: Box::new(Expression::RecordGet(RecordGetExpression {
+                        record: Box::new(current_item.clone()),
+                        key: "variable_id".into(),
+                    })),
+                    right: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                })),
+                then_expr: Box::new(Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(current_item),
+                    key: "value".into(),
+                })),
+                else_expr: Box::new(recurse_prev),
+            })),
+        }),
+    );
 
     ModulePartEntry {
         name: "env-lookup-inner".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(env_part_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::TypePart(val_part_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(env_part_hash)),
+                ("var_id", PartType::Number),
+                ("idx", PartType::Number),
+            ],
+            PartType::TypePart(val_part_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Inner helper for env-lookup with index recursion"),
             ("ja", "env-lookup のインデックス再帰用内部ヘルパー"),
@@ -299,7 +304,7 @@ pub fn create_env_lookup_inner_part(core_module_id: &EventHashId) -> ModulePartE
 }
 
 /// 環境に変数を追加して新しい環境を返す関数 (`core.env-extend`)
-/// `env -> number -> value -> env`
+/// `(env: env, var_id: Number, val: value) -> env`
 pub fn create_env_extend_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let val_part_hash = derive_module_part_id(core_module_id, "value");
     let env_part_hash = derive_module_part_id(core_module_id, "env");
@@ -317,35 +322,24 @@ pub fn create_env_extend_part(core_module_id: &EventHashId) -> ModulePartEntry {
         ],
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "var_id".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "val".into(),
-                body: Box::new(Expression::ListAppend(ListAppendExpression {
-                    list: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-                    item: Box::new(new_entry),
-                })),
-            })),
-        })),
-    });
+    let body = fn_expr(
+        &[("env", 0), ("var_id", 1), ("val", 2)],
+        Expression::ListAppend(ListAppendExpression {
+            list: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+            item: Box::new(new_entry),
+        }),
+    );
 
     ModulePartEntry {
         name: "env-extend".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(env_part_hash.clone())),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(val_part_hash)),
-                    return_type: Box::new(PartType::TypePart(env_part_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(env_part_hash.clone())),
+                ("var_id", PartType::Number),
+                ("val", PartType::TypePart(val_part_hash)),
+            ],
+            PartType::TypePart(env_part_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Extend environment with a new variable binding"),
             ("ja", "環境に新しい変数束縛を追加した新しい環境を返却"),
@@ -399,39 +393,39 @@ pub fn create_value_equals_record_fields_part(core_module_id: &EventHashId) -> M
         })),
     });
 
-    let values_equal = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                val_equals_hash,
-            ))),
-            argument: Box::new(Expression::RecordGet(RecordGetExpression {
-                record: Box::new(left_item),
-                key: "value".into(),
-            })),
-        })),
-        argument: Box::new(Expression::RecordGet(RecordGetExpression {
-            record: Box::new(right_item),
-            key: "value".into(),
-        })),
-    });
+    let values_equal = call_part(
+        &val_equals_hash,
+        &[
+            (
+                "val_a",
+                Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(left_item),
+                    key: "value".into(),
+                }),
+            ),
+            (
+                "val_b",
+                Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(right_item),
+                    key: "value".into(),
+                }),
+            ),
+        ],
+    );
 
     let next_index = Expression::Add(AddExpression {
         left: Box::new(index),
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    record_fields_equals_hash,
-                ))),
-                argument: Box::new(left_fields),
-            })),
-            argument: Box::new(right_fields),
-        })),
-        argument: Box::new(next_index),
-    });
+    let recurse = call_part(
+        &record_fields_equals_hash,
+        &[
+            ("left_fields", left_fields),
+            ("right_fields", right_fields),
+            ("index", next_index),
+        ],
+    );
 
     let current_equal = Expression::If(IfExpression {
         condition: Box::new(keys_equal),
@@ -466,34 +460,23 @@ pub fn create_value_equals_record_fields_part(core_module_id: &EventHashId) -> M
 
     ModulePartEntry {
         name: "value-equals-record-fields".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(field_type.clone()))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(field_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("left_fields", PartType::List(Box::new(field_type.clone()))),
+                ("right_fields", PartType::List(Box::new(field_type))),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Recursively compare dynamic record value fields"),
             ("ja", "レコード動的値のフィールド一覧を順序付きで再帰比較"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "left_fields".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "right_fields".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("left_fields", 0), ("right_fields", 1), ("index", 2)],
+            body,
+        )),
     }
 }
 
@@ -529,33 +512,24 @@ pub fn create_value_equals_list_items_part(core_module_id: &EventHashId) -> Modu
         index: Box::new(index.clone()),
     });
 
-    let values_equal = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                val_equals_hash,
-            ))),
-            argument: Box::new(left_item),
-        })),
-        argument: Box::new(right_item),
-    });
+    let values_equal = call_part(
+        &val_equals_hash,
+        &[("val_a", left_item), ("val_b", right_item)],
+    );
 
     let next_index = Expression::Add(AddExpression {
         left: Box::new(index),
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    list_items_equals_hash,
-                ))),
-                argument: Box::new(left_items),
-            })),
-            argument: Box::new(right_items),
-        })),
-        argument: Box::new(next_index),
-    });
+    let recurse = call_part(
+        &list_items_equals_hash,
+        &[
+            ("left_items", left_items),
+            ("right_items", right_items),
+            ("index", next_index),
+        ],
+    );
 
     let current_equal = Expression::If(IfExpression {
         condition: Box::new(values_equal),
@@ -575,36 +549,29 @@ pub fn create_value_equals_list_items_part(core_module_id: &EventHashId) -> Modu
 
     ModulePartEntry {
         name: "value-equals-list-items".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(
-                val_part_hash.clone(),
-            )))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(PartType::TypePart(val_part_hash)))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "left_items",
+                    PartType::List(Box::new(PartType::TypePart(val_part_hash.clone()))),
+                ),
+                (
+                    "right_items",
+                    PartType::List(Box::new(PartType::TypePart(val_part_hash))),
+                ),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Recursively compare dynamic list value items"),
             ("ja", "リスト動的値の要素一覧を順序付きで再帰比較"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "left_items".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "right_items".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("left_items", 0), ("right_items", 1), ("index", 2)],
+            body,
+        )),
     }
 }
 
@@ -618,18 +585,9 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
     let val_equals_list_items_hash =
         derive_module_part_id(core_module_id, "value-equals-list-items");
 
-    // Helper: recursive call value-equals(a)(b)
-    let recurse_eq = |a: Expression, b: Expression| {
-        Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    val_equals_hash.clone(),
-                ))),
-                argument: Box::new(a),
-            })),
-            argument: Box::new(b),
-        })
-    };
+    // Helper: recursive call value-equals(a, b)
+    let recurse_eq =
+        |a: Expression, b: Expression| call_part(&val_equals_hash, &[("val_a", a), ("val_b", b)]);
 
     let false_expr = Expression::Boolean(BooleanExpression { value: false });
     let true_expr = Expression::Boolean(BooleanExpression { value: true });
@@ -727,22 +685,24 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
                 tag: "record".into(),
                 variable_id: Some(rec2_id),
                 variable_name: Some("r2".into()),
-                body: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::PartReference(
-                                PartReferenceExpression::new(val_equals_record_fields_hash),
-                            )),
-                            argument: Box::new(Expression::Variable(VariableExpression {
+                body: Box::new(call_part(
+                    &val_equals_record_fields_hash,
+                    &[
+                        (
+                            "left_fields",
+                            Expression::Variable(VariableExpression {
                                 variable_id: rec1_id,
-                            })),
-                        })),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: rec2_id,
-                        })),
-                    })),
-                    argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                })),
+                            }),
+                        ),
+                        (
+                            "right_fields",
+                            Expression::Variable(VariableExpression {
+                                variable_id: rec2_id,
+                            }),
+                        ),
+                        ("index", Expression::Number(NumberExpression { value: 0 })),
+                    ],
+                )),
             },
             MatchArm {
                 tag: "_".into(),
@@ -764,22 +724,24 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
                 tag: "list".into(),
                 variable_id: Some(list2_id),
                 variable_name: Some("l2".into()),
-                body: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::PartReference(
-                                PartReferenceExpression::new(val_equals_list_items_hash),
-                            )),
-                            argument: Box::new(Expression::Variable(VariableExpression {
+                body: Box::new(call_part(
+                    &val_equals_list_items_hash,
+                    &[
+                        (
+                            "left_items",
+                            Expression::Variable(VariableExpression {
                                 variable_id: list1_id,
-                            })),
-                        })),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: list2_id,
-                        })),
-                    })),
-                    argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                })),
+                            }),
+                        ),
+                        (
+                            "right_items",
+                            Expression::Variable(VariableExpression {
+                                variable_id: list2_id,
+                            }),
+                        ),
+                        ("index", Expression::Number(NumberExpression { value: 0 })),
+                    ],
+                )),
             },
             MatchArm {
                 tag: "_".into(),
@@ -849,29 +811,24 @@ pub fn create_value_equals_part(core_module_id: &EventHashId) -> ModulePartEntry
         },
     ];
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "val_a".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "val_b".into(),
-            body: Box::new(Expression::Match(MatchExpression {
-                target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-                arms,
-                default: None,
-            })),
-        })),
-    });
+    let body = fn_expr(
+        &[("val_a", 0), ("val_b", 1)],
+        Expression::Match(MatchExpression {
+            target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+            arms,
+            default: None,
+        }),
+    );
 
     ModulePartEntry {
         name: "value-equals".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(val_part_hash.clone())),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(val_part_hash)),
-                return_type: Box::new(PartType::Boolean),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("val_a", PartType::TypePart(val_part_hash.clone())),
+                ("val_b", PartType::TypePart(val_part_hash)),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Compare two dynamic values for equality"),
             ("ja", "2つの動的値が等しいかを再帰的に判定する関数"),

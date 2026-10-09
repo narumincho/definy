@@ -1,4 +1,5 @@
 use super::*;
+use crate::expression_editor::types::FunctionParameterTypeInfo;
 use std::collections::HashMap;
 
 #[test]
@@ -79,7 +80,10 @@ fn test_selector_options_sorted_for_type() {
 fn test_lambda_selector_is_only_available_for_function_expectations() {
     let state = AppState::default();
     let function_type = ExpressionType::Function {
-        parameter: Box::new(ExpressionType::Number),
+        parameters: vec![FunctionParameterTypeInfo {
+            name: "x".to_string(),
+            r#type: ExpressionType::Number,
+        }],
         return_type: Box::new(ExpressionType::Number),
     };
     let function_options = selector_options(
@@ -165,8 +169,10 @@ fn test_function_and_call_use_syntax_selector_values() {
     let state = AppState::default();
     let function =
         definy_event::event::Expression::Function(definy_event::event::FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "value".into(),
+            parameters: vec![definy_event::event::FunctionParameter {
+                parameter_id: 1,
+                parameter_name: "value".into(),
+            }],
             body: Box::new(definy_event::event::Expression::Variable(
                 definy_event::event::VariableExpression { variable_id: 1 },
             )),
@@ -175,9 +181,12 @@ fn test_function_and_call_use_syntax_selector_values() {
         function: Box::new(definy_event::event::Expression::Variable(
             definy_event::event::VariableExpression { variable_id: 1 },
         )),
-        argument: Box::new(definy_event::event::Expression::Number(
-            definy_event::event::NumberExpression { value: 1 },
-        )),
+        arguments: vec![definy_event::event::CallArgument {
+            name: "value".into(),
+            value: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 1 },
+            )),
+        }],
     });
 
     assert_eq!(current_selection_value(&state, &function), "expr:function");

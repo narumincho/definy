@@ -11,7 +11,7 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_evaluator_parts, all_type_checker_parts, call_part2, call_part3, create_test_module_events,
+    all_evaluator_parts, all_type_checker_parts, call_part, create_test_module_events,
     empty_type_env, get_test_account_and_mod_id,
 };
 
@@ -160,7 +160,10 @@ fn test_self_hosted_list_number_type_inference() {
     // リスト式: [10, 20, 30]
     let list_expr = ast_list(vec![expr_num(10), expr_num(20), expr_num(30)]);
 
-    let check_call = call_part2(type_check_hash, list_expr, empty_env());
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", list_expr), ("env", empty_env())],
+    );
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate type check on number list");
 
@@ -206,7 +209,10 @@ fn test_self_hosted_list_string_type_inference() {
     // リスト式: ["hello", "world"]
     let list_expr = ast_list(vec![expr_str("hello"), expr_str("world")]);
 
-    let check_call = call_part2(type_check_hash, list_expr, empty_env());
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", list_expr), ("env", empty_env())],
+    );
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate type check on string list");
 
@@ -252,7 +258,10 @@ fn test_self_hosted_empty_list_inference_fails_without_expected_type() {
     // 空リスト式: []
     let list_expr = ast_list(vec![]);
 
-    let check_call = call_part2(type_check_hash, list_expr, empty_env());
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", list_expr), ("env", empty_env())],
+    );
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate type check on empty list without expected type");
 
@@ -284,7 +293,14 @@ fn test_self_hosted_empty_list_checked_against_expected_type() {
     // 期待型: list<number>
     let expected = type_list(type_num());
 
-    let check_call = call_part3(type_check_against_hash, list_expr, empty_env(), expected);
+    let check_call = call_part(
+        type_check_against_hash,
+        &[
+            ("expr", list_expr),
+            ("env", empty_env()),
+            ("expected_type", expected),
+        ],
+    );
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate type check against on empty list");
 
@@ -330,7 +346,10 @@ fn test_self_hosted_list_heterogeneous_items_detects_mismatch() {
     // 異種要素リスト: [10, "string_item"]
     let list_expr = ast_list(vec![expr_num(10), expr_str("string_item")]);
 
-    let check_call = call_part2(type_check_hash, list_expr, empty_env());
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", list_expr), ("env", empty_env())],
+    );
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate type check on heterogeneous list");
 
@@ -368,20 +387,24 @@ fn test_self_hosted_list_covariant_subtyping() {
 
     // 1. type-assignable による共変サブタイピング検証
     // list<{ x: number, y: string }> は list<{ x: number }> に代入適合すべき
-    let assignable_call = call_part2(
+    let assignable_call = call_part(
         type_assignable_hash.clone(),
-        actual_list_type.clone(),
-        expected_list_type.clone(),
+        &[
+            ("sub", actual_list_type.clone()),
+            ("sup", expected_list_type.clone()),
+        ],
     );
     let is_assignable = definy_core::evaluate_expression(&assignable_call, &events)
         .expect("evaluate type-assignable for list subtyping");
     assert_eq!(is_assignable, Value::Bool(true));
 
     // 逆向きは不適合
-    let reverse_call = call_part2(
+    let reverse_call = call_part(
         type_assignable_hash,
-        expected_list_type.clone(),
-        actual_list_type,
+        &[
+            ("sub", expected_list_type.clone()),
+            ("sup", actual_list_type),
+        ],
     );
     let is_reverse_assignable = definy_core::evaluate_expression(&reverse_call, &events)
         .expect("evaluate reverse type-assignable");
@@ -394,11 +417,13 @@ fn test_self_hosted_list_covariant_subtyping() {
         ast_record(vec![("x", expr_num(20)), ("y", expr_str("b"))]),
     ]);
 
-    let against_call = call_part3(
+    let against_call = call_part(
         type_check_against_hash,
-        record_list_expr,
-        empty_env(),
-        expected_list_type,
+        &[
+            ("expr", record_list_expr),
+            ("env", empty_env()),
+            ("expected_type", expected_list_type),
+        ],
     );
     let against_result = definy_core::evaluate_expression(&against_call, &events)
         .expect("evaluate type-check-against with record list");
@@ -442,7 +467,10 @@ fn test_self_hosted_list_eval_value_execution() {
     // 1. 要素を含むリスト式: [ 10 + 20, 42 ]
     let list_ast = ast_list(vec![expr_add(expr_num(10), expr_num(20)), expr_num(42)]);
     let empty_env_val = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
-    let eval_call = call_part2(eval_hash.clone(), list_ast, empty_env_val.clone());
+    let eval_call = call_part(
+        eval_hash.clone(),
+        &[("expr", list_ast), ("env", empty_env_val.clone())],
+    );
 
     let eval_res = definy_core::evaluate_expression(&eval_call, &events)
         .expect("Failed to evaluate list literal expression");
@@ -464,7 +492,10 @@ fn test_self_hosted_list_eval_value_execution() {
 
     // 2. 空リスト式: []
     let empty_list_ast = ast_list(vec![]);
-    let eval_empty_call = call_part2(eval_hash, empty_list_ast, empty_env_val);
+    let eval_empty_call = call_part(
+        eval_hash,
+        &[("expr", empty_list_ast), ("env", empty_env_val)],
+    );
     let eval_empty_res = definy_core::evaluate_expression(&eval_empty_call, &events)
         .expect("Failed to evaluate empty list literal expression");
 
@@ -504,40 +535,47 @@ fn test_self_hosted_list_value_equals_execution() {
     // 1. 同一のリスト値: [1, 2] == [1, 2] -> true
     let list_a = val_list(vec![val_num(1), val_num(2)]);
     let list_b = val_list(vec![val_num(1), val_num(2)]);
-    let eq_call = call_part2(val_equals_hash.clone(), list_a, list_b);
+    let eq_call = call_part(val_equals_hash.clone(), &[("a", list_a), ("b", list_b)]);
     let eq_res = definy_core::evaluate_expression(&eq_call, &events)
         .expect("evaluate value-equals on identical lists");
     assert_eq!(eq_res, Value::Bool(true));
 
     // 2. 異なる要素を持つリスト値: [1, 2] == [1, 3] -> false
     let list_c = val_list(vec![val_num(1), val_num(3)]);
-    let neq_call = call_part2(
+    let neq_call = call_part(
         val_equals_hash.clone(),
-        val_list(vec![val_num(1), val_num(2)]),
-        list_c,
+        &[("a", val_list(vec![val_num(1), val_num(2)])), ("b", list_c)],
     );
     let neq_res = definy_core::evaluate_expression(&neq_call, &events)
         .expect("evaluate value-equals on different item lists");
     assert_eq!(neq_res, Value::Bool(false));
 
     // 3. 異なる長さのリスト値: [1] == [1, 2] -> false
-    let diff_len_call = call_part2(
+    let diff_len_call = call_part(
         val_equals_hash.clone(),
-        val_list(vec![val_num(1)]),
-        val_list(vec![val_num(1), val_num(2)]),
+        &[
+            ("a", val_list(vec![val_num(1)])),
+            ("b", val_list(vec![val_num(1), val_num(2)])),
+        ],
     );
     let diff_len_res = definy_core::evaluate_expression(&diff_len_call, &events)
         .expect("evaluate value-equals on different length lists");
     assert_eq!(diff_len_res, Value::Bool(false));
 
     // 4. 空リスト同士: [] == [] -> true
-    let empty_eq_call = call_part2(val_equals_hash.clone(), val_list(vec![]), val_list(vec![]));
+    let empty_eq_call = call_part(
+        val_equals_hash.clone(),
+        &[("a", val_list(vec![])), ("b", val_list(vec![]))],
+    );
     let empty_eq_res = definy_core::evaluate_expression(&empty_eq_call, &events)
         .expect("evaluate value-equals on empty lists");
     assert_eq!(empty_eq_res, Value::Bool(true));
 
     // 5. 型違い: [] == 0 -> false
-    let type_mismatch_call = call_part2(val_equals_hash, val_list(vec![]), val_num(0));
+    let type_mismatch_call = call_part(
+        val_equals_hash,
+        &[("a", val_list(vec![])), ("b", val_num(0))],
+    );
     let type_mismatch_res = definy_core::evaluate_expression(&type_mismatch_call, &events)
         .expect("evaluate value-equals on type mismatch");
     assert_eq!(type_mismatch_res, Value::Bool(false));

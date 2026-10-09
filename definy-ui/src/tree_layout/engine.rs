@@ -304,19 +304,27 @@ pub fn expression_to_layout_node_with_path(
                 .with_children(vec![name_node, val_node, body_node])
         }
         Expression::Function(func) => {
-            let param_node = LayoutNode::new(
-                format!("{}.param", id_prefix),
-                func.parameter_name.as_ref(),
-                NodeKind::Identifier,
-            );
+            let mut children: Vec<LayoutNode> = func
+                .parameters
+                .iter()
+                .enumerate()
+                .map(|(idx, param)| {
+                    LayoutNode::new(
+                        format!("{}.param_{}", id_prefix, idx),
+                        param.parameter_name.as_ref(),
+                        NodeKind::Identifier,
+                    )
+                })
+                .collect();
             let body_node = expression_to_layout_node_with_path(
                 &func.body,
                 &format!("{}.body", id_prefix),
                 &child_path(current_path, PathStep::FunctionBody),
             );
+            children.push(body_node);
             LayoutNode::new(id_prefix, "fn", NodeKind::Block)
                 .with_path(p)
-                .with_children(vec![param_node, body_node])
+                .with_children(children)
         }
         Expression::Call(call) => {
             let fn_node = expression_to_layout_node_with_path(
@@ -324,14 +332,18 @@ pub fn expression_to_layout_node_with_path(
                 &format!("{}.func", id_prefix),
                 &child_path(current_path, PathStep::CallFunction),
             );
-            let arg_node = expression_to_layout_node_with_path(
-                &call.argument,
-                &format!("{}.arg", id_prefix),
-                &child_path(current_path, PathStep::CallArgument),
-            );
+            let mut children = vec![fn_node];
+            for (idx, arg) in call.arguments.iter().enumerate() {
+                let arg_node = expression_to_layout_node_with_path(
+                    &arg.value,
+                    &format!("{}.arg_{}", id_prefix, idx),
+                    &child_path(current_path, PathStep::CallArgument(idx)),
+                );
+                children.push(arg_node);
+            }
             LayoutNode::new(id_prefix, "call", NodeKind::Group)
                 .with_path(p)
-                .with_children(vec![fn_node, arg_node])
+                .with_children(children)
         }
         Expression::TypeList(type_list) => {
             let item_type = expression_to_layout_node_with_path(
@@ -419,19 +431,27 @@ pub fn expression_to_layout_node_with_path(
                 .with_children(children)
         }
         Expression::TypeFunction(type_func) => {
-            let param_node = expression_to_layout_node_with_path(
-                &type_func.parameter,
-                &format!("{}.param", id_prefix),
-                &child_path(current_path, PathStep::TypeFunctionParameter),
-            );
+            let mut children: Vec<LayoutNode> = type_func
+                .parameters
+                .iter()
+                .enumerate()
+                .map(|(idx, param)| {
+                    expression_to_layout_node_with_path(
+                        &param.r#type,
+                        &format!("{}.param_{}", id_prefix, idx),
+                        &child_path(current_path, PathStep::TypeFunctionParameter(idx)),
+                    )
+                })
+                .collect();
             let ret_node = expression_to_layout_node_with_path(
                 &type_func.return_type,
                 &format!("{}.ret", id_prefix),
                 &child_path(current_path, PathStep::TypeFunctionReturn),
             );
+            children.push(ret_node);
             LayoutNode::new(id_prefix, "type_function", NodeKind::Operator)
                 .with_path(p)
-                .with_children(vec![param_node, ret_node])
+                .with_children(children)
         }
         Expression::TypeUnion(union_expr) => {
             let children = union_expr

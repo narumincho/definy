@@ -135,8 +135,10 @@ mod tests {
         let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
 
         let add_ten_expr = Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "x".into(),
+            parameters: vec![FunctionParameter {
+                parameter_id: 1,
+                parameter_name: "x".into(),
+            }],
             body: Box::new(Expression::Add(AddExpression {
                 left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 right: Box::new(Expression::Number(NumberExpression { value: 10 })),
@@ -157,7 +159,10 @@ mod tests {
                     ModulePartEntry {
                         name: "add_ten".into(),
                         part_type: Some(PartType::Function {
-                            parameter: Box::new(PartType::Number),
+                            parameters: vec![FunctionParameterType {
+                                name: "x".into(),
+                                r#type: Box::new(PartType::Number),
+                            }],
                             return_type: Box::new(PartType::Number),
                         }),
                         description: Description::Plain("adds 10 to input".into()),

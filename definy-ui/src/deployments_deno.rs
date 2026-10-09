@@ -293,7 +293,7 @@ pub fn DenoDeployCard(context: PageContext) -> Element {
                                         ),
                                         value: "{new_app_slug.read()}",
                                         oninput: move |e| {
-                                            app_selection_mode.set(AppSelectionMode::CreateNew); // 選択肢 / 新規作成 切替ボタン
+                                            app_selection_mode.set(AppSelectionMode::CreateNew); // 選択肢 / 新規作成 切替ボタン  選択肢 / 新規作成 切替ボタン
                                             new_app_slug.set(e.value());
                                         },
                                         style: "padding: 0.65rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #090d16; color: #f8fafc; font-size: 0.9rem; font-family: monospace; outline: none;",
@@ -312,6 +312,7 @@ pub fn DenoDeployCard(context: PageContext) -> Element {
                                                 disabled: !has_apps,
                                                 style: if *app_selection_mode.read() == AppSelectionMode::Existing && has_apps { "padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 700; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; cursor: pointer;" } else { "padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer;" },
                                                 "📋 "
+
                                                 {
                                                     lang.label(
                                                         "Select Existing App",

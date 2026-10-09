@@ -151,7 +151,10 @@ pub fn validate_module_seed_with_type_checker(
             function: Box::new(definy_event::event::Expression::PartReference(
                 definy_event::event::PartReferenceExpression::new(validate_module_hash),
             )),
-            argument: Box::new(module_value),
+            arguments: vec![definy_event::event::CallArgument {
+                name: "module".into(),
+                value: Box::new(module_value),
+            }],
         });
 
     match definy_core::evaluate_expression(&validation_call, &events) {

@@ -1,14 +1,14 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, BooleanExpression, CallExpression, Description, Expression, FunctionExpression,
-    IfExpression, LessThanExpression, LessThanOrEqualExpression, ListAppendExpression,
-    ListGetExpression, ListLengthExpression, ListLiteralExpression, MatchArm, MatchExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordGetExpression,
-    StringLengthExpression, SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    VariableExpression, derive_module_part_id,
+    AddExpression, BooleanExpression, Description, Expression, IfExpression, LessThanExpression,
+    LessThanOrEqualExpression, ListAppendExpression, ListGetExpression, ListLengthExpression,
+    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType,
+    RecordGetExpression, StringLengthExpression, SubtractExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, VariableExpression, derive_module_part_id,
 };
 
-/// `core.collect-part-type-env-inner`: `list<part-definition> -> number -> part-type-env`
+/// `core.collect-part-type-env-inner`: `(parts: list<part-definition>, index: number) -> part-type-env`
 /// パーツ定義リストを末尾から先頭へ走査し、各パーツの `{ part_definition_event_hash, part_type }` を蓄積する再帰ヘルパー。
 pub fn create_collect_part_type_env_inner_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let part_def_hash = derive_module_part_id(core_module_id, "part-definition");
@@ -44,18 +44,22 @@ pub fn create_collect_part_type_env_inner_part(core_module_id: &EventHashId) -> 
         ],
     });
 
-    let recurse_prev = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                inner_hash,
-            ))),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-        })),
-        argument: Box::new(Expression::Subtract(SubtractExpression {
-            left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-        })),
-    });
+    let recurse_prev = call_part(
+        &inner_hash,
+        &[
+            (
+                "parts",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            (
+                "index",
+                Expression::Subtract(SubtractExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                }),
+            ),
+        ],
+    );
 
     let appended = Expression::ListAppend(ListAppendExpression {
         list: Box::new(recurse_prev),
@@ -70,25 +74,20 @@ pub fn create_collect_part_type_env_inner_part(core_module_id: &EventHashId) -> 
         else_expr: Box::new(appended),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "parts".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "index".into(),
-            body: Box::new(body),
-        })),
-    });
+    let main_expr = fn_expr(&[("parts", 0), ("index", 1)], body);
 
     ModulePartEntry {
         name: "collect-part-type-env-inner".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(part_def_hash)))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::TypePart(part_type_env_hash)),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "parts",
+                    PartType::List(Box::new(PartType::TypePart(part_def_hash))),
+                ),
+                ("index", PartType::Number),
+            ],
+            PartType::TypePart(part_type_env_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -104,7 +103,7 @@ pub fn create_collect_part_type_env_inner_part(core_module_id: &EventHashId) -> 
     }
 }
 
-/// `core.collect-part-type-env`: `list<part-definition> -> part-type-env`
+/// `core.collect-part-type-env`: `(parts: list<part-definition>) -> part-type-env`
 /// パーツ定義リスト全体を走査してパーツ型環境（`part-type-env`）を構築します。
 pub fn create_collect_part_type_env_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let part_def_hash = derive_module_part_id(core_module_id, "part-definition");
@@ -119,28 +118,19 @@ pub fn create_collect_part_type_env_part(core_module_id: &EventHashId) -> Module
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let body = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                inner_hash,
-            ))),
-            argument: Box::new(parts_expr),
-        })),
-        argument: Box::new(max_index),
-    });
+    let body = call_part(&inner_hash, &[("parts", parts_expr), ("index", max_index)]);
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "parts".into(),
-        body: Box::new(body),
-    });
+    let main_expr = fn_expr(&[("parts", 0)], body);
 
     ModulePartEntry {
         name: "collect-part-type-env".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(part_def_hash)))),
-            return_type: Box::new(PartType::TypePart(part_type_env_hash)),
-        }),
+        part_type: Some(fn_type(
+            &[(
+                "parts",
+                PartType::List(Box::new(PartType::TypePart(part_def_hash))),
+            )],
+            PartType::TypePart(part_type_env_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -153,7 +143,7 @@ pub fn create_collect_part_type_env_part(core_module_id: &EventHashId) -> Module
     }
 }
 
-/// `core.validate-part-in-env`: `part-definition -> type-env -> boolean`
+/// `core.validate-part-in-env`: `(part: part-definition, env: type-env) -> boolean`
 /// 指定した型環境（モジュール型環境を含む）を用いて、パーツの式が宣言された型と一致するかを自己検証します。
 pub fn create_validate_part_in_env_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let part_def_hash = derive_module_part_id(core_module_id, "part-definition");
@@ -170,19 +160,15 @@ pub fn create_validate_part_in_env_part(core_module_id: &EventHashId) -> ModuleP
     });
     let env_access = Expression::Variable(VariableExpression { variable_id: 1 });
 
-    // type-check-against(expr)(env)(declared_type)
-    let check_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_check_against_hash,
-                ))),
-                argument: Box::new(expr_access),
-            })),
-            argument: Box::new(env_access),
-        })),
-        argument: Box::new(declared_type_access),
-    });
+    // type-check-against(expr, env, declared_type)
+    let check_call = call_part(
+        &type_check_against_hash,
+        &[
+            ("expr", expr_access),
+            ("env", env_access),
+            ("expected_type", declared_type_access),
+        ],
+    );
 
     let match_expr = Expression::Match(MatchExpression {
         target: Box::new(check_call),
@@ -209,25 +195,17 @@ pub fn create_validate_part_in_env_part(core_module_id: &EventHashId) -> ModuleP
         default: None,
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "part".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "env".into(),
-            body: Box::new(match_expr),
-        })),
-    });
+    let main_expr = fn_expr(&[("part", 0), ("env", 1)], match_expr);
 
     ModulePartEntry {
         name: "validate-part-in-env".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(part_def_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(type_env_hash)),
-                return_type: Box::new(PartType::Boolean),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("part", PartType::TypePart(part_def_hash)),
+                ("env", PartType::TypePart(type_env_hash)),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -243,7 +221,7 @@ pub fn create_validate_part_in_env_part(core_module_id: &EventHashId) -> ModuleP
     }
 }
 
-/// パーツ妥当性検証器 `core.validate-part`: `part-definition -> boolean`
+/// パーツ妥当性検証器 `core.validate-part`: `(part: part-definition) -> boolean`
 /// 空の型環境でパーツの式が宣言された型と一致するかを自己検証します（単体パーツ用）。
 pub fn create_validate_part_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let part_def_hash = derive_module_part_id(core_module_id, "part-definition");
@@ -251,28 +229,25 @@ pub fn create_validate_part_part(core_module_id: &EventHashId) -> ModulePartEntr
 
     let empty_env = crate::builtin_type_checker::empty_type_env();
 
-    let call_in_env = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                validate_part_in_env_hash,
-            ))),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-        })),
-        argument: Box::new(empty_env),
-    });
+    let call_in_env = call_part(
+        &validate_part_in_env_hash,
+        &[
+            (
+                "part",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            ("env", empty_env),
+        ],
+    );
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "part".into(),
-        body: Box::new(call_in_env),
-    });
+    let main_expr = fn_expr(&[("part", 0)], call_in_env);
 
     ModulePartEntry {
         name: "validate-part".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(part_def_hash)),
-            return_type: Box::new(PartType::Boolean),
-        }),
+        part_type: Some(fn_type(
+            &[("part", PartType::TypePart(part_def_hash))],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -288,7 +263,7 @@ pub fn create_validate_part_part(core_module_id: &EventHashId) -> ModulePartEntr
     }
 }
 
-/// `core.validate-parts-in-env`: `list<part-definition> -> type-env -> number -> boolean`
+/// `core.validate-parts-in-env`: `(parts: list<part-definition>, env: type-env, index: number) -> boolean`
 /// 指定型環境を用いてパーツ一覧を再帰走査し、全パーツが妥当であるかを検証します。
 pub fn create_validate_parts_in_env_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let part_def_hash = derive_module_part_id(core_module_id, "part-definition");
@@ -312,33 +287,20 @@ pub fn create_validate_parts_in_env_part(core_module_id: &EventHashId) -> Module
         index: Box::new(index.clone()),
     });
 
-    let current_is_valid = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                validate_part_in_env_hash,
-            ))),
-            argument: Box::new(current_part),
-        })),
-        argument: Box::new(env.clone()),
-    });
+    let current_is_valid = call_part(
+        &validate_part_in_env_hash,
+        &[("part", current_part), ("env", env.clone())],
+    );
 
     let next_index = Expression::Add(AddExpression {
         left: Box::new(index),
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let validate_rest = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    validate_parts_in_env_hash,
-                ))),
-                argument: Box::new(parts),
-            })),
-            argument: Box::new(env),
-        })),
-        argument: Box::new(next_index),
-    });
+    let validate_rest = call_part(
+        &validate_parts_in_env_hash,
+        &[("parts", parts), ("env", env), ("index", next_index)],
+    );
 
     let body = Expression::If(IfExpression {
         condition: Box::new(at_end),
@@ -350,32 +312,21 @@ pub fn create_validate_parts_in_env_part(core_module_id: &EventHashId) -> Module
         })),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "parts".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "env".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "index".into(),
-                body: Box::new(body),
-            })),
-        })),
-    });
+    let main_expr = fn_expr(&[("parts", 0), ("env", 1), ("index", 2)], body);
 
     ModulePartEntry {
         name: "validate-parts-in-env".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(part_def_hash)))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(type_env_hash)),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "parts",
+                    PartType::List(Box::new(PartType::TypePart(part_def_hash))),
+                ),
+                ("env", PartType::TypePart(type_env_hash)),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -398,38 +349,35 @@ pub fn create_validate_parts_part(core_module_id: &EventHashId) -> ModulePartEnt
 
     let empty_env = crate::builtin_type_checker::empty_type_env();
 
-    let call_in_env = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    validate_parts_in_env_hash,
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-            })),
-            argument: Box::new(empty_env),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-    });
+    let call_in_env = call_part(
+        &validate_parts_in_env_hash,
+        &[
+            (
+                "parts",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            ("env", empty_env),
+            (
+                "index",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+        ],
+    );
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "parts".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "index".into(),
-            body: Box::new(call_in_env),
-        })),
-    });
+    let main_expr = fn_expr(&[("parts", 0), ("index", 1)], call_in_env);
 
     ModulePartEntry {
         name: "validate-parts".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(part_def_hash)))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Boolean),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "parts",
+                    PartType::List(Box::new(PartType::TypePart(part_def_hash))),
+                ),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Validates every part definition in a list"),
             ("ja", "パーツ定義のリストを最後まで検証する関数"),
@@ -439,7 +387,7 @@ pub fn create_validate_parts_part(core_module_id: &EventHashId) -> ModulePartEnt
     }
 }
 
-/// モジュール妥当性検証器 `core.validate-module`: `module-definition -> boolean`
+/// モジュール妥当性検証器 `core.validate-module`: `(mod_def: module-definition) -> boolean`
 /// モジュール名が非空であり、構成パーツから自動構築したモジュール型環境を用いて全パーツが相互型検証を満たすかを検証します。
 pub fn create_validate_module_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let mod_def_hash = derive_module_part_id(core_module_id, "module-definition");
@@ -470,12 +418,10 @@ pub fn create_validate_module_part(core_module_id: &EventHashId) -> ModulePartEn
     });
 
     // collect-part-type-env(parts)
-    let collected_parts = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            collect_part_type_env_hash,
-        ))),
-        argument: Box::new(parts_access.clone()),
-    });
+    let collected_parts = call_part(
+        &collect_part_type_env_hash,
+        &[("parts", parts_access.clone())],
+    );
 
     // module_type_env = { variables: [], parts: collected_parts }
     let module_type_env = Expression::TypeLiteral(TypeLiteralExpression {
@@ -493,19 +439,15 @@ pub fn create_validate_module_part(core_module_id: &EventHashId) -> ModulePartEn
         ],
     });
 
-    // validate-parts-in-env(parts)(module_type_env)(0)
-    let parts_valid = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    validate_parts_in_env_hash,
-                ))),
-                argument: Box::new(parts_access),
-            })),
-            argument: Box::new(module_type_env),
-        })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-    });
+    // validate-parts-in-env(parts, module_type_env, 0)
+    let parts_valid = call_part(
+        &validate_parts_in_env_hash,
+        &[
+            ("parts", parts_access),
+            ("env", module_type_env),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+        ],
+    );
 
     // if name_not_empty then parts_valid else false
     let body = Expression::If(IfExpression {
@@ -514,18 +456,14 @@ pub fn create_validate_module_part(core_module_id: &EventHashId) -> ModulePartEn
         else_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: mod_var_id,
-        parameter_name: "mod_def".into(),
-        body: Box::new(body),
-    });
+    let main_expr = fn_expr(&[("mod_def", mod_var_id)], body);
 
     ModulePartEntry {
         name: "validate-module".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(mod_def_hash)),
-            return_type: Box::new(PartType::Boolean),
-        }),
+        part_type: Some(fn_type(
+            &[("mod_def", PartType::TypePart(mod_def_hash))],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             (
                 "en",

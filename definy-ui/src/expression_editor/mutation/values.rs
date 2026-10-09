@@ -44,13 +44,45 @@ pub fn set_let_variable_name(
 pub fn set_function_parameter_name(
     root_expression_opt: &mut Option<definy_event::event::Expression>,
     path: &[PathStep],
+    param_index: usize,
     value: &str,
 ) {
     if let Some(root_expression) = root_expression_opt.as_mut()
         && let Some(definy_event::event::Expression::Function(func_expr)) =
             get_mut_expression_at_path(root_expression, path)
+        && let Some(param) = func_expr.parameters.get_mut(param_index)
     {
-        func_expr.parameter_name = value.into();
+        param.parameter_name = value.into();
+    }
+}
+
+pub fn set_call_argument_name(
+    root_expression_opt: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+    arg_index: usize,
+    value: &str,
+) {
+    if let Some(root_expression) = root_expression_opt.as_mut()
+        && let Some(definy_event::event::Expression::Call(call_expr)) =
+            get_mut_expression_at_path(root_expression, path)
+        && let Some(arg) = call_expr.arguments.get_mut(arg_index)
+    {
+        arg.name = value.into();
+    }
+}
+
+pub fn set_type_function_parameter_name(
+    root_expression_opt: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+    param_index: usize,
+    value: &str,
+) {
+    if let Some(root_expression) = root_expression_opt.as_mut()
+        && let Some(definy_event::event::Expression::TypeFunction(type_func_expr)) =
+            get_mut_expression_at_path(root_expression, path)
+        && let Some(param) = type_func_expr.parameters.get_mut(param_index)
+    {
+        param.name = value.into();
     }
 }
 

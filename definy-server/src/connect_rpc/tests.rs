@@ -278,7 +278,10 @@ async fn test_connect_rpc_lifecycle() {
                     content_hash: None,
                     expression: Some(definy_event::event::Expression::TypeFunction(
                         definy_event::event::TypeFunctionExpression {
-                            parameter: Box::new(definy_event::event::Expression::TypeNumber),
+                            parameters: vec![definy_event::event::TypeFunctionParameter {
+                                name: "input".into(),
+                                r#type: Box::new(definy_event::event::Expression::TypeNumber),
+                            }],
                             return_type: Box::new(definy_event::event::Expression::TypeString),
                         },
                     )),

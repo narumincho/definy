@@ -151,11 +151,14 @@ fn crate_part_type_summary(pt: PartType) -> Value {
         PartType::TypePart(h) => json!({ "type-part": h.to_string() }),
         PartType::List(sub) => json!({ "list": crate_part_type_summary(*sub) }),
         PartType::Function {
-            parameter,
+            parameters,
             return_type,
         } => json!({
             "function": {
-                "parameter": crate_part_type_summary(*parameter),
+                "parameters": parameters.into_iter().map(|p| json!({
+                    "name": p.name,
+                    "type": crate_part_type_summary(*p.r#type),
+                })).collect::<Vec<_>>(),
                 "return": crate_part_type_summary(*return_type)
             }
         }),

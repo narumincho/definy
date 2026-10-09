@@ -1,14 +1,15 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, EqualExpression, Expression, FunctionExpression,
-    IfExpression, LessThanOrEqualExpression, ListGetExpression, ListLengthExpression,
-    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
-    PartReferenceExpression, PartType, RecordFieldType, RecordGetExpression, TypeLiteralExpression,
-    TypeLiteralItemExpression, VariableExpression, VariantExpression, derive_module_part_id,
+    AddExpression, Description, EqualExpression, Expression, IfExpression,
+    LessThanOrEqualExpression, ListGetExpression, ListLengthExpression, ListLiteralExpression,
+    MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType, RecordFieldType,
+    RecordGetExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
+    VariantExpression, derive_module_part_id,
 };
 
 /// 直和型のバリアント一覧からタグ名でペイロード型を再帰探索するパーツ
-/// `core.union-variant-type-lookup`: `list<{ tag: string, payload_type: none | some(type-ast) }> -> string -> number -> type-result`
+/// `core.union-variant-type-lookup`: `(variants: List Variant, tag: String, index: Number) -> type-result`
 pub fn create_union_variant_type_lookup_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_result_hash = derive_module_part_id(core_module_id, "type-result");
@@ -48,18 +49,14 @@ pub fn create_union_variant_type_lookup_part(core_module_id: &EventHashId) -> Mo
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    lookup_hash,
-                ))),
-                argument: Box::new(variants),
-            })),
-            argument: Box::new(tag.clone()),
-        })),
-        argument: Box::new(next_index),
-    });
+    let recurse = call_part(
+        &lookup_hash,
+        &[
+            ("variants", variants),
+            ("tag", tag.clone()),
+            ("index", next_index),
+        ],
+    );
 
     let err_variant_not_found = Expression::Variant(VariantExpression {
         type_part_definition_event_hash: None,
@@ -150,16 +147,14 @@ pub fn create_union_variant_type_lookup_part(core_module_id: &EventHashId) -> Mo
 
     ModulePartEntry {
         name: "union-variant-type-lookup".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(variant_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::TypePart(type_result_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("variants", PartType::List(Box::new(variant_type))),
+                ("tag", PartType::String),
+                ("index", PartType::Number),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -168,24 +163,12 @@ pub fn create_union_variant_type_lookup_part(core_module_id: &EventHashId) -> Mo
             ("ja", "直和型のバリアント一覧からタグ名でペイロード型を探索"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "variants".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "tag".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(&[("variants", 0), ("tag", 1), ("index", 2)], body)),
     }
 }
 
 /// パターンマッチアーム一覧に対象タグが含まれるかを線形探索するパーツ
-/// `core.find-tag-in-arms`: `list<{ tag: string, variable_id: number, body: expression }> -> string -> number -> boolean`
+/// `core.find-tag-in-arms`: `(arms: List Arm, target_tag: String, index: Number) -> Boolean`
 pub fn create_find_tag_in_arms_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_hash = derive_module_part_id(core_module_id, "expression");
     let find_hash = derive_module_part_id(core_module_id, "find-tag-in-arms");
@@ -220,18 +203,14 @@ pub fn create_find_tag_in_arms_part(core_module_id: &EventHashId) -> ModulePartE
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    find_hash,
-                ))),
-                argument: Box::new(arms),
-            })),
-            argument: Box::new(target_tag),
-        })),
-        argument: Box::new(next_index),
-    });
+    let recurse = call_part(
+        &find_hash,
+        &[
+            ("arms", arms),
+            ("target_tag", target_tag),
+            ("index", next_index),
+        ],
+    );
 
     let body = Expression::If(IfExpression {
         condition: Box::new(at_end),
@@ -264,39 +243,28 @@ pub fn create_find_tag_in_arms_part(core_module_id: &EventHashId) -> ModulePartE
 
     ModulePartEntry {
         name: "find-tag-in-arms".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(arm_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("arms", PartType::List(Box::new(arm_type))),
+                ("target_tag", PartType::String),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Check if tag is present in match arm list"),
             ("ja", "パターンマッチアーム一覧に対象タグが存在するか検査"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "arms".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "target_tag".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("arms", 0), ("target_tag", 1), ("index", 2)],
+            body,
+        )),
     }
 }
 
 /// 直和型の全バリアントが match アームで網羅されているか検査するパーツ
-/// `core.check-union-exhaustiveness`: `variants -> arms -> number -> type-ast -> type-result`
+/// `core.check-union-exhaustiveness`: `(variants: List Variant, arms: List Arm, index: Number, return_type: type-ast) -> type-result`
 pub fn create_check_union_exhaustiveness_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_result_hash = derive_module_part_id(core_module_id, "type-result");
@@ -325,39 +293,29 @@ pub fn create_check_union_exhaustiveness_part(core_module_id: &EventHashId) -> M
         key: "tag".into(),
     });
 
-    let is_present = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    find_hash,
-                ))),
-                argument: Box::new(arms.clone()),
-            })),
-            argument: Box::new(current_tag.clone()),
-        })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-    });
+    let is_present = call_part(
+        &find_hash,
+        &[
+            ("arms", arms.clone()),
+            ("target_tag", current_tag.clone()),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+        ],
+    );
 
     let next_index = Expression::Add(AddExpression {
         left: Box::new(index),
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        exhaust_hash,
-                    ))),
-                    argument: Box::new(variants),
-                })),
-                argument: Box::new(arms),
-            })),
-            argument: Box::new(next_index),
-        })),
-        argument: Box::new(return_type.clone()),
-    });
+    let recurse = call_part(
+        &exhaust_hash,
+        &[
+            ("variants", variants),
+            ("arms", arms),
+            ("index", next_index),
+            ("return_type", return_type.clone()),
+        ],
+    );
 
     let ok_result = Expression::Variant(VariantExpression {
         type_part_definition_event_hash: None,
@@ -427,19 +385,15 @@ pub fn create_check_union_exhaustiveness_part(core_module_id: &EventHashId) -> M
 
     ModulePartEntry {
         name: "check-union-exhaustiveness".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(variant_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(arm_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::TypePart(type_ast_hash)),
-                        return_type: Box::new(PartType::TypePart(type_result_hash)),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("variants", PartType::List(Box::new(variant_type))),
+                ("arms", PartType::List(Box::new(arm_type))),
+                ("index", PartType::Number),
+                ("return_type", PartType::TypePart(type_ast_hash)),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -451,28 +405,20 @@ pub fn create_check_union_exhaustiveness_part(core_module_id: &EventHashId) -> M
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "variants".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "arms".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(Expression::Function(FunctionExpression {
-                        parameter_id: 3,
-                        parameter_name: "return_type".into(),
-                        body: Box::new(body),
-                    })),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[
+                ("variants", 0),
+                ("arms", 1),
+                ("index", 2),
+                ("return_type", 3),
+            ],
+            body,
+        )),
     }
 }
 
 /// 実際のバリアント群が期待される直和型に含まれ、ペイロード型が適合しているかを再帰判定するパーツ
-/// `core.type-assignable-union-variants`: `actual_variants -> expected_variants -> index -> boolean`
+/// `core.type-assignable-union-variants`: `(actual_variants: List Variant, expected_variants: List Variant, index: Number) -> Boolean`
 pub fn create_type_assignable_union_variants_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
@@ -504,46 +450,42 @@ pub fn create_type_assignable_union_variants_part(core_module_id: &EventHashId) 
         key: "payload_type".into(),
     });
 
-    let lookup_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    lookup_hash,
-                ))),
-                argument: Box::new(expected_variants.clone()),
-            })),
-            argument: Box::new(current_tag),
-        })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-    });
+    let lookup_call = call_part(
+        &lookup_hash,
+        &[
+            ("variants", expected_variants.clone()),
+            ("tag", current_tag),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+        ],
+    );
 
     let next_index = Expression::Add(AddExpression {
         left: Box::new(index),
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    assignable_variants_hash,
-                ))),
-                argument: Box::new(actual_variants),
-            })),
-            argument: Box::new(expected_variants),
-        })),
-        argument: Box::new(next_index),
-    });
+    let recurse = call_part(
+        &assignable_variants_hash,
+        &[
+            ("actual_variants", actual_variants),
+            ("expected_variants", expected_variants),
+            ("index", next_index),
+        ],
+    );
 
-    let check_payload_assignable = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_assignable_hash,
-            ))),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 11 })),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 10 })),
-    });
+    let check_payload_assignable = call_part(
+        &type_assignable_hash,
+        &[
+            (
+                "actual_type",
+                Expression::Variable(VariableExpression { variable_id: 11 }),
+            ),
+            (
+                "expected_type",
+                Expression::Variable(VariableExpression { variable_id: 10 }),
+            ),
+        ],
+    );
 
     let payload_match = Expression::Match(MatchExpression {
         target: Box::new(current_payload_type),
@@ -621,16 +563,17 @@ pub fn create_type_assignable_union_variants_part(core_module_id: &EventHashId) 
 
     ModulePartEntry {
         name: "type-assignable-union-variants".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(variant_type.clone()))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(variant_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "actual_variants",
+                    PartType::List(Box::new(variant_type.clone())),
+                ),
+                ("expected_variants", PartType::List(Box::new(variant_type))),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -642,18 +585,13 @@ pub fn create_type_assignable_union_variants_part(core_module_id: &EventHashId) 
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "actual_variants".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "expected_variants".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[
+                ("actual_variants", 0),
+                ("expected_variants", 1),
+                ("index", 2),
+            ],
+            body,
+        )),
     }
 }

@@ -1,12 +1,13 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Description, Expression, FunctionExpression, IfExpression, MatchArm,
-    MatchExpression, ModulePartEntry, PartReferenceExpression, PartType, RecordGetExpression,
-    StringConcatExpression, StringExpression, VariableExpression, derive_module_part_id,
+    Description, Expression, IfExpression, MatchArm, MatchExpression, ModulePartEntry, PartType,
+    RecordGetExpression, StringConcatExpression, StringExpression, VariableExpression,
+    derive_module_part_id,
 };
 
 /// definy AST を人間可読なソースコード文字列に変換する自己ホスト式
-/// `core.expression-to-source`: `expression -> string`
+/// `core.expression-to-source`: `(expr: expression) -> string`
 pub fn create_expression_to_source_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
     let to_source_hash = derive_module_part_id(core_module_id, "expression-to-source");
@@ -23,12 +24,7 @@ pub fn create_expression_to_source_part(core_module_id: &EventHashId) -> ModuleP
     }
 
     fn rec_call(to_source_hash: &EventHashId, sub_expr: Expression) -> Expression {
-        Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                to_source_hash.clone(),
-            ))),
-            argument: Box::new(sub_expr),
-        })
+        call_part(to_source_hash, &[("expr", sub_expr)])
     }
 
     let binary_op_arm = |tag: &'static str,
@@ -179,7 +175,7 @@ pub fn create_expression_to_source_part(core_module_id: &EventHashId) -> ModuleP
         });
     }
 
-    // 10. Call: call({ function, argument })
+    // 10. Call: call({ function, arguments })
     {
         let call_var_id = 25;
         let fn_sub = Expression::RecordGet(RecordGetExpression {
@@ -188,17 +184,9 @@ pub fn create_expression_to_source_part(core_module_id: &EventHashId) -> ModuleP
             })),
             key: "function".into(),
         });
-        let arg_sub = Expression::RecordGet(RecordGetExpression {
-            record: Box::new(Expression::Variable(VariableExpression {
-                variable_id: call_var_id,
-            })),
-            key: "argument".into(),
-        });
 
         let rec_fn = rec_call(&to_source_hash, fn_sub);
-        let rec_arg = rec_call(&to_source_hash, arg_sub);
-
-        let call_str = concat(rec_fn, concat(str_lit("("), concat(rec_arg, str_lit(")"))));
+        let call_str = concat(rec_fn, str_lit("(...)"));
 
         arms.push(MatchArm {
             tag: "call".into(),
@@ -216,22 +204,21 @@ pub fn create_expression_to_source_part(core_module_id: &EventHashId) -> ModuleP
         body: Box::new(str_lit("...")),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "expr".into(),
-        body: Box::new(Expression::Match(MatchExpression {
+    let main_expr = fn_expr(
+        &[("expr", 0)],
+        Expression::Match(MatchExpression {
             target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
             arms,
             default: None,
-        })),
-    });
+        }),
+    );
 
     ModulePartEntry {
         name: "expression-to-source".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(expr_type_part_hash)),
-            return_type: Box::new(PartType::String),
-        }),
+        part_type: Some(fn_type(
+            &[("expr", PartType::TypePart(expr_type_part_hash))],
+            PartType::String,
+        )),
         description: Description::localized(vec![
             (
                 "en",

@@ -554,13 +554,18 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
             }
             definy_event::event::Expression::Function(func_expression) => {
                 let mut body_scope = scope.to_vec();
-                body_scope.push((
-                    func_expression.parameter_id,
-                    func_expression.parameter_name.to_string(),
-                ));
+                for param in &func_expression.parameters {
+                    body_scope.push((param.parameter_id, param.parameter_name.to_string()));
+                }
+                let params_str = func_expression
+                    .parameters
+                    .iter()
+                    .map(|p| p.parameter_name.as_ref())
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 let source = format!(
-                    "fn {} -> {}",
-                    func_expression.parameter_name,
+                    "fn ({}) -> {}",
+                    params_str,
                     render(func_expression.body.as_ref(), false, &body_scope)
                 );
                 if is_child {
@@ -570,10 +575,18 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::Call(call_expression) => {
+                let args_str = call_expression
+                    .arguments
+                    .iter()
+                    .map(|arg| {
+                        format!("{}: {}", arg.name, render(arg.value.as_ref(), false, scope))
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 let source = format!(
-                    "{} {}",
+                    "{}({})",
                     render(call_expression.function.as_ref(), true, scope),
-                    render(call_expression.argument.as_ref(), true, scope)
+                    args_str
                 );
                 if is_child {
                     format!("({})", source)
@@ -582,9 +595,15 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 }
             }
             definy_event::event::Expression::TypeFunction(type_func_expression) => {
+                let params_str = type_func_expression
+                    .parameters
+                    .iter()
+                    .map(|p| format!("{}: {}", p.name, render(p.r#type.as_ref(), false, scope)))
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 let source = format!(
-                    "{} -> {}",
-                    render(type_func_expression.parameter.as_ref(), true, scope),
+                    "({}) -> {}",
+                    params_str,
                     render(type_func_expression.return_type.as_ref(), false, scope)
                 );
                 if is_child {

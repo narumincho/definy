@@ -73,32 +73,35 @@
       "name": "clock-now",
       "part_type": {
         "function": {
-          "parameter": {
-            "record": [
-              {
-                "key": "now",
-                "value": {
-                  "function": {
-                    "parameter": {
-                      "record": []
-                    },
-                    "return_type": {
-                      "record": [
-                        {
-                          "key": "seconds",
-                          "value": "number"
-                        },
-                        {
-                          "key": "nanoseconds",
-                          "value": "number"
+          "parameters": [
+            {
+              "name": "clock",
+              "type": {
+                "record": [
+                  {
+                    "key": "now",
+                    "value": {
+                      "function": {
+                        "parameters": [],
+                        "return_type": {
+                          "record": [
+                            {
+                              "key": "seconds",
+                              "value": "number"
+                            },
+                            {
+                              "key": "nanoseconds",
+                              "value": "number"
+                            }
+                          ]
                         }
-                      ]
+                      }
                     }
                   }
-                }
+                ]
               }
-            ]
-          },
+            }
+          ],
           "return_type": {
             "record": [
               {
@@ -125,8 +128,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "clock",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "clock"
+            }
+          ],
           "body": {
             "Call": {
               "function": {
@@ -139,11 +146,7 @@
                   "key": "now"
                 }
               },
-              "argument": {
-                "TypeLiteral": {
-                  "items": []
-                }
-              }
+              "arguments": []
             }
           }
         }
@@ -153,21 +156,24 @@
       "name": "monotonic-now",
       "part_type": {
         "function": {
-          "parameter": {
-            "record": [
-              {
-                "key": "now",
-                "value": {
-                  "function": {
-                    "parameter": {
-                      "record": []
-                    },
-                    "return_type": "number"
+          "parameters": [
+            {
+              "name": "clock",
+              "type": {
+                "record": [
+                  {
+                    "key": "now",
+                    "value": {
+                      "function": {
+                        "parameters": [],
+                        "return_type": "number"
+                      }
+                    }
                   }
-                }
+                ]
               }
-            ]
-          },
+            }
+          ],
           "return_type": "number"
         }
       },
@@ -183,8 +189,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "clock",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "clock"
+            }
+          ],
           "body": {
             "Call": {
               "function": {
@@ -197,11 +207,7 @@
                   "key": "now"
                 }
               },
-              "argument": {
-                "TypeLiteral": {
-                  "items": []
-                }
-              }
+              "arguments": []
             }
           }
         }
@@ -211,21 +217,24 @@
       "name": "random-u64",
       "part_type": {
         "function": {
-          "parameter": {
-            "record": [
-              {
-                "key": "get_random_u64",
-                "value": {
-                  "function": {
-                    "parameter": {
-                      "record": []
-                    },
-                    "return_type": "number"
+          "parameters": [
+            {
+              "name": "random",
+              "type": {
+                "record": [
+                  {
+                    "key": "get_random_u64",
+                    "value": {
+                      "function": {
+                        "parameters": [],
+                        "return_type": "number"
+                      }
+                    }
                   }
-                }
+                ]
               }
-            ]
-          },
+            }
+          ],
           "return_type": "number"
         }
       },
@@ -241,8 +250,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "random",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "random"
+            }
+          ],
           "body": {
             "Call": {
               "function": {
@@ -255,11 +268,7 @@
                   "key": "get_random_u64"
                 }
               },
-              "argument": {
-                "TypeLiteral": {
-                  "items": []
-                }
-              }
+              "arguments": []
             }
           }
         }
@@ -269,32 +278,35 @@
       "name": "clock-get-seconds",
       "part_type": {
         "function": {
-          "parameter": {
-            "record": [
-              {
-                "key": "now",
-                "value": {
-                  "function": {
-                    "parameter": {
-                      "record": []
-                    },
-                    "return_type": {
-                      "record": [
-                        {
-                          "key": "seconds",
-                          "value": "number"
-                        },
-                        {
-                          "key": "nanoseconds",
-                          "value": "number"
+          "parameters": [
+            {
+              "name": "clock",
+              "type": {
+                "record": [
+                  {
+                    "key": "now",
+                    "value": {
+                      "function": {
+                        "parameters": [],
+                        "return_type": {
+                          "record": [
+                            {
+                              "key": "seconds",
+                              "value": "number"
+                            },
+                            {
+                              "key": "nanoseconds",
+                              "value": "number"
+                            }
+                          ]
                         }
-                      ]
+                      }
                     }
                   }
-                }
+                ]
               }
-            ]
-          },
+            }
+          ],
           "return_type": "number"
         }
       },
@@ -310,8 +322,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "clock",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "clock"
+            }
+          ],
           "body": {
             "RecordGet": {
               "record": {
@@ -326,11 +342,7 @@
                       "key": "now"
                     }
                   },
-                  "argument": {
-                    "TypeLiteral": {
-                      "items": []
-                    }
-                  }
+                  "arguments": []
                 }
               },
               "key": "seconds"
@@ -343,38 +355,40 @@
       "name": "clock-is-expired",
       "part_type": {
         "function": {
-          "parameter": {
-            "record": [
-              {
-                "key": "now",
-                "value": {
-                  "function": {
-                    "parameter": {
-                      "record": []
-                    },
-                    "return_type": {
-                      "record": [
-                        {
-                          "key": "seconds",
-                          "value": "number"
-                        },
-                        {
-                          "key": "nanoseconds",
-                          "value": "number"
+          "parameters": [
+            {
+              "name": "clock",
+              "type": {
+                "record": [
+                  {
+                    "key": "now",
+                    "value": {
+                      "function": {
+                        "parameters": [],
+                        "return_type": {
+                          "record": [
+                            {
+                              "key": "seconds",
+                              "value": "number"
+                            },
+                            {
+                              "key": "nanoseconds",
+                              "value": "number"
+                            }
+                          ]
                         }
-                      ]
+                      }
                     }
                   }
-                }
+                ]
               }
-            ]
-          },
-          "return_type": {
-            "function": {
-              "parameter": "number",
-              "return_type": "boolean"
+            },
+            {
+              "name": "deadline",
+              "type": "number"
             }
-          }
+          ],
+          "return_type": "boolean"
         }
       },
       "description": [
@@ -389,43 +403,41 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "clock",
-          "body": {
-            "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "clock"
+            },
+            {
               "parameter_id": 2,
-              "parameter_name": "deadline",
-              "body": {
-                "GreaterThanOrEqual": {
-                  "left": {
-                    "RecordGet": {
-                      "record": {
-                        "Call": {
-                          "function": {
-                            "RecordGet": {
-                              "record": {
-                                "Variable": {
-                                  "variable_id": 1
-                                }
-                              },
-                              "key": "now"
+              "parameter_name": "deadline"
+            }
+          ],
+          "body": {
+            "GreaterThanOrEqual": {
+              "left": {
+                "RecordGet": {
+                  "record": {
+                    "Call": {
+                      "function": {
+                        "RecordGet": {
+                          "record": {
+                            "Variable": {
+                              "variable_id": 1
                             }
                           },
-                          "argument": {
-                            "TypeLiteral": {
-                              "items": []
-                            }
-                          }
+                          "key": "now"
                         }
                       },
-                      "key": "seconds"
+                      "arguments": []
                     }
                   },
-                  "right": {
-                    "Variable": {
-                      "variable_id": 2
-                    }
-                  }
+                  "key": "seconds"
+                }
+              },
+              "right": {
+                "Variable": {
+                  "variable_id": 2
                 }
               }
             }

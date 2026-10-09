@@ -4,16 +4,17 @@
 //! 与えられたパターンアーム一覧 (`arms`) を先頭から走査し、対象バリアントのタグと一致するアームを
 //! 検出して、その変数を束縛した環境上で本体式を `core.eval-value` で解釈実行します。
 
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, EqualExpression, Expression, FunctionExpression,
-    IfExpression, LessThanOrEqualExpression, ListGetExpression, ListLengthExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordGetExpression,
-    VariableExpression, VariantExpression, derive_module_part_id,
+    AddExpression, Description, EqualExpression, Expression, IfExpression,
+    LessThanOrEqualExpression, ListGetExpression, ListLengthExpression, ModulePartEntry,
+    NumberExpression, PartType, RecordGetExpression, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
 /// `core.eval-match-arms`:
-/// `arms -> target_tag -> target_payload -> env -> value`
+/// `(arms: expression, target_tag: String, target_payload: value, env: env) -> value`
 ///
 /// パターンマッチアームのリストを先頭 (インデックス 0) から走査開始するエントリーポイントです。
 pub fn create_eval_match_arms_part(core_module_id: &EventHashId) -> ModulePartEntry {
@@ -21,69 +22,53 @@ pub fn create_eval_match_arms_part(core_module_id: &EventHashId) -> ModulePartEn
     let env_part_hash = derive_module_part_id(core_module_id, "env");
     let match_arms_inner_hash = derive_module_part_id(core_module_id, "eval-match-arms-inner");
 
-    // eval-match-arms(arms)(target_tag)(target_payload)(env)
-    // = eval-match-arms-inner(arms)(target_tag)(target_payload)(env)(0)
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "arms".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "target_tag".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "target_payload".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 3,
-                    parameter_name: "env".into(),
-                    body: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::Call(CallExpression {
-                                function: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::Call(CallExpression {
-                                        function: Box::new(Expression::PartReference(
-                                            PartReferenceExpression::new(match_arms_inner_hash),
-                                        )),
-                                        argument: Box::new(Expression::Variable(
-                                            VariableExpression { variable_id: 0 },
-                                        )),
-                                    })),
-                                    argument: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 1,
-                                    })),
-                                })),
-                                argument: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 2,
-                                })),
-                            })),
-                            argument: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 3,
-                            })),
-                        })),
-                        argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                    })),
-                })),
-            })),
-        })),
-    });
+    let call_inner = call_part(
+        &match_arms_inner_hash,
+        &[
+            (
+                "arms",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            (
+                "target_tag",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+            (
+                "target_payload",
+                Expression::Variable(VariableExpression { variable_id: 2 }),
+            ),
+            (
+                "env",
+                Expression::Variable(VariableExpression { variable_id: 3 }),
+            ),
+            ("idx", Expression::Number(NumberExpression { value: 0 })),
+        ],
+    );
+
+    let body = fn_expr(
+        &[
+            ("arms", 0),
+            ("target_tag", 1),
+            ("target_payload", 2),
+            ("env", 3),
+        ],
+        call_inner,
+    );
 
     ModulePartEntry {
         name: "eval-match-arms".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(derive_module_part_id(
-                core_module_id,
-                "expression",
-            ))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(val_part_hash.clone())),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::TypePart(env_part_hash)),
-                        return_type: Box::new(PartType::TypePart(val_part_hash)),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "arms",
+                    PartType::TypePart(derive_module_part_id(core_module_id, "expression")),
+                ),
+                ("target_tag", PartType::String),
+                ("target_payload", PartType::TypePart(val_part_hash.clone())),
+                ("env", PartType::TypePart(env_part_hash)),
+            ],
+            PartType::TypePart(val_part_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -116,30 +101,35 @@ pub fn create_eval_match_arms_inner_part(core_module_id: &EventHashId) -> Module
         payload: None,
     });
 
-    // recurse: eval-match-arms-inner(arms)(target_tag)(target_payload)(env)(idx + 1)
-    let recurse_next = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(match_arms_inner_hash),
-                        )),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
-                        })),
-                    })),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
-        })),
-        argument: Box::new(Expression::Add(AddExpression {
-            left: Box::new(Expression::Variable(VariableExpression { variable_id: 4 })),
-            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-        })),
-    });
+    // recurse: eval-match-arms-inner(arms, target_tag, target_payload, env, idx + 1)
+    let recurse_next = call_part(
+        &match_arms_inner_hash,
+        &[
+            (
+                "arms",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            (
+                "target_tag",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+            (
+                "target_payload",
+                Expression::Variable(VariableExpression { variable_id: 2 }),
+            ),
+            (
+                "env",
+                Expression::Variable(VariableExpression { variable_id: 3 }),
+            ),
+            (
+                "idx",
+                Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 4 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                }),
+            ),
+        ],
+    );
 
     // current arm = list_get(arms, idx)
     let current_arm = Expression::ListGet(ListGetExpression {
@@ -162,30 +152,27 @@ pub fn create_eval_match_arms_inner_part(core_module_id: &EventHashId) -> Module
         key: "body".into(),
     });
 
-    // extended_env = env-extend(env)(arm.variable_id)(target_payload)
-    let extended_env = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    env_extend_hash,
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
-            })),
-            argument: Box::new(current_arm_var_id),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-    });
+    // extended_env = env-extend(env, arm.variable_id, target_payload)
+    let extended_env = call_part(
+        &env_extend_hash,
+        &[
+            (
+                "env",
+                Expression::Variable(VariableExpression { variable_id: 3 }),
+            ),
+            ("var_id", current_arm_var_id),
+            (
+                "val",
+                Expression::Variable(VariableExpression { variable_id: 2 }),
+            ),
+        ],
+    );
 
-    // evaluated_body = eval-value(arm.body)(extended_env)
-    let evaluated_body = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                eval_value_hash,
-            ))),
-            argument: Box::new(current_arm_body),
-        })),
-        argument: Box::new(extended_env),
-    });
+    // evaluated_body = eval-value(arm.body, extended_env)
+    let evaluated_body = call_part(
+        &eval_value_hash,
+        &[("expr", current_arm_body), ("env", extended_env)],
+    );
 
     // If idx >= list_length(arms) => unit
     // Else if arm.tag == target_tag => evaluated_body
@@ -208,49 +195,32 @@ pub fn create_eval_match_arms_inner_part(core_module_id: &EventHashId) -> Module
         })),
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "arms".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "target_tag".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "target_payload".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 3,
-                    parameter_name: "env".into(),
-                    body: Box::new(Expression::Function(FunctionExpression {
-                        parameter_id: 4,
-                        parameter_name: "idx".into(),
-                        body: Box::new(body_inner),
-                    })),
-                })),
-            })),
-        })),
-    });
+    let body = fn_expr(
+        &[
+            ("arms", 0),
+            ("target_tag", 1),
+            ("target_payload", 2),
+            ("env", 3),
+            ("idx", 4),
+        ],
+        body_inner,
+    );
 
     ModulePartEntry {
         name: "eval-match-arms-inner".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(derive_module_part_id(
-                core_module_id,
-                "expression",
-            ))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(val_part_hash.clone())),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::TypePart(env_part_hash)),
-                        return_type: Box::new(PartType::Function {
-                            parameter: Box::new(PartType::Number),
-                            return_type: Box::new(PartType::TypePart(val_part_hash)),
-                        }),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "arms",
+                    PartType::TypePart(derive_module_part_id(core_module_id, "expression")),
+                ),
+                ("target_tag", PartType::String),
+                ("target_payload", PartType::TypePart(val_part_hash.clone())),
+                ("env", PartType::TypePart(env_part_hash)),
+                ("idx", PartType::Number),
+            ],
+            PartType::TypePart(val_part_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",

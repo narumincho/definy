@@ -259,11 +259,18 @@ pub enum PartType {
     TypePart(EventHashId),
     List(Box<PartType>),
     Function {
-        parameter: Box<PartType>,
+        parameters: Vec<FunctionParameterType>,
         return_type: Box<PartType>,
     },
     Record(Vec<RecordFieldType>),
     Union(Vec<UnionVariantType>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct FunctionParameterType {
+    pub name: Box<str>,
+    pub r#type: Box<PartType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -290,9 +297,16 @@ impl std::fmt::Display for PartType {
             PartType::TypePart(hash) => write!(f, "type-part({hash})"),
             PartType::List(item) => write!(f, "list<{item}>"),
             PartType::Function {
-                parameter,
+                parameters,
                 return_type,
-            } => write!(f, "{parameter} -> {return_type}"),
+            } => {
+                let params_text = parameters
+                    .iter()
+                    .map(|p| format!("{}: {}", p.name, p.r#type))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "({params_text}) -> {return_type}")
+            }
             PartType::Record(fields) => {
                 let field_texts = fields
                     .iter()
@@ -338,10 +352,16 @@ impl PartType {
                 item_type: Box::new(item.to_expression()),
             }),
             PartType::Function {
-                parameter,
+                parameters,
                 return_type,
             } => Expression::TypeFunction(TypeFunctionExpression {
-                parameter: Box::new(parameter.to_expression()),
+                parameters: parameters
+                    .iter()
+                    .map(|p| TypeFunctionParameter {
+                        name: p.name.clone(),
+                        r#type: Box::new(p.r#type.to_expression()),
+                    })
+                    .collect(),
                 return_type: Box::new(return_type.to_expression()),
             }),
             PartType::Record(fields) => Expression::TypeLiteral(TypeLiteralExpression {
@@ -375,10 +395,17 @@ impl PartType {
                 Some(PartType::List(Box::new(item)))
             }
             Expression::TypeFunction(func_expr) => {
-                let parameter = Self::from_expression(&func_expr.parameter)?;
+                let mut parameters = Vec::with_capacity(func_expr.parameters.len());
+                for p in &func_expr.parameters {
+                    let param_type = Self::from_expression(&p.r#type)?;
+                    parameters.push(FunctionParameterType {
+                        name: p.name.clone(),
+                        r#type: Box::new(param_type),
+                    });
+                }
                 let return_type = Self::from_expression(&func_expr.return_type)?;
                 Some(PartType::Function {
-                    parameter: Box::new(parameter),
+                    parameters,
                     return_type: Box::new(return_type),
                 })
             }
@@ -804,23 +831,43 @@ pub struct ConstructorExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct FunctionExpression {
+pub struct FunctionParameter {
     pub parameter_id: i64,
     pub parameter_name: Box<str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct FunctionExpression {
+    pub parameters: Vec<FunctionParameter>,
     pub body: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct CallArgument {
+    pub name: Box<str>,
+    pub value: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct CallExpression {
     pub function: Box<Expression>,
-    pub argument: Box<Expression>,
+    pub arguments: Vec<CallArgument>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct TypeFunctionParameter {
+    pub name: Box<str>,
+    pub r#type: Box<Expression>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct TypeFunctionExpression {
-    pub parameter: Box<Expression>,
+    pub parameters: Vec<TypeFunctionParameter>,
     pub return_type: Box<Expression>,
 }
 

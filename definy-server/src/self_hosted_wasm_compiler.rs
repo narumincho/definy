@@ -4,8 +4,8 @@
 use chrono::DateTime;
 use definy_core::expression_eval::Value;
 use definy_event::event::{
-    AccountId, AddExpression, CallExpression, Description, Event, EventContent, Expression,
-    ModuleCommitEvent, NumberExpression, PartReferenceExpression, derive_module_id,
+    AccountId, AddExpression, CallArgument, CallExpression, Description, Event, EventContent,
+    Expression, ModuleCommitEvent, NumberExpression, PartReferenceExpression, derive_module_id,
     derive_module_part_id,
 };
 use definy_event::{EventHashId, VerifyAndDeserializeError};
@@ -103,7 +103,10 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             compile_to_wasm_hash,
         ))),
-        argument: Box::new(self_hosted_ast),
+        arguments: vec![CallArgument {
+            name: "expr".into(),
+            value: Box::new(self_hosted_ast),
+        }],
     });
 
     // definy 実行系上で自己記述コンパイラを実行

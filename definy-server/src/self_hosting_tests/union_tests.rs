@@ -11,7 +11,7 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, call_part2, call_part3, create_test_module_events, empty_type_env,
+    all_type_checker_parts, call_part, create_test_module_events, empty_type_env,
     get_test_account_and_mod_id, type_env_single_var,
 };
 
@@ -210,7 +210,10 @@ fn test_self_hosted_variant_type_inference_and_subtyping() {
     let var_some_expr = ast_variant_some("some", expr_num(42));
     let env_empty = empty_type_env();
 
-    let check_call = call_part2(type_check_hash, var_some_expr.clone(), env_empty.clone());
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", var_some_expr.clone()), ("env", env_empty.clone())],
+    );
     let inferred = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate type check inferred");
 
@@ -243,21 +246,25 @@ fn test_self_hosted_variant_type_inference_and_subtyping() {
     let option_num_type = ast_union_type(vec![("none", None), ("some", Some(type_num()))]);
 
     // inferred_type（some(number) のみを持つ union）が Option<number> に代入可能か
-    let assignable_call = call_part2(
+    let assignable_call = call_part(
         type_assignable_hash,
-        ast_union_type(vec![("some", Some(type_num()))]),
-        option_num_type.clone(),
+        &[
+            ("sub", ast_union_type(vec![("some", Some(type_num()))])),
+            ("sup", option_num_type.clone()),
+        ],
     );
     let assignable_res =
         definy_core::evaluate_expression(&assignable_call, &events).expect("evaluate assignable");
     assert_eq!(assignable_res, Value::Bool(true));
 
     // 3. check-against で variant("some", 42) を Option<number> に対して検査
-    let against_call = call_part3(
+    let against_call = call_part(
         type_check_against_hash,
-        var_some_expr,
-        env_empty,
-        option_num_type,
+        &[
+            ("expr", var_some_expr),
+            ("env", env_empty),
+            ("expected_type", option_num_type),
+        ],
     );
     let against_res =
         definy_core::evaluate_expression(&against_call, &events).expect("evaluate check against");
@@ -296,7 +303,10 @@ fn test_self_hosted_match_expression_type_checking() {
         ],
     );
 
-    let check_call = call_part2(type_check_hash, match_expr, env_with_option);
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", match_expr), ("env", env_with_option)],
+    );
     let result =
         definy_core::evaluate_expression(&check_call, &events).expect("evaluate match type check");
     match result {
@@ -349,7 +359,10 @@ fn test_self_hosted_match_expression_detects_type_mismatch() {
         ],
     );
 
-    let check_call = call_part2(type_check_hash, match_expr, env_with_option);
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", match_expr), ("env", env_with_option)],
+    );
     let result =
         definy_core::evaluate_expression(&check_call, &events).expect("evaluate type mismatch");
     match result {
@@ -392,7 +405,10 @@ fn test_self_hosted_match_expression_detects_non_exhaustive_arms() {
         vec![("some", 1, expr_add(expr_var(1), expr_num(1)))],
     );
 
-    let check_call = call_part2(type_check_hash, match_non_exhaustive, env_with_option);
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", match_non_exhaustive), ("env", env_with_option)],
+    );
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("evaluate non exhaustive match");
     match result {
@@ -446,7 +462,10 @@ fn test_self_hosted_match_expression_detects_unknown_variant() {
         ],
     );
 
-    let check_call = call_part2(type_check_hash, match_unknown, env_with_option);
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", match_unknown), ("env", env_with_option)],
+    );
     let result =
         definy_core::evaluate_expression(&check_call, &events).expect("evaluate unknown variant");
     match result {
@@ -492,7 +511,10 @@ fn test_self_hosted_variant_none_inference_and_against() {
     let var_none_expr = ast_variant_none("none");
 
     // 1. 型推論
-    let check_call = call_part2(type_check_hash, var_none_expr.clone(), env_empty.clone());
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", var_none_expr.clone()), ("env", env_empty.clone())],
+    );
     let inferred =
         definy_core::evaluate_expression(&check_call, &events).expect("evaluate none type check");
     match inferred {
@@ -504,11 +526,13 @@ fn test_self_hosted_variant_none_inference_and_against() {
 
     // 2. Option<number> に対する check-against
     let option_num_type = ast_union_type(vec![("none", None), ("some", Some(type_num()))]);
-    let against_call = call_part3(
+    let against_call = call_part(
         type_check_against_hash,
-        var_none_expr,
-        env_empty,
-        option_num_type,
+        &[
+            ("expr", var_none_expr),
+            ("env", env_empty),
+            ("expected_type", option_num_type),
+        ],
     );
     let against_res = definy_core::evaluate_expression(&against_call, &events)
         .expect("evaluate against for none");

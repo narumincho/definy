@@ -1,3 +1,4 @@
+pub mod assignable;
 pub mod constructor;
 #[cfg(test)]
 mod tests;
@@ -11,8 +12,9 @@ use definy_event::EventHashId;
 use crate::app_state::AppState;
 use crate::part_projection::{PartSnapshot, collect_part_snapshots};
 
-use super::types::{ExpressionType, TypeDiagnostic};
+use super::types::{ExpressionType, FunctionParameterTypeInfo, TypeDiagnostic};
 
+pub(crate) use assignable::*;
 pub use constructor::*;
 pub(crate) use type_check::*;
 
@@ -27,10 +29,16 @@ pub fn part_type_to_expression_type(part_type: &definy_event::event::PartType) -
             ExpressionType::List(Box::new(part_type_to_expression_type(item_type.as_ref())))
         }
         definy_event::event::PartType::Function {
-            parameter,
+            parameters,
             return_type,
         } => ExpressionType::Function {
-            parameter: Box::new(part_type_to_expression_type(parameter.as_ref())),
+            parameters: parameters
+                .iter()
+                .map(|p| FunctionParameterTypeInfo {
+                    name: p.name.to_string(),
+                    r#type: part_type_to_expression_type(&p.r#type),
+                })
+                .collect(),
             return_type: Box::new(part_type_to_expression_type(return_type.as_ref())),
         },
         definy_event::event::PartType::Record(fields) => ExpressionType::Record(

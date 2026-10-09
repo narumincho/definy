@@ -31,8 +31,8 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::Item => "IT".to_string(),
             PathStep::FunctionBody => "FB".to_string(),
             PathStep::CallFunction => "CF".to_string(),
-            PathStep::CallArgument => "CA".to_string(),
-            PathStep::TypeFunctionParameter => "TFP".to_string(),
+            PathStep::CallArgument(index) => format!("CA{}", index),
+            PathStep::TypeFunctionParameter(index) => format!("TFP{}", index),
             PathStep::TypeFunctionReturn => "TFR".to_string(),
             PathStep::VariantPayload => "VP".to_string(),
             PathStep::MatchTarget => "MT".to_string(),
@@ -263,15 +263,17 @@ pub fn get_mut_expression_at_path<'a>(
             PathStep::CallFunction | PathStep::Left => {
                 get_mut_expression_at_path(call_expression.function.as_mut(), &path[1..])
             }
-            PathStep::CallArgument | PathStep::Right => {
-                get_mut_expression_at_path(call_expression.argument.as_mut(), &path[1..])
-            }
+            PathStep::CallArgument(index) => call_expression
+                .arguments
+                .get_mut(index)
+                .and_then(|arg| get_mut_expression_at_path(arg.value.as_mut(), &path[1..])),
             _ => None,
         },
         definy_event::event::Expression::TypeFunction(type_func_expression) => match path[0] {
-            PathStep::TypeFunctionParameter | PathStep::Left => {
-                get_mut_expression_at_path(type_func_expression.parameter.as_mut(), &path[1..])
-            }
+            PathStep::TypeFunctionParameter(index) => type_func_expression
+                .parameters
+                .get_mut(index)
+                .and_then(|param| get_mut_expression_at_path(param.r#type.as_mut(), &path[1..])),
             PathStep::TypeFunctionReturn | PathStep::Right => {
                 get_mut_expression_at_path(type_func_expression.return_type.as_mut(), &path[1..])
             }

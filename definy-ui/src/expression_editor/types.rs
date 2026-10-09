@@ -16,6 +16,12 @@ impl ScopeVariable {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
+pub struct FunctionParameterTypeInfo {
+    pub name: String,
+    pub r#type: ExpressionType,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ExpressionType {
     Number,
     String,
@@ -26,7 +32,7 @@ pub enum ExpressionType {
     Record(Vec<(String, ExpressionType)>),
     Union,
     Function {
-        parameter: Box<ExpressionType>,
+        parameters: Vec<FunctionParameterTypeInfo>,
         return_type: Box<ExpressionType>,
     },
     Unknown,
@@ -55,9 +61,16 @@ impl ExpressionType {
             }
             ExpressionType::Union => "Union".to_string(),
             ExpressionType::Function {
-                parameter,
+                parameters,
                 return_type,
-            } => format!("{} -> {}", parameter.text(), return_type.text()),
+            } => {
+                let params_str = parameters
+                    .iter()
+                    .map(|p| format!("{}: {}", p.name, p.r#type.text()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("({}) -> {}", params_str, return_type.text())
+            }
             ExpressionType::Unknown => "Unknown".to_string(),
         }
     }

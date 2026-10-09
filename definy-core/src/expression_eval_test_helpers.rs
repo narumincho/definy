@@ -262,3 +262,31 @@ pub fn match_op(
         default: default.map(Box::new),
     })
 }
+
+#[allow(dead_code)]
+pub fn func(params: Vec<(i64, &str)>, body: Expression) -> Expression {
+    Expression::Function(FunctionExpression {
+        parameters: params
+            .into_iter()
+            .map(|(id, name)| FunctionParameter {
+                parameter_id: id,
+                parameter_name: name.into(),
+            })
+            .collect(),
+        body: Box::new(body),
+    })
+}
+
+#[allow(dead_code)]
+pub fn call(function: Expression, args: Vec<(&str, Expression)>) -> Expression {
+    Expression::Call(CallExpression {
+        function: Box::new(function),
+        arguments: args
+            .into_iter()
+            .map(|(name, value)| CallArgument {
+                name: name.into(),
+                value: Box::new(value),
+            })
+            .collect(),
+    })
+}

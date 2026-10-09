@@ -12,11 +12,24 @@ fn test_part_type_display() {
     );
     assert_eq!(
         PartType::Function {
-            parameter: Box::new(PartType::Number),
-            return_type: Box::new(PartType::String),
+            parameters: vec![
+                FunctionParameterType {
+                    name: "list".into(),
+                    r#type: Box::new(PartType::List(Box::new(PartType::String))),
+                },
+                FunctionParameterType {
+                    name: "target".into(),
+                    r#type: Box::new(PartType::String),
+                },
+                FunctionParameterType {
+                    name: "index".into(),
+                    r#type: Box::new(PartType::Number),
+                },
+            ],
+            return_type: Box::new(PartType::Boolean),
         }
         .to_string(),
-        "number -> string"
+        "(list: list<string>, target: string, index: number) -> boolean"
     );
     let record_type = PartType::Record(vec![
         RecordFieldType {
@@ -57,7 +70,10 @@ fn test_part_type_expression_roundtrip() {
         PartType::Boolean,
         PartType::List(Box::new(PartType::Number)),
         PartType::Function {
-            parameter: Box::new(PartType::String),
+            parameters: vec![FunctionParameterType {
+                name: "arg".into(),
+                r#type: Box::new(PartType::String),
+            }],
             return_type: Box::new(PartType::Boolean),
         },
         PartType::Record(vec![

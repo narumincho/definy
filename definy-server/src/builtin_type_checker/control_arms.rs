@@ -1,27 +1,30 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Expression, IfExpression, MatchArm, MatchExpression, PartReferenceExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
+    Expression, IfExpression, MatchArm, MatchExpression, NumberExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, VariableExpression, VariantExpression,
 };
 
 use super::helpers::{
-    check_sub, error_mismatch, error_not_a_function, error_unknown, error_value, ok_type,
-    record_get, type_bool,
+    call_part, check_sub, error_mismatch, error_not_a_function, error_unknown, error_value,
+    ok_type, record_get, type_bool,
 };
 
 /// 関数適用 (call)、変数参照 (variable)、条件分岐 (if)、let 束縛 (let)、パーツ参照 (part_reference) の型検査 MatchArm リストを生成します。
 pub fn create_control_check_arms(
     type_check_hash: &EventHashId,
     type_check_against_hash: &EventHashId,
+    type_check_call_arguments_hash: &EventHashId,
     type_assignable_hash: &EventHashId,
     type_equals_hash: &EventHashId,
     type_env_lookup_hash: &EventHashId,
     type_env_extend_hash: &EventHashId,
     type_env_lookup_part_hash: &EventHashId,
 ) -> Vec<MatchArm> {
+    let _ = type_check_against_hash;
+    let _ = type_assignable_hash;
     let mut arms = Vec::new();
 
-    // 1. Function application: call({ function, argument })
+    // 1. Function application: call({ function, arguments })
     {
         let call_var_id = 56;
         let function_expr = record_get(
@@ -30,11 +33,11 @@ pub fn create_control_check_arms(
             }),
             "function",
         );
-        let argument_expr = record_get(
+        let arguments_expr = record_get(
             Expression::Variable(VariableExpression {
                 variable_id: call_var_id,
             }),
-            "argument",
+            "arguments",
         );
         let function_check = check_sub(
             type_check_hash,
@@ -45,74 +48,34 @@ pub fn create_control_check_arms(
         let function_type = Expression::Variable(VariableExpression {
             variable_id: function_type_var_id,
         });
-        let parameter_type = record_get(
+        let parameters = record_get(
             Expression::Variable(VariableExpression { variable_id: 58 }),
-            "parameter",
+            "parameters",
         );
         let return_type = record_get(
             Expression::Variable(VariableExpression { variable_id: 58 }),
             "return_type",
         );
-        let argument_check = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        type_check_against_hash.clone(),
-                    ))),
-                    argument: Box::new(argument_expr),
-                })),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            })),
-            argument: Box::new(parameter_type.clone()),
-        });
-        let argument_type_var_id = 59;
-        let argument_matches = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_assignable_hash.clone(),
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression {
-                    variable_id: argument_type_var_id,
-                })),
-            })),
-            argument: Box::new(parameter_type.clone()),
-        });
-        let check_argument_result = Expression::Match(MatchExpression {
-            target: Box::new(argument_check),
-            arms: vec![
-                MatchArm {
-                    tag: "ok".into(),
-                    variable_id: Some(argument_type_var_id),
-                    variable_name: Some("argument_type".into()),
-                    body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(argument_matches),
-                        then_expr: Box::new(ok_type(return_type)),
-                        else_expr: Box::new(error_mismatch(
-                            parameter_type,
-                            Expression::Variable(VariableExpression {
-                                variable_id: argument_type_var_id,
-                            }),
-                        )),
-                    })),
-                },
-                MatchArm {
-                    tag: "error".into(),
-                    variable_id: Some(60),
-                    variable_name: Some("argument_error".into()),
-                    body: Box::new(error_value(Expression::Variable(VariableExpression {
-                        variable_id: 60,
-                    }))),
-                },
+        let check_call_args = call_part(
+            type_check_call_arguments_hash,
+            &[
+                ("parameters", parameters),
+                ("arguments", arguments_expr),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("index", Expression::Number(NumberExpression { value: 0 })),
+                ("return_type", return_type),
             ],
-            default: Some(Box::new(error_unknown())),
-        });
+        );
         let function_type_match = Expression::Match(MatchExpression {
             target: Box::new(function_type.clone()),
             arms: vec![MatchArm {
                 tag: "function".into(),
                 variable_id: Some(58),
                 variable_name: Some("function_type".into()),
-                body: Box::new(check_argument_result),
+                body: Box::new(check_call_args),
             }],
             default: Some(Box::new(error_not_a_function(function_type))),
         });
@@ -152,15 +115,16 @@ pub fn create_control_check_arms(
             }),
             "variable_id",
         );
-        let lookup_call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_env_lookup_hash.clone(),
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            })),
-            argument: Box::new(target_var_id),
-        });
+        let lookup_call = call_part(
+            type_env_lookup_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("var_id", target_var_id),
+            ],
+        );
 
         arms.push(MatchArm {
             tag: "variable".into(),
@@ -226,25 +190,23 @@ pub fn create_control_check_arms(
                                 variable_id: Some(e_type_var),
                                 variable_name: Some("e_ok".into()),
                                 body: Box::new(Expression::If(IfExpression {
-                                    condition: Box::new(Expression::Call(CallExpression {
-                                        function: Box::new(Expression::Call(CallExpression {
-                                            function: Box::new(Expression::PartReference(
-                                                PartReferenceExpression::new(
-                                                    type_equals_hash.clone(),
-                                                ),
-                                            )),
-                                            argument: Box::new(Expression::Variable(
-                                                VariableExpression {
+                                    condition: Box::new(call_part(
+                                        type_equals_hash,
+                                        &[
+                                            (
+                                                "t1",
+                                                Expression::Variable(VariableExpression {
                                                     variable_id: t_type_var,
-                                                },
-                                            )),
-                                        })),
-                                        argument: Box::new(Expression::Variable(
-                                            VariableExpression {
-                                                variable_id: e_type_var,
-                                            },
-                                        )),
-                                    })),
+                                                }),
+                                            ),
+                                            (
+                                                "t2",
+                                                Expression::Variable(VariableExpression {
+                                                    variable_id: e_type_var,
+                                                }),
+                                            ),
+                                        ],
+                                    )),
                                     then_expr: Box::new(ok_type(Expression::Variable(
                                         VariableExpression {
                                             variable_id: t_type_var,
@@ -292,17 +254,16 @@ pub fn create_control_check_arms(
                     variable_id: Some(50),
                     variable_name: Some("c_ok".into()),
                     body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::Call(CallExpression {
-                                function: Box::new(Expression::PartReference(
-                                    PartReferenceExpression::new(type_equals_hash.clone()),
-                                )),
-                                argument: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 50,
-                                })),
-                            })),
-                            argument: Box::new(type_bool()),
-                        })),
+                        condition: Box::new(call_part(
+                            type_equals_hash,
+                            &[
+                                (
+                                    "t1",
+                                    Expression::Variable(VariableExpression { variable_id: 50 }),
+                                ),
+                                ("t2", type_bool()),
+                            ],
+                        )),
                         then_expr: Box::new(check_branch_types),
                         else_expr: Box::new(error_value(Expression::Variant(VariantExpression {
                             type_part_definition_event_hash: None,
@@ -369,20 +330,22 @@ pub fn create_control_check_arms(
         );
         let val_ok_var = 50;
 
-        let extended_env = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        type_env_extend_hash.clone(),
-                    ))),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(var_id_sub),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression {
-                variable_id: val_ok_var,
-            })),
-        });
+        let extended_env = call_part(
+            type_env_extend_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("var_id", var_id_sub),
+                (
+                    "var_type",
+                    Expression::Variable(VariableExpression {
+                        variable_id: val_ok_var,
+                    }),
+                ),
+            ],
+        );
 
         let check_body = check_sub(type_check_hash, body_sub, extended_env);
 
@@ -424,15 +387,16 @@ pub fn create_control_check_arms(
             }),
             "part_definition_event_hash",
         );
-        let lookup_call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_env_lookup_part_hash.clone(),
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            })),
-            argument: Box::new(part_hash),
-        });
+        let lookup_call = call_part(
+            type_env_lookup_part_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("part_hash", part_hash),
+            ],
+        );
 
         arms.push(MatchArm {
             tag: "part_reference".into(),

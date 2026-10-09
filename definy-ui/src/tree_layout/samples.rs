@@ -87,20 +87,25 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "function_and_call",
-            title_ja: "5. 関数定義と呼び出し ((fn x -> multiply x 2) 21)",
-            title_en: "5. Function Definition and Call ((fn x -> multiply x 2) 21)",
-            description_ja: "無名関数と実引数の適用関係を表示します。",
-            description_en: "Shows lambda abstraction and argument application.",
+            title_ja: "5. 関数定義と呼び出し ((fn (x) -> multiply x 2)(x: 21))",
+            title_en: "5. Function Definition and Call ((fn (x) -> multiply x 2)(x: 21))",
+            description_ja: "無名関数と名前付き実引数の適用関係を表示します。",
+            description_en: "Shows lambda abstraction and named argument application.",
             expression: Expression::Call(CallExpression {
                 function: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 1,
-                    parameter_name: "x".into(),
+                    parameters: vec![FunctionParameter {
+                        parameter_id: 1,
+                        parameter_name: "x".into(),
+                    }],
                     body: Box::new(Expression::Multiply(MultiplyExpression {
                         left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                         right: Box::new(Expression::Number(NumberExpression { value: 2 })),
                     })),
                 })),
-                argument: Box::new(Expression::Number(NumberExpression { value: 21 })),
+                arguments: vec![CallArgument {
+                    name: "x".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 21 })),
+                }],
             }),
         },
         LayoutSample {

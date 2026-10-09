@@ -1,8 +1,10 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Expression, ListLiteralExpression, NumberExpression, PartReferenceExpression,
-    RecordGetExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariantExpression,
+    Expression, ListLiteralExpression, NumberExpression, RecordGetExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariantExpression,
 };
+
+pub use crate::ast_builder::call_part;
 
 /// 成功した型検査結果 `ok(type_ast)` を構築します。
 pub fn ok_type(type_ast: Expression) -> Expression {
@@ -129,19 +131,6 @@ pub fn type_bool() -> Expression {
     })
 }
 
-/// パーツ呼び出し式 `f(arg1)(arg2)...` をカリー化合成します。
-pub fn call_part(part_hash: &EventHashId, args: Vec<Expression>) -> Expression {
-    args.into_iter().fold(
-        Expression::PartReference(PartReferenceExpression::new(part_hash.clone())),
-        |function, argument| {
-            Expression::Call(CallExpression {
-                function: Box::new(function),
-                argument: Box::new(argument),
-            })
-        },
-    )
-}
-
 /// レコードフィールドアクセス式 `record.key` を構築します。
 pub fn record_get(record: Expression, key: &str) -> Expression {
     Expression::RecordGet(RecordGetExpression {
@@ -152,15 +141,7 @@ pub fn record_get(record: Expression, key: &str) -> Expression {
 
 /// 部分式の型検査呼び出し `type-check(expr, env)` を構築します。
 pub fn check_sub(check_hash: &EventHashId, expr: Expression, env: Expression) -> Expression {
-    Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                check_hash.clone(),
-            ))),
-            argument: Box::new(expr),
-        })),
-        argument: Box::new(env),
-    })
+    crate::ast_builder::call_part(check_hash, &[("expr", expr), ("env", env)])
 }
 
 /// 空の型環境 `{ variables: [], parts: [] }` を構築します。

@@ -63,8 +63,23 @@ pub fn create_type_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
                         items: vec![
                             TypeLiteralItemExpression {
-                                key: "parameter".into(),
-                                value: Box::new(type_ast_ref.clone()),
+                                key: "parameters".into(),
+                                value: Box::new(Expression::TypeList(TypeListExpression {
+                                    item_type: Box::new(Expression::TypeLiteral(
+                                        TypeLiteralExpression {
+                                            items: vec![
+                                                TypeLiteralItemExpression {
+                                                    key: "name".into(),
+                                                    value: Box::new(Expression::TypeString),
+                                                },
+                                                TypeLiteralItemExpression {
+                                                    key: "type".into(),
+                                                    value: Box::new(type_ast_ref.clone()),
+                                                },
+                                            ],
+                                        },
+                                    )),
+                                })),
                             },
                             TypeLiteralItemExpression {
                                 key: "return_type".into(),

@@ -10,7 +10,7 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_evaluator_parts, all_type_checker_parts, all_validator_parts, call_part1, call_part2,
+    all_evaluator_parts, all_type_checker_parts, all_validator_parts, call_part,
     create_test_module_events, empty_type_env, get_test_account_and_mod_id, type_env_single_var,
 };
 
@@ -76,7 +76,7 @@ fn test_self_hosted_record_type_checking_execution() {
     });
 
     let empty_env = empty_type_env();
-    let check_call = call_part2(type_check_hash, record_ast, empty_env);
+    let check_call = call_part(type_check_hash, &[("expr", record_ast), ("env", empty_env)]);
 
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("Failed to evaluate record type checking");
@@ -181,7 +181,10 @@ fn test_self_hosted_record_get_type_checking_execution() {
         }))),
     });
 
-    let check_success = call_part2(type_check_hash.clone(), record_get_age, env.clone());
+    let check_success = call_part(
+        type_check_hash.clone(),
+        &[("expr", record_get_age), ("env", env.clone())],
+    );
     let res_success = definy_core::evaluate_expression(&check_success, &events)
         .expect("Failed to evaluate record_get type check");
     assert_eq!(
@@ -215,7 +218,10 @@ fn test_self_hosted_record_get_type_checking_execution() {
         }))),
     });
 
-    let check_missing = call_part2(type_check_hash.clone(), record_get_missing, env);
+    let check_missing = call_part(
+        type_check_hash.clone(),
+        &[("expr", record_get_missing), ("env", env)],
+    );
     let res_missing = definy_core::evaluate_expression(&check_missing, &events)
         .expect("Failed to evaluate missing field type check");
     assert_eq!(
@@ -258,7 +264,10 @@ fn test_self_hosted_record_get_type_checking_execution() {
     });
 
     let empty_env = empty_type_env();
-    let check_not_record = call_part2(type_check_hash, record_get_on_num, empty_env);
+    let check_not_record = call_part(
+        type_check_hash,
+        &[("expr", record_get_on_num), ("env", empty_env)],
+    );
     let res_not_record = definy_core::evaluate_expression(&check_not_record, &events)
         .expect("Failed to evaluate not a record type check");
     assert_eq!(
@@ -361,7 +370,10 @@ fn test_self_hosted_record_eval_value_and_get_execution() {
     });
 
     let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
-    let eval_record_call = call_part2(eval_hash.clone(), record_ast.clone(), empty_env.clone());
+    let eval_record_call = call_part(
+        eval_hash.clone(),
+        &[("expr", record_ast.clone()), ("env", empty_env.clone())],
+    );
 
     let eval_res = definy_core::evaluate_expression(&eval_record_call, &events)
         .expect("Failed to evaluate record literal expression");
@@ -410,7 +422,10 @@ fn test_self_hosted_record_eval_value_and_get_execution() {
             ],
         }))),
     });
-    let get_x_call = call_part2(eval_hash.clone(), get_x_ast, empty_env.clone());
+    let get_x_call = call_part(
+        eval_hash.clone(),
+        &[("expr", get_x_ast), ("env", empty_env.clone())],
+    );
     let get_x_res = definy_core::evaluate_expression(&get_x_call, &events)
         .expect("Failed to evaluate record_get field 'x'");
     assert_eq!(
@@ -440,7 +455,7 @@ fn test_self_hosted_record_eval_value_and_get_execution() {
             ],
         }))),
     });
-    let get_missing_call = call_part2(eval_hash, get_missing_ast, empty_env);
+    let get_missing_call = call_part(eval_hash, &[("expr", get_missing_ast), ("env", empty_env)]);
     let get_missing_res = definy_core::evaluate_expression(&get_missing_call, &events)
         .expect("Failed to evaluate record_get missing key");
     assert_eq!(
@@ -513,19 +528,25 @@ fn test_self_hosted_record_value_equals_execution() {
     let rec3_diff_key = make_val_record(vec![("z", make_val_num(10)), ("b", make_val_str("ok"))]);
 
     // rec1 == rec1_same -> true
-    let call_equal = call_part2(val_equals_hash.clone(), rec1.clone(), rec1_same);
+    let call_equal = call_part(
+        val_equals_hash.clone(),
+        &[("a", rec1.clone()), ("b", rec1_same)],
+    );
     let res_equal = definy_core::evaluate_expression(&call_equal, &events)
         .expect("Failed to compare equal record values");
     assert_eq!(res_equal, Value::Bool(true));
 
     // rec1 == rec2_diff_val -> false
-    let call_diff_val = call_part2(val_equals_hash.clone(), rec1.clone(), rec2_diff_val);
+    let call_diff_val = call_part(
+        val_equals_hash.clone(),
+        &[("a", rec1.clone()), ("b", rec2_diff_val)],
+    );
     let res_diff_val = definy_core::evaluate_expression(&call_diff_val, &events)
         .expect("Failed to compare records with different value");
     assert_eq!(res_diff_val, Value::Bool(false));
 
     // rec1 == rec3_diff_key -> false
-    let call_diff_key = call_part2(val_equals_hash, rec1, rec3_diff_key);
+    let call_diff_key = call_part(val_equals_hash, &[("a", rec1), ("b", rec3_diff_key)]);
     let res_diff_key = definy_core::evaluate_expression(&call_diff_key, &events)
         .expect("Failed to compare records with different key");
     assert_eq!(res_diff_key, Value::Bool(false));
@@ -626,7 +647,7 @@ fn test_self_hosted_validate_part_with_record_expression() {
         ],
     });
 
-    let call_validate = call_part1(validate_part_hash, part_def);
+    let call_validate = call_part(validate_part_hash, &[("part", part_def)]);
     let result = definy_core::evaluate_expression(&call_validate, &events)
         .expect("Failed to validate part with record expression");
 
@@ -692,10 +713,12 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
     });
 
     // 1. type-assignable(actual_large, expected_clock) -> true !
-    let call_subtyping = call_part2(
+    let call_subtyping = call_part(
         type_assignable_hash.clone(),
-        actual_large_record_type.clone(),
-        expected_clock_record_type.clone(),
+        &[
+            ("sub", actual_large_record_type.clone()),
+            ("sup", expected_clock_record_type.clone()),
+        ],
     );
     let res_subtyping = definy_core::evaluate_expression(&call_subtyping, &events)
         .expect("Failed to evaluate type-assignable");
@@ -706,10 +729,12 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
     );
 
     // 2. 逆方向 type-assignable(expected_clock, actual_large) -> false ! (不足フィールドあり)
-    let call_reverse = call_part2(
+    let call_reverse = call_part(
         type_assignable_hash.clone(),
-        expected_clock_record_type.clone(),
-        actual_large_record_type,
+        &[
+            ("sub", expected_clock_record_type.clone()),
+            ("sup", actual_large_record_type),
+        ],
     );
     let res_reverse = definy_core::evaluate_expression(&call_reverse, &events)
         .expect("Failed to evaluate reverse type-assignable");
@@ -730,10 +755,12 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
             ],
         }))),
     });
-    let call_reordered = call_part2(
+    let call_reordered = call_part(
         type_assignable_hash,
-        reordered_record_type,
-        expected_clock_record_type.clone(),
+        &[
+            ("sub", reordered_record_type),
+            ("sup", expected_clock_record_type.clone()),
+        ],
     );
     let res_reordered = definy_core::evaluate_expression(&call_reordered, &events)
         .expect("Failed to evaluate reordered type-assignable");
@@ -744,16 +771,32 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
     );
 
     // 4. 関数呼び出し (Call 式):
-    // funcA: { clock: number } -> number
-    // call(funcA, { clock: 42, crypto: "secret", random: 99 }) -> ok(number)
+    // funcA: (ctx: { clock: number }) -> number
+    // call(funcA, [ { name: "ctx", value: { clock: 42, crypto: "secret", random: 99 } } ]) -> ok(number)
+    let make_param = |name: &str, t: Expression| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "name".into(),
+                    value: Box::new(Expression::String(StringExpression { value: name.into() })),
+                },
+                TypeLiteralItemExpression {
+                    key: "type".into(),
+                    value: Box::new(t),
+                },
+            ],
+        })
+    };
     let func_type = Expression::Variant(VariantExpression {
         type_part_definition_event_hash: None,
         tag: "function".into(),
         payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![
                 TypeLiteralItemExpression {
-                    key: "parameter".into(),
-                    value: Box::new(expected_clock_record_type),
+                    key: "parameters".into(),
+                    value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                        items: vec![make_param("ctx", expected_clock_record_type)],
+                    })),
                 },
                 TypeLiteralItemExpression {
                     key: "return_type".into(),
@@ -816,6 +859,21 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
         }))),
     });
 
+    let make_arg = |name: &str, v: Expression| {
+        Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "name".into(),
+                    value: Box::new(Expression::String(StringExpression { value: name.into() })),
+                },
+                TypeLiteralItemExpression {
+                    key: "value".into(),
+                    value: Box::new(v),
+                },
+            ],
+        })
+    };
+
     let call_func_expr = Expression::Variant(VariantExpression {
         type_part_definition_event_hash: Some(expr_type_hash.clone()),
         tag: "call".into(),
@@ -835,14 +893,16 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
                     })),
                 },
                 TypeLiteralItemExpression {
-                    key: "argument".into(),
-                    value: Box::new(arg_record_expr),
+                    key: "arguments".into(),
+                    value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                        items: vec![make_arg("ctx", arg_record_expr)],
+                    })),
                 },
             ],
         }))),
     });
 
-    let check_call = call_part2(type_check_hash, call_func_expr, env);
+    let check_call = call_part(type_check_hash, &[("expr", call_func_expr), ("env", env)]);
     let check_result = definy_core::evaluate_expression(&check_call, &events)
         .expect("Failed to evaluate call type check with extra record fields");
 

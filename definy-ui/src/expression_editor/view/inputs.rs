@@ -5,8 +5,9 @@ use crate::language::Language;
 
 use super::super::mutation::{
     add_list_item, add_record_item, path_to_key, remove_list_item, remove_record_item,
-    set_boolean_value, set_function_parameter_name, set_let_variable_name, set_number_value,
-    set_record_get_key, set_record_item_key, set_string_value,
+    set_boolean_value, set_call_argument_name, set_function_parameter_name, set_let_variable_name,
+    set_number_value, set_record_get_key, set_record_item_key, set_string_value,
+    set_type_function_parameter_name,
 };
 
 pub(crate) fn number_input(path: Vec<PathStep>, value: i64) -> Element {
@@ -119,8 +120,16 @@ pub(crate) fn let_name_input(path: Vec<PathStep>, value: &str) -> Element {
     }
 }
 
-pub(crate) fn function_param_name_input(path: Vec<PathStep>, value: &str) -> Element {
-    let name = format!("expr-func-param-{}", path_to_key(path.as_slice()));
+pub(crate) fn function_param_name_input(
+    path: Vec<PathStep>,
+    param_index: usize,
+    value: &str,
+) -> Element {
+    let name = format!(
+        "expr-func-param-{}-{}",
+        path_to_key(path.as_slice()),
+        param_index
+    );
 
     rsx! {
         input {
@@ -133,7 +142,71 @@ pub(crate) fn function_param_name_input(path: Vec<PathStep>, value: &str) -> Ele
                     Signal<Option<definy_event::event::Expression>>,
                 >();
                 let mut expr = expr_sig.read().clone();
-                set_function_parameter_name(&mut expr, path.as_slice(), &evt.value());
+                set_function_parameter_name(
+                    &mut expr,
+                    path.as_slice(),
+                    param_index,
+                    &evt.value(),
+                );
+                expr_sig.set(expr);
+            },
+        }
+    }
+}
+
+pub(crate) fn call_arg_name_input(path: Vec<PathStep>, arg_index: usize, value: &str) -> Element {
+    let name = format!(
+        "expr-call-arg-{}-{}",
+        path_to_key(path.as_slice()),
+        arg_index
+    );
+
+    rsx! {
+        input {
+            name: "{name}",
+            r#type: "text",
+            value: "{value}",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 7.5rem; box-sizing: border-box;",
+            oninput: move |evt: FormEvent| {
+                let mut expr_sig = use_context::<
+                    Signal<Option<definy_event::event::Expression>>,
+                >();
+                let mut expr = expr_sig.read().clone();
+                set_call_argument_name(&mut expr, path.as_slice(), arg_index, &evt.value());
+                expr_sig.set(expr);
+            },
+        }
+    }
+}
+
+pub(crate) fn type_function_param_name_input(
+    path: Vec<PathStep>,
+    param_index: usize,
+    value: &str,
+) -> Element {
+    let name = format!(
+        "expr-type-func-param-{}-{}",
+        path_to_key(path.as_slice()),
+        param_index
+    );
+
+    rsx! {
+        input {
+            name: "{name}",
+            r#type: "text",
+            value: "{value}",
+            style: "padding: 0.25rem 0.5rem; font-size: 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); width: 7.5rem; box-sizing: border-box;",
+            oninput: move |evt: FormEvent| {
+                let mut expr_sig = use_context::<
+                    Signal<Option<definy_event::event::Expression>>,
+                >();
+                let mut expr = expr_sig.read().clone();
+                set_type_function_parameter_name(
+                    &mut expr,
+                    path.as_slice(),
+                    param_index,
+                    &evt.value(),
+                );
                 expr_sig.set(expr);
             },
         }

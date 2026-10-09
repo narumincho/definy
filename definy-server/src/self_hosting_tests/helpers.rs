@@ -109,41 +109,8 @@ pub fn ast_mul(
     })
 }
 
-/// 1引数パーツ呼び出し式 `part_ref(arg)` を構築します。
-pub fn call_part1(part_hash: EventHashId, arg: Expression) -> Expression {
-    Expression::Call(definy_event::event::CallExpression {
-        function: Box::new(Expression::PartReference(
-            definy_event::event::PartReferenceExpression::new(part_hash),
-        )),
-        argument: Box::new(arg),
-    })
-}
-
-/// カリー化 2引数パーツ呼び出し式 `part_ref(arg1)(arg2)` を構築します。
-pub fn call_part2(part_hash: EventHashId, arg1: Expression, arg2: Expression) -> Expression {
-    Expression::Call(definy_event::event::CallExpression {
-        function: Box::new(Expression::Call(definy_event::event::CallExpression {
-            function: Box::new(Expression::PartReference(
-                definy_event::event::PartReferenceExpression::new(part_hash),
-            )),
-            argument: Box::new(arg1),
-        })),
-        argument: Box::new(arg2),
-    })
-}
-
-/// カリー化 3引数パーツ呼び出し式 `part_ref(arg1)(arg2)(arg3)` を構築します。
-pub fn call_part3(
-    part_hash: EventHashId,
-    arg1: Expression,
-    arg2: Expression,
-    arg3: Expression,
-) -> Expression {
-    Expression::Call(definy_event::event::CallExpression {
-        function: Box::new(call_part2(part_hash, arg1, arg2)),
-        argument: Box::new(arg3),
-    })
-}
+#[allow(unused_imports)]
+pub use crate::ast_builder::{call_expr, call_part, fn_expr, fn_type};
 
 /// 式評価結果の `Value::List` (数値リスト) からバイト列 `Vec<u8>` を抽出します。
 pub fn value_list_to_u8_vec(val: definy_core::Value) -> Vec<u8> {
@@ -207,11 +174,13 @@ pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_type_checker::create_part_type_lookup_inner_part(mod_id),
         crate::builtin_type_checker::create_type_env_lookup_part_part(mod_id),
         crate::builtin_type_checker::create_type_equals_part(mod_id),
+        crate::builtin_type_checker::create_type_equals_function_parameters_part(mod_id),
         crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
         crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
         crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
         crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
         crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
+        crate::builtin_type_checker::create_type_assignable_function_parameters_part(mod_id),
         crate::builtin_type_checker::create_union_variant_type_lookup_part(mod_id),
         crate::builtin_type_checker::create_find_tag_in_arms_part(mod_id),
         crate::builtin_type_checker::create_check_union_exhaustiveness_part(mod_id),
@@ -225,6 +194,9 @@ pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_type_checker::create_list_contains_string_part(mod_id),
         crate::builtin_type_checker::create_type_check_type_record_fields_part(mod_id),
         crate::builtin_type_checker::create_type_check_type_union_variants_part(mod_id),
+        crate::builtin_type_checker::create_type_check_type_function_parameters_part(mod_id),
+        crate::builtin_type_checker::create_type_check_call_arguments_part(mod_id),
+        crate::builtin_type_checker::create_type_check_function_part(mod_id),
         crate::builtin_type_checker::create_type_check_against_part(mod_id),
     ]
 }
@@ -245,6 +217,7 @@ pub fn all_evaluator_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
         crate::builtin_evaluator::create_eval_list_items_part(mod_id),
         crate::builtin_eval_match::create_eval_match_arms_part(mod_id),
         crate::builtin_eval_match::create_eval_match_arms_inner_part(mod_id),
+        crate::builtin_evaluator::create_eval_call_arguments_part(mod_id),
         crate::builtin_evaluator::create_eval_value_part(mod_id),
     ]
 }

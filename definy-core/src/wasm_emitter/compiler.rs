@@ -518,7 +518,7 @@ pub(crate) fn emit_expression(
                     ctx.pending_functions
                         .push(super::function_ops::PendingFunction {
                             captured_vars: Vec::new(),
-                            parameter_id: f.parameter_id,
+                            parameters: f.parameters.clone(),
                             body: (*f.body).clone(),
                         });
                     super::function_ops::emit_closure_with_zero_env(table_idx, out, next_local_idx);
@@ -834,8 +834,14 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
                     .map(|d| count_locals(d.as_ref()))
                     .unwrap_or(0)
         }
-        Expression::Function(f) => 6 + count_locals(&f.body),
-        Expression::Call(c) => 8 + count_locals(&c.function) + count_locals(&c.argument),
+        Expression::Function(f) => 6 + (f.parameters.len() as u32) + count_locals(&f.body),
+        Expression::Call(c) => {
+            8 + count_locals(&c.function)
+                + c.arguments
+                    .iter()
+                    .map(|arg| count_locals(&arg.value))
+                    .sum::<u32>()
+        }
         _ => 2,
     }
 }

@@ -11,7 +11,7 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, all_validator_parts, ast_add, ast_num, call_part1, call_part3,
+    all_type_checker_parts, all_validator_parts, ast_add, ast_num, call_part,
     create_test_module_events, empty_type_env, get_test_account_and_mod_id,
 };
 
@@ -64,7 +64,7 @@ fn test_self_hosted_validate_part_execution() {
         ],
     });
 
-    let call_validate = call_part1(validate_part_hash.clone(), valid_part_def);
+    let call_validate = call_part(validate_part_hash.clone(), &[("part", valid_part_def)]);
 
     let result = definy_core::evaluate_expression(&call_validate, &events)
         .expect("Failed to validate part using core.validate-part");
@@ -82,40 +82,104 @@ fn test_self_hosted_validate_part_execution() {
                 .collect(),
         })
     };
+    let make_param_type = |name: &str, t: Expression| {
+        make_type_record(vec![
+            (
+                "name",
+                Expression::String(StringExpression { value: name.into() }),
+            ),
+            ("type", t),
+        ])
+    };
+    let function_type_ast = |parameters: Vec<(&str, Expression)>, return_type: Expression| {
+        let params = parameters
+            .into_iter()
+            .map(|(name, t)| make_param_type(name, t))
+            .collect();
+        Expression::Variant(VariantExpression {
+            tag: "function".into(),
+            payload: Some(Box::new(make_type_record(vec![
+                (
+                    "parameters",
+                    Expression::ListLiteral(ListLiteralExpression { items: params }),
+                ),
+                ("return_type", return_type),
+            ]))),
+            type_part_definition_event_hash: None,
+        })
+    };
+    let make_fn_param = |id: i64, name: &str| {
+        make_type_record(vec![
+            (
+                "parameter_id",
+                Expression::Number(definy_event::event::NumberExpression { value: id }),
+            ),
+            (
+                "parameter_name",
+                Expression::String(StringExpression { value: name.into() }),
+            ),
+        ])
+    };
+    let make_fn_expr = |parameters: Vec<(i64, &str)>, body: Expression| {
+        let params = parameters
+            .into_iter()
+            .map(|(id, name)| make_fn_param(id, name))
+            .collect();
+        Expression::Variant(VariantExpression {
+            tag: "function".into(),
+            payload: Some(Box::new(make_type_record(vec![
+                (
+                    "parameters",
+                    Expression::ListLiteral(ListLiteralExpression { items: params }),
+                ),
+                ("body", body),
+            ]))),
+            type_part_definition_event_hash: expr_type_opt.clone(),
+        })
+    };
+    let make_call_arg = |name: &str, value: Expression| {
+        make_type_record(vec![
+            (
+                "name",
+                Expression::String(StringExpression { value: name.into() }),
+            ),
+            ("value", value),
+        ])
+    };
+    let make_call_ast = |function: Expression, arguments: Vec<(&str, Expression)>| {
+        let args = arguments
+            .into_iter()
+            .map(|(name, val)| make_call_arg(name, val))
+            .collect();
+        Expression::Variant(VariantExpression {
+            tag: "call".into(),
+            payload: Some(Box::new(make_type_record(vec![
+                ("function", function),
+                (
+                    "arguments",
+                    Expression::ListLiteral(ListLiteralExpression { items: args }),
+                ),
+            ]))),
+            type_part_definition_event_hash: expr_type_opt.clone(),
+        })
+    };
     let number_type = Expression::Variant(VariantExpression {
         tag: "number".into(),
         payload: None,
         type_part_definition_event_hash: None,
     });
-    let function_type = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            ("parameter", number_type.clone()),
-            ("return_type", number_type),
-        ]))),
-        type_part_definition_event_hash: None,
-    });
-    let function_expression = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            (
-                "parameter_variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: 7 }),
-            ),
-            (
-                "body",
-                Expression::Variant(VariantExpression {
-                    tag: "variable".into(),
-                    payload: Some(Box::new(make_type_record(vec![(
-                        "variable_id",
-                        Expression::Number(definy_event::event::NumberExpression { value: 7 }),
-                    )]))),
-                    type_part_definition_event_hash: expr_type_opt.clone(),
-                }),
-            ),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
+    let function_type = function_type_ast(vec![("x", number_type.clone())], number_type.clone());
+    let variable_ast = |variable_id| {
+        Expression::Variant(VariantExpression {
+            tag: "variable".into(),
+            payload: Some(Box::new(make_type_record(vec![(
+                "variable_id",
+                Expression::Number(definy_event::event::NumberExpression { value: variable_id }),
+            )]))),
+            type_part_definition_event_hash: expr_type_opt.clone(),
+        })
+    };
+    let function_expression = make_fn_expr(vec![(7, "x")], variable_ast(7));
     let function_part_def = Expression::TypeLiteral(TypeLiteralExpression {
         items: vec![
             TypeLiteralItemExpression {
@@ -140,21 +204,12 @@ fn test_self_hosted_validate_part_execution() {
             },
         ],
     });
-    let validate_function_call = call_part1(validate_part_hash.clone(), function_part_def);
+    let validate_function_call =
+        call_part(validate_part_hash.clone(), &[("part", function_part_def)]);
     let function_result = definy_core::evaluate_expression(&validate_function_call, &events)
         .expect("Failed to validate declared identity function");
     assert_eq!(function_result, Value::Bool(true));
 
-    let function_type_ast = |parameter: Expression, return_type: Expression| {
-        Expression::Variant(VariantExpression {
-            tag: "function".into(),
-            payload: Some(Box::new(make_type_record(vec![
-                ("parameter", parameter),
-                ("return_type", return_type),
-            ]))),
-            type_part_definition_event_hash: None,
-        })
-    };
     let number_type_ast = || {
         Expression::Variant(VariantExpression {
             tag: "number".into(),
@@ -169,56 +224,19 @@ fn test_self_hosted_validate_part_execution() {
             type_part_definition_event_hash: None,
         })
     };
-    let number_to_number = function_type_ast(number_type_ast(), number_type_ast());
-    let string_to_number = function_type_ast(string_type_ast(), number_type_ast());
+    let number_to_number = function_type_ast(vec![("n", number_type_ast())], number_type_ast());
+    let string_to_number = function_type_ast(vec![("s", string_type_ast())], number_type_ast());
     let higher_order_type = function_type_ast(
-        number_to_number.clone(),
-        function_type_ast(number_type_ast(), number_type_ast()),
+        vec![("f", number_to_number.clone())],
+        function_type_ast(vec![("x", number_type_ast())], number_type_ast()),
     );
     let invalid_higher_order_type = function_type_ast(
-        string_to_number,
-        function_type_ast(number_type_ast(), number_type_ast()),
+        vec![("f", string_to_number)],
+        function_type_ast(vec![("x", number_type_ast())], number_type_ast()),
     );
-    let variable_ast = |variable_id| {
-        Expression::Variant(VariantExpression {
-            tag: "variable".into(),
-            payload: Some(Box::new(make_type_record(vec![(
-                "variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: variable_id }),
-            )]))),
-            type_part_definition_event_hash: expr_type_opt.clone(),
-        })
-    };
-    let call_ast = Expression::Variant(VariantExpression {
-        tag: "call".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            ("function", variable_ast(1)),
-            ("argument", variable_ast(2)),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let inner_function_ast = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            (
-                "parameter_variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: 2 }),
-            ),
-            ("body", call_ast),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let higher_order_expression = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            (
-                "parameter_variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: 1 }),
-            ),
-            ("body", inner_function_ast),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
+    let call_ast = make_call_ast(variable_ast(1), vec![("n", variable_ast(2))]);
+    let inner_function_ast = make_fn_expr(vec![(2, "x")], call_ast);
+    let higher_order_expression = make_fn_expr(vec![(1, "f")], inner_function_ast);
     let make_part_definition = |name: &str, expression: Expression, part_type: Expression| {
         let part_id = derive_module_part_id(&mod_id, name).to_string();
         Expression::TypeLiteral(TypeLiteralExpression {
@@ -250,64 +268,48 @@ fn test_self_hosted_validate_part_execution() {
             ],
         })
     };
-    let higher_order_call = call_part1(
+    let higher_order_call = call_part(
         validate_part_hash.clone(),
-        make_part_definition("apply", higher_order_expression.clone(), higher_order_type),
+        &[(
+            "part",
+            make_part_definition("apply", higher_order_expression.clone(), higher_order_type),
+        )],
     );
     let higher_order_result = definy_core::evaluate_expression(&higher_order_call, &events)
         .expect("Failed to type-check a higher-order function call");
     assert_eq!(higher_order_result, Value::Bool(true));
 
-    let wrong_argument_type = call_part1(
+    let wrong_argument_type = call_part(
         validate_part_hash.clone(),
-        make_part_definition(
-            "invalid-apply",
-            higher_order_expression,
-            invalid_higher_order_type,
-        ),
+        &[(
+            "part",
+            make_part_definition(
+                "invalid-apply",
+                higher_order_expression,
+                invalid_higher_order_type,
+            ),
+        )],
     );
     let wrong_argument_result = definy_core::evaluate_expression(&wrong_argument_type, &events)
         .expect("Failed to reject a higher-order call with mismatched argument type");
     assert_eq!(wrong_argument_result, Value::Bool(false));
 
-    let callback_lambda = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            (
-                "parameter_variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: 3 }),
-            ),
-            ("body", variable_ast(3)),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let callback_call = Expression::Variant(VariantExpression {
-        tag: "call".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            ("function", variable_ast(1)),
-            ("argument", callback_lambda.clone()),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let callback_consumer_type = function_type_ast(number_to_number.clone(), number_type_ast());
-    let callback_consumer_lambda_type =
-        function_type_ast(callback_consumer_type.clone(), number_type_ast());
-    let callback_consumer_expression = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            (
-                "parameter_variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: 1 }),
-            ),
-            ("body", callback_call),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let callback_type_check = call_part3(
+    let callback_lambda = make_fn_expr(vec![(3, "n")], variable_ast(3));
+    let callback_call = make_call_ast(variable_ast(1), vec![("cb", callback_lambda.clone())]);
+    let callback_consumer_type =
+        function_type_ast(vec![("cb", number_to_number.clone())], number_type_ast());
+    let callback_consumer_lambda_type = function_type_ast(
+        vec![("consumer", callback_consumer_type.clone())],
+        number_type_ast(),
+    );
+    let callback_consumer_expression = make_fn_expr(vec![(1, "consumer")], callback_call);
+    let callback_type_check = call_part(
         derive_module_part_id(&mod_id, "type-check-against"),
-        callback_consumer_expression.clone(),
-        empty_type_env(),
-        callback_consumer_lambda_type.clone(),
+        &[
+            ("expr", callback_consumer_expression.clone()),
+            ("env", empty_type_env()),
+            ("expected_type", callback_consumer_lambda_type.clone()),
+        ],
     );
     let callback_type_check_result =
         definy_core::evaluate_expression(&callback_type_check, &events)
@@ -319,49 +321,41 @@ fn test_self_hosted_validate_part_execution() {
         ),
         "Expected type-check-against to return ok, got: {callback_type_check_result:?}"
     );
-    let callback_consumer = call_part1(
+    let callback_consumer = call_part(
         validate_part_hash.clone(),
-        make_part_definition(
-            "consume-callback",
-            callback_consumer_expression,
-            callback_consumer_lambda_type,
-        ),
+        &[(
+            "part",
+            make_part_definition(
+                "consume-callback",
+                callback_consumer_expression,
+                callback_consumer_lambda_type,
+            ),
+        )],
     );
     let callback_result = definy_core::evaluate_expression(&callback_consumer, &events)
         .expect("Failed to validate a lambda passed to a function parameter");
     assert_eq!(callback_result, Value::Bool(true));
 
-    let directly_called_lambda = Expression::Variant(VariantExpression {
-        tag: "function".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            (
-                "parameter_variable_id",
-                Expression::Number(definy_event::event::NumberExpression { value: 4 }),
-            ),
-            ("body", variable_ast(4)),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let direct_lambda_call = Expression::Variant(VariantExpression {
-        tag: "call".into(),
-        payload: Some(Box::new(make_type_record(vec![
-            ("function", directly_called_lambda),
-            (
-                "argument",
-                Expression::Variant(VariantExpression {
-                    tag: "number".into(),
-                    payload: Some(Box::new(Expression::Number(
-                        definy_event::event::NumberExpression { value: 1 },
-                    ))),
-                    type_part_definition_event_hash: expr_type_opt.clone(),
-                }),
-            ),
-        ]))),
-        type_part_definition_event_hash: expr_type_opt.clone(),
-    });
-    let direct_lambda_part = call_part1(
+    let directly_called_lambda = make_fn_expr(vec![(4, "x")], variable_ast(4));
+    let direct_lambda_call = make_call_ast(
+        directly_called_lambda,
+        vec![(
+            "x",
+            Expression::Variant(VariantExpression {
+                tag: "number".into(),
+                payload: Some(Box::new(Expression::Number(
+                    definy_event::event::NumberExpression { value: 1 },
+                ))),
+                type_part_definition_event_hash: expr_type_opt.clone(),
+            }),
+        )],
+    );
+    let direct_lambda_part = call_part(
         validate_part_hash,
-        make_part_definition("direct-lambda-call", direct_lambda_call, number_type_ast()),
+        &[(
+            "part",
+            make_part_definition("direct-lambda-call", direct_lambda_call, number_type_ast()),
+        )],
     );
     let direct_lambda_result = definy_core::evaluate_expression(&direct_lambda_part, &events)
         .expect("Failed to reject a directly applied lambda");
@@ -447,7 +441,7 @@ fn test_self_hosted_validate_module_execution() {
         ],
     });
 
-    let call_valid = call_part1(validate_module_hash.clone(), valid_mod);
+    let call_valid = call_part(validate_module_hash.clone(), &[("mod_def", valid_mod)]);
 
     let valid_result = definy_core::evaluate_expression(&call_valid, &events)
         .expect("Failed to evaluate validate-module on valid module");
@@ -475,7 +469,7 @@ fn test_self_hosted_validate_module_execution() {
         ],
     });
 
-    let call_invalid = call_part1(validate_module_hash.clone(), invalid_mod);
+    let call_invalid = call_part(validate_module_hash.clone(), &[("mod_def", invalid_mod)]);
 
     let invalid_result = definy_core::evaluate_expression(&call_invalid, &events)
         .expect("Failed to evaluate validate-module on invalid module");
@@ -541,7 +535,10 @@ fn test_self_hosted_validate_module_execution() {
             },
         ],
     });
-    let call_invalid_second_part = call_part1(validate_module_hash, invalid_second_part_mod);
+    let call_invalid_second_part = call_part(
+        validate_module_hash,
+        &[("mod_def", invalid_second_part_mod)],
+    );
     let invalid_second_part_result =
         definy_core::evaluate_expression(&call_invalid_second_part, &events)
             .expect("Failed to evaluate validate-module with an invalid second part");

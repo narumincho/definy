@@ -13,7 +13,7 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, all_validator_parts, call_part1, call_part3, create_test_module_events,
+    all_type_checker_parts, all_validator_parts, call_part, create_test_module_events,
     empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
 };
 use crate::builtin_type_checker::type_type;
@@ -56,15 +56,36 @@ fn ast_type_list(item_type: Expression) -> Expression {
     })
 }
 
-fn ast_type_func(param: Expression, ret: Expression) -> Expression {
+fn ast_type_func(params: Vec<(&str, Expression)>, ret: Expression) -> Expression {
+    let parameters = params
+        .into_iter()
+        .map(|(name, t)| {
+            Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "name".into(),
+                        value: Box::new(Expression::String(StringExpression {
+                            value: name.into(),
+                        })),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "type".into(),
+                        value: Box::new(t),
+                    },
+                ],
+            })
+        })
+        .collect();
     Expression::Variant(VariantExpression {
         type_part_definition_event_hash: None,
         tag: "type_function".into(),
         payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![
                 TypeLiteralItemExpression {
-                    key: "parameter".into(),
-                    value: Box::new(param),
+                    key: "parameters".into(),
+                    value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                        items: parameters,
+                    })),
                 },
                 TypeLiteralItemExpression {
                     key: "return_type".into(),
@@ -195,11 +216,13 @@ fn test_self_hosted_type_constructors_valid() {
     let parts = all_type_checker_parts(&mod_id);
     let events = create_test_module_events(account, parts, 140);
     let eval = |expr: Expression| -> Value {
-        let call = call_part3(
+        let call = call_part(
             type_check_against_hash.clone(),
-            expr,
-            empty_type_env(),
-            type_type(),
+            &[
+                ("expr", expr),
+                ("env", empty_type_env()),
+                ("expected_type", type_type()),
+            ],
         );
         definy_core::evaluate_expression(&call, &events).expect("evaluation failed")
     };
@@ -216,7 +239,7 @@ fn test_self_hosted_type_constructors_valid() {
     assert_is_ok(&res);
 
     // 3. type_function
-    let func_type_expr = ast_type_func(ast_type_str(), ast_type_bool());
+    let func_type_expr = ast_type_func(vec![("s", ast_type_str())], ast_type_bool());
     let res = eval(func_type_expr);
     assert_is_ok(&res);
 
@@ -241,11 +264,13 @@ fn test_self_hosted_type_constructors_invalid() {
     let parts = all_type_checker_parts(&mod_id);
     let events = create_test_module_events(account, parts, 141);
     let eval = |expr: Expression| -> Value {
-        let call = call_part3(
+        let call = call_part(
             type_check_against_hash.clone(),
-            expr,
-            empty_type_env(),
-            type_type(),
+            &[
+                ("expr", expr),
+                ("env", empty_type_env()),
+                ("expected_type", type_type()),
+            ],
         );
         definy_core::evaluate_expression(&call, &events).expect("evaluation failed")
     };
@@ -256,9 +281,17 @@ fn test_self_hosted_type_constructors_invalid() {
     assert_eq!(get_error_tag(&res), "type_mismatch");
 
     // 2. type_function with invalid parameter type
-    let bad_func = ast_type_func(ast_expr_num(42), ast_type_num());
+    let bad_func = ast_type_func(vec![("n", ast_expr_num(42))], ast_type_num());
     let res = eval(bad_func);
     assert_eq!(get_error_tag(&res), "type_mismatch");
+
+    // 2b. type_function with duplicate parameter name
+    let dup_param_func = ast_type_func(
+        vec![("n", ast_type_num()), ("n", ast_type_str())],
+        ast_type_bool(),
+    );
+    let res = eval(dup_param_func);
+    assert_eq!(get_error_tag(&res), "invalid_type_declaration");
 
     // 3. type_record with duplicate keys
     let dup_record = ast_type_record(vec![
@@ -368,7 +401,7 @@ fn test_self_hosted_type_part_reference_in_module_validation() {
             .expect("module_commit_to_self_hosted_ast failed");
 
     // validate-module でモジュール全体を一括検証
-    let validate_call = call_part1(validate_module_hash, self_hosted_module);
+    let validate_call = call_part(validate_module_hash, &[("mod_def", self_hosted_module)]);
     let result = definy_core::evaluate_expression(&validate_call, &events)
         .expect("validation evaluation failed");
 
@@ -385,7 +418,10 @@ fn test_self_hosted_type_part_reference_errors() {
     let events = create_test_module_events(account, parts, 143);
 
     let eval_in_env = |expr: Expression, env: Expression| -> Value {
-        let call = call_part3(type_check_against_hash.clone(), expr, env, type_type());
+        let call = call_part(
+            type_check_against_hash.clone(),
+            &[("expr", expr), ("env", env), ("expected_type", type_type())],
+        );
         definy_core::evaluate_expression(&call, &events).expect("evaluation failed")
     };
 
