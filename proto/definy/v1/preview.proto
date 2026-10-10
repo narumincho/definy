@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package definy.v1;
+
+// PreviewService provides Connect-RPC APIs for running and previewing web applications on definy server.
+service PreviewService {
+  // RegisterPreviewApp registers and starts a web app preview on the definy server.
+  // Only admin users specified in DEFINY_ADMIN_ACCOUNT_ID are authorized to call this RPC.
+  rpc RegisterPreviewApp(RegisterPreviewAppRequest) returns (RegisterPreviewAppResponse);
+
+  // ListPreviewApps lists currently active preview web applications.
+  rpc ListPreviewApps(ListPreviewAppsRequest) returns (ListPreviewAppsResponse);
+
+  // StopPreviewApp stops and unregisters an active preview web application.
+  rpc StopPreviewApp(StopPreviewAppRequest) returns (StopPreviewAppResponse);
+}
+
+message RegisterPreviewAppRequest {
+  // Unique application ID / subdomain slug (e.g. "my-app", "demo")
+  string app_id = 1;
+  // Human-readable display name of the application
+  string display_name = 2;
+  // Target definy part ID or part name whose expression / handler should be executed
+  string part_id = 3;
+  // Owner / operator account ID (must match DEFINY_ADMIN_ACCOUNT_ID)
+  string account_id = 4;
+  // Optional cryptographic signature verifying request authenticity
+  optional string signature = 5;
+  // Optional precompiled WebAssembly hash to execute
+  optional string wasm_hash = 6;
+}
+
+message RegisterPreviewAppResponse {
+  // Application ID / subdomain slug
+  string app_id = 1;
+  // Primary preview URL (subdomain based, e.g. "https://my-app.definy.fly.dev" or "http://my-app.localhost:8000")
+  string preview_url = 2;
+  // Fallback path URL (e.g. "http://localhost:8000/preview/my-app/")
+  string path_url = 3;
+  // Status of the preview application (e.g. "running")
+  string status = 4;
+  // Assigned subdomain name
+  string subdomain = 5;
+}
+
+message PreviewAppItem {
+  string app_id = 1;
+  string display_name = 2;
+  string part_id = 3;
+  string preview_url = 4;
+  string path_url = 5;
+  string owner_account_id = 6;
+  string created_at_rfc3339 = 7;
+  string status = 8;
+  string subdomain = 9;
+}
+
+message ListPreviewAppsRequest {
+  // Optional account ID to filter previews
+  optional string account_id = 1;
+}
+
+message ListPreviewAppsResponse {
+  repeated PreviewAppItem apps = 1;
+}
+
+message StopPreviewAppRequest {
+  // Application ID to stop
+  string app_id = 1;
+  // Requesting account ID (must match DEFINY_ADMIN_ACCOUNT_ID)
+  string account_id = 2;
+  // Optional cryptographic signature
+  optional string signature = 3;
+}
+
+message StopPreviewAppResponse {
+  bool success = 1;
+  string message = 2;
+}

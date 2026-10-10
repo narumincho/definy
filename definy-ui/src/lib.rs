@@ -36,6 +36,7 @@ mod part_create_form;
 mod part_detail;
 mod part_list;
 pub mod part_projection;
+pub mod preview_apps;
 pub mod query;
 mod rpc_architecture;
 mod settings;

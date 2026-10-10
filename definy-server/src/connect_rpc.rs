@@ -511,6 +511,18 @@ pub fn router() -> axum::Router<AppState> {
             PATH_LIST_CLOUDFLARE_WORKERS,
             axum::routing::post(crate::deploy_rpc::handle_list_cloudflare_workers),
         )
+        .route(
+            PATH_REGISTER_PREVIEW_APP,
+            axum::routing::post(crate::preview_service::handle_register_preview_app),
+        )
+        .route(
+            PATH_LIST_PREVIEW_APPS,
+            axum::routing::post(crate::preview_service::handle_list_preview_apps),
+        )
+        .route(
+            PATH_STOP_PREVIEW_APP,
+            axum::routing::post(crate::preview_service::handle_stop_preview_app),
+        )
 }
 
 async fn validate_module_commit(
