@@ -23,7 +23,6 @@ mod db;
 pub mod deploy_rpc;
 mod error;
 mod extractor;
-pub mod fly_machines;
 mod html;
 pub mod mcp;
 pub mod preview_service;
@@ -61,7 +60,6 @@ pub enum DbInitStatus {
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
-    pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
     pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
     pub preview_store: Arc<RwLock<preview_service::PreviewAppStore>>,
     pub last_db_failure: Arc<RwLock<Option<std::time::Instant>>>,
@@ -70,10 +68,7 @@ pub struct AppState {
 
 impl AppState {
     #[must_use]
-    pub fn new(
-        db: Option<Surreal<Any>>,
-        fly_client: Option<crate::fly_machines::FlyMachineClient>,
-    ) -> Self {
+    pub fn new(db: Option<Surreal<Any>>) -> Self {
         let db_init_status = if db.is_some() {
             DbInitStatus::Ready
         } else {
@@ -81,7 +76,6 @@ impl AppState {
         };
         Self {
             db: Arc::new(RwLock::new(db)),
-            fly_client,
             virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
             preview_store: Arc::new(RwLock::new(preview_service::PreviewAppStore::new())),
             last_db_failure: Arc::new(RwLock::new(None)),
@@ -93,7 +87,6 @@ impl AppState {
     pub fn test_state() -> Self {
         Self {
             db: Arc::new(RwLock::new(None)),
-            fly_client: None,
             virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
             preview_store: Arc::new(RwLock::new(preview_service::PreviewAppStore::new())),
             last_db_failure: Arc::new(RwLock::new(None)),
@@ -105,7 +98,7 @@ impl AppState {
 pub async fn start_server() -> Result<(), anyhow::Error> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     println!("Starting definy server (Axum)...");
-    let state = AppState::new(None, crate::fly_machines::FlyMachineClient::from_env());
+    let state = AppState::new(None);
 
     let state_for_db = state.clone();
     tokio::spawn(async move {
@@ -135,13 +128,10 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
         .and_then(|p| p.parse().ok())
         .unwrap_or(8000);
 
-    let ip: std::net::IpAddr = match std::env::var("FLY_APP_NAME") {
-        Ok(_) => std::net::IpAddr::V6(std::net::Ipv6Addr::UNSPECIFIED),
-        Err(_) => std::env::var("IP")
-            .ok()
-            .and_then(|ip| ip.parse().ok())
-            .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST)),
-    };
+    let ip: std::net::IpAddr = std::env::var("IP")
+        .ok()
+        .and_then(|ip| ip.parse().ok())
+        .unwrap_or(std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST));
 
     let addr = SocketAddr::from((ip, port));
 
@@ -205,7 +195,7 @@ pub fn create_test_router() -> axum::Router {
 
 pub async fn create_test_router_with_db() -> Result<axum::Router, anyhow::Error> {
     let db = db::init_db().await?;
-    let state = AppState::new(Some(db), None);
+    let state = AppState::new(Some(db));
     let mcp_session_manager = mcp::McpSessionManager::new();
     Ok(create_router(state, mcp_session_manager))
 }
@@ -620,8 +610,6 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         connect_rpc::handle_check_missing_hashes,
         connect_rpc::handle_upload_content,
         connect_rpc::handle_get_content,
-        deploy_rpc::handle_deploy_instance,
-        deploy_rpc::handle_get_deploy_status,
         deploy_rpc::handle_list_deployments,
         deploy_rpc::handle_deploy_cloudflare,
         deploy_rpc::handle_list_cloudflare_workers,
@@ -646,10 +634,6 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::UploadContentResponse,
             definy_event::rpc::GetContentRequest,
             definy_event::rpc::GetContentResponse,
-            definy_event::rpc::DeployInstanceRequest,
-            definy_event::rpc::DeployInstanceResponse,
-            definy_event::rpc::GetDeployStatusRequest,
-            definy_event::rpc::GetDeployStatusResponse,
             definy_event::rpc::DeployCloudflareRequest,
             definy_event::rpc::DeployCloudflareResponse,
             definy_event::rpc::ListCloudflareWorkersRequest,
@@ -700,8 +684,8 @@ mod tests {
         assert!(json.contains("/definy.v1.EventService/CheckMissingHashes"));
         assert!(json.contains("/definy.v1.EventService/UploadContent"));
         assert!(json.contains("/definy.v1.EventService/GetContent"));
-        assert!(json.contains("/definy.v1.DeployService/DeployInstance"));
-        assert!(json.contains("/definy.v1.DeployService/GetDeployStatus"));
+        assert!(json.contains("/definy.v1.DeployService/DeployCloudflare"));
+        assert!(json.contains("/definy.v1.DeployService/ListCloudflareWorkers"));
         assert!(json.contains("/definy.v1.DeployService/ListDeployments"));
         assert!(json.contains("/definy.v1.PreviewService/RegisterPreviewApp"));
         assert!(json.contains("/definy.v1.PreviewService/ListPreviewApps"));
@@ -748,7 +732,7 @@ mod tests {
     #[tokio::test]
     async fn test_handle_html_request_home_with_db() {
         let db = db::init_db().await.unwrap();
-        let state = AppState::new(Some(db), None);
+        let state = AppState::new(Some(db));
         let uri = axum::http::Uri::from_static("/?lang=en");
         let mut headers = axum::http::HeaderMap::new();
         headers.insert("accept", axum::http::HeaderValue::from_static("text/html"));
@@ -764,7 +748,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_requests_with_broken_db() {
-        let state = AppState::new(None, None);
+        let state = AppState::new(None);
         // Simulate that DB connection attempt just failed
         *state.last_db_failure.write().await = Some(std::time::Instant::now());
         let app = create_router(state, mcp::McpSessionManager::new());
@@ -808,8 +792,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_handle_html_request_when_db_is_initializing() {
-        let state = AppState::new(None, None);
-        // AppState::new(None, None) defaults db_init_status to DbInitStatus::Initializing
+        let state = AppState::new(None);
+        // AppState::new(None) defaults db_init_status to DbInitStatus::Initializing
         assert_eq!(
             *state.db_init_status.read().await,
             DbInitStatus::Initializing

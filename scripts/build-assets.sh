@@ -24,4 +24,9 @@ if [ -f "${ROOT_DIR}/worker-assets/_headers" ]; then
   cp "${ROOT_DIR}/worker-assets/_headers" "${OUTPUT_DIR}/"
 fi
 
-echo "=== Build complete! Static assets ready in ${OUTPUT_DIR} ==="
+# 組み込みシードイベントと CAS コンテンツバンドルを出力
+echo "=== Exporting builtin seed bundle into ${OUTPUT_DIR}/__definy_seed_bundle.json ==="
+cd "${ROOT_DIR}"
+cargo run -p definy-server --release -- --export-seed-bundle "${OUTPUT_DIR}/__definy_seed_bundle.json"
+
+echo "=== Build complete! Static assets and seed bundle ready in ${OUTPUT_DIR} ==="

@@ -36,9 +36,9 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
                             {
                                 language
                                     .label(
-                                        "fly.io Deployment & Request Lifecycle Diagrams",
-                                        "fly.io デプロイ & リクエスト ライフサイクルフロー図",
-                                        "Vivociklaj Fludiagramoj de fly.io Deplojo kaj Petoj",
+                                        "Cloudflare Workers Deployment & Request Lifecycle Diagrams",
+                                        "Cloudflare Workers デプロイ & リクエスト ライフサイクルフロー図",
+                                        "Vivociklaj Fludiagramoj de Cloudflare Workers Deplojo kaj Petoj",
                                     )
                             }
                         }
@@ -47,9 +47,9 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
                         {
                             language
                                 .label(
-                                    "Visual sequence diagrams: Client HTTP delivery, GitHub Actions CI/CD rollout, and autonomous Fly.io-to-Fly.io self-deployment (operational bootstrapping).",
-                                    "クライアントの HTML 配信シーケンス、GitHub Actions による CI/CD ロールアウト、そして fly.io 自身が次世代インスタンスをデプロイする運用ブートストラップの完全なフロー図。",
-                                    "Vida sekvenco de HTTP-liverado, CI/CD dukto, kaj memstara fly.io-al-fly.io memdeplojo.",
+                                    "Visual sequence diagrams: Client HTTP delivery, GitHub Actions CI/CD rollout, and autonomous Cloudflare Workers self-deployment (operational bootstrapping).",
+                                    "クライアントの HTML 配信シーケンス、GitHub Actions による CI/CD ロールアウト、そして Cloudflare Workers 自身が次世代インスタンスをデプロイする運用ブートストラップの完全なフロー図。",
+                                    "Vida sekvenco de HTTP-liverado, CI/CD dukto, kaj memstara Cloudflare Workers memdeplojo.",
                                 )
                         }
                     }
@@ -90,9 +90,9 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
                         {
                             language
                                 .label(
-                                    "3. Fly.io Self-Deploy (Bootstrapping)",
-                                    "3. Fly.io 自己デプロイ (運用ブートストラップ)",
-                                    "3. Fly.io Memdeplojo (Memgastigo)",
+                                    "3. Cloudflare Self-Deploy (Bootstrapping)",
+                                    "3. Cloudflare 自己デプロイ (運用ブートストラップ)",
+                                    "3. Cloudflare Memdeplojo (Memgastigo)",
                                 )
                         }
                     }

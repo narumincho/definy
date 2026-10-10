@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use super::common::*;
 use crate::language::Language;
 
-/// Fly.io から Fly.io への自己デプロイ（運用ブートストラップ）シーケンス図
+/// Cloudflare Workers から Cloudflare Workers への自己デプロイ（運用ブートストラップ）シーケンス図
 #[component]
 pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
     let actor_user = language.label(
@@ -12,20 +12,20 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
         "Uzanto / Kliento",
     );
     let actor_parent = language.label(
-        "Parent definy-server",
-        "親 definy-server (Fly.io)",
-        "Gepatra definy-servilo",
+        "Parent definy Worker",
+        "親 definy Worker",
+        "Gepatra definy Worker",
     );
-    let actor_db = language.label("SurrealDB", "SurrealDB (履歴)", "SurrealDB");
-    let actor_fly = language.label(
-        "fly.io Machines REST",
-        "fly.io Machines REST API",
-        "fly.io Machines REST API",
+    let actor_db = language.label("Edge Store", "エッジ履歴ストア", "Randa Konservejo");
+    let actor_cf = language.label(
+        "Cloudflare API v4",
+        "Cloudflare REST API v4",
+        "Cloudflare REST API v4",
     );
     let actor_child = language.label(
-        "Child definy-server",
-        "子 definy-server (新世代VM)",
-        "Ida definy-servilo",
+        "Child Worker (Wasm)",
+        "子 Worker (新世代 Isolate)",
+        "Ida Worker (Wasm)",
     );
 
     rsx! {
@@ -34,9 +34,9 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                 {
                     language
                         .label(
-                            "Autonomous operational lifecycle where definy-server provisions, bootstraps, and delegates traffic to next-generation instances on fly.io without local CLI tools:",
-                            "ターミナルや外部 CI に依存せず、稼働中の definy サーバー自身が fly.io Machines REST API を直接呼び出して次世代の子インスタンスを起動・配信する完全な自己複製（運用ブートストラップ）の通信シーケンス:",
-                            "Memstara vivociklo kie definy mem provizas kaj delegas sekvajn instancojn en fly.io:",
+                            "Autonomous operational lifecycle where definy provisions, bootstraps, and delegates traffic to next-generation Worker instances on Cloudflare without local CLI tools:",
+                            "ターミナルや外部 CI に依存せず、稼働中の definy 自身が Cloudflare REST API v4 を直接呼び出して次世代の子 Worker インスタンスを起動・配信する完全な自己複製（運用ブートストラップ）の通信シーケンス:",
+                            "Memstara vivociklo kie definy mem provizas kaj delegas sekvajn Worker-instancojn en Cloudflare:",
                         )
                 }
             }
@@ -92,7 +92,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         width: 180,
                         color: "#fb923c",
                         border: "#ea580c",
-                        title: actor_fly,
+                        title: actor_cf,
                     }
                     ActorBox {
                         x: 880,
@@ -103,7 +103,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         title: actor_child,
                     }
 
-                    // Step 1: DeployInstance RPC
+                    // Step 1: DeployCloudflare RPC
                     SequenceArrow {
                         x1: 105,
                         y1: 85,
@@ -112,10 +112,10 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#38bdf8",
                         marker: "self-arrow-blue",
                         dashed: false,
-                        label: "1. DeployInstance(wasm_hash, region: 'nrt')",
+                        label: "1. DeployCloudflare(wasm_hash, worker_name)",
                     }
 
-                    // Step 2: Record pending status in SurrealDB
+                    // Step 2: Fetch Wasm from CAS
                     SequenceArrow {
                         x1: 320,
                         y1: 125,
@@ -124,10 +124,10 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#c084fc",
                         marker: "self-arrow-purple",
                         dashed: false,
-                        label: "2. Record deployment pending in DB",
+                        label: "2. Fetch Wasm binary from CAS",
                     }
 
-                    // Step 3: Call fly.io Machines REST API with directly injected Wasm file
+                    // Step 3: Call Cloudflare Workers API v4 with multipart form-data
                     SequenceArrow {
                         x1: 320,
                         y1: 170,
@@ -136,10 +136,10 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#fb923c",
                         marker: "self-arrow-orange",
                         dashed: false,
-                        label: "3. REST POST /machines (config.files: Base64 injected Wasm)",
+                        label: "3. PUT /accounts/:id/workers/scripts/:name (multipart: worker.mjs + app.wasm)",
                     }
 
-                    // Machine creation with direct injection
+                    // Worker creation with direct Wasm module upload
                     ActionBox {
                         x: 670,
                         y: 195,
@@ -148,11 +148,11 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         bg: "#1c1917",
                         border: "#fb923c",
                         text_color: "#fdba74",
-                        line1: "Direct File Injection",
-                        line2: Some("guest_path: /app/definy_core.wasm"),
+                        line1: "Direct Wasm Bundle",
+                        line2: Some("ES Module + application/wasm"),
                     }
 
-                    // Step 4: Machine Created (201 Created)
+                    // Step 4: Worker Script Uploaded (200 OK)
                     SequenceArrow {
                         x1: 750,
                         y1: 250,
@@ -161,10 +161,10 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#fb923c",
                         marker: "self-arrow-orange",
                         dashed: true,
-                        label: "4. 201 Created (MicroVM configured with Wasm on disk)",
+                        label: "4. 200 OK + Enable workers.dev subdomain",
                     }
 
-                    // Step 5: Save container URL to SurrealDB
+                    // Step 5: Save deployment URL to store
                     SequenceArrow {
                         x1: 320,
                         y1: 290,
@@ -173,10 +173,10 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#c084fc",
                         marker: "self-arrow-purple",
                         dashed: false,
-                        label: "5. Save URL to deployments table",
+                        label: "5. Save URL to deployments history",
                     }
 
-                    // Child VM boots directly from local injected file (No HTTP fetch required!)
+                    // Child Worker boots directly at the edge
                     ActionBox {
                         x: 885,
                         y: 325,
@@ -185,8 +185,8 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         bg: "#064e3b",
                         border: "#34d399",
                         text_color: "#a7f3d0",
-                        line1: "wasmtime serve (Local Disk)",
-                        line2: Some("Zero Parent Fetch Dependency"),
+                        line1: "V8 Isolate + WebAssembly",
+                        line2: Some("0ms Cold Start at Edge"),
                     }
 
                     // Step 6: Return child URL to client
@@ -198,7 +198,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         color: "#34d399",
                         marker: "self-arrow-green",
                         dashed: true,
-                        label: "6. Deploy OK: https://definy-<id>.fly.dev",
+                        label: "6. Deploy OK: https://<worker>.<sub >.workers.dev",
                     }
 
                     // Step 7: User visits next-generation instance
@@ -222,31 +222,31 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                     title: language
                         .label(
                             "Operational Bootstrapping",
-                            "運用層の自己完結 (Fly.io to Fly.io)",
+                            "運用層の自己完結 (Worker to Worker)",
                             "Operacia Memgastigo",
                         ),
                     color: "#38bdf8",
                     description: language
                         .label(
-                            "definy-server itself calls fly.io Machines REST API, spawning new microVM instances on demand without local developer terminals or external CI.",
-                            "稼働中の definy サーバー自身が fly.io Machines REST API を呼び出し、外部 CI やローカル端末に依存せずオンデマンドで新世代 VM を起動・案内。",
-                            "definy mem vokas fly.io Machines REST API sen lokaj komandlinioj.",
+                            "definy itself calls Cloudflare REST API v4, deploying new edge Worker instances on demand without local developer terminals or external CI.",
+                            "稼働中の definy 自身が Cloudflare REST API v4 を呼び出し、外部 CI やローカル端末に依存せずオンデマンドで新世代 Worker を起動・案内。",
+                            "definy mem vokas Cloudflare REST API v4 sen lokaj komandlinioj.",
                         ),
                 }
                 StepDetailCard {
                     step_number: "Layer 2: ビルド・注入層",
                     title: language
                         .label(
-                            "Direct Bytecode Injection",
-                            "デプロイ時直接注入 (親依存ゼロ起動)",
-                            "Rekta Bajtokoda Injekto",
+                            "Direct Wasm Multipart Upload",
+                            "Wasm モジュール直接バンドル配信",
+                            "Rekta Wasm-Alŝuto",
                         ),
                     color: "#a855f7",
                     description: language
                         .label(
-                            "Instead of slow Docker builds or runtime HTTP fetching, Fly.io's 'config.files' directly writes the Wasm binary into '/app/definy_core.wasm', achieving immediate autonomous startup.",
-                            "重い Docker ビルドや起動時の HTTP フェッチを全廃。Fly.io の 'config.files' で Wasm バイナリをゲストディスク (/app/definy_core.wasm) へ直接注入し、親サーバー依存なしで即座に自律起動。",
-                            "Rekte injektas Wasm-dosieron per 'config.files' sen bezono de HTTP-elŝuto dum lanĉo.",
+                            "Instead of container builds, definy uploads ES Module glue code and the compiled Wasm binary directly via multipart/form-data to Cloudflare's edge.",
+                            "重いコンテナビルドを全廃。ES Module エントリポイントと Wasm バイナリを multipart/form-data で Cloudflare エッジへ直接デプロイし、0ms で自律起動。",
+                            "Rekte alŝutas Wasm-dosieron kaj ES-modulon per multipart/form-data.",
                         ),
                 }
                 StepDetailCard {
@@ -260,8 +260,8 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                     color: "#fb923c",
                     description: language
                         .label(
-                            "HTTP handlers and fly.io deployment requests expressed as pure definy expression parts via WASI 0.3 Capability Dependency Injection.",
-                            "Fly.io Machines API 呼び出しや HTTP ハンドラ自体を、WASI 0.3 の能力注入 (wasi:http) として definy 言語内の純粋な式・パーツとして記述。",
+                            "HTTP handlers and Cloudflare deployment requests expressed as pure definy expression parts via WASI 0.3 Capability Dependency Injection.",
+                            "Cloudflare API 呼び出しや HTTP ハンドラ自体を、WASI 0.3 の能力注入 (wasi:http) として definy 言語内の純粋な式・パーツとして記述。",
                             "API-vokoj priskribitaj per definy-esprimoj kaj WASI 0.3 kapabloj.",
                         ),
                 }

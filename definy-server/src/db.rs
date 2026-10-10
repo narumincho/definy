@@ -358,6 +358,7 @@ pub async fn get_deployments(
     Ok(records)
 }
 
+#[cfg(test)]
 pub async fn get_deployment(
     db: &Surreal<Any>,
     machine_id: &str,
@@ -591,12 +592,12 @@ mod tests {
             machine_id: "m_test_deploy_1".to_string(),
             commit_hash: Some("commit_abc123".to_string()),
             status: "started".to_string(),
-            url: "https://definy.fly.dev".to_string(),
-            app_url: "https://definy.fly.dev".to_string(),
-            region: "nrt".to_string(),
+            url: "https://definy.workers.dev".to_string(),
+            app_url: "https://definy.workers.dev".to_string(),
+            region: "cloudflare-edge".to_string(),
             created_at: chrono::Utc::now(),
             wasm_hash: Some("wasm_hash_456".to_string()),
-            provider: Some("flyio".to_string()),
+            provider: Some("cloudflare".to_string()),
         };
 
         save_deployment(&db, rec.clone()).await.unwrap();
