@@ -8,9 +8,16 @@ use crate::language::Language;
 pub fn DeployPipelineDiagram(language: Language) -> Element {
     let actor_git = language.label("Git / Developer", "Git / 開発者", "Git / Programisto");
     let actor_gha = language.label("GitHub Actions", "GitHub Actions", "GitHub Actions");
-    let actor_registry = language.label("Fly.io Registry", "Fly.io レジストリ", "Fly.io Registro");
-    let actor_machines =
-        language.label("Fly.io Machines", "Fly.io Machines (nrt)", "Fly.io Maŝinoj");
+    let actor_registry = language.label(
+        "Cloudflare API v4",
+        "Cloudflare API v4",
+        "Cloudflare API v4",
+    );
+    let actor_machines = language.label(
+        "Cloudflare Workers Edge",
+        "Cloudflare Workers (Edge)",
+        "Cloudflare Workers Rando",
+    );
 
     rsx! {
         div { style: "display: grid; gap: 1.4rem; width: 100%;",
@@ -19,7 +26,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                     language
                         .label(
                             "Automated build and zero-downtime deployment pipeline executed upon merging to 'main' branch:",
-                            "main ブランチへのマージを契機として実行される自動ビルドおよび Fly.io ロールアウトの流れ:",
+                            "main ブランチへのマージを契機として実行される自動ビルドおよび Cloudflare Workers ロールアウトの流れ:",
                             "Aŭtomata konstruo kaj deplojo post kunfando al la 'main' branĉo:",
                         )
                 }
@@ -88,7 +95,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         label: "1. git push / merge PR -> main",
                     }
 
-                    // Step 2: Build client & server
+                    // Step 2: Build client & seed bundle
                     ActionBox {
                         x: 305,
                         y: 105,
@@ -98,10 +105,10 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         border: "#38bdf8",
                         text_color: "#e0f2fe",
                         line1: "dx build --release",
-                        line2: Some("cargo build server --release"),
+                        line2: Some("--export-seed-bundle"),
                     }
 
-                    // Step 3: Package Docker image
+                    // Step 3: Package dist-assets
                     ActionBox {
                         x: 305,
                         y: 168,
@@ -110,11 +117,11 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         bg: "#1e1b4b",
                         border: "#818cf8",
                         text_color: "#e0e7ff",
-                        line1: "Dockerfile.flyio-deploy",
+                        line1: "scripts/build-assets.sh",
                         line2: None,
                     }
 
-                    // Step 4: flyctl deploy -> push image
+                    // Step 4: wrangler deploy
                     SequenceArrow {
                         x1: 380,
                         y1: 215,
@@ -123,10 +130,10 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         color: "#38bdf8",
                         marker: "pipe-arrow-blue",
                         dashed: false,
-                        label: "2. flyctl deploy --local-only",
+                        label: "2. wrangler deploy",
                     }
 
-                    // Step 5: Registry pushes image
+                    // Step 5: Propagate Worker + Static Assets
                     SequenceArrow {
                         x1: 640,
                         y1: 250,
@@ -135,10 +142,10 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         color: "#c084fc",
                         marker: "pipe-arrow-blue",
                         dashed: false,
-                        label: "3. Pull Image: definy:deployment-*",
+                        label: "3. Upload Worker + Static Assets",
                     }
 
-                    // Step 6: Rollout Machine Version
+                    // Step 6: Global Edge Activation
                     ActionBox {
                         x: 810,
                         y: 270,
@@ -147,8 +154,8 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         bg: "#064e3b",
                         border: "#34d399",
                         text_color: "#a7f3d0",
-                        line1: "Rollout v43 -> v44",
-                        line2: Some("Health check OK on 8000"),
+                        line1: "Global Edge Rollout",
+                        line2: Some("Health check /healthz OK"),
                     }
 
                     // Step 7: Deploy Success
@@ -190,41 +197,41 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                     color: "#38bdf8",
                     description: language
                         .label(
-                            "GitHub Actions runner executes 'dx build --release' (with custom sections preserved) and compiles optimized server binaries.",
-                            "GitHub Actions 上で Dioxus CLI による WASM 最適化ビルドと Axum サーバーのリリースコンパイルを並列実行。",
-                            "dx build kaj cargo build en GitHub Actions.",
+                            "GitHub Actions runner executes 'dx build --release' (with custom sections preserved) and exports the deterministic builtin seed bundle.",
+                            "GitHub Actions 上で Dioxus CLI による WASM 最適化ビルドと組み込みシードバンドル出力を実行。",
+                            "dx build kaj eksporto de sem-pako en GitHub Actions.",
                         ),
                 }
                 StepDetailCard {
                     step_number: "CI Step 2",
                     title: language
                         .label(
-                            "Local-Only Docker Pack",
-                            "Docker パッケージング",
-                            "Docker Pakado",
+                            "Static Assets & Seed Bundle",
+                            "Static Assets & シードパッケージング",
+                            "Statikaj Aktivaĵoj Pakado",
                         ),
                     color: "#818cf8",
                     description: language
                         .label(
-                            "Bins and static assets are copied into minimal Debian/Rust scratch images, avoiding slow remote Docker daemons.",
-                            "生成されたバイナリと WASM/JS アセットを軽量 Docker イメージにまとめ、Fly.io Registry へダイレクトに転送。",
-                            "Kopias dosierojn al minimala Docker-bildo.",
+                            "WASM/JS assets, headers, and signed builtin seed bundle are assembled into dist-assets/ and uploaded via Wrangler.",
+                            "生成された WASM/JS アセットと署名済みシードデータを dist-assets/ にまとめ、Wrangler で Cloudflare へダイレクトにアップロード。",
+                            "Kunmetas aktivaĵojn kaj alŝutas per Wrangler.",
                         ),
                 }
                 StepDetailCard {
                     step_number: "CI Step 3",
                     title: language
                         .label(
-                            "Rolling Machine Update",
-                            "ゼロダウンタイム更新",
-                            "Seninterrompa Ĝisdatigo",
+                            "Global Edge Activation",
+                            "グローバルエッジ即時反映",
+                            "Tutmonda Randa Aktivigo",
                         ),
                     color: "#34d399",
                     description: language
                         .label(
-                            "Fly.io spins up the new version, performs HTTP health checks on port 8000, and switches traffic with zero downtime.",
-                            "Fly.io Machines が新バージョン（例: v44）を起動し、ポート 8000 でのヘルスチェック通過後にトラフィックを切り替えます。",
-                            "Fly.io ŝanĝas maŝinon post sana kontrolo.",
+                            "Cloudflare Workers distributes the new Worker version and Static Assets across 300+ global edge locations with zero downtime.",
+                            "Cloudflare Workers が世界中のエッジ拠点へ新バージョンと Static Assets を展開し、ゼロダウンタイムでトラフィックを切り替えます。",
+                            "Cloudflare Workers distribuas la novan version tutmonde sen interrompo.",
                         ),
                 }
             }

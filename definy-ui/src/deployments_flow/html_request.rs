@@ -12,19 +12,19 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
         "Retumilo / Kliento",
     );
     let actor_proxy = language.label(
-        "fly.io Edge Proxy",
-        "fly.io エッジプロキシ",
-        "fly.io Randa Prokurilo",
+        "Cloudflare Workers Edge",
+        "Cloudflare Workers エッジ",
+        "Cloudflare Workers Rando",
     );
     let actor_server = language.label(
-        "definy-server (Axum)",
-        "definy-server (Axum)",
-        "definy-servilo (Axum)",
+        "Static Assets / Worker",
+        "Static Assets / Worker",
+        "Statikaj Aktivaĵoj / Worker",
     );
     let actor_db = language.label(
-        "SurrealDB (Events)",
-        "SurrealDB (イベント)",
-        "SurrealDB (Eventoj)",
+        "Edge Seed / CAS Store",
+        "エッジ シード / CAS ストア",
+        "Randa Semo / CAS",
     );
     let actor_wasm = language.label(
         "Dioxus WASM App",
@@ -38,9 +38,9 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                 {
                     language
                         .label(
-                            "Detailed sequence from entering https://definy.fly.dev to initial SSR HTML display and interactive WASM client bootstrap:",
-                            "https://definy.fly.dev へのアクセスから、プロキシによるマシン起動、307 言語リダイレクト、SSR HTML レンダリング、そしてブラウザ内 WASM 起動までの流れ:",
-                            "Detala sekvenco de aliro al https://definy.fly.dev ĝis SSR HTML kaj WASM:",
+                            "Detailed sequence from entering https://definy.workers.dev to initial HTML display and interactive WASM client bootstrap:",
+                            "https://definy.workers.dev へのアクセスから、Cloudflare Workers エッジ配信、HTML レンダリング、そしてブラウザ内 WASM 起動までの流れ:",
+                            "Detala sekvenco de aliro al https://definy.workers.dev ĝis HTML kaj WASM:",
                         )
                 }
             }
@@ -107,7 +107,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         title: actor_wasm,
                     }
 
-                    // Step 1: GET https://definy.fly.dev/
+                    // Step 1: GET https://definy.workers.dev/
                     SequenceArrow {
                         x1: 100,
                         y1: 85,
@@ -116,7 +116,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         color: "#38bdf8",
                         marker: "flow-arrow-blue",
                         dashed: false,
-                        label: "1. GET https://definy.fly.dev/",
+                        label: "1. GET https://definy.workers.dev/",
                     }
 
                     // Step 2: Auto-start Machine (if stopped)
@@ -287,16 +287,16 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                     step_number: "Phase A",
                     title: language
                         .label(
-                            "Edge Anycast & Auto-Start",
-                            "エッジ Anycast & コールドスタート",
-                            "Randa Aŭtomata Lanĉo",
+                            "Edge Anycast & 0ms Isolate",
+                            "エッジ Anycast & 0ms Isolate 起動",
+                            "Randa 0ms Lanĉo",
                         ),
                     color: "#fb923c",
                     description: language
                         .label(
-                            "Fly.io router intercepts incoming requests. If the machine is stopped (0 running machines to save cost), it spins up a Firecracker MicroVM within 1-2 seconds.",
-                            "Fly.io のエッジルーターがリクエストを受信。コスト削減のためマシンが stopped の場合、Firecracker MicroVM を 1〜2 秒で瞬時にコールドスタートします。",
-                            "Fly.io ekigas MicroVM ene de 1-2 sekundoj se ĝi estas haltigita.",
+                            "Cloudflare's global Anycast network routes incoming requests to the nearest PoP, executing V8 isolates and serving Static Assets with zero cold-start latency.",
+                            "Cloudflare のグローバル Anycast 網が最寄り PoP でリクエストを受信。Static Assets と V8 Isolate によりコールドスタート 0ms で応答します。",
+                            "Cloudflare rulas V8-izolaĵon kun 0ms malvarma starto.",
                         ),
                 }
                 StepDetailCard {

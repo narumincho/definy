@@ -210,9 +210,9 @@ pub fn document_description_text(state: &AppState, context: &PageContext) -> Str
         Some(Location::Deployments) => context
             .language
             .label(
-                "Deploy definy instances to fly.io and monitor operational bootstrapping status.",
-                "definy インスタンスの fly.io へのデプロイと運用ブートストラップ状況の確認。",
-                "Deploji definy-aplikaĵojn al fly.io kaj kontroli memgastigan staton.",
+                "Deploy definy instances to Cloudflare Workers and monitor operational bootstrapping status.",
+                "definy インスタンスの Cloudflare Workers へのデプロイと運用ブートストラップ状況の確認。",
+                "Deploji definy-aplikaĵojn al Cloudflare Workers kaj kontroli memgastigan staton.",
             )
             .to_string(),
         Some(Location::Part(definition_event_hash)) => {

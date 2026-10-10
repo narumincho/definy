@@ -192,7 +192,7 @@ fn DeployCommandGuideCard(context: PageContext) -> Element {
             // Connect-RPC DeployCloudflare cURL 例
             div { style: "background: #090d16; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; font-family: monospace; font-size: 0.84rem; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap;",
                 {
-                    "curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployCloudflare \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"apiToken\": \"$CLOUDFLARE_API_TOKEN\", \"scriptName\": \"my-definy-edge\"}'"
+                    "curl -X POST https://definy.workers.dev/definy.v1.DeployService/DeployCloudflare \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"apiToken\": \"$CLOUDFLARE_API_TOKEN\", \"scriptName\": \"my-definy-edge\"}'"
                 }
             }
 
@@ -351,14 +351,8 @@ fn DeploymentsHistoryCard(context: PageContext) -> Element {
 
                             div { style: "display: flex; flex-direction: column; gap: 0.2rem;",
                                 div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                                    span { style: if item.provider.as_deref() == Some("cloudflare_workers") { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);" } else if item.provider.as_deref() == Some("deno_deploy") { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);" } else { "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);" },
-                                        if item.provider.as_deref() == Some("cloudflare_workers") {
-                                            "⚡ Cloudflare"
-                                        } else if item.provider.as_deref() == Some("deno_deploy") {
-                                            "🦕 Deno Deploy"
-                                        } else {
-                                            "🪰 fly.io"
-                                        }
+                                    span { style: "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);",
+                                        "⚡ Cloudflare"
                                     }
                                     a {
                                         href: "{item.url}",

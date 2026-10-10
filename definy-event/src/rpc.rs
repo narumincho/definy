@@ -22,14 +22,10 @@ pub const PATH_UPLOAD_CONTENT: &str = "/definy.v1.EventService/UploadContent";
 pub const PATH_GET_CONTENT: &str = "/definy.v1.EventService/GetContent";
 
 pub const DEPLOY_SERVICE_NAME: &str = "definy.v1.DeployService";
-pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
-pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
 pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
 pub const METHOD_DEPLOY_CLOUDFLARE: &str = "DeployCloudflare";
 pub const METHOD_LIST_CLOUDFLARE_WORKERS: &str = "ListCloudflareWorkers";
 
-pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
-pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
 pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
 pub const PATH_DEPLOY_CLOUDFLARE: &str = "/definy.v1.DeployService/DeployCloudflare";
 pub const PATH_LIST_CLOUDFLARE_WORKERS: &str = "/definy.v1.DeployService/ListCloudflareWorkers";
@@ -264,82 +260,6 @@ pub struct GetContentResponse {
     #[prost(message, optional, tag = "1")]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub item: Option<ContentItem>,
-}
-
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DeployInstanceRequest {
-    #[prost(string, optional, tag = "1")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub commit_hash: Option<String>,
-
-    #[prost(string, optional, tag = "2")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub machine_name: Option<String>,
-
-    #[prost(string, optional, tag = "3")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub region: Option<String>,
-
-    #[prost(string, optional, tag = "4")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub wasm_hash: Option<String>,
-}
-
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DeployInstanceResponse {
-    #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub machine_id: String,
-
-    #[prost(string, tag = "2")]
-    #[serde(default)]
-    pub status: String,
-
-    #[prost(string, tag = "3")]
-    #[serde(default)]
-    pub url: String,
-
-    #[prost(string, tag = "4")]
-    #[serde(default)]
-    pub app_url: String,
-}
-
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct GetDeployStatusRequest {
-    #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub machine_id: String,
-}
-
-#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct GetDeployStatusResponse {
-    #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub machine_id: String,
-
-    #[prost(string, tag = "2")]
-    #[serde(default)]
-    pub status: String,
-
-    #[prost(string, tag = "3")]
-    #[serde(default)]
-    pub region: String,
-
-    #[prost(string, tag = "4")]
-    #[serde(default)]
-    pub url: String,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
@@ -603,26 +523,29 @@ mod tests {
 
     #[test]
     fn test_deploy_messages_roundtrip() {
-        let req = DeployInstanceRequest {
-            commit_hash: Some("commit_abc123".into()),
-            machine_name: Some("test-machine".into()),
-            region: Some("nrt".into()),
+        let req = DeployCloudflareRequest {
+            api_token: "cf_token_123".into(),
+            account_id: Some("acc_abc".into()),
+            script_name: Some("test-worker".into()),
             wasm_hash: Some("wasm_hash_789".into()),
+            custom_script: None,
+            compile_self_hosted: Some(true),
+            part_id: None,
         };
         let mut buf = Vec::new();
         req.encode(&mut buf).unwrap();
-        let decoded = DeployInstanceRequest::decode(&buf[..]).unwrap();
+        let decoded = DeployCloudflareRequest::decode(&buf[..]).unwrap();
         assert_eq!(req, decoded);
 
-        let res = DeployInstanceResponse {
-            machine_id: "m_123".into(),
-            status: "created".into(),
-            url: "https://definy.fly.dev".into(),
-            app_url: "https://definy.fly.dev".into(),
+        let res = DeployCloudflareResponse {
+            script_name: "test-worker".into(),
+            status: "succeeded".into(),
+            url: "https://test-worker.definy.workers.dev".into(),
+            evaluated_result: Some("42".into()),
         };
         let mut buf_res = Vec::new();
         res.encode(&mut buf_res).unwrap();
-        let decoded_res = DeployInstanceResponse::decode(&buf_res[..]).unwrap();
+        let decoded_res = DeployCloudflareResponse::decode(&buf_res[..]).unwrap();
         assert_eq!(res, decoded_res);
     }
 

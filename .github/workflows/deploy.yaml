@@ -13,9 +13,11 @@ jobs:
         run: curl -sSL https://dioxus.dev/install.sh | bash
       - run: rustup target add wasm32-unknown-unknown
       - run: dx build --package definy-client --release
-      - run: cargo build -p definy-server --release
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy to Fly
-        run: flyctl deploy --local-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Package Static Assets and Seed Bundle
+        run: bash scripts/build-assets.sh --skip-build
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

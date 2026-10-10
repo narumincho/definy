@@ -2,14 +2,8 @@ syntax = "proto3";
 
 package definy.v1;
 
-// DeployService provides Connect-RPC APIs for bootstrapping and deploying definy instances to cloud providers (e.g. fly.io).
+// DeployService provides Connect-RPC APIs for bootstrapping and deploying definy instances to Cloudflare Workers.
 service DeployService {
-  // DeployInstance deploys a definy instance for a given commit/state to fly.io.
-  rpc DeployInstance(DeployInstanceRequest) returns (DeployInstanceResponse);
-
-  // GetDeployStatus retrieves the status and machine information of a deployment.
-  rpc GetDeployStatus(GetDeployStatusRequest) returns (GetDeployStatusResponse);
-
   // ListDeployments retrieves recent deployment records.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
 
@@ -48,39 +42,6 @@ message DeployCloudflareResponse {
   optional string evaluated_result = 4;
 }
 
-message DeployInstanceRequest {
-  // Target commit hash or module event hash to deploy
-  optional string commit_hash = 1;
-  // Optional custom name for the machine
-  optional string machine_name = 2;
-  // Target region (e.g. "nrt", "iad", defaults to server region)
-  optional string region = 3;
-  // Content hash of virtual WebAssembly binary to execute in generic runner
-  optional string wasm_hash = 4;
-}
-
-message DeployInstanceResponse {
-  // Unique machine ID created on fly.io
-  string machine_id = 1;
-  // Deployment status (e.g. "created", "started", "failed")
-  string status = 2;
-  // URL to access the deployed instance (e.g. "https://definy.fly.dev" or instance URL)
-  string url = 3;
-  // Public app URL
-  string app_url = 4;
-}
-
-message GetDeployStatusRequest {
-  string machine_id = 1;
-}
-
-message GetDeployStatusResponse {
-  string machine_id = 1;
-  string status = 2;
-  string region = 3;
-  string url = 4;
-}
-
 message DeploymentItem {
   string machine_id = 1;
   optional string commit_hash = 2;
@@ -90,7 +51,7 @@ message DeploymentItem {
   string region = 6;
   string created_at_rfc3339 = 7;
   optional string wasm_hash = 8;
-  // Cloud provider (e.g. "flyio", "cloudflare_workers")
+  // Cloud provider (e.g. "cloudflare_workers")
   optional string provider = 9;
 }
 

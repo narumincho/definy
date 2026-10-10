@@ -1,8 +1,0 @@
-FROM ubuntu:24.04
-WORKDIR /app
-RUN apt-get update && apt-get install -y ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
-
-COPY target/release/definy_server /app/definy_server
-COPY target/dx/definy_client/release/web/public /app/public
-
-CMD ["/app/definy_server"]

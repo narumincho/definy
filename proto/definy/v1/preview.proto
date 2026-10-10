@@ -33,7 +33,7 @@ message RegisterPreviewAppRequest {
 message RegisterPreviewAppResponse {
   // Application ID / subdomain slug
   string app_id = 1;
-  // Primary preview URL (subdomain based, e.g. "https://my-app.definy.fly.dev" or "http://my-app.localhost:8000")
+  // Primary preview URL (subdomain based, e.g. "https://my-app.definy.workers.dev" or "http://my-app.localhost:8000")
   string preview_url = 2;
   // Fallback path URL (e.g. "http://localhost:8000/preview/my-app/")
   string path_url = 3;

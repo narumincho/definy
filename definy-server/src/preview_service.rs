@@ -101,12 +101,6 @@ pub fn get_root_domain() -> String {
             return d.to_string();
         }
     }
-    if let Ok(fly_app) = std::env::var("FLY_APP_NAME") {
-        let f = fly_app.trim();
-        if !f.is_empty() {
-            return format!("{f}.fly.dev");
-        }
-    }
     "localhost:8000".to_string()
 }
 
@@ -135,7 +129,7 @@ pub fn build_path_url(app_id: &str) -> String {
 
 /// HTTP の Host ヘッダーからサブドメイン名を抽出します。
 /// 例: `my-app.localhost:8000` -> Some("my-app")
-/// 例: `my-app.definy.fly.dev` -> Some("my-app")
+/// 例: `my-app.definy.workers.dev` -> Some("my-app")
 /// ルートドメインそのものや無関係なホスト名の場合は None を返します。
 #[must_use]
 pub fn extract_subdomain_from_host(host: &str) -> Option<String> {
@@ -714,16 +708,16 @@ mod tests {
         let _lock = ENV_MUTEX.blocking_lock();
 
         {
-            let _g = EnvGuard::set("DEFINY_ROOT_DOMAIN", "definy.fly.dev");
+            let _g = EnvGuard::set("DEFINY_ROOT_DOMAIN", "definy.workers.dev");
             assert_eq!(
-                extract_subdomain_from_host("my-app.definy.fly.dev"),
+                extract_subdomain_from_host("my-app.definy.workers.dev"),
                 Some("my-app".to_string())
             );
             assert_eq!(
-                extract_subdomain_from_host("my-app.definy.fly.dev:443"),
+                extract_subdomain_from_host("my-app.definy.workers.dev:443"),
                 Some("my-app".to_string())
             );
-            assert_eq!(extract_subdomain_from_host("definy.fly.dev"), None);
+            assert_eq!(extract_subdomain_from_host("definy.workers.dev"), None);
             assert_eq!(extract_subdomain_from_host("other-domain.com"), None);
         }
 

@@ -492,14 +492,6 @@ pub fn router() -> axum::Router<AppState> {
         )
         .route(PATH_GET_CONTENT, axum::routing::post(handle_get_content))
         .route(
-            PATH_DEPLOY_INSTANCE,
-            axum::routing::post(crate::deploy_rpc::handle_deploy_instance),
-        )
-        .route(
-            PATH_GET_DEPLOY_STATUS,
-            axum::routing::post(crate::deploy_rpc::handle_get_deploy_status),
-        )
-        .route(
             PATH_LIST_DEPLOYMENTS,
             axum::routing::post(crate::deploy_rpc::handle_list_deployments),
         )
