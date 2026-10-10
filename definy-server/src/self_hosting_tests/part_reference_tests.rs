@@ -10,8 +10,8 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_type_checker_parts, all_validator_parts, call_part1, call_part2, call_part3,
-    create_test_module_events, empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
+    all_type_checker_parts, all_validator_parts, call_part, create_test_module_events,
+    empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
 };
 use crate::builtin_type_checker::{type_num, type_str};
 
@@ -94,12 +94,17 @@ fn test_self_hosted_part_type_lookup_direct() {
     });
 
     // 1. 存在するパーツ "hash_const_pi" の検索 -> ok(number)
-    let call_pi = call_part2(
+    let call_pi = call_part(
         lookup_hash.clone(),
-        part_env.clone(),
-        Expression::String(StringExpression {
-            value: "hash_const_pi".into(),
-        }),
+        &[
+            ("env", part_env.clone()),
+            (
+                "part_hash",
+                Expression::String(StringExpression {
+                    value: "hash_const_pi".into(),
+                }),
+            ),
+        ],
     );
     let result_pi = definy_core::evaluate_expression(&call_pi, &events)
         .expect("Failed to evaluate part-type-lookup for const_pi");
@@ -116,12 +121,17 @@ fn test_self_hosted_part_type_lookup_direct() {
     );
 
     // 2. 存在するパーツ "hash_app_title" の検索 -> ok(string)
-    let call_title = call_part2(
+    let call_title = call_part(
         lookup_hash.clone(),
-        part_env.clone(),
-        Expression::String(StringExpression {
-            value: "hash_app_title".into(),
-        }),
+        &[
+            ("env", part_env.clone()),
+            (
+                "part_hash",
+                Expression::String(StringExpression {
+                    value: "hash_app_title".into(),
+                }),
+            ),
+        ],
     );
     let result_title = definy_core::evaluate_expression(&call_title, &events)
         .expect("Failed to evaluate part-type-lookup for app_title");
@@ -138,12 +148,17 @@ fn test_self_hosted_part_type_lookup_direct() {
     );
 
     // 3. 存在しないパーツ "hash_missing" の検索 -> error(part_not_found { part_definition_event_hash: "hash_missing" })
-    let call_missing = call_part2(
+    let call_missing = call_part(
         lookup_hash,
-        part_env,
-        Expression::String(StringExpression {
-            value: "hash_missing".into(),
-        }),
+        &[
+            ("env", part_env),
+            (
+                "part_hash",
+                Expression::String(StringExpression {
+                    value: "hash_missing".into(),
+                }),
+            ),
+        ],
     );
     let result_missing = definy_core::evaluate_expression(&call_missing, &events)
         .expect("Failed to evaluate part-type-lookup for missing part");
@@ -191,10 +206,9 @@ fn test_self_hosted_part_reference_type_checking() {
     let env = type_env_with_parts(parts_list);
 
     // 1. part_reference("part_answer") -> ok(number)
-    let check_answer = call_part2(
+    let check_answer = call_part(
         type_check_hash.clone(),
-        expr_part_ref("part_answer"),
-        env.clone(),
+        &[("expr", expr_part_ref("part_answer")), ("env", env.clone())],
     );
     let res_answer = definy_core::evaluate_expression(&check_answer, &events)
         .expect("evaluate type check for part_answer");
@@ -211,10 +225,12 @@ fn test_self_hosted_part_reference_type_checking() {
     );
 
     // 2. part_reference("part_greeting") -> ok(string)
-    let check_greeting = call_part2(
+    let check_greeting = call_part(
         type_check_hash.clone(),
-        expr_part_ref("part_greeting"),
-        env.clone(),
+        &[
+            ("expr", expr_part_ref("part_greeting")),
+            ("env", env.clone()),
+        ],
     );
     let res_greeting = definy_core::evaluate_expression(&check_greeting, &events)
         .expect("evaluate type check for part_greeting");
@@ -231,10 +247,12 @@ fn test_self_hosted_part_reference_type_checking() {
     );
 
     // 3. 空環境での検索 -> error(part_not_found)
-    let check_in_empty = call_part2(
+    let check_in_empty = call_part(
         type_check_hash.clone(),
-        expr_part_ref("part_answer"),
-        empty_type_env(),
+        &[
+            ("expr", expr_part_ref("part_answer")),
+            ("env", empty_type_env()),
+        ],
     );
     let res_in_empty = definy_core::evaluate_expression(&check_in_empty, &events)
         .expect("evaluate type check in empty env");
@@ -254,7 +272,7 @@ fn test_self_hosted_part_reference_type_checking() {
 
     // 4. パーツ参照を含む複合式: part_reference("part_answer") + 10 -> ok(number)
     let compound_expr = expr_add(expr_part_ref("part_answer"), expr_num(10));
-    let check_compound = call_part2(type_check_hash, compound_expr, env);
+    let check_compound = call_part(type_check_hash, &[("expr", compound_expr), ("env", env)]);
     let res_compound = definy_core::evaluate_expression(&check_compound, &events)
         .expect("evaluate type check for compound expression with part_reference");
 
@@ -284,11 +302,13 @@ fn test_self_hosted_part_reference_check_against() {
     let env = type_env_with_parts(parts_list);
 
     // 1. 期待型 number に合致 -> ok(number)
-    let check_num = call_part3(
+    let check_num = call_part(
         type_check_against_hash.clone(),
-        expr_part_ref("part_answer"),
-        env.clone(),
-        type_num(),
+        &[
+            ("expr", expr_part_ref("part_answer")),
+            ("env", env.clone()),
+            ("expected_type", type_num()),
+        ],
     );
     let res_num = definy_core::evaluate_expression(&check_num, &events)
         .expect("evaluate type-check-against with matching type");
@@ -305,11 +325,13 @@ fn test_self_hosted_part_reference_check_against() {
     );
 
     // 2. 期待型 string に不一致 -> error(type_mismatch)
-    let check_mismatch = call_part3(
+    let check_mismatch = call_part(
         type_check_against_hash,
-        expr_part_ref("part_answer"),
-        env,
-        type_str(),
+        &[
+            ("expr", expr_part_ref("part_answer")),
+            ("env", env),
+            ("expected_type", type_str()),
+        ],
     );
     let res_mismatch = definy_core::evaluate_expression(&check_mismatch, &events)
         .expect("evaluate type-check-against with mismatching type");
@@ -430,7 +452,7 @@ fn test_self_hosted_validate_module_with_part_references() {
         ],
     });
 
-    let call_valid = call_part1(validate_module_hash.clone(), valid_mod);
+    let call_valid = call_part(validate_module_hash.clone(), &[("mod_def", valid_mod)]);
     let valid_res = definy_core::evaluate_expression(&call_valid, &events)
         .expect("evaluate validate-module on module with valid part_reference");
     assert_eq!(valid_res, Value::Bool(true));
@@ -490,7 +512,10 @@ fn test_self_hosted_validate_module_with_part_references() {
             },
         ],
     });
-    let call_invalid_ref = call_part1(validate_module_hash.clone(), invalid_ref_mod);
+    let call_invalid_ref = call_part(
+        validate_module_hash.clone(),
+        &[("mod_def", invalid_ref_mod)],
+    );
     let invalid_ref_res = definy_core::evaluate_expression(&call_invalid_ref, &events)
         .expect("evaluate validate-module on module with unknown part_reference");
     assert_eq!(invalid_ref_res, Value::Bool(false));
@@ -550,7 +575,7 @@ fn test_self_hosted_validate_module_with_part_references() {
             },
         ],
     });
-    let call_type_mismatch = call_part1(validate_module_hash, type_mismatch_mod);
+    let call_type_mismatch = call_part(validate_module_hash, &[("mod_def", type_mismatch_mod)]);
     let type_mismatch_res = definy_core::evaluate_expression(&call_type_mismatch, &events)
         .expect("evaluate validate-module on module with type mismatch");
     assert_eq!(type_mismatch_res, Value::Bool(false));

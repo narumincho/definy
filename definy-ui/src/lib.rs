@@ -5,6 +5,7 @@ pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
 mod deployments;
+pub mod deployments_cloudflare;
 mod deployments_flow;
 pub mod dom;
 pub mod dropdown;

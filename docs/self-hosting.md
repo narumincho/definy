@@ -21,7 +21,10 @@ definy
 3. **安全なマクロ・メタプログラミング**:
    式をデータとして受け取り、式を返す関数を通常パーツとして安全に定義可能。
 4. **自己ホスト WebAssembly 生成とエッジ配備**: definy 式から WebAssembly
-   バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザおよび Deno Deploy エッジ上で即時実行可能（詳細は [自己記述コンパイラと Deno Deploy エッジ直結パイプライン](file:///Users/narumi/Documents/GitHub/definy/docs/self-hosting-compiler-deno-deploy.md) を参照）。
+   バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザおよび
+   Cloudflare Workers エッジ上で即時実行可能（詳細は
+   [自己記述コンパイラと Cloudflare Workers エッジ直結パイプライン](file:///Users/narumi/Documents/GitHub/definy/docs/self-hosting-compiler-cloudflare-workers.md)
+   を参照）。
 
 ### 実サービスとの接続状況
 

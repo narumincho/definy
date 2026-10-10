@@ -1,14 +1,15 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
-    LessThanOrEqualExpression, ListGetExpression, ListLengthExpression, ListLiteralExpression,
-    MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartReferenceExpression,
-    PartType, RecordFieldType, RecordGetExpression, TypeLiteralExpression,
-    TypeLiteralItemExpression, VariableExpression, VariantExpression, derive_module_part_id,
+    AddExpression, Description, Expression, IfExpression, LessThanOrEqualExpression,
+    ListGetExpression, ListLengthExpression, ListLiteralExpression, MatchArm, MatchExpression,
+    ModulePartEntry, NumberExpression, PartType, RecordFieldType, RecordGetExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
 /// パターンマッチアーム一覧の各アームを検査し戻り値型の統一性を検証するパーツ
-/// `core.type-check-match-arms-inner`: `arms -> variants -> env -> index -> optional-type-ast -> type-result`
+/// `core.type-check-match-arms-inner`: `(arms: List Arm, variants: List Variant, env: type-env, index: Number, first_arm_type: optional-type-ast) -> type-result`
 pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_env_hash = derive_module_part_id(core_module_id, "type-env");
@@ -52,18 +53,14 @@ pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> 
     });
 
     // lookup = union-variant-type-lookup(variants, arm_tag, 0)
-    let lookup_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    variant_lookup_hash,
-                ))),
-                argument: Box::new(variants.clone()),
-            })),
-            argument: Box::new(arm_tag),
-        })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-    });
+    let lookup_call = call_part(
+        &variant_lookup_hash,
+        &[
+            ("variants", variants.clone()),
+            ("tag", arm_tag),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+        ],
+    );
 
     let next_index = Expression::Add(AddExpression {
         left: Box::new(index),
@@ -72,24 +69,16 @@ pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> 
 
     // recurse(arms, variants, env, next_index, new_first_arm_type)
     let call_recurse = |new_first: Expression| {
-        Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::PartReference(
-                                PartReferenceExpression::new(inner_hash.clone()),
-                            )),
-                            argument: Box::new(arms.clone()),
-                        })),
-                        argument: Box::new(variants.clone()),
-                    })),
-                    argument: Box::new(env.clone()),
-                })),
-                argument: Box::new(next_index.clone()),
-            })),
-            argument: Box::new(new_first),
-        })
+        call_part(
+            &inner_hash,
+            &[
+                ("arms", arms.clone()),
+                ("variants", variants.clone()),
+                ("env", env.clone()),
+                ("index", next_index.clone()),
+                ("first_arm_type", new_first),
+            ],
+        )
     };
 
     let opt_some = |t: Expression| {
@@ -101,47 +90,45 @@ pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> 
     };
 
     // extended_env = env-extend(env, arm_var_id, payload_type)
-    let extended_env = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    env_extend_hash,
-                ))),
-                argument: Box::new(env.clone()),
-            })),
-            argument: Box::new(arm_var_id),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 11 })),
-    });
+    let extended_env = call_part(
+        &env_extend_hash,
+        &[
+            ("env", env.clone()),
+            ("var_id", arm_var_id),
+            (
+                "var_type",
+                Expression::Variable(VariableExpression { variable_id: 11 }),
+            ),
+        ],
+    );
 
     // body_check = type-check(arm_body, extended_env)
-    let check_body = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_check_hash,
-            ))),
-            argument: Box::new(arm_body),
-        })),
-        argument: Box::new(extended_env),
-    });
+    let check_body = call_part(
+        &type_check_hash,
+        &[("expr", arm_body), ("env", extended_env)],
+    );
 
     // first_arm_type との一致検査
     let prev_t_var = 13;
     let body_t_var = 12;
 
-    let is_assignable = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_assignable_hash,
-            ))),
-            argument: Box::new(Expression::Variable(VariableExpression {
-                variable_id: body_t_var,
-            })),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression {
-            variable_id: prev_t_var,
-        })),
-    });
+    let is_assignable = call_part(
+        &type_assignable_hash,
+        &[
+            (
+                "actual_type",
+                Expression::Variable(VariableExpression {
+                    variable_id: body_t_var,
+                }),
+            ),
+            (
+                "expected_type",
+                Expression::Variable(VariableExpression {
+                    variable_id: prev_t_var,
+                }),
+            ),
+        ],
+    );
 
     let err_type_mismatch = Expression::Variant(VariantExpression {
         type_part_definition_event_hash: None,
@@ -250,21 +237,18 @@ pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> 
     });
 
     // at_end の時の処理: 全アーム走査完了 -> check-union-exhaustiveness を呼び出す
-    let call_exhaustiveness = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        exhaust_hash,
-                    ))),
-                    argument: Box::new(variants),
-                })),
-                argument: Box::new(arms),
-            })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 16 })),
-    });
+    let call_exhaustiveness = call_part(
+        &exhaust_hash,
+        &[
+            ("variants", variants),
+            ("arms", arms),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+            (
+                "return_type",
+                Expression::Variable(VariableExpression { variable_id: 16 }),
+            ),
+        ],
+    );
 
     let err_empty_arms = Expression::Variant(VariantExpression {
         type_part_definition_event_hash: None,
@@ -349,22 +333,16 @@ pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> 
 
     ModulePartEntry {
         name: "type-check-match-arms-inner".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(arm_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(variant_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(type_env_hash)),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::Number),
-                        return_type: Box::new(PartType::Function {
-                            parameter: Box::new(optional_type_ast),
-                            return_type: Box::new(PartType::TypePart(type_result_hash)),
-                        }),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("arms", PartType::List(Box::new(arm_type))),
+                ("variants", PartType::List(Box::new(variant_type))),
+                ("env", PartType::TypePart(type_env_hash)),
+                ("index", PartType::Number),
+                ("first_arm_type", optional_type_ast),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -376,32 +354,21 @@ pub fn create_type_check_match_arms_inner_part(core_module_id: &EventHashId) -> 
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "arms".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "variants".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "env".into(),
-                    body: Box::new(Expression::Function(FunctionExpression {
-                        parameter_id: 3,
-                        parameter_name: "index".into(),
-                        body: Box::new(Expression::Function(FunctionExpression {
-                            parameter_id: 4,
-                            parameter_name: "first_arm_type".into(),
-                            body: Box::new(body),
-                        })),
-                    })),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[
+                ("arms", 0),
+                ("variants", 1),
+                ("env", 2),
+                ("index", 3),
+                ("first_arm_type", 4),
+            ],
+            body,
+        )),
     }
 }
 
 /// パターンマッチアーム一覧の型検査エントリーポイント
-/// `core.type-check-match-arms`: `arms -> variants -> env -> type-result`
+/// `core.type-check-match-arms`: `(arms: List Arm, variants: List Variant, env: type-env) -> type-result`
 pub fn create_type_check_match_arms_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_env_hash = derive_module_part_id(core_module_id, "type-env");
@@ -419,24 +386,16 @@ pub fn create_type_check_match_arms_part(core_module_id: &EventHashId) -> Module
         payload: None,
     });
 
-    let call_inner = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(inner_hash),
-                        )),
-                        argument: Box::new(arms),
-                    })),
-                    argument: Box::new(variants),
-                })),
-                argument: Box::new(env),
-            })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-        })),
-        argument: Box::new(opt_none),
-    });
+    let call_inner = call_part(
+        &inner_hash,
+        &[
+            ("arms", arms),
+            ("variants", variants),
+            ("env", env),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+            ("first_arm_type", opt_none),
+        ],
+    );
 
     let variant_type = PartType::Record(vec![
         RecordFieldType {
@@ -475,16 +434,14 @@ pub fn create_type_check_match_arms_part(core_module_id: &EventHashId) -> Module
 
     ModulePartEntry {
         name: "type-check-match-arms".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(arm_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(variant_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(type_env_hash)),
-                    return_type: Box::new(PartType::TypePart(type_result_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("arms", PartType::List(Box::new(arm_type))),
+                ("variants", PartType::List(Box::new(variant_type))),
+                ("env", PartType::TypePart(type_env_hash)),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -496,19 +453,10 @@ pub fn create_type_check_match_arms_part(core_module_id: &EventHashId) -> Module
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "arms".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "variants".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "env".into(),
-                    body: Box::new(call_inner),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("arms", 0), ("variants", 1), ("env", 2)],
+            call_inner,
+        )),
     }
 }
 
@@ -570,15 +518,19 @@ pub fn create_union_check_arms(
 
         let ok_for_none = make_union_type(payload_none_type);
 
-        let check_payload = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_check_hash.clone(),
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 72 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        });
+        let check_payload = call_part(
+            type_check_hash,
+            &[
+                (
+                    "expr",
+                    Expression::Variable(VariableExpression { variable_id: 72 }),
+                ),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+            ],
+        );
 
         let payload_some_match = Expression::Match(MatchExpression {
             target: Box::new(check_payload),
@@ -653,28 +605,31 @@ pub fn create_union_check_arms(
             key: "arms".into(),
         });
 
-        let check_target = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_check_hash.clone(),
-                ))),
-                argument: Box::new(target_expr),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        });
+        let check_target = call_part(
+            type_check_hash,
+            &[
+                ("expr", target_expr),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+            ],
+        );
 
-        let check_match_arms_call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        type_check_match_arms_hash.clone(),
-                    ))),
-                    argument: Box::new(arms_expr),
-                })),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 77 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        });
+        let check_match_arms_call = call_part(
+            type_check_match_arms_hash,
+            &[
+                ("arms", arms_expr),
+                (
+                    "variants",
+                    Expression::Variable(VariableExpression { variable_id: 77 }),
+                ),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+            ],
+        );
 
         let err_not_a_union = Expression::Variant(VariantExpression {
             type_part_definition_event_hash: None,

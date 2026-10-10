@@ -100,6 +100,7 @@ pub(crate) fn error_to_response(err: ConnectError) -> Response {
         "not_found" => StatusCode::NOT_FOUND,
         "already_exists" => StatusCode::CONFLICT,
         "unavailable" => StatusCode::SERVICE_UNAVAILABLE,
+        "unauthenticated" => StatusCode::UNAUTHORIZED,
         _ => StatusCode::INTERNAL_SERVER_ERROR,
     };
 
@@ -503,8 +504,12 @@ pub fn router() -> axum::Router<AppState> {
             axum::routing::post(crate::deploy_rpc::handle_list_deployments),
         )
         .route(
-            PATH_DEPLOY_DENO,
-            axum::routing::post(crate::deploy_rpc::handle_deploy_deno),
+            PATH_DEPLOY_CLOUDFLARE,
+            axum::routing::post(crate::deploy_rpc::handle_deploy_cloudflare),
+        )
+        .route(
+            PATH_LIST_CLOUDFLARE_WORKERS,
+            axum::routing::post(crate::deploy_rpc::handle_list_cloudflare_workers),
         )
 }
 
@@ -572,7 +577,10 @@ async fn validate_module_commit(
             function: Box::new(definy_event::event::Expression::PartReference(
                 definy_event::event::PartReferenceExpression::new(validate_module_hash),
             )),
-            argument: Box::new(module_value),
+            arguments: vec![definy_event::event::CallArgument {
+                name: "mod_def".into(),
+                value: Box::new(module_value),
+            }],
         });
     match definy_core::evaluate_expression(&validation_call, &events) {
         Ok(definy_core::Value::Bool(true)) => Ok(()),

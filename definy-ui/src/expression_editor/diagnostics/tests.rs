@@ -4,7 +4,7 @@ use definy_event::EventHashId;
 use definy_event::event::*;
 
 use super::*;
-use crate::expression_editor::types::ExpressionType;
+use crate::expression_editor::types::{ExpressionType, FunctionParameterTypeInfo};
 use crate::part_projection::PartSnapshot;
 
 fn create_test_snapshot(
@@ -255,28 +255,44 @@ fn test_recursive_type_cycle_detection_in_constructor() {
 fn test_function_parameter_accepts_lambda_argument() {
     let state = crate::app_state::AppState::default();
     let callback_type = ExpressionType::Function {
-        parameter: Box::new(ExpressionType::Number),
+        parameters: vec![FunctionParameterTypeInfo {
+            name: "value".to_string(),
+            r#type: ExpressionType::Number,
+        }],
         return_type: Box::new(ExpressionType::Number),
     };
     let map_type = ExpressionType::Function {
-        parameter: Box::new(callback_type),
+        parameters: vec![FunctionParameterTypeInfo {
+            name: "callback".to_string(),
+            r#type: callback_type,
+        }],
         return_type: Box::new(ExpressionType::Number),
     };
     let expected_type = ExpressionType::Function {
-        parameter: Box::new(map_type),
+        parameters: vec![FunctionParameterTypeInfo {
+            name: "map".to_string(),
+            r#type: map_type,
+        }],
         return_type: Box::new(ExpressionType::Number),
     };
     let callback = Expression::Function(FunctionExpression {
-        parameter_id: 2,
-        parameter_name: "value".into(),
+        parameters: vec![FunctionParameter {
+            parameter_id: 2,
+            parameter_name: "value".into(),
+        }],
         body: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
     });
     let expression = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "map".into(),
+        parameters: vec![FunctionParameter {
+            parameter_id: 1,
+            parameter_name: "map".into(),
+        }],
         body: Box::new(Expression::Call(CallExpression {
             function: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            argument: Box::new(callback),
+            arguments: vec![CallArgument {
+                name: "callback".into(),
+                value: Box::new(callback),
+            }],
         })),
     });
 
@@ -294,11 +310,16 @@ fn test_direct_lambda_application_is_diagnosed() {
     let state = crate::app_state::AppState::default();
     let expression = Expression::Call(CallExpression {
         function: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "value".into(),
+            parameters: vec![FunctionParameter {
+                parameter_id: 1,
+                parameter_name: "value".into(),
+            }],
             body: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
         })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 1 })),
+        arguments: vec![CallArgument {
+            name: "value".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 1 })),
+        }],
     });
 
     let analysis = analyze_expression_types(&state, &expression, Some(ExpressionType::Number));
@@ -314,18 +335,23 @@ fn test_direct_lambda_application_is_diagnosed() {
 fn test_record_structural_width_subtyping_allows_extra_fields() {
     let state = crate::app_state::AppState::default();
 
-    // funcA: { clock: Number } -> Number
+    // funcA: (ctx: { clock: Number }) -> Number
     let expected_param_type =
         ExpressionType::Record(vec![("clock".to_string(), ExpressionType::Number)]);
     let func_expected_type = ExpressionType::Function {
-        parameter: Box::new(expected_param_type),
+        parameters: vec![FunctionParameterTypeInfo {
+            name: "ctx".to_string(),
+            r#type: expected_param_type,
+        }],
         return_type: Box::new(ExpressionType::Number),
     };
 
     // fn ctx => ctx.clock
     let func_expr = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "ctx".into(),
+        parameters: vec![FunctionParameter {
+            parameter_id: 1,
+            parameter_name: "ctx".into(),
+        }],
         body: Box::new(Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
             key: "clock".into(),
@@ -363,18 +389,21 @@ fn test_record_structural_width_subtyping_allows_extra_fields() {
 
     let call_expr = Expression::Call(CallExpression {
         function: Box::new(Expression::Variable(VariableExpression { variable_id: 10 })),
-        argument: Box::new(extra_record_arg),
+        arguments: vec![CallArgument {
+            name: "ctx".into(),
+            value: Box::new(extra_record_arg),
+        }],
     });
 
-    // env: 変数 10 は funcA ({ clock: Number } -> Number)
+    // env: 変数 10 は funcA (ctx: { clock: Number } -> Number)
     let mut env = std::collections::HashMap::new();
     env.insert(
         10,
         ExpressionType::Function {
-            parameter: Box::new(ExpressionType::Record(vec![(
-                "clock".to_string(),
-                ExpressionType::Number,
-            )])),
+            parameters: vec![FunctionParameterTypeInfo {
+                name: "ctx".to_string(),
+                r#type: ExpressionType::Record(vec![("clock".to_string(), ExpressionType::Number)]),
+            }],
             return_type: Box::new(ExpressionType::Number),
         },
     );
@@ -412,7 +441,10 @@ fn test_record_structural_width_subtyping_allows_extra_fields() {
     });
     let call_missing_expr = Expression::Call(CallExpression {
         function: Box::new(Expression::Variable(VariableExpression { variable_id: 10 })),
-        argument: Box::new(missing_clock_arg),
+        arguments: vec![CallArgument {
+            name: "ctx".into(),
+            value: Box::new(missing_clock_arg),
+        }],
     });
 
     let mut diagnostics_missing = Vec::new();

@@ -1,7 +1,8 @@
+use crate::ast_builder::{fn_expr, fn_type};
 use definy_event::event::{
-    Description, EqualExpression, Expression, FunctionExpression, GreaterThanExpression,
-    IfExpression, LessThanExpression, ListGetExpression, ListLengthExpression, ModulePartEntry,
-    NumberExpression, PartType, StringExpression, SubtractExpression, VariableExpression,
+    Description, EqualExpression, Expression, GreaterThanExpression, IfExpression,
+    LessThanExpression, ListGetExpression, ListLengthExpression, ModulePartEntry, NumberExpression,
+    PartType, StringExpression, SubtractExpression, VariableExpression,
 };
 
 /// 標準ライブラリ `std` モジュールのパーツ一覧を生成します。
@@ -10,19 +11,15 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
         // 1. abs: 数値の絶対値
         ModulePartEntry {
             name: "abs".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Number),
-            }),
+            part_type: Some(fn_type(&[("x", PartType::Number)], PartType::Number)),
             description: Description::localized(vec![
                 ("en", "Return absolute value of a number"),
                 ("ja", "数値の絶対値を返します"),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "x".into(),
-                body: Box::new(Expression::If(IfExpression {
+            expression: Some(fn_expr(
+                &[("x", 1)],
+                Expression::If(IfExpression {
                     condition: Box::new(Expression::LessThan(LessThanExpression {
                         left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                         right: Box::new(Expression::Number(NumberExpression { value: 0 })),
@@ -36,96 +33,73 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                     else_expr: Box::new(Expression::Variable(VariableExpression {
                         variable_id: 1,
                     })),
-                })),
-            })),
+                }),
+            )),
         },
-        // 2. min: 2つの数値の最小値 (カリー化)
+        // 2. min: 2つの数値の最小値
         ModulePartEntry {
             name: "min".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Number),
-                }),
-            }),
+            part_type: Some(fn_type(
+                &[("a", PartType::Number), ("b", PartType::Number)],
+                PartType::Number,
+            )),
             description: Description::localized(vec![
-                ("en", "Return the smaller of two numbers (curried)"),
-                ("ja", "2つの数値のうち小さい方を返します (カリー化)"),
+                ("en", "Return the smaller of two numbers"),
+                ("ja", "2つの数値のうち小さい方を返します"),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "a".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "b".into(),
-                    body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::LessThan(LessThanExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 1,
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 2,
-                            })),
-                        })),
-                        then_expr: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 1,
-                        })),
-                        else_expr: Box::new(Expression::Variable(VariableExpression {
+            expression: Some(fn_expr(
+                &[("a", 1), ("b", 2)],
+                Expression::If(IfExpression {
+                    condition: Box::new(Expression::LessThan(LessThanExpression {
+                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                        right: Box::new(Expression::Variable(VariableExpression {
                             variable_id: 2,
                         })),
                     })),
-                })),
-            })),
+                    then_expr: Box::new(Expression::Variable(VariableExpression {
+                        variable_id: 1,
+                    })),
+                    else_expr: Box::new(Expression::Variable(VariableExpression {
+                        variable_id: 2,
+                    })),
+                }),
+            )),
         },
-        // 3. max: 2つの数値の最大値 (カリー化)
+        // 3. max: 2つの数値の最大値
         ModulePartEntry {
             name: "max".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Number),
-                }),
-            }),
+            part_type: Some(fn_type(
+                &[("a", PartType::Number), ("b", PartType::Number)],
+                PartType::Number,
+            )),
             description: Description::localized(vec![
-                ("en", "Return the larger of two numbers (curried)"),
-                ("ja", "2つの数値のうち大きい方を返します (カリー化)"),
+                ("en", "Return the larger of two numbers"),
+                ("ja", "2つの数値のうち大きい方を返します"),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "a".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "b".into(),
-                    body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::GreaterThan(GreaterThanExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 1,
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 2,
-                            })),
-                        })),
-                        then_expr: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 1,
-                        })),
-                        else_expr: Box::new(Expression::Variable(VariableExpression {
+            expression: Some(fn_expr(
+                &[("a", 1), ("b", 2)],
+                Expression::If(IfExpression {
+                    condition: Box::new(Expression::GreaterThan(GreaterThanExpression {
+                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                        right: Box::new(Expression::Variable(VariableExpression {
                             variable_id: 2,
                         })),
                     })),
-                })),
-            })),
+                    then_expr: Box::new(Expression::Variable(VariableExpression {
+                        variable_id: 1,
+                    })),
+                    else_expr: Box::new(Expression::Variable(VariableExpression {
+                        variable_id: 2,
+                    })),
+                }),
+            )),
         },
         // 4. sign: 数値の符号 (-1, 0, 1)
         ModulePartEntry {
             name: "sign".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Number),
-            }),
+            part_type: Some(fn_type(&[("x", PartType::Number)], PartType::Number)),
             description: Description::localized(vec![
                 (
                     "en",
@@ -137,10 +111,9 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "x".into(),
-                body: Box::new(Expression::If(IfExpression {
+            expression: Some(fn_expr(
+                &[("x", 1)],
+                Expression::If(IfExpression {
                     condition: Box::new(Expression::GreaterThan(GreaterThanExpression {
                         left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                         right: Box::new(Expression::Number(NumberExpression { value: 0 })),
@@ -156,16 +129,13 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                         then_expr: Box::new(Expression::Number(NumberExpression { value: -1 })),
                         else_expr: Box::new(Expression::Number(NumberExpression { value: 0 })),
                     })),
-                })),
-            })),
+                }),
+            )),
         },
         // 5. bool-to-string: 真偽値の文字列化
         ModulePartEntry {
             name: "bool-to-string".into(),
-            part_type: Some(PartType::Function {
-                parameter: Box::new(PartType::Boolean),
-                return_type: Box::new(PartType::String),
-            }),
+            part_type: Some(fn_type(&[("b", PartType::Boolean)], PartType::String)),
             description: Description::localized(vec![
                 ("en", "Convert boolean to string (\"true\" or \"false\")"),
                 (
@@ -174,10 +144,9 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                 ),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "b".into(),
-                body: Box::new(Expression::If(IfExpression {
+            expression: Some(fn_expr(
+                &[("b", 1)],
+                Expression::If(IfExpression {
                     condition: Box::new(Expression::Variable(VariableExpression {
                         variable_id: 1,
                     })),
@@ -187,48 +156,52 @@ pub fn create_std_module_parts() -> Vec<ModulePartEntry> {
                     else_expr: Box::new(Expression::String(StringExpression {
                         value: "false".into(),
                     })),
-                })),
-            })),
+                }),
+            )),
         },
         // 6. list-is-empty: リストが空かどうか判定
         ModulePartEntry {
             name: "list-is-empty".into(),
-            part_type: None,
+            part_type: Some(fn_type(
+                &[("xs", PartType::List(Box::new(PartType::Number)))],
+                PartType::Boolean,
+            )),
             description: Description::localized(vec![
                 ("en", "Check if a list is empty"),
                 ("ja", "リストが空かどうかを判定します"),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "xs".into(),
-                body: Box::new(Expression::Equal(EqualExpression {
+            expression: Some(fn_expr(
+                &[("xs", 1)],
+                Expression::Equal(EqualExpression {
                     left: Box::new(Expression::ListLength(ListLengthExpression {
                         value: Box::new(Expression::Variable(VariableExpression {
                             variable_id: 1,
                         })),
                     })),
                     right: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                })),
-            })),
+                }),
+            )),
         },
         // 7. list-head: リストの先頭要素を取得
         ModulePartEntry {
             name: "list-head".into(),
-            part_type: None,
+            part_type: Some(fn_type(
+                &[("xs", PartType::List(Box::new(PartType::Number)))],
+                PartType::Number,
+            )),
             description: Description::localized(vec![
                 ("en", "Get the first item of a list"),
                 ("ja", "リストの先頭要素を取得します"),
             ]),
             content_hash: None,
-            expression: Some(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "xs".into(),
-                body: Box::new(Expression::ListGet(ListGetExpression {
+            expression: Some(fn_expr(
+                &[("xs", 1)],
+                Expression::ListGet(ListGetExpression {
                     list: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                     index: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                })),
-            })),
+                }),
+            )),
         },
     ]
 }

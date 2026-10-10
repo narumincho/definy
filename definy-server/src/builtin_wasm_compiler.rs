@@ -1,26 +1,21 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
-    LessThanExpression, LetExpression, ListAppendExpression, ListConcatExpression,
-    ListLengthExpression, ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry,
-    NumberExpression, PartReferenceExpression, PartType, RecordGetExpression, VariableExpression,
-    derive_module_part_id,
+    AddExpression, Description, Expression, IfExpression, LessThanExpression, LetExpression,
+    ListAppendExpression, ListConcatExpression, ListLengthExpression, ListLiteralExpression,
+    MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType, RecordGetExpression,
+    VariableExpression, derive_module_part_id,
 };
 
 /// WebAssembly 式命令列コンパイラ (`core.compile-expr-instructions`):
-/// `expression -> list<number>`
+/// `(expr: expression) -> list<number>`
 /// 各種式をスタックマシンの Wasm バイトコード列に変換します。
 pub fn create_compile_expr_instructions_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_type_part_hash = derive_module_part_id(core_module_id, "expression");
     let compile_instr_hash = derive_module_part_id(core_module_id, "compile-expr-instructions");
 
     fn compile_sub(compile_hash: &EventHashId, sub_expr: Expression) -> Expression {
-        Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                compile_hash.clone(),
-            ))),
-            argument: Box::new(sub_expr),
-        })
+        call_part(compile_hash, &[("expr", sub_expr)])
     }
 
     fn concat2(a: Expression, b: Expression) -> Expression {
@@ -366,22 +361,21 @@ pub fn create_compile_expr_instructions_part(core_module_id: &EventHashId) -> Mo
         })),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "expr".into(),
-        body: Box::new(Expression::Match(MatchExpression {
+    let main_expr = fn_expr(
+        &[("expr", 0)],
+        Expression::Match(MatchExpression {
             target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
             arms,
             default: None,
-        })),
-    });
+        }),
+    );
 
     ModulePartEntry {
         name: "compile-expr-instructions".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(expr_type_part_hash)),
-            return_type: Box::new(PartType::List(Box::new(PartType::Number))),
-        }),
+        part_type: Some(fn_type(
+            &[("expr", PartType::TypePart(expr_type_part_hash))],
+            PartType::List(Box::new(PartType::Number)),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -719,12 +713,13 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
         default: None,
     });
 
-    let raw_instructions = Expression::Call(CallExpression {
-        function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-            compile_instr_hash,
-        ))),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-    });
+    let raw_instructions = call_part(
+        &compile_instr_hash,
+        &[(
+            "expr",
+            Expression::Variable(VariableExpression { variable_id: 0 }),
+        )],
+    );
 
     let full_instructions = Expression::ListAppend(ListAppendExpression {
         list: Box::new(raw_instructions),
@@ -884,18 +879,14 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
         })),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "expr".into(),
-        body: Box::new(body),
-    });
+    let main_expr = fn_expr(&[("expr", 0)], body);
 
     ModulePartEntry {
         name: "compile-to-wasm".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(expr_type_part_hash)),
-            return_type: Box::new(PartType::List(Box::new(PartType::Number))),
-        }),
+        part_type: Some(fn_type(
+            &[("expr", PartType::TypePart(expr_type_part_hash))],
+            PartType::List(Box::new(PartType::Number)),
+        )),
         description: Description::localized(vec![
             (
                 "en",

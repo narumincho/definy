@@ -24,8 +24,8 @@ pub enum PathStep {
     Item,
     FunctionBody,
     CallFunction,
-    CallArgument,
-    TypeFunctionParameter,
+    CallArgument(usize),
+    TypeFunctionParameter(usize),
     TypeFunctionReturn,
     VariantPayload,
     MatchTarget,
@@ -55,8 +55,10 @@ impl std::fmt::Display for PathStep {
             PathStep::Item => "Item",
             PathStep::FunctionBody => "FunctionBody",
             PathStep::CallFunction => "CallFunction",
-            PathStep::CallArgument => "CallArgument",
-            PathStep::TypeFunctionParameter => "TypeFunctionParameter",
+            PathStep::CallArgument(index) => return write!(f, "CallArgument({})", index),
+            PathStep::TypeFunctionParameter(index) => {
+                return write!(f, "TypeFunctionParameter({})", index);
+            }
             PathStep::TypeFunctionReturn => "TypeFunctionReturn",
             PathStep::VariantPayload => "VariantPayload",
             PathStep::MatchTarget => "MatchTarget",
@@ -84,6 +86,21 @@ impl std::str::FromStr for PathStep {
             .and_then(|r| r.strip_suffix(')'))
         {
             return inner.parse().map(PathStep::RecordItemValue).map_err(|_| ());
+        }
+        if let Some(inner) = s
+            .strip_prefix("CallArgument(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner.parse().map(PathStep::CallArgument).map_err(|_| ());
+        }
+        if let Some(inner) = s
+            .strip_prefix("TypeFunctionParameter(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner
+                .parse()
+                .map(PathStep::TypeFunctionParameter)
+                .map_err(|_| ());
         }
         if let Some(inner) = s
             .strip_prefix("MatchArmBody(")
@@ -116,8 +133,6 @@ impl std::str::FromStr for PathStep {
             "Item" => Ok(PathStep::Item),
             "FunctionBody" => Ok(PathStep::FunctionBody),
             "CallFunction" => Ok(PathStep::CallFunction),
-            "CallArgument" => Ok(PathStep::CallArgument),
-            "TypeFunctionParameter" => Ok(PathStep::TypeFunctionParameter),
             "TypeFunctionReturn" => Ok(PathStep::TypeFunctionReturn),
             "VariantPayload" => Ok(PathStep::VariantPayload),
             "MatchTarget" => Ok(PathStep::MatchTarget),
@@ -671,8 +686,8 @@ mod tests {
             PathStep::Item,
             PathStep::FunctionBody,
             PathStep::CallFunction,
-            PathStep::CallArgument,
-            PathStep::TypeFunctionParameter,
+            PathStep::CallArgument(0),
+            PathStep::TypeFunctionParameter(0),
             PathStep::TypeFunctionReturn,
             PathStep::VariantPayload,
             PathStep::MatchTarget,

@@ -17,7 +17,12 @@
       "name": "abs",
       "part_type": {
         "function": {
-          "parameter": "number",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "number"
+            }
+          ],
           "return_type": "number"
         }
       },
@@ -33,8 +38,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "x",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "x"
+            }
+          ],
           "body": {
             "If": {
               "condition": {
@@ -79,59 +88,65 @@
       "name": "min",
       "part_type": {
         "function": {
-          "parameter": "number",
-          "return_type": {
-            "function": {
-              "parameter": "number",
-              "return_type": "number"
+          "parameters": [
+            {
+              "name": "a",
+              "type": "number"
+            },
+            {
+              "name": "b",
+              "type": "number"
             }
-          }
+          ],
+          "return_type": "number"
         }
       },
       "description": [
         {
           "language": "en",
-          "text": "Return the smaller of two numbers (curried)"
+          "text": "Return the smaller of two numbers"
         },
         {
           "language": "ja",
-          "text": "2つの数値のうち小さい方を返します (カリー化)"
+          "text": "2つの数値のうち小さい方を返します"
         }
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "a",
-          "body": {
-            "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "a"
+            },
+            {
               "parameter_id": 2,
-              "parameter_name": "b",
-              "body": {
-                "If": {
-                  "condition": {
-                    "LessThan": {
-                      "left": {
-                        "Variable": {
-                          "variable_id": 1
-                        }
-                      },
-                      "right": {
-                        "Variable": {
-                          "variable_id": 2
-                        }
-                      }
-                    }
-                  },
-                  "then_expr": {
+              "parameter_name": "b"
+            }
+          ],
+          "body": {
+            "If": {
+              "condition": {
+                "LessThan": {
+                  "left": {
                     "Variable": {
                       "variable_id": 1
                     }
                   },
-                  "else_expr": {
+                  "right": {
                     "Variable": {
                       "variable_id": 2
                     }
                   }
+                }
+              },
+              "then_expr": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              },
+              "else_expr": {
+                "Variable": {
+                  "variable_id": 2
                 }
               }
             }
@@ -143,59 +158,65 @@
       "name": "max",
       "part_type": {
         "function": {
-          "parameter": "number",
-          "return_type": {
-            "function": {
-              "parameter": "number",
-              "return_type": "number"
+          "parameters": [
+            {
+              "name": "a",
+              "type": "number"
+            },
+            {
+              "name": "b",
+              "type": "number"
             }
-          }
+          ],
+          "return_type": "number"
         }
       },
       "description": [
         {
           "language": "en",
-          "text": "Return the larger of two numbers (curried)"
+          "text": "Return the larger of two numbers"
         },
         {
           "language": "ja",
-          "text": "2つの数値のうち大きい方を返します (カリー化)"
+          "text": "2つの数値のうち大きい方を返します"
         }
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "a",
-          "body": {
-            "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "a"
+            },
+            {
               "parameter_id": 2,
-              "parameter_name": "b",
-              "body": {
-                "If": {
-                  "condition": {
-                    "GreaterThan": {
-                      "left": {
-                        "Variable": {
-                          "variable_id": 1
-                        }
-                      },
-                      "right": {
-                        "Variable": {
-                          "variable_id": 2
-                        }
-                      }
-                    }
-                  },
-                  "then_expr": {
+              "parameter_name": "b"
+            }
+          ],
+          "body": {
+            "If": {
+              "condition": {
+                "GreaterThan": {
+                  "left": {
                     "Variable": {
                       "variable_id": 1
                     }
                   },
-                  "else_expr": {
+                  "right": {
                     "Variable": {
                       "variable_id": 2
                     }
                   }
+                }
+              },
+              "then_expr": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              },
+              "else_expr": {
+                "Variable": {
+                  "variable_id": 2
                 }
               }
             }
@@ -207,7 +228,12 @@
       "name": "sign",
       "part_type": {
         "function": {
-          "parameter": "number",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "number"
+            }
+          ],
           "return_type": "number"
         }
       },
@@ -223,8 +249,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "x",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "x"
+            }
+          ],
           "body": {
             "If": {
               "condition": {
@@ -283,7 +313,12 @@
       "name": "bool-to-string",
       "part_type": {
         "function": {
-          "parameter": "boolean",
+          "parameters": [
+            {
+              "name": "b",
+              "type": "boolean"
+            }
+          ],
           "return_type": "string"
         }
       },
@@ -299,8 +334,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "b",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "b"
+            }
+          ],
           "body": {
             "If": {
               "condition": {
@@ -325,6 +364,19 @@
     },
     {
       "name": "list-is-empty",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "xs",
+              "type": {
+                "list": "number"
+              }
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
       "description": [
         {
           "language": "en",
@@ -337,8 +389,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "xs",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "xs"
+            }
+          ],
           "body": {
             "Equal": {
               "left": {
@@ -362,6 +418,19 @@
     },
     {
       "name": "list-head",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "xs",
+              "type": {
+                "list": "number"
+              }
+            }
+          ],
+          "return_type": "number"
+        }
+      },
       "description": [
         {
           "language": "en",
@@ -374,8 +443,12 @@
       ],
       "expression": {
         "Function": {
-          "parameter_id": 1,
-          "parameter_name": "xs",
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "xs"
+            }
+          ],
           "body": {
             "ListGet": {
               "list": {

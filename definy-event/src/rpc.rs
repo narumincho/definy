@@ -23,12 +23,14 @@ pub const DEPLOY_SERVICE_NAME: &str = "definy.v1.DeployService";
 pub const METHOD_DEPLOY_INSTANCE: &str = "DeployInstance";
 pub const METHOD_GET_DEPLOY_STATUS: &str = "GetDeployStatus";
 pub const METHOD_LIST_DEPLOYMENTS: &str = "ListDeployments";
-pub const METHOD_DEPLOY_DENO: &str = "DeployDeno";
+pub const METHOD_DEPLOY_CLOUDFLARE: &str = "DeployCloudflare";
+pub const METHOD_LIST_CLOUDFLARE_WORKERS: &str = "ListCloudflareWorkers";
 
 pub const PATH_DEPLOY_INSTANCE: &str = "/definy.v1.DeployService/DeployInstance";
 pub const PATH_GET_DEPLOY_STATUS: &str = "/definy.v1.DeployService/GetDeployStatus";
 pub const PATH_LIST_DEPLOYMENTS: &str = "/definy.v1.DeployService/ListDeployments";
-pub const PATH_DEPLOY_DENO: &str = "/definy.v1.DeployService/DeployDeno";
+pub const PATH_DEPLOY_CLOUDFLARE: &str = "/definy.v1.DeployService/DeployCloudflare";
+pub const PATH_LIST_CLOUDFLARE_WORKERS: &str = "/definy.v1.DeployService/ListCloudflareWorkers";
 
 pub mod base64_bytes {
     use serde::{Deserialize, Deserializer, Serializer};
@@ -384,29 +386,45 @@ pub struct DeploymentItem {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DeployDenoRequest {
+pub struct DeployCloudflareRequest {
     #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub org_token: String,
+    #[serde(default, alias = "api_token")]
+    pub api_token: String,
 
     #[prost(string, optional, tag = "2")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub app_slug: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "account_id")]
+    pub account_id: Option<String>,
 
     #[prost(string, optional, tag = "3")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub wasm_hash: Option<String>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "script_name"
+    )]
+    pub script_name: Option<String>,
 
     #[prost(string, optional, tag = "4")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "wasm_hash")]
+    pub wasm_hash: Option<String>,
+
+    #[prost(string, optional, tag = "5")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "custom_script"
+    )]
     pub custom_script: Option<String>,
 
-    #[prost(bool, optional, tag = "5")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[prost(bool, optional, tag = "6")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "compile_self_hosted"
+    )]
     pub compile_self_hosted: Option<bool>,
 
-    #[prost(string, optional, tag = "6")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[prost(string, optional, tag = "7")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "part_id")]
     pub part_id: Option<String>,
 }
 
@@ -414,33 +432,25 @@ pub struct DeployDenoRequest {
 #[serde(rename_all = "camelCase")]
 #[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct DeployDenoResponse {
+pub struct DeployCloudflareResponse {
     #[prost(string, tag = "1")]
-    #[serde(default)]
-    pub app_id: String,
+    #[serde(default, alias = "script_name")]
+    pub script_name: String,
 
     #[prost(string, tag = "2")]
     #[serde(default)]
-    pub app_slug: String,
+    pub status: String,
 
     #[prost(string, tag = "3")]
     #[serde(default)]
-    pub revision_id: String,
-
-    #[prost(string, tag = "4")]
-    #[serde(default)]
-    pub status: String,
-
-    #[prost(string, tag = "5")]
-    #[serde(default)]
     pub url: String,
 
-    #[prost(string, repeated, tag = "6")]
-    #[serde(default)]
-    pub hostnames: Vec<String>,
-
-    #[prost(string, optional, tag = "7")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[prost(string, optional, tag = "4")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "evaluated_result"
+    )]
     pub evaluated_result: Option<String>,
 }
 
@@ -462,6 +472,52 @@ pub struct ListDeploymentsResponse {
     #[prost(message, repeated, tag = "1")]
     #[serde(default)]
     pub deployments: Vec<DeploymentItem>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListCloudflareWorkersRequest {
+    #[prost(string, tag = "1")]
+    #[serde(default, alias = "api_token")]
+    pub api_token: String,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "account_id")]
+    pub account_id: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct CloudflareWorkerItem {
+    #[prost(string, tag = "1")]
+    #[serde(default)]
+    pub id: String,
+
+    #[prost(string, optional, tag = "2")]
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "created_on")]
+    pub created_on: Option<String>,
+
+    #[prost(string, optional, tag = "3")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "modified_on"
+    )]
+    pub modified_on: Option<String>,
+}
+
+#[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct ListCloudflareWorkersResponse {
+    #[prost(message, repeated, tag = "1")]
+    #[serde(default)]
+    pub workers: Vec<CloudflareWorkerItem>,
 }
 
 /// Connect-RPC standard error format
@@ -490,6 +546,10 @@ impl ConnectError {
 
     pub fn unavailable(message: impl Into<String>) -> Self {
         Self::new("unavailable", message)
+    }
+
+    pub fn unauthenticated(message: impl Into<String>) -> Self {
+        Self::new("unauthenticated", message)
     }
 
     pub fn internal(message: impl Into<String>) -> Self {
@@ -557,6 +617,37 @@ mod tests {
         let mut buf_res = Vec::new();
         res.encode(&mut buf_res).unwrap();
         let decoded_res = DeployInstanceResponse::decode(&buf_res[..]).unwrap();
+        assert_eq!(res, decoded_res);
+    }
+
+    #[test]
+    fn test_cloudflare_workers_messages_roundtrip() {
+        let req = ListCloudflareWorkersRequest {
+            api_token: "cf_test123".to_string(),
+            account_id: Some("acc-id-123".to_string()),
+        };
+        let mut buf = Vec::new();
+        req.encode(&mut buf).unwrap();
+        let decoded = ListCloudflareWorkersRequest::decode(&buf[..]).unwrap();
+        assert_eq!(req, decoded);
+
+        let res = ListCloudflareWorkersResponse {
+            workers: vec![
+                CloudflareWorkerItem {
+                    id: "worker-1".to_string(),
+                    created_on: Some("2026-10-09T00:00:00Z".to_string()),
+                    modified_on: Some("2026-10-10T00:00:00Z".to_string()),
+                },
+                CloudflareWorkerItem {
+                    id: "worker-2".to_string(),
+                    created_on: None,
+                    modified_on: None,
+                },
+            ],
+        };
+        let mut res_buf = Vec::new();
+        res.encode(&mut res_buf).unwrap();
+        let decoded_res = ListCloudflareWorkersResponse::decode(&res_buf[..]).unwrap();
         assert_eq!(res, decoded_res);
     }
 }

@@ -298,54 +298,61 @@ pub async fn handle_list_deployments(
 
 #[utoipa::path(
     post,
-    path = "/definy.v1.DeployService/DeployDeno",
+    path = "/definy.v1.DeployService/DeployCloudflare",
     tag = "connect-rpc",
     request_body(
-        content = DeployDenoRequest,
+        content = DeployCloudflareRequest,
         content_type = "application/json",
-        description = "Connect-RPC DeployDeno request payload"
+        description = "Connect-RPC DeployCloudflare request payload"
     ),
     responses(
-        (status = 200, description = "Connect-RPC DeployDeno response", body = DeployDenoResponse, content_type = "application/json"),
+        (status = 200, description = "Connect-RPC DeployCloudflare response", body = DeployCloudflareResponse, content_type = "application/json"),
         (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
         (status = 500, description = "Internal Server Error", body = ConnectError, content_type = "application/json")
     )
 )]
-pub async fn handle_deploy_deno(
+pub async fn handle_deploy_cloudflare(
     State(state): State<AppState>,
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
     let codec = ContentCodec::from_headers(&headers);
-    let req: DeployDenoRequest = match decode_request(codec, &body) {
+    let req: DeployCloudflareRequest = match decode_request(codec, &body) {
         Ok(r) => r,
         Err(err) => return error_to_response(err),
     };
 
-    let token = if !req.org_token.trim().is_empty() {
-        req.org_token.trim().to_string()
-    } else if let Ok(env_token) = std::env::var("DENO_DEPLOY_TOKEN") {
+    let token = if !req.api_token.trim().is_empty() {
+        req.api_token.trim().to_string()
+    } else if let Ok(env_token) =
+        std::env::var("CLOUDFLARE_API_TOKEN").or_else(|_| std::env::var("CF_API_TOKEN"))
+    {
         env_token.trim().to_string()
     } else {
         return error_to_response(ConnectError::invalid_argument(
-            "Deno Deploy token (org_token) is required",
+            "Cloudflare API token (api_token) is required",
         ));
     };
 
     if token.is_empty() {
         return error_to_response(ConnectError::invalid_argument(
-            "Deno Deploy token cannot be empty",
+            "Cloudflare API token cannot be empty",
         ));
     }
 
-    let mut config = crate::deno_deploy::DenoDeployConfig::new(token);
-    if let Ok(base_url) = std::env::var("DENO_DEPLOY_API_URL")
+    let mut config = crate::cloudflare_workers::CloudflareWorkersConfig::new(token);
+    if let Some(ref acc_id) = req.account_id
+        && !acc_id.trim().is_empty()
+    {
+        config = config.with_account_id(acc_id.trim());
+    }
+    if let Ok(base_url) = std::env::var("CLOUDFLARE_API_URL")
         && !base_url.trim().is_empty()
     {
         config = config.with_base_url(base_url.trim());
     }
 
-    let client = crate::deno_deploy::DenoDeployClient::new(config);
+    let client = crate::cloudflare_workers::CloudflareWorkersClient::new(config);
 
     // 自己記述コンパイラ (core.compile-to-wasm) によるオンデマンド Wasm 生成、
     // または指定された wasm_hash からバイナリを取得
@@ -444,7 +451,7 @@ pub async fn handle_deploy_deno(
 
     match client
         .deploy(
-            req.app_slug.as_deref(),
+            req.script_name.as_deref(),
             wasm_bytes.as_deref(),
             req.custom_script.as_deref(),
         )
@@ -453,7 +460,7 @@ pub async fn handle_deploy_deno(
         Ok(result) => {
             if let Some(db) = crate::ensure_db(&state).await {
                 let deployment_record = crate::db::DeploymentRecord {
-                    machine_id: format!("deno:{}", result.revision_id),
+                    machine_id: format!("cf:{}", result.script_name),
                     commit_hash: None,
                     status: result.status.clone(),
                     url: result.url.clone(),
@@ -461,27 +468,123 @@ pub async fn handle_deploy_deno(
                     region: "global-edge".to_string(),
                     created_at: chrono::Utc::now(),
                     wasm_hash: req.wasm_hash.clone(),
-                    provider: Some("deno_deploy".to_string()),
+                    provider: Some("cloudflare_workers".to_string()),
                 };
                 if let Err(e) = crate::db::save_deployment(&db, deployment_record).await {
-                    eprintln!("Failed to save Deno deployment to DB: {:?}", e);
+                    eprintln!(
+                        "Failed to save Cloudflare Workers deployment to DB: {:?}",
+                        e
+                    );
                 }
             }
 
-            let response = DeployDenoResponse {
-                app_id: result.app_id,
-                app_slug: result.app_slug,
-                revision_id: result.revision_id,
+            let response = DeployCloudflareResponse {
+                script_name: result.script_name,
                 status: result.status,
                 url: result.url,
-                hostnames: result.hostnames,
                 evaluated_result,
             };
             encode_response_or_error(codec, &response)
         }
         Err(err) => {
-            eprintln!("Failed to deploy to Deno Deploy: {:?}", err);
-            error_to_response(ConnectError::internal(format!("Deno Deploy failed: {err}")))
+            eprintln!("Failed to deploy to Cloudflare Workers: {:?}", err);
+            error_to_response(ConnectError::internal(format!(
+                "Cloudflare Workers deploy failed: {err}"
+            )))
+        }
+    }
+}
+
+#[utoipa::path(
+    post,
+    path = "/definy.v1.DeployService/ListCloudflareWorkers",
+    tag = "connect-rpc",
+    request_body(
+        content = ListCloudflareWorkersRequest,
+        content_type = "application/json",
+        description = "Connect-RPC ListCloudflareWorkers request payload"
+    ),
+    responses(
+        (status = 200, description = "Connect-RPC ListCloudflareWorkers response", body = ListCloudflareWorkersResponse, content_type = "application/json"),
+        (status = 400, description = "Bad Request", body = ConnectError, content_type = "application/json"),
+        (status = 401, description = "Unauthorized", body = ConnectError, content_type = "application/json")
+    )
+)]
+pub async fn handle_list_cloudflare_workers(headers: HeaderMap, body: Bytes) -> Response {
+    let codec = ContentCodec::from_headers(&headers);
+    let req: ListCloudflareWorkersRequest = match decode_request(codec, &body) {
+        Ok(r) => r,
+        Err(err) => return error_to_response(err),
+    };
+
+    let token = if !req.api_token.trim().is_empty() {
+        req.api_token.trim().to_string()
+    } else if let Ok(env_token) =
+        std::env::var("CLOUDFLARE_API_TOKEN").or_else(|_| std::env::var("CF_API_TOKEN"))
+    {
+        env_token.trim().to_string()
+    } else {
+        return error_to_response(ConnectError::invalid_argument(
+            "Cloudflare API token (api_token) is required",
+        ));
+    };
+
+    if token.is_empty() {
+        return error_to_response(ConnectError::invalid_argument(
+            "Cloudflare API token cannot be empty",
+        ));
+    }
+
+    let mut config = crate::cloudflare_workers::CloudflareWorkersConfig::new(token);
+    if let Some(ref acc_id) = req.account_id
+        && !acc_id.trim().is_empty()
+    {
+        config = config.with_account_id(acc_id.trim());
+    }
+    if let Ok(base_url) = std::env::var("CLOUDFLARE_API_URL")
+        && !base_url.trim().is_empty()
+    {
+        config = config.with_base_url(base_url.trim());
+    }
+
+    let client = crate::cloudflare_workers::CloudflareWorkersClient::new(config);
+
+    let account_id = match client.resolve_account_id().await {
+        Ok(id) => id,
+        Err(err) => {
+            eprintln!("Failed to resolve Cloudflare account ID: {:?}", err);
+            return error_to_response(ConnectError::internal(format!(
+                "Failed to resolve Cloudflare account ID: {err}"
+            )));
+        }
+    };
+
+    match client.list_workers(&account_id).await {
+        Ok(workers) => {
+            let response = ListCloudflareWorkersResponse {
+                workers: workers
+                    .into_iter()
+                    .map(|w| CloudflareWorkerItem {
+                        id: w.id,
+                        created_on: w.created_on,
+                        modified_on: w.modified_on,
+                    })
+                    .collect(),
+            };
+            encode_response_or_error(codec, &response)
+        }
+        Err(crate::cloudflare_workers::CloudflareWorkersError::ApiError { status, message })
+            if status == axum::http::StatusCode::UNAUTHORIZED =>
+        {
+            error_to_response(ConnectError::unauthenticated(format!(
+                "Invalid Cloudflare API token: {message}"
+            )))
+        }
+        Err(err) => {
+            eprintln!("Failed to list Cloudflare Workers: {:?}", err);
+            error_to_response(ConnectError::internal(format!(
+                "Failed to list Cloudflare Workers: {err}"
+            )))
         }
     }
 }

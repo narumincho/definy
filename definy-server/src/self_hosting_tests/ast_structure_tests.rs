@@ -195,18 +195,16 @@ fn test_phase1_evaluator_ast_structure() {
         .expression
         .expect("eval-value must have expression");
 
-    // Structure: Function(expr -> Function(env -> Match(expr)))
-    let (expr_var, env_func) = match expr {
-        Expression::Function(f) => (f.parameter_id, *f.body),
-        other => panic!("Expected outer Function, got: {:?}", other),
+    // Structure: Function([expr, env] -> Match(expr))
+    let (params, match_expr) = match expr {
+        Expression::Function(f) => (f.parameters, *f.body),
+        other => panic!("Expected Function, got: {:?}", other),
     };
-    assert_eq!(expr_var, 0);
-
-    let (env_var, match_expr) = match env_func {
-        Expression::Function(f) => (f.parameter_id, *f.body),
-        other => panic!("Expected inner Function, got: {:?}", other),
-    };
-    assert_eq!(env_var, 1);
+    assert_eq!(params.len(), 2);
+    assert_eq!(params[0].parameter_id, 0);
+    assert_eq!(&*params[0].parameter_name, "expr");
+    assert_eq!(params[1].parameter_id, 1);
+    assert_eq!(&*params[1].parameter_name, "env");
 
     let match_arms: Vec<MatchArm> = match match_expr {
         Expression::Match(m) => m.arms,
@@ -258,18 +256,16 @@ fn test_phase2_type_checker_ast_structure() {
         .expression
         .expect("type-check must have expression");
 
-    // Structure: Function(expr -> Function(env -> Match(expr)))
-    let (expr_var, env_func) = match expr {
-        Expression::Function(f) => (f.parameter_id, *f.body),
-        other => panic!("Expected outer Function, got: {:?}", other),
+    // Structure: Function([expr, env] -> Match(expr))
+    let (params, match_expr) = match expr {
+        Expression::Function(f) => (f.parameters, *f.body),
+        other => panic!("Expected Function, got: {:?}", other),
     };
-    assert_eq!(expr_var, 0);
-
-    let (env_var, match_expr) = match env_func {
-        Expression::Function(f) => (f.parameter_id, *f.body),
-        other => panic!("Expected inner Function, got: {:?}", other),
-    };
-    assert_eq!(env_var, 1);
+    assert_eq!(params.len(), 2);
+    assert_eq!(params[0].parameter_id, 0);
+    assert_eq!(&*params[0].parameter_name, "expr");
+    assert_eq!(params[1].parameter_id, 1);
+    assert_eq!(&*params[1].parameter_name, "env");
 
     let match_arms: Vec<MatchArm> = match match_expr {
         Expression::Match(m) => m.arms,
@@ -363,11 +359,12 @@ fn test_phase3_wasm_compiler_ast_structure() {
         .expression
         .expect("compile-to-wasm must have expression");
 
-    // The expression should be a function(expr -> Let*(ListConcat(...)))
+    // The expression should be a function([expr] -> Let*(ListConcat(...)))
     match to_wasm_expr {
         Expression::Function(f) => {
-            assert_eq!(f.parameter_id, 0);
-            assert_eq!(&*f.parameter_name, "expr");
+            assert_eq!(f.parameters.len(), 1);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "expr");
             let mut current = &*f.body;
             while let Expression::Let(let_expr) = current {
                 current = &*let_expr.body;
@@ -490,42 +487,39 @@ fn test_validator_ast_structure() {
         .expression
         .expect("validate-part must have expression");
 
-    // validate-part: Function(part => Call(Call(validate-part-in-env, part), empty_type_env))
+    // validate-part: Function([part] => Call(validate-part-in-env, &[("part", ...), ("env", ...)]))
     match expr {
         Expression::Function(f) => {
-            assert_eq!(f.parameter_id, 0);
-            assert_eq!(&*f.parameter_name, "part");
+            assert_eq!(f.parameters.len(), 1);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "part");
             assert!(matches!(*f.body, Expression::Call(_)));
         }
         other => panic!("Expected Function, got: {:?}", other),
     }
 
-    // validate-part-in-env: Function(part => Function(env => Match(...)))
+    // validate-part-in-env: Function([part, env] => Match(...))
     let val_in_env_part = crate::builtin_validator::create_validate_part_in_env_part(&core_id);
     let in_env_expr = val_in_env_part
         .expression
         .expect("validate-part-in-env must have expression");
 
     match in_env_expr {
-        Expression::Function(f0) => {
-            assert_eq!(f0.parameter_id, 0);
-            assert_eq!(&*f0.parameter_name, "part");
-            match *f0.body {
-                Expression::Function(f1) => {
-                    assert_eq!(f1.parameter_id, 1);
-                    assert_eq!(&*f1.parameter_name, "env");
-                    match *f1.body {
-                        Expression::Match(m) => {
-                            let arm_tags: HashSet<String> =
-                                m.arms.into_iter().map(|a| a.tag.to_string()).collect();
-                            assert!(arm_tags.contains("ok"));
-                            assert!(arm_tags.contains("error"));
-                            assert!(arm_tags.contains("_"));
-                        }
-                        other => panic!("Expected Match in validate-part-in-env, got: {:?}", other),
-                    }
+        Expression::Function(f) => {
+            assert_eq!(f.parameters.len(), 2);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "part");
+            assert_eq!(f.parameters[1].parameter_id, 1);
+            assert_eq!(&*f.parameters[1].parameter_name, "env");
+            match *f.body {
+                Expression::Match(m) => {
+                    let arm_tags: HashSet<String> =
+                        m.arms.into_iter().map(|a| a.tag.to_string()).collect();
+                    assert!(arm_tags.contains("ok"));
+                    assert!(arm_tags.contains("error"));
+                    assert!(arm_tags.contains("_"));
                 }
-                other => panic!("Expected inner Function, got: {:?}", other),
+                other => panic!("Expected Match in validate-part-in-env, got: {:?}", other),
             }
         }
         other => panic!("Expected Function, got: {:?}", other),
@@ -543,8 +537,9 @@ fn test_optimizer_ast_structure() {
 
     match expr {
         Expression::Function(f) => {
-            assert_eq!(f.parameter_id, 0);
-            assert_eq!(&*f.parameter_name, "expr");
+            assert_eq!(f.parameters.len(), 1);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "expr");
             match *f.body {
                 Expression::Match(m) => {
                     let arm_tags: HashSet<String> =
@@ -576,8 +571,9 @@ fn test_validate_module_ast_structure() {
 
     match expr {
         Expression::Function(f) => {
-            assert_eq!(f.parameter_id, 0);
-            assert_eq!(&*f.parameter_name, "mod_def");
+            assert_eq!(f.parameters.len(), 1);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "mod_def");
             match *f.body {
                 Expression::If(_) => {}
                 other => panic!("Expected If in validate-module, got: {:?}", other),
@@ -587,7 +583,7 @@ fn test_validate_module_ast_structure() {
     }
 }
 
-/// `core.value-equals` の AST 構造（カリー化関数、パターンマッチ）を検証します。
+/// `core.value-equals` の AST 構造（複数引数関数、パターンマッチ）を検証します。
 #[test]
 fn test_value_equals_ast_structure() {
     let core_id = get_dummy_core_id();
@@ -595,8 +591,13 @@ fn test_value_equals_ast_structure() {
     let expr = val_eq_part.expression.expect("value-equals expression");
 
     match expr {
-        Expression::Function(f1) => match *f1.body {
-            Expression::Function(f2) => match *f2.body {
+        Expression::Function(f) => {
+            assert_eq!(f.parameters.len(), 2);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "val_a");
+            assert_eq!(f.parameters[1].parameter_id, 1);
+            assert_eq!(&*f.parameters[1].parameter_name, "val_b");
+            match *f.body {
                 Expression::Match(m) => {
                     let tags: HashSet<String> = m.arms.iter().map(|a| a.tag.to_string()).collect();
                     assert!(tags.contains("number"));
@@ -608,10 +609,9 @@ fn test_value_equals_ast_structure() {
                     assert!(tags.contains("_"));
                 }
                 other => panic!("Expected Match, got {:?}", other),
-            },
-            other => panic!("Expected inner Function, got {:?}", other),
-        },
-        other => panic!("Expected outer Function, got {:?}", other),
+            }
+        }
+        other => panic!("Expected Function, got {:?}", other),
     }
 }
 
@@ -623,27 +623,28 @@ fn test_list_ops_ast_structure() {
     let list_fold_part = crate::builtin_list_ops::create_list_fold_part(&core_id);
 
     match list_map_part.expression.expect("list-map expression") {
-        Expression::Function(f1) => match *f1.body {
-            Expression::Function(f2) => match *f2.body {
-                Expression::Call(_) => {}
-                other => panic!("Expected Call in list-map, got {:?}", other),
-            },
-            other => panic!("Expected inner Function, got {:?}", other),
-        },
-        other => panic!("Expected outer Function, got {:?}", other),
+        Expression::Function(f) => {
+            assert_eq!(f.parameters.len(), 2);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "f");
+            assert_eq!(f.parameters[1].parameter_id, 1);
+            assert_eq!(&*f.parameters[1].parameter_name, "xs");
+            assert!(matches!(*f.body, Expression::Call(_)));
+        }
+        other => panic!("Expected Function in list-map, got {:?}", other),
     }
 
     match list_fold_part.expression.expect("list-fold expression") {
-        Expression::Function(f1) => match *f1.body {
-            Expression::Function(f2) => match *f2.body {
-                Expression::Function(f3) => match *f3.body {
-                    Expression::Call(_) => {}
-                    other => panic!("Expected Call in list-fold, got {:?}", other),
-                },
-                other => panic!("Expected inner-2 Function, got {:?}", other),
-            },
-            other => panic!("Expected inner-1 Function, got {:?}", other),
-        },
-        other => panic!("Expected outer Function, got {:?}", other),
+        Expression::Function(f) => {
+            assert_eq!(f.parameters.len(), 3);
+            assert_eq!(f.parameters[0].parameter_id, 0);
+            assert_eq!(&*f.parameters[0].parameter_name, "reducer");
+            assert_eq!(f.parameters[1].parameter_id, 1);
+            assert_eq!(&*f.parameters[1].parameter_name, "init");
+            assert_eq!(f.parameters[2].parameter_id, 2);
+            assert_eq!(&*f.parameters[2].parameter_name, "xs");
+            assert!(matches!(*f.body, Expression::Call(_)));
+        }
+        other => panic!("Expected Function in list-fold, got {:?}", other),
     }
 }

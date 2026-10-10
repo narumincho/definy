@@ -233,17 +233,22 @@ fn test_compile_and_execute_list_operations() {
 
 #[test]
 fn test_compile_and_execute_function_call() {
-    // (fn x -> x + 5) 10 -> 15
+    // (fn (x) -> x + 5)(x: 10) -> 15
     let expr = Expression::Call(CallExpression {
         function: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "x".into(),
+            parameters: vec![FunctionParameter {
+                parameter_id: 1,
+                parameter_name: "x".into(),
+            }],
             body: Box::new(Expression::Add(AddExpression {
                 left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 right: Box::new(Expression::Number(NumberExpression { value: 5 })),
             })),
         })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 10 })),
+        arguments: vec![CallArgument {
+            name: "x".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+        }],
     });
 
     let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
@@ -252,27 +257,35 @@ fn test_compile_and_execute_function_call() {
 }
 
 #[test]
-fn test_compile_and_execute_curried_function() {
-    // ((fn x -> fn y -> x * y) 6) 7 -> 42
+fn test_compile_and_execute_multi_parameter_function() {
+    // (fn (x, y) -> x * y)(x: 6, y: 7) -> 42
     let expr = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "x".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
+        function: Box::new(Expression::Function(FunctionExpression {
+            parameters: vec![
+                FunctionParameter {
+                    parameter_id: 1,
+                    parameter_name: "x".into(),
+                },
+                FunctionParameter {
                     parameter_id: 2,
                     parameter_name: "y".into(),
-                    body: Box::new(Expression::Multiply(MultiplyExpression {
-                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                        right: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 2,
-                        })),
-                    })),
-                })),
+                },
+            ],
+            body: Box::new(Expression::Multiply(MultiplyExpression {
+                left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                right: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
             })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 6 })),
         })),
-        argument: Box::new(Expression::Number(NumberExpression { value: 7 })),
+        arguments: vec![
+            CallArgument {
+                name: "x".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 6 })),
+            },
+            CallArgument {
+                name: "y".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 7 })),
+            },
+        ],
     });
 
     let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
@@ -282,7 +295,7 @@ fn test_compile_and_execute_curried_function() {
 
 #[test]
 fn test_compile_and_execute_closure_capture() {
-    // let a = 100 in let add_a = (fn x -> x + a) in add_a 23 -> 123
+    // let a = 100 in let add_a = (fn x -> x + a) in add_a(x: 23) -> 123
     let expr = Expression::Let(LetExpression {
         variable_id: 1,
         variable_name: "a".into(),
@@ -291,8 +304,10 @@ fn test_compile_and_execute_closure_capture() {
             variable_id: 2,
             variable_name: "add_a".into(),
             value: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 3,
-                parameter_name: "x".into(),
+                parameters: vec![FunctionParameter {
+                    parameter_id: 3,
+                    parameter_name: "x".into(),
+                }],
                 body: Box::new(Expression::Add(AddExpression {
                     left: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
                     right: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
@@ -300,7 +315,10 @@ fn test_compile_and_execute_closure_capture() {
             })),
             body: Box::new(Expression::Call(CallExpression {
                 function: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-                argument: Box::new(Expression::Number(NumberExpression { value: 23 })),
+                arguments: vec![CallArgument {
+                    name: "x".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 23 })),
+                }],
             })),
         })),
     });
@@ -312,8 +330,8 @@ fn test_compile_and_execute_closure_capture() {
 
 #[test]
 fn test_compile_and_execute_part_reference_function() {
-    // Part "double": fn x -> x * 2
-    // Expression: Call(PartReference(double), 21) -> 42
+    // Part "double": fn (x) -> x * 2
+    // Expression: Call(PartReference(double), x: 21) -> 42
     let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
     let dummy_account = AccountId(dummy_key);
     let mod_id = definy_event::event::derive_module_id(&dummy_account, "math");
@@ -330,14 +348,19 @@ fn test_compile_and_execute_part_reference_function() {
             parts: vec![ModulePartEntry {
                 name: "double".into(),
                 part_type: Some(PartType::Function {
-                    parameter: Box::new(PartType::Number),
+                    parameters: vec![FunctionParameterType {
+                        name: "x".into(),
+                        r#type: Box::new(PartType::Number),
+                    }],
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("".into()),
                 content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
-                    parameter_id: 1,
-                    parameter_name: "x".into(),
+                    parameters: vec![FunctionParameter {
+                        parameter_id: 1,
+                        parameter_name: "x".into(),
+                    }],
                     body: Box::new(Expression::Multiply(MultiplyExpression {
                         left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                         right: Box::new(Expression::Number(NumberExpression { value: 2 })),
@@ -355,7 +378,10 @@ fn test_compile_and_execute_part_reference_function() {
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             part_def_hash,
         ))),
-        argument: Box::new(Expression::Number(NumberExpression { value: 21 })),
+        arguments: vec![CallArgument {
+            name: "x".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 21 })),
+        }],
     });
 
     let wasm = compile_expression_to_wasm(&expr, &events).unwrap();
@@ -454,14 +480,19 @@ fn test_compile_and_execute_recursive_function_part() {
             parts: vec![ModulePartEntry {
                 name: "factorial".into(),
                 part_type: Some(PartType::Function {
-                    parameter: Box::new(PartType::Number),
+                    parameters: vec![FunctionParameterType {
+                        name: "n".into(),
+                        r#type: Box::new(PartType::Number),
+                    }],
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("factorial function".into()),
                 content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
-                    parameter_id: 1,
-                    parameter_name: "n".into(),
+                    parameters: vec![FunctionParameter {
+                        parameter_id: 1,
+                        parameter_name: "n".into(),
+                    }],
                     body: Box::new(Expression::If(IfExpression {
                         condition: Box::new(Expression::LessThanOrEqual(
                             LessThanOrEqualExpression {
@@ -480,14 +511,17 @@ fn test_compile_and_execute_recursive_function_part() {
                                 function: Box::new(Expression::PartReference(
                                     PartReferenceExpression::new(fact_hash.clone()),
                                 )),
-                                argument: Box::new(Expression::Subtract(SubtractExpression {
-                                    left: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 1,
+                                arguments: vec![CallArgument {
+                                    name: "n".into(),
+                                    value: Box::new(Expression::Subtract(SubtractExpression {
+                                        left: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 1,
+                                        })),
+                                        right: Box::new(Expression::Number(NumberExpression {
+                                            value: 1,
+                                        })),
                                     })),
-                                    right: Box::new(Expression::Number(NumberExpression {
-                                        value: 1,
-                                    })),
-                                })),
+                                }],
                             })),
                         })),
                     })),
@@ -500,12 +534,15 @@ fn test_compile_and_execute_recursive_function_part() {
     let commit_hash = EventHashId::from_bytes(&[99u8; 32]);
     let events: Vec<crate::EventWithHash> = vec![(commit_hash, Ok((dummy_sig, fact_event)))];
 
-    // Call factorial(5) -> 120
+    // Call factorial(n: 5) -> 120
     let call_fact = Expression::Call(CallExpression {
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             fact_hash,
         ))),
-        argument: Box::new(Expression::Number(NumberExpression { value: 5 })),
+        arguments: vec![CallArgument {
+            name: "n".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 5 })),
+        }],
     });
 
     let wasm = compile_expression_to_wasm(&call_fact, &events).unwrap();
@@ -538,14 +575,19 @@ fn test_compile_and_execute_definy_eval_ast_function() {
             parts: vec![ModulePartEntry {
                 name: "eval_ast".into(),
                 part_type: Some(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(expr_hash.clone())),
+                    parameters: vec![FunctionParameterType {
+                        name: "e".into(),
+                        r#type: Box::new(PartType::TypePart(expr_hash.clone())),
+                    }],
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("eval AST".into()),
                 content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
-                    parameter_id: 1, // e
-                    parameter_name: "e".into(),
+                    parameters: vec![FunctionParameter {
+                        parameter_id: 1, // e
+                        parameter_name: "e".into(),
+                    }],
                     body: Box::new(Expression::Match(MatchExpression {
                         target: Box::new(Expression::Variable(VariableExpression {
                             variable_id: 1,
@@ -568,27 +610,33 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                                         function: Box::new(Expression::PartReference(
                                             PartReferenceExpression::new(eval_hash.clone()),
                                         )),
-                                        argument: Box::new(Expression::RecordGet(
-                                            RecordGetExpression {
-                                                record: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 20 },
-                                                )),
-                                                key: "left".into(),
-                                            },
-                                        )),
+                                        arguments: vec![CallArgument {
+                                            name: "e".into(),
+                                            value: Box::new(Expression::RecordGet(
+                                                RecordGetExpression {
+                                                    record: Box::new(Expression::Variable(
+                                                        VariableExpression { variable_id: 20 },
+                                                    )),
+                                                    key: "left".into(),
+                                                },
+                                            )),
+                                        }],
                                     })),
                                     right: Box::new(Expression::Call(CallExpression {
                                         function: Box::new(Expression::PartReference(
                                             PartReferenceExpression::new(eval_hash.clone()),
                                         )),
-                                        argument: Box::new(Expression::RecordGet(
-                                            RecordGetExpression {
-                                                record: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 20 },
-                                                )),
-                                                key: "right".into(),
-                                            },
-                                        )),
+                                        arguments: vec![CallArgument {
+                                            name: "e".into(),
+                                            value: Box::new(Expression::RecordGet(
+                                                RecordGetExpression {
+                                                    record: Box::new(Expression::Variable(
+                                                        VariableExpression { variable_id: 20 },
+                                                    )),
+                                                    key: "right".into(),
+                                                },
+                                            )),
+                                        }],
                                     })),
                                 })),
                             },
@@ -601,27 +649,33 @@ fn test_compile_and_execute_definy_eval_ast_function() {
                                         function: Box::new(Expression::PartReference(
                                             PartReferenceExpression::new(eval_hash.clone()),
                                         )),
-                                        argument: Box::new(Expression::RecordGet(
-                                            RecordGetExpression {
-                                                record: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 30 },
-                                                )),
-                                                key: "left".into(),
-                                            },
-                                        )),
+                                        arguments: vec![CallArgument {
+                                            name: "e".into(),
+                                            value: Box::new(Expression::RecordGet(
+                                                RecordGetExpression {
+                                                    record: Box::new(Expression::Variable(
+                                                        VariableExpression { variable_id: 30 },
+                                                    )),
+                                                    key: "left".into(),
+                                                },
+                                            )),
+                                        }],
                                     })),
                                     right: Box::new(Expression::Call(CallExpression {
                                         function: Box::new(Expression::PartReference(
                                             PartReferenceExpression::new(eval_hash.clone()),
                                         )),
-                                        argument: Box::new(Expression::RecordGet(
-                                            RecordGetExpression {
-                                                record: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 30 },
-                                                )),
-                                                key: "right".into(),
-                                            },
-                                        )),
+                                        arguments: vec![CallArgument {
+                                            name: "e".into(),
+                                            value: Box::new(Expression::RecordGet(
+                                                RecordGetExpression {
+                                                    record: Box::new(Expression::Variable(
+                                                        VariableExpression { variable_id: 30 },
+                                                    )),
+                                                    key: "right".into(),
+                                                },
+                                            )),
+                                        }],
                                     })),
                                 })),
                             },
@@ -690,7 +744,10 @@ fn test_compile_and_execute_definy_eval_ast_function() {
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             eval_hash,
         ))),
-        argument: Box::new(ast_expr),
+        arguments: vec![CallArgument {
+            name: "e".into(),
+            value: Box::new(ast_expr),
+        }],
     });
 
     let wasm = compile_expression_to_wasm(&eval_call, &events).unwrap();

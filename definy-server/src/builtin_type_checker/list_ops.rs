@@ -1,14 +1,15 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
-    LessThanOrEqualExpression, ListGetExpression, ListLengthExpression, MatchArm, MatchExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, TypeLiteralExpression,
-    TypeLiteralItemExpression, VariableExpression, VariantExpression, derive_module_part_id,
+    AddExpression, Description, Expression, IfExpression, LessThanOrEqualExpression,
+    ListGetExpression, ListLengthExpression, MatchArm, MatchExpression, ModulePartEntry,
+    NumberExpression, PartType, TypeLiteralExpression, TypeLiteralItemExpression,
+    VariableExpression, VariantExpression, derive_module_part_id,
 };
 
 /// リストリテラルの要素型を再帰的に走査し、全要素が `expected_item_type` に適合するか検査する。
 /// 全走査完了時に `ok(list({ item_type: expected_item_type }))` を返却する。
-/// `core.type-check-list-items`: `list<expression> -> type-env -> number -> type-ast -> type-result`
+/// `core.type-check-list-items`: `(items: List expression, env: type-env, index: Number, expected_item_type: type-ast) -> type-result`
 pub fn create_type_check_list_items_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_hash = derive_module_part_id(core_module_id, "expression");
     let type_env_hash = derive_module_part_id(core_module_id, "type-env");
@@ -60,15 +61,10 @@ pub fn create_type_check_list_items_part(core_module_id: &EventHashId) -> Module
     });
 
     // current_expr の型検査: type-check(current_expr, env)
-    let check_item = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_check_hash,
-            ))),
-            argument: Box::new(current_expr),
-        })),
-        argument: Box::new(env.clone()),
-    });
+    let check_item = call_part(
+        &type_check_hash,
+        &[("expr", current_expr), ("env", env.clone())],
+    );
 
     // 次のインデックス: index + 1
     let next_index = Expression::Add(AddExpression {
@@ -77,35 +73,30 @@ pub fn create_type_check_list_items_part(core_module_id: &EventHashId) -> Module
     });
 
     // 再帰呼び出し: type-check-list-items(items, env, next_index, expected_item_type)
-    let recurse_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        check_list_items_hash,
-                    ))),
-                    argument: Box::new(items),
-                })),
-                argument: Box::new(env),
-            })),
-            argument: Box::new(next_index),
-        })),
-        argument: Box::new(expected_item_type.clone()),
-    });
+    let recurse_call = call_part(
+        &check_list_items_hash,
+        &[
+            ("items", items),
+            ("env", env),
+            ("index", next_index),
+            ("expected_item_type", expected_item_type.clone()),
+        ],
+    );
 
     // 要素型の一致判定: type-assignable(item_type, expected_item_type)
     let item_type_var = 10;
-    let item_type_assignable = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_assignable_hash,
-            ))),
-            argument: Box::new(Expression::Variable(VariableExpression {
-                variable_id: item_type_var,
-            })),
-        })),
-        argument: Box::new(expected_item_type.clone()),
-    });
+    let item_type_assignable = call_part(
+        &type_assignable_hash,
+        &[
+            (
+                "actual_type",
+                Expression::Variable(VariableExpression {
+                    variable_id: item_type_var,
+                }),
+            ),
+            ("expected_type", expected_item_type.clone()),
+        ],
+    );
 
     // 型不一致エラー: error(type_mismatch { expected, actual })
     let mismatch_err = Expression::Variant(VariantExpression {
@@ -168,19 +159,18 @@ pub fn create_type_check_list_items_part(core_module_id: &EventHashId) -> Module
 
     ModulePartEntry {
         name: "type-check-list-items".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(expr_hash)))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(type_env_hash)),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::TypePart(type_ast_hash)),
-                        return_type: Box::new(PartType::TypePart(type_result_hash)),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "items",
+                    PartType::List(Box::new(PartType::TypePart(expr_hash))),
+                ),
+                ("env", PartType::TypePart(type_env_hash)),
+                ("index", PartType::Number),
+                ("expected_item_type", PartType::TypePart(type_ast_hash)),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -192,30 +182,22 @@ pub fn create_type_check_list_items_part(core_module_id: &EventHashId) -> Module
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "items".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "env".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(Expression::Function(FunctionExpression {
-                        parameter_id: 3,
-                        parameter_name: "expected_item_type".into(),
-                        body: Box::new(loop_body),
-                    })),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[
+                ("items", 0),
+                ("env", 1),
+                ("index", 2),
+                ("expected_item_type", 3),
+            ],
+            loop_body,
+        )),
     }
 }
 
 /// リストリテラルの型推論エントリーポイント。
 /// 要素が0個（空リスト）の場合は `error(cannot_infer_empty_list)` を返却し、
 /// 1個以上の場合は先頭要素から型を推論して残りの要素を `core.type-check-list-items` で検証する。
-/// `core.type-check-list`: `list<expression> -> type-env -> type-result`
+/// `core.type-check-list`: `(items: List expression, env: type-env) -> type-result`
 pub fn create_type_check_list_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let expr_hash = derive_module_part_id(core_module_id, "expression");
     let type_env_hash = derive_module_part_id(core_module_id, "type-env");
@@ -255,35 +237,27 @@ pub fn create_type_check_list_part(core_module_id: &EventHashId) -> ModulePartEn
     });
 
     // 先頭要素の型検査: type-check(first_expr, env)
-    let check_first = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_check_hash,
-            ))),
-            argument: Box::new(first_expr),
-        })),
-        argument: Box::new(env.clone()),
-    });
+    let check_first = call_part(
+        &type_check_hash,
+        &[("expr", first_expr), ("env", env.clone())],
+    );
 
     let first_type_var = 10;
     // 残り要素の検査呼び出し: type-check-list-items(items, env, 1, first_type)
-    let check_rest = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        check_list_items_hash,
-                    ))),
-                    argument: Box::new(items),
-                })),
-                argument: Box::new(env),
-            })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 1 })),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression {
-            variable_id: first_type_var,
-        })),
-    });
+    let check_rest = call_part(
+        &check_list_items_hash,
+        &[
+            ("items", items),
+            ("env", env),
+            ("index", Expression::Number(NumberExpression { value: 1 })),
+            (
+                "expected_item_type",
+                Expression::Variable(VariableExpression {
+                    variable_id: first_type_var,
+                }),
+            ),
+        ],
+    );
 
     let check_first_match = Expression::Match(MatchExpression {
         target: Box::new(check_first),
@@ -318,13 +292,16 @@ pub fn create_type_check_list_part(core_module_id: &EventHashId) -> ModulePartEn
 
     ModulePartEntry {
         name: "type-check-list".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(expr_hash)))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(type_env_hash)),
-                return_type: Box::new(PartType::TypePart(type_result_hash)),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "items",
+                    PartType::List(Box::new(PartType::TypePart(expr_hash))),
+                ),
+                ("env", PartType::TypePart(type_env_hash)),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -333,15 +310,7 @@ pub fn create_type_check_list_part(core_module_id: &EventHashId) -> ModulePartEn
             ("ja", "リストリテラル式の要素型を推論・検証する型チェッカー"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "items".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "env".into(),
-                body: Box::new(body),
-            })),
-        })),
+        expression: Some(fn_expr(&[("items", 0), ("env", 1)], body)),
     }
 }
 
@@ -351,14 +320,18 @@ pub fn create_list_check_arms(type_check_list_hash: &EventHashId) -> Vec<MatchAr
         tag: "list".into(),
         variable_id: Some(30),
         variable_name: Some("items".into()),
-        body: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    type_check_list_hash.clone(),
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 30 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        })),
+        body: Box::new(call_part(
+            type_check_list_hash,
+            &[
+                (
+                    "items",
+                    Expression::Variable(VariableExpression { variable_id: 30 }),
+                ),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+            ],
+        )),
     }]
 }

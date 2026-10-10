@@ -7,11 +7,10 @@
 
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
-    MatchArm, MatchExpression, ModulePartEntry, MultiplyExpression, NotExpression,
-    PartReferenceExpression, PartType, RecordGetExpression, SubtractExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
-    derive_module_part_id,
+    AddExpression, Description, Expression, IfExpression, MatchArm, MatchExpression,
+    ModulePartEntry, MultiplyExpression, NotExpression, PartType, RecordGetExpression,
+    SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
+    VariantExpression, derive_module_part_id,
 };
 
 /// 自己記述 AST 最適化器パーツ (`core.optimize-expression`) を生成します。
@@ -24,12 +23,7 @@ pub fn create_optimize_expression_part(core_module_id: &EventHashId) -> ModulePa
 
     // Helper: call optimize-expression(sub_expr)
     fn opt_sub(opt_hash: &EventHashId, sub_expr: Expression) -> Expression {
-        Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                opt_hash.clone(),
-            ))),
-            argument: Box::new(sub_expr),
-        })
+        crate::ast_builder::call_part(opt_hash, &[("expr", sub_expr)])
     }
 
     let expr_hash_clone = expr_type_part_hash.clone();
@@ -413,22 +407,21 @@ pub fn create_optimize_expression_part(core_module_id: &EventHashId) -> ModulePa
         body: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "expr".into(),
-        body: Box::new(Expression::Match(MatchExpression {
+    let main_expr = crate::ast_builder::fn_expr(
+        &[("expr", 0)],
+        Expression::Match(MatchExpression {
             target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
             arms,
             default: None,
-        })),
-    });
+        }),
+    );
 
     ModulePartEntry {
         name: "optimize-expression".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(expr_type_part_hash.clone())),
-            return_type: Box::new(PartType::TypePart(expr_type_part_hash)),
-        }),
+        part_type: Some(crate::ast_builder::fn_type(
+            &[("expr", PartType::TypePart(expr_type_part_hash.clone()))],
+            PartType::TypePart(expr_type_part_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",

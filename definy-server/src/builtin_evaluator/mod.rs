@@ -4,19 +4,21 @@
 //! 式の種別に応じたパターンマッチを行って動的値 (`core.value`) を返却します。
 
 mod arith_arms;
+pub mod call_eval;
 mod control_arms;
 mod helpers;
 pub mod list_eval;
 mod logical_arms;
 pub mod record_eval;
 
+pub use call_eval::*;
 pub use list_eval::*;
 pub use record_eval::*;
 
 use definy_event::EventHashId;
 use definy_event::event::{
-    Description, Expression, FunctionExpression, MatchArm, MatchExpression, ModulePartEntry,
-    PartType, VariableExpression, derive_module_part_id,
+    Description, Expression, MatchArm, MatchExpression, ModulePartEntry, PartType,
+    VariableExpression, derive_module_part_id,
 };
 
 use self::arith_arms::create_arithmetic_arms;
@@ -89,29 +91,24 @@ pub fn create_eval_value_part(core_module_id: &EventHashId) -> ModulePartEntry {
         body: Box::new(val_unit()),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "expr".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "env".into(),
-            body: Box::new(Expression::Match(MatchExpression {
-                target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-                arms,
-                default: None,
-            })),
-        })),
-    });
+    let main_expr = crate::ast_builder::fn_expr(
+        &[("expr", 0), ("env", 1)],
+        Expression::Match(MatchExpression {
+            target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+            arms,
+            default: None,
+        }),
+    );
 
     ModulePartEntry {
         name: "eval-value".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(expr_type_part_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(env_part_hash)),
-                return_type: Box::new(PartType::TypePart(val_part_hash)),
-            }),
-        }),
+        part_type: Some(crate::ast_builder::fn_type(
+            &[
+                ("expr", PartType::TypePart(expr_type_part_hash)),
+                ("env", PartType::TypePart(env_part_hash)),
+            ],
+            PartType::TypePart(val_part_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",

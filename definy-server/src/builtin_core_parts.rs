@@ -298,6 +298,9 @@ pub fn create_core_module_parts(core_module_id: &EventHashId) -> Vec<ModulePartE
     core_parts.push(crate::builtin_evaluator::create_eval_list_items_part(
         core_module_id,
     ));
+    core_parts.push(crate::builtin_evaluator::create_eval_call_arguments_part(
+        core_module_id,
+    ));
     core_parts.push(crate::builtin_eval_match::create_eval_match_arms_part(
         core_module_id,
     ));
@@ -332,6 +335,9 @@ pub fn create_core_module_parts(core_module_id: &EventHashId) -> Vec<ModulePartE
     ));
     core_parts
         .push(crate::builtin_type_checker::create_type_equals_record_fields_part(core_module_id));
+    core_parts.push(
+        crate::builtin_type_checker::create_type_equals_function_parameters_part(core_module_id),
+    );
     core_parts
         .push(crate::builtin_type_checker::create_type_equals_union_variants_part(core_module_id));
     core_parts
@@ -340,6 +346,11 @@ pub fn create_core_module_parts(core_module_id: &EventHashId) -> Vec<ModulePartE
         .push(crate::builtin_type_checker::create_type_check_record_fields_part(core_module_id));
     core_parts.push(
         crate::builtin_type_checker::create_type_assignable_record_fields_part(core_module_id),
+    );
+    core_parts.push(
+        crate::builtin_type_checker::create_type_assignable_function_parameters_part(
+            core_module_id,
+        ),
     );
     core_parts
         .push(crate::builtin_type_checker::create_union_variant_type_lookup_part(core_module_id));
@@ -371,6 +382,14 @@ pub fn create_core_module_parts(core_module_id: &EventHashId) -> Vec<ModulePartE
     core_parts.push(
         crate::builtin_type_checker::create_type_check_type_union_variants_part(core_module_id),
     );
+    core_parts.push(
+        crate::builtin_type_checker::create_type_check_type_function_parameters_part(
+            core_module_id,
+        ),
+    );
+    core_parts
+        .push(crate::builtin_type_checker::create_type_check_call_arguments_part(core_module_id));
+    core_parts.push(crate::builtin_type_checker::create_type_check_function_part(core_module_id));
 
     core_parts.push(crate::builtin_type_checker::create_type_check_against_part(
         core_module_id,

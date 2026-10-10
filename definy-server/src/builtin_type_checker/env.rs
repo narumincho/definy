@@ -1,13 +1,14 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Description, EqualExpression, Expression, FunctionExpression, IfExpression,
-    LessThanExpression, ListAppendExpression, ListGetExpression, ListLengthExpression,
-    ModulePartEntry, NumberExpression, PartReferenceExpression, PartType, RecordFieldType,
-    RecordGetExpression, SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    VariableExpression, VariantExpression, derive_module_part_id,
+    Description, EqualExpression, Expression, IfExpression, LessThanExpression,
+    ListAppendExpression, ListGetExpression, ListLengthExpression, ModulePartEntry,
+    NumberExpression, PartType, RecordFieldType, RecordGetExpression, SubtractExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
-/// `core.type-env-lookup`: `type-env -> number -> type-result`
+/// `core.type-env-lookup`: `(env: type-env, var_id: number) -> type-result`
 pub fn create_type_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
     let type_result_part_hash = derive_module_part_id(core_module_id, "type-result");
@@ -18,41 +19,38 @@ pub fn create_type_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEn
         key: "variables".into(),
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "var_id".into(),
-            body: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(inner_hash),
-                        )),
-                        argument: Box::new(variables_expr.clone()),
-                    })),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(Expression::Subtract(SubtractExpression {
-                    left: Box::new(Expression::ListLength(ListLengthExpression {
-                        value: Box::new(variables_expr),
-                    })),
-                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                })),
-            })),
-        })),
-    });
+    let body = fn_expr(
+        &[("env", 0), ("var_id", 1)],
+        call_part(
+            &inner_hash,
+            &[
+                ("variables", variables_expr.clone()),
+                (
+                    "var_id",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                (
+                    "idx",
+                    Expression::Subtract(SubtractExpression {
+                        left: Box::new(Expression::ListLength(ListLengthExpression {
+                            value: Box::new(variables_expr),
+                        })),
+                        right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                    }),
+                ),
+            ],
+        ),
+    );
 
     ModulePartEntry {
         name: "type-env-lookup".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(type_env_part_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::TypePart(type_result_part_hash)),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(type_env_part_hash)),
+                ("var_id", PartType::Number),
+            ],
+            PartType::TypePart(type_result_part_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Lookup variable type in type environment"),
             ("ja", "型環境から変数の型を検索"),
@@ -62,7 +60,7 @@ pub fn create_type_env_lookup_part(core_module_id: &EventHashId) -> ModulePartEn
     }
 }
 
-/// `core.type-env-lookup-inner`: `list<{ variable_id, var_type }> -> var_id -> idx -> type-result`
+/// `core.type-env-lookup-inner`: `(variables: list<{ variable_id, var_type }>, var_id: number, idx: number) -> type-result`
 pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_part_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_result_part_hash = derive_module_part_id(core_module_id, "type-result");
@@ -88,61 +86,55 @@ pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> Module
         index: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
     });
 
-    let recurse_prev = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    inner_hash,
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        })),
-        argument: Box::new(Expression::Subtract(SubtractExpression {
-            left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-        })),
-    });
+    let recurse_prev = call_part(
+        &inner_hash,
+        &[
+            (
+                "variables",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            (
+                "var_id",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+            (
+                "idx",
+                Expression::Subtract(SubtractExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                }),
+            ),
+        ],
+    );
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "variables".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "var_id".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "idx".into(),
-                body: Box::new(Expression::If(IfExpression {
-                    condition: Box::new(Expression::LessThan(LessThanExpression {
-                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                    })),
-                    then_expr: Box::new(err_undef),
-                    else_expr: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::Equal(EqualExpression {
-                            left: Box::new(Expression::RecordGet(RecordGetExpression {
-                                record: Box::new(current_item.clone()),
-                                key: "variable_id".into(),
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 1,
-                            })),
-                        })),
-                        then_expr: Box::new(Expression::Variant(VariantExpression {
-                            type_part_definition_event_hash: None,
-                            tag: "ok".into(),
-                            payload: Some(Box::new(Expression::RecordGet(RecordGetExpression {
-                                record: Box::new(current_item),
-                                key: "var_type".into(),
-                            }))),
-                        })),
-                        else_expr: Box::new(recurse_prev),
-                    })),
-                })),
+    let body = fn_expr(
+        &[("variables", 0), ("var_id", 1), ("idx", 2)],
+        Expression::If(IfExpression {
+            condition: Box::new(Expression::LessThan(LessThanExpression {
+                left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+                right: Box::new(Expression::Number(NumberExpression { value: 0 })),
             })),
-        })),
-    });
+            then_expr: Box::new(err_undef),
+            else_expr: Box::new(Expression::If(IfExpression {
+                condition: Box::new(Expression::Equal(EqualExpression {
+                    left: Box::new(Expression::RecordGet(RecordGetExpression {
+                        record: Box::new(current_item.clone()),
+                        key: "variable_id".into(),
+                    })),
+                    right: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                })),
+                then_expr: Box::new(Expression::Variant(VariantExpression {
+                    type_part_definition_event_hash: None,
+                    tag: "ok".into(),
+                    payload: Some(Box::new(Expression::RecordGet(RecordGetExpression {
+                        record: Box::new(current_item),
+                        key: "var_type".into(),
+                    }))),
+                })),
+                else_expr: Box::new(recurse_prev),
+            })),
+        }),
+    );
 
     let var_entry_type = PartType::Record(vec![
         RecordFieldType {
@@ -157,16 +149,14 @@ pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> Module
 
     ModulePartEntry {
         name: "type-env-lookup-inner".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(var_entry_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::TypePart(type_result_part_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("variables", PartType::List(Box::new(var_entry_type))),
+                ("var_id", PartType::Number),
+                ("idx", PartType::Number),
+            ],
+            PartType::TypePart(type_result_part_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Inner helper for type-env-lookup recursion"),
             ("ja", "type-env-lookup の再帰用内部ヘルパー"),
@@ -176,7 +166,7 @@ pub fn create_type_env_lookup_inner_part(core_module_id: &EventHashId) -> Module
     }
 }
 
-/// `core.type-env-extend`: `type-env -> number -> type-ast -> type-env`
+/// `core.type-env-extend`: `(env: type-env, var_id: number, var_type: type-ast) -> type-env`
 pub fn create_type_env_extend_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
     let type_ast_part_hash = derive_module_part_id(core_module_id, "type-ast");
@@ -218,32 +208,18 @@ pub fn create_type_env_extend_part(core_module_id: &EventHashId) -> ModulePartEn
         ],
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "var_id".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "var_type".into(),
-                body: Box::new(updated_env),
-            })),
-        })),
-    });
+    let body = fn_expr(&[("env", 0), ("var_id", 1), ("var_type", 2)], updated_env);
 
     ModulePartEntry {
         name: "type-env-extend".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(type_env_part_hash.clone())),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(type_ast_part_hash)),
-                    return_type: Box::new(PartType::TypePart(type_env_part_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(type_env_part_hash.clone())),
+                ("var_id", PartType::Number),
+                ("var_type", PartType::TypePart(type_ast_part_hash)),
+            ],
+            PartType::TypePart(type_env_part_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Extend type environment with a variable type binding"),
             ("ja", "型環境に変数の型束縛を追加"),

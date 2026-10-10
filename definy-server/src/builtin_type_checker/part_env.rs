@@ -1,10 +1,10 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Description, EqualExpression, Expression, FunctionExpression, IfExpression,
-    LessThanExpression, ListGetExpression, ListLengthExpression, ModulePartEntry, NumberExpression,
-    PartReferenceExpression, PartType, RecordFieldType, RecordGetExpression, SubtractExpression,
-    TypeListExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
-    derive_module_part_id,
+    Description, EqualExpression, Expression, IfExpression, LessThanExpression, ListGetExpression,
+    ListLengthExpression, ModulePartEntry, NumberExpression, PartReferenceExpression, PartType,
+    RecordFieldType, RecordGetExpression, SubtractExpression, TypeListExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, derive_module_part_id,
 };
 
 use super::helpers::{error_part_not_found, ok_type};
@@ -45,52 +45,50 @@ pub fn create_part_type_env_part(core_module_id: &EventHashId) -> ModulePartEntr
     }
 }
 
-/// `core.part-type-lookup`: `part-type-env -> string -> type-result`
+/// `core.part-type-lookup`: `(env: part-type-env, part_hash: string) -> type-result`
 /// モジュール型環境から指定されたパーツハッシュの宣言型を検索します。
 pub fn create_part_type_lookup_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let part_type_env_hash = derive_module_part_id(core_module_id, "part-type-env");
     let type_result_hash = derive_module_part_id(core_module_id, "type-result");
     let inner_hash = derive_module_part_id(core_module_id, "part-type-lookup-inner");
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "part_hash".into(),
-            body: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(inner_hash),
-                        )),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
+    let body = fn_expr(
+        &[("env", 0), ("part_hash", 1)],
+        call_part(
+            &inner_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 0 }),
+                ),
+                (
+                    "part_hash",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                (
+                    "index",
+                    Expression::Subtract(SubtractExpression {
+                        left: Box::new(Expression::ListLength(ListLengthExpression {
+                            value: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 0,
+                            })),
                         })),
-                    })),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(Expression::Subtract(SubtractExpression {
-                    left: Box::new(Expression::ListLength(ListLengthExpression {
-                        value: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 0,
-                        })),
-                    })),
-                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                })),
-            })),
-        })),
-    });
+                        right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                    }),
+                ),
+            ],
+        ),
+    );
 
     ModulePartEntry {
         name: "part-type-lookup".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(part_type_env_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::TypePart(type_result_hash)),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(part_type_env_hash)),
+                ("part_hash", PartType::String),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -103,7 +101,7 @@ pub fn create_part_type_lookup_part(core_module_id: &EventHashId) -> ModulePartE
     }
 }
 
-/// `core.part-type-lookup-inner`: `part-type-env -> string -> number -> type-result`
+/// `core.part-type-lookup-inner`: `(env: part-type-env, part_hash: string, index: number) -> type-result`
 /// 末尾から先頭へ線形走査して指定パーツハッシュを検索する再帰ヘルパーです。
 pub fn create_part_type_lookup_inner_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_result_hash = derive_module_part_id(core_module_id, "type-result");
@@ -132,21 +130,26 @@ pub fn create_part_type_lookup_inner_part(core_module_id: &EventHashId) -> Modul
         right: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    inner_hash,
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        })),
-        argument: Box::new(Expression::Subtract(SubtractExpression {
-            left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-        })),
-    });
+    let recurse = call_part(
+        &inner_hash,
+        &[
+            (
+                "env",
+                Expression::Variable(VariableExpression { variable_id: 0 }),
+            ),
+            (
+                "part_hash",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+            (
+                "index",
+                Expression::Subtract(SubtractExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                }),
+            ),
+        ],
+    );
 
     let not_found_error =
         error_part_not_found(Expression::Variable(VariableExpression { variable_id: 1 }));
@@ -177,38 +180,24 @@ pub fn create_part_type_lookup_inner_part(core_module_id: &EventHashId) -> Modul
 
     ModulePartEntry {
         name: "part-type-lookup-inner".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(entry_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::TypePart(type_result_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::List(Box::new(entry_type))),
+                ("part_hash", PartType::String),
+                ("index", PartType::Number),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             ("en", "Inner recursive helper for part-type-lookup"),
             ("ja", "part-type-lookup の再帰用内部ヘルパー"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "env".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "part_hash".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(&[("env", 0), ("part_hash", 1), ("index", 2)], body)),
     }
 }
 
-/// `core.type-env-lookup-part`: `type-env -> string -> type-result`
+/// `core.type-env-lookup-part`: `(env: type-env, part_hash: string) -> type-result`
 /// `type-env` レコードから `parts` リストを取り出し、指定パーツハッシュの宣言型を検索します。
 pub fn create_type_env_lookup_part_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
@@ -220,35 +209,28 @@ pub fn create_type_env_lookup_part_part(core_module_id: &EventHashId) -> ModuleP
         key: "parts".into(),
     });
 
-    let lookup_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                part_type_lookup_hash,
-            ))),
-            argument: Box::new(parts_expr),
-        })),
-        argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-    });
+    let lookup_call = call_part(
+        &part_type_lookup_hash,
+        &[
+            ("env", parts_expr),
+            (
+                "part_hash",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+        ],
+    );
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "env".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "part_hash".into(),
-            body: Box::new(lookup_call),
-        })),
-    });
+    let body = fn_expr(&[("env", 0), ("part_hash", 1)], lookup_call);
 
     ModulePartEntry {
         name: "type-env-lookup-part".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(type_env_part_hash)),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::TypePart(type_result_hash)),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("env", PartType::TypePart(type_env_part_hash)),
+                ("part_hash", PartType::String),
+            ],
+            PartType::TypePart(type_result_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",

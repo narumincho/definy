@@ -75,9 +75,12 @@ body {
   /* グリッドの子要素が中身の幅で広がって横スクロールが発生しないようにする */
   grid-template-columns: minmax(0, 1fr);
   background-image:
-    radial-gradient(ellipse 65% 50% at 20% 10%, rgba(56, 189, 248, 0.09) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 45% at 85% 20%, rgba(129, 140, 248, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 55% at 50% 90%, rgba(14, 165, 233, 0.06) 0%, transparent 65%);
+    radial-gradient(ellipse 65% 50% at 20% 10%, rgba(56, 189, 248, 0.09) 0%,
+    transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 20%, rgba(129, 140, 248, 0.08) 0%,
+    transparent 60%),
+    radial-gradient(ellipse 70% 55% at 50% 90%, rgba(14, 165, 233, 0.06) 0%,
+    transparent 65%);
   background-attachment: fixed;
   color: var(--text);
   font-family: 'Outfit', system-ui, -apple-system, sans-serif;
@@ -267,7 +270,8 @@ dialog::backdrop {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -547,7 +551,8 @@ textarea {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12),
+    transparent);
   pointer-events: none;
 }
 
@@ -555,7 +560,8 @@ textarea {
   transform: translateY(-2px);
   border-color: rgba(56, 189, 248, 0.35);
   box-shadow: var(--shadow-md), 0 0 20px rgba(56, 189, 248, 0.08);
-  background: linear-gradient(180deg, rgba(26, 38, 58, 0.8) 0%, rgba(16, 24, 38, 0.88) 100%);
+  background: linear-gradient(180deg, rgba(26, 38, 58, 0.8) 0%, rgba(16, 24, 38,
+    0.88) 100%);
 }
 
 .event-detail-card {
@@ -846,7 +852,8 @@ textarea {
     margin: 0 -0.75rem;
     padding: 0 0.75rem;
     -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(90deg, transparent 0, #000 0.75rem, #000 calc(100% - 1.5rem), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 0.75rem, #000
+      calc(100% - 1.5rem), transparent 100%);
   }
 
   .nav-link {

@@ -278,7 +278,10 @@ async fn test_connect_rpc_lifecycle() {
                     content_hash: None,
                     expression: Some(definy_event::event::Expression::TypeFunction(
                         definy_event::event::TypeFunctionExpression {
-                            parameter: Box::new(definy_event::event::Expression::TypeNumber),
+                            parameters: vec![definy_event::event::TypeFunctionParameter {
+                                name: "input".into(),
+                                r#type: Box::new(definy_event::event::Expression::TypeNumber),
+                            }],
                             return_type: Box::new(definy_event::event::Expression::TypeString),
                         },
                     )),
@@ -645,74 +648,83 @@ async fn test_connect_rpc_deploy_service_success() {
 }
 
 #[tokio::test]
-async fn test_connect_rpc_deploy_deno_success() {
-    use crate::deno_deploy::{
-        CreateAppRequest, CreateRevisionRequest, DenoApp, DenoRevision, DenoRevisionTimeline,
-    };
+async fn test_connect_rpc_deploy_cloudflare_success() {
     use axum::extract::{Json, Path};
-    use axum::response::IntoResponse;
+    use serde_json::json;
     use tokio::net::TcpListener;
 
-    // 1. Mock Deno Deploy REST API v2
-    let mock_deno_app = axum::Router::new()
+    // 1. Mock Cloudflare Workers REST API v4
+    let mock_cf_app = axum::Router::new()
         .route(
-            "/apps/{app}",
-            axum::routing::get(|Path(app): Path<String>| async move {
-                if app == "existing-definy-edge" {
-                    Json(DenoApp {
-                        id: "app_id_999".to_string(),
-                        slug: "existing-definy-edge".to_string(),
-                    })
-                    .into_response()
-                } else {
-                    StatusCode::NOT_FOUND.into_response()
-                }
+            "/accounts",
+            axum::routing::get(|| async {
+                Json(json!({
+                    "success": true,
+                    "errors": [],
+                    "result": [
+                        {
+                            "id": "acc_cf_123",
+                            "name": "Definy Cloudflare Account"
+                        }
+                    ]
+                }))
             }),
         )
         .route(
-            "/apps",
-            axum::routing::post(|Json(req): Json<CreateAppRequest>| async move {
-                let slug = req.slug.unwrap_or_else(|| "auto-definy-edge".to_string());
-                Json(DenoApp {
-                    id: "app_id_created".to_string(),
-                    slug,
-                })
+            "/accounts/{account}/workers/subdomain",
+            axum::routing::get(|| async {
+                Json(json!({
+                    "success": true,
+                    "errors": [],
+                    "result": {
+                        "subdomain": "definy-subdomain"
+                    }
+                }))
             }),
         )
         .route(
-            "/apps/{app}/deploy",
-            axum::routing::post(
-                |Path(app): Path<String>, Json(req): Json<CreateRevisionRequest>| async move {
-                    assert!(req.assets.contains_key("main.ts"));
-                    assert!(req.assets.contains_key("deno.json"));
-                    assert_eq!(app, "app_id_created");
-
-                    Json(DenoRevision {
-                        id: "rev_deno_123".to_string(),
-                        status: "succeeded".to_string(),
-                        failure_reason: None,
-                        timelines: Some(vec![DenoRevisionTimeline {
-                            name: "Production".to_string(),
-                            context: "production".to_string(),
-                            hostnames: vec!["auto-definy-edge-xyz.deno.net".to_string()],
-                        }]),
-                    })
-                },
-            ),
+            "/accounts/{account}/workers/scripts",
+            axum::routing::get(|| async {
+                Json(json!({
+                    "success": true,
+                    "errors": [],
+                    "result": [
+                        {
+                            "id": "existing-worker",
+                            "created_on": "2026-10-09T00:00:00Z",
+                            "modified_on": "2026-10-10T00:00:00Z"
+                        },
+                        {
+                            "id": "worker-demo",
+                            "created_on": "2026-10-08T00:00:00Z",
+                            "modified_on": "2026-10-09T00:00:00Z"
+                        }
+                    ]
+                }))
+            }),
         )
         .route(
-            "/revisions/{revision}",
-            axum::routing::get(|Path(revision): Path<String>| async move {
-                Json(DenoRevision {
-                    id: revision,
-                    status: "succeeded".to_string(),
-                    failure_reason: None,
-                    timelines: Some(vec![DenoRevisionTimeline {
-                        name: "Production".to_string(),
-                        context: "production".to_string(),
-                        hostnames: vec!["auto-definy-edge-xyz.deno.net".to_string()],
-                    }]),
-                })
+            "/accounts/{account}/workers/scripts/{script}",
+            axum::routing::put(|Path((_acc, script)): Path<(String, String)>| async move {
+                Json(json!({
+                    "success": true,
+                    "errors": [],
+                    "result": {
+                        "id": script
+                    }
+                }))
+            }),
+        )
+        .route(
+            "/accounts/{account}/workers/scripts/{script}/subdomain",
+            axum::routing::post(|| async {
+                Json(json!({
+                    "success": true,
+                    "errors": [],
+                    "result": {
+                        "enabled": true
+                    }
+                }))
             }),
         );
 
@@ -722,11 +734,11 @@ async fn test_connect_rpc_deploy_deno_success() {
     let local_addr = listener.local_addr().unwrap();
 
     tokio::spawn(async move {
-        axum::serve(listener, mock_deno_app).await.unwrap();
+        axum::serve(listener, mock_cf_app).await.unwrap();
     });
 
     unsafe {
-        std::env::set_var("DENO_DEPLOY_API_URL", format!("http://{local_addr}"));
+        std::env::set_var("CLOUDFLARE_API_URL", format!("http://{local_addr}"));
     }
 
     let db = crate::db::init_db().await.unwrap();
@@ -743,15 +755,16 @@ async fn test_connect_rpc_deploy_deno_success() {
     );
 
     // 2. Token が空の場合は BadRequest
-    let empty_token_req = DeployDenoRequest {
-        org_token: "".to_string(),
-        app_slug: None,
+    let empty_token_req = DeployCloudflareRequest {
+        api_token: "".to_string(),
+        account_id: None,
+        script_name: None,
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
         part_id: None,
     };
-    let empty_res = handle_deploy_deno(
+    let empty_res = handle_deploy_cloudflare(
         State(state.clone()),
         headers.clone(),
         Bytes::from(serde_json::to_vec(&empty_token_req).unwrap()),
@@ -760,15 +773,16 @@ async fn test_connect_rpc_deploy_deno_success() {
     assert_eq!(empty_res.status(), StatusCode::BAD_REQUEST);
 
     // 3. 有効なトークンでデプロイ成功
-    let deploy_req = DeployDenoRequest {
-        org_token: "test_deno_token_123".to_string(),
-        app_slug: Some("auto-definy-edge".to_string()),
+    let deploy_req = DeployCloudflareRequest {
+        api_token: "test_cf_token_123".to_string(),
+        account_id: None,
+        script_name: Some("auto-definy-worker".to_string()),
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
         part_id: None,
     };
-    let deploy_res = handle_deploy_deno(
+    let deploy_res = handle_deploy_cloudflare(
         State(state.clone()),
         headers.clone(),
         Bytes::from(serde_json::to_vec(&deploy_req).unwrap()),
@@ -779,15 +793,15 @@ async fn test_connect_rpc_deploy_deno_success() {
     let deploy_bytes = axum::body::to_bytes(deploy_res.into_body(), 1024 * 1024)
         .await
         .unwrap();
-    let deploy_data: DeployDenoResponse = serde_json::from_slice(&deploy_bytes).unwrap();
-    assert_eq!(deploy_data.app_id, "app_id_created");
-    assert_eq!(deploy_data.app_slug, "auto-definy-edge");
-    assert_eq!(deploy_data.revision_id, "rev_deno_123");
+    let deploy_data: DeployCloudflareResponse = serde_json::from_slice(&deploy_bytes).unwrap();
+    assert_eq!(deploy_data.script_name, "auto-definy-worker");
     assert_eq!(deploy_data.status, "succeeded");
-    assert_eq!(deploy_data.url, "https://auto-definy-edge-xyz.deno.net");
-    assert_eq!(deploy_data.hostnames, vec!["auto-definy-edge-xyz.deno.net"]);
+    assert_eq!(
+        deploy_data.url,
+        "https://auto-definy-worker.definy-subdomain.workers.dev"
+    );
 
-    // 4. ListDeployments で Deno Deploy のレコードが provider: "deno_deploy" で保存されていることを確認
+    // 4. ListDeployments で Cloudflare Workers のレコードが provider: "cloudflare_workers" で保存されていることを確認
     let list_req = ListDeploymentsRequest { limit: Some(10) };
     let list_res = handle_list_deployments(
         State(state.clone()),
@@ -804,20 +818,21 @@ async fn test_connect_rpc_deploy_deno_success() {
     assert_eq!(list_data.deployments.len(), 1);
     assert_eq!(
         list_data.deployments[0].provider.as_deref(),
-        Some("deno_deploy")
+        Some("cloudflare_workers")
     );
-    assert_eq!(list_data.deployments[0].machine_id, "deno:rev_deno_123");
+    assert_eq!(list_data.deployments[0].machine_id, "cf:auto-definy-worker");
 
     // 5. 自己記述コンパイラ (core.compile-to-wasm) による動的ビルドデプロイ
-    let self_hosted_deploy_req = DeployDenoRequest {
-        org_token: "test_deno_token_123".to_string(),
-        app_slug: Some("self-hosted-wasm-edge".to_string()),
+    let self_hosted_deploy_req = DeployCloudflareRequest {
+        api_token: "test_cf_token_123".to_string(),
+        account_id: None,
+        script_name: Some("self-hosted-wasm-worker".to_string()),
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: Some(true),
         part_id: None,
     };
-    let self_hosted_res = handle_deploy_deno(
+    let self_hosted_res = handle_deploy_cloudflare(
         State(state.clone()),
         headers.clone(),
         Bytes::from(serde_json::to_vec(&self_hosted_deploy_req).unwrap()),
@@ -828,19 +843,22 @@ async fn test_connect_rpc_deploy_deno_success() {
     let sh_bytes = axum::body::to_bytes(self_hosted_res.into_body(), 1024 * 1024)
         .await
         .unwrap();
-    let sh_data: DeployDenoResponse = serde_json::from_slice(&sh_bytes).unwrap();
+    let sh_data: DeployCloudflareResponse = serde_json::from_slice(&sh_bytes).unwrap();
     assert_eq!(sh_data.evaluated_result, Some("42".to_string()));
 
-    // 6. 任意の TypeScript スクリプト (definy に依存しない汎用デプロイ)
-    let custom_script_req = DeployDenoRequest {
-        org_token: "test_deno_token_123".to_string(),
-        app_slug: Some("generic-edge-app".to_string()),
+    // 6. 任意のカスタムスクリプト
+    let custom_script_req = DeployCloudflareRequest {
+        api_token: "test_cf_token_123".to_string(),
+        account_id: None,
+        script_name: Some("generic-worker".to_string()),
         wasm_hash: None,
-        custom_script: Some("Deno.serve(() => new Response('Hello Pure Edge'));".to_string()),
+        custom_script: Some(
+            "export default { fetch() { return new Response('Hello Pure Worker'); } };".to_string(),
+        ),
         compile_self_hosted: None,
         part_id: None,
     };
-    let custom_res = handle_deploy_deno(
+    let custom_res = handle_deploy_cloudflare(
         State(state.clone()),
         headers.clone(),
         Bytes::from(serde_json::to_vec(&custom_script_req).unwrap()),
@@ -850,14 +868,14 @@ async fn test_connect_rpc_deploy_deno_success() {
     let custom_bytes = axum::body::to_bytes(custom_res.into_body(), 1024 * 1024)
         .await
         .unwrap();
-    let custom_data: DeployDenoResponse = serde_json::from_slice(&custom_bytes).unwrap();
+    let custom_data: DeployCloudflareResponse = serde_json::from_slice(&custom_bytes).unwrap();
     assert_eq!(custom_data.status, "succeeded");
-    assert_eq!(custom_data.app_slug, "generic-edge-app");
+    assert_eq!(custom_data.script_name, "generic-worker");
     assert_eq!(custom_data.evaluated_result, None);
 
     // 7. Web/HTTP ハンドラーパーツ (HTML 文字列) をデプロイ
     let web_part_name = "render_home_html";
-    let html_content = "<h1>Hello from definy Web Handler!</h1>";
+    let html_content = "<h1>Hello from definy Web Handler on Workers!</h1>";
     let web_part = definy_event::event::ModulePartEntry {
         name: web_part_name.into(),
         part_type: None,
@@ -890,15 +908,16 @@ async fn test_connect_rpc_deploy_deno_success() {
         .await
         .unwrap();
 
-    let web_deploy_req = DeployDenoRequest {
-        org_token: "test_deno_token_123".to_string(),
-        app_slug: Some("definy-web-service".to_string()),
+    let web_deploy_req = DeployCloudflareRequest {
+        api_token: "test_cf_token_123".to_string(),
+        account_id: None,
+        script_name: Some("definy-web-service".to_string()),
         wasm_hash: None,
         custom_script: None,
         compile_self_hosted: None,
         part_id: Some(web_part_name.to_string()),
     };
-    let web_res = handle_deploy_deno(
+    let web_res = handle_deploy_cloudflare(
         State(state.clone()),
         headers.clone(),
         Bytes::from(serde_json::to_vec(&web_deploy_req).unwrap()),
@@ -908,8 +927,39 @@ async fn test_connect_rpc_deploy_deno_success() {
     let web_bytes = axum::body::to_bytes(web_res.into_body(), 1024 * 1024)
         .await
         .unwrap();
-    let web_data: DeployDenoResponse = serde_json::from_slice(&web_bytes).unwrap();
+    let web_data: DeployCloudflareResponse = serde_json::from_slice(&web_bytes).unwrap();
     assert_eq!(web_data.status, "succeeded");
-    assert_eq!(web_data.app_slug, "definy-web-service");
+    assert_eq!(web_data.script_name, "definy-web-service");
     assert_eq!(web_data.evaluated_result, Some(html_content.to_string()));
+
+    // 8. ListCloudflareWorkers RPC - 空のトークン
+    let empty_list_req = ListCloudflareWorkersRequest {
+        api_token: "".to_string(),
+        account_id: None,
+    };
+    let empty_list_res = handle_list_cloudflare_workers(
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&empty_list_req).unwrap()),
+    )
+    .await;
+    assert_eq!(empty_list_res.status(), StatusCode::BAD_REQUEST);
+
+    // 9. ListCloudflareWorkers RPC - 有効なトークン
+    let list_req = ListCloudflareWorkersRequest {
+        api_token: "test_cf_token_123".to_string(),
+        account_id: None,
+    };
+    let list_res = handle_list_cloudflare_workers(
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&list_req).unwrap()),
+    )
+    .await;
+    assert_eq!(list_res.status(), StatusCode::OK);
+    let list_bytes = axum::body::to_bytes(list_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let list_data: ListCloudflareWorkersResponse = serde_json::from_slice(&list_bytes).unwrap();
+    assert_eq!(list_data.workers.len(), 2);
+    assert_eq!(list_data.workers[0].id, "existing-worker");
+    assert_eq!(list_data.workers[1].id, "worker-demo");
 }

@@ -1,15 +1,15 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, Expression, FunctionExpression, IfExpression,
-    LessThanOrEqualExpression, ListAppendExpression, ListGetExpression, ListLengthExpression,
-    ListLiteralExpression, MatchArm, ModulePartEntry, NumberExpression, PartReferenceExpression,
-    PartType, VariableExpression, derive_module_part_id,
+    AddExpression, Description, Expression, IfExpression, LessThanOrEqualExpression,
+    ListAppendExpression, ListGetExpression, ListLengthExpression, ListLiteralExpression, MatchArm,
+    ModulePartEntry, NumberExpression, PartType, VariableExpression, derive_module_part_id,
 };
 
 use super::helpers::{eval_sub, val_list};
 
 /// リスト式内の全要素の式を左から右へ動的評価して値リストを構築する関数パーツ
-/// `core.eval-list-items`: `list<expression> -> env -> number -> list<value> -> list<value>`
+/// `core.eval-list-items`: `(items: list<expression>, env: env, index: number, accum: list<value>) -> list<value>`
 pub fn create_eval_list_items_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let val_part_hash = derive_module_part_id(core_module_id, "value");
     let env_part_hash = derive_module_part_id(core_module_id, "env");
@@ -46,21 +46,15 @@ pub fn create_eval_list_items_part(core_module_id: &EventHashId) -> ModulePartEn
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        eval_list_items_hash,
-                    ))),
-                    argument: Box::new(items),
-                })),
-                argument: Box::new(env),
-            })),
-            argument: Box::new(next_index),
-        })),
-        argument: Box::new(next_accum),
-    });
+    let recurse = call_part(
+        &eval_list_items_hash,
+        &[
+            ("items", items),
+            ("env", env),
+            ("index", next_index),
+            ("accum", next_accum),
+        ],
+    );
 
     let body = Expression::If(IfExpression {
         condition: Box::new(at_end),
@@ -68,43 +62,23 @@ pub fn create_eval_list_items_part(core_module_id: &EventHashId) -> ModulePartEn
         else_expr: Box::new(recurse),
     });
 
-    let main_expr = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "items".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "env".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 2,
-                parameter_name: "index".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 3,
-                    parameter_name: "accum".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
-    });
-
     ModulePartEntry {
         name: "eval-list-items".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(PartType::TypePart(expr_type_hash)))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(env_part_hash)),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::List(Box::new(PartType::TypePart(
-                            val_part_hash.clone(),
-                        )))),
-                        return_type: Box::new(PartType::List(Box::new(PartType::TypePart(
-                            val_part_hash,
-                        )))),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "items",
+                    PartType::List(Box::new(PartType::TypePart(expr_type_hash))),
+                ),
+                ("env", PartType::TypePart(env_part_hash)),
+                ("index", PartType::Number),
+                (
+                    "accum",
+                    PartType::List(Box::new(PartType::TypePart(val_part_hash.clone()))),
+                ),
+            ],
+            PartType::List(Box::new(PartType::TypePart(val_part_hash))),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -116,7 +90,10 @@ pub fn create_eval_list_items_part(core_module_id: &EventHashId) -> ModulePartEn
             ),
         ]),
         content_hash: None,
-        expression: Some(main_expr),
+        expression: Some(fn_expr(
+            &[("items", 0), ("env", 1), ("index", 2), ("accum", 3)],
+            body,
+        )),
     }
 }
 
@@ -134,21 +111,18 @@ pub fn create_list_eval_arms(
     });
     let empty_accum = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
 
-    let eval_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        eval_list_items_hash,
-                    ))),
-                    argument: Box::new(items_expr),
-                })),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-        })),
-        argument: Box::new(empty_accum),
-    });
+    let eval_call = call_part(
+        &eval_list_items_hash,
+        &[
+            ("items", items_expr),
+            (
+                "env",
+                Expression::Variable(VariableExpression { variable_id: 1 }),
+            ),
+            ("index", Expression::Number(NumberExpression { value: 0 })),
+            ("accum", empty_accum),
+        ],
+    );
 
     arms.push(MatchArm {
         tag: "list".into(),

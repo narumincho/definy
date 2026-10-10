@@ -13,40 +13,39 @@ service DeployService {
   // ListDeployments retrieves recent deployment records.
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
 
-  // DeployDeno deploys any web application, custom TypeScript script, or WebAssembly service directly to Deno Deploy via REST API v2.
-  rpc DeployDeno(DeployDenoRequest) returns (DeployDenoResponse);
+  // DeployCloudflare deploys any web application, custom script, or WebAssembly service directly to Cloudflare Workers via REST API v4.
+  rpc DeployCloudflare(DeployCloudflareRequest) returns (DeployCloudflareResponse);
+
+  // ListCloudflareWorkers lists Workers scripts associated with the given Cloudflare API token.
+  rpc ListCloudflareWorkers(ListCloudflareWorkersRequest) returns (ListCloudflareWorkersResponse);
 }
 
-message DeployDenoRequest {
-  // Deno Deploy Organization or Personal Access Token
-  string org_token = 1;
-  // Target app slug (optional; created if omitted or non-existent)
-  optional string app_slug = 2;
+message DeployCloudflareRequest {
+  // Cloudflare API Token (Workers Scripts Write permissions)
+  string api_token = 1;
+  // Cloudflare Account ID (optional; automatically resolved from token if omitted)
+  optional string account_id = 2;
+  // Target worker script name (optional; generated if omitted)
+  optional string script_name = 3;
   // Content hash of virtual WebAssembly binary to execute in edge runtime (optional)
-  optional string wasm_hash = 3;
-  // Custom main.ts TypeScript/JavaScript entrypoint script (optional; executes any web service or API)
-  optional string custom_script = 4;
+  optional string wasm_hash = 4;
+  // Custom JavaScript/TypeScript worker entrypoint script (optional; executes any web service or API)
+  optional string custom_script = 5;
   // Compile expression using self-hosted compiler core.compile-to-wasm (optional fallback)
-  optional bool compile_self_hosted = 5;
+  optional bool compile_self_hosted = 6;
   // ID of a definy Part whose expression should be compiled to WebAssembly (optional)
-  optional string part_id = 6;
+  optional string part_id = 7;
 }
 
-message DeployDenoResponse {
-  // Deno Deploy App ID
-  string app_id = 1;
-  // Deno Deploy App Slug
-  string app_slug = 2;
-  // Created Revision ID
-  string revision_id = 3;
-  // Deployment status (e.g. "succeeded", "queued", "building")
-  string status = 4;
-  // Primary URL to access the deployed instance
-  string url = 5;
-  // All assigned hostnames
-  repeated string hostnames = 6;
+message DeployCloudflareResponse {
+  // Cloudflare Worker Script Name
+  string script_name = 1;
+  // Deployment status (e.g. "succeeded")
+  string status = 2;
+  // Primary URL to access the deployed worker (e.g. "https://<script>.<subdomain>.workers.dev")
+  string url = 3;
   // Result evaluated by self-hosted compiler WebAssembly binary (optional)
-  optional string evaluated_result = 7;
+  optional string evaluated_result = 4;
 }
 
 message DeployInstanceRequest {
@@ -91,7 +90,7 @@ message DeploymentItem {
   string region = 6;
   string created_at_rfc3339 = 7;
   optional string wasm_hash = 8;
-  // Cloud provider (e.g. "flyio", "deno_deploy")
+  // Cloud provider (e.g. "flyio", "cloudflare_workers")
   optional string provider = 9;
 }
 
@@ -101,4 +100,21 @@ message ListDeploymentsRequest {
 
 message ListDeploymentsResponse {
   repeated DeploymentItem deployments = 1;
+}
+
+message ListCloudflareWorkersRequest {
+  // Cloudflare API Token (Workers Scripts Read permissions)
+  string api_token = 1;
+  // Cloudflare Account ID (optional; automatically resolved from token if omitted)
+  optional string account_id = 2;
+}
+
+message CloudflareWorkerItem {
+  string id = 1;
+  optional string created_on = 2;
+  optional string modified_on = 3;
+}
+
+message ListCloudflareWorkersResponse {
+  repeated CloudflareWorkerItem workers = 1;
 }

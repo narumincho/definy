@@ -1,11 +1,12 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, AndExpression, BooleanExpression, CallExpression, Description, EqualExpression,
-    Expression, FunctionExpression, IfExpression, LessThanOrEqualExpression, ListGetExpression,
-    ListLengthExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
-    PartReferenceExpression, PartType, RecordFieldType, RecordGetExpression, TypeListExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, TypeUnionExpression, TypeUnionVariant,
-    VariableExpression, derive_module_part_id,
+    AddExpression, AndExpression, BooleanExpression, Description, EqualExpression, Expression,
+    IfExpression, LessThanOrEqualExpression, ListGetExpression, ListLengthExpression, MatchArm,
+    MatchExpression, ModulePartEntry, NumberExpression, PartReferenceExpression, PartType,
+    RecordFieldType, RecordGetExpression, TypeListExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, TypeUnionExpression, TypeUnionVariant, VariableExpression,
+    derive_module_part_id,
 };
 
 /// 型検査エラーを表す直和型 (`core.type-error`)
@@ -235,10 +236,12 @@ pub fn create_type_env_part(core_module_id: &EventHashId) -> ModulePartEntry {
     }
 }
 
-/// `core.type-equals`: `type-ast -> type-ast -> boolean`
+/// `core.type-equals`: `(t1: type-ast, t2: type-ast) -> Boolean`
 pub fn create_type_equals_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_ast_part_hash = derive_module_part_id(core_module_id, "type-ast");
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
+    let function_parameters_equals_hash =
+        derive_module_part_id(core_module_id, "type-equals-function-parameters");
     let record_fields_equals_hash =
         derive_module_part_id(core_module_id, "type-equals-record-fields");
     let union_variants_equals_hash =
@@ -273,7 +276,18 @@ pub fn create_type_equals_part(core_module_id: &EventHashId) -> ModulePartEntry 
         "function",
         Some(5),
         Expression::And(AndExpression {
-            left: Box::new(compare_field(4, 5, "parameter")),
+            left: Box::new(call_type_equals_function_parameters(
+                &function_parameters_equals_hash,
+                Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(Expression::Variable(VariableExpression { variable_id: 4 })),
+                    key: "parameters".into(),
+                }),
+                Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(Expression::Variable(VariableExpression { variable_id: 5 })),
+                    key: "parameters".into(),
+                }),
+                Expression::Number(NumberExpression { value: 0 }),
+            )),
             right: Box::new(compare_field(4, 5, "return_type")),
         }),
     );
@@ -312,108 +326,223 @@ pub fn create_type_equals_part(core_module_id: &EventHashId) -> ModulePartEntry 
         ),
     );
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 0,
-        parameter_name: "t1".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "t2".into(),
-            body: Box::new(Expression::Match(MatchExpression {
-                target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
-                arms: vec![
-                    MatchArm {
-                        tag: "number".into(),
-                        variable_id: None,
-                        variable_name: None,
-                        body: Box::new(compare_second_tag(
-                            "number",
-                            None,
-                            Expression::Boolean(BooleanExpression { value: true }),
-                        )),
-                    },
-                    MatchArm {
-                        tag: "string".into(),
-                        variable_id: None,
-                        variable_name: None,
-                        body: Box::new(compare_second_tag(
-                            "string",
-                            None,
-                            Expression::Boolean(BooleanExpression { value: true }),
-                        )),
-                    },
-                    MatchArm {
-                        tag: "boolean".into(),
-                        variable_id: None,
-                        variable_name: None,
-                        body: Box::new(compare_second_tag(
-                            "boolean",
-                            None,
-                            Expression::Boolean(BooleanExpression { value: true }),
-                        )),
-                    },
-                    MatchArm {
-                        tag: "type".into(),
-                        variable_id: None,
-                        variable_name: None,
-                        body: Box::new(compare_second_tag(
-                            "type",
-                            None,
-                            Expression::Boolean(BooleanExpression { value: true }),
-                        )),
-                    },
-                    MatchArm {
-                        tag: "list".into(),
-                        variable_id: Some(2),
-                        variable_name: None,
-                        body: Box::new(compare_list_payloads),
-                    },
-                    MatchArm {
-                        tag: "function".into(),
-                        variable_id: Some(4),
-                        variable_name: None,
-                        body: Box::new(compare_function_payloads),
-                    },
-                    MatchArm {
-                        tag: "record".into(),
-                        variable_id: Some(6),
-                        variable_name: None,
-                        body: Box::new(compare_record_payloads),
-                    },
-                    MatchArm {
-                        tag: "reference".into(),
-                        variable_id: Some(8),
-                        variable_name: None,
-                        body: Box::new(compare_reference_payloads),
-                    },
-                    MatchArm {
-                        tag: "union".into(),
-                        variable_id: Some(10),
-                        variable_name: None,
-                        body: Box::new(compare_union_payloads),
-                    },
-                ],
-                default: Some(Box::new(Expression::Boolean(BooleanExpression {
-                    value: false,
-                }))),
-            })),
-        })),
-    });
+    let body = fn_expr(
+        &[("t1", 0), ("t2", 1)],
+        Expression::Match(MatchExpression {
+            target: Box::new(Expression::Variable(VariableExpression { variable_id: 0 })),
+            arms: vec![
+                MatchArm {
+                    tag: "number".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(compare_second_tag(
+                        "number",
+                        None,
+                        Expression::Boolean(BooleanExpression { value: true }),
+                    )),
+                },
+                MatchArm {
+                    tag: "string".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(compare_second_tag(
+                        "string",
+                        None,
+                        Expression::Boolean(BooleanExpression { value: true }),
+                    )),
+                },
+                MatchArm {
+                    tag: "boolean".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(compare_second_tag(
+                        "boolean",
+                        None,
+                        Expression::Boolean(BooleanExpression { value: true }),
+                    )),
+                },
+                MatchArm {
+                    tag: "type".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(compare_second_tag(
+                        "type",
+                        None,
+                        Expression::Boolean(BooleanExpression { value: true }),
+                    )),
+                },
+                MatchArm {
+                    tag: "list".into(),
+                    variable_id: Some(2),
+                    variable_name: None,
+                    body: Box::new(compare_list_payloads),
+                },
+                MatchArm {
+                    tag: "function".into(),
+                    variable_id: Some(4),
+                    variable_name: None,
+                    body: Box::new(compare_function_payloads),
+                },
+                MatchArm {
+                    tag: "record".into(),
+                    variable_id: Some(6),
+                    variable_name: None,
+                    body: Box::new(compare_record_payloads),
+                },
+                MatchArm {
+                    tag: "reference".into(),
+                    variable_id: Some(8),
+                    variable_name: None,
+                    body: Box::new(compare_reference_payloads),
+                },
+                MatchArm {
+                    tag: "union".into(),
+                    variable_id: Some(10),
+                    variable_name: None,
+                    body: Box::new(compare_union_payloads),
+                },
+            ],
+            default: Some(Box::new(Expression::Boolean(BooleanExpression {
+                value: false,
+            }))),
+        }),
+    );
 
     ModulePartEntry {
         name: "type-equals".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(type_ast_part_hash.clone())),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(type_ast_part_hash)),
-                return_type: Box::new(PartType::Boolean),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("t1", PartType::TypePart(type_ast_part_hash.clone())),
+                ("t2", PartType::TypePart(type_ast_part_hash)),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Compare all type-ast forms structurally"),
             ("ja", "すべての型 AST 形式を構造的に比較"),
         ]),
         content_hash: None,
         expression: Some(body),
+    }
+}
+
+pub fn create_type_equals_function_parameters_part(
+    core_module_id: &EventHashId,
+) -> ModulePartEntry {
+    let type_ast_hash = derive_module_part_id(core_module_id, "type-ast");
+    let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
+    let function_parameters_equals_hash =
+        derive_module_part_id(core_module_id, "type-equals-function-parameters");
+
+    let left_params = Expression::Variable(VariableExpression { variable_id: 0 });
+    let right_params = Expression::Variable(VariableExpression { variable_id: 1 });
+    let index = Expression::Variable(VariableExpression { variable_id: 2 });
+    let left_done = Expression::LessThanOrEqual(LessThanOrEqualExpression {
+        left: Box::new(Expression::ListLength(ListLengthExpression {
+            value: Box::new(left_params.clone()),
+        })),
+        right: Box::new(index.clone()),
+    });
+    let right_done = Expression::LessThanOrEqual(LessThanOrEqualExpression {
+        left: Box::new(Expression::ListLength(ListLengthExpression {
+            value: Box::new(right_params.clone()),
+        })),
+        right: Box::new(index.clone()),
+    });
+    let left_param = Expression::ListGet(ListGetExpression {
+        list: Box::new(left_params.clone()),
+        index: Box::new(index.clone()),
+    });
+    let right_param = Expression::ListGet(ListGetExpression {
+        list: Box::new(right_params.clone()),
+        index: Box::new(index.clone()),
+    });
+    let left_name = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(left_param.clone()),
+        key: "name".into(),
+    });
+    let right_name = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(right_param.clone()),
+        key: "name".into(),
+    });
+    let names_equal = Expression::Equal(EqualExpression {
+        left: Box::new(left_name),
+        right: Box::new(right_name),
+    });
+    let left_param_type = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(left_param),
+        key: "type".into(),
+    });
+    let right_param_type = Expression::RecordGet(RecordGetExpression {
+        record: Box::new(right_param),
+        key: "type".into(),
+    });
+    let param_types_equal = call_type_equals(&type_equals_hash, left_param_type, right_param_type);
+    let next_index = Expression::Add(AddExpression {
+        left: Box::new(index),
+        right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+    });
+    let compare_rest = call_type_equals_function_parameters(
+        &function_parameters_equals_hash,
+        left_params.clone(),
+        right_params.clone(),
+        next_index,
+    );
+    let current_params_equal = Expression::If(IfExpression {
+        condition: Box::new(names_equal),
+        then_expr: Box::new(Expression::If(IfExpression {
+            condition: Box::new(param_types_equal),
+            then_expr: Box::new(compare_rest),
+            else_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
+        })),
+        else_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
+    });
+    let body = Expression::If(IfExpression {
+        condition: Box::new(left_done),
+        then_expr: Box::new(right_done.clone()),
+        else_expr: Box::new(Expression::If(IfExpression {
+            condition: Box::new(right_done),
+            then_expr: Box::new(Expression::Boolean(BooleanExpression { value: false })),
+            else_expr: Box::new(current_params_equal),
+        })),
+    });
+
+    let param_type = PartType::Record(vec![
+        RecordFieldType {
+            key: "name".into(),
+            value: Box::new(PartType::String),
+        },
+        RecordFieldType {
+            key: "type".into(),
+            value: Box::new(PartType::TypePart(type_ast_hash)),
+        },
+    ]);
+    ModulePartEntry {
+        name: "type-equals-function-parameters".into(),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "left_parameters",
+                    PartType::List(Box::new(param_type.clone())),
+                ),
+                ("right_parameters", PartType::List(Box::new(param_type))),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
+        description: Description::localized(vec![
+            ("en", "Recursively compare ordered function type parameters"),
+            ("ja", "関数型のパラメータ一覧を順序付きで再帰比較"),
+        ]),
+        content_hash: None,
+        expression: Some(fn_expr(
+            &[
+                ("left_parameters", 0),
+                ("right_parameters", 1),
+                ("index", 2),
+            ],
+            body,
+        )),
     }
 }
 
@@ -508,34 +637,23 @@ pub fn create_type_equals_record_fields_part(core_module_id: &EventHashId) -> Mo
     ]);
     ModulePartEntry {
         name: "type-equals-record-fields".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(field_type.clone()))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(field_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("left_fields", PartType::List(Box::new(field_type.clone()))),
+                ("right_fields", PartType::List(Box::new(field_type))),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Recursively compare ordered record type fields"),
             ("ja", "レコード型のフィールド一覧を順序付きで再帰比較"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "left_fields".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "right_fields".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("left_fields", 0), ("right_fields", 1), ("index", 2)],
+            body,
+        )),
     }
 }
 
@@ -677,34 +795,26 @@ pub fn create_type_equals_union_variants_part(core_module_id: &EventHashId) -> M
     ]);
     ModulePartEntry {
         name: "type-equals-union-variants".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(variant_type.clone()))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::List(Box::new(variant_type))),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Boolean),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                (
+                    "left_variants",
+                    PartType::List(Box::new(variant_type.clone())),
+                ),
+                ("right_variants", PartType::List(Box::new(variant_type))),
+                ("index", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             ("en", "Recursively compare ordered union type variants"),
             ("ja", "union 型の variant 一覧を順序付きで再帰比較"),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "left_variants".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "right_variants".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("left_variants", 0), ("right_variants", 1), ("index", 2)],
+            body,
+        )),
     }
 }
 
@@ -713,15 +823,23 @@ fn call_type_equals(
     left: Expression,
     right: Expression,
 ) -> Expression {
-    Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                type_equals_hash.clone(),
-            ))),
-            argument: Box::new(left),
-        })),
-        argument: Box::new(right),
-    })
+    call_part(type_equals_hash, &[("t1", left), ("t2", right)])
+}
+
+fn call_type_equals_function_parameters(
+    helper_hash: &EventHashId,
+    left: Expression,
+    right: Expression,
+    index: Expression,
+) -> Expression {
+    call_part(
+        helper_hash,
+        &[
+            ("left_parameters", left),
+            ("right_parameters", right),
+            ("index", index),
+        ],
+    )
 }
 
 fn call_type_equals_record_fields(
@@ -730,18 +848,14 @@ fn call_type_equals_record_fields(
     right: Expression,
     index: Expression,
 ) -> Expression {
-    Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    helper_hash.clone(),
-                ))),
-                argument: Box::new(left),
-            })),
-            argument: Box::new(right),
-        })),
-        argument: Box::new(index),
-    })
+    call_part(
+        helper_hash,
+        &[
+            ("left_fields", left),
+            ("right_fields", right),
+            ("index", index),
+        ],
+    )
 }
 
 fn call_type_equals_union_variants(
@@ -750,16 +864,12 @@ fn call_type_equals_union_variants(
     right: Expression,
     index: Expression,
 ) -> Expression {
-    Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    helper_hash.clone(),
-                ))),
-                argument: Box::new(left),
-            })),
-            argument: Box::new(right),
-        })),
-        argument: Box::new(index),
-    })
+    call_part(
+        helper_hash,
+        &[
+            ("left_variants", left),
+            ("right_variants", right),
+            ("index", index),
+        ],
+    )
 }

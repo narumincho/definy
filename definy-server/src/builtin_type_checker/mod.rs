@@ -1,5 +1,6 @@
 pub mod assignable;
 pub mod basic_arms;
+pub mod call_args;
 pub mod check;
 pub mod check_against;
 pub mod control_arms;
@@ -14,6 +15,7 @@ pub mod union_check;
 pub mod union_lookup;
 
 pub use assignable::*;
+pub use call_args::*;
 pub use check::*;
 pub use check_against::*;
 pub use env::*;

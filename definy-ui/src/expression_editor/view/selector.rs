@@ -10,7 +10,7 @@ use crate::part_projection::collect_part_snapshots;
 
 use super::super::diagnostics::constructor_default_value_from_type_part;
 use super::super::mutation::{apply_selection, path_to_key};
-use super::super::types::{ExpressionType, ScopeVariable};
+use super::super::types::{ExpressionType, FunctionParameterTypeInfo, ScopeVariable};
 
 pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep]) -> bool {
     if allow_kind_change {
@@ -421,7 +421,10 @@ fn classify_option_type(
     }
     if opt_val == "expr:function" {
         return Some(ExpressionType::Function {
-            parameter: Box::new(ExpressionType::Unknown),
+            parameters: vec![FunctionParameterTypeInfo {
+                name: "x".into(),
+                r#type: ExpressionType::Unknown,
+            }],
             return_type: Box::new(ExpressionType::Unknown),
         });
     }

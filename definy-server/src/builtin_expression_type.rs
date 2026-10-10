@@ -3,14 +3,15 @@
 //! definy の構文木（AST）そのものを definy の直和型（`TypeUnion`）として定義し、
 //! メタプログラミングや自己評価（メタ循環評価）を可能にします。
 
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, DivideExpression, EqualExpression, Expression,
-    FunctionExpression, IfExpression, LessThanExpression, MatchArm, MatchExpression,
-    ModulePartEntry, MultiplyExpression, NumberExpression, PartReferenceExpression, PartType,
-    RecordGetExpression, RemainderExpression, SubtractExpression, TypeListExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, TypeUnionExpression, TypeUnionVariant,
-    VariableExpression, VariantExpression, derive_module_part_id,
+    AddExpression, Description, DivideExpression, EqualExpression, Expression, IfExpression,
+    LessThanExpression, MatchArm, MatchExpression, ModulePartEntry, MultiplyExpression,
+    NumberExpression, PartReferenceExpression, PartType, RecordGetExpression, RemainderExpression,
+    SubtractExpression, TypeListExpression, TypeLiteralExpression, TypeLiteralItemExpression,
+    TypeUnionExpression, TypeUnionVariant, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
 /// definy AST 式型 (`core.expression`) パーツを生成します。
@@ -85,8 +86,23 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
                     payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
                         items: vec![
                             TypeLiteralItemExpression {
-                                key: "parameter".into(),
-                                value: Box::new(expr_ref.clone()),
+                                key: "parameters".into(),
+                                value: Box::new(Expression::TypeList(TypeListExpression {
+                                    item_type: Box::new(Expression::TypeLiteral(
+                                        TypeLiteralExpression {
+                                            items: vec![
+                                                TypeLiteralItemExpression {
+                                                    key: "name".into(),
+                                                    value: Box::new(Expression::TypeString),
+                                                },
+                                                TypeLiteralItemExpression {
+                                                    key: "type".into(),
+                                                    value: Box::new(expr_ref.clone()),
+                                                },
+                                            ],
+                                        },
+                                    )),
+                                })),
                             },
                             TypeLiteralItemExpression {
                                 key: "return_type".into(),
@@ -184,8 +200,23 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
                                 value: Box::new(expr_ref.clone()),
                             },
                             TypeLiteralItemExpression {
-                                key: "argument".into(),
-                                value: Box::new(expr_ref.clone()),
+                                key: "arguments".into(),
+                                value: Box::new(Expression::TypeList(TypeListExpression {
+                                    item_type: Box::new(Expression::TypeLiteral(
+                                        TypeLiteralExpression {
+                                            items: vec![
+                                                TypeLiteralItemExpression {
+                                                    key: "name".into(),
+                                                    value: Box::new(Expression::TypeString),
+                                                },
+                                                TypeLiteralItemExpression {
+                                                    key: "value".into(),
+                                                    value: Box::new(expr_ref.clone()),
+                                                },
+                                            ],
+                                        },
+                                    )),
+                                })),
                             },
                         ],
                     }))),
@@ -204,8 +235,23 @@ pub fn create_expression_ast_part(core_module_id: &EventHashId) -> ModulePartEnt
                     payload_type: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
                         items: vec![
                             TypeLiteralItemExpression {
-                                key: "parameter_variable_id".into(),
-                                value: Box::new(Expression::TypeNumber),
+                                key: "parameters".into(),
+                                value: Box::new(Expression::TypeList(TypeListExpression {
+                                    item_type: Box::new(Expression::TypeLiteral(
+                                        TypeLiteralExpression {
+                                            items: vec![
+                                                TypeLiteralItemExpression {
+                                                    key: "parameter_id".into(),
+                                                    value: Box::new(Expression::TypeNumber),
+                                                },
+                                                TypeLiteralItemExpression {
+                                                    key: "parameter_name".into(),
+                                                    value: Box::new(Expression::TypeString),
+                                                },
+                                            ],
+                                        },
+                                    )),
+                                })),
                             },
                             TypeLiteralItemExpression {
                                 key: "body".into(),
@@ -384,17 +430,18 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let eval_ast_hash = derive_module_part_id(core_module_id, "eval-ast");
 
     fn recursive_call(eval_ast_hash: &EventHashId, var_id: i64, key: &str) -> Expression {
-        Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                eval_ast_hash.clone(),
-            ))),
-            argument: Box::new(Expression::RecordGet(RecordGetExpression {
-                record: Box::new(Expression::Variable(VariableExpression {
-                    variable_id: var_id,
-                })),
-                key: key.into(),
-            })),
-        })
+        call_part(
+            eval_ast_hash,
+            &[(
+                "e",
+                Expression::RecordGet(RecordGetExpression {
+                    record: Box::new(Expression::Variable(VariableExpression {
+                        variable_id: var_id,
+                    })),
+                    key: key.into(),
+                }),
+            )],
+        )
     }
 
     let binary_eval =
@@ -407,10 +454,10 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
 
     ModulePartEntry {
         name: "eval-ast".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::TypePart(expr_type_part_hash.clone())),
-            return_type: Box::new(PartType::Number),
-        }),
+        part_type: Some(fn_type(
+            &[("e", PartType::TypePart(expr_type_part_hash.clone()))],
+            PartType::Number,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -422,10 +469,9 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 1,
-            parameter_name: "e".into(),
-            body: Box::new(Expression::Match(MatchExpression {
+        expression: Some(fn_expr(
+            &[("e", 1)],
+            Expression::Match(MatchExpression {
                 target: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 arms: vec![
                     MatchArm {
@@ -523,8 +569,8 @@ pub fn create_eval_ast_part(core_module_id: &EventHashId) -> ModulePartEntry {
                     },
                 ],
                 default: Some(Box::new(Expression::Number(NumberExpression { value: 0 }))),
-            })),
-        })),
+            }),
+        )),
     }
 }
 
@@ -584,11 +630,6 @@ pub fn create_sample_ast_calc_part(core_module_id: &EventHashId) -> ModulePartEn
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                eval_ast_part_hash,
-            ))),
-            argument: Box::new(add),
-        })),
+        expression: Some(call_part(&eval_ast_part_hash, &[("e", add)])),
     }
 }

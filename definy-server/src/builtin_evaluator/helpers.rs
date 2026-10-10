@@ -1,20 +1,13 @@
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Expression, PartReferenceExpression, TypeLiteralExpression,
-    TypeLiteralItemExpression, VariantExpression,
+    Expression, TypeLiteralExpression, TypeLiteralItemExpression, VariantExpression,
 };
 
-/// `eval-value(sub_expr)(env)` のカリー化呼び出し式を生成します。
+use crate::ast_builder::call_part;
+
+/// `eval-value(sub_expr, env)` の呼び出し式を生成します。
 pub fn eval_sub(eval_hash: &EventHashId, sub_expr: Expression, env_expr: Expression) -> Expression {
-    Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                eval_hash.clone(),
-            ))),
-            argument: Box::new(sub_expr),
-        })),
-        argument: Box::new(env_expr),
-    })
+    call_part(eval_hash, &[("expr", sub_expr), ("env", env_expr)])
 }
 
 /// 数値動的値 `Value::Number` を生成する式です。

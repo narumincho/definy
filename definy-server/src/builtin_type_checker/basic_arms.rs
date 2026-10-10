@@ -1,7 +1,8 @@
+use crate::ast_builder::call_part;
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Expression, IfExpression, MatchArm, MatchExpression, PartReferenceExpression,
-    RecordGetExpression, VariableExpression, VariantExpression,
+    Expression, IfExpression, MatchArm, MatchExpression, RecordGetExpression, VariableExpression,
+    VariantExpression,
 };
 
 use super::helpers::{check_sub, error_mismatch, ok_type, type_bool, type_num, type_str};
@@ -48,17 +49,18 @@ pub fn create_basic_check_arms(
                         variable_id: Some(r_ok_var),
                         variable_name: Some("r_ok".into()),
                         body: Box::new(Expression::If(IfExpression {
-                            condition: Box::new(Expression::Call(CallExpression {
-                                function: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression::new(type_equals_hash.clone()),
-                                    )),
-                                    argument: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: r_ok_var,
-                                    })),
-                                })),
-                                argument: Box::new(operand_and_result_type()),
-                            })),
+                            condition: Box::new(call_part(
+                                type_equals_hash,
+                                &[
+                                    (
+                                        "t1",
+                                        Expression::Variable(VariableExpression {
+                                            variable_id: r_ok_var,
+                                        }),
+                                    ),
+                                    ("t2", operand_and_result_type()),
+                                ],
+                            )),
                             then_expr: Box::new(ok_type(operand_and_result_type())),
                             else_expr: Box::new(error_mismatch(
                                 operand_and_result_type(),
@@ -92,17 +94,18 @@ pub fn create_basic_check_arms(
                         variable_id: Some(l_ok_var),
                         variable_name: Some("l_ok".into()),
                         body: Box::new(Expression::If(IfExpression {
-                            condition: Box::new(Expression::Call(CallExpression {
-                                function: Box::new(Expression::Call(CallExpression {
-                                    function: Box::new(Expression::PartReference(
-                                        PartReferenceExpression::new(type_equals_hash.clone()),
-                                    )),
-                                    argument: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: l_ok_var,
-                                    })),
-                                })),
-                                argument: Box::new(operand_and_result_type()),
-                            })),
+                            condition: Box::new(call_part(
+                                type_equals_hash,
+                                &[
+                                    (
+                                        "t1",
+                                        Expression::Variable(VariableExpression {
+                                            variable_id: l_ok_var,
+                                        }),
+                                    ),
+                                    ("t2", operand_and_result_type()),
+                                ],
+                            )),
                             then_expr: Box::new(check_r_match),
                             else_expr: Box::new(error_mismatch(
                                 operand_and_result_type(),
@@ -203,19 +206,23 @@ pub fn create_basic_check_arms(
                     variable_id: Some(r_t_var),
                     variable_name: Some("r_ok".into()),
                     body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::Call(CallExpression {
-                                function: Box::new(Expression::PartReference(
-                                    PartReferenceExpression::new(type_equals_hash.clone()),
-                                )),
-                                argument: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: l_t_var,
-                                })),
-                            })),
-                            argument: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: r_t_var,
-                            })),
-                        })),
+                        condition: Box::new(call_part(
+                            type_equals_hash,
+                            &[
+                                (
+                                    "t1",
+                                    Expression::Variable(VariableExpression {
+                                        variable_id: l_t_var,
+                                    }),
+                                ),
+                                (
+                                    "t2",
+                                    Expression::Variable(VariableExpression {
+                                        variable_id: r_t_var,
+                                    }),
+                                ),
+                            ],
+                        )),
                         then_expr: Box::new(ok_type(type_bool())),
                         else_expr: Box::new(error_mismatch(
                             Expression::Variable(VariableExpression {
@@ -309,17 +316,18 @@ pub fn create_basic_check_arms(
                     variable_id: Some(v_ok_var),
                     variable_name: Some("v_ok".into()),
                     body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::Call(CallExpression {
-                            function: Box::new(Expression::Call(CallExpression {
-                                function: Box::new(Expression::PartReference(
-                                    PartReferenceExpression::new(type_equals_hash.clone()),
-                                )),
-                                argument: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: v_ok_var,
-                                })),
-                            })),
-                            argument: Box::new(type_bool()),
-                        })),
+                        condition: Box::new(call_part(
+                            type_equals_hash,
+                            &[
+                                (
+                                    "t1",
+                                    Expression::Variable(VariableExpression {
+                                        variable_id: v_ok_var,
+                                    }),
+                                ),
+                                ("t2", type_bool()),
+                            ],
+                        )),
                         then_expr: Box::new(ok_type(type_bool())),
                         else_expr: Box::new(error_mismatch(
                             type_bool(),

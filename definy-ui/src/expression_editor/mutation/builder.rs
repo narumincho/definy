@@ -160,13 +160,18 @@ pub(crate) fn default_expression_for_compiler_builtin(
             body: var_expr(next_variable_id),
         }),
         CompilerBuiltin::Function => Expression::Function(FunctionExpression {
-            parameter_id: next_variable_id,
-            parameter_name: "x".into(),
+            parameters: vec![FunctionParameter {
+                parameter_id: next_variable_id,
+                parameter_name: "x".into(),
+            }],
             body: var_expr(next_variable_id),
         }),
         CompilerBuiltin::Call => Expression::Call(CallExpression {
             function: num(0),
-            argument: num(0),
+            arguments: vec![CallArgument {
+                name: "x".into(),
+                value: num(0),
+            }],
         }),
     }
 }
@@ -246,7 +251,10 @@ pub(crate) fn build_expression_from_selection(
             key: "field".into(),
         }),
         "expr:type:function" => Expression::TypeFunction(TypeFunctionExpression {
-            parameter: Box::new(Expression::TypeNumber),
+            parameters: vec![TypeFunctionParameter {
+                name: "x".into(),
+                r#type: Box::new(Expression::TypeNumber),
+            }],
             return_type: Box::new(Expression::TypeNumber),
         }),
         "expr:type:union" => Expression::TypeUnion(TypeUnionExpression {

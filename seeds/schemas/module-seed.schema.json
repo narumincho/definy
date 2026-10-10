@@ -123,15 +123,33 @@
         }
       }
     },
+    "CallArgument": {
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
     "CallExpression": {
       "type": "object",
       "required": [
-        "argument",
+        "arguments",
         "function"
       ],
       "properties": {
-        "argument": {
-          "$ref": "#/definitions/Expression"
+        "arguments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CallArgument"
+          }
         },
         "function": {
           "$ref": "#/definitions/Expression"
@@ -821,19 +839,48 @@
       "type": "object",
       "required": [
         "body",
-        "parameter_id",
-        "parameter_name"
+        "parameters"
       ],
       "properties": {
         "body": {
           "$ref": "#/definitions/Expression"
         },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FunctionParameter"
+          }
+        }
+      }
+    },
+    "FunctionParameter": {
+      "type": "object",
+      "required": [
+        "parameter_id",
+        "parameter_name"
+      ],
+      "properties": {
         "parameter_id": {
           "type": "integer",
           "format": "int64"
         },
         "parameter_name": {
           "type": "string"
+        }
+      }
+    },
+    "FunctionParameterType": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/PartType"
         }
       }
     },
@@ -1261,12 +1308,15 @@
             "function": {
               "type": "object",
               "required": [
-                "parameter",
+                "parameters",
                 "return_type"
               ],
               "properties": {
-                "parameter": {
-                  "$ref": "#/definitions/PartType"
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/FunctionParameterType"
+                  }
                 },
                 "return_type": {
                   "$ref": "#/definitions/PartType"
@@ -1468,14 +1518,32 @@
     "TypeFunctionExpression": {
       "type": "object",
       "required": [
-        "parameter",
+        "parameters",
         "return_type"
       ],
       "properties": {
-        "parameter": {
-          "$ref": "#/definitions/Expression"
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TypeFunctionParameter"
+          }
         },
         "return_type": {
+          "$ref": "#/definitions/Expression"
+        }
+      }
+    },
+    "TypeFunctionParameter": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
           "$ref": "#/definitions/Expression"
         }
       }

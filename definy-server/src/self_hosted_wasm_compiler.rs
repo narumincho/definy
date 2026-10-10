@@ -4,8 +4,8 @@
 use chrono::DateTime;
 use definy_core::expression_eval::Value;
 use definy_event::event::{
-    AccountId, AddExpression, CallExpression, Description, Event, EventContent, Expression,
-    ModuleCommitEvent, NumberExpression, PartReferenceExpression, derive_module_id,
+    AccountId, AddExpression, CallArgument, CallExpression, Description, Event, EventContent,
+    Expression, ModuleCommitEvent, NumberExpression, PartReferenceExpression, derive_module_id,
     derive_module_part_id,
 };
 use definy_event::{EventHashId, VerifyAndDeserializeError};
@@ -103,7 +103,10 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             compile_to_wasm_hash,
         ))),
-        argument: Box::new(self_hosted_ast),
+        arguments: vec![CallArgument {
+            name: "expr".into(),
+            value: Box::new(self_hosted_ast),
+        }],
     });
 
     // definy 実行系上で自己記述コンパイラを実行
@@ -339,38 +342,37 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live DENO_DEPLOY_TOKEN"]
-    async fn test_live_self_hosted_compiler_deploy_to_deno() {
-        let token = std::env::var("DENO_DEPLOY_TOKEN").expect("DENO_DEPLOY_TOKEN required");
+    #[ignore = "requires live CLOUDFLARE_API_TOKEN"]
+    async fn test_live_self_hosted_compiler_deploy_to_cloudflare() {
+        let token = std::env::var("CLOUDFLARE_API_TOKEN")
+            .or_else(|_| std::env::var("CF_API_TOKEN"))
+            .expect("CLOUDFLARE_API_TOKEN required");
         let wasm_bytes = compile_sample_to_wasm().expect("Self-hosted compiler failed");
         assert_eq!(execute_compiled_wasm(&wasm_bytes).unwrap(), 42);
 
-        let config = crate::deno_deploy::DenoDeployConfig::new(token);
-        let client = crate::deno_deploy::DenoDeployClient::new(config);
+        let config = crate::cloudflare_workers::CloudflareWorkersConfig::new(token);
+        let client = crate::cloudflare_workers::CloudflareWorkersClient::new(config);
 
         let res = client
             .deploy(Some("definy-self-hosted-edge"), Some(&wasm_bytes), None)
             .await
-            .expect("Live deploy to Deno Deploy should succeed");
+            .expect("Live deploy to Cloudflare Workers should succeed");
 
         println!("Deployed successfully! URL: {}", res.url);
-        println!("Hostnames: {:?}", res.hostnames);
 
         let http_client = reqwest::Client::new();
-        let eval_url = format!("{}/api/eval", res.url);
         let eval_res: serde_json::Value = http_client
-            .get(&eval_url)
+            .get(&res.url)
             .send()
             .await
-            .expect("Failed to query edge /api/eval")
+            .expect("Failed to query worker endpoint")
             .json()
             .await
-            .expect("Failed to parse JSON from /api/eval");
+            .expect("Failed to parse JSON from worker");
 
-        println!("Edge /api/eval response: {:?}", eval_res);
-        assert_eq!(eval_res["status"], "success");
-        assert_eq!(eval_res["result"], "42");
-        assert_eq!(eval_res["wasmLoaded"], true);
+        println!("Worker response: {:?}", eval_res);
+        assert_eq!(eval_res["service"], "definy-cloudflare-workers");
+        assert_eq!(eval_res["evaluatedResult"], 42);
     }
 
     #[test]

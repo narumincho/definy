@@ -20,16 +20,16 @@ Type）を値の式（Expression）と同じ式エディタ UI（`render_root_ex
 `PartType` と型式（`Expression`）は相互変換（`PartType::to_expression` /
 `PartType::from_expression`）可能。
 
-| `PartType`                            | 対応する型式 (`Expression`) | 説明                                                                                       |
-| :------------------------------------ | :-------------------------- | :----------------------------------------------------------------------------------------- |
-| `Number`                              | `Expression::TypeNumber`    | 64ビット数値型                                                                             |
-| `String`                              | `Expression::TypeString`    | 文字列型                                                                                   |
-| `Boolean`                             | `Expression::TypeBoolean`   | 真偽値型                                                                                   |
-| `List(T)`                             | `Expression::TypeList`      | 要素型 T のリスト型                                                                        |
-| `Function { parameter, return_type }` | `Expression::TypeFunction`  | 引数型 -> 戻り値型                                                                         |
-| `Record([Field])`                     | `Expression::TypeLiteral`   | レコード型（直積型 `{ key: Type }`。余剰フィールドを許容する構造的幅サブタイピングに対応） |
-| `Union([Variant])`                    | `Expression::TypeUnion`     | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
-| `TypePart(hash)`                      | `Expression::PartReference` | 定義済み型パーツの参照（`@part:...`）                                                      |
+| `PartType`                             | 対応する型式 (`Expression`) | 説明                                                                                       |
+| :------------------------------------- | :-------------------------- | :----------------------------------------------------------------------------------------- |
+| `Number`                               | `Expression::TypeNumber`    | 64ビット数値型                                                                             |
+| `String`                               | `Expression::TypeString`    | 文字列型                                                                                   |
+| `Boolean`                              | `Expression::TypeBoolean`   | 真偽値型                                                                                   |
+| `List(T)`                              | `Expression::TypeList`      | 要素型 T のリスト型                                                                        |
+| `Function { parameters, return_type }` | `Expression::TypeFunction`  | 複数の名前付き引数型 `[(name, type)]` -> 戻り値型                                          |
+| `Record([Field])`                      | `Expression::TypeLiteral`   | レコード型（直積型 `{ key: Type }`。余剰フィールドを許容する構造的幅サブタイピングに対応） |
+| `Union([Variant])`                     | `Expression::TypeUnion`     | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
+| `TypePart(hash)`                       | `Expression::PartReference` | 定義済み型パーツの参照（`@part:...`）                                                      |
 
 ## イベント仕様
 
@@ -116,3 +116,33 @@ definy の自己記述型チェッカー（`core.type-check`, `core.type-check-a
 - これにより、レコードの幅サブタイピング（$Expected \subseteq Actual$）を満たすレコードリスト（例:
   `list<{x: number, y: string}>`）は、余剰フィールドを許容して
   `list<{x: number}>` の期待型スロットへ安全に代入可能です。
+
+## 関数型（Function）の非カリー化・名前付きパラメータ仕様
+
+definy
+における関数はカリー化を行わず、**常に複数の名前付きパラメーター**を持つ非カリー化構造で表現されます。
+
+### 1. 型・式・呼び出しの構造
+
+- **関数型宣言 (`PartType::Function` / `Expression::TypeFunction`)**:
+  ```
+  (name_1: Type_1, name_2: Type_2, ...) -> ReturnType
+  ```
+  - 例:
+    `list-contains-string: (list: List String, target: String, index: Number) -> Boolean`
+  - ゼロ引数関数は空リスト `parameters: []` として表現されます。
+- **関数式 (`Expression::Function`)**:
+  - `parameters: Vec<FunctionParameter>`: 各パラメーターは
+    `{ parameter_id: i64, parameter_name: String }`
+  - `body: Box<Expression>`: 関数本体式
+- **関数呼び出し式 (`Expression::Call`)**:
+  - `function: Box<Expression>`: 呼び出し対象
+  - `arguments: Vec<CallArgument>`: 各実引数は
+    `{ name: String, value: Box<Expression> }`
+
+### 2. 型検査とサブタイピング仕様
+
+- **引数の名前と順序の一致**:
+  実引数は関数型が宣言するパラメータ名および順序と完全に一致して渡される必要があります。
+- **パラメータの反変性・戻り値の共変性**:
+  関数型同士の代入適合性（`type-assignable`）において、引数型は反変（$ExpectedParam \le ActualParam$）、戻り値型は共変（$ActualReturn \le ExpectedReturn$）として検査されます。

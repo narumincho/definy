@@ -17,7 +17,10 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
             function: Box::new(Expression::PartReference(PartReferenceExpression::new(
                 eval_hash.clone(),
             ))),
-            argument: Box::new(record_get(var_ref(var_id), key)),
+            arguments: vec![CallArgument {
+                name: "e".into(),
+                value: Box::new(record_get(var_ref(var_id), key)),
+            }],
         })
     }
 
@@ -32,14 +35,19 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
             parts: vec![definy_event::event::ModulePartEntry {
                 name: "eval_ast".into(),
                 part_type: Some(PartType::Function {
-                    parameter: Box::new(PartType::TypePart(expr_hash.clone())),
+                    parameters: vec![FunctionParameterType {
+                        name: "e".into(),
+                        r#type: Box::new(PartType::TypePart(expr_hash.clone())),
+                    }],
                     return_type: Box::new(PartType::Number),
                 }),
                 description: Description::Plain("eval AST all arithmetic ops".into()),
                 content_hash: None,
                 expression: Some(Expression::Function(FunctionExpression {
-                    parameter_id: 1, // e
-                    parameter_name: "e".into(),
+                    parameters: vec![FunctionParameter {
+                        parameter_id: 1, // e
+                        parameter_name: "e".into(),
+                    }],
                     body: Box::new(match_op(
                         var_ref(1),
                         vec![
@@ -134,7 +142,10 @@ fn test_evaluate_self_hosting_eval_ast_all_operations() {
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             eval_hash,
         ))),
-        argument: Box::new(add2),
+        arguments: vec![CallArgument {
+            name: "e".into(),
+            value: Box::new(add2),
+        }],
     });
 
     let val = evaluate_expression(&eval_call, &events).unwrap();
@@ -233,8 +244,10 @@ fn test_module_commit_batch_parts_projection_and_eval() {
 
     // add_ten: x -> x + 10
     let add_ten_expr = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "x".into(),
+        parameters: vec![FunctionParameter {
+            parameter_id: 1,
+            parameter_name: "x".into(),
+        }],
         body: Box::new(Expression::Add(AddExpression {
             left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
             right: Box::new(Expression::Number(NumberExpression { value: 10 })),
@@ -255,7 +268,10 @@ fn test_module_commit_batch_parts_projection_and_eval() {
                 ModulePartEntry {
                     name: "add_ten".into(),
                     part_type: Some(PartType::Function {
-                        parameter: Box::new(PartType::Number),
+                        parameters: vec![FunctionParameterType {
+                            name: "x".into(),
+                            r#type: Box::new(PartType::Number),
+                        }],
                         return_type: Box::new(PartType::Number),
                     }),
                     description: Description::Plain("adds 10 to input".into()),
@@ -284,7 +300,10 @@ fn test_module_commit_batch_parts_projection_and_eval() {
         function: Box::new(Expression::PartReference(
             PartReferenceExpression::with_content_hash(part_add_ten_id, add_ten_content_hash),
         )),
-        argument: Box::new(Expression::Number(NumberExpression { value: 32 })),
+        arguments: vec![CallArgument {
+            name: "x".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 32 })),
+        }],
     });
 
     assert_eq!(

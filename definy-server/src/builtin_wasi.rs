@@ -6,11 +6,12 @@
 //! などの能力（Capability）を明示的なパラメータとして受け取ることで、
 //! 決定論的なテスト（モック化）と純粋関数型セマンティクスを両立します。
 
+use crate::ast_builder::{call_expr, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Description, Expression, FunctionExpression, GreaterThanOrEqualExpression,
-    ModulePartEntry, NumberExpression, PartType, RecordFieldType, RecordGetExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
+    Description, Expression, GreaterThanOrEqualExpression, ModulePartEntry, NumberExpression,
+    PartType, RecordFieldType, RecordGetExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, VariableExpression,
 };
 
 pub fn expr_record(items: Vec<(&str, Expression)>) -> Expression {
@@ -81,14 +82,11 @@ pub fn create_wasi_wall_clock_part(_mod_id: &EventHashId) -> ModulePartEntry {
 }
 
 /// `WASI-WallClock` の型定義ヘルパー
-/// `{ now: {} -> { seconds: number, nanoseconds: number } }`
+/// `{ now: () -> { seconds: number, nanoseconds: number } }`
 pub fn wasi_wall_clock_type() -> PartType {
     PartType::Record(vec![RecordFieldType {
         key: "now".into(),
-        value: Box::new(PartType::Function {
-            parameter: Box::new(PartType::Record(vec![])),
-            return_type: Box::new(wasi_datetime_type()),
-        }),
+        value: Box::new(fn_type(&[], wasi_datetime_type())),
     }])
 }
 
@@ -113,14 +111,11 @@ pub fn create_wasi_monotonic_clock_part(_mod_id: &EventHashId) -> ModulePartEntr
 }
 
 /// `WASI-MonotonicClock` の型定義ヘルパー
-/// `{ now: {} -> number }`
+/// `{ now: () -> number }`
 pub fn wasi_monotonic_clock_type() -> PartType {
     PartType::Record(vec![RecordFieldType {
         key: "now".into(),
-        value: Box::new(PartType::Function {
-            parameter: Box::new(PartType::Record(vec![])),
-            return_type: Box::new(PartType::Number),
-        }),
+        value: Box::new(fn_type(&[], PartType::Number)),
     }])
 }
 
@@ -149,14 +144,11 @@ pub fn create_wasi_random_part(_mod_id: &EventHashId) -> ModulePartEntry {
 }
 
 /// `WASI-Random` の型定義ヘルパー
-/// `{ get_random_u64: {} -> number }`
+/// `{ get_random_u64: () -> number }`
 pub fn wasi_random_type() -> PartType {
     PartType::Record(vec![RecordFieldType {
         key: "get_random_u64".into(),
-        value: Box::new(PartType::Function {
-            parameter: Box::new(PartType::Record(vec![])),
-            return_type: Box::new(PartType::Number),
-        }),
+        value: Box::new(fn_type(&[], PartType::Number)),
     }])
 }
 
@@ -187,29 +179,26 @@ pub fn wasi_env_type() -> PartType {
 // 4. Standard Utility Functions
 // ---------------------------------------------------------------------------
 
-/// `clock => (clock.now)({})`
+/// `clock => (clock.now)()`
 /// WASI Wall Clock 能力を受け取り、現在時刻（`datetime`）を返す標準関数
 pub fn create_wasi_clock_now_part(_mod_id: &EventHashId) -> ModulePartEntry {
-    let unit_arg = expr_record(vec![]);
-
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "clock".into(),
-        body: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::RecordGet(RecordGetExpression {
+    let body = fn_expr(
+        &[("clock", 1)],
+        call_expr(
+            Expression::RecordGet(RecordGetExpression {
                 record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 key: "now".into(),
-            })),
-            argument: Box::new(unit_arg),
-        })),
-    });
+            }),
+            &[],
+        ),
+    );
 
     ModulePartEntry {
         name: "clock-now".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(wasi_wall_clock_type()),
-            return_type: Box::new(wasi_datetime_type()),
-        }),
+        part_type: Some(fn_type(
+            &[("clock", wasi_wall_clock_type())],
+            wasi_datetime_type(),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -225,29 +214,26 @@ pub fn create_wasi_clock_now_part(_mod_id: &EventHashId) -> ModulePartEntry {
     }
 }
 
-/// `clock => (clock.now)({})`
+/// `clock => (clock.now)()`
 /// WASI Monotonic Clock 能力を受け取り、単調増加ナノ秒を返す標準関数
 pub fn create_wasi_monotonic_now_part(_mod_id: &EventHashId) -> ModulePartEntry {
-    let unit_arg = expr_record(vec![]);
-
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "clock".into(),
-        body: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::RecordGet(RecordGetExpression {
+    let body = fn_expr(
+        &[("clock", 1)],
+        call_expr(
+            Expression::RecordGet(RecordGetExpression {
                 record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 key: "now".into(),
-            })),
-            argument: Box::new(unit_arg),
-        })),
-    });
+            }),
+            &[],
+        ),
+    );
 
     ModulePartEntry {
         name: "monotonic-now".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(wasi_monotonic_clock_type()),
-            return_type: Box::new(PartType::Number),
-        }),
+        part_type: Some(fn_type(
+            &[("clock", wasi_monotonic_clock_type())],
+            PartType::Number,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -263,29 +249,23 @@ pub fn create_wasi_monotonic_now_part(_mod_id: &EventHashId) -> ModulePartEntry 
     }
 }
 
-/// `random => (random.get_random_u64)({})`
+/// `random => (random.get_random_u64)()`
 /// WASI Random 能力を受け取り、64ビット乱数を返す標準関数
 pub fn create_wasi_random_u64_part(_mod_id: &EventHashId) -> ModulePartEntry {
-    let unit_arg = expr_record(vec![]);
-
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "random".into(),
-        body: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::RecordGet(RecordGetExpression {
+    let body = fn_expr(
+        &[("random", 1)],
+        call_expr(
+            Expression::RecordGet(RecordGetExpression {
                 record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                 key: "get_random_u64".into(),
-            })),
-            argument: Box::new(unit_arg),
-        })),
-    });
+            }),
+            &[],
+        ),
+    );
 
     ModulePartEntry {
         name: "random-u64".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(wasi_random_type()),
-            return_type: Box::new(PartType::Number),
-        }),
+        part_type: Some(fn_type(&[("random", wasi_random_type())], PartType::Number)),
         description: Description::localized(vec![
             (
                 "en",
@@ -301,36 +281,30 @@ pub fn create_wasi_random_u64_part(_mod_id: &EventHashId) -> ModulePartEntry {
     }
 }
 
-/// `clock => ((clock.now)({})).seconds`
+/// `clock => ((clock.now)()).seconds`
 /// WASI Wall Clock 能力を受け取り、現在時刻の秒数を返す標準関数
 pub fn create_wasi_clock_get_seconds_part(_mod_id: &EventHashId) -> ModulePartEntry {
-    let unit_arg = expr_record(vec![]);
-
-    let now_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::RecordGet(RecordGetExpression {
+    let now_call = call_expr(
+        Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
             key: "now".into(),
-        })),
-        argument: Box::new(unit_arg),
-    });
+        }),
+        &[],
+    );
 
     let get_seconds = Expression::RecordGet(RecordGetExpression {
         record: Box::new(now_call),
         key: "seconds".into(),
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "clock".into(),
-        body: Box::new(get_seconds),
-    });
+    let body = fn_expr(&[("clock", 1)], get_seconds);
 
     ModulePartEntry {
         name: "clock-get-seconds".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(wasi_wall_clock_type()),
-            return_type: Box::new(PartType::Number),
-        }),
+        part_type: Some(fn_type(
+            &[("clock", wasi_wall_clock_type())],
+            PartType::Number,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -346,18 +320,16 @@ pub fn create_wasi_clock_get_seconds_part(_mod_id: &EventHashId) -> ModulePartEn
     }
 }
 
-/// `clock => deadline => ((clock.now)({})).seconds >= deadline`
+/// `clock => deadline => ((clock.now)()).seconds >= deadline`
 /// 期限を過ぎたかを判定する純粋ビジネスロジック関数（WASI Clock 注入型）
 pub fn create_wasi_clock_is_expired_part(_mod_id: &EventHashId) -> ModulePartEntry {
-    let unit_arg = expr_record(vec![]);
-
-    let now_call = Expression::Call(CallExpression {
-        function: Box::new(Expression::RecordGet(RecordGetExpression {
+    let now_call = call_expr(
+        Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
             key: "now".into(),
-        })),
-        argument: Box::new(unit_arg),
-    });
+        }),
+        &[],
+    );
 
     let current_seconds = Expression::RecordGet(RecordGetExpression {
         record: Box::new(now_call),
@@ -369,25 +341,17 @@ pub fn create_wasi_clock_is_expired_part(_mod_id: &EventHashId) -> ModulePartEnt
         right: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
     });
 
-    let body = Expression::Function(FunctionExpression {
-        parameter_id: 1,
-        parameter_name: "clock".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 2,
-            parameter_name: "deadline".into(),
-            body: Box::new(is_expired),
-        })),
-    });
+    let body = fn_expr(&[("clock", 1), ("deadline", 2)], is_expired);
 
     ModulePartEntry {
         name: "clock-is-expired".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(wasi_wall_clock_type()),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::Number),
-                return_type: Box::new(PartType::Boolean),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("clock", wasi_wall_clock_type()),
+                ("deadline", PartType::Number),
+            ],
+            PartType::Boolean,
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -427,10 +391,9 @@ pub fn create_wasi_module_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
 pub fn create_mock_clock_capability(seconds: i64, nanoseconds: i64) -> Expression {
     expr_record(vec![(
         "now",
-        Expression::Function(FunctionExpression {
-            parameter_id: 10,
-            parameter_name: "_unit".into(),
-            body: Box::new(expr_record(vec![
+        fn_expr(
+            &[],
+            expr_record(vec![
                 (
                     "nanoseconds",
                     Expression::Number(NumberExpression { value: nanoseconds }),
@@ -439,8 +402,8 @@ pub fn create_mock_clock_capability(seconds: i64, nanoseconds: i64) -> Expressio
                     "seconds",
                     Expression::Number(NumberExpression { value: seconds }),
                 ),
-            ])),
-        }),
+            ]),
+        ),
     )])
 }
 
@@ -449,11 +412,10 @@ pub fn create_mock_clock_capability(seconds: i64, nanoseconds: i64) -> Expressio
 pub fn create_mock_monotonic_clock_capability(nanoseconds: i64) -> Expression {
     expr_record(vec![(
         "now",
-        Expression::Function(FunctionExpression {
-            parameter_id: 11,
-            parameter_name: "_unit".into(),
-            body: Box::new(Expression::Number(NumberExpression { value: nanoseconds })),
-        }),
+        fn_expr(
+            &[],
+            Expression::Number(NumberExpression { value: nanoseconds }),
+        ),
     )])
 }
 
@@ -462,11 +424,7 @@ pub fn create_mock_monotonic_clock_capability(nanoseconds: i64) -> Expression {
 pub fn create_mock_random_capability(val: i64) -> Expression {
     expr_record(vec![(
         "get_random_u64",
-        Expression::Function(FunctionExpression {
-            parameter_id: 12,
-            parameter_name: "_unit".into(),
-            body: Box::new(Expression::Number(NumberExpression { value: val })),
-        }),
+        fn_expr(&[], Expression::Number(NumberExpression { value: val })),
     )])
 }
 

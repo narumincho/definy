@@ -10,7 +10,7 @@ use super::{
 #[derive(Clone)]
 pub(crate) struct PendingFunction {
     pub(crate) captured_vars: Vec<i64>,
-    pub(crate) parameter_id: i64,
+    pub(crate) parameters: Vec<FunctionParameter>,
     pub(crate) body: Expression,
 }
 
@@ -39,17 +39,24 @@ pub(crate) fn collect_free_variables(
             }
         }
         Expression::Function(FunctionExpression {
-            parameter_id, body, ..
+            parameters, body, ..
         }) => {
-            let inserted = bound.insert(*parameter_id);
+            for param in parameters {
+                bound.insert(param.parameter_id);
+            }
             collect_free_variables(body, bound, free);
-            if inserted {
-                bound.remove(parameter_id);
+            for param in parameters {
+                bound.remove(&param.parameter_id);
             }
         }
-        Expression::Call(CallExpression { function, argument }) => {
+        Expression::Call(CallExpression {
+            function,
+            arguments,
+        }) => {
             collect_free_variables(function, bound, free);
-            collect_free_variables(argument, bound, free);
+            for arg in arguments {
+                collect_free_variables(&arg.value, bound, free);
+            }
         }
         Expression::Add(a) => {
             collect_free_variables(&a.left, bound, free);
@@ -189,7 +196,9 @@ pub(crate) fn emit_function(
     let mut bound = std::collections::HashSet::new();
     let mut free = std::collections::HashSet::new();
     collect_free_variables(&f.body, &mut bound, &mut free);
-    free.remove(&f.parameter_id);
+    for param in &f.parameters {
+        free.remove(&param.parameter_id);
+    }
 
     // Capture only variables that are in current env
     let mut captured: Vec<i64> = free
@@ -201,7 +210,7 @@ pub(crate) fn emit_function(
     let table_idx = ctx.pending_functions.len() as u32;
     ctx.pending_functions.push(PendingFunction {
         captured_vars: captured.clone(),
-        parameter_id: f.parameter_id,
+        parameters: f.parameters.clone(),
         body: (*f.body).clone(),
     });
 
@@ -324,11 +333,44 @@ pub(crate) fn emit_call(
     out.push(LOCAL_SET);
     encode_u32_leb128(out, closure_ptr_local);
 
-    emit_expression(&c.argument, out, env, next_local_idx, ctx)?;
-    let arg_ptr_local = *next_local_idx;
+    let args_ptr_local = *next_local_idx;
     *next_local_idx += 1;
-    out.push(LOCAL_SET);
-    encode_u32_leb128(out, arg_ptr_local);
+
+    if c.arguments.is_empty() {
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 0);
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, args_ptr_local);
+    } else {
+        let args_bytes = (c.arguments.len() * 4).div_ceil(8) * 8;
+        out.push(GLOBAL_GET);
+        out.push(0);
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, args_ptr_local);
+
+        out.push(GLOBAL_GET);
+        out.push(0);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, args_bytes as i32);
+        out.push(I32_ADD);
+        out.push(GLOBAL_SET);
+        out.push(0);
+
+        for (i, arg) in c.arguments.iter().enumerate() {
+            emit_expression(&arg.value, out, env, next_local_idx, ctx)?;
+            let arg_val_local = *next_local_idx;
+            *next_local_idx += 1;
+            out.push(LOCAL_SET);
+            encode_u32_leb128(out, arg_val_local);
+
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, args_ptr_local);
+            out.push(LOCAL_GET);
+            encode_u32_leb128(out, arg_val_local);
+            out.push(I32_STORE);
+            encode_mem_arg(out, 2, (i * 4) as u32);
+        }
+    }
 
     // Stack for call_indirect:
     // 1. env_ptr (param 0)
@@ -337,9 +379,9 @@ pub(crate) fn emit_call(
     out.push(I32_LOAD);
     encode_mem_arg(out, 2, 8);
 
-    // 2. arg_ptr (param 1)
+    // 2. args_ptr (param 1)
     out.push(LOCAL_GET);
-    encode_u32_leb128(out, arg_ptr_local);
+    encode_u32_leb128(out, args_ptr_local);
 
     // 3. table_idx (target func index in table)
     out.push(LOCAL_GET);
@@ -360,12 +402,25 @@ pub(crate) fn compile_pending_function(
     ctx: &mut CompileContext,
 ) -> Result<Vec<u8>, String> {
     // Function type 1: (param i32 i32) (result i32)
-    // Param 0 = env_ptr, Param 1 = arg_ptr
+    // Param 0 = env_ptr, Param 1 = args_ptr
     let mut func_code = Vec::new();
     let mut f_env = HashMap::new();
-    f_env.insert(pending.parameter_id, 1); // arg_ptr is local 1
 
     let mut f_local_idx = 3; // local 0,1 are params, local 2 is i64 scratch
+
+    for (i, param) in pending.parameters.iter().enumerate() {
+        let param_local = f_local_idx;
+        f_local_idx += 1;
+        f_env.insert(param.parameter_id, param_local);
+
+        func_code.push(LOCAL_GET);
+        encode_u32_leb128(&mut func_code, 1); // args_ptr
+        func_code.push(I32_LOAD);
+        encode_mem_arg(&mut func_code, 2, (i * 4) as u32);
+        func_code.push(LOCAL_SET);
+        encode_u32_leb128(&mut func_code, param_local);
+    }
+
     for (i, var_id) in pending.captured_vars.iter().enumerate() {
         let var_local = f_local_idx;
         f_local_idx += 1;

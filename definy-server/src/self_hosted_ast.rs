@@ -130,28 +130,49 @@ pub(crate) fn expression_to_self_hosted_ast(
                     expression_type_hash,
                 )
             }),
-        E::Call(value) => record(vec![
-            (
-                "function",
-                expression_to_self_hosted_ast(&value.function, expression_type_hash)?,
-            ),
-            (
-                "argument",
-                expression_to_self_hosted_ast(&value.argument, expression_type_hash)?,
-            ),
-        ])
-        .map(|payload| expression_variant("call", Some(payload), expression_type_hash)),
-        E::Function(value) => record(vec![
-            (
-                "parameter_variable_id",
-                E::Number(number(value.parameter_id)),
-            ),
-            (
-                "body",
-                expression_to_self_hosted_ast(&value.body, expression_type_hash)?,
-            ),
-        ])
-        .map(|payload| expression_variant("function", Some(payload), expression_type_hash)),
+        E::Call(value) => {
+            let func_expr = expression_to_self_hosted_ast(&value.function, expression_type_hash)?;
+            let args: Vec<Expression> = value
+                .arguments
+                .iter()
+                .map(|arg| {
+                    let val_expr = expression_to_self_hosted_ast(&arg.value, expression_type_hash)?;
+                    record(vec![
+                        ("name", E::String(string(&arg.name))),
+                        ("value", val_expr),
+                    ])
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            record(vec![
+                ("function", func_expr),
+                (
+                    "arguments",
+                    E::ListLiteral(definy_event::event::ListLiteralExpression { items: args }),
+                ),
+            ])
+            .map(|payload| expression_variant("call", Some(payload), expression_type_hash))
+        }
+        E::Function(value) => {
+            let body_expr = expression_to_self_hosted_ast(&value.body, expression_type_hash)?;
+            let params: Vec<Expression> = value
+                .parameters
+                .iter()
+                .map(|p| {
+                    record(vec![
+                        ("parameter_id", E::Number(number(p.parameter_id))),
+                        ("parameter_name", E::String(string(&p.parameter_name))),
+                    ])
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            record(vec![
+                (
+                    "parameters",
+                    E::ListLiteral(definy_event::event::ListLiteralExpression { items: params }),
+                ),
+                ("body", body_expr),
+            ])
+            .map(|payload| expression_variant("function", Some(payload), expression_type_hash))
+        }
         E::Variable(value) => record(vec![("variable_id", E::Number(number(value.variable_id)))])
             .map(|payload| expression_variant("variable", Some(payload), expression_type_hash)),
         E::TypeLiteral(value) => value
@@ -330,17 +351,26 @@ fn type_declaration_to_self_hosted_ast(
             type_declaration_to_self_hosted_ast(&list.item_type, expression_type_hash)?,
         )])
         .map(|payload| expression_variant("type_list", Some(payload), expression_type_hash)),
-        E::TypeFunction(function) => record(vec![
-            (
-                "parameter",
-                type_declaration_to_self_hosted_ast(&function.parameter, expression_type_hash)?,
-            ),
-            (
-                "return_type",
-                type_declaration_to_self_hosted_ast(&function.return_type, expression_type_hash)?,
-            ),
-        ])
-        .map(|payload| expression_variant("type_function", Some(payload), expression_type_hash)),
+        E::TypeFunction(function) => {
+            let ret_type =
+                type_declaration_to_self_hosted_ast(&function.return_type, expression_type_hash)?;
+            let params: Vec<Expression> = function
+                .parameters
+                .iter()
+                .map(|p| {
+                    let t = type_declaration_to_self_hosted_ast(&p.r#type, expression_type_hash)?;
+                    record(vec![("name", E::String(string(&p.name))), ("type", t)])
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            record(vec![
+                (
+                    "parameters",
+                    E::ListLiteral(definy_event::event::ListLiteralExpression { items: params }),
+                ),
+                ("return_type", ret_type),
+            ])
+            .map(|payload| expression_variant("type_function", Some(payload), expression_type_hash))
+        }
         E::TypeLiteral(record_type) => record_type
             .items
             .iter()
@@ -433,21 +463,33 @@ pub(crate) fn part_type_to_self_hosted_ast(
             ))
         }
         T::Function {
-            parameter,
+            parameters,
             return_type,
-        } => Ok(make_variant(
-            "function".into(),
-            Some(record_payload(vec![
-                (
-                    "parameter",
-                    part_type_to_self_hosted_ast(parameter, type_ast_hash)?,
-                ),
-                (
-                    "return_type",
-                    part_type_to_self_hosted_ast(return_type, type_ast_hash)?,
-                ),
-            ])?),
-        )),
+        } => {
+            let ret = part_type_to_self_hosted_ast(return_type, type_ast_hash)?;
+            let params: Vec<Expression> = parameters
+                .iter()
+                .map(|p| {
+                    let t = part_type_to_self_hosted_ast(&p.r#type, type_ast_hash)?;
+                    record_payload(vec![
+                        ("name", Expression::String(string(&p.name))),
+                        ("type", t),
+                    ])
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            Ok(make_variant(
+                "function".into(),
+                Some(record_payload(vec![
+                    (
+                        "parameters",
+                        Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                            items: params,
+                        }),
+                    ),
+                    ("return_type", ret),
+                ])?),
+            ))
+        }
         T::Record(fields) => {
             let fields = fields
                 .iter()
@@ -597,7 +639,10 @@ mod tests {
         let type_hash = dummy_hash();
         let encoded = part_type_to_self_hosted_ast(
             &PartType::Function {
-                parameter: Box::new(PartType::Number),
+                parameters: vec![definy_event::event::FunctionParameterType {
+                    name: "value".into(),
+                    r#type: Box::new(PartType::Number),
+                }],
                 return_type: Box::new(PartType::String),
             },
             &type_hash,

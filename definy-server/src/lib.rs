@@ -1,4 +1,5 @@
 mod assets;
+pub(crate) mod ast_builder;
 pub mod builtin_core_parts;
 mod builtin_eval_match;
 mod builtin_evaluator;
@@ -16,9 +17,9 @@ mod builtin_value_type;
 pub mod builtin_wasi;
 mod builtin_wasm_compiler;
 mod builtin_wasm_data_section;
+pub mod cloudflare_workers;
 mod connect_rpc;
 mod db;
-pub mod deno_deploy;
 pub mod deploy_rpc;
 mod error;
 mod extractor;
@@ -589,7 +590,8 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         deploy_rpc::handle_deploy_instance,
         deploy_rpc::handle_get_deploy_status,
         deploy_rpc::handle_list_deployments,
-        deploy_rpc::handle_deploy_deno,
+        deploy_rpc::handle_deploy_cloudflare,
+        deploy_rpc::handle_list_cloudflare_workers,
         virtual_file::handle_get_virtual_wasm,
     ),
     components(
@@ -612,8 +614,11 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::DeployInstanceResponse,
             definy_event::rpc::GetDeployStatusRequest,
             definy_event::rpc::GetDeployStatusResponse,
-            definy_event::rpc::DeployDenoRequest,
-            definy_event::rpc::DeployDenoResponse,
+            definy_event::rpc::DeployCloudflareRequest,
+            definy_event::rpc::DeployCloudflareResponse,
+            definy_event::rpc::ListCloudflareWorkersRequest,
+            definy_event::rpc::ListCloudflareWorkersResponse,
+            definy_event::rpc::CloudflareWorkerItem,
             definy_event::rpc::DeploymentItem,
             definy_event::rpc::ListDeploymentsRequest,
             definy_event::rpc::ListDeploymentsResponse,

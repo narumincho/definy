@@ -1,8 +1,8 @@
+use crate::ast_builder::call_part;
 use definy_event::EventHashId;
 use definy_event::event::{
-    CallExpression, Expression, IfExpression, MatchArm, MatchExpression, PartReferenceExpression,
-    RecordGetExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
-    VariantExpression,
+    Expression, IfExpression, MatchArm, MatchExpression, RecordGetExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
 };
 
 use super::helpers::{eval_sub, val_unit, val_variant};
@@ -15,10 +15,12 @@ pub fn create_control_arms(
 ) {
     let env_lookup_hash = definy_event::event::derive_module_part_id(core_module_id, "env-lookup");
     let env_extend_hash = definy_event::event::derive_module_part_id(core_module_id, "env-extend");
+    let eval_call_args_hash =
+        definy_event::event::derive_module_part_id(core_module_id, "eval-call-arguments");
     let eval_match_arms_hash =
         definy_event::event::derive_module_part_id(core_module_id, "eval-match-arms");
 
-    // 7. Variable lookup: env-lookup(env)(variable_id)
+    // 7. Variable lookup: env-lookup(env, variable_id)
     {
         let var_payload_id = 20;
         let target_var_id = Expression::RecordGet(RecordGetExpression {
@@ -27,15 +29,16 @@ pub fn create_control_arms(
             })),
             key: "variable_id".into(),
         });
-        let lookup_call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    env_lookup_hash,
-                ))),
-                argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-            })),
-            argument: Box::new(target_var_id),
-        });
+        let lookup_call = call_part(
+            &env_lookup_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("var_id", target_var_id),
+            ],
+        );
 
         arms.push(MatchArm {
             tag: "variable".into(),
@@ -117,14 +120,14 @@ pub fn create_control_arms(
         });
     }
 
-    // 9. Function definition: function({ parameter_variable_id, body }) -> value.closure
+    // 9. Function definition: function({ parameters, body }) -> value.closure
     {
         let func_var_id = 23;
-        let param_id_expr = Expression::RecordGet(RecordGetExpression {
+        let params_expr = Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression {
                 variable_id: func_var_id,
             })),
-            key: "parameter_variable_id".into(),
+            key: "parameters".into(),
         });
         let body_expr = Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression {
@@ -136,8 +139,8 @@ pub fn create_control_arms(
         let closure_record = Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![
                 TypeLiteralItemExpression {
-                    key: "parameter_variable_id".into(),
-                    value: Box::new(param_id_expr),
+                    key: "parameters".into(),
+                    value: Box::new(params_expr),
                 },
                 TypeLiteralItemExpression {
                     key: "body".into(),
@@ -164,7 +167,7 @@ pub fn create_control_arms(
         });
     }
 
-    // 10. Function call: call({ function, argument })
+    // 10. Function call: call({ function, arguments })
     {
         let call_var_id = 24;
         let fn_expr = Expression::RecordGet(RecordGetExpression {
@@ -173,11 +176,11 @@ pub fn create_control_arms(
             })),
             key: "function".into(),
         });
-        let arg_expr = Expression::RecordGet(RecordGetExpression {
+        let args_expr = Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression {
                 variable_id: call_var_id,
             })),
-            key: "argument".into(),
+            key: "arguments".into(),
         });
 
         let eval_fn = eval_sub(
@@ -185,18 +188,13 @@ pub fn create_control_arms(
             fn_expr,
             Expression::Variable(VariableExpression { variable_id: 1 }),
         );
-        let eval_arg = eval_sub(
-            eval_value_hash,
-            arg_expr,
-            Expression::Variable(VariableExpression { variable_id: 1 }),
-        );
 
         let closure_var_id = 25;
-        let closure_param_id = Expression::RecordGet(RecordGetExpression {
+        let closure_params = Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression {
                 variable_id: closure_var_id,
             })),
-            key: "parameter_variable_id".into(),
+            key: "parameters".into(),
         });
         let closure_body = Expression::RecordGet(RecordGetExpression {
             record: Box::new(Expression::Variable(VariableExpression {
@@ -211,18 +209,22 @@ pub fn create_control_arms(
             key: "captured_env".into(),
         });
 
-        let extended_env = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        env_extend_hash.clone(),
-                    ))),
-                    argument: Box::new(closure_env),
-                })),
-                argument: Box::new(closure_param_id),
-            })),
-            argument: Box::new(eval_arg),
-        });
+        let extended_env = call_part(
+            &eval_call_args_hash,
+            &[
+                ("params", closure_params),
+                ("args", args_expr),
+                (
+                    "caller_env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("callee_env", closure_env),
+                (
+                    "index",
+                    Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+                ),
+            ],
+        );
 
         let call_result = eval_sub(eval_value_hash, closure_body, extended_env);
 
@@ -281,18 +283,17 @@ pub fn create_control_arms(
             Expression::Variable(VariableExpression { variable_id: 1 }),
         );
 
-        let extended_env = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        env_extend_hash,
-                    ))),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(var_id_expr),
-            })),
-            argument: Box::new(eval_val),
-        });
+        let extended_env = call_part(
+            &env_extend_hash,
+            &[
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("var_id", var_id_expr),
+                ("val", eval_val),
+            ],
+        );
 
         let let_eval_body = eval_sub(eval_value_hash, body_expr, extended_env);
 
@@ -399,21 +400,18 @@ pub fn create_control_arms(
             key: "payload".into(),
         });
 
-        let eval_match_call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(eval_match_arms_hash),
-                        )),
-                        argument: Box::new(arms_expr),
-                    })),
-                    argument: Box::new(target_tag),
-                })),
-                argument: Box::new(target_payload),
-            })),
-            argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-        });
+        let eval_match_call = call_part(
+            &eval_match_arms_hash,
+            &[
+                ("arms", arms_expr),
+                ("target_tag", target_tag),
+                ("target_payload", target_payload),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+            ],
+        );
 
         let match_body = Expression::Match(MatchExpression {
             target: Box::new(eval_target),

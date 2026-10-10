@@ -1,16 +1,17 @@
+use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, CallExpression, Description, EqualExpression, Expression, FunctionExpression,
-    IfExpression, LessThanOrEqualExpression, ListAppendExpression, ListGetExpression,
-    ListLengthExpression, ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry,
-    NumberExpression, PartReferenceExpression, PartType, RecordFieldType, RecordGetExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, derive_module_part_id,
+    AddExpression, Description, EqualExpression, Expression, IfExpression,
+    LessThanOrEqualExpression, ListAppendExpression, ListGetExpression, ListLengthExpression,
+    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType,
+    RecordFieldType, RecordGetExpression, TypeLiteralExpression, TypeLiteralItemExpression,
+    VariableExpression, derive_module_part_id,
 };
 
 use super::helpers::{eval_sub, val_record, val_unit};
 
 /// 動的レコード値からキーを検索して対応する値を返す関数パーツ
-/// `core.record-field-lookup`: `list<{ key: string, value: value }> -> string -> number -> value`
+/// `core.record-field-lookup`: `(items: list<{ key: string, value: value }>, key: string, index: number) -> value`
 pub fn create_record_field_lookup_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let val_part_hash = derive_module_part_id(core_module_id, "value");
     let lookup_hash = derive_module_part_id(core_module_id, "record-field-lookup");
@@ -49,18 +50,10 @@ pub fn create_record_field_lookup_part(core_module_id: &EventHashId) -> ModulePa
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                    lookup_hash,
-                ))),
-                argument: Box::new(items),
-            })),
-            argument: Box::new(key),
-        })),
-        argument: Box::new(next_index),
-    });
+    let recurse = call_part(
+        &lookup_hash,
+        &[("items", items), ("key", key), ("index", next_index)],
+    );
 
     let body = Expression::If(IfExpression {
         condition: Box::new(at_end),
@@ -85,16 +78,14 @@ pub fn create_record_field_lookup_part(core_module_id: &EventHashId) -> ModulePa
 
     ModulePartEntry {
         name: "record-field-lookup".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(item_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::String),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::TypePart(val_part_hash)),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("items", PartType::List(Box::new(item_type))),
+                ("key", PartType::String),
+                ("index", PartType::Number),
+            ],
+            PartType::TypePart(val_part_hash),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -106,19 +97,7 @@ pub fn create_record_field_lookup_part(core_module_id: &EventHashId) -> ModulePa
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "items".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "key".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(body),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(&[("items", 0), ("key", 1), ("index", 2)], body)),
     }
 }
 
@@ -181,21 +160,15 @@ pub fn create_eval_record_fields_part(core_module_id: &EventHashId) -> ModulePar
         right: Box::new(Expression::Number(NumberExpression { value: 1 })),
     });
 
-    let recurse = Expression::Call(CallExpression {
-        function: Box::new(Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        eval_record_fields_hash,
-                    ))),
-                    argument: Box::new(fields),
-                })),
-                argument: Box::new(env),
-            })),
-            argument: Box::new(next_index),
-        })),
-        argument: Box::new(next_accum),
-    });
+    let recurse = call_part(
+        &eval_record_fields_hash,
+        &[
+            ("fields", fields),
+            ("env", env),
+            ("index", next_index),
+            ("accum", next_accum),
+        ],
+    );
 
     let body = Expression::If(IfExpression {
         condition: Box::new(at_end),
@@ -226,19 +199,15 @@ pub fn create_eval_record_fields_part(core_module_id: &EventHashId) -> ModulePar
 
     ModulePartEntry {
         name: "eval-record-fields".into(),
-        part_type: Some(PartType::Function {
-            parameter: Box::new(PartType::List(Box::new(expr_field_type))),
-            return_type: Box::new(PartType::Function {
-                parameter: Box::new(PartType::TypePart(env_part_hash)),
-                return_type: Box::new(PartType::Function {
-                    parameter: Box::new(PartType::Number),
-                    return_type: Box::new(PartType::Function {
-                        parameter: Box::new(PartType::List(Box::new(val_field_type.clone()))),
-                        return_type: Box::new(PartType::List(Box::new(val_field_type))),
-                    }),
-                }),
-            }),
-        }),
+        part_type: Some(fn_type(
+            &[
+                ("fields", PartType::List(Box::new(expr_field_type))),
+                ("env", PartType::TypePart(env_part_hash)),
+                ("index", PartType::Number),
+                ("accum", PartType::List(Box::new(val_field_type.clone()))),
+            ],
+            PartType::List(Box::new(val_field_type)),
+        )),
         description: Description::localized(vec![
             (
                 "en",
@@ -250,23 +219,10 @@ pub fn create_eval_record_fields_part(core_module_id: &EventHashId) -> ModulePar
             ),
         ]),
         content_hash: None,
-        expression: Some(Expression::Function(FunctionExpression {
-            parameter_id: 0,
-            parameter_name: "fields".into(),
-            body: Box::new(Expression::Function(FunctionExpression {
-                parameter_id: 1,
-                parameter_name: "env".into(),
-                body: Box::new(Expression::Function(FunctionExpression {
-                    parameter_id: 2,
-                    parameter_name: "index".into(),
-                    body: Box::new(Expression::Function(FunctionExpression {
-                        parameter_id: 3,
-                        parameter_name: "accum".into(),
-                        body: Box::new(body),
-                    })),
-                })),
-            })),
-        })),
+        expression: Some(fn_expr(
+            &[("fields", 0), ("env", 1), ("index", 2), ("accum", 3)],
+            body,
+        )),
     }
 }
 
@@ -302,20 +258,19 @@ pub fn create_record_eval_arms(
         );
 
         let rec_val_id = 71;
-        let lookup_call = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::PartReference(PartReferenceExpression::new(
-                        lookup_hash,
-                    ))),
-                    argument: Box::new(Expression::Variable(VariableExpression {
+        let lookup_call = call_part(
+            &lookup_hash,
+            &[
+                (
+                    "items",
+                    Expression::Variable(VariableExpression {
                         variable_id: rec_val_id,
-                    })),
-                })),
-                argument: Box::new(key_expr),
-            })),
-            argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-        });
+                    }),
+                ),
+                ("key", key_expr),
+                ("index", Expression::Number(NumberExpression { value: 0 })),
+            ],
+        );
 
         let body = Expression::Match(MatchExpression {
             target: Box::new(eval_rec),
@@ -349,23 +304,23 @@ pub fn create_record_eval_arms(
         let rec_var_id = 72;
         let empty_accum = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
 
-        let eval_fields = Expression::Call(CallExpression {
-            function: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Call(CallExpression {
-                    function: Box::new(Expression::Call(CallExpression {
-                        function: Box::new(Expression::PartReference(
-                            PartReferenceExpression::new(eval_record_fields_hash),
-                        )),
-                        argument: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: rec_var_id,
-                        })),
-                    })),
-                    argument: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                })),
-                argument: Box::new(Expression::Number(NumberExpression { value: 0 })),
-            })),
-            argument: Box::new(empty_accum),
-        });
+        let eval_fields = call_part(
+            &eval_record_fields_hash,
+            &[
+                (
+                    "fields",
+                    Expression::Variable(VariableExpression {
+                        variable_id: rec_var_id,
+                    }),
+                ),
+                (
+                    "env",
+                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                ),
+                ("index", Expression::Number(NumberExpression { value: 0 })),
+                ("accum", empty_accum),
+            ],
+        );
 
         arms.push(MatchArm {
             tag: "record".into(),

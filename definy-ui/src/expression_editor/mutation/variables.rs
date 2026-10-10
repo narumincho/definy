@@ -144,17 +144,34 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 max_local_variable_id(constructor_expression.value.as_ref())
             }
-            definy_event::event::Expression::Function(func_expression) => func_expression
-                .parameter_id
-                .max(max_local_variable_id(func_expression.body.as_ref())),
+            definy_event::event::Expression::Function(func_expression) => {
+                let max_param_id = func_expression
+                    .parameters
+                    .iter()
+                    .map(|p| p.parameter_id)
+                    .max()
+                    .unwrap_or(0);
+                max_param_id.max(max_local_variable_id(func_expression.body.as_ref()))
+            }
             definy_event::event::Expression::Call(call_expression) => {
-                max_local_variable_id(call_expression.function.as_ref())
-                    .max(max_local_variable_id(call_expression.argument.as_ref()))
+                let max_arg_id = call_expression
+                    .arguments
+                    .iter()
+                    .map(|a| max_local_variable_id(a.value.as_ref()))
+                    .max()
+                    .unwrap_or(0);
+                max_local_variable_id(call_expression.function.as_ref()).max(max_arg_id)
             }
             definy_event::event::Expression::TypeFunction(type_func_expression) => {
-                max_local_variable_id(type_func_expression.parameter.as_ref()).max(
-                    max_local_variable_id(type_func_expression.return_type.as_ref()),
-                )
+                let max_param_id = type_func_expression
+                    .parameters
+                    .iter()
+                    .map(|p| max_local_variable_id(p.r#type.as_ref()))
+                    .max()
+                    .unwrap_or(0);
+                max_param_id.max(max_local_variable_id(
+                    type_func_expression.return_type.as_ref(),
+                ))
             }
             definy_event::event::Expression::TypeUnion(_) => 0,
             definy_event::event::Expression::Variant(v) => v

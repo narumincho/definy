@@ -10,10 +10,11 @@ use definy_event::event::{
 };
 
 use super::helpers::{
-    all_evaluator_parts, all_type_checker_parts, ast_add, ast_mul, ast_num, call_part1, call_part2,
-    call_part3, create_test_module_events, empty_type_env, get_test_account_and_mod_id,
-    test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
+    all_evaluator_parts, all_type_checker_parts, ast_add, ast_mul, ast_num,
+    create_test_module_events, empty_type_env, get_test_account_and_mod_id, test_val_bool,
+    test_val_num, test_val_str, value_list_to_u8_vec,
 };
+use crate::ast_builder::{call_part, fn_expr};
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
 #[test]
@@ -50,7 +51,7 @@ fn test_self_hosted_expression_to_source_execution() {
         expr_type_opt.clone(),
     );
 
-    let call_expr = call_part1(to_source_hash, ast_expr);
+    let call_expr = call_part(to_source_hash, &[("expr", ast_expr)]);
 
     let result = definy_core::evaluate_expression(&call_expr, &events)
         .expect("Failed to evaluate self-hosted expression-to-source");
@@ -77,7 +78,7 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
     );
     let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
 
-    let eval_call = call_part2(eval_hash, expr_to_eval, empty_env);
+    let eval_call = call_part(eval_hash, &[("expr", expr_to_eval), ("env", empty_env)]);
 
     let result = definy_core::evaluate_expression(&eval_call, &events)
         .expect("Failed to evaluate expression using core.eval-value");
@@ -108,7 +109,10 @@ fn test_self_hosted_type_checker_execution() {
     );
     let empty_env = empty_type_env();
 
-    let check_call = call_part2(type_check_hash, expr_to_check, empty_env);
+    let check_call = call_part(
+        type_check_hash,
+        &[("expr", expr_to_check), ("env", empty_env)],
+    );
 
     let result = definy_core::evaluate_expression(&check_call, &events)
         .expect("Failed to type-check expression using core.type-check");
@@ -135,7 +139,10 @@ fn test_self_hosted_type_checker_execution() {
         payload: None,
         type_part_definition_event_hash: None,
     });
-    let unequal_types = call_part2(type_equals_hash, number_type.clone(), string_type.clone());
+    let unequal_types = call_part(
+        type_equals_hash,
+        &[("t1", number_type.clone()), ("t2", string_type.clone())],
+    );
     let unequal_types_result = definy_core::evaluate_expression(&unequal_types, &events)
         .expect("Failed to compare distinct primitive type ASTs");
     assert_eq!(unequal_types_result, Value::Bool(false));
@@ -174,7 +181,7 @@ fn test_self_hosted_type_checker_execution() {
     let type_equals_hash = derive_module_part_id(&mod_id, "type-equals");
     let compare_types = |left, right| {
         definy_core::evaluate_expression(
-            &call_part2(type_equals_hash.clone(), left, right),
+            &call_part(type_equals_hash.clone(), &[("t1", left), ("t2", right)]),
             &events,
         )
         .expect("Failed to compare structural type ASTs")
@@ -436,7 +443,7 @@ fn test_self_hosted_compile_to_wasm_execution() {
         expr_type_opt,
     );
 
-    let call_compile = call_part1(compile_to_wasm_hash, expr_to_compile);
+    let call_compile = call_part(compile_to_wasm_hash, &[("expr", expr_to_compile)]);
 
     // Execute self-hosted compiler to generate Wasm bytecode!
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
@@ -484,7 +491,7 @@ fn test_self_hosted_optimize_expression_execution() {
         expr_type_opt.clone(),
     );
 
-    let call_optimize = call_part1(optimize_hash, expr_to_optimize);
+    let call_optimize = call_part(optimize_hash, &[("expr", expr_to_optimize)]);
 
     // Execute self-hosted optimizer!
     let optimized_result = definy_core::evaluate_expression(&call_optimize, &events)
@@ -501,7 +508,7 @@ fn test_self_hosted_optimize_expression_execution() {
 
     // Now compile the folded AST: number(42) directly to Wasm
     let folded_ast = ast_num(42, expr_type_opt);
-    let call_compile = call_part1(compile_to_wasm_hash, folded_ast);
+    let call_compile = call_part(compile_to_wasm_hash, &[("expr", folded_ast)]);
 
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
         .expect("Failed to compile optimized AST to Wasm");
@@ -523,7 +530,7 @@ fn test_self_hosted_value_equals_execution() {
     let events = create_test_module_events(account, parts, 201);
 
     let check_eq = |a: Expression, b: Expression| {
-        let call = call_part2(val_eq_hash.clone(), a, b);
+        let call = call_part(val_eq_hash.clone(), &[("a", a), ("b", b)]);
         definy_core::evaluate_expression(&call, &events).expect("evaluate value-equals")
     };
 
@@ -674,7 +681,7 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
     });
 
     let empty_env = Expression::ListLiteral(ListLiteralExpression { items: vec![] });
-    let eval_call = call_part2(eval_hash, match_ast, empty_env);
+    let eval_call = call_part(eval_hash, &[("expr", match_ast), ("env", empty_env)]);
 
     let eval_result = definy_core::evaluate_expression(&eval_call, &events)
         .expect("Failed to evaluate self-hosted variant and match");
@@ -691,8 +698,6 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
 
 #[test]
 fn test_self_hosted_list_map_and_fold_execution() {
-    use definy_event::event::{FunctionExpression, MultiplyExpression, NumberExpression};
-
     let (account, mod_id) = get_test_account_and_mod_id();
 
     let list_map = crate::builtin_list_ops::create_list_map_part(&mod_id);
@@ -709,27 +714,28 @@ fn test_self_hosted_list_map_and_fold_execution() {
         203,
     );
 
-    // 1. Test list-map: map (x => x * 2) [1, 2, 3] -> [2, 4, 6]
-    let double_fn = Expression::Function(FunctionExpression {
-        parameter_id: 10,
-        parameter_name: "x".into(),
-        body: Box::new(Expression::Multiply(MultiplyExpression {
+    // 1. Test list-map: map (f: item => item * 2, xs: [1, 2, 3]) -> [2, 4, 6]
+    let double_fn = fn_expr(
+        &[("item", 10)],
+        Expression::Multiply(definy_event::event::MultiplyExpression {
             left: Box::new(Expression::Variable(
                 definy_event::event::VariableExpression { variable_id: 10 },
             )),
-            right: Box::new(Expression::Number(NumberExpression { value: 2 })),
-        })),
-    });
+            right: Box::new(Expression::Number(definy_event::event::NumberExpression {
+                value: 2,
+            })),
+        }),
+    );
 
     let list_input = Expression::ListLiteral(ListLiteralExpression {
         items: vec![
-            Expression::Number(NumberExpression { value: 1 }),
-            Expression::Number(NumberExpression { value: 2 }),
-            Expression::Number(NumberExpression { value: 3 }),
+            Expression::Number(definy_event::event::NumberExpression { value: 1 }),
+            Expression::Number(definy_event::event::NumberExpression { value: 2 }),
+            Expression::Number(definy_event::event::NumberExpression { value: 3 }),
         ],
     });
 
-    let map_call = call_part2(map_hash, double_fn, list_input);
+    let map_call = call_part(map_hash, &[("f", double_fn), ("xs", list_input)]);
 
     let map_res = definy_core::evaluate_expression(&map_call, &events)
         .expect("Failed to evaluate self-hosted list-map");
@@ -738,37 +744,37 @@ fn test_self_hosted_list_map_and_fold_execution() {
         Value::List(vec![Value::Number(2), Value::Number(4), Value::Number(6)])
     );
 
-    // 2. Test list-fold: fold (acc => x => acc + x) 0 [10, 20, 30] -> 60
-    let add_reducer = Expression::Function(FunctionExpression {
-        parameter_id: 20,
-        parameter_name: "acc".into(),
-        body: Box::new(Expression::Function(FunctionExpression {
-            parameter_id: 21,
-            parameter_name: "x".into(),
-            body: Box::new(Expression::Add(definy_event::event::AddExpression {
-                left: Box::new(Expression::Variable(
-                    definy_event::event::VariableExpression { variable_id: 20 },
-                )),
-                right: Box::new(Expression::Variable(
-                    definy_event::event::VariableExpression { variable_id: 21 },
-                )),
-            })),
-        })),
-    });
+    // 2. Test list-fold: fold (reducer: (acc, item) => acc + item, init: 0, xs: [10, 20, 30]) -> 60
+    let add_reducer = fn_expr(
+        &[("acc", 20), ("item", 21)],
+        Expression::Add(definy_event::event::AddExpression {
+            left: Box::new(Expression::Variable(
+                definy_event::event::VariableExpression { variable_id: 20 },
+            )),
+            right: Box::new(Expression::Variable(
+                definy_event::event::VariableExpression { variable_id: 21 },
+            )),
+        }),
+    );
 
     let fold_list_input = Expression::ListLiteral(ListLiteralExpression {
         items: vec![
-            Expression::Number(NumberExpression { value: 10 }),
-            Expression::Number(NumberExpression { value: 20 }),
-            Expression::Number(NumberExpression { value: 30 }),
+            Expression::Number(definy_event::event::NumberExpression { value: 10 }),
+            Expression::Number(definy_event::event::NumberExpression { value: 20 }),
+            Expression::Number(definy_event::event::NumberExpression { value: 30 }),
         ],
     });
 
-    let fold_call = call_part3(
+    let fold_call = call_part(
         fold_hash,
-        add_reducer,
-        Expression::Number(NumberExpression { value: 0 }),
-        fold_list_input,
+        &[
+            ("reducer", add_reducer),
+            (
+                "init",
+                Expression::Number(definy_event::event::NumberExpression { value: 0 }),
+            ),
+            ("xs", fold_list_input),
+        ],
     );
 
     let fold_res = definy_core::evaluate_expression(&fold_call, &events)

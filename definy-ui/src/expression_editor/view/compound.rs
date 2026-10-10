@@ -4,9 +4,9 @@ use crate::app_state::{AppState, PathStep};
 
 use super::super::types::{ExpressionEditorContext, ScopeVariable};
 use super::inputs::{
-    add_list_item_button, add_record_item_button, function_param_name_input, get_tabular_keys,
-    let_name_input, record_get_key_input, record_item_key_input, remove_list_item_button,
-    remove_record_item_button,
+    add_list_item_button, add_record_item_button, call_arg_name_input, function_param_name_input,
+    get_tabular_keys, let_name_input, record_get_key_input, record_item_key_input,
+    remove_list_item_button, remove_record_item_button, type_function_param_name_input,
 };
 use super::is_compound_expression;
 use super::render_expression_editor;
@@ -643,22 +643,27 @@ pub fn render_function(
 ) -> Element {
     let mut body_path = path.to_vec();
     body_path.push(PathStep::FunctionBody);
-    let param_name = func_expression.parameter_name.clone();
     let mut body_scope = context.scope_variables.clone();
-    body_scope.push(ScopeVariable {
-        id: func_expression.parameter_id,
-        name: func_expression.parameter_name.to_string(),
-    });
+    for param in &func_expression.parameters {
+        body_scope.push(ScopeVariable {
+            id: param.parameter_id,
+            name: param.parameter_name.to_string(),
+        });
+    }
     let language = context.language;
 
     rsx! {
         div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
             div { style: "display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: flex-start;",
-                div { style: "display: grid; gap: 0.15rem; min-width: 7.5rem;",
-                    div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                        "{language.label(\"Parameter\", \"引数名\", \"Parametro\")}"
+                for (idx, param) in func_expression.parameters.iter().enumerate() {
+                    div {
+                        key: "param-{idx}",
+                        style: "display: grid; gap: 0.15rem; min-width: 7.5rem;",
+                        div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                            "{language.label(\"Parameter\", \"引数名\", \"Parametro\")} #{idx + 1}"
+                        }
+                        {function_param_name_input(path.to_vec(), idx, &param.parameter_name)}
                     }
-                    {function_param_name_input(path.to_vec(), &param_name)}
                 }
             }
             div { style: "display: grid; gap: 0.15rem; width: 100%;",
@@ -691,8 +696,6 @@ pub fn render_call(
 ) -> Element {
     let mut func_path = path.to_vec();
     func_path.push(PathStep::CallFunction);
-    let mut arg_path = path.to_vec();
-    arg_path.push(PathStep::CallArgument);
     let language = context.language;
 
     rsx! {
@@ -715,22 +718,34 @@ pub fn render_call(
                     )
                 }
             }
-            div { style: "display: grid; gap: 0.15rem; width: 100%;",
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Argument\", \"実引数\", \"Argumento\")}"
-                }
+            for (idx, arg) in call_expression.arguments.iter().enumerate() {
                 {
-                    render_expression_editor(
-                        state,
-                        call_expression.argument.as_ref(),
-                        context
-                            .child(
-                                arg_path,
-                                context.scope_variables.clone(),
-                                context.structure_locked,
-                                context.allow_kind_change,
-                            ),
-                    )
+                    let mut arg_path = path.to_vec();
+                    arg_path.push(PathStep::CallArgument(idx));
+                    let arg_name = arg.name.clone();
+                    rsx! {
+                        div { key: "arg-{idx}", style: "display: grid; gap: 0.15rem; width: 100%;",
+                            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                                    "{language.label(\"Argument\", \"実引数\", \"Argumento\")}"
+                                }
+                                {call_arg_name_input(path.to_vec(), idx, &arg_name)}
+                            }
+                            {
+                                render_expression_editor(
+                                    state,
+                                    arg.value.as_ref(),
+                                    context
+                                        .child(
+                                            arg_path,
+                                            context.scope_variables.clone(),
+                                            context.structure_locked,
+                                            context.allow_kind_change,
+                                        ),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -743,30 +758,40 @@ pub fn render_type_function(
     path: &[PathStep],
     type_func: &definy_event::event::TypeFunctionExpression,
 ) -> Element {
-    let mut param_path = path.to_vec();
-    param_path.push(PathStep::TypeFunctionParameter);
     let mut ret_path = path.to_vec();
     ret_path.push(PathStep::TypeFunctionReturn);
     let language = context.language;
 
     rsx! {
         div { style: "display: flex; flex-direction: column; gap: 0.35rem; width: 100%;",
-            div { style: "display: grid; gap: 0.15rem; width: 100%;",
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
-                    "{language.label(\"Parameter Type\", \"引数の型\", \"Parametra tipo\")}"
-                }
+            for (idx, param) in type_func.parameters.iter().enumerate() {
                 {
-                    render_expression_editor(
-                        state,
-                        type_func.parameter.as_ref(),
-                        context
-                            .child(
-                                param_path,
-                                context.scope_variables.clone(),
-                                context.structure_locked,
-                                context.allow_kind_change,
-                            ),
-                    )
+                    let mut param_path = path.to_vec();
+                    param_path.push(PathStep::TypeFunctionParameter(idx));
+                    let param_name = param.name.clone();
+                    rsx! {
+                        div { key: "param-{idx}", style: "display: grid; gap: 0.15rem; width: 100%;",
+                            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                                div { style: "font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;",
+                                    "{language.label(\"Parameter Type\", \"引数の型\", \"Parametra tipo\")}"
+                                }
+                                {type_function_param_name_input(path.to_vec(), idx, &param_name)}
+                            }
+                            {
+                                render_expression_editor(
+                                    state,
+                                    param.r#type.as_ref(),
+                                    context
+                                        .child(
+                                            param_path,
+                                            context.scope_variables.clone(),
+                                            context.structure_locked,
+                                            context.allow_kind_change,
+                                        ),
+                                )
+                            }
+                        }
+                    }
                 }
             }
             div { style: "display: grid; gap: 0.15rem; width: 100%;",
