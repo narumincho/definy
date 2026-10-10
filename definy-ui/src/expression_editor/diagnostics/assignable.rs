@@ -35,10 +35,7 @@ fn resolve_record_fields_with_visited(
                     .map(|item| {
                         (
                             item.key.to_string(),
-                            type_expression_to_expression_type(
-                                item.value.as_ref(),
-                                part_snapshot_map,
-                            ),
+                            type_expression_to_expression_type(item.value.as_ref()),
                         )
                     })
                     .collect();
@@ -136,14 +133,13 @@ pub(crate) fn is_type_assignable(
 
 pub(crate) fn type_expression_to_expression_type(
     expr: &definy_event::event::Expression,
-    part_snapshot_map: &HashMap<EventHashId, PartSnapshot>,
 ) -> ExpressionType {
     match expr {
         definy_event::event::Expression::TypeNumber => ExpressionType::Number,
         definy_event::event::Expression::TypeString => ExpressionType::String,
         definy_event::event::Expression::TypeBoolean => ExpressionType::Boolean,
         definy_event::event::Expression::TypeList(list) => ExpressionType::List(Box::new(
-            type_expression_to_expression_type(list.item_type.as_ref(), part_snapshot_map),
+            type_expression_to_expression_type(list.item_type.as_ref()),
         )),
         definy_event::event::Expression::TypeLiteral(record) => {
             let fields = record
@@ -152,7 +148,7 @@ pub(crate) fn type_expression_to_expression_type(
                 .map(|item| {
                     (
                         item.key.to_string(),
-                        type_expression_to_expression_type(item.value.as_ref(), part_snapshot_map),
+                        type_expression_to_expression_type(item.value.as_ref()),
                     )
                 })
                 .collect();
@@ -167,15 +163,11 @@ pub(crate) fn type_expression_to_expression_type(
                 .iter()
                 .map(|p| FunctionParameterTypeInfo {
                     name: p.name.to_string(),
-                    r#type: type_expression_to_expression_type(
-                        p.r#type.as_ref(),
-                        part_snapshot_map,
-                    ),
+                    r#type: type_expression_to_expression_type(p.r#type.as_ref()),
                 })
                 .collect(),
             return_type: Box::new(type_expression_to_expression_type(
                 func.return_type.as_ref(),
-                part_snapshot_map,
             )),
         },
         definy_event::event::Expression::TypeUnion(_) => ExpressionType::Union,
@@ -196,7 +188,7 @@ pub(crate) fn find_union_variant_payload_type(
                     variant
                         .payload_type
                         .as_ref()
-                        .map(|p| type_expression_to_expression_type(p.as_ref(), part_snapshot_map)),
+                        .map(|p| type_expression_to_expression_type(p.as_ref())),
                 );
             }
         }
@@ -225,10 +217,7 @@ pub(crate) fn find_record_field_type(
     if let Some(definy_event::event::Expression::TypeLiteral(record)) = &snapshot.expression {
         for item in &record.items {
             if item.key.as_ref() == field_name {
-                return Some(type_expression_to_expression_type(
-                    item.value.as_ref(),
-                    part_snapshot_map,
-                ));
+                return Some(type_expression_to_expression_type(item.value.as_ref()));
             }
         }
     }

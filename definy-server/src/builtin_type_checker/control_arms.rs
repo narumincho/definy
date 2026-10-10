@@ -12,16 +12,12 @@ use super::helpers::{
 /// 関数適用 (call)、変数参照 (variable)、条件分岐 (if)、let 束縛 (let)、パーツ参照 (part_reference) の型検査 MatchArm リストを生成します。
 pub fn create_control_check_arms(
     type_check_hash: &EventHashId,
-    type_check_against_hash: &EventHashId,
     type_check_call_arguments_hash: &EventHashId,
-    type_assignable_hash: &EventHashId,
     type_equals_hash: &EventHashId,
     type_env_lookup_hash: &EventHashId,
     type_env_extend_hash: &EventHashId,
     type_env_lookup_part_hash: &EventHashId,
 ) -> Vec<MatchArm> {
-    let _ = type_check_against_hash;
-    let _ = type_assignable_hash;
     let mut arms = Vec::new();
 
     // 1. Function application: call({ function, arguments })

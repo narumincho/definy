@@ -18,11 +18,9 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     let type_env_part_hash = derive_module_part_id(core_module_id, "type-env");
     let type_result_part_hash = derive_module_part_id(core_module_id, "type-result");
     let type_check_hash = derive_module_part_id(core_module_id, "type-check");
-    let type_check_against_hash = derive_module_part_id(core_module_id, "type-check-against");
     let type_check_call_arguments_hash =
         derive_module_part_id(core_module_id, "type-check-call-arguments");
     let type_equals_hash = derive_module_part_id(core_module_id, "type-equals");
-    let type_assignable_hash = derive_module_part_id(core_module_id, "type-assignable");
     let type_env_lookup_hash = derive_module_part_id(core_module_id, "type-env-lookup");
     let type_env_extend_hash = derive_module_part_id(core_module_id, "type-env-extend");
     let type_env_lookup_part_hash = derive_module_part_id(core_module_id, "type-env-lookup-part");
@@ -41,9 +39,7 @@ pub fn create_type_check_part(core_module_id: &EventHashId) -> ModulePartEntry {
     // 2. Function calls, Variable lookup, Conditionals, Let bindings, and Part references
     arms.extend(create_control_check_arms(
         &type_check_hash,
-        &type_check_against_hash,
         &type_check_call_arguments_hash,
-        &type_assignable_hash,
         &type_equals_hash,
         &type_env_lookup_hash,
         &type_env_extend_hash,
