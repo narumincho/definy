@@ -19,7 +19,7 @@ jobs:
         run: |
           deno fmt --check
           deno lint
-          deno test pages/
+          deno test worker/
       - name: Setup ChromeDriver
         run: |
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)

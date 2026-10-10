@@ -1,2 +1,0 @@
-# SPA fallback: Send all non-file routes to /index.html with status 200 (rewrite)
-/* /index.html 200

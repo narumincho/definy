@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { proxyToBackend, shouldProxyToBackend } from "./[[path]].ts";
+import { proxyToBackend, shouldProxyToBackend } from "./index.ts";
 
 Deno.test("shouldProxyToBackend identifies Connect-RPC endpoints", () => {
   assertEquals(
@@ -24,7 +24,7 @@ Deno.test("shouldProxyToBackend identifies exact backend paths", () => {
   assertEquals(shouldProxyToBackend("/healthz"), true);
 });
 
-Deno.test("shouldProxyToBackend leaves static assets and SPA routes to Pages", () => {
+Deno.test("shouldProxyToBackend leaves static assets and SPA routes to Workers Static Assets", () => {
   assertEquals(shouldProxyToBackend("/"), false);
   assertEquals(shouldProxyToBackend("/index.html"), false);
   assertEquals(shouldProxyToBackend("/assets/main.js"), false);
@@ -34,9 +34,8 @@ Deno.test("shouldProxyToBackend leaves static assets and SPA routes to Pages", (
 });
 
 Deno.test("proxyToBackend returns 503 Connect error on connection failure", async () => {
-  // 存在しないローカルポートを指定して接続失敗をシミュレート
   const req = new Request(
-    "https://definy.pages.dev/definy.v1.ProjectService/ListProjects",
+    "https://definy.workers.dev/definy.v1.ProjectService/ListProjects",
     {
       method: "POST",
       headers: {

@@ -1,14 +1,8 @@
 interface Env {
   readonly DEFINY_SERVER_URL?: string;
-}
-
-interface EventContext {
-  readonly request: Request;
-  readonly env: Env;
-  readonly params: {
-    readonly path?: ReadonlyArray<string>;
+  readonly ASSETS?: {
+    readonly fetch: (request: Request) => Promise<Response>;
   };
-  readonly next: () => Promise<Response>;
 }
 
 const DEFAULT_SERVER_URL = "https://definy.fly.dev";
@@ -105,16 +99,19 @@ export async function proxyToBackend(
   }
 }
 
-/**
- * Cloudflare Pages Functions のエントリポイント
- */
-export async function onRequest(context: EventContext): Promise<Response> {
-  const url = new URL(context.request.url);
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
 
-  if (shouldProxyToBackend(url.pathname)) {
-    const backendUrl = context.env.DEFINY_SERVER_URL || DEFAULT_SERVER_URL;
-    return await proxyToBackend(context.request, backendUrl);
-  }
+    if (shouldProxyToBackend(url.pathname)) {
+      const backendUrl = env.DEFINY_SERVER_URL || DEFAULT_SERVER_URL;
+      return await proxyToBackend(request, backendUrl);
+    }
 
-  return await context.next();
-}
+    if (env.ASSETS) {
+      return await env.ASSETS.fetch(request);
+    }
+
+    return new Response("Not Found", { status: 404 });
+  },
+};
