@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use crate::Location;
 use crate::deployments_cloudflare::CloudflareWorkersCard;
 use crate::page_context::PageContext;
+use crate::preview_apps::PreviewAppsCard;
 
 #[component]
 pub fn DeploymentsView(context: PageContext) -> Element {
@@ -82,6 +83,9 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                         }
                     }
                 }
+
+                // インサーバープレビュー実行フォーム (Localhost / サブドメイン動作検証)
+                PreviewAppsCard { context: context.clone() }
 
                 // Cloudflare Workers インタラクティブ実行フォーム
                 CloudflareWorkersCard { context: context.clone() }

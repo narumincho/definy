@@ -26,6 +26,7 @@ mod extractor;
 pub mod fly_machines;
 mod html;
 pub mod mcp;
+pub mod preview_service;
 pub mod seed;
 mod self_hosted_ast;
 pub mod self_hosted_wasm_compiler;
@@ -62,6 +63,7 @@ pub struct AppState {
     pub db: Arc<RwLock<Option<Surreal<Any>>>>,
     pub fly_client: Option<crate::fly_machines::FlyMachineClient>,
     pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
+    pub preview_store: Arc<RwLock<preview_service::PreviewAppStore>>,
     pub last_db_failure: Arc<RwLock<Option<std::time::Instant>>>,
     pub db_init_status: Arc<RwLock<DbInitStatus>>,
 }
@@ -81,6 +83,7 @@ impl AppState {
             db: Arc::new(RwLock::new(db)),
             fly_client,
             virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
+            preview_store: Arc::new(RwLock::new(preview_service::PreviewAppStore::new())),
             last_db_failure: Arc::new(RwLock::new(None)),
             db_init_status: Arc::new(RwLock::new(db_init_status)),
         }
@@ -92,6 +95,7 @@ impl AppState {
             db: Arc::new(RwLock::new(None)),
             fly_client: None,
             virtual_file_store: Arc::new(RwLock::new(virtual_file::VirtualFileStore::new())),
+            preview_store: Arc::new(RwLock::new(preview_service::PreviewAppStore::new())),
             last_db_failure: Arc::new(RwLock::new(None)),
             db_init_status: Arc::new(RwLock::new(DbInitStatus::Ready)),
         }
@@ -177,6 +181,14 @@ pub fn create_router(state: AppState, mcp_session_manager: mcp::McpSessionManage
             "/api-docs/openapi.json",
             <ApiDoc as utoipa::OpenApi>::openapi(),
         ))
+        .route(
+            "/preview/{app_id}",
+            axum::routing::any(crate::preview_service::handle_preview_path_root),
+        )
+        .route(
+            "/preview/{app_id}/{*subpath}",
+            axum::routing::any(crate::preview_service::handle_preview_path_subpath),
+        )
         .merge(connect_rpc::router())
         .merge(virtual_file::router())
         .merge(mcp::router(mcp_session_manager))
@@ -251,7 +263,28 @@ pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
     }
 }
 
-async fn handle_fallback(State(state): State<AppState>, uri: Uri, headers: HeaderMap) -> Response {
+async fn handle_fallback(
+    State(state): State<AppState>,
+    method: axum::http::Method,
+    uri: Uri,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    // 0. Check Host header for subdomain preview apps
+    if let Some(host) = headers.get("host").and_then(|h| h.to_str().ok())
+        && let Some(subdomain) = crate::preview_service::extract_subdomain_from_host(host)
+    {
+        let app_exists = {
+            let store = state.preview_store.read().await;
+            store.get(&subdomain).is_some()
+        };
+        if app_exists {
+            return crate::preview_service::execute_preview_app(
+                &state, &subdomain, &uri, &method, &headers, &body,
+            )
+            .await;
+        }
+    }
     let path = uri.path();
     let trimmed_path = path.trim_start_matches('/');
 
@@ -592,6 +625,9 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
         deploy_rpc::handle_list_deployments,
         deploy_rpc::handle_deploy_cloudflare,
         deploy_rpc::handle_list_cloudflare_workers,
+        preview_service::handle_register_preview_app,
+        preview_service::handle_list_preview_apps,
+        preview_service::handle_stop_preview_app,
         virtual_file::handle_get_virtual_wasm,
     ),
     components(
@@ -619,6 +655,13 @@ fn build_url_with_lang(uri: &Uri, lang_code: &str) -> String {
             definy_event::rpc::ListCloudflareWorkersRequest,
             definy_event::rpc::ListCloudflareWorkersResponse,
             definy_event::rpc::CloudflareWorkerItem,
+            definy_event::rpc::RegisterPreviewAppRequest,
+            definy_event::rpc::RegisterPreviewAppResponse,
+            definy_event::rpc::PreviewAppItem,
+            definy_event::rpc::ListPreviewAppsRequest,
+            definy_event::rpc::ListPreviewAppsResponse,
+            definy_event::rpc::StopPreviewAppRequest,
+            definy_event::rpc::StopPreviewAppResponse,
             definy_event::rpc::DeploymentItem,
             definy_event::rpc::ListDeploymentsRequest,
             definy_event::rpc::ListDeploymentsResponse,
@@ -660,6 +703,9 @@ mod tests {
         assert!(json.contains("/definy.v1.DeployService/DeployInstance"));
         assert!(json.contains("/definy.v1.DeployService/GetDeployStatus"));
         assert!(json.contains("/definy.v1.DeployService/ListDeployments"));
+        assert!(json.contains("/definy.v1.PreviewService/RegisterPreviewApp"));
+        assert!(json.contains("/definy.v1.PreviewService/ListPreviewApps"));
+        assert!(json.contains("/definy.v1.PreviewService/StopPreviewApp"));
         assert!(json.contains("/virtual/wasm/{hash}"));
     }
 

@@ -79,9 +79,12 @@ use definy_event::rpc::{
     DeployCloudflareResponse, GetContentRequest, GetContentResponse, GetEventRequest,
     GetEventResponse, GetEventsRequest, GetEventsResponse, ListCloudflareWorkersRequest,
     ListCloudflareWorkersResponse, ListDeploymentsRequest, ListDeploymentsResponse,
-    PATH_CHECK_MISSING_HASHES, PATH_DEPLOY_CLOUDFLARE, PATH_GET_CONTENT, PATH_GET_EVENT,
-    PATH_GET_EVENTS, PATH_LIST_CLOUDFLARE_WORKERS, PATH_LIST_DEPLOYMENTS, PATH_SUBMIT_EVENT,
-    PATH_UPLOAD_CONTENT, SubmitEventRequest, SubmitEventResponse, UploadContentRequest,
+    ListPreviewAppsRequest, ListPreviewAppsResponse, PATH_CHECK_MISSING_HASHES,
+    PATH_DEPLOY_CLOUDFLARE, PATH_GET_CONTENT, PATH_GET_EVENT, PATH_GET_EVENTS,
+    PATH_LIST_CLOUDFLARE_WORKERS, PATH_LIST_DEPLOYMENTS, PATH_LIST_PREVIEW_APPS,
+    PATH_REGISTER_PREVIEW_APP, PATH_STOP_PREVIEW_APP, PATH_SUBMIT_EVENT, PATH_UPLOAD_CONTENT,
+    RegisterPreviewAppRequest, RegisterPreviewAppResponse, StopPreviewAppRequest,
+    StopPreviewAppResponse, SubmitEventRequest, SubmitEventResponse, UploadContentRequest,
     UploadContentResponse,
 };
 
@@ -399,4 +402,22 @@ pub async fn list_cloudflare_workers(
 pub async fn list_deployments(limit: Option<u64>) -> Result<ListDeploymentsResponse, FetchError> {
     let req = ListDeploymentsRequest { limit };
     connect_rpc_post(PATH_LIST_DEPLOYMENTS, &req).await
+}
+
+pub async fn register_preview_app(
+    req: &RegisterPreviewAppRequest,
+) -> Result<RegisterPreviewAppResponse, FetchError> {
+    connect_rpc_post(PATH_REGISTER_PREVIEW_APP, req).await
+}
+
+pub async fn list_preview_apps(
+    req: &ListPreviewAppsRequest,
+) -> Result<ListPreviewAppsResponse, FetchError> {
+    connect_rpc_post(PATH_LIST_PREVIEW_APPS, req).await
+}
+
+pub async fn stop_preview_app(
+    req: &StopPreviewAppRequest,
+) -> Result<StopPreviewAppResponse, FetchError> {
+    connect_rpc_post(PATH_STOP_PREVIEW_APP, req).await
 }
