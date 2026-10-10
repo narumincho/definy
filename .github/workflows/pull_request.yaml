@@ -13,6 +13,13 @@ jobs:
       - run: cargo fmt --check
       - run: dx fmt --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+      - name: Deno fmt, lint and test
+        run: |
+          deno fmt --check
+          deno lint
+          deno test pages/
       - name: Setup ChromeDriver
         run: |
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)

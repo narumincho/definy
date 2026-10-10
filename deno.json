@@ -1,0 +1,17 @@
+{
+  "tasks": {
+    "test": "deno test pages/",
+    "check": "deno check pages/functions/[[path]].ts pages/functions/proxy_test.ts",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19"
+  },
+  "lint": {
+    "include": ["pages/"]
+  },
+  "fmt": {
+    "include": ["pages/"]
+  }
+}

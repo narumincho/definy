@@ -2,6 +2,7 @@
 /generated/
 /target/
 /dist/
+/dist-pages/
 .codex/
 /narumincho-vdom-build/data.json
 /narumincho-vdom-build/cache/

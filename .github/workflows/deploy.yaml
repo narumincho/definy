@@ -13,6 +13,14 @@ jobs:
         run: curl -sSL https://dioxus.dev/install.sh | bash
       - run: rustup target add wasm32-unknown-unknown
       - run: dx build --package definy-client --release
+      - name: Package Cloudflare Pages
+        run: bash scripts/build-pages.sh --skip-build
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist-pages --project-name definy --branch main
       - run: cargo build -p definy-server --release
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to Fly
