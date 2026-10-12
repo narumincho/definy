@@ -21,18 +21,31 @@ struct RenderContext {
     selection_anchor_id: Option<u64>,
 }
 
-/// 選択中ノードに付与する CSS `anchor-name`. ドロップダウンメニューをノード直下に表示するために使う
-pub fn tree_selection_anchor_name(anchor_id: u64) -> String {
-    format!("--tree-selection-{anchor_id}")
+/// ノードに付与する CSS `anchor-name`. ドロップダウンメニューをノード直下に表示するために使う
+pub fn tree_node_anchor_name(anchor_id: u64, node_id: &str) -> String {
+    let sanitized: String = node_id
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '-'
+            }
+        })
+        .collect();
+    format!("--tree-node-{anchor_id}-{sanitized}")
 }
 
-/// 選択中ノードであれば `anchor-name` の CSS 宣言を返す
-fn anchor_style(ctx: &RenderContext, is_selected: bool) -> String {
+/// `selection_anchor_id` が指定されていればノード固有の `anchor-name` CSS 宣言を返す
+fn anchor_style(ctx: &RenderContext, node_id: &str) -> String {
     match ctx.selection_anchor_id {
-        Some(anchor_id) if is_selected => {
-            format!(" anchor-name: {};", tree_selection_anchor_name(anchor_id))
+        Some(anchor_id) => {
+            format!(
+                " anchor-name: {};",
+                tree_node_anchor_name(anchor_id, node_id)
+            )
         }
-        _ => String::new(),
+        None => String::new(),
     }
 }
 
@@ -49,7 +62,7 @@ pub fn TreeLayoutRenderer(
     #[props(default = None)] on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     #[props(default = None)] on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
     #[props(default = None)] on_change_boolean: Option<EventHandler<(Vec<PathStep>, bool)>>,
-    /// 指定すると選択中ノードに [`tree_selection_anchor_name`] の `anchor-name` を付与する
+    /// 指定すると各ノードに [`tree_node_anchor_name`] の `anchor-name` を付与する
     #[props(default = None)]
     selection_anchor_id: Option<u64>,
 ) -> Element {
@@ -117,7 +130,7 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
         let badge_style = format!(
             "{}{}",
             node_badge_style(&node.kind, is_selected, is_hovered, has_error),
-            anchor_style(&ctx, is_selected)
+            anchor_style(&ctx, &node.id)
         );
         let id_for_click = node.id.clone();
         let id_for_enter = node.id.clone();
@@ -130,9 +143,8 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                 input {
                     r#type: "number",
                     value: "{raw_val}",
-                    style: "background: transparent; border: none; outline: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
+                    style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
                     autofocus: true,
-                    onclick: move |evt: MouseEvent| evt.stop_propagation(),
                     oninput: move |evt: FormEvent| {
                         if let Ok(n) = evt.value().parse::<i64>()
                             && let Some(cb) = ctx.on_change_number
@@ -149,9 +161,8 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                 input {
                     r#type: "text",
                     value: "{raw_str}",
-                    style: "background: transparent; border: none; outline: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
+                    style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
                     autofocus: true,
-                    onclick: move |evt: MouseEvent| evt.stop_propagation(),
                     oninput: move |evt: FormEvent| {
                         if let Some(cb) = ctx.on_change_string {
                             cb.call((p.clone(), evt.value()));
@@ -212,13 +223,13 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     // 複数行はヘッダーのバッジ直下、インラインはカプセル全体の直下にメニューを表示する
     let (badge_style, container_style) = if is_multiline {
         (
-            format!("{badge_style}{}", anchor_style(&ctx, is_selected)),
+            format!("{badge_style}{}", anchor_style(&ctx, &node.id)),
             container_style,
         )
     } else {
         (
             badge_style,
-            format!("{container_style}{}", anchor_style(&ctx, is_selected)),
+            format!("{container_style}{}", anchor_style(&ctx, &node.id)),
         )
     };
 
@@ -361,7 +372,7 @@ fn render_table_node(
     let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node.id);
     let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node.id);
 
-    let table_anchor_style = anchor_style(&ctx, is_selected);
+    let table_anchor_style = anchor_style(&ctx, &node.id);
     let border_color = if has_error && is_selected {
         "#ef4444"
     } else if has_error {

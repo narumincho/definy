@@ -232,13 +232,6 @@ pub fn PartDefinitionFormView(
                                     )
                             }
                         }
-                        if !is_logged_in {
-                            span {
-                                "data-unauthenticated-badge": "true",
-                                style: "font-size: 0.74rem; color: var(--text-muted);",
-                                "{context.language.label(\"(Editable & Evaluatable without login)\", \"(未ログインでも自由に編集・評価可能)\", \"(Redaktebla kaj taksebla sen ensaluto)\")}"
-                            }
-                        }
                     }
                     div { style: "display: flex; align-items: center; gap: 0.5rem;",
                         if composing_expression.read().is_some() {

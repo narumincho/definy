@@ -43,10 +43,21 @@ data = [
 
 ## ツリーエディタの操作 UI
 
-- ノードを選択すると, 式・演算子を切り替えるドロップダウンメニューが**選択したノードの直下**に表示される
+- ノードを選択すると,
+  式・演算子を切り替えるドロップダウンメニューが**選択したノードの直下**に表示される
   (エディタ上部のツールバーには表示しない).
-  - 選択ノードに CSS `anchor-name` (`--tree-selection-{エディタごとの連番}`) を付与し,
-    `SearchableDropdownPanel` (popover) を CSS Anchor Positioning でそこに配置している.
-  - 数値・文字列リテラル選択時はノード上で直接編集するため, メニューの検索欄にはフォーカスを移さない.
-- ノードの枠は常に丸くする. 1 行に収まるバッジ・インラインカプセルは `--radius-full` (ピル型),
-  高さのある複数行カプセル・テーブルは `--radius-lg` を使う.
+  - 各ノードに一意の CSS `anchor-name` (`--tree-node-{エディタ連番}-{ノードID}`)
+    を常時付与し, `SearchableDropdownPanel` (popover) も DOM
+    上に常時配置した上で, クリックイベント内で同期的に `position-anchor`
+    を対象ノードに切り替えて `showPopover()` (`show_anchored_popover`)
+    を呼び出す.
+  - 数値・文字列リテラル選択時はノード上で直接編集するため,
+    メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
+    を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).
+  - Dioxus 0.7 ではコンポーネント描画中に無条件で子コンポーネントが購読する
+    `Signal::set` を呼ぶと, 常に dirty scope が残って `use_effect`
+    等が実行されなくなるため, `diagnostics` / `expected_types` の `Signal`
+    更新は値が変わったとき (`*sig.peek() != new_val`) のみ行う.
+- ノードの枠は常に丸くする. 1 行に収まるバッジ・インラインカプセルは
+  `--radius-full` (ピル型), 高さのある複数行カプセル・テーブルは `--radius-lg`
+  を使う.

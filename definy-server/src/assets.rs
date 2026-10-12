@@ -187,48 +187,64 @@ fn resolve_cached_asset_by_finder<F>(
 where
     F: Fn(&std::path::Path) -> Option<std::path::PathBuf>,
 {
+    let mut newest: Option<(
+        std::path::PathBuf,
+        std::path::PathBuf,
+        std::time::SystemTime,
+    )> = None;
     for dir in get_public_dir_candidates() {
         if let Some(p) = finder(&dir)
             && let Ok(metadata) = std::fs::metadata(&p)
             && let Ok(modified) = metadata.modified()
         {
-            if let Ok(guard) = cache.read()
-                && let Some(ref cached) = *guard
-                && cached.path == p
-                && cached.modified == modified
-            {
-                return Some(cached.asset.clone());
-            }
-
-            if let Ok(bytes) = std::fs::read(&p) {
-                let hash = sha2::Sha256::digest(&bytes);
-                let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-                let rel_path = p
-                    .strip_prefix(&dir)
-                    .ok()
-                    .map(|rp| rp.to_string_lossy().replace('\\', "/"))
-                    .unwrap_or_else(|| {
-                        p.file_name()
-                            .map(|n| n.to_string_lossy().to_string())
-                            .unwrap_or_default()
-                    });
-                let asset = ResolvedAsset {
-                    bytes,
-                    hash: hash_hex,
-                    content_type,
-                    relative_path: rel_path,
-                };
-                if let Ok(mut guard) = cache.write() {
-                    *guard = Some(CachedAsset {
-                        path: p,
-                        modified,
-                        asset: asset.clone(),
-                    });
-                }
-                return Some(asset);
+            let is_newer = match &newest {
+                Some((_, _, best_modified)) => modified > *best_modified,
+                None => true,
+            };
+            if is_newer {
+                newest = Some((dir, p, modified));
             }
         }
     }
+
+    let (dir, p, modified) = newest?;
+
+    if let Ok(guard) = cache.read()
+        && let Some(ref cached) = *guard
+        && cached.path == p
+        && cached.modified == modified
+    {
+        return Some(cached.asset.clone());
+    }
+
+    if let Ok(bytes) = std::fs::read(&p) {
+        let hash = sha2::Sha256::digest(&bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+        let rel_path = p
+            .strip_prefix(&dir)
+            .ok()
+            .map(|rp| rp.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|| {
+                p.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            });
+        let asset = ResolvedAsset {
+            bytes,
+            hash: hash_hex,
+            content_type,
+            relative_path: rel_path,
+        };
+        if let Ok(mut guard) = cache.write() {
+            *guard = Some(CachedAsset {
+                path: p,
+                modified,
+                asset: asset.clone(),
+            });
+        }
+        return Some(asset);
+    }
+
     None
 }
 
@@ -249,13 +265,23 @@ pub fn resolve_icon() -> &'static ResolvedAsset {
 }
 
 pub fn resolve_snippet(snippet_path: &str) -> Option<Vec<u8>> {
+    let mut newest: Option<(std::path::PathBuf, std::time::SystemTime)> = None;
     for dir in get_public_dir_candidates() {
         let full = dir.join("wasm").join("snippets").join(snippet_path);
-        if let Ok(bytes) = std::fs::read(&full) {
-            return Some(bytes);
+        if let Ok(metadata) = std::fs::metadata(&full)
+            && let Ok(modified) = metadata.modified()
+        {
+            let is_newer = match &newest {
+                Some((_, best_modified)) => modified > *best_modified,
+                None => true,
+            };
+            if is_newer {
+                newest = Some((full, modified));
+            }
         }
     }
-    None
+    let (full, _) = newest?;
+    std::fs::read(&full).ok()
 }
 
 pub fn resolve_snippets_list() -> Vec<String> {

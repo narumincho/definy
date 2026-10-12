@@ -30,11 +30,30 @@ fn dom_hide_popover(_panel_id: &str) {
     }
 }
 
-fn dom_show_popover_and_focus(_panel_id: &str, _search_input_name: Option<&str>) {
+fn dom_show_popover_and_focus(
+    _panel_id: &str,
+    _anchor_name: Option<&str>,
+    _search_input_name: Option<&str>,
+) {
     #[cfg(target_arch = "wasm32")]
     if let Some(window) = web_sys::window() {
         if let Some(doc) = window.document() {
             if let Some(elem) = doc.get_element_by_id(_panel_id) {
+                if let Some(anchor_name) = _anchor_name
+                    && let Ok(style) =
+                        js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("style"))
+                    && let Ok(set_prop) = js_sys::Reflect::get(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("setProperty"),
+                    )
+                    && let Ok(set_prop_fn) = set_prop.dyn_into::<js_sys::Function>()
+                {
+                    let _ = set_prop_fn.call2(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("position-anchor"),
+                        &wasm_bindgen::JsValue::from_str(anchor_name),
+                    );
+                }
                 let _ =
                     js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("showPopover"))
                         .ok()
@@ -77,9 +96,13 @@ fn initial_search_query_for_label(label: &str) -> String {
     }
 }
 
-/// popover を表示し、必要であれば検索入力欄にフォーカスする
-pub fn show_popover(panel_id: &str, focus_search_input_name: Option<&str>) {
-    dom_show_popover_and_focus(panel_id, focus_search_input_name);
+/// アンカー要素を指定して popover を表示し、必要であれば検索入力欄にフォーカスする
+pub fn show_anchored_popover(
+    panel_id: &str,
+    anchor_name: &str,
+    focus_search_input_name: Option<&str>,
+) {
+    dom_show_popover_and_focus(panel_id, Some(anchor_name), focus_search_input_name);
 }
 
 /// popover を閉じる
@@ -122,7 +145,7 @@ pub fn SearchableDropdown(
         move || {
             search_query.set(initial_search_query_for_label(&current_label));
             highlighted_index.set(None);
-            dom_show_popover_and_focus(&panel_id, Some(&format!("search-{}", name)));
+            dom_show_popover_and_focus(&panel_id, None, Some(&format!("search-{}", name)));
         }
     };
 
@@ -172,7 +195,7 @@ pub fn SearchableDropdown(
 
 /// 検索付き選択肢パネル (popover). `anchor_name` で指定した CSS アンカー要素の直下に表示される.
 ///
-/// 表示は [`show_popover`] で行う.
+/// 表示は [`show_anchored_popover`] で行う.
 #[component]
 pub fn SearchableDropdownPanel(
     panel_id: String,
@@ -221,10 +244,9 @@ pub fn SearchableDropdownPanel(
             {header}
             input {
                 r#type: "text",
-                autofocus: true,
                 name: "{search_input_name}",
                 value: "{search_query}",
-                style: "width: 100%; padding: 0.4rem 0.6rem; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); outline: none; box-sizing: border-box;",
+                style: "width: 100%; padding: 0.4rem 0.6rem; border: none; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; color: var(--text); outline: none; box-shadow: none; backdrop-filter: none; box-sizing: border-box;",
                 onfocus: {
                     let initial_query = initial_query.clone();
                     move |_| {
