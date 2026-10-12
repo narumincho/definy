@@ -36,8 +36,8 @@ pub(crate) fn assemble_wasm_module(
     encode_u32_leb128(&mut table_section, num_funcs.max(1) as u32);
     emit_section(&mut module, TABLE_SECTION, &table_section);
 
-    // 4. Memory Section: 1 memory, min 2 pages (128KB)
-    let memory_section = vec![1, 0x00, 2];
+    // 4. Memory Section: 1 memory, min 16 pages (1MB)
+    let memory_section = vec![1, 0x00, 16];
     emit_section(&mut module, MEMORY_SECTION, &memory_section);
 
     // 5. Global Section:

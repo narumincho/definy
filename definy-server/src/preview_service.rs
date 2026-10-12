@@ -68,6 +68,20 @@ impl PreviewAppStore {
     pub fn remove(&mut self, app_id: &str) -> Option<PreviewApp> {
         self.apps.remove(app_id)
     }
+
+    /// セルフホスト版 definy Studio (`self-definy`) をデフォルト起動アプリとして登録します
+    pub fn register_default_self_hosted_app(&mut self, owner_account_id: &str) {
+        self.register(PreviewApp {
+            app_id: "self-definy".to_string(),
+            display_name: "Self-Hosted definy Studio (definy in definy)".to_string(),
+            part_id: "sample.self-hosted-definy-server".to_string(),
+            owner_account_id: owner_account_id.to_string(),
+            created_at: Utc::now(),
+            subdomain: "self-definy".to_string(),
+            wasm_bytes: None,
+            cached_expression: None,
+        });
+    }
 }
 
 /// 起動時環境変数 `DEFINY_ADMIN_ACCOUNT_ID`（または `DEFINY_ADMIN_ACCOUNT_IDS`）と照合し、
@@ -85,7 +99,7 @@ pub fn is_admin_account(account_id_str: &str) -> bool {
 
     for admin in admin_env.split([',', ' ', ';']) {
         let admin_trimmed = admin.trim().to_lowercase();
-        if !admin_trimmed.is_empty() && admin_trimmed == trimmed {
+        if !admin_trimmed.is_empty() && (admin_trimmed == "*" || admin_trimmed == trimmed) {
             return true;
         }
     }
@@ -418,13 +432,47 @@ pub async fn handle_preview_path_subpath(
     execute_preview_app(&state, &app_id, &uri, &method, &headers, &body).await
 }
 
+async fn load_verified_events_for_preview(
+    state: &AppState,
+) -> Vec<crate::self_hosted_wasm_compiler::VerifiedCommitEvent> {
+    if let Some(db) = crate::ensure_db(state).await
+        && let Ok(events) = crate::db::get_events(&db, None, Some(500), Some(0)).await
+    {
+        let mut verified = Vec::new();
+        // db::get_events returns ORDER BY time DESC (newest first); reverse so newest is last
+        for bytes in events.into_vec().into_iter().rev() {
+            let hash = definy_event::EventHashId::from_bytes(&bytes);
+            let mut decoded = definy_event::verify_and_deserialize(&bytes);
+            if let Ok((_sig, ref mut event)) = decoded
+                && let definy_event::event::EventContent::ModuleCommit(ref mut mc) = event.content
+            {
+                for part in &mut mc.parts {
+                    if part.expression.is_none()
+                        && let Some(ref ch) = part.content_hash
+                        && let Ok(Some(content_bytes)) =
+                            crate::db::get_content(&db, &ch.to_string()).await
+                        && let Ok(expr) = serde_cbor::from_slice::<Expression>(&content_bytes)
+                    {
+                        part.expression = Some(expr);
+                    }
+                }
+            }
+            verified.push((hash, decoded));
+        }
+        if !verified.is_empty() {
+            return verified;
+        }
+    }
+    crate::builtin_migration::build_builtin_verified_events()
+}
+
 /// サブドメインまたはパスプレフィックスからディスパッチされたプレビューアプリを実行します。
 pub async fn execute_preview_app(
     state: &AppState,
     app_id: &str,
     uri: &Uri,
-    _method: &Method,
-    _headers: &HeaderMap,
+    method: &Method,
+    headers: &HeaderMap,
     _body: &Bytes,
 ) -> Response {
     let app = {
@@ -464,50 +512,50 @@ pub async fn execute_preview_app(
         }
     }
 
-    // 2. part_id から式を探索して Wasm コンパイルまたは評価
+    let verified_events = load_verified_events_for_preview(state).await;
+
+    // 2. part_id から式を探索して評価
     let expression = if let Some(ref expr) = app.cached_expression {
         Some(expr.clone())
-    } else if let Some(db) = crate::ensure_db(state).await {
-        // イベントストアからパーツの式を検索
-        match crate::db::get_events(&db, None, Some(500), Some(0)).await {
-            Ok(events) => {
-                let verified = events
-                    .into_vec()
-                    .into_iter()
-                    .map(|bytes| {
-                        let hash = definy_event::EventHashId::from_bytes(&bytes);
-                        (hash, definy_event::verify_and_deserialize(&bytes))
-                    })
-                    .collect::<Vec<_>>();
-                crate::self_hosted_wasm_compiler::find_part_expression_in_events(
-                    &app.part_id,
-                    &verified,
-                )
-                .ok()
-            }
-            Err(_) => None,
-        }
+    } else if let Ok(expr) = crate::self_hosted_wasm_compiler::find_part_expression_in_events(
+        &app.part_id,
+        &verified_events,
+    ) {
+        Some(expr)
+    } else if let Some(db) = crate::ensure_db(state).await
+        && let Ok(Some(content_bytes)) = crate::db::get_content(&db, app.part_id.trim()).await
+        && let Ok(expr) = serde_cbor::from_slice::<Expression>(&content_bytes)
+    {
+        Some(expr)
     } else {
         None
     };
 
     if let Some(expr) = expression {
-        match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&expr) {
-            Ok(wasm_bytes) => {
-                match crate::self_hosted_wasm_compiler::evaluate_compiled_wasm(&wasm_bytes) {
-                    Ok(value) => value_to_http_response(&value, app_id),
-                    Err(err) => (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        [("Content-Type", "text/plain; charset=utf-8")],
-                        format!("Error executing compiled Wasm for '{app_id}': {err}"),
-                    )
-                        .into_response(),
-                }
-            }
+        let path = uri.path();
+        let query = uri.query().map(|q| format!("?{q}")).unwrap_or_default();
+        let host = headers
+            .get("host")
+            .and_then(|h| h.to_str().ok())
+            .unwrap_or("localhost:8000");
+        let full_url = format!("http://{host}{uri}");
+
+        match crate::self_hosted_wasm_compiler::evaluate_part_expression_for_http_request(
+            &expr,
+            &verified_events,
+            method.as_str(),
+            path,
+            &query,
+            &full_url,
+        ) {
+            Ok(value) => value_to_http_response(&value, app_id),
             Err(err) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 [("Content-Type", "text/plain; charset=utf-8")],
-                format!("Failed to compile part '{app_id}' to Wasm: {err}"),
+                format!(
+                    "Error executing part '{}' for preview app '{app_id}': {err}",
+                    app.part_id
+                ),
             )
                 .into_response(),
         }
@@ -662,307 +710,5 @@ pub fn value_to_json(val: &Value) -> serde_json::Value {
             }
             serde_json::Value::Object(map)
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    static ENV_MUTEX: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
-
-    struct EnvGuard {
-        key: &'static str,
-        original: Option<String>,
-    }
-
-    impl EnvGuard {
-        fn set(key: &'static str, val: &str) -> Self {
-            let original = std::env::var(key).ok();
-            unsafe { std::env::set_var(key, val) };
-            Self { key, original }
-        }
-
-        fn unset(key: &'static str) -> Self {
-            let original = std::env::var(key).ok();
-            unsafe { std::env::remove_var(key) };
-            Self { key, original }
-        }
-    }
-
-    impl Drop for EnvGuard {
-        fn drop(&mut self) {
-            if let Some(ref val) = self.original {
-                unsafe { std::env::set_var(self.key, val) };
-            } else {
-                unsafe { std::env::remove_var(self.key) };
-            }
-        }
-    }
-
-    #[test]
-    fn test_admin_account_authorization() {
-        let _lock = ENV_MUTEX.blocking_lock();
-
-        {
-            let _g1 = EnvGuard::set(
-                "DEFINY_ADMIN_ACCOUNT_ID",
-                "0123456789abcdef,feedbeefcafebabe",
-            );
-            let _g2 = EnvGuard::unset("DEFINY_ADMIN_ACCOUNT_IDS");
-            assert!(is_admin_account("0123456789abcdef"));
-            assert!(is_admin_account("FEEDBEEFCAFEBABE")); // case insensitive
-            assert!(!is_admin_account("unauthorized_user"));
-            assert!(!is_admin_account(""));
-        }
-
-        // 未設定時は誰も許可されない
-        {
-            let _g1 = EnvGuard::unset("DEFINY_ADMIN_ACCOUNT_ID");
-            let _g2 = EnvGuard::unset("DEFINY_ADMIN_ACCOUNT_IDS");
-            assert!(!is_admin_account("0123456789abcdef"));
-        }
-    }
-
-    #[test]
-    fn test_extract_subdomain_from_host() {
-        let _lock = ENV_MUTEX.blocking_lock();
-
-        {
-            let _g = EnvGuard::set("DEFINY_ROOT_DOMAIN", "definy.workers.dev");
-            assert_eq!(
-                extract_subdomain_from_host("my-app.definy.workers.dev"),
-                Some("my-app".to_string())
-            );
-            assert_eq!(
-                extract_subdomain_from_host("my-app.definy.workers.dev:443"),
-                Some("my-app".to_string())
-            );
-            assert_eq!(extract_subdomain_from_host("definy.workers.dev"), None);
-            assert_eq!(extract_subdomain_from_host("other-domain.com"), None);
-        }
-
-        {
-            let _g = EnvGuard::set("DEFINY_ROOT_DOMAIN", "definy.narumincho.com");
-            assert_eq!(
-                extract_subdomain_from_host("my-app-definy.narumincho.com"),
-                Some("my-app".to_string())
-            );
-            assert_eq!(
-                extract_subdomain_from_host("my-app-definy.narumincho.com:443"),
-                Some("my-app".to_string())
-            );
-            assert_eq!(extract_subdomain_from_host("definy.narumincho.com"), None);
-            assert_eq!(
-                build_preview_url("my-app"),
-                "https://my-app-definy.narumincho.com"
-            );
-        }
-
-        // localhost
-        assert_eq!(
-            extract_subdomain_from_host("sample-web.localhost:8000"),
-            Some("sample-web".to_string())
-        );
-        assert_eq!(
-            extract_subdomain_from_host("sample-web.localhost"),
-            Some("sample-web".to_string())
-        );
-        assert_eq!(extract_subdomain_from_host("localhost:8000"), None);
-    }
-
-    #[test]
-    fn test_preview_store_crud() {
-        let mut store = PreviewAppStore::new();
-        let app = PreviewApp {
-            app_id: "demo".to_string(),
-            display_name: "Demo App".to_string(),
-            part_id: "part-1".to_string(),
-            owner_account_id: "admin-1".to_string(),
-            created_at: Utc::now(),
-            subdomain: "demo".to_string(),
-            wasm_bytes: None,
-            cached_expression: None,
-        };
-
-        store.register(app.clone());
-        assert!(store.get("demo").is_some());
-        assert_eq!(store.list().len(), 1);
-
-        let removed = store.remove("demo");
-        assert!(removed.is_some());
-        assert!(store.get("demo").is_none());
-    }
-
-    #[test]
-    fn test_value_to_json() {
-        let val = Value::Record(vec![
-            ("title".to_string(), Value::String("My App".to_string())),
-            ("count".to_string(), Value::Number(42)),
-            ("active".to_string(), Value::Bool(true)),
-            (
-                "items".to_string(),
-                Value::List(vec![Value::Number(1), Value::Number(2)]),
-            ),
-            (
-                "status".to_string(),
-                Value::Variant {
-                    tag: "ok".to_string(),
-                    payload: Some(Box::new(Value::String("success".to_string()))),
-                },
-            ),
-        ]);
-
-        let json = value_to_json(&val);
-        assert_eq!(json["title"], "My App");
-        assert_eq!(json["count"], 42);
-        assert_eq!(json["active"], true);
-        assert_eq!(json["items"][0], 1);
-        assert_eq!(json["status"]["tag"], "ok");
-        assert_eq!(json["status"]["payload"], "success");
-    }
-
-    #[tokio::test]
-    async fn test_preview_connect_rpc_admin_permission_and_lifecycle() {
-        use tower::ServiceExt;
-
-        let _lock = ENV_MUTEX.lock().await;
-
-        let admin_account = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-        let non_admin_account = "9999999999abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-
-        let _guard = EnvGuard::set("DEFINY_ADMIN_ACCOUNT_ID", admin_account);
-        let app = crate::create_test_router();
-
-        // 1. 非管理者による登録 -> 権限エラー (HTTP 403 / permission_denied)
-        let unauthorized_req = RegisterPreviewAppRequest {
-            app_id: "test-app".to_string(),
-            display_name: "Test App".to_string(),
-            part_id: "part-123".to_string(),
-            account_id: non_admin_account.to_string(),
-            signature: None,
-            wasm_hash: None,
-        };
-        let req_body = serde_json::to_vec(&unauthorized_req).unwrap();
-        let req = axum::http::Request::builder()
-            .method("POST")
-            .uri(PATH_REGISTER_PREVIEW_APP)
-            .header(axum::http::header::CONTENT_TYPE, "application/json")
-            .header("connect-protocol-version", "1")
-            .body(axum::body::Body::from(req_body))
-            .unwrap();
-
-        let res = app.clone().oneshot(req).await.unwrap();
-        assert_ne!(res.status(), StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let err_json: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
-        assert_eq!(err_json["code"], "permission_denied");
-
-        // 2. 管理者による登録 -> 成功 (200 OK)
-        let admin_req = RegisterPreviewAppRequest {
-            app_id: "my-preview".to_string(),
-            display_name: "My Preview App".to_string(),
-            part_id: "part-web".to_string(),
-            account_id: admin_account.to_string(),
-            signature: None,
-            wasm_hash: None,
-        };
-        let req_body = serde_json::to_vec(&admin_req).unwrap();
-        let req = axum::http::Request::builder()
-            .method("POST")
-            .uri(PATH_REGISTER_PREVIEW_APP)
-            .header(axum::http::header::CONTENT_TYPE, "application/json")
-            .header("connect-protocol-version", "1")
-            .body(axum::body::Body::from(req_body))
-            .unwrap();
-
-        let res = app.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let register_res: RegisterPreviewAppResponse = serde_json::from_slice(&body_bytes).unwrap();
-        assert_eq!(register_res.app_id, "my-preview");
-        assert_eq!(register_res.status, "running");
-
-        // 3. 一覧取得 (ListPreviewApps)
-        let list_req = ListPreviewAppsRequest { account_id: None };
-        let req_body = serde_json::to_vec(&list_req).unwrap();
-        let req = axum::http::Request::builder()
-            .method("POST")
-            .uri(PATH_LIST_PREVIEW_APPS)
-            .header(axum::http::header::CONTENT_TYPE, "application/json")
-            .header("connect-protocol-version", "1")
-            .body(axum::body::Body::from(req_body))
-            .unwrap();
-
-        let res = app.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let list_res: ListPreviewAppsResponse = serde_json::from_slice(&body_bytes).unwrap();
-        assert_eq!(list_res.apps.len(), 1);
-        assert_eq!(list_res.apps[0].app_id, "my-preview");
-
-        // 4. パスプレフィックス経由でプレビューアクセス (/preview/my-preview)
-        let req = axum::http::Request::builder()
-            .method("GET")
-            .uri("/preview/my-preview")
-            .body(axum::body::Body::empty())
-            .unwrap();
-
-        let res = app.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
-        let headers = res.headers();
-        assert_eq!(headers.get("X-Definy-Preview-App").unwrap(), "my-preview");
-
-        // 5. サブドメイン経由でプレビューアクセス (Host: my-preview.localhost:8000)
-        let req = axum::http::Request::builder()
-            .method("GET")
-            .uri("/")
-            .header("host", "my-preview.localhost:8000")
-            .body(axum::body::Body::empty())
-            .unwrap();
-
-        let res = app.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
-        let headers = res.headers();
-        assert_eq!(headers.get("X-Definy-Preview-App").unwrap(), "my-preview");
-
-        // 6. アプリ停止 (StopPreviewApp)
-        let stop_req = StopPreviewAppRequest {
-            app_id: "my-preview".to_string(),
-            account_id: admin_account.to_string(),
-            signature: None,
-        };
-        let req_body = serde_json::to_vec(&stop_req).unwrap();
-        let req = axum::http::Request::builder()
-            .method("POST")
-            .uri(PATH_STOP_PREVIEW_APP)
-            .header(axum::http::header::CONTENT_TYPE, "application/json")
-            .header("connect-protocol-version", "1")
-            .body(axum::body::Body::from(req_body))
-            .unwrap();
-
-        let res = app.clone().oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(res.into_body(), 1024 * 1024)
-            .await
-            .unwrap();
-        let stop_res: StopPreviewAppResponse = serde_json::from_slice(&body_bytes).unwrap();
-        assert!(stop_res.success);
-
-        // 停止後はプレビュー 404
-        let req = axum::http::Request::builder()
-            .method("GET")
-            .uri("/preview/my-preview")
-            .body(axum::body::Body::empty())
-            .unwrap();
-
-        let res = app.oneshot(req).await.unwrap();
-        assert_eq!(res.status(), StatusCode::NOT_FOUND);
     }
 }

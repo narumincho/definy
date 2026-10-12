@@ -782,6 +782,1453 @@
           ]
         }
       }
+    },
+    {
+      "name": "self-hosted-definy-server",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "req",
+              "type": {
+                "record": [
+                  {
+                    "key": "method",
+                    "value": "string"
+                  },
+                  {
+                    "key": "path",
+                    "value": "string"
+                  },
+                  {
+                    "key": "query",
+                    "value": "string"
+                  },
+                  {
+                    "key": "url",
+                    "value": "string"
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "status",
+                "value": "number"
+              },
+              {
+                "key": "contentType",
+                "value": "string"
+              },
+              {
+                "key": "body",
+                "value": "string"
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Self-hosted definy HTTP server & Studio executing core.expression-to-source, core.optimize-expression, core.type-check, core.eval-ast, and core.compile-to-wasm"
+        },
+        {
+          "language": "ja",
+          "text": "definy 自身のコアパーツ群 (フォーマッタ・最適化器・型検査器・評価器・Wasmコンパイラ) を実行して definy Studio を提供するセルフホスト HTTP サーバーパーツ"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "req"
+            }
+          ],
+          "body": {
+            "Let": {
+              "variable_id": 2,
+              "variable_name": "path",
+              "value": {
+                "RecordGet": {
+                  "record": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "key": "path"
+                }
+              },
+              "body": {
+                "Let": {
+                  "variable_id": 3,
+                  "variable_name": "method",
+                  "value": {
+                    "RecordGet": {
+                      "record": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "key": "method"
+                    }
+                  },
+                  "body": {
+                    "Let": {
+                      "variable_id": 10,
+                      "variable_name": "raw_ast",
+                      "value": {
+                        "Variant": {
+                          "tag": "add",
+                          "payload": {
+                            "TypeLiteral": {
+                              "items": [
+                                {
+                                  "key": "left",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "multiply",
+                                      "payload": {
+                                        "TypeLiteral": {
+                                          "items": [
+                                            {
+                                              "key": "left",
+                                              "value": {
+                                                "Variant": {
+                                                  "tag": "add",
+                                                  "payload": {
+                                                    "TypeLiteral": {
+                                                      "items": [
+                                                        {
+                                                          "key": "left",
+                                                          "value": {
+                                                            "Variant": {
+                                                              "tag": "number",
+                                                              "payload": {
+                                                                "Number": {
+                                                                  "value": 10
+                                                                }
+                                                              },
+                                                              "type_part_definition_event_hash": [
+                                                                226,
+                                                                152,
+                                                                190,
+                                                                120,
+                                                                223,
+                                                                182,
+                                                                49,
+                                                                197,
+                                                                160,
+                                                                124,
+                                                                239,
+                                                                125,
+                                                                90,
+                                                                18,
+                                                                38,
+                                                                73,
+                                                                99,
+                                                                119,
+                                                                93,
+                                                                144,
+                                                                161,
+                                                                86,
+                                                                73,
+                                                                81,
+                                                                50,
+                                                                160,
+                                                                52,
+                                                                241,
+                                                                252,
+                                                                70,
+                                                                16,
+                                                                39
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "key": "right",
+                                                          "value": {
+                                                            "Variant": {
+                                                              "tag": "number",
+                                                              "payload": {
+                                                                "Number": {
+                                                                  "value": 5
+                                                                }
+                                                              },
+                                                              "type_part_definition_event_hash": [
+                                                                226,
+                                                                152,
+                                                                190,
+                                                                120,
+                                                                223,
+                                                                182,
+                                                                49,
+                                                                197,
+                                                                160,
+                                                                124,
+                                                                239,
+                                                                125,
+                                                                90,
+                                                                18,
+                                                                38,
+                                                                73,
+                                                                99,
+                                                                119,
+                                                                93,
+                                                                144,
+                                                                161,
+                                                                86,
+                                                                73,
+                                                                81,
+                                                                50,
+                                                                160,
+                                                                52,
+                                                                241,
+                                                                252,
+                                                                70,
+                                                                16,
+                                                                39
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "type_part_definition_event_hash": [
+                                                    226,
+                                                    152,
+                                                    190,
+                                                    120,
+                                                    223,
+                                                    182,
+                                                    49,
+                                                    197,
+                                                    160,
+                                                    124,
+                                                    239,
+                                                    125,
+                                                    90,
+                                                    18,
+                                                    38,
+                                                    73,
+                                                    99,
+                                                    119,
+                                                    93,
+                                                    144,
+                                                    161,
+                                                    86,
+                                                    73,
+                                                    81,
+                                                    50,
+                                                    160,
+                                                    52,
+                                                    241,
+                                                    252,
+                                                    70,
+                                                    16,
+                                                    39
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "right",
+                                              "value": {
+                                                "Variant": {
+                                                  "tag": "number",
+                                                  "payload": {
+                                                    "Number": {
+                                                      "value": 2
+                                                    }
+                                                  },
+                                                  "type_part_definition_event_hash": [
+                                                    226,
+                                                    152,
+                                                    190,
+                                                    120,
+                                                    223,
+                                                    182,
+                                                    49,
+                                                    197,
+                                                    160,
+                                                    124,
+                                                    239,
+                                                    125,
+                                                    90,
+                                                    18,
+                                                    38,
+                                                    73,
+                                                    99,
+                                                    119,
+                                                    93,
+                                                    144,
+                                                    161,
+                                                    86,
+                                                    73,
+                                                    81,
+                                                    50,
+                                                    160,
+                                                    52,
+                                                    241,
+                                                    252,
+                                                    70,
+                                                    16,
+                                                    39
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": [
+                                        226,
+                                        152,
+                                        190,
+                                        120,
+                                        223,
+                                        182,
+                                        49,
+                                        197,
+                                        160,
+                                        124,
+                                        239,
+                                        125,
+                                        90,
+                                        18,
+                                        38,
+                                        73,
+                                        99,
+                                        119,
+                                        93,
+                                        144,
+                                        161,
+                                        86,
+                                        73,
+                                        81,
+                                        50,
+                                        160,
+                                        52,
+                                        241,
+                                        252,
+                                        70,
+                                        16,
+                                        39
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "right",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "number",
+                                      "payload": {
+                                        "Number": {
+                                          "value": 12
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": [
+                                        226,
+                                        152,
+                                        190,
+                                        120,
+                                        223,
+                                        182,
+                                        49,
+                                        197,
+                                        160,
+                                        124,
+                                        239,
+                                        125,
+                                        90,
+                                        18,
+                                        38,
+                                        73,
+                                        99,
+                                        119,
+                                        93,
+                                        144,
+                                        161,
+                                        86,
+                                        73,
+                                        81,
+                                        50,
+                                        160,
+                                        52,
+                                        241,
+                                        252,
+                                        70,
+                                        16,
+                                        39
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "type_part_definition_event_hash": [
+                            226,
+                            152,
+                            190,
+                            120,
+                            223,
+                            182,
+                            49,
+                            197,
+                            160,
+                            124,
+                            239,
+                            125,
+                            90,
+                            18,
+                            38,
+                            73,
+                            99,
+                            119,
+                            93,
+                            144,
+                            161,
+                            86,
+                            73,
+                            81,
+                            50,
+                            160,
+                            52,
+                            241,
+                            252,
+                            70,
+                            16,
+                            39
+                          ]
+                        }
+                      },
+                      "body": {
+                        "Let": {
+                          "variable_id": 11,
+                          "variable_name": "source_before",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": [
+                                    166,
+                                    134,
+                                    184,
+                                    236,
+                                    42,
+                                    61,
+                                    247,
+                                    234,
+                                    204,
+                                    20,
+                                    124,
+                                    55,
+                                    152,
+                                    119,
+                                    80,
+                                    37,
+                                    213,
+                                    183,
+                                    170,
+                                    16,
+                                    9,
+                                    128,
+                                    151,
+                                    187,
+                                    118,
+                                    244,
+                                    230,
+                                    112,
+                                    56,
+                                    191,
+                                    19,
+                                    224
+                                  ]
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 10
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "Let": {
+                              "variable_id": 12,
+                              "variable_name": "opt_ast",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": [
+                                        198,
+                                        28,
+                                        38,
+                                        207,
+                                        51,
+                                        132,
+                                        216,
+                                        115,
+                                        201,
+                                        164,
+                                        217,
+                                        7,
+                                        174,
+                                        142,
+                                        47,
+                                        102,
+                                        230,
+                                        62,
+                                        213,
+                                        131,
+                                        136,
+                                        189,
+                                        172,
+                                        26,
+                                        115,
+                                        131,
+                                        177,
+                                        190,
+                                        127,
+                                        38,
+                                        235,
+                                        206
+                                      ]
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 10
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "body": {
+                                "Let": {
+                                  "variable_id": 13,
+                                  "variable_name": "source_after",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": [
+                                            166,
+                                            134,
+                                            184,
+                                            236,
+                                            42,
+                                            61,
+                                            247,
+                                            234,
+                                            204,
+                                            20,
+                                            124,
+                                            55,
+                                            152,
+                                            119,
+                                            80,
+                                            37,
+                                            213,
+                                            183,
+                                            170,
+                                            16,
+                                            9,
+                                            128,
+                                            151,
+                                            187,
+                                            118,
+                                            244,
+                                            230,
+                                            112,
+                                            56,
+                                            191,
+                                            19,
+                                            224
+                                          ]
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 12
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "body": {
+                                    "Let": {
+                                      "variable_id": 14,
+                                      "variable_name": "eval_raw",
+                                      "value": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": [
+                                                25,
+                                                99,
+                                                12,
+                                                139,
+                                                116,
+                                                101,
+                                                1,
+                                                233,
+                                                31,
+                                                183,
+                                                248,
+                                                19,
+                                                238,
+                                                62,
+                                                247,
+                                                124,
+                                                207,
+                                                83,
+                                                185,
+                                                177,
+                                                189,
+                                                187,
+                                                142,
+                                                214,
+                                                13,
+                                                73,
+                                                204,
+                                                176,
+                                                160,
+                                                197,
+                                                27,
+                                                47
+                                              ]
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "e",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 10
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "body": {
+                                        "Let": {
+                                          "variable_id": 15,
+                                          "variable_name": "eval_opt",
+                                          "value": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": [
+                                                    25,
+                                                    99,
+                                                    12,
+                                                    139,
+                                                    116,
+                                                    101,
+                                                    1,
+                                                    233,
+                                                    31,
+                                                    183,
+                                                    248,
+                                                    19,
+                                                    238,
+                                                    62,
+                                                    247,
+                                                    124,
+                                                    207,
+                                                    83,
+                                                    185,
+                                                    177,
+                                                    189,
+                                                    187,
+                                                    142,
+                                                    214,
+                                                    13,
+                                                    73,
+                                                    204,
+                                                    176,
+                                                    160,
+                                                    197,
+                                                    27,
+                                                    47
+                                                  ]
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "e",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 12
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "body": {
+                                            "Let": {
+                                              "variable_id": 16,
+                                              "variable_name": "type_res",
+                                              "value": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": [
+                                                        114,
+                                                        63,
+                                                        246,
+                                                        85,
+                                                        126,
+                                                        193,
+                                                        231,
+                                                        77,
+                                                        129,
+                                                        99,
+                                                        237,
+                                                        231,
+                                                        166,
+                                                        233,
+                                                        194,
+                                                        42,
+                                                        67,
+                                                        232,
+                                                        158,
+                                                        249,
+                                                        177,
+                                                        40,
+                                                        171,
+                                                        159,
+                                                        24,
+                                                        114,
+                                                        108,
+                                                        235,
+                                                        242,
+                                                        127,
+                                                        250,
+                                                        56
+                                                      ]
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "expr",
+                                                      "value": {
+                                                        "Variable": {
+                                                          "variable_id": 10
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "env",
+                                                      "value": {
+                                                        "TypeLiteral": {
+                                                          "items": [
+                                                            {
+                                                              "key": "vars",
+                                                              "value": {
+                                                                "ListLiteral": {
+                                                                  "items": []
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "key": "parts",
+                                                              "value": {
+                                                                "ListLiteral": {
+                                                                  "items": []
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "body": {
+                                                "Let": {
+                                                  "variable_id": 17,
+                                                  "variable_name": "type_status",
+                                                  "value": {
+                                                    "Match": {
+                                                      "target": {
+                                                        "Variable": {
+                                                          "variable_id": 16
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "tag": "ok",
+                                                          "variable_id": 30,
+                                                          "variable_name": "t",
+                                                          "body": {
+                                                            "String": {
+                                                              "value": "ok(number)"
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "tag": "error",
+                                                          "variable_id": 31,
+                                                          "variable_name": "err",
+                                                          "body": {
+                                                            "String": {
+                                                              "value": "error"
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "tag": "_",
+                                                          "variable_id": 32,
+                                                          "variable_name": "_",
+                                                          "body": {
+                                                            "String": {
+                                                              "value": "unknown"
+                                                            }
+                                                          }
+                                                        }
+                                                      ],
+                                                      "default": null
+                                                    }
+                                                  },
+                                                  "body": {
+                                                    "Let": {
+                                                      "variable_id": 18,
+                                                      "variable_name": "wasm_bytes",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": [
+                                                                178,
+                                                                26,
+                                                                208,
+                                                                28,
+                                                                69,
+                                                                85,
+                                                                24,
+                                                                250,
+                                                                118,
+                                                                93,
+                                                                91,
+                                                                170,
+                                                                39,
+                                                                191,
+                                                                180,
+                                                                136,
+                                                                16,
+                                                                170,
+                                                                34,
+                                                                232,
+                                                                215,
+                                                                226,
+                                                                3,
+                                                                139,
+                                                                208,
+                                                                116,
+                                                                97,
+                                                                94,
+                                                                228,
+                                                                229,
+                                                                97,
+                                                                228
+                                                              ]
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "expr",
+                                                              "value": {
+                                                                "Variable": {
+                                                                  "variable_id": 10
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "body": {
+                                                        "Let": {
+                                                          "variable_id": 19,
+                                                          "variable_name": "pipeline_ok",
+                                                          "value": {
+                                                            "If": {
+                                                              "condition": {
+                                                                "And": {
+                                                                  "left": {
+                                                                    "And": {
+                                                                      "left": {
+                                                                        "And": {
+                                                                          "left": {
+                                                                            "And": {
+                                                                              "left": {
+                                                                                "Equal": {
+                                                                                  "left": {
+                                                                                    "Variable": {
+                                                                                      "variable_id": 14
+                                                                                    }
+                                                                                  },
+                                                                                  "right": {
+                                                                                    "Number": {
+                                                                                      "value": 42
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "right": {
+                                                                                "Equal": {
+                                                                                  "left": {
+                                                                                    "Variable": {
+                                                                                      "variable_id": 15
+                                                                                    }
+                                                                                  },
+                                                                                  "right": {
+                                                                                    "Number": {
+                                                                                      "value": 42
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "right": {
+                                                                            "GreaterThan": {
+                                                                              "left": {
+                                                                                "ListLength": {
+                                                                                  "value": {
+                                                                                    "Variable": {
+                                                                                      "variable_id": 18
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "right": {
+                                                                                "Number": {
+                                                                                  "value": 8
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "Equal": {
+                                                                          "left": {
+                                                                            "ListGet": {
+                                                                              "list": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 18
+                                                                                }
+                                                                              },
+                                                                              "index": {
+                                                                                "Number": {
+                                                                                  "value": 0
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "right": {
+                                                                            "Number": {
+                                                                              "value": 0
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "right": {
+                                                                    "Equal": {
+                                                                      "left": {
+                                                                        "ListGet": {
+                                                                          "list": {
+                                                                            "Variable": {
+                                                                              "variable_id": 18
+                                                                            }
+                                                                          },
+                                                                          "index": {
+                                                                            "Number": {
+                                                                              "value": 1
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "Number": {
+                                                                          "value": 97
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              },
+                                                              "then_expr": {
+                                                                "String": {
+                                                                  "value": "true"
+                                                                }
+                                                              },
+                                                              "else_expr": {
+                                                                "String": {
+                                                                  "value": "false"
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "body": {
+                                                            "If": {
+                                                              "condition": {
+                                                                "Equal": {
+                                                                  "left": {
+                                                                    "Variable": {
+                                                                      "variable_id": 2
+                                                                    }
+                                                                  },
+                                                                  "right": {
+                                                                    "String": {
+                                                                      "value": "/healthz"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              },
+                                                              "then_expr": {
+                                                                "TypeLiteral": {
+                                                                  "items": [
+                                                                    {
+                                                                      "key": "status",
+                                                                      "value": {
+                                                                        "Number": {
+                                                                          "value": 200
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "key": "contentType",
+                                                                      "value": {
+                                                                        "String": {
+                                                                          "value": "application/json; charset=utf-8"
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "key": "body",
+                                                                      "value": {
+                                                                        "StringConcat": {
+                                                                          "left": {
+                                                                            "StringConcat": {
+                                                                              "left": {
+                                                                                "StringConcat": {
+                                                                                  "left": {
+                                                                                    "StringConcat": {
+                                                                                      "left": {
+                                                                                        "String": {
+                                                                                          "value": "{\"status\":\"ok\",\"service\":\"self-hosted-definy-server\",\"selfHostingPipelineVerified\":"
+                                                                                        }
+                                                                                      },
+                                                                                      "right": {
+                                                                                        "Variable": {
+                                                                                          "variable_id": 19
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "right": {
+                                                                                    "String": {
+                                                                                      "value": ",\"typeCheck\":\""
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "right": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 17
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "right": {
+                                                                            "String": {
+                                                                              "value": "\"}"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "else_expr": {
+                                                                "If": {
+                                                                  "condition": {
+                                                                    "Equal": {
+                                                                      "left": {
+                                                                        "Variable": {
+                                                                          "variable_id": 2
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "String": {
+                                                                          "value": "/api/self-host"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "then_expr": {
+                                                                    "TypeLiteral": {
+                                                                      "items": [
+                                                                        {
+                                                                          "key": "status",
+                                                                          "value": {
+                                                                            "Number": {
+                                                                              "value": 200
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "key": "contentType",
+                                                                          "value": {
+                                                                            "String": {
+                                                                              "value": "application/json; charset=utf-8"
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "key": "body",
+                                                                          "value": {
+                                                                            "StringConcat": {
+                                                                              "left": {
+                                                                                "StringConcat": {
+                                                                                  "left": {
+                                                                                    "StringConcat": {
+                                                                                      "left": {
+                                                                                        "StringConcat": {
+                                                                                          "left": {
+                                                                                            "StringConcat": {
+                                                                                              "left": {
+                                                                                                "StringConcat": {
+                                                                                                  "left": {
+                                                                                                    "StringConcat": {
+                                                                                                      "left": {
+                                                                                                        "StringConcat": {
+                                                                                                          "left": {
+                                                                                                            "StringConcat": {
+                                                                                                              "left": {
+                                                                                                                "StringConcat": {
+                                                                                                                  "left": {
+                                                                                                                    "StringConcat": {
+                                                                                                                      "left": {
+                                                                                                                        "StringConcat": {
+                                                                                                                          "left": {
+                                                                                                                            "String": {
+                                                                                                                              "value": "{\"engine\":\"definy-self-hosted\",\"method\":\""
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          "right": {
+                                                                                                                            "Variable": {
+                                                                                                                              "variable_id": 3
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      },
+                                                                                                                      "right": {
+                                                                                                                        "String": {
+                                                                                                                          "value": "\",\"path\":\""
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  },
+                                                                                                                  "right": {
+                                                                                                                    "Variable": {
+                                                                                                                      "variable_id": 2
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "right": {
+                                                                                                                "String": {
+                                                                                                                  "value": "\",\"sourceBefore\":\""
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          },
+                                                                                                          "right": {
+                                                                                                            "Variable": {
+                                                                                                              "variable_id": 11
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      "right": {
+                                                                                                        "String": {
+                                                                                                          "value": "\",\"sourceAfter\":\""
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  },
+                                                                                                  "right": {
+                                                                                                    "Variable": {
+                                                                                                      "variable_id": 13
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              "right": {
+                                                                                                "String": {
+                                                                                                  "value": "\",\"typeCheck\":\""
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          },
+                                                                                          "right": {
+                                                                                            "Variable": {
+                                                                                              "variable_id": 17
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "right": {
+                                                                                        "String": {
+                                                                                          "value": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "right": {
+                                                                                    "Variable": {
+                                                                                      "variable_id": 19
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "right": {
+                                                                                "String": {
+                                                                                  "value": "}"
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  },
+                                                                  "else_expr": {
+                                                                    "TypeLiteral": {
+                                                                      "items": [
+                                                                        {
+                                                                          "key": "status",
+                                                                          "value": {
+                                                                            "Number": {
+                                                                              "value": 200
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "key": "contentType",
+                                                                          "value": {
+                                                                            "String": {
+                                                                              "value": "text/html; charset=utf-8"
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "key": "body",
+                                                                          "value": {
+                                                                            "StringConcat": {
+                                                                              "left": {
+                                                                                "StringConcat": {
+                                                                                  "left": {
+                                                                                    "StringConcat": {
+                                                                                      "left": {
+                                                                                        "StringConcat": {
+                                                                                          "left": {
+                                                                                            "StringConcat": {
+                                                                                              "left": {
+                                                                                                "StringConcat": {
+                                                                                                  "left": {
+                                                                                                    "StringConcat": {
+                                                                                                      "left": {
+                                                                                                        "StringConcat": {
+                                                                                                          "left": {
+                                                                                                            "StringConcat": {
+                                                                                                              "left": {
+                                                                                                                "StringConcat": {
+                                                                                                                  "left": {
+                                                                                                                    "StringConcat": {
+                                                                                                                      "left": {
+                                                                                                                        "StringConcat": {
+                                                                                                                          "left": {
+                                                                                                                            "StringConcat": {
+                                                                                                                              "left": {
+                                                                                                                                "StringConcat": {
+                                                                                                                                  "left": {
+                                                                                                                                    "StringConcat": {
+                                                                                                                                      "left": {
+                                                                                                                                        "String": {
+                                                                                                                                          "value": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n<title>Self-Hosted definy Studio (definy in definy)</title>\n<style>\n:root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #38bdf8; --ok: #22c55e; --text: #f8fafc; --muted: #94a3b8; }\n* { box-sizing: border-box; }\nbody { margin: 0; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1.25rem; }\n.container { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }\n.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }\n.badge { display: inline-block; background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.35); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }\nh1 { margin: 0.5rem 0; font-size: 1.6rem; color: var(--accent); }\nh2 { margin: 0 0 1rem 0; font-size: 1.15rem; color: var(--text); }\np { margin: 0.35rem 0; color: var(--muted); line-height: 1.55; font-size: 0.92rem; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 0.85rem; margin-top: 1rem; }\n.metric { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }\n.label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }\ncode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88rem; color: #e2e8f0; word-break: break-all; }\ncode.ok { color: var(--ok); font-weight: 700; }\ninput, select { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }\nbutton { background: #0284c7; color: white; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }\nbutton:hover { background: #0369a1; }\n.app-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }\n.app-row { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 8px; flex-wrap: wrap; gap: 0.5rem; }\na { color: var(--accent); text-decoration: none; }\na:hover { text-decoration: underline; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"card\">\n<span class=\"badge\">🧬 Executed by Self-Hosted definy Part (sample.self-hosted-definy-server)</span>\n<h1>🚀 Self-Hosted definy Studio</h1>\n<p>このページ自体が definy の関数パーツ (<code>fn(req) =&gt; { status, contentType, body }</code>) として WebAssembly / AST 評価器上で動的に生成されています。</p>\n<div class=\"grid\">\n<div class=\"metric\"><span class=\"label\">0. Incoming HTTP Request</span><code>"
+                                                                                                                                        }
+                                                                                                                                      },
+                                                                                                                                      "right": {
+                                                                                                                                        "Variable": {
+                                                                                                                                          "variable_id": 3
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  "right": {
+                                                                                                                                    "String": {
+                                                                                                                                      "value": " "
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                }
+                                                                                                                              },
+                                                                                                                              "right": {
+                                                                                                                                "Variable": {
+                                                                                                                                  "variable_id": 2
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          "right": {
+                                                                                                                            "String": {
+                                                                                                                              "value": "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>"
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      },
+                                                                                                                      "right": {
+                                                                                                                        "Variable": {
+                                                                                                                          "variable_id": 11
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  },
+                                                                                                                  "right": {
+                                                                                                                    "String": {
+                                                                                                                      "value": "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>"
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              },
+                                                                                                              "right": {
+                                                                                                                "Variable": {
+                                                                                                                  "variable_id": 13
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          },
+                                                                                                          "right": {
+                                                                                                            "String": {
+                                                                                                              "value": "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">"
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      },
+                                                                                                      "right": {
+                                                                                                        "Variable": {
+                                                                                                          "variable_id": 17
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  },
+                                                                                                  "right": {
+                                                                                                    "String": {
+                                                                                                      "value": "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: "
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              },
+                                                                                              "right": {
+                                                                                                "Variable": {
+                                                                                                  "variable_id": 19
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          },
+                                                                                          "right": {
+                                                                                            "String": {
+                                                                                              "value": ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified ("
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      "right": {
+                                                                                        "Variable": {
+                                                                                          "variable_id": 19
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "right": {
+                                                                                    "String": {
+                                                                                      "value": ")</code></div></div>"
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "right": {
+                                                                                "String": {
+                                                                                  "value": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から新しいサブドメインアプリを起動 (Self-Host App Launcher)</h2>\n<p>このセルフホスト画面から Connect-RPC (<code>/definy.v1.PreviewService/RegisterPreviewApp</code>) を呼び出し、任意のパーツを新しいサブドメインで即座にホストできます。</p>\n<div class=\"grid\">\n<div><label class=\"label\">Subdomain / App ID</label><input id=\"sub\" value=\"my-definy\" placeholder=\"e.g. my-definy\" /></div>\n<div><label class=\"label\">Target Part (module.part or EventHashId)</label>\n<input id=\"part\" list=\"part-presets\" value=\"sample.self-hosted-definy-server\" placeholder=\"e.g. sample.self-hosted-definy-server\" />\n<datalist id=\"part-presets\">\n<option value=\"sample.self-hosted-definy-server\">Self-Hosted definy Studio (fn(req) =&gt; Response)</option>\n<option value=\"sample.greet\">sample.greet (\"Hello, definy!\")</option>\n<option value=\"sample.triangle-area\">sample.triangle-area (25)</option>\n<option value=\"sample.sample-ast-calc\">sample.sample-ast-calc (core.eval-ast =&gt; 95)</option>\n<option value=\"sample.prime-numbers\">sample.prime-numbers ([2, 3, 5, 7, 11])</option>\n</datalist>\n</div>\n<div><label class=\"label\">Admin Account ID</label><input id=\"admin\" value=\"local-dev-admin\" /></div>\n</div>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<button onclick=\"launchApp()\">🚀 Launch Subdomain Server</button>\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n<span id=\"msg\" style=\"font-size:0.85rem;color:var(--ok);\"></span>\n</div>\n<div id=\"apps\" class=\"app-list\"></div>\n</div>\n</div>\n<script>\nasync function refreshApps() {\n  try {\n    const res = await fetch('/definy.v1.PreviewService/ListPreviewApps', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({})\n    });\n    const data = await res.json();\n    const box = document.getElementById('apps');\n    box.innerHTML = (data.apps || []).map(a =>\n      `<div class=\"app-row\"><div><strong>${a.displayName}</strong> (<code>${a.partId}</code>)</div><div><a href=\"${a.previewUrl}\" target=\"_blank\">🔗 ${a.previewUrl}</a></div></div>`\n    ).join('');\n  } catch (e) { console.error(e); }\n}\nasync function launchApp() {\n  const appId = document.getElementById('sub').value.trim();\n  const partId = document.getElementById('part').value.trim();\n  const accountId = document.getElementById('admin').value.trim();\n  const msg = document.getElementById('msg');\n  msg.textContent = 'Starting...';\n  try {\n    const res = await fetch('/definy.v1.PreviewService/RegisterPreviewApp', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({ appId, displayName: appId + ' (Self-Hosted)', partId, accountId })\n    });\n    const data = await res.json();\n    if (res.ok) {\n      msg.textContent = 'Launched: ' + data.previewUrl;\n      refreshApps();\n    } else {\n      msg.textContent = 'Error: ' + (data.message || res.statusText);\n    }\n  } catch (e) { msg.textContent = String(e); }\n}\nrefreshApps();\n</script>\n</body>\n</html>"
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

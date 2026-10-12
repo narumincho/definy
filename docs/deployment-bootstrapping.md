@@ -242,6 +242,69 @@ graph TD
 が、クラウド上で自分自身の次の世代を生み出し続ける」**
 という究極の自己ホスティングが達成されます。
 
-現在、この完全なシーケンスは definy UI の `/deployments` 画面の「3. Fly.io
-自己デプロイ
-(運用ブートストラップ)」タブにて多言語で視覚的に閲覧できるようになっています。
+現在、この完全なシーケンスは definy UI の `/deployments`
+画面にて多言語で視覚的に閲覧できるようになっています。
+
+---
+
+## 5. サブドメイン分離型セルフホスト HTTP サーバー (`sample.self-hosted-definy-server`)
+
+definy 自身で作成したパーツを独立したオリジン（サブドメイン）上の HTTP
+サーバーとして稼働させ、そのパーツ内部で definy
+自身のコアパーツ群を実行して次世代のアプリや definy
+自身を構築・起動する仕組みが実装されています。
+
+### 5.1 オリジン分離（サブドメイン方式）の採用理由
+
+パス方式（`/preview/{app_id}`）ではなくサブドメイン方式を採用することで、ブラウザの
+**Same-Origin Policy (同一オリジンポリシー)** により、`IndexedDB`（Ed25519
+秘密鍵などが保存されるストレージ）や `localStorage`
+がユーザー作成アプリから読み取られることを防ぎます。
+
+| 環境                           | メイン IDE オリジン             | パーツ HTTP サーバーのサブドメイン形式 | 例 (`self-definy`)                          |
+| :----------------------------- | :------------------------------ | :------------------------------------- | :------------------------------------------ |
+| **ローカル開発 (`localhost`)** | `http://localhost:8000`         | `http://{sub}.localhost:8000`          | `http://self-definy.localhost:8000`         |
+| **本番 (`narumincho.com`)**    | `https://definy.narumincho.com` | `https://{sub}-definy.narumincho.com`  | `https://self-definy-definy.narumincho.com` |
+
+- 本番環境では Cloudflare Universal SSL（無償の第1階層ワイルドカード証明書
+  `*.narumincho.com`）と単一 Worker のワイルドカードルート
+  `*/*-definy.narumincho.com/*` を組み合わせることで、Workers
+  インスタンスを増やさず無制限のサブドメインを単一の Worker + D1
+  で処理できます。
+- ローカル開発時（`cargo run -p definy-server`）は、起動時に自動で
+  `self-definy`（`sample.self-hosted-definy-server`）が登録され、即座に
+  `http://self-definy.localhost:8000` でアクセス可能です。
+
+### 5.2 `sample.self-hosted-definy-server` の仕組み
+
+`definy-server/src/builtin_self_hosted_server.rs` で定義される
+`sample.self-hosted-definy-server` は、以下の関数型を持つ純粋な definy
+パーツです：
+
+```text
+fn(req: { method: String, path: String, query: String, url: String })
+  => { status: Number, contentType: String, body: String }
+```
+
+リクエストを受け取ると、パーツ式の内部で `PartReference`
+を通じて以下の自己記述コンパイラパイプラインを実時間で呼び出します：
+
+1. **`core.expression-to-source`**: 入力 AST `((10 + 4) * 3) + 0`
+   をソース文字列へ整形
+2. **`core.optimize-expression`**: 定数畳み込み最適化により AST を単一定数 `42`
+   へ簡約
+3. **`core.type-check`**: 式の静的型検査を実行し `ok(number)` を検証
+4. **`core.eval-ast`**: メタ循環評価器で式を評価し `42` を算出
+5. **`core.compile-to-wasm`**: 自己記述 Wasm コンパイラで WebAssembly
+   バイナリ（`\0asm` マジックヘッダ `0x00, 0x61, 0x73, 0x6d`
+   を含むバイト列）を生成・検証
+
+#### 提供エンドポイント
+
+- `GET /`: **Self-Hosted definy Studio**（対話型 HTML
+  UI）。セルフホストパイプライン全工程のライブ検証結果を表示し、ブラウザから
+  Connect-RPC (`/definy.v1.PreviewService/RegisterPreviewApp`)
+  を呼び出して新しいサブドメイン HTTP サーバーを起動できます。
+- `GET /api/self-host`: セルフホストパイプラインの実行結果を JSON で返却します。
+- `GET /healthz`: ヘルスチェックと型検査・Wasm 生成検証結果を JSON
+  で返却します。
