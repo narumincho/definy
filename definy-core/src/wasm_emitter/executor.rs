@@ -256,3 +256,151 @@ pub fn read_value_from_gc(
         other => Err(format!("Unsupported Val: {other:?}")),
     }
 }
+
+#[cfg(not(target_arch = "wasm32"))]
+pub struct EvaluatedHttpResponse {
+    pub status: u16,
+    pub headers: Vec<(String, String)>,
+    pub body_stream: WasmPullStream,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub struct WasmPullStream {
+    store: wasmtime::Store<()>,
+    memory: wasmtime::Memory,
+    next_func: wasmtime::Func,
+    env_ptr: i32,
+    state_ptr: u32,
+    done: bool,
+    remaining_steps: usize,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl WasmPullStream {
+    /// Calls `body.next(state)` once (or skips empty chunks) to pull the next byte chunk from the Wasm stream.
+    pub fn pull_next_chunk(&mut self) -> Result<Option<Vec<u8>>, String> {
+        while !self.done {
+            if self.remaining_steps == 0 {
+                return Err("Stream exceeded maximum allowed pull steps (10000)".to_string());
+            }
+            self.remaining_steps -= 1;
+
+            let args_scratch_offset: usize = 512;
+            {
+                let mem_mut = self.memory.data_mut(&mut self.store);
+                if args_scratch_offset + 8 > mem_mut.len() {
+                    return Err("Wasm memory too small for closure call scratch".to_string());
+                }
+                mem_mut[args_scratch_offset..args_scratch_offset + 4]
+                    .copy_from_slice(&self.state_ptr.to_le_bytes());
+            }
+
+            let mut results = [wasmtime::Val::I32(0)];
+            self.next_func
+                .call(
+                    &mut self.store,
+                    &[
+                        wasmtime::Val::I32(self.env_ptr),
+                        wasmtime::Val::I32(args_scratch_offset as i32),
+                    ],
+                    &mut results,
+                )
+                .map_err(|e| format!("Failed to invoke stream next(state) closure: {e}"))?;
+
+            let step_ptr = match results[0] {
+                wasmtime::Val::I32(ptr) => ptr as usize,
+                _ => return Err("Stream next(state) closure returned non-i32 pointer".to_string()),
+            };
+
+            let step = super::memory::read_stream_step_from_memory(
+                self.memory.data(&self.store),
+                step_ptr,
+            )?;
+            match step {
+                super::memory::RawWasmStreamStep::Done => {
+                    self.done = true;
+                    return Ok(None);
+                }
+                super::memory::RawWasmStreamStep::Yield {
+                    chunk,
+                    next_state_ptr,
+                } => {
+                    self.state_ptr = next_state_ptr;
+                    if !chunk.is_empty() {
+                        return Ok(Some(chunk));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
+    /// Collects all remaining chunks of the stream into a single byte vector.
+    pub fn collect_all_bytes(&mut self) -> Result<Vec<u8>, String> {
+        let mut all = Vec::new();
+        while let Some(chunk) = self.pull_next_chunk()? {
+            all.extend_from_slice(&chunk);
+        }
+        Ok(all)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn execute_wasm_http_response(wasm_bytes: &[u8]) -> Result<EvaluatedHttpResponse, String> {
+    let mut config = wasmtime::Config::new();
+    config.wasm_gc(true);
+
+    let engine = wasmtime::Engine::new(&config).map_err(|e| format!("{e:?}"))?;
+    let module = wasmtime::Module::new(&engine, wasm_bytes).map_err(|e| format!("{e:?}"))?;
+    let mut store = wasmtime::Store::new(&engine, ());
+    let instance =
+        wasmtime::Instance::new(&mut store, &module, &[]).map_err(|e| format!("{e:?}"))?;
+
+    let eval_func = instance
+        .get_func(&mut store, "evaluate")
+        .ok_or_else(|| "Wasm module is missing 'evaluate' export".to_string())?;
+    let memory = instance
+        .get_memory(&mut store, "memory")
+        .ok_or_else(|| "Wasm module is missing 'memory' export".to_string())?;
+    let table = instance
+        .get_table(&mut store, "table")
+        .ok_or_else(|| "Wasm module is missing 'table' export".to_string())?;
+
+    let mut results = [wasmtime::Val::I32(0)];
+    eval_func
+        .call(&mut store, &[], &mut results)
+        .map_err(|e| e.to_string())?;
+    let ret_ptr = match results[0] {
+        wasmtime::Val::I32(ptr) => ptr as usize,
+        _ => return Err("evaluate returned non-i32 pointer".into()),
+    };
+
+    let raw_http = super::memory::read_http_response_and_stream_ptrs(memory.data(&store), ret_ptr)?;
+
+    let table_elem = table
+        .get(&mut store, u64::from(raw_http.next_table_idx))
+        .ok_or_else(|| {
+            format!(
+                "Closure table index {} out of bounds in Wasm table",
+                raw_http.next_table_idx
+            )
+        })?;
+    let next_func = table_elem
+        .unwrap_func()
+        .cloned()
+        .ok_or_else(|| "Closure table entry is null".to_string())?;
+
+    Ok(EvaluatedHttpResponse {
+        status: raw_http.status,
+        headers: raw_http.headers,
+        body_stream: WasmPullStream {
+            store,
+            memory,
+            next_func,
+            env_ptr: raw_http.next_env_ptr,
+            state_ptr: raw_http.initial_state_ptr,
+            done: false,
+            remaining_steps: 10_000,
+        },
+    })
+}

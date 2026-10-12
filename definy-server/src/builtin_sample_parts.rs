@@ -6,7 +6,10 @@ use definy_event::event::{
     StringExpression, TypeUnionExpression, TypeUnionVariant, VariableExpression, VariantExpression,
 };
 
-pub fn create_sample_module_parts(core_module_id: &EventHashId) -> Vec<ModulePartEntry> {
+pub fn create_sample_module_parts(
+    core_module_id: &EventHashId,
+    std_module_id: &EventHashId,
+) -> Vec<ModulePartEntry> {
     vec![
         ModulePartEntry {
             name: "triangle-area".into(),
@@ -173,6 +176,9 @@ pub fn create_sample_module_parts(core_module_id: &EventHashId) -> Vec<ModulePar
             })),
         },
         crate::builtin_expression_type::create_sample_ast_calc_part(core_module_id),
-        crate::builtin_self_hosted_server::create_self_hosted_definy_server_part(core_module_id),
+        crate::builtin_self_hosted_server::create_self_hosted_definy_server_part(
+            core_module_id,
+            std_module_id,
+        ),
     ]
 }

@@ -12,8 +12,6 @@ import {
   sha256EventHashId,
   toUint8Array,
 } from "./cbor.ts";
-import type { Env } from "./types.ts";
-
 export {
   base64ToBytes,
   bytesToBase64,
@@ -43,21 +41,31 @@ export type DefinyValue =
     >;
     readonly body: unknown;
     readonly closureEnv: ReadonlyMap<number, DefinyValue>;
+    readonly resolvePartExpr?: (
+      partHash: string,
+    ) => Promise<unknown | undefined>;
+  }
+  | {
+    readonly __nativeFn: (
+      arg: DefinyValue,
+    ) => Promise<DefinyValue> | DefinyValue;
   }
   | { readonly [key: string]: DefinyValue };
 
 function readDefinyValueFromWasmMemory(
-  mem: Uint8Array,
+  memory: WebAssembly.Memory,
+  table: WebAssembly.Table | undefined,
   ptr: number,
 ): DefinyValue {
+  const mem = new Uint8Array(memory.buffer);
   if (ptr < 0 || ptr >= mem.length) return null;
   const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
-  const tag = mem[ptr];
+  const tag = view.getInt32(ptr, true);
   if (tag === 0) {
     return Number(view.getBigInt64(ptr + 8, true));
   }
   if (tag === 1) {
-    return mem[ptr + 8] !== 0;
+    return view.getInt32(ptr + 4, true) !== 0;
   }
   if (tag === 2) {
     const len = view.getUint32(ptr + 4, true);
@@ -68,7 +76,7 @@ function readDefinyValueFromWasmMemory(
     const items: DefinyValue[] = [];
     for (let i = 0; i < count; i++) {
       const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
-      items.push(readDefinyValueFromWasmMemory(mem, elemPtr));
+      items.push(readDefinyValueFromWasmMemory(memory, table, elemPtr));
     }
     return items;
   }
@@ -76,23 +84,93 @@ function readDefinyValueFromWasmMemory(
     const count = view.getUint32(ptr + 4, true);
     const obj: Record<string, DefinyValue> = {};
     for (let i = 0; i < count; i++) {
-      const itemBase = ptr + 8 + i * 16;
+      const itemBase = ptr + 8 + i * 8;
       const keyPtr = view.getUint32(itemBase, true);
-      const valPtr = view.getUint32(itemBase + 8, true);
-      const keyStr = readDefinyValueFromWasmMemory(mem, keyPtr);
+      const valPtr = view.getUint32(itemBase + 4, true);
+      const keyStr = readDefinyValueFromWasmMemory(memory, table, keyPtr);
       if (typeof keyStr === "string") {
-        obj[keyStr] = readDefinyValueFromWasmMemory(mem, valPtr);
+        obj[keyStr] = readDefinyValueFromWasmMemory(memory, table, valPtr);
       }
     }
     return obj;
   }
   if (tag === 5) {
-    const tagPtr = view.getUint32(ptr + 8, true);
-    const payloadPtr = view.getUint32(ptr + 16, true);
-    const tagName = String(readDefinyValueFromWasmMemory(mem, tagPtr) ?? "");
-    const payloadVal = payloadPtr !== 0
-      ? readDefinyValueFromWasmMemory(mem, payloadPtr)
+    const tableIdx = view.getUint32(ptr + 4, true);
+    const envPtr = view.getInt32(ptr + 8, true);
+    const fn = table?.get(tableIdx) as
+      | ((env: number, argsPtr: number) => number)
+      | undefined;
+    return {
+      __nativeFn: (argVal: DefinyValue): DefinyValue => {
+        if (!fn) {
+          throw new Error("Wasm indirect function table not available");
+        }
+        const liveMem = new Uint8Array(memory.buffer);
+        const liveView = new DataView(
+          liveMem.buffer,
+          liveMem.byteOffset,
+          liveMem.byteLength,
+        );
+        // Write boxed or pointer argument into scratch slot at 512..528
+        let argPtr = 0;
+        if (
+          argVal &&
+          typeof argVal === "object" &&
+          "__wasmPtr" in argVal &&
+          typeof (argVal as { __wasmPtr?: unknown }).__wasmPtr === "number"
+        ) {
+          argPtr = (argVal as { __wasmPtr: number }).__wasmPtr;
+        } else if (typeof argVal === "number") {
+          argPtr = 520;
+          liveView.setInt32(argPtr, 0, true);
+          liveView.setInt32(argPtr + 4, 0, true);
+          liveView.setBigInt64(argPtr + 8, BigInt(Math.trunc(argVal)), true);
+        }
+        liveView.setInt32(512, argPtr, true);
+        const stepPtr = fn(envPtr, 512);
+        return readDefinyValueFromWasmMemory(memory, table, stepPtr);
+      },
+    };
+  }
+  if (tag === 6) {
+    const tagPtr = view.getUint32(ptr + 4, true);
+    const hasPayload = view.getUint32(ptr + 8, true);
+    const payloadPtr = view.getUint32(ptr + 12, true);
+    const tagName = String(
+      readDefinyValueFromWasmMemory(memory, table, tagPtr) ?? "",
+    );
+    const payloadVal = hasPayload !== 0
+      ? readDefinyValueFromWasmMemory(memory, table, payloadPtr)
       : null;
+    if (
+      tagName === "yield" &&
+      payloadVal &&
+      typeof payloadVal === "object" &&
+      !Array.isArray(payloadVal) &&
+      hasPayload !== 0
+    ) {
+      // Preserve raw Wasm pointer for nextState so stateful closures (e.g. List<String>) can step without re-allocation
+      const pView = new DataView(
+        memory.buffer,
+        memory.buffer.byteLength > 0 ? 0 : 0,
+      );
+      const fieldCount = pView.getUint32(payloadPtr + 4, true);
+      for (let i = 0; i < fieldCount; i++) {
+        const base = payloadPtr + 8 + i * 8;
+        const kPtr = pView.getUint32(base, true);
+        const vPtr = pView.getUint32(base + 4, true);
+        const kName = readDefinyValueFromWasmMemory(memory, table, kPtr);
+        if (kName === "nextState") {
+          return {
+            __variant: tagName,
+            payload: {
+              ...(payloadVal as Record<string, DefinyValue>),
+              nextState: { __wasmPtr: vPtr },
+            },
+          };
+        }
+      }
+    }
     return { __variant: tagName, payload: payloadVal };
   }
   return null;
@@ -117,6 +195,7 @@ export async function executeWasmBinary(
   const exports = instance.exports as {
     main?: () => bigint | number;
     memory?: WebAssembly.Memory;
+    table?: WebAssembly.Table;
   };
   if (typeof exports.main !== "function") {
     throw new Error("Wasm binary does not export a 'main' function");
@@ -124,8 +203,10 @@ export async function executeWasmBinary(
   const rawRes = exports.main();
   const numRes = typeof rawRes === "bigint" ? Number(rawRes) : rawRes;
   if (exports.memory) {
-    const mem = new Uint8Array(exports.memory.buffer);
-    return readDefinyValueFromWasmMemory(mem, numRes) ?? numRes;
+    return (
+      readDefinyValueFromWasmMemory(exports.memory, exports.table, numRes) ??
+        numRes
+    );
   }
   return numRes;
 }
@@ -202,7 +283,7 @@ export async function evaluateCborExpression(
       resolvePartExpr,
       depth + 1,
     );
-    return typeof v === "string" ? v.length : 0;
+    return typeof v === "string" ? new TextEncoder().encode(v).length : 0;
   }
   if ("StringSlice" in node) {
     const v = await evaluateCborExpression(
@@ -227,7 +308,21 @@ export async function evaluateCborExpression(
         depth + 1,
       ),
     );
-    return typeof v === "string" ? v.slice(start, end) : "";
+    if (typeof v !== "string") return "";
+    const bytes = new TextEncoder().encode(v);
+    const s = Math.max(0, Math.min(start, bytes.length));
+    const e = Math.max(s, Math.min(end, bytes.length));
+    return new TextDecoder().decode(bytes.subarray(s, e));
+  }
+  if ("StringToBytes" in node) {
+    const v = await evaluateCborExpression(
+      node.StringToBytes.value,
+      vars,
+      resolvePartExpr,
+      depth + 1,
+    );
+    if (typeof v !== "string") return [];
+    return Array.from(new TextEncoder().encode(v));
   }
   if ("Subtract" in node) {
     const l = await evaluateCborExpression(
@@ -431,13 +526,13 @@ export async function evaluateCborExpression(
     );
     return cond
       ? await evaluateCborExpression(
-        node.If.then_expr,
+        node.If.then_expr ?? node.If.then,
         vars,
         resolvePartExpr,
         depth + 1,
       )
       : await evaluateCborExpression(
-        node.If.else_expr,
+        node.If.else_expr ?? node.If.else,
         vars,
         resolvePartExpr,
         depth + 1,
@@ -631,6 +726,7 @@ export async function evaluateCborExpression(
       parameters: params,
       body: node.Function.body,
       closureEnv: vars,
+      resolvePartExpr,
     };
   }
   if ("PartReference" in node) {
@@ -657,6 +753,26 @@ export async function evaluateCborExpression(
       resolvePartExpr,
       depth + 1,
     );
+    const rawArgs =
+      (node.Call.arguments as ReadonlyArray<Record<string, unknown>>) ?? [];
+    if (fnVal && typeof fnVal === "object" && "__nativeFn" in fnVal) {
+      const firstArgVal = rawArgs.length > 0
+        ? await evaluateCborExpression(
+          rawArgs[0].value,
+          vars,
+          resolvePartExpr,
+          depth + 1,
+        )
+        : null;
+      const nativeFn = (
+        fnVal as {
+          readonly __nativeFn: (
+            arg: DefinyValue,
+          ) => Promise<DefinyValue> | DefinyValue;
+        }
+      ).__nativeFn;
+      return await nativeFn(firstArgVal);
+    }
     if (fnVal && typeof fnVal === "object" && "__fn" in fnVal) {
       const fnObj = fnVal as {
         readonly parameters: ReadonlyArray<
@@ -664,10 +780,11 @@ export async function evaluateCborExpression(
         >;
         readonly body: unknown;
         readonly closureEnv: ReadonlyMap<number, DefinyValue>;
+        readonly resolvePartExpr?: (
+          partHash: string,
+        ) => Promise<unknown | undefined>;
       };
       const callVars = new Map<number, DefinyValue>(fnObj.closureEnv);
-      const rawArgs =
-        (node.Call.arguments as ReadonlyArray<Record<string, unknown>>) ?? [];
       for (let i = 0; i < rawArgs.length; i++) {
         const arg = rawArgs[i];
         const argName = String(arg.name ?? "");
@@ -686,7 +803,7 @@ export async function evaluateCborExpression(
       return await evaluateCborExpression(
         fnObj.body,
         callVars,
-        resolvePartExpr,
+        fnObj.resolvePartExpr ?? resolvePartExpr,
         depth + 1,
       );
     }
@@ -696,285 +813,53 @@ export async function evaluateCborExpression(
   return null;
 }
 
-export interface PartStoreReader {
-  getEvents(
-    req: { readonly eventType?: string; readonly limit?: number },
-    env?: Env,
-  ): Promise<
-    ReadonlyArray<{
-      readonly eventHash: string;
-      readonly signedEventBytes: string;
-    }>
-  >;
-  getRawContentBytes(hash: string, env?: Env): Promise<Uint8Array | undefined>;
-}
-
 /**
- * 指定された `partId`（PartHashId / `module.part` / `partName` / `contentHash`）を
- * D1 またはインメモリストアから解決し、HTTP リクエストに対して評価する
+ * 評価済みの関数値（CBOR クロージャまたはネイティブ/Wasm 関数）に 1 引数を渡して呼び出す
  */
-export async function evaluatePartForHttpRequest(
-  partId: string,
-  request: Request,
-  subpath: string,
-  store: PartStoreReader,
-  env?: Env,
-): Promise<DefinyValue | undefined> {
-  const trimmed = partId.trim();
-  if (!trimmed) {
-    return undefined;
+export async function callDefinyFunction(
+  fnVal: DefinyValue,
+  argVal: DefinyValue,
+): Promise<DefinyValue> {
+  if (!fnVal || typeof fnVal !== "object") {
+    throw new Error("Target value is not a callable definy function");
   }
-
-  // 1. 直接 CAS に Wasm または式 CBOR として存在するかチェック
-  const directBytes = await store.getRawContentBytes(trimmed, env);
-  if (directBytes && directBytes.length >= 4) {
-    if (
-      directBytes[0] === 0x00 &&
-      directBytes[1] === 0x61 &&
-      directBytes[2] === 0x73 &&
-      directBytes[3] === 0x6d
-    ) {
-      return await executeWasmBinary(directBytes);
-    }
-  }
-
-  // 2. 全 ModuleCommit イベントからパーツ辞書を構築
-  const commitEvents = await store.getEvents(
-    { eventType: "module_commit", limit: 500 },
-    env,
-  );
-  const partMap = new Map<string, unknown>();
-
-  const loadPartExpression = async (
-    partObj: Record<string, unknown>,
-  ): Promise<unknown | undefined> => {
-    if (partObj.expression != null) {
-      return partObj.expression;
-    }
-    if (partObj.content_hash != null) {
-      const hashBytes = toUint8Array(partObj.content_hash);
-      const contentHash = hashBytes
-        ? bytesToUrlSafeBase64NoPad(hashBytes)
-        : String(partObj.content_hash);
-      const casBytes = await store.getRawContentBytes(contentHash, env);
-      if (casBytes) {
-        const [decoded] = decodeCborItem(casBytes);
-        return decoded;
+  if ("__nativeFn" in fnVal) {
+    const nativeFn = (
+      fnVal as {
+        readonly __nativeFn: (
+          arg: DefinyValue,
+        ) => Promise<DefinyValue> | DefinyValue;
       }
-    }
-    return undefined;
-  };
-
-  let targetExpr: unknown | undefined;
-
-  if (directBytes) {
-    try {
-      const [decoded] = decodeCborItem(directBytes);
-      targetExpr = decoded;
-    } catch {
-      // CBOR ではない場合は無視
-    }
+    ).__nativeFn;
+    return await nativeFn(argVal);
   }
-
-  for (const ev of commitEvents) {
-    try {
-      const evBytes = base64ToBytes(ev.signedEventBytes);
-      const [signedRaw] = decodeCborItem(evBytes);
-      if (!signedRaw || typeof signedRaw !== "object") continue;
-      const signedObj = signedRaw as Record<string, unknown>;
-      const eventBinaryField = signedObj.event_binary as
-        | { value?: unknown }
-        | undefined;
-      const innerBytes = toUint8Array(
-        eventBinaryField?.value ?? eventBinaryField,
-      );
-      if (!innerBytes) continue;
-      const [innerRaw] = decodeCborItem(innerBytes);
-      if (!innerRaw || typeof innerRaw !== "object") continue;
-      const innerObj = innerRaw as Record<string, unknown>;
-      const accountBytes = toUint8Array(innerObj.account_id);
-      const contentObj = innerObj.content as
-        | Record<string, unknown>
-        | undefined;
-      if (!accountBytes || !contentObj || !("ModuleCommit" in contentObj)) {
-        continue;
-      }
-      const mc = contentObj.ModuleCommit as {
-        module_name?: string;
-        parts?: ReadonlyArray<Record<string, unknown>>;
-      };
-      const moduleName = String(mc.module_name ?? "");
-      const moduleIdBytes = await deriveModuleIdBytes(accountBytes, moduleName);
-
-      for (const part of mc.parts ?? []) {
-        if (!part || typeof part !== "object") continue;
-        const partName = String(part.name ?? "");
-        const derivedId = await deriveModulePartId(moduleIdBytes, partName);
-
-        if (!partMap.has(derivedId)) {
-          const expr = await loadPartExpression(part);
-          if (expr !== undefined) {
-            partMap.set(derivedId, expr);
-          }
-        }
-
-        if (
-          targetExpr === undefined &&
-          (derivedId === trimmed ||
-            partName === trimmed ||
-            `${moduleName}.${partName}` === trimmed)
-        ) {
-          targetExpr = partMap.get(derivedId) ??
-            (await loadPartExpression(part));
-        }
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  if (targetExpr === undefined) {
-    return undefined;
-  }
-
-  const resolvePartExpr = (partHash: string): Promise<unknown | undefined> =>
-    Promise.resolve(partMap.get(partHash));
-
-  const evaluated = await evaluateCborExpression(
-    targetExpr,
-    new Map(),
-    resolvePartExpr,
-  );
-
-  // トップレベルが関数の場合、HTTP リクエスト情報を第1引数に渡して呼び出す
-  if (evaluated && typeof evaluated === "object" && "__fn" in evaluated) {
-    const fnObj = evaluated as {
+  if ("__fn" in fnVal) {
+    const fnObj = fnVal as {
       readonly parameters: ReadonlyArray<
         { readonly name: string; readonly variable_id: number }
       >;
       readonly body: unknown;
       readonly closureEnv: ReadonlyMap<number, DefinyValue>;
+      readonly resolvePartExpr?: (
+        partHash: string,
+      ) => Promise<unknown | undefined>;
     };
     const callVars = new Map<number, DefinyValue>(fnObj.closureEnv);
-    const reqUrl = new URL(request.url);
-    const reqHeaders: Array<DefinyValue> = [];
-    request.headers.forEach((value, name) => {
-      reqHeaders.push({ name, value });
-    });
-    const reqValue: DefinyValue = {
-      method: request.method,
-      path: subpath,
-      query: reqUrl.search,
-      url: request.url,
-      headers: reqHeaders,
-    };
     if (fnObj.parameters.length > 0) {
-      const firstParam = fnObj.parameters[0];
-      if (firstParam.name === "path") {
-        callVars.set(firstParam.variable_id, subpath);
-      } else {
-        callVars.set(firstParam.variable_id, reqValue);
-      }
+      callVars.set(fnObj.parameters[0].variable_id, argVal);
     }
     return await evaluateCborExpression(
       fnObj.body,
       callVars,
-      resolvePartExpr,
+      fnObj.resolvePartExpr ?? (() => Promise.resolve(undefined)),
     );
   }
-
-  return evaluated;
+  throw new Error("Target value is not a callable definy function");
 }
 
-/**
- * 評価結果 `DefinyValue` を HTTP `Response` に変換する (`definy-server/src/preview_service.rs` 準拠)
- */
-export function definyValueToHttpResponse(
-  value: DefinyValue,
-  appId: string,
-  corsHeaders: Readonly<Record<string, string>>,
-): Response {
-  const baseHeaders: Record<string, string> = {
-    "X-Definy-Preview-App": appId,
-    ...corsHeaders,
-  };
-
-  if (typeof value === "string") {
-    const isHtml = value.includes("<!DOCTYPE") ||
-      value.includes("<html") ||
-      value.includes("<div") ||
-      value.includes("<h1") ||
-      value.includes("<main") ||
-      value.includes("<body") ||
-      value.includes("<svg");
-    return new Response(value, {
-      status: 200,
-      headers: {
-        ...baseHeaders,
-        "Content-Type": isHtml
-          ? "text/html; charset=utf-8"
-          : "text/plain; charset=utf-8",
-      },
-    });
-  }
-
-  if (
-    value &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    !("__variant" in value) &&
-    !("__fn" in value)
-  ) {
-    const rec = value as Record<string, DefinyValue>;
-    const hasBodyField = "body" in rec;
-    const hasHeadersList = Array.isArray(rec.headers);
-    if (hasBodyField || hasHeadersList) {
-      const status =
-        typeof rec.status === "number" && rec.status >= 100 && rec.status <= 599
-          ? rec.status
-          : 200;
-      const bodyStr = typeof rec.body === "string"
-        ? rec.body
-        : rec.body !== undefined
-        ? JSON.stringify(rec.body)
-        : "";
-      const responseHeaders = new Headers(baseHeaders);
-      let hasContentType = false;
-      if (Array.isArray(rec.headers)) {
-        for (const item of rec.headers) {
-          if (item && typeof item === "object" && !Array.isArray(item)) {
-            const hObj = item as Record<string, DefinyValue>;
-            if (
-              typeof hObj.name === "string" && typeof hObj.value === "string"
-            ) {
-              const name = hObj.name.trim();
-              if (name.length > 0) {
-                if (name.toLowerCase() === "content-type") {
-                  hasContentType = true;
-                }
-                responseHeaders.append(name, hObj.value);
-              }
-            }
-          }
-        }
-      }
-      if (!hasContentType) {
-        const contentType = typeof rec.contentType === "string"
-          ? rec.contentType
-          : typeof rec.content_type === "string"
-          ? rec.content_type
-          : "text/html; charset=utf-8";
-        responseHeaders.set("Content-Type", contentType);
-      }
-      return new Response(bodyStr, { status, headers: responseHeaders });
-    }
-  }
-
-  return new Response(JSON.stringify(value), {
-    status: 200,
-    headers: {
-      ...baseHeaders,
-      "Content-Type": "application/json; charset=utf-8",
-    },
-  });
-}
+export {
+  createByteStreamDefinyValue,
+  definyValueToHttpResponse,
+  evaluatePartForHttpRequest,
+  type PartStoreReader,
+} from "./http_stream.ts";

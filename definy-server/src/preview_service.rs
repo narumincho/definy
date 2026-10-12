@@ -4,12 +4,11 @@
 
 use std::collections::HashMap;
 
-use axum::body::Bytes;
+use axum::body::{Body, Bytes};
 use axum::extract::{Path, State};
 use axum::http::{HeaderMap, Method, StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use chrono::Utc;
-use definy_core::expression_eval::Value;
 use definy_event::event::Expression;
 use definy_event::rpc::*;
 
@@ -473,7 +472,7 @@ pub async fn execute_preview_app(
     uri: &Uri,
     method: &Method,
     headers: &HeaderMap,
-    _body: &Bytes,
+    body: &Bytes,
 ) -> Response {
     let app = {
         let store = state.preview_store.read().await;
@@ -497,10 +496,10 @@ pub async fn execute_preview_app(
         }
     };
 
-    // 1. Wasm バイナリが存在する場合は Wasmtime で実行
+    // 1. Wasm バイナリが存在する場合は Wasmtime でストリーム実行
     if let Some(ref wasm) = app.wasm_bytes {
-        match crate::self_hosted_wasm_compiler::evaluate_compiled_wasm(wasm) {
-            Ok(value) => return value_to_http_response(&value, app_id),
+        match definy_core::wasm_emitter::execute_wasm_http_response(wasm) {
+            Ok(evaluated) => return evaluated_http_response_to_axum_response(evaluated, app_id),
             Err(err) => {
                 return (
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -532,8 +531,6 @@ pub async fn execute_preview_app(
     };
 
     if let Some(expr) = expression {
-        let path = uri.path();
-        let query = uri.query().map(|q| format!("?{q}")).unwrap_or_default();
         let host = headers
             .get("host")
             .and_then(|h| h.to_str().ok())
@@ -548,16 +545,15 @@ pub async fn execute_preview_app(
             })
             .collect();
 
-        match crate::self_hosted_wasm_compiler::evaluate_part_expression_for_http_request(
+        match crate::self_hosted_wasm_compiler::evaluate_part_expression_for_http_request_stream(
             &expr,
             &verified_events,
             method.as_str(),
-            path,
-            &query,
             &full_url,
             &header_pairs,
+            body.as_ref(),
         ) {
-            Ok(value) => value_to_http_response(&value, app_id),
+            Ok(evaluated) => evaluated_http_response_to_axum_response(evaluated, app_id),
             Err(err) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 [("Content-Type", "text/plain; charset=utf-8")],
@@ -601,172 +597,50 @@ pub async fn execute_preview_app(
     }
 }
 
-/// 評価された definy の Value を HTTP Response にマッピングします
-fn value_to_http_response(value: &Value, app_id: &str) -> Response {
-    match value {
-        Value::String(html_or_text) => {
-            let is_html = html_or_text.contains("<html")
-                || html_or_text.contains("<div")
-                || html_or_text.contains("<h1")
-                || html_or_text.contains("<!DOCTYPE");
-            let content_type = if is_html {
-                "text/html; charset=utf-8"
-            } else {
-                "text/plain; charset=utf-8"
-            };
-            (
-                StatusCode::OK,
-                [
-                    ("Content-Type", content_type),
-                    ("X-Definy-Preview-App", app_id),
-                ],
-                html_or_text.clone(),
-            )
-                .into_response()
-        }
-        Value::Record(fields) => {
-            let mut status_code = StatusCode::OK;
-            let mut has_body_field = false;
-            let mut body_str = String::new();
-            let mut explicit_content_type: Option<String> = None;
-            let mut custom_headers: Vec<(String, String)> = Vec::new();
+/// Wasm インスタンス内の Pull 型ストリーム (`{ initialState, next }`) を
+/// Axum の `Body::from_stream` 用の `tokio_stream::Stream` に変換するアダプタ。
+struct WasmBodyStream(definy_core::wasm_emitter::WasmPullStream);
 
-            for (k, v) in fields {
-                match k.as_str() {
-                    "status" => {
-                        if let Value::Number(num) = v
-                            && let Ok(code) = u16::try_from(*num)
-                            && let Ok(sc) = StatusCode::from_u16(code)
-                        {
-                            status_code = sc;
-                        }
-                    }
-                    "body" => {
-                        has_body_field = true;
-                        if let Value::String(s) = v {
-                            body_str = s.clone();
-                        } else {
-                            body_str = format!("{v:?}");
-                        }
-                    }
-                    "contentType" | "content_type" => {
-                        if let Value::String(s) = v {
-                            explicit_content_type = Some(s.clone());
-                        }
-                    }
-                    "headers" => {
-                        if let Value::List(items) = v {
-                            for item in items {
-                                if let Value::Record(h_fields) = item {
-                                    let mut h_name: Option<String> = None;
-                                    let mut h_val: Option<String> = None;
-                                    for (hk, hv) in h_fields {
-                                        if hk == "name"
-                                            && let Value::String(s) = hv
-                                        {
-                                            h_name = Some(s.clone());
-                                        } else if hk == "value"
-                                            && let Value::String(s) = hv
-                                        {
-                                            h_val = Some(s.clone());
-                                        }
-                                    }
-                                    if let (Some(n), Some(val_str)) = (h_name, h_val) {
-                                        custom_headers.push((n, val_str));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            }
+impl tokio_stream::Stream for WasmBodyStream {
+    type Item = Result<Bytes, std::io::Error>;
 
-            if !has_body_field && custom_headers.is_empty() {
-                let json_val = value_to_json(value);
-                let json = serde_json::to_string_pretty(&json_val).unwrap_or_default();
-                (
-                    status_code,
-                    [
-                        ("Content-Type", "application/json"),
-                        ("X-Definy-Preview-App", app_id),
-                    ],
-                    json,
-                )
-                    .into_response()
-            } else {
-                let mut header_map = HeaderMap::new();
-                if let Ok(app_val) = axum::http::HeaderValue::from_str(app_id) {
-                    header_map.insert(
-                        axum::http::HeaderName::from_static("x-definy-preview-app"),
-                        app_val,
-                    );
-                }
-
-                let has_content_type_in_headers = custom_headers
-                    .iter()
-                    .any(|(n, _)| n.eq_ignore_ascii_case("content-type"));
-
-                if !has_content_type_in_headers {
-                    let ct = explicit_content_type
-                        .as_deref()
-                        .unwrap_or("text/html; charset=utf-8");
-                    if let Ok(ct_val) = axum::http::HeaderValue::from_str(ct) {
-                        header_map.insert(axum::http::header::CONTENT_TYPE, ct_val);
-                    }
-                }
-
-                for (name, val) in custom_headers {
-                    if let (Ok(h_name), Ok(h_val)) = (
-                        axum::http::HeaderName::from_bytes(name.trim().as_bytes()),
-                        axum::http::HeaderValue::from_str(&val),
-                    ) {
-                        header_map.append(h_name, h_val);
-                    }
-                }
-
-                (status_code, header_map, body_str).into_response()
-            }
-        }
-        other => {
-            let json_val = value_to_json(other);
-            let json = serde_json::to_string_pretty(&json_val).unwrap_or_default();
-            (
-                StatusCode::OK,
-                [
-                    ("Content-Type", "application/json"),
-                    ("X-Definy-Preview-App", app_id),
-                ],
-                json,
-            )
-                .into_response()
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        match self.0.pull_next_chunk() {
+            Ok(Some(chunk)) => std::task::Poll::Ready(Some(Ok(Bytes::from(chunk)))),
+            Ok(None) => std::task::Poll::Ready(None),
+            Err(err) => std::task::Poll::Ready(Some(Err(std::io::Error::other(err)))),
         }
     }
 }
 
-/// definy の評価結果 `Value` を `serde_json::Value` にマッピングします
-#[must_use]
-pub fn value_to_json(val: &Value) -> serde_json::Value {
-    match val {
-        Value::Number(n) => serde_json::Value::Number((*n).into()),
-        Value::String(s) => serde_json::Value::String(s.clone()),
-        Value::Bool(b) => serde_json::Value::Bool(*b),
-        Value::List(items) => serde_json::Value::Array(items.iter().map(value_to_json).collect()),
-        Value::Record(items) => {
-            let mut map = serde_json::Map::new();
-            for (k, v) in items {
-                map.insert(k.clone(), value_to_json(v));
-            }
-            serde_json::Value::Object(map)
-        }
-        Value::Function => serde_json::Value::String("<function>".to_string()),
-        Value::Variant { tag, payload } => {
-            let mut map = serde_json::Map::new();
-            map.insert("tag".to_string(), serde_json::Value::String(tag.clone()));
-            if let Some(p) = payload {
-                map.insert("payload".to_string(), value_to_json(p));
-            }
-            serde_json::Value::Object(map)
+/// 評価された純粋関数型 HTTP レスポンス (`{ status, headers, body }`) を
+/// Axum のストリーミング `Response` にマッピングします。
+fn evaluated_http_response_to_axum_response(
+    evaluated: definy_core::wasm_emitter::EvaluatedHttpResponse,
+    app_id: &str,
+) -> Response {
+    let status_code = StatusCode::from_u16(evaluated.status).unwrap_or(StatusCode::OK);
+
+    let mut header_map = HeaderMap::new();
+    if let Ok(app_val) = axum::http::HeaderValue::from_str(app_id) {
+        header_map.insert(
+            axum::http::HeaderName::from_static("x-definy-preview-app"),
+            app_val,
+        );
+    }
+
+    for (name, val) in evaluated.headers {
+        if let (Ok(h_name), Ok(h_val)) = (
+            axum::http::HeaderName::from_bytes(name.trim().as_bytes()),
+            axum::http::HeaderValue::from_str(&val),
+        ) {
+            header_map.append(h_name, h_val);
         }
     }
+
+    let body = Body::from_stream(WasmBodyStream(evaluated.body_stream));
+    (status_code, header_map, body).into_response()
 }

@@ -49,7 +49,7 @@ pub(crate) fn assemble_wasm_module(
 
     // 6. Export Section:
     let mut export_section = Vec::new();
-    export_section.push(2); // 2 exports
+    export_section.push(3); // 3 exports
 
     let export_name_eval = "evaluate".as_bytes();
     export_section.push(export_name_eval.len() as u8);
@@ -62,6 +62,12 @@ pub(crate) fn assemble_wasm_module(
     export_section.extend_from_slice(export_name_mem);
     export_section.push(0x02); // kind: memory
     export_section.push(0); // memory idx 0
+
+    let export_name_table = "table".as_bytes();
+    export_section.push(export_name_table.len() as u8);
+    export_section.extend_from_slice(export_name_table);
+    export_section.push(0x01); // kind: table
+    export_section.push(0); // table idx 0
 
     emit_section(&mut module, EXPORT_SECTION, &export_section);
 

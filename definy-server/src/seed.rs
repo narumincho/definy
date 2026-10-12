@@ -17,6 +17,7 @@ pub fn generate_module_seed_schema_json() -> Result<String, serde_json::Error> {
 /// ビルトインモジュール（core, std, wasi, sample）の ModuleSeed リストを取得します。
 pub fn get_builtin_module_seeds(account_id: &AccountId) -> Vec<ModuleSeed> {
     let core_module_id = definy_event::event::derive_module_id(account_id, "core");
+    let std_module_id = definy_event::event::derive_module_id(account_id, "std");
     let wasi_module_id = definy_event::event::derive_module_id(account_id, "wasi");
 
     vec![
@@ -34,15 +35,15 @@ pub fn get_builtin_module_seeds(account_id: &AccountId) -> Vec<ModuleSeed> {
             Description::localized(vec![
                 (
                     "en",
-                    "Definy standard utility functions (pure math, logic, list operations)",
+                    "Definy standard utility functions (pure math, logic, list, UTF-8 stream, URL operations)",
                 ),
                 (
                     "ja",
-                    "definy の標準ユーティリティ関数群 (数学・論理・リスト操作)",
+                    "definy の標準ユーティリティ関数群 (数学・論理・リスト・UTF-8ストリーム・URL操作)",
                 ),
             ]),
             "Initial commit for std module",
-            crate::builtin_std_functions::create_std_module_parts(),
+            crate::builtin_std_functions::create_std_module_parts(&std_module_id),
         ),
         ModuleSeed::new(
             "wasi",
@@ -72,7 +73,10 @@ pub fn get_builtin_module_seeds(account_id: &AccountId) -> Vec<ModuleSeed> {
                 ),
             ]),
             "Initial commit for sample module",
-            crate::builtin_sample_parts::create_sample_module_parts(&core_module_id),
+            crate::builtin_sample_parts::create_sample_module_parts(
+                &core_module_id,
+                &std_module_id,
+            ),
         ),
     ]
 }

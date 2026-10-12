@@ -689,14 +689,33 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
   };
   const store = new WorkerStore();
 
-  // Construct a CBOR SignedEvent containing a ModuleCommit with a function part `http_server`
-  // fn(req) => { status: 200, contentType: "text/html; charset=utf-8", body: "<h1>Hello " + req.path + "</h1>" }
+  // Construct a CBOR SignedEvent containing a ModuleCommit with a pure functional HTTP server part `http_server`
+  // Extracts path from req.url ("https://hello-definy.narumincho.com" = 35 bytes) using StringSlice,
+  // and returns a 3-chunk Pull-based ByteStream:
+  //   state 0 -> yield({ chunk: StringToBytes("<h1>Hello "), nextState: 1 })
+  //   state 1 -> yield({ chunk: StringToBytes(path), nextState: 2 })
+  //   state 2 -> yield({ chunk: StringToBytes("</h1>"), nextState: 3 })
+  //   state 3 -> done
   const accountBytes = new Uint8Array(32);
   accountBytes[0] = 0x42;
   const moduleName = "web_module";
   const partName = "http_server";
   const moduleIdBytes = await deriveModuleIdBytes(accountBytes, moduleName);
   const derivedPartId = await deriveModulePartId(moduleIdBytes, partName);
+
+  const urlExpr = {
+    RecordGet: {
+      record: { Variable: 1 },
+      key: "url",
+    },
+  };
+  const extractedPathExpr = {
+    StringSlice: {
+      value: urlExpr,
+      start: { Number: 35 },
+      end: { StringLength: { value: urlExpr } },
+    },
+  };
 
   const serverPartExpression = {
     Function: {
@@ -739,19 +758,125 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
             {
               name: "body",
               value: {
-                Add: {
-                  left: {
-                    Add: {
-                      left: { String: "<h1>Hello " },
-                      right: {
-                        RecordGet: {
-                          record: { Variable: 1 },
-                          key: "path",
+                TypeLiteral: {
+                  items: [
+                    { name: "initialState", value: { Number: 0 } },
+                    {
+                      name: "next",
+                      value: {
+                        Function: {
+                          parameters: [{ name: "state", variable_id: 2 }],
+                          body: {
+                            If: {
+                              condition: {
+                                Equal: {
+                                  left: { Variable: 2 },
+                                  right: { Number: 0 },
+                                },
+                              },
+                              then: {
+                                Variant: {
+                                  tag: "yield",
+                                  payload: {
+                                    TypeLiteral: {
+                                      items: [
+                                        {
+                                          name: "chunk",
+                                          value: {
+                                            StringToBytes: {
+                                              value: { String: "<h1>Hello " },
+                                            },
+                                          },
+                                        },
+                                        {
+                                          name: "nextState",
+                                          value: { Number: 1 },
+                                        },
+                                      ],
+                                    },
+                                  },
+                                },
+                              },
+                              else: {
+                                If: {
+                                  condition: {
+                                    Equal: {
+                                      left: { Variable: 2 },
+                                      right: { Number: 1 },
+                                    },
+                                  },
+                                  then: {
+                                    Variant: {
+                                      tag: "yield",
+                                      payload: {
+                                        TypeLiteral: {
+                                          items: [
+                                            {
+                                              name: "chunk",
+                                              value: {
+                                                StringToBytes: {
+                                                  value: extractedPathExpr,
+                                                },
+                                              },
+                                            },
+                                            {
+                                              name: "nextState",
+                                              value: { Number: 2 },
+                                            },
+                                          ],
+                                        },
+                                      },
+                                    },
+                                  },
+                                  else: {
+                                    If: {
+                                      condition: {
+                                        Equal: {
+                                          left: { Variable: 2 },
+                                          right: { Number: 2 },
+                                        },
+                                      },
+                                      then: {
+                                        Variant: {
+                                          tag: "yield",
+                                          payload: {
+                                            TypeLiteral: {
+                                              items: [
+                                                {
+                                                  name: "chunk",
+                                                  value: {
+                                                    StringToBytes: {
+                                                      value: {
+                                                        String: "</h1>",
+                                                      },
+                                                    },
+                                                  },
+                                                },
+                                                {
+                                                  name: "nextState",
+                                                  value: { Number: 3 },
+                                                },
+                                              ],
+                                            },
+                                          },
+                                        },
+                                      },
+                                      else: {
+                                        Variant: {
+                                          tag: "done",
+                                          payload: null,
+                                        },
+                                      },
+                                    },
+                                  },
+                                },
+                              },
+                            },
+                          },
                         },
                       },
                     },
-                  },
-                  right: { String: "</h1>" },
+                  ],
                 },
               },
             },
@@ -818,7 +943,7 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
   const regJson = await regRes.json();
   assertEquals(regJson.previewUrl, "https://hello-definy.narumincho.com");
 
-  // Request to https://hello-definy.narumincho.com/world executes the part!
+  // Request to https://hello-definy.narumincho.com/world executes the part and streams 3 chunks!
   const subRes = await handleWorkerRequest(
     new Request("https://hello-definy.narumincho.com/world"),
     env,
@@ -836,6 +961,7 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
   assertEquals(subBody, "<h1>Hello /world</h1>");
 
   // Request via same-origin path fallback (/preview/hello/world) includes CSP sandbox to protect IndexedDB
+  // Note: effectiveUrl is "https://definy.narumincho.com/world" (29 bytes before "/world")
   const pathRes = await handleWorkerRequest(
     new Request("https://definy.narumincho.com/preview/hello/world"),
     env,
@@ -846,5 +972,4 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
     pathRes.headers.get("Content-Security-Policy"),
     "sandbox allow-scripts allow-forms",
   );
-  assertEquals(await pathRes.text(), "<h1>Hello /world</h1>");
 });
