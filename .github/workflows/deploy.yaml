@@ -15,6 +15,10 @@ jobs:
       - run: dx build --package definy-client --release
       - name: Package Static Assets and Seed Bundle
         run: bash scripts/build-assets.sh --skip-build
+      - name: Provision Cloudflare D1 Binding
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bash scripts/ensure-d1.sh
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

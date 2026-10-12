@@ -206,7 +206,7 @@ export async function handleWorkerRequest(
   const hostHeader = request.headers.get("host") ?? url.host;
   const subdomain = extractSubdomainFromHost(hostHeader, rootDomain);
   if (subdomain && !pathname.startsWith("/definy.v1.")) {
-    const app = store.getPreviewApp(subdomain);
+    const app = await store.getPreviewApp(subdomain, env);
     if (!app) {
       return new Response(`Preview app '${subdomain}' is not running`, {
         status: 404,
@@ -218,7 +218,11 @@ export async function handleWorkerRequest(
 
   // Health check
   if (pathname === "/healthz") {
-    return jsonResponse({ status: "ok", runtime: "cloudflare-workers" });
+    return jsonResponse({
+      status: "ok",
+      runtime: "cloudflare-workers",
+      storage: env.DB ? "cloudflare-d1" : "in-memory",
+    });
   }
 
   // Virtual Wasm CAS endpoint: /virtual/wasm/:hash
@@ -227,7 +231,7 @@ export async function handleWorkerRequest(
       /\.wasm$/,
       "",
     );
-    const bytes = store.getRawContentBytes(rawHash);
+    const bytes = await store.getRawContentBytes(rawHash, env);
     if (!bytes) {
       return new Response("Wasm binary not found in CAS", {
         status: 404,
@@ -252,7 +256,7 @@ export async function handleWorkerRequest(
     const slashIdx = rest.indexOf("/");
     const appId = (slashIdx === -1 ? rest : rest.slice(0, slashIdx)).trim();
     const subpath = slashIdx === -1 ? "/" : rest.slice(slashIdx);
-    const app = store.getPreviewApp(appId);
+    const app = await store.getPreviewApp(appId, env);
     if (!app) {
       return new Response(`Preview app '${appId}' is not running`, {
         status: 404,
@@ -265,7 +269,7 @@ export async function handleWorkerRequest(
   // Connect-RPC: EventService
   if (pathname === "/definy.v1.EventService/GetEvents") {
     const req = await parseJsonRequest<GetEventsRequest>(request);
-    const events = store.getEvents(req);
+    const events = await store.getEvents(req, env);
     return jsonResponse({ events });
   }
 
@@ -279,7 +283,7 @@ export async function handleWorkerRequest(
         400,
       );
     }
-    const event = store.getEvent(hash);
+    const event = await store.getEvent(hash, env);
     if (!event) {
       return connectErrorResponse(
         "not_found",
@@ -301,24 +305,24 @@ export async function handleWorkerRequest(
         400,
       );
     }
-    const eventHash = await store.submitEvent(rawEvent);
-    return jsonResponse({
-      eventHash,
-      status: "accepted",
-      missingContentHashes: [],
-    });
+    const res = await store.submitEventWithStatus(
+      rawEvent,
+      "module_commit",
+      env,
+    );
+    return jsonResponse(res);
   }
 
   if (pathname === "/definy.v1.EventService/CheckMissingHashes") {
     const req = await parseJsonRequest<CheckMissingHashesRequest>(request);
     const hashes = req.contentHashes ?? req.content_hashes ?? req.hashes ?? [];
-    const missing = store.checkMissingHashes(hashes);
+    const missing = await store.checkMissingHashes(hashes, env);
     return jsonResponse({ missingContentHashes: missing });
   }
 
   if (pathname === "/definy.v1.EventService/UploadContent") {
     const req = await parseJsonRequest<UploadContentRequest>(request);
-    const stored = store.uploadContent(req.items ?? []);
+    const stored = await store.uploadContent(req.items ?? [], env);
     return jsonResponse({ storedContentHashes: stored });
   }
 
@@ -326,7 +330,7 @@ export async function handleWorkerRequest(
     const req = await parseJsonRequest<GetContentRequest>(request);
     const singleHash = req.contentHash ?? req.content_hash;
     if (singleHash) {
-      const item = store.getContentItem(singleHash.trim());
+      const item = await store.getContentItem(singleHash.trim(), env);
       if (!item) {
         return connectErrorResponse(
           "not_found",
@@ -337,7 +341,7 @@ export async function handleWorkerRequest(
       return jsonResponse({ item });
     }
     if (req.hashes) {
-      const items = store.getContentItems(req.hashes);
+      const items = await store.getContentItems(req.hashes, env);
       return jsonResponse({ item: items[0], items });
     }
     return connectErrorResponse(
@@ -354,7 +358,7 @@ export async function handleWorkerRequest(
       const wasmHash = req.wasmHash ?? req.wasm_hash;
       let wasmBytes: Uint8Array | undefined;
       if (wasmHash && wasmHash.trim().length > 0) {
-        wasmBytes = store.getRawContentBytes(wasmHash.trim());
+        wasmBytes = await store.getRawContentBytes(wasmHash.trim(), env);
         if (!wasmBytes) {
           return connectErrorResponse(
             "not_found",
@@ -370,17 +374,20 @@ export async function handleWorkerRequest(
         fetchFn,
       );
       const nowIso = new Date().toISOString();
-      store.recordDeployment({
-        machineId: `cf-${res.scriptName}`,
-        status: res.status,
-        url: res.url,
-        appUrl: res.url,
-        region: "cloudflare-edge",
-        createdAtRfc3339: nowIso,
-        commitHash: req.commitHash ?? req.commit_hash ?? null,
-        wasmHash: wasmHash ?? null,
-        provider: "cloudflare_workers",
-      });
+      await store.recordDeployment(
+        {
+          machineId: `cf-${res.scriptName}`,
+          status: res.status,
+          url: res.url,
+          appUrl: res.url,
+          region: "cloudflare-edge",
+          createdAtRfc3339: nowIso,
+          commitHash: req.commitHash ?? req.commit_hash ?? null,
+          wasmHash: wasmHash ?? null,
+          provider: "cloudflare_workers",
+        },
+        env,
+      );
       return jsonResponse(res);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -390,7 +397,7 @@ export async function handleWorkerRequest(
 
   if (pathname === "/definy.v1.DeployService/ListDeployments") {
     const req = await parseJsonRequest<ListDeploymentsRequest>(request);
-    const deployments = store.listDeployments(req.limit);
+    const deployments = await store.listDeployments(req.limit, env);
     return jsonResponse({ deployments });
   }
 
@@ -443,7 +450,7 @@ export async function handleWorkerRequest(
       createdAtRfc3339,
       subdomain: appId,
     };
-    store.registerPreviewApp(item);
+    await store.registerPreviewApp(item, env);
 
     return jsonResponse({
       appId: item.appId,
@@ -456,7 +463,10 @@ export async function handleWorkerRequest(
 
   if (pathname === "/definy.v1.PreviewService/ListPreviewApps") {
     const req = await parseJsonRequest<ListPreviewAppsRequest>(request);
-    const apps = store.listPreviewApps(req.accountId ?? req.account_id);
+    const apps = await store.listPreviewApps(
+      req.accountId ?? req.account_id,
+      env,
+    );
     return jsonResponse({ apps });
   }
 
@@ -471,7 +481,7 @@ export async function handleWorkerRequest(
       );
     }
     const appId = (req.appId ?? req.app_id ?? "").trim().toLowerCase();
-    const success = store.stopPreviewApp(appId);
+    const success = await store.stopPreviewApp(appId, env);
     return jsonResponse({
       success,
       message: success

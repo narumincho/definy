@@ -1,3 +1,4 @@
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import {
   extractSubdomainFromHost,
   handleWorkerRequest,
@@ -6,7 +7,98 @@ import {
   WorkerStore,
 } from "./index.ts";
 import { bytesToBase64 } from "./store.ts";
-import type { Env, SeedBundle } from "./types.ts";
+import type {
+  D1Database,
+  D1ExecResult,
+  D1PreparedStatement,
+  D1Result,
+  Env,
+  SeedBundle,
+} from "./types.ts";
+
+function createSqliteD1Database(): D1Database {
+  const sqlite = new DatabaseSync(":memory:");
+
+  const createStmt = (
+    query: string,
+    boundValues: ReadonlyArray<unknown> = [],
+  ): D1PreparedStatement => {
+    const normalizeParams = (): SQLInputValue[] =>
+      boundValues.map((v) => (v === undefined ? null : (v as SQLInputValue)));
+
+    return {
+      bind(...values: ReadonlyArray<unknown>): D1PreparedStatement {
+        return createStmt(query, values);
+      },
+      first<T = Record<string, unknown>>(colName?: string): Promise<T | null> {
+        const stmt = sqlite.prepare(query);
+        const row = stmt.get(...normalizeParams()) as
+          | Record<string, unknown>
+          | undefined;
+        if (!row) {
+          return Promise.resolve(null);
+        }
+        if (colName) {
+          return Promise.resolve((row[colName] as T) ?? null);
+        }
+        return Promise.resolve({ ...row } as unknown as T);
+      },
+      run<T = Record<string, unknown>>(): Promise<D1Result<T>> {
+        const stmt = sqlite.prepare(query);
+        const res = stmt.run(...normalizeParams());
+        return Promise.resolve({
+          results: [],
+          success: true,
+          meta: {
+            changes: Number(res.changes),
+            last_row_id: Number(res.lastInsertRowid),
+          },
+        });
+      },
+      all<T = Record<string, unknown>>(): Promise<D1Result<T>> {
+        const stmt = sqlite.prepare(query);
+        const isSelect = query.trim().toUpperCase().startsWith("SELECT");
+        if (!isSelect) {
+          const res = stmt.run(...normalizeParams());
+          return Promise.resolve({
+            results: [],
+            success: true,
+            meta: {
+              changes: Number(res.changes),
+              last_row_id: Number(res.lastInsertRowid),
+            },
+          });
+        }
+        const rows = stmt.all(...normalizeParams()) as Array<
+          Record<string, unknown>
+        >;
+        return Promise.resolve({
+          results: rows.map((r) => ({ ...r }) as unknown as T),
+          success: true,
+        });
+      },
+    };
+  };
+
+  return {
+    prepare(query: string): D1PreparedStatement {
+      return createStmt(query);
+    },
+    async batch<T = Record<string, unknown>>(
+      statements: ReadonlyArray<D1PreparedStatement>,
+    ): Promise<ReadonlyArray<D1Result<T>>> {
+      const results: D1Result<T>[] = [];
+      for (const stmt of statements) {
+        results.push(await stmt.all<T>());
+      }
+      return results;
+    },
+    exec(query: string): Promise<D1ExecResult> {
+      sqlite.exec(query);
+      return Promise.resolve({ count: 1, duration: 0 });
+    },
+  };
+}
 
 function assertEquals<T>(actual: T, expected: T, message?: string): void {
   if (actual !== expected) {
@@ -375,4 +467,167 @@ Deno.test("handleWorkerRequest enforces admin check on PreviewService and serves
   );
   assertEquals(previewRes.status, 200);
   assertEquals(previewRes.headers.get("X-Definy-Preview-App"), "demo");
+});
+
+Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", async () => {
+  const d1 = createSqliteD1Database();
+  const adminAccount = "admin_account_123";
+  const sampleSeed: SeedBundle = {
+    events: [
+      {
+        eventHash: "seed_ev_1",
+        signedEventBytes: bytesToBase64(new Uint8Array([1, 2, 3])),
+        accountId: "acc_seed",
+        eventType: "create_account",
+        createdAtRfc3339: "2019-01-31T04:36:01Z",
+        timeMs: 1000,
+      },
+    ],
+    contents: [
+      {
+        contentHash: "seed_content_1",
+        contentBytes: bytesToBase64(new Uint8Array([11, 22, 33])),
+      },
+    ],
+  };
+
+  const envWithD1: Env = {
+    DB: d1,
+    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
+    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
+    ASSETS: {
+      fetch(input: Request | URL | string): Promise<Response> {
+        const url = typeof input === "string"
+          ? input
+          : input instanceof URL
+          ? input.toString()
+          : input.url;
+        if (url.endsWith("/__definy_seed_bundle.json")) {
+          return Promise.resolve(
+            new Response(JSON.stringify(sampleSeed), { status: 200 }),
+          );
+        }
+        return Promise.resolve(new Response("SPA", { status: 200 }));
+      },
+    },
+  };
+
+  // Isolate 1: seed, submit a new event, upload CAS content, register preview app
+  const store1 = new WorkerStore();
+
+  const healthRes = await handleWorkerRequest(
+    new Request("https://definy.workers.dev/healthz"),
+    envWithD1,
+    store1,
+  );
+  const healthJson = await healthRes.json();
+  assertEquals(healthJson.storage, "cloudflare-d1");
+
+  const submitRes = await handleWorkerRequest(
+    new Request(
+      "https://definy.workers.dev/definy.v1.EventService/SubmitEvent",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          signedEventBytes: bytesToBase64(new Uint8Array([99, 100, 101])),
+        }),
+      },
+    ),
+    envWithD1,
+    store1,
+  );
+  const submitJson = await submitRes.json();
+  assertEquals(submitJson.status, "accepted");
+  const submittedHash: string = submitJson.eventHash;
+
+  await handleWorkerRequest(
+    new Request(
+      "https://definy.workers.dev/definy.v1.EventService/UploadContent",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          items: [
+            {
+              contentHash: "d1_cas_hash_1",
+              contentBytes: bytesToBase64(
+                new Uint8Array([0x00, 0x61, 0x73, 0x6d]),
+              ),
+            },
+          ],
+        }),
+      },
+    ),
+    envWithD1,
+    store1,
+  );
+
+  await handleWorkerRequest(
+    new Request(
+      "https://definy.workers.dev/definy.v1.PreviewService/RegisterPreviewApp",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          appId: "persisted-app",
+          displayName: "Persisted App",
+          partId: "part-persisted",
+          accountId: adminAccount,
+        }),
+      },
+    ),
+    envWithD1,
+    store1,
+  );
+
+  // Isolate 2: completely fresh WorkerStore (simulating cold start), WITHOUT ASSETS seed
+  const store2 = new WorkerStore();
+  const envColdStart: Env = {
+    DB: d1,
+    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
+    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
+  };
+
+  // Verify both seeded event and submitted event are persisted in D1
+  const eventsRes = await handleWorkerRequest(
+    new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
+      method: "POST",
+      body: JSON.stringify({ limit: 10 }),
+    }),
+    envColdStart,
+    store2,
+  );
+  const eventsJson = await eventsRes.json();
+  assertEquals(eventsJson.events.length, 2);
+  assertEquals(eventsJson.events[0].eventHash, submittedHash);
+  assertEquals(eventsJson.events[1].eventHash, "seed_ev_1");
+
+  // Verify CAS content is persisted in D1
+  const contentRes = await handleWorkerRequest(
+    new Request(
+      "https://definy.workers.dev/definy.v1.EventService/GetContent",
+      {
+        method: "POST",
+        body: JSON.stringify({ contentHash: "d1_cas_hash_1" }),
+      },
+    ),
+    envColdStart,
+    store2,
+  );
+  const contentJson = await contentRes.json();
+  assertEquals(contentJson.item.contentHash, "d1_cas_hash_1");
+
+  // Verify PreviewApp is persisted in D1
+  const listAppsRes = await handleWorkerRequest(
+    new Request(
+      "https://definy.workers.dev/definy.v1.PreviewService/ListPreviewApps",
+      {
+        method: "POST",
+        body: JSON.stringify({}),
+      },
+    ),
+    envColdStart,
+    store2,
+  );
+  const listAppsJson = await listAppsRes.json();
+  assertEquals(listAppsJson.apps.length, 1);
+  assertEquals(listAppsJson.apps[0].appId, "persisted-app");
 });
