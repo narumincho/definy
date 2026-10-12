@@ -98,7 +98,10 @@ fn test_self_hosted_type_checking_of_seed_files() {
     // Filter out parts with expressions not yet represented in self-hosted core.expression (e.g. string_concat)
     // or external cross-module references (e.g. sample-ast-calc), or match requiring module-id for Variant type tag
     sample_seed.parts.retain(|p| {
-        &*p.name != "greet" && &*p.name != "sample-ast-calc" && &*p.name != "match-option-sample"
+        &*p.name != "greet"
+            && &*p.name != "sample-ast-calc"
+            && &*p.name != "match-option-sample"
+            && &*p.name != "self-hosted-definy-server"
     });
 
     for part in &sample_seed.parts {

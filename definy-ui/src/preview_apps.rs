@@ -227,7 +227,25 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
             }
 
             // 起動ボタン
-            div { style: "display: flex; justify-content: flex-end; gap: 0.8rem;",
+            div { style: "display: flex; justify-content: flex-end; gap: 0.8rem; flex-wrap: wrap;",
+                button {
+                    onclick: move |_| {
+                        app_id.set("self-definy".to_string());
+                        display_name.set("Self-Hosted definy Studio (definy in definy)".to_string());
+                        part_id.set("sample.self-hosted-definy-server".to_string());
+                        if account_id.read().trim().is_empty() {
+                            account_id.set("local-dev-admin".to_string());
+                        }
+                    },
+                    style: "padding: 0.65rem 1.2rem; background: var(--bg-canvas); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; cursor: pointer;",
+                    {
+                        lang.label(
+                            "⚡ Fill Self-Hosted definy Preset",
+                            "⚡ セルフホスト definy (self-definy) をセット",
+                            "⚡ Plenigi Mem-Gastigitan definy",
+                        )
+                    }
+                }
                 button {
                     onclick: on_start_preview,
                     disabled: *is_loading.read(),

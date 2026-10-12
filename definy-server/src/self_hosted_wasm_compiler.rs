@@ -216,11 +216,12 @@ pub fn compile_expression_to_wasm(
         .map_err(SelfHostedCompileError::Evaluation)
 }
 
-/// コミットイベント群から指定されたパーツ ID (hex 文字列、またはパーツ名) に一致する Expression を探索します。
+/// コミットイベント群から指定されたパーツ ID (hex/base64 文字列、`module.part`、またはパーツ名) に一致する Expression を探索します。
 pub fn find_part_expression_in_events(
     part_id: &str,
     events: &[VerifiedCommitEvent],
 ) -> Result<Expression, SelfHostedCompileError> {
+    let trimmed = part_id.trim();
     for (_hash, res) in events.iter().rev() {
         if let Ok((_sig, event)) = res
             && let EventContent::ModuleCommit(ref mc) = event.content
@@ -228,19 +229,23 @@ pub fn find_part_expression_in_events(
             let module_id = derive_module_id(&event.account_id, &mc.module_name);
             for part in &mc.parts {
                 let derived_part_id = derive_module_part_id(&module_id, &part.name);
-                if derived_part_id.to_string() == part_id || part.name.as_ref() == part_id {
+                let qualified_name = format!("{}.{}", mc.module_name, part.name);
+                if derived_part_id.to_string() == trimmed
+                    || part.name.as_ref() == trimmed
+                    || qualified_name == trimmed
+                {
                     if let Some(ref expr) = part.expression {
                         return Ok(expr.clone());
                     } else {
                         return Err(SelfHostedCompileError::PartHasNoExpression(
-                            part_id.to_string(),
+                            trimmed.to_string(),
                         ));
                     }
                 }
             }
         }
     }
-    Err(SelfHostedCompileError::PartNotFound(part_id.to_string()))
+    Err(SelfHostedCompileError::PartNotFound(trimmed.to_string()))
 }
 
 /// シリアライズされた署名付きイベント列バイトからパーツの Expression を探索します。
@@ -248,6 +253,7 @@ pub fn find_part_expression_in_signed_events(
     part_id: &str,
     event_binaries: &[Vec<u8>],
 ) -> Result<Expression, SelfHostedCompileError> {
+    let trimmed = part_id.trim();
     for bytes in event_binaries.iter().rev() {
         if let Ok((_sig, event)) = definy_event::verify_and_deserialize(bytes)
             && let EventContent::ModuleCommit(ref mc) = event.content
@@ -255,19 +261,114 @@ pub fn find_part_expression_in_signed_events(
             let module_id = derive_module_id(&event.account_id, &mc.module_name);
             for part in &mc.parts {
                 let derived_part_id = derive_module_part_id(&module_id, &part.name);
-                if derived_part_id.to_string() == part_id || part.name.as_ref() == part_id {
+                let qualified_name = format!("{}.{}", mc.module_name, part.name);
+                if derived_part_id.to_string() == trimmed
+                    || part.name.as_ref() == trimmed
+                    || qualified_name == trimmed
+                {
                     if let Some(ref expr) = part.expression {
                         return Ok(expr.clone());
                     } else {
                         return Err(SelfHostedCompileError::PartHasNoExpression(
-                            part_id.to_string(),
+                            trimmed.to_string(),
                         ));
                     }
                 }
             }
         }
     }
-    Err(SelfHostedCompileError::PartNotFound(part_id.to_string()))
+    Err(SelfHostedCompileError::PartNotFound(trimmed.to_string()))
+}
+
+/// HTTP リクエスト情報 `{ method, path, query, url }` を表す definy レコード式を構築します。
+#[must_use]
+pub fn build_http_request_record_expression(
+    method: &str,
+    path: &str,
+    query: &str,
+    url: &str,
+) -> Expression {
+    use definy_event::event::{StringExpression, TypeLiteralExpression, TypeLiteralItemExpression};
+    Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "method".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: method.into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "path".into(),
+                value: Box::new(Expression::String(StringExpression { value: path.into() })),
+            },
+            TypeLiteralItemExpression {
+                key: "query".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: query.into(),
+                })),
+            },
+            TypeLiteralItemExpression {
+                key: "url".into(),
+                value: Box::new(Expression::String(StringExpression { value: url.into() })),
+            },
+        ],
+    })
+}
+
+/// パーツ式 (`Expression`) を全イベントコンテキスト付きで HTTP リクエストに対して評価します。
+/// トップレベルが関数 (`fn(req) => ...` または `fn(path) => ...`) の場合はリクエスト情報を引数として渡して呼び出します。
+pub fn evaluate_part_expression_for_http_request(
+    expression: &Expression,
+    events: &[VerifiedCommitEvent],
+    method: &str,
+    path: &str,
+    query: &str,
+    url: &str,
+) -> Result<Value, SelfHostedCompileError> {
+    if let Expression::Function(ref fn_expr) = *expression {
+        let first_param_name = fn_expr
+            .parameters
+            .first()
+            .map(|p| p.parameter_name.as_ref())
+            .unwrap_or("req");
+        let arg_value = if first_param_name == "path" {
+            Expression::String(definy_event::event::StringExpression { value: path.into() })
+        } else {
+            build_http_request_record_expression(method, path, query, url)
+        };
+        let call_expr = Expression::Call(CallExpression {
+            function: Box::new(expression.clone()),
+            arguments: vec![CallArgument {
+                name: first_param_name.into(),
+                value: Box::new(arg_value),
+            }],
+        });
+        return definy_core::evaluate_expression(&call_expr, events)
+            .map_err(SelfHostedCompileError::Evaluation);
+    }
+
+    if events.is_empty() && is_supported_by_self_hosted_compiler(expression) {
+        let wasm_bytes = compile_expression_to_wasm(expression)?;
+        return evaluate_compiled_wasm(&wasm_bytes);
+    }
+
+    let val = definy_core::evaluate_expression(expression, events)
+        .map_err(SelfHostedCompileError::Evaluation)?;
+    if matches!(val, Value::Function) {
+        let call_expr = Expression::Call(CallExpression {
+            function: Box::new(expression.clone()),
+            arguments: vec![CallArgument {
+                name: "req".into(),
+                value: Box::new(build_http_request_record_expression(
+                    method, path, query, url,
+                )),
+            }],
+        });
+        return definy_core::evaluate_expression(&call_expr, events)
+            .map_err(SelfHostedCompileError::Evaluation);
+    }
+
+    Ok(val)
 }
 
 /// 自己記述コンパイラのデフォルト検証用サンプル式 (`15 + 27 = 42`) を生成します。

@@ -36,17 +36,62 @@ export DEFINY_ADMIN_ACCOUNT_ID="0123456789abcdef0123456789abcdef0123456789abcdef
 
 ## 2. ドメインルーティングとアクセス方式
 
-### ① クラウド版: サブドメイン自動割り当て (`*.definy.fly.dev`)
+### ① Cloudflare Workers 本番環境: ハイフン連結 1階層サブドメイン (`https://{sub}-definy.narumincho.com`)
 
-クラウド環境（Fly.io
-等）では、アプリごとに一意のサブドメインスラッグ（`app_id`）が割り当てられます。
+Cloudflare Workers + カスタムドメイン (`narumincho.com`)
+環境では、以下の2つの要件を同時に満たすため、本体を
+**`https://definy.narumincho.com`**、作成したパーツで動作する HTTP
+サーバー（プレビューアプリ）を **`https://{sub}-definy.narumincho.com`**
+で配信します。
 
-- **URL 形式**: `https://<app_id>.<root_domain>`
-  - 例: `https://my-app.definy.fly.dev`
-- **ルーティング機構**: Axum のフォールバックハンドラーが HTTP リクエストの
-  `Host`
-  ヘッダーを解析し、登録済みプレビューアプリのサブドメインとマッチした場合、SSR
-  や通常アセット配信をバイパスして直接プレビューハンドラー（`execute_preview_app`）にディスパッチします。
+1. **Same-Origin Policy による `IndexedDB`（秘密鍵）の完全隔離**:
+   - definy 本体 (`https://definy.narumincho.com`) はブラウザの `IndexedDB`
+     にユーザーの Ed25519 秘密鍵を保存します。
+   - ユーザー作成アプリを同一オリジンのパス (`/preview/{sub}`)
+     でそのまま実行すると、アプリ内の JavaScript から本体の `IndexedDB`
+     が読み取られてしまうため、アプリごとに独立したオリジン
+     (`https://{sub}-definy.narumincho.com`) へ分離します。
+2. **Cloudflare 無料 Universal SSL ワイルドカード (`*.narumincho.com`) と単一
+   Worker 運用**:
+   - 2階層サブドメイン (`{sub}.definy.narumincho.com`) は Cloudflare 標準の無料
+     Universal SSL 証明書 (`*.narumincho.com`) の対象外となり、Advanced
+     Certificate Manager または個別 Custom Domain 登録が必要になります。
+   - 一方、1階層サブドメインの **`https://{sub}-definy.narumincho.com`**
+     であれば、無料 Universal SSL (`*.narumincho.com`)
+     で追加費用・証明書発行待ち時間ゼロで無制限のサブドメインを即座に HTTPS
+     化でき、かつ Worker Route のプレフィックスワイルドカード
+     (`*-definy.narumincho.com/*` → `definy` Worker) により **単一の `definy`
+     Worker** で全サブドメインを処理できます。
+   - また、`wrangler.toml` の `[assets]` で `run_worker_first = true`
+     を指定することで、すべてのサブドメインリクエストが Static Assets の SPA
+     フォールバックより先に Worker スクリプト (`worker/index.ts`)
+     で判定・実行されます。
+
+#### Cloudflare 管理画面での1回限りの設定手順（GitHub Actions での権限付与不要）
+
+`wrangler.toml` にはあえて `routes` を記載していないため、**Cloudflare
+ダッシュボードで1度だけ以下の設定を行えば、以降の GitHub Actions による
+`wrangler deploy` でも上書き・消去されずに永続維持されます**（GitHub Actions の
+`CLOUDFLARE_API_TOKEN` に DNS や Zone Routes
+の編集権限を付与する必要もありません）。
+
+1. **メインドメイン (`definy.narumincho.com`) の登録**:
+   - Cloudflare ダッシュボード → **Workers & Pages** → **`definy`** →
+     **Settings** → **Domains & Routes** → **Add** → **Custom domain**
+   - `definy.narumincho.com` を入力して追加（DNS
+     レコードと証明書が自動構成されます）。
+2. **ワイルドカード DNS レコード (`*.narumincho.com` または個別) の追加**:
+   - Cloudflare ダッシュボード → **`narumincho.com` ゾーン** → **DNS** →
+     **Records** → **Add record**
+   - **Type**: `AAAA` / **Name**: `*` / **IPv6 address**: `100::` / **Proxy
+     status**: **Proxied (オレンジ雲 ON)**
+   - ※ 明示的に登録したサブドメイン（例: `mc.narumincho.com` や
+     `narumincho.com`）は最長一致ルールによりワイルドカードより常に優先されるため、他用途のサブドメインには一切影響しません。
+3. **ワイルドカード Worker Route (`*-definy.narumincho.com/*`) の追加**:
+   - Cloudflare ダッシュボード → **`narumincho.com` ゾーン** → **Workers
+     Routes** → **Add route**
+   - **Route**: `*-definy.narumincho.com/*`
+   - **Worker**: `definy`
 
 ### ② ローカル開発環境: `*.localhost` サブドメイン
 
@@ -63,7 +108,11 @@ export DEFINY_ADMIN_ACCOUNT_ID="0123456789abcdef0123456789abcdef0123456789abcdef
 ### ③ パスプレフィックス フォールバック (`/preview/:app_id/*`)
 
 ワイルドカード DNS
-やサブドメインが使用できない閉域環境やリバースプロキシ環境向けに、パスプレフィックスルーティングもネイティブサポートされています。
+やサブドメインが使用できない閉域環境向けに、パスプレフィックスルーティングもサポートされています。
+同一オリジン上の `/preview/:app_id/*` 経由でアクセスされた場合は、本体の
+`IndexedDB` や `localStorage` へのアクセスを遮断するため、レスポンスに
+`Content-Security-Policy: sandbox allow-scripts allow-forms`（`allow-same-origin`
+なし＝不透明オリジン `null` への強制隔離）を自動付与します。
 
 - **URL 形式**: `http://localhost:8000/preview/<app_id>/*`
   - ルート: `http://localhost:8000/preview/my-app/`
@@ -71,10 +120,24 @@ export DEFINY_ADMIN_ACCOUNT_ID="0123456789abcdef0123456789abcdef0123456789abcdef
 
 ---
 
-## 3. レスポンス形式とマッピング仕様
+## 3. パーツ評価エンジンとレスポンス形式
 
-プレビュー対象パーツの評価結果（`definy_core::expression_eval::Value`）は、以下のように
-HTTP レスポンスへ自動変換されます。
+Cloudflare Workers (`worker/cbor_eval.ts`) および Rust サーバー
+(`definy-server/src/preview_service.rs`) の双方で、プレビューアプリに紐づく
+`partId`（`derive_module_part_id` で導出された Part ID、`module.part` 名、または
+CAS の Wasm ハッシュ）を D1 / イベントストアから解決して評価します。
+
+- **関数パーツ (`Expression::Function`) の HTTP リクエスト引数**:
+  - 対象パーツが関数の場合、第1引数に `{ method, path, query, url }`
+    レコード（第1引数名が `path` の場合はパス文字列
+    `subpath`）を渡して呼び出します。
+- **CAS Wasm バイナリの直接実行**:
+  - CAS 内にコンパイル済み Wasm バイナリが存在する場合は
+    `WebAssembly.instantiate` で実行し、線形メモリ上のタgged layout から
+    `DefinyValue` を復元します。
+
+プレビュー対象パーツの評価結果は、以下のように HTTP
+レスポンスへ自動変換されます。
 
 | definy の評価値型                          | マッピング先 HTTP レスポンス                             | 適用される Content-Type                                                                                 |
 | ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |

@@ -70,3 +70,4 @@ database_id = "${DB_UUID}"
 EOF
 
 echo "Successfully configured D1 binding in ${WRANGLER_TOML}."
+

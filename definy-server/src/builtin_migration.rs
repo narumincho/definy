@@ -106,6 +106,28 @@ fn build_builtin_events() -> (
     (account_id, signing_key, events)
 }
 
+/// 組み込みシステムアカウントの公開鍵 16進文字列を返します。
+#[must_use]
+pub fn system_account_id_hex() -> String {
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
+    hex::encode(signing_key.verifying_key().as_bytes())
+}
+
+/// 組み込みシードイベント群を検証済みイベントリスト (`VerifiedCommitEvent`) として返します。
+#[must_use]
+pub fn build_builtin_verified_events() -> Vec<crate::self_hosted_wasm_compiler::VerifiedCommitEvent>
+{
+    let (_account_id, signing_key, events) = build_builtin_events();
+    let mut verified = Vec::with_capacity(events.len());
+    for event in events {
+        if let Ok(bytes) = definy_event::sign_and_serialize(event, &signing_key) {
+            let hash = definy_event::EventHashId::from_bytes(&bytes);
+            verified.push((hash, definy_event::verify_and_deserialize(&bytes)));
+        }
+    }
+    verified
+}
+
 /// Cloudflare Workers 等のエッジ環境向けに、組み込みシードイベントと CAS コンテンツをバンドル生成する。
 pub fn build_builtin_seed_bundle() -> Result<SeedBundle, anyhow::Error> {
     let (_account_id, signing_key, events) = build_builtin_events();

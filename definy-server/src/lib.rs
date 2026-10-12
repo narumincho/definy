@@ -9,6 +9,7 @@ mod builtin_list_ops;
 pub mod builtin_migration;
 mod builtin_optimizer;
 pub mod builtin_sample_parts;
+pub mod builtin_self_hosted_server;
 mod builtin_std_functions;
 mod builtin_type_ast;
 mod builtin_type_checker;
@@ -26,6 +27,8 @@ mod extractor;
 mod html;
 pub mod mcp;
 pub mod preview_service;
+#[cfg(test)]
+mod preview_service_tests;
 pub mod seed;
 mod self_hosted_ast;
 pub mod self_hosted_wasm_compiler;
@@ -99,6 +102,27 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     println!("Starting definy server (Axum)...");
     let state = AppState::new(None);
+
+    let system_id = crate::builtin_migration::system_account_id_hex();
+    if std::env::var("DEFINY_ADMIN_ACCOUNT_ID").is_err()
+        && std::env::var("DEFINY_ADMIN_ACCOUNT_IDS").is_err()
+    {
+        let default_admins = format!("*,{},local-dev-admin", system_id);
+        unsafe { std::env::set_var("DEFINY_ADMIN_ACCOUNT_ID", &default_admins) };
+        println!(
+            "DEFINY_ADMIN_ACCOUNT_ID not set; enabled local dev preview admin access ({})",
+            default_admins
+        );
+    }
+
+    {
+        let mut preview_store = state.preview_store.write().await;
+        preview_store.register_default_self_hosted_app(&system_id);
+        println!(
+            "Registered default self-hosted definy Studio at {}",
+            crate::preview_service::build_preview_url("self-definy")
+        );
+    }
 
     let state_for_db = state.clone();
     tokio::spawn(async move {
@@ -704,7 +728,7 @@ mod tests {
 
         let response = handle_html_request(&state, &uri, &headers).await;
         assert_eq!(response.status(), axum::http::StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        let body_bytes = axum::body::to_bytes(response.into_body(), 10 * 1024 * 1024)
             .await
             .expect("Failed to read body");
         let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
@@ -722,7 +746,7 @@ mod tests {
 
         let response = handle_html_request(&state, &uri, &headers).await;
         assert_eq!(response.status(), axum::http::StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        let body_bytes = axum::body::to_bytes(response.into_body(), 10 * 1024 * 1024)
             .await
             .expect("Failed to read body");
         let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
@@ -739,7 +763,7 @@ mod tests {
 
         let response = handle_html_request(&state, &uri, &headers).await;
         assert_eq!(response.status(), axum::http::StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        let body_bytes = axum::body::to_bytes(response.into_body(), 10 * 1024 * 1024)
             .await
             .expect("Failed to read body");
         let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
@@ -805,7 +829,7 @@ mod tests {
 
         let response = handle_html_request(&state, &uri, &headers).await;
         assert_eq!(response.status(), axum::http::StatusCode::OK);
-        let body_bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+        let body_bytes = axum::body::to_bytes(response.into_body(), 10 * 1024 * 1024)
             .await
             .expect("Failed to read body");
         let body_str = String::from_utf8(body_bytes.to_vec()).expect("Body is not UTF-8");
