@@ -59,6 +59,21 @@ fn let_chain(bindings: Vec<(i64, &str, Expression)>, body: Expression) -> Expres
         })
 }
 
+fn http_header_item(name: &str, value: &str) -> Expression {
+    Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(str_expr(name)),
+            },
+            TypeLiteralItemExpression {
+                key: "value".into(),
+                value: Box::new(str_expr(value)),
+            },
+        ],
+    })
+}
+
 fn http_response_record(status: i64, content_type: &str, body: Expression) -> Expression {
     Expression::TypeLiteral(TypeLiteralExpression {
         items: vec![
@@ -67,8 +82,13 @@ fn http_response_record(status: i64, content_type: &str, body: Expression) -> Ex
                 value: Box::new(num_expr(status)),
             },
             TypeLiteralItemExpression {
-                key: "contentType".into(),
-                value: Box::new(str_expr(content_type)),
+                key: "headers".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        http_header_item("content-type", content_type),
+                        http_header_item("x-powered-by", "definy-self-hosted"),
+                    ],
+                })),
             },
             TypeLiteralItemExpression {
                 key: "body".into(),
@@ -372,6 +392,19 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
         route_expr,
     );
 
+    let headers_list_type = || {
+        PartType::List(Box::new(PartType::Record(vec![
+            RecordFieldType {
+                key: "name".into(),
+                value: Box::new(PartType::String),
+            },
+            RecordFieldType {
+                key: "value".into(),
+                value: Box::new(PartType::String),
+            },
+        ])))
+    };
+
     ModulePartEntry {
         name: "self-hosted-definy-server".into(),
         part_type: Some(fn_type(
@@ -394,6 +427,10 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
                         key: "url".into(),
                         value: Box::new(PartType::String),
                     },
+                    RecordFieldType {
+                        key: "headers".into(),
+                        value: Box::new(headers_list_type()),
+                    },
                 ]),
             )],
             PartType::Record(vec![
@@ -402,8 +439,8 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
                     value: Box::new(PartType::Number),
                 },
                 RecordFieldType {
-                    key: "contentType".into(),
-                    value: Box::new(PartType::String),
+                    key: "headers".into(),
+                    value: Box::new(headers_list_type()),
                 },
                 RecordFieldType {
                     key: "body".into(),

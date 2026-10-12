@@ -857,11 +857,16 @@ export async function evaluatePartForHttpRequest(
     };
     const callVars = new Map<number, DefinyValue>(fnObj.closureEnv);
     const reqUrl = new URL(request.url);
+    const reqHeaders: Array<DefinyValue> = [];
+    request.headers.forEach((value, name) => {
+      reqHeaders.push({ name, value });
+    });
     const reqValue: DefinyValue = {
       method: request.method,
       path: subpath,
       query: reqUrl.search,
       url: request.url,
+      headers: reqHeaders,
     };
     if (fnObj.parameters.length > 0) {
       const firstParam = fnObj.parameters[0];
@@ -921,23 +926,47 @@ export function definyValueToHttpResponse(
     !("__fn" in value)
   ) {
     const rec = value as Record<string, DefinyValue>;
-    if (typeof rec.body === "string" && rec.body.length > 0) {
+    const hasBodyField = "body" in rec;
+    const hasHeadersList = Array.isArray(rec.headers);
+    if (hasBodyField || hasHeadersList) {
       const status =
         typeof rec.status === "number" && rec.status >= 100 && rec.status <= 599
           ? rec.status
           : 200;
-      const contentType = typeof rec.contentType === "string"
-        ? rec.contentType
-        : typeof rec.content_type === "string"
-        ? rec.content_type
-        : "text/html; charset=utf-8";
-      return new Response(rec.body, {
-        status,
-        headers: {
-          ...baseHeaders,
-          "Content-Type": contentType,
-        },
-      });
+      const bodyStr = typeof rec.body === "string"
+        ? rec.body
+        : rec.body !== undefined
+        ? JSON.stringify(rec.body)
+        : "";
+      const responseHeaders = new Headers(baseHeaders);
+      let hasContentType = false;
+      if (Array.isArray(rec.headers)) {
+        for (const item of rec.headers) {
+          if (item && typeof item === "object" && !Array.isArray(item)) {
+            const hObj = item as Record<string, DefinyValue>;
+            if (
+              typeof hObj.name === "string" && typeof hObj.value === "string"
+            ) {
+              const name = hObj.name.trim();
+              if (name.length > 0) {
+                if (name.toLowerCase() === "content-type") {
+                  hasContentType = true;
+                }
+                responseHeaders.append(name, hObj.value);
+              }
+            }
+          }
+        }
+      }
+      if (!hasContentType) {
+        const contentType = typeof rec.contentType === "string"
+          ? rec.contentType
+          : typeof rec.content_type === "string"
+          ? rec.content_type
+          : "text/html; charset=utf-8";
+        responseHeaders.set("Content-Type", contentType);
+      }
+      return new Response(bodyStr, { status, headers: responseHeaders });
     }
   }
 

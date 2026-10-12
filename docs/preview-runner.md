@@ -128,7 +128,8 @@ Cloudflare Workers (`worker/cbor_eval.ts`) および Rust サーバー
 CAS の Wasm ハッシュ）を D1 / イベントストアから解決して評価します。
 
 - **関数パーツ (`Expression::Function`) の HTTP リクエスト引数**:
-  - 対象パーツが関数の場合、第1引数に `{ method, path, query, url }`
+  - 対象パーツが関数の場合、第1引数に
+    `{ method: String, path: String, query: String, url: String, headers: List<{ name: String, value: String }> }`
     レコード（第1引数名が `path` の場合はパス文字列
     `subpath`）を渡して呼び出します。
 - **CAS Wasm バイナリの直接実行**:
@@ -139,11 +140,11 @@ CAS の Wasm ハッシュ）を D1 / イベントストアから解決して評�
 プレビュー対象パーツの評価結果は、以下のように HTTP
 レスポンスへ自動変換されます。
 
-| definy の評価値型                          | マッピング先 HTTP レスポンス                             | 適用される Content-Type                                                                                 |
-| ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `Value::String(html)`                      | HTML またはプレーンテキスト本文                          | HTML タグを含む場合: `text/html; charset=utf-8`<br>その他: `text/plain; charset=utf-8`                  |
-| `Value::Record(fields)`                    | `{ status, body, contentType }` フィールドを解析して展開 | `status` (数値, 例: 200, 404)<br>`body` (本文文字列)<br>`contentType` (指定値, デフォルト: `text/html`) |
-| その他 (`Record`, `List`, `Variant`, etc.) | JSON 構造体へシリアライズ                                | `application/json`                                                                                      |
+| definy の評価値型                          | マッピング先 HTTP レスポンス                         | 適用されるヘッダー / Content-Type                                                                                                     |
+| ------------------------------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Value::String(html)`                      | HTML またはプレーンテキスト本文                      | HTML タグを含む場合: `text/html; charset=utf-8`<br>その他: `text/plain; charset=utf-8`                                                |
+| `Value::Record(fields)`                    | `{ status, headers, body }` フィールドを解析して展開 | `status`: 数値 (例: 200, 404)<br>`headers`: `List<{ name: String, value: String }>`（任意の複数ヘッダー指定可）<br>`body`: 本文文字列 |
+| その他 (`Record`, `List`, `Variant`, etc.) | JSON 構造体へシリアライズ                            | `application/json`                                                                                                                    |
 
 全てのプレビューレスポンスには識別ヘッダーとして
 `X-Definy-Preview-App: <app_id>` が付与されます。

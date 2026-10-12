@@ -706,8 +706,35 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
           items: [
             { name: "status", value: { Number: 200 } },
             {
-              name: "contentType",
-              value: { String: "text/html; charset=utf-8" },
+              name: "headers",
+              value: {
+                ListLiteral: {
+                  items: [
+                    {
+                      TypeLiteral: {
+                        items: [
+                          { name: "name", value: { String: "content-type" } },
+                          {
+                            name: "value",
+                            value: { String: "text/html; charset=utf-8" },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      TypeLiteral: {
+                        items: [
+                          {
+                            name: "name",
+                            value: { String: "x-custom-header" },
+                          },
+                          { name: "value", value: { String: "from-definy" } },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
             },
             {
               name: "body",
@@ -803,6 +830,7 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
     subRes.headers.get("Content-Type"),
     "text/html; charset=utf-8",
   );
+  assertEquals(subRes.headers.get("x-custom-header"), "from-definy");
   assertEquals(subRes.headers.get("Content-Security-Policy"), null);
   const subBody = await subRes.text();
   assertEquals(subBody, "<h1>Hello /world</h1>");

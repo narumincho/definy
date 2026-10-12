@@ -280,15 +280,41 @@ pub fn find_part_expression_in_signed_events(
     Err(SelfHostedCompileError::PartNotFound(trimmed.to_string()))
 }
 
-/// HTTP リクエスト情報 `{ method, path, query, url }` を表す definy レコード式を構築します。
+/// HTTP リクエスト情報 `{ method, path, query, url, headers }` を表す definy レコード式を構築します。
+/// `headers` は `List<{ name: String, value: String }>` として表現されます。
 #[must_use]
 pub fn build_http_request_record_expression(
     method: &str,
     path: &str,
     query: &str,
     url: &str,
+    headers: &[(String, String)],
 ) -> Expression {
-    use definy_event::event::{StringExpression, TypeLiteralExpression, TypeLiteralItemExpression};
+    use definy_event::event::{
+        ListLiteralExpression, StringExpression, TypeLiteralExpression, TypeLiteralItemExpression,
+    };
+    let header_items: Vec<Expression> = headers
+        .iter()
+        .map(|(name, val)| {
+            Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "name".into(),
+                        value: Box::new(Expression::String(StringExpression {
+                            value: name.as_str().into(),
+                        })),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "value".into(),
+                        value: Box::new(Expression::String(StringExpression {
+                            value: val.as_str().into(),
+                        })),
+                    },
+                ],
+            })
+        })
+        .collect();
+
     Expression::TypeLiteral(TypeLiteralExpression {
         items: vec![
             TypeLiteralItemExpression {
@@ -311,6 +337,12 @@ pub fn build_http_request_record_expression(
                 key: "url".into(),
                 value: Box::new(Expression::String(StringExpression { value: url.into() })),
             },
+            TypeLiteralItemExpression {
+                key: "headers".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: header_items,
+                })),
+            },
         ],
     })
 }
@@ -324,6 +356,7 @@ pub fn evaluate_part_expression_for_http_request(
     path: &str,
     query: &str,
     url: &str,
+    headers: &[(String, String)],
 ) -> Result<Value, SelfHostedCompileError> {
     if let Expression::Function(ref fn_expr) = *expression {
         let first_param_name = fn_expr
@@ -334,7 +367,7 @@ pub fn evaluate_part_expression_for_http_request(
         let arg_value = if first_param_name == "path" {
             Expression::String(definy_event::event::StringExpression { value: path.into() })
         } else {
-            build_http_request_record_expression(method, path, query, url)
+            build_http_request_record_expression(method, path, query, url, headers)
         };
         let call_expr = Expression::Call(CallExpression {
             function: Box::new(expression.clone()),
@@ -360,7 +393,7 @@ pub fn evaluate_part_expression_for_http_request(
             arguments: vec![CallArgument {
                 name: "req".into(),
                 value: Box::new(build_http_request_record_expression(
-                    method, path, query, url,
+                    method, path, query, url, headers,
                 )),
             }],
         });

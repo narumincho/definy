@@ -346,6 +346,10 @@ async fn test_self_hosted_definy_server_subdomain_and_routes() {
         res_home.headers().get("X-Definy-Preview-App").unwrap(),
         "self-definy"
     );
+    assert_eq!(
+        res_home.headers().get("x-powered-by").unwrap(),
+        "definy-self-hosted"
+    );
     let html_bytes = axum::body::to_bytes(res_home.into_body(), 1024 * 1024)
         .await
         .unwrap();

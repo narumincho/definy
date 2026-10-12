@@ -539,6 +539,14 @@ pub async fn execute_preview_app(
             .and_then(|h| h.to_str().ok())
             .unwrap_or("localhost:8000");
         let full_url = format!("http://{host}{uri}");
+        let header_pairs: Vec<(String, String)> = headers
+            .iter()
+            .filter_map(|(name, val)| {
+                val.to_str()
+                    .ok()
+                    .map(|v| (name.as_str().to_string(), v.to_string()))
+            })
+            .collect();
 
         match crate::self_hosted_wasm_compiler::evaluate_part_expression_for_http_request(
             &expr,
@@ -547,6 +555,7 @@ pub async fn execute_preview_app(
             path,
             &query,
             &full_url,
+            &header_pairs,
         ) {
             Ok(value) => value_to_http_response(&value, app_id),
             Err(err) => (
@@ -617,8 +626,10 @@ fn value_to_http_response(value: &Value, app_id: &str) -> Response {
         }
         Value::Record(fields) => {
             let mut status_code = StatusCode::OK;
+            let mut has_body_field = false;
             let mut body_str = String::new();
-            let mut content_type = "text/html; charset=utf-8".to_string();
+            let mut explicit_content_type: Option<String> = None;
+            let mut custom_headers: Vec<(String, String)> = Vec::new();
 
             for (k, v) in fields {
                 match k.as_str() {
@@ -631,6 +642,7 @@ fn value_to_http_response(value: &Value, app_id: &str) -> Response {
                         }
                     }
                     "body" => {
+                        has_body_field = true;
                         if let Value::String(s) = v {
                             body_str = s.clone();
                         } else {
@@ -639,14 +651,38 @@ fn value_to_http_response(value: &Value, app_id: &str) -> Response {
                     }
                     "contentType" | "content_type" => {
                         if let Value::String(s) = v {
-                            content_type = s.clone();
+                            explicit_content_type = Some(s.clone());
+                        }
+                    }
+                    "headers" => {
+                        if let Value::List(items) = v {
+                            for item in items {
+                                if let Value::Record(h_fields) = item {
+                                    let mut h_name: Option<String> = None;
+                                    let mut h_val: Option<String> = None;
+                                    for (hk, hv) in h_fields {
+                                        if hk == "name"
+                                            && let Value::String(s) = hv
+                                        {
+                                            h_name = Some(s.clone());
+                                        } else if hk == "value"
+                                            && let Value::String(s) = hv
+                                        {
+                                            h_val = Some(s.clone());
+                                        }
+                                    }
+                                    if let (Some(n), Some(val_str)) = (h_name, h_val) {
+                                        custom_headers.push((n, val_str));
+                                    }
+                                }
+                            }
                         }
                     }
                     _ => {}
                 }
             }
 
-            if body_str.is_empty() {
+            if !has_body_field && custom_headers.is_empty() {
                 let json_val = value_to_json(value);
                 let json = serde_json::to_string_pretty(&json_val).unwrap_or_default();
                 (
@@ -659,15 +695,37 @@ fn value_to_http_response(value: &Value, app_id: &str) -> Response {
                 )
                     .into_response()
             } else {
-                (
-                    status_code,
-                    [
-                        ("Content-Type", content_type.as_str()),
-                        ("X-Definy-Preview-App", app_id),
-                    ],
-                    body_str,
-                )
-                    .into_response()
+                let mut header_map = HeaderMap::new();
+                if let Ok(app_val) = axum::http::HeaderValue::from_str(app_id) {
+                    header_map.insert(
+                        axum::http::HeaderName::from_static("x-definy-preview-app"),
+                        app_val,
+                    );
+                }
+
+                let has_content_type_in_headers = custom_headers
+                    .iter()
+                    .any(|(n, _)| n.eq_ignore_ascii_case("content-type"));
+
+                if !has_content_type_in_headers {
+                    let ct = explicit_content_type
+                        .as_deref()
+                        .unwrap_or("text/html; charset=utf-8");
+                    if let Ok(ct_val) = axum::http::HeaderValue::from_str(ct) {
+                        header_map.insert(axum::http::header::CONTENT_TYPE, ct_val);
+                    }
+                }
+
+                for (name, val) in custom_headers {
+                    if let (Ok(h_name), Ok(h_val)) = (
+                        axum::http::HeaderName::from_bytes(name.trim().as_bytes()),
+                        axum::http::HeaderValue::from_str(&val),
+                    ) {
+                        header_map.append(h_name, h_val);
+                    }
+                }
+
+                (status_code, header_map, body_str).into_response()
             }
         }
         other => {

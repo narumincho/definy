@@ -807,6 +807,23 @@
                   {
                     "key": "url",
                     "value": "string"
+                  },
+                  {
+                    "key": "headers",
+                    "value": {
+                      "list": {
+                        "record": [
+                          {
+                            "key": "name",
+                            "value": "string"
+                          },
+                          {
+                            "key": "value",
+                            "value": "string"
+                          }
+                        ]
+                      }
+                    }
                   }
                 ]
               }
@@ -819,8 +836,21 @@
                 "value": "number"
               },
               {
-                "key": "contentType",
-                "value": "string"
+                "key": "headers",
+                "value": {
+                  "list": {
+                    "record": [
+                      {
+                        "key": "name",
+                        "value": "string"
+                      },
+                      {
+                        "key": "value",
+                        "value": "string"
+                      }
+                    ]
+                  }
+                }
               },
               {
                 "key": "body",
@@ -1826,10 +1856,55 @@
                                                                       }
                                                                     },
                                                                     {
-                                                                      "key": "contentType",
+                                                                      "key": "headers",
                                                                       "value": {
-                                                                        "String": {
-                                                                          "value": "application/json; charset=utf-8"
+                                                                        "ListLiteral": {
+                                                                          "items": [
+                                                                            {
+                                                                              "TypeLiteral": {
+                                                                                "items": [
+                                                                                  {
+                                                                                    "key": "name",
+                                                                                    "value": {
+                                                                                      "String": {
+                                                                                        "value": "content-type"
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "key": "value",
+                                                                                    "value": {
+                                                                                      "String": {
+                                                                                        "value": "application/json; charset=utf-8"
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "TypeLiteral": {
+                                                                                "items": [
+                                                                                  {
+                                                                                    "key": "name",
+                                                                                    "value": {
+                                                                                      "String": {
+                                                                                        "value": "x-powered-by"
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  {
+                                                                                    "key": "value",
+                                                                                    "value": {
+                                                                                      "String": {
+                                                                                        "value": "definy-self-hosted"
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                ]
+                                                                              }
+                                                                            }
+                                                                          ]
                                                                         }
                                                                       }
                                                                     },
@@ -1908,10 +1983,55 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "key": "contentType",
+                                                                          "key": "headers",
                                                                           "value": {
-                                                                            "String": {
-                                                                              "value": "application/json; charset=utf-8"
+                                                                            "ListLiteral": {
+                                                                              "items": [
+                                                                                {
+                                                                                  "TypeLiteral": {
+                                                                                    "items": [
+                                                                                      {
+                                                                                        "key": "name",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "content-type"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "key": "value",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "application/json; charset=utf-8"
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "TypeLiteral": {
+                                                                                    "items": [
+                                                                                      {
+                                                                                        "key": "name",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "x-powered-by"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "key": "value",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "definy-self-hosted"
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              ]
                                                                             }
                                                                           }
                                                                         },
@@ -2046,10 +2166,55 @@
                                                                           }
                                                                         },
                                                                         {
-                                                                          "key": "contentType",
+                                                                          "key": "headers",
                                                                           "value": {
-                                                                            "String": {
-                                                                              "value": "text/html; charset=utf-8"
+                                                                            "ListLiteral": {
+                                                                              "items": [
+                                                                                {
+                                                                                  "TypeLiteral": {
+                                                                                    "items": [
+                                                                                      {
+                                                                                        "key": "name",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "content-type"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "key": "value",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "text/html; charset=utf-8"
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                },
+                                                                                {
+                                                                                  "TypeLiteral": {
+                                                                                    "items": [
+                                                                                      {
+                                                                                        "key": "name",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "x-powered-by"
+                                                                                          }
+                                                                                        }
+                                                                                      },
+                                                                                      {
+                                                                                        "key": "value",
+                                                                                        "value": {
+                                                                                          "String": {
+                                                                                            "value": "definy-self-hosted"
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+                                                                                  }
+                                                                                }
+                                                                              ]
                                                                             }
                                                                           }
                                                                         },
