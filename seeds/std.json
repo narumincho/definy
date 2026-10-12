@@ -4,11 +4,11 @@
   "module_description": [
     {
       "language": "en",
-      "text": "Definy standard utility functions (pure math, logic, list operations)"
+      "text": "Definy standard utility functions (pure math, logic, list, UTF-8 stream, URL operations)"
     },
     {
       "language": "ja",
-      "text": "definy の標準ユーティリティ関数群 (数学・論理・リスト操作)"
+      "text": "definy の標準ユーティリティ関数群 (数学・論理・リスト・UTF-8ストリーム・URL操作)"
     }
   ],
   "message": "Initial commit for std module",
@@ -459,6 +459,1406 @@
               "index": {
                 "Number": {
                   "value": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-to-utf8-bytes",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string"
+            }
+          ],
+          "return_type": {
+            "list": "number"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Encode a string into a list of UTF-8 bytes"
+        },
+        {
+          "language": "ja",
+          "text": "文字列を UTF-8 バイト列 (List<Number>) に変換します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "text"
+            }
+          ],
+          "body": {
+            "StringToBytes": {
+              "value": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "bytes-to-stream",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "bytes",
+              "type": {
+                "list": "number"
+              }
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "initialState",
+                "value": "number"
+              },
+              {
+                "key": "next",
+                "value": {
+                  "function": {
+                    "parameters": [
+                      {
+                        "name": "state",
+                        "type": "number"
+                      }
+                    ],
+                    "return_type": {
+                      "union": [
+                        {
+                          "tag": "yield",
+                          "payload": {
+                            "record": [
+                              {
+                                "key": "chunk",
+                                "value": {
+                                  "list": "number"
+                                }
+                              },
+                              {
+                                "key": "nextState",
+                                "value": "number"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "tag": "done",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Wrap a byte list into a pull-based byte stream ({ initialState, next })"
+        },
+        {
+          "language": "ja",
+          "text": "バイト列 (List<Number>) を Pull 型バイトストリーム ({ initialState, next }) に変換します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "bytes"
+            }
+          ],
+          "body": {
+            "TypeLiteral": {
+              "items": [
+                {
+                  "key": "initialState",
+                  "value": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "key": "next",
+                  "value": {
+                    "Function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 2,
+                          "parameter_name": "state"
+                        }
+                      ],
+                      "body": {
+                        "If": {
+                          "condition": {
+                            "And": {
+                              "left": {
+                                "Equal": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "GreaterThan": {
+                                  "left": {
+                                    "ListLength": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "then_expr": {
+                            "Variant": {
+                              "tag": "yield",
+                              "payload": {
+                                "TypeLiteral": {
+                                  "items": [
+                                    {
+                                      "key": "chunk",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "key": "nextState",
+                                      "value": {
+                                        "Number": {
+                                          "value": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          },
+                          "else_expr": {
+                            "Variant": {
+                              "tag": "done",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-to-utf8-stream",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string"
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "initialState",
+                "value": "number"
+              },
+              {
+                "key": "next",
+                "value": {
+                  "function": {
+                    "parameters": [
+                      {
+                        "name": "state",
+                        "type": "number"
+                      }
+                    ],
+                    "return_type": {
+                      "union": [
+                        {
+                          "tag": "yield",
+                          "payload": {
+                            "record": [
+                              {
+                                "key": "chunk",
+                                "value": {
+                                  "list": "number"
+                                }
+                              },
+                              {
+                                "key": "nextState",
+                                "value": "number"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "tag": "done",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Convert a string into a UTF-8 pull-based byte stream ({ initialState, next })"
+        },
+        {
+          "language": "ja",
+          "text": "文字列を UTF-8 バイト列の Pull 型ストリーム ({ initialState, next }) に変換します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "text"
+            }
+          ],
+          "body": {
+            "TypeLiteral": {
+              "items": [
+                {
+                  "key": "initialState",
+                  "value": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "key": "next",
+                  "value": {
+                    "Function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 2,
+                          "parameter_name": "state"
+                        }
+                      ],
+                      "body": {
+                        "If": {
+                          "condition": {
+                            "And": {
+                              "left": {
+                                "Equal": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "GreaterThan": {
+                                  "left": {
+                                    "StringLength": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "then_expr": {
+                            "Variant": {
+                              "tag": "yield",
+                              "payload": {
+                                "TypeLiteral": {
+                                  "items": [
+                                    {
+                                      "key": "chunk",
+                                      "value": {
+                                        "StringToBytes": {
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "key": "nextState",
+                                      "value": {
+                                        "Number": {
+                                          "value": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          },
+                          "else_expr": {
+                            "Variant": {
+                              "tag": "done",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-list-to-utf8-stream",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "chunks",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "initialState",
+                "value": "number"
+              },
+              {
+                "key": "next",
+                "value": {
+                  "function": {
+                    "parameters": [
+                      {
+                        "name": "state",
+                        "type": "number"
+                      }
+                    ],
+                    "return_type": {
+                      "union": [
+                        {
+                          "tag": "yield",
+                          "payload": {
+                            "record": [
+                              {
+                                "key": "chunk",
+                                "value": {
+                                  "list": "number"
+                                }
+                              },
+                              {
+                                "key": "nextState",
+                                "value": "number"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "tag": "done",
+                          "payload": null
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Convert a list of string chunks into a multi-chunk UTF-8 pull-based byte stream"
+        },
+        {
+          "language": "ja",
+          "text": "文字列のリストを1チャンクずつ UTF-8 バイト列として遅延送出する Pull 型ストリームに変換します"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "chunks"
+            }
+          ],
+          "body": {
+            "TypeLiteral": {
+              "items": [
+                {
+                  "key": "initialState",
+                  "value": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
+                },
+                {
+                  "key": "next",
+                  "value": {
+                    "Function": {
+                      "parameters": [
+                        {
+                          "parameter_id": 2,
+                          "parameter_name": "state"
+                        }
+                      ],
+                      "body": {
+                        "If": {
+                          "condition": {
+                            "LessThan": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "right": {
+                                "ListLength": {
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "then_expr": {
+                            "Variant": {
+                              "tag": "yield",
+                              "payload": {
+                                "TypeLiteral": {
+                                  "items": [
+                                    {
+                                      "key": "chunk",
+                                      "value": {
+                                        "StringToBytes": {
+                                          "value": {
+                                            "ListGet": {
+                                              "list": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              },
+                                              "index": {
+                                                "Variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "key": "nextState",
+                                      "value": {
+                                        "Add": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          },
+                          "else_expr": {
+                            "Variant": {
+                              "tag": "done",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "string-index-of",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "target",
+              "type": "string"
+            },
+            {
+              "name": "startIndex",
+              "type": "number"
+            }
+          ],
+          "return_type": "number"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Find first byte index of target substring in text at or after startIndex, or -1 if not found"
+        },
+        {
+          "language": "ja",
+          "text": "文字列 text 内の startIndex 以降で target が最初に出現する位置を返します (見つからない場合は -1)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "text"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "target"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "startIndex"
+            }
+          ],
+          "body": {
+            "Let": {
+              "variable_id": 4,
+              "variable_name": "textLen",
+              "value": {
+                "StringLength": {
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              },
+              "body": {
+                "Let": {
+                  "variable_id": 5,
+                  "variable_name": "targetLen",
+                  "value": {
+                    "StringLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "If": {
+                      "condition": {
+                        "GreaterThan": {
+                          "left": {
+                            "Add": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 5
+                                }
+                              }
+                            }
+                          },
+                          "right": {
+                            "Variable": {
+                              "variable_id": 4
+                            }
+                          }
+                        }
+                      },
+                      "then_expr": {
+                        "Number": {
+                          "value": -1
+                        }
+                      },
+                      "else_expr": {
+                        "If": {
+                          "condition": {
+                            "Equal": {
+                              "left": {
+                                "StringSlice": {
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "start": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "end": {
+                                    "Add": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      },
+                                      "right": {
+                                        "Variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          },
+                          "then_expr": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          },
+                          "else_expr": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": [
+                                    25,
+                                    213,
+                                    211,
+                                    189,
+                                    6,
+                                    85,
+                                    25,
+                                    177,
+                                    183,
+                                    82,
+                                    38,
+                                    156,
+                                    35,
+                                    103,
+                                    54,
+                                    102,
+                                    147,
+                                    239,
+                                    175,
+                                    249,
+                                    22,
+                                    185,
+                                    104,
+                                    34,
+                                    110,
+                                    19,
+                                    127,
+                                    34,
+                                    141,
+                                    182,
+                                    203,
+                                    147
+                                  ]
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "text",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "target",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "startIndex",
+                                  "value": {
+                                    "Add": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      },
+                                      "right": {
+                                        "Number": {
+                                          "value": 1
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "url-path",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "url",
+              "type": "string"
+            }
+          ],
+          "return_type": "string"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Extract the path component (e.g. \"/api/self-host\") from a URL string"
+        },
+        {
+          "language": "ja",
+          "text": "URL 文字列からパス部分 (例: \"/api/self-host\", \"/\") を抽出する純粋関数"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "url"
+            }
+          ],
+          "body": {
+            "Let": {
+              "variable_id": 2,
+              "variable_name": "schemeIdx",
+              "value": {
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": [
+                        25,
+                        213,
+                        211,
+                        189,
+                        6,
+                        85,
+                        25,
+                        177,
+                        183,
+                        82,
+                        38,
+                        156,
+                        35,
+                        103,
+                        54,
+                        102,
+                        147,
+                        239,
+                        175,
+                        249,
+                        22,
+                        185,
+                        104,
+                        34,
+                        110,
+                        19,
+                        127,
+                        34,
+                        141,
+                        182,
+                        203,
+                        147
+                      ]
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "target",
+                      "value": {
+                        "String": {
+                          "value": "://"
+                        }
+                      }
+                    },
+                    {
+                      "name": "startIndex",
+                      "value": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "Let": {
+                  "variable_id": 3,
+                  "variable_name": "searchStart",
+                  "value": {
+                    "If": {
+                      "condition": {
+                        "GreaterThanOrEqual": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          },
+                          "right": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        }
+                      },
+                      "then_expr": {
+                        "Add": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          },
+                          "right": {
+                            "Number": {
+                              "value": 3
+                            }
+                          }
+                        }
+                      },
+                      "else_expr": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  },
+                  "body": {
+                    "Let": {
+                      "variable_id": 4,
+                      "variable_name": "slashIdx",
+                      "value": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": [
+                                25,
+                                213,
+                                211,
+                                189,
+                                6,
+                                85,
+                                25,
+                                177,
+                                183,
+                                82,
+                                38,
+                                156,
+                                35,
+                                103,
+                                54,
+                                102,
+                                147,
+                                239,
+                                175,
+                                249,
+                                22,
+                                185,
+                                104,
+                                34,
+                                110,
+                                19,
+                                127,
+                                34,
+                                141,
+                                182,
+                                203,
+                                147
+                              ]
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "text",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "target",
+                              "value": {
+                                "String": {
+                                  "value": "/"
+                                }
+                              }
+                            },
+                            {
+                              "name": "startIndex",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "body": {
+                        "Let": {
+                          "variable_id": 5,
+                          "variable_name": "queryIdx",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": [
+                                    25,
+                                    213,
+                                    211,
+                                    189,
+                                    6,
+                                    85,
+                                    25,
+                                    177,
+                                    183,
+                                    82,
+                                    38,
+                                    156,
+                                    35,
+                                    103,
+                                    54,
+                                    102,
+                                    147,
+                                    239,
+                                    175,
+                                    249,
+                                    22,
+                                    185,
+                                    104,
+                                    34,
+                                    110,
+                                    19,
+                                    127,
+                                    34,
+                                    141,
+                                    182,
+                                    203,
+                                    147
+                                  ]
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "text",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "target",
+                                  "value": {
+                                    "String": {
+                                      "value": "?"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "startIndex",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "body": {
+                            "If": {
+                              "condition": {
+                                "LessThan": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 4
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              },
+                              "then_expr": {
+                                "String": {
+                                  "value": "/"
+                                }
+                              },
+                              "else_expr": {
+                                "Let": {
+                                  "variable_id": 6,
+                                  "variable_name": "endIdx",
+                                  "value": {
+                                    "If": {
+                                      "condition": {
+                                        "GreaterThanOrEqual": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 5
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "then_expr": {
+                                        "Variable": {
+                                          "variable_id": 5
+                                        }
+                                      },
+                                      "else_expr": {
+                                        "StringLength": {
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "body": {
+                                    "If": {
+                                      "condition": {
+                                        "LessThanOrEqual": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 6
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "then_expr": {
+                                        "String": {
+                                          "value": "/"
+                                        }
+                                      },
+                                      "else_expr": {
+                                        "StringSlice": {
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          },
+                                          "start": {
+                                            "Variable": {
+                                              "variable_id": 4
+                                            }
+                                          },
+                                          "end": {
+                                            "Variable": {
+                                              "variable_id": 6
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "url-query",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "url",
+              "type": "string"
+            }
+          ],
+          "return_type": "string"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Extract the query string component after '?' (or \"\" if none) from a URL string"
+        },
+        {
+          "language": "ja",
+          "text": "URL 文字列からクエリ文字列 ('?' の後ろの部分、存在しない場合は \"\") を抽出する純粋関数"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "url"
+            }
+          ],
+          "body": {
+            "Let": {
+              "variable_id": 2,
+              "variable_name": "queryIdx",
+              "value": {
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": [
+                        25,
+                        213,
+                        211,
+                        189,
+                        6,
+                        85,
+                        25,
+                        177,
+                        183,
+                        82,
+                        38,
+                        156,
+                        35,
+                        103,
+                        54,
+                        102,
+                        147,
+                        239,
+                        175,
+                        249,
+                        22,
+                        185,
+                        104,
+                        34,
+                        110,
+                        19,
+                        127,
+                        34,
+                        141,
+                        182,
+                        203,
+                        147
+                      ]
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "target",
+                      "value": {
+                        "String": {
+                          "value": "?"
+                        }
+                      }
+                    },
+                    {
+                      "name": "startIndex",
+                      "value": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "If": {
+                  "condition": {
+                    "LessThan": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  },
+                  "then_expr": {
+                    "String": {
+                      "value": ""
+                    }
+                  },
+                  "else_expr": {
+                    "StringSlice": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "start": {
+                        "Add": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          },
+                          "right": {
+                            "Number": {
+                              "value": 1
+                            }
+                          }
+                        }
+                      },
+                      "end": {
+                        "StringLength": {
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

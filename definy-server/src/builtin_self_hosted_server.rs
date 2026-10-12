@@ -1,6 +1,7 @@
 //! definy 自身で definy を構築・検証・ホストするセルフホスト HTTP サーバーパーツ (`sample.self-hosted-definy-server`)。
 //!
-//! HTTP リクエスト `{ method, path, query, url }` を受け取り、リクエスト処理の内部で実際に:
+//! HTTP リクエスト `{ method, url, headers, body }` を受け取り、利用者側の純粋関数 `std.url-path` / `std.url-query` で URL をパースし、
+//! リクエスト処理の内部で実際に:
 //! - `core.expression-to-source` (自己記述フォーマッタ)
 //! - `core.optimize-expression` (自己記述定数畳み込み最適化器)
 //! - `core.type-check` (自己記述型検査器)
@@ -8,9 +9,11 @@
 //! - `core.compile-to-wasm` (自己記述 WebAssembly コンパイラ)
 //!
 //! を呼び出し、セルフホストパイプラインの実証結果および definy 上で新たなパーツ・サブドメインサーバーを
-//! 構築・起動できる対話型 Studio UI (`GET /`) と JSON API (`GET /healthz`, `GET /api/self-host`) を返します。
+//! 構築・起動できる対話型 Studio UI (`GET /`) と JSON API (`GET /healthz`, `GET /api/self-host`) を
+//! 純粋関数型 Pull ストリーム (`std.string-list-to-utf8-stream`, `std.string-to-utf8-stream`) として返します。
 
 use crate::ast_builder::{call_part, fn_expr, fn_type};
+use crate::builtin_std_functions::byte_stream_part_type;
 use definy_event::EventHashId;
 use definy_event::event::{
     AndExpression, Description, EqualExpression, Expression, GreaterThanExpression, IfExpression,
@@ -59,7 +62,22 @@ fn let_chain(bindings: Vec<(i64, &str, Expression)>, body: Expression) -> Expres
         })
 }
 
-fn http_response_record(status: i64, content_type: &str, body: Expression) -> Expression {
+fn http_header_item(name: &str, value: &str) -> Expression {
+    Expression::TypeLiteral(TypeLiteralExpression {
+        items: vec![
+            TypeLiteralItemExpression {
+                key: "name".into(),
+                value: Box::new(str_expr(name)),
+            },
+            TypeLiteralItemExpression {
+                key: "value".into(),
+                value: Box::new(str_expr(value)),
+            },
+        ],
+    })
+}
+
+fn http_response_record(status: i64, content_type: &str, body_stream: Expression) -> Expression {
     Expression::TypeLiteral(TypeLiteralExpression {
         items: vec![
             TypeLiteralItemExpression {
@@ -67,12 +85,17 @@ fn http_response_record(status: i64, content_type: &str, body: Expression) -> Ex
                 value: Box::new(num_expr(status)),
             },
             TypeLiteralItemExpression {
-                key: "contentType".into(),
-                value: Box::new(str_expr(content_type)),
+                key: "headers".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        http_header_item("content-type", content_type),
+                        http_header_item("x-powered-by", "definy-self-hosted"),
+                    ],
+                })),
             },
             TypeLiteralItemExpression {
                 key: "body".into(),
-                value: Box::new(body),
+                value: Box::new(body_stream),
             },
         ],
     })
@@ -80,13 +103,22 @@ fn http_response_record(status: i64, content_type: &str, body: Expression) -> Ex
 
 /// `sample.self-hosted-definy-server` パーツを生成します。
 #[must_use]
-pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> ModulePartEntry {
+pub fn create_self_hosted_definy_server_part(
+    core_module_id: &EventHashId,
+    std_module_id: &EventHashId,
+) -> ModulePartEntry {
     let expr_type_hash = derive_module_part_id(core_module_id, "expression");
     let to_source_hash = derive_module_part_id(core_module_id, "expression-to-source");
     let optimize_hash = derive_module_part_id(core_module_id, "optimize-expression");
     let eval_ast_hash = derive_module_part_id(core_module_id, "eval-ast");
     let type_check_hash = derive_module_part_id(core_module_id, "type-check");
     let compile_to_wasm_hash = derive_module_part_id(core_module_id, "compile-to-wasm");
+
+    let url_path_hash = derive_module_part_id(std_module_id, "url-path");
+    let url_query_hash = derive_module_part_id(std_module_id, "url-query");
+    let string_to_utf8_stream_hash = derive_module_part_id(std_module_id, "string-to-utf8-stream");
+    let string_list_to_utf8_stream_hash =
+        derive_module_part_id(std_module_id, "string-list-to-utf8-stream");
 
     let ast_num = |val: i64| {
         Expression::Variant(VariantExpression {
@@ -223,8 +255,8 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
         else_expr: Box::new(str_expr("false")),
     });
 
-    // 1. /healthz JSON レスポンス
-    let healthz_body = concat_all(vec![
+    // 1. /healthz JSON レスポンス (std.string-to-utf8-stream を仲介)
+    let healthz_json = concat_all(vec![
         str_expr(
             "{\"status\":\"ok\",\"service\":\"self-hosted-definy-server\",\"selfHostingPipelineVerified\":",
         ),
@@ -233,13 +265,16 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
         var_expr(17),
         str_expr("\"}"),
     ]);
+    let healthz_stream = call_part(&string_to_utf8_stream_hash, &[("text", healthz_json)]);
 
-    // 2. /api/self-host JSON レスポンス
-    let api_self_host_body = concat_all(vec![
+    // 2. /api/self-host JSON レスポンス (std.string-to-utf8-stream を仲介)
+    let api_self_host_json = concat_all(vec![
         str_expr("{\"engine\":\"definy-self-hosted\",\"method\":\""),
         var_expr(3),
         str_expr("\",\"path\":\""),
         var_expr(2),
+        str_expr("\",\"query\":\""),
+        var_expr(5),
         str_expr("\",\"sourceBefore\":\""),
         var_expr(11),
         str_expr("\",\"sourceAfter\":\""),
@@ -250,36 +285,44 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
         var_expr(19),
         str_expr("}"),
     ]);
+    let api_self_host_stream =
+        call_part(&string_to_utf8_stream_hash, &[("text", api_self_host_json)]);
 
-    // 3. / (Studio HTML) レスポンス
-    let studio_html_body = concat_all(vec![
-        str_expr(STUDIO_HTML_HEAD),
-        var_expr(3),
-        str_expr(" "),
-        var_expr(2),
-        str_expr(
-            "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>",
-        ),
-        var_expr(11),
-        str_expr(
-            "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>",
-        ),
-        var_expr(13),
-        str_expr(
-            "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">",
-        ),
-        var_expr(17),
-        str_expr(
-            "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: ",
-        ),
-        var_expr(19),
-        str_expr(
-            ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified (",
-        ),
-        var_expr(19),
-        str_expr(")</code></div></div>"),
-        str_expr(STUDIO_HTML_INTERACTIVE_SCRIPT),
-    ]);
+    // 3. / (Studio HTML) レスポンス (std.string-list-to-utf8-stream でチャンクごとに Pull ストリーム送出)
+    let studio_html_chunks = Expression::ListLiteral(ListLiteralExpression {
+        items: vec![
+            str_expr(STUDIO_HTML_HEAD),
+            var_expr(3),
+            str_expr(" "),
+            var_expr(2),
+            str_expr(
+                "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>",
+            ),
+            var_expr(11),
+            str_expr(
+                "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>",
+            ),
+            var_expr(13),
+            str_expr(
+                "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">",
+            ),
+            var_expr(17),
+            str_expr(
+                "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: ",
+            ),
+            var_expr(19),
+            str_expr(
+                ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified (",
+            ),
+            var_expr(19),
+            str_expr(")</code></div></div>"),
+            str_expr(STUDIO_HTML_INTERACTIVE_SCRIPT),
+        ],
+    });
+    let studio_html_stream = call_part(
+        &string_list_to_utf8_stream_hash,
+        &[("chunks", studio_html_chunks)],
+    );
 
     let route_expr = Expression::If(IfExpression {
         condition: Box::new(Expression::Equal(EqualExpression {
@@ -289,7 +332,7 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
         then_expr: Box::new(http_response_record(
             200,
             "application/json; charset=utf-8",
-            healthz_body,
+            healthz_stream,
         )),
         else_expr: Box::new(Expression::If(IfExpression {
             condition: Box::new(Expression::Equal(EqualExpression {
@@ -299,12 +342,12 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
             then_expr: Box::new(http_response_record(
                 200,
                 "application/json; charset=utf-8",
-                api_self_host_body,
+                api_self_host_stream,
             )),
             else_expr: Box::new(http_response_record(
                 200,
                 "text/html; charset=utf-8",
-                studio_html_body,
+                studio_html_stream,
             )),
         })),
     });
@@ -312,12 +355,22 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
     let body = let_chain(
         vec![
             (
-                2,
-                "path",
+                4,
+                "url",
                 Expression::RecordGet(RecordGetExpression {
                     record: Box::new(var_expr(1)),
-                    key: "path".into(),
+                    key: "url".into(),
                 }),
+            ),
+            (
+                2,
+                "path",
+                call_part(&url_path_hash, &[("url", var_expr(4))]),
+            ),
+            (
+                5,
+                "query",
+                call_part(&url_query_hash, &[("url", var_expr(4))]),
             ),
             (
                 3,
@@ -372,6 +425,19 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
         route_expr,
     );
 
+    let headers_list_type = || {
+        PartType::List(Box::new(PartType::Record(vec![
+            RecordFieldType {
+                key: "name".into(),
+                value: Box::new(PartType::String),
+            },
+            RecordFieldType {
+                key: "value".into(),
+                value: Box::new(PartType::String),
+            },
+        ])))
+    };
+
     ModulePartEntry {
         name: "self-hosted-definy-server".into(),
         part_type: Some(fn_type(
@@ -383,16 +449,16 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
                         value: Box::new(PartType::String),
                     },
                     RecordFieldType {
-                        key: "path".into(),
-                        value: Box::new(PartType::String),
-                    },
-                    RecordFieldType {
-                        key: "query".into(),
-                        value: Box::new(PartType::String),
-                    },
-                    RecordFieldType {
                         key: "url".into(),
                         value: Box::new(PartType::String),
+                    },
+                    RecordFieldType {
+                        key: "headers".into(),
+                        value: Box::new(headers_list_type()),
+                    },
+                    RecordFieldType {
+                        key: "body".into(),
+                        value: Box::new(byte_stream_part_type()),
                     },
                 ]),
             )],
@@ -402,12 +468,12 @@ pub fn create_self_hosted_definy_server_part(core_module_id: &EventHashId) -> Mo
                     value: Box::new(PartType::Number),
                 },
                 RecordFieldType {
-                    key: "contentType".into(),
-                    value: Box::new(PartType::String),
+                    key: "headers".into(),
+                    value: Box::new(headers_list_type()),
                 },
                 RecordFieldType {
                     key: "body".into(),
-                    value: Box::new(PartType::String),
+                    value: Box::new(byte_stream_part_type()),
                 },
             ]),
         )),

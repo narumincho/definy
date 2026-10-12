@@ -282,8 +282,17 @@ definy 自身で作成したパーツを独立したオリジン（サブドメ�
 パーツです：
 
 ```text
-fn(req: { method: String, path: String, query: String, url: String })
-  => { status: Number, contentType: String, body: String }
+fn(req: {
+  method: String,
+  path: String,
+  query: String,
+  url: String,
+  headers: List<{ name: String, value: String }>
+}) => {
+  status: Number,
+  headers: List<{ name: String, value: String }>,
+  body: String
+}
 ```
 
 リクエストを受け取ると、パーツ式の内部で `PartReference`

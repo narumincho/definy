@@ -120,33 +120,74 @@ Cloudflare Workers + カスタムドメイン (`narumincho.com`)
 
 ---
 
-## 3. パーツ評価エンジンとレスポンス形式
+## 3. 純粋関数型 HTTP インターフェースと Pull 型ストリーム (`ByteStream`)
 
-Cloudflare Workers (`worker/cbor_eval.ts`) および Rust サーバー
-(`definy-server/src/preview_service.rs`) の双方で、プレビューアプリに紐づく
-`partId`（`derive_module_part_id` で導出された Part ID、`module.part` 名、または
-CAS の Wasm ハッシュ）を D1 / イベントストアから解決して評価します。
+definy は純粋関数型言語であり、HTTP の仕様そのものに含まれない JSON の暗黙変換やホスト側での URL パス・クエリ事前分割といった短絡的な API を排除しています。
+Cloudflare Workers (`worker/http_stream.ts`) および Rust サーバー (`definy-server/src/preview_service.rs`) の双方で、以下の厳密な純粋関数型インターフェースに従って HTTP リクエスト・レスポンスを評価します。
 
-- **関数パーツ (`Expression::Function`) の HTTP リクエスト引数**:
-  - 対象パーツが関数の場合、第1引数に `{ method, path, query, url }`
-    レコード（第1引数名が `path` の場合はパス文字列
-    `subpath`）を渡して呼び出します。
-- **CAS Wasm バイナリの直接実行**:
-  - CAS 内にコンパイル済み Wasm バイナリが存在する場合は
-    `WebAssembly.instantiate` で実行し、線形メモリ上のタgged layout から
-    `DefinyValue` を復元します。
+### ① Pull 型バイトストリーム (`ByteStream`) の表現
 
-プレビュー対象パーツの評価結果は、以下のように HTTP
-レスポンスへ自動変換されます。
+HTTP のリクエストボディおよびレスポンスボディは、余代数的な Unfold（ステートマシン）による **Pull 型ストリーム** として表現されます。
 
-| definy の評価値型                          | マッピング先 HTTP レスポンス                             | 適用される Content-Type                                                                                 |
-| ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `Value::String(html)`                      | HTML またはプレーンテキスト本文                          | HTML タグを含む場合: `text/html; charset=utf-8`<br>その他: `text/plain; charset=utf-8`                  |
-| `Value::Record(fields)`                    | `{ status, body, contentType }` フィールドを解析して展開 | `status` (数値, 例: 200, 404)<br>`body` (本文文字列)<br>`contentType` (指定値, デフォルト: `text/html`) |
-| その他 (`Record`, `List`, `Variant`, etc.) | JSON 構造体へシリアライズ                                | `application/json`                                                                                      |
+```text
+type StreamStep<State> = union<
+  yield({ chunk: List<Number>, nextState: State })
+  | done
+>
 
-全てのプレビューレスポンスには識別ヘッダーとして
-`X-Definy-Preview-App: <app_id>` が付与されます。
+type ByteStream<State> = {
+  initialState: State,
+  next: fn(state: State) => StreamStep<State>
+}
+```
+
+- ホストランタイム（Rust の `axum::body::Body::from_stream` / `WasmPullStream`、および Cloudflare Workers の Web 標準 `ReadableStream<Uint8Array>`）がクライアントへの送信準備ができるたびに `body.next(state)` を1ステップずつ Pull 評価します。
+- `yield({ chunk, nextState })` が返された場合、`chunk`（`0..=255` のバイト列）を即座にフラッシュし、状態を `nextState` に更新して次の Pull を待機します。
+- `done` が返された時点でストリームをクローズします。
+
+### ② HTTP リクエスト型 (`HttpRequest`)
+
+対象パーツが関数 (`fn(req) => ...`) の場合、第1引数 `req` には以下の4フィールドのみを持つレコードが渡されます。
+
+```text
+type HttpHeader = { name: String, value: String }
+
+type HttpRequest = {
+  method: String,
+  url: String,
+  headers: List<HttpHeader>,
+  body: ByteStream
+}
+```
+
+- ホスト側では URL の `path` や `query` を事前分割しません。利用者側の純粋な標準ライブラリ関数（`std.url-path(url)`, `std.url-query(url)`）を用いて `req.url` から抽出します。
+
+### ③ HTTP レスポンス型 (`HttpResponse`)
+
+HTTP ハンドラは以下の3フィールドを持つレコードを返します（文字列の直接返却による HTML 自動判定や、任意レコードの暗黙 JSON シリアライズは行いません）。
+
+```text
+type HttpResponse = {
+  status: Number,
+  headers: List<HttpHeader>,
+  body: ByteStream
+}
+```
+
+- 単純なテキストや HTML、自身で組み立てた JSON 文字列を返したい場合は、標準ライブラリの純粋関数 `std.string-to-utf8-stream(text)` または複数チャンクを順次ストリーム出力する `std.string-list-to-utf8-stream(chunks)` を仲介させます。
+- 全てのプレビューレスポンスには識別ヘッダーとして `X-Definy-Preview-App: <app_id>` が付与されます。
+
+### ④ 標準ライブラリ (`std`) の HTTP・URL・ストリーム補助関数
+
+| 関数名 | 型シグネチャ | 説明 |
+| --- | --- | --- |
+| `std.string-to-utf8-bytes` | `(text: String) -> List<Number>` | 文字列を UTF-8 バイト列（`0..=255` のリスト）に変換する（`Expression::StringToBytes`） |
+| `std.bytes-to-stream` | `(bytes: List<Number>) -> ByteStream<Number>` | 単一のバイト列を1チャンクの Pull 型 `ByteStream` に変換する |
+| `std.string-to-utf8-stream` | `(text: String) -> ByteStream<Number>` | 文字列を UTF-8 エンコードし、1チャンクの Pull 型 `ByteStream` に変換する |
+| `std.string-list-to-utf8-stream` | `(chunks: List<String>) -> ByteStream<Number>` | 文字列リストの各要素を Pull ごとに1チャンクずつ UTF-8 バイト列へ変換して返すマルチチャンク `ByteStream` |
+| `std.string-index-of` | `(text: String, target: String, startIndex: Number) -> Number` | `startIndex` 以降で `target` が最初に現れるバイト位置（見つからない場合は `-1`）を返す |
+| `std.url-path` | `(url: String) -> String` | 完全な URL（例: `"https://sub-definy.narumincho.com/api/self-host?foo=1"`）からパス部分（`"/api/self-host"`）を抽出する純粋関数 |
+| `std.url-query` | `(url: String) -> String` | 完全な URL から `?` を含むクエリ文字列（`"?foo=1"`、存在しない場合は `""`）を抽出する純粋関数 |
 
 ---
 

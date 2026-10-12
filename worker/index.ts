@@ -190,12 +190,14 @@ async function renderPreviewResponse(
 
   if (app.partId && app.partId.trim().length > 0) {
     try {
+      const effectiveUrl = new URL(request.url);
+      effectiveUrl.pathname = subpath;
       const evaluated = await evaluatePartForHttpRequest(
         app.partId.trim(),
         request,
-        subpath,
         store,
         env,
+        effectiveUrl.toString(),
       );
       if (evaluated !== undefined) {
         return definyValueToHttpResponse(evaluated, app.appId, {

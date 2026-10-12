@@ -1,6 +1,5 @@
 use axum::http::StatusCode;
 use chrono::Utc;
-use definy_core::expression_eval::Value;
 use definy_event::rpc::*;
 
 use crate::preview_service::*;
@@ -128,34 +127,6 @@ fn test_preview_store_crud() {
     let removed = store.remove("demo");
     assert!(removed.is_some());
     assert!(store.get("demo").is_none());
-}
-
-#[test]
-fn test_value_to_json() {
-    let val = Value::Record(vec![
-        ("title".to_string(), Value::String("My App".to_string())),
-        ("count".to_string(), Value::Number(42)),
-        ("active".to_string(), Value::Bool(true)),
-        (
-            "items".to_string(),
-            Value::List(vec![Value::Number(1), Value::Number(2)]),
-        ),
-        (
-            "status".to_string(),
-            Value::Variant {
-                tag: "ok".to_string(),
-                payload: Some(Box::new(Value::String("success".to_string()))),
-            },
-        ),
-    ]);
-
-    let json = value_to_json(&val);
-    assert_eq!(json["title"], "My App");
-    assert_eq!(json["count"], 42);
-    assert_eq!(json["active"], true);
-    assert_eq!(json["items"][0], 1);
-    assert_eq!(json["status"]["tag"], "ok");
-    assert_eq!(json["status"]["payload"], "success");
 }
 
 #[tokio::test]
@@ -345,6 +316,10 @@ async fn test_self_hosted_definy_server_subdomain_and_routes() {
     assert_eq!(
         res_home.headers().get("X-Definy-Preview-App").unwrap(),
         "self-definy"
+    );
+    assert_eq!(
+        res_home.headers().get("x-powered-by").unwrap(),
+        "definy-self-hosted"
     );
     let html_bytes = axum::body::to_bytes(res_home.into_body(), 1024 * 1024)
         .await

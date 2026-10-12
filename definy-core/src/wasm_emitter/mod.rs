@@ -19,4 +19,9 @@ mod tests;
 pub use bytecode::{encode_i32_sleb128, encode_u32_leb128};
 pub use compiler::compile_expression_to_wasm;
 pub use executor::execute_wasm;
-pub use memory::read_value_from_memory;
+#[cfg(not(target_arch = "wasm32"))]
+pub use executor::{EvaluatedHttpResponse, WasmPullStream, execute_wasm_http_response};
+pub use memory::{
+    RawWasmHttpResponse, RawWasmStreamStep, read_http_response_and_stream_ptrs,
+    read_stream_step_from_memory, read_value_from_memory,
+};
