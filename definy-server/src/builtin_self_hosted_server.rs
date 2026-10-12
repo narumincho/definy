@@ -6,6 +6,7 @@
 //! - `core.type-check` (自己記述型検査器)
 //! - `core.eval-ast` (自己記述メタ循環評価器)
 //! - `core.compile-to-wasm` (自己記述 WebAssembly コンパイラ)
+//!
 //! を呼び出し、セルフホストパイプラインの実証結果および definy 上で新たなパーツ・サブドメインサーバーを
 //! 構築・起動できる対話型 Studio UI (`GET /`) と JSON API (`GET /healthz`, `GET /api/self-host`) を返します。
 

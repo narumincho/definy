@@ -269,6 +269,36 @@ async function renderPreviewResponse(
   });
 }
 
+async function resolvePreviewAppOrDefault(
+  appId: string,
+  rootDomain: string,
+  store: WorkerStore,
+  env: Env,
+): Promise<PreviewAppItem | undefined> {
+  const existing = await store.getPreviewApp(appId, env);
+  if (existing) {
+    return existing;
+  }
+  if (appId === "self-definy") {
+    const protocol = rootDomain.startsWith("localhost") ||
+        rootDomain.includes("127.0.0.1")
+      ? "http"
+      : "https";
+    return {
+      appId: "self-definy",
+      displayName: "Self-Hosted definy Studio (definy in definy)",
+      partId: "sample.self-hosted-definy-server",
+      ownerAccountId: "system",
+      previewUrl: buildPreviewUrl("self-definy", rootDomain),
+      pathUrl: `${protocol}://${rootDomain}/preview/self-definy/`,
+      status: "running",
+      createdAtRfc3339: "2026-01-01T00:00:00Z",
+      subdomain: "self-definy",
+    };
+  }
+  return undefined;
+}
+
 /**
  * Worker リクエストハンドラー（テスト用にカスタム Store と Fetch 関数を注入可能）
  */
@@ -292,7 +322,12 @@ export async function handleWorkerRequest(
   const hostHeader = request.headers.get("host") ?? url.host;
   const subdomain = extractSubdomainFromHost(hostHeader, rootDomain);
   if (subdomain && !pathname.startsWith("/definy.v1.")) {
-    const app = await store.getPreviewApp(subdomain, env);
+    const app = await resolvePreviewAppOrDefault(
+      subdomain,
+      rootDomain,
+      store,
+      env,
+    );
     if (!app) {
       return new Response(`Preview app '${subdomain}' is not running`, {
         status: 404,
@@ -342,7 +377,7 @@ export async function handleWorkerRequest(
     const slashIdx = rest.indexOf("/");
     const appId = (slashIdx === -1 ? rest : rest.slice(0, slashIdx)).trim();
     const subpath = slashIdx === -1 ? "/" : rest.slice(slashIdx);
-    const app = await store.getPreviewApp(appId, env);
+    const app = await resolvePreviewAppOrDefault(appId, rootDomain, store, env);
     if (!app) {
       return new Response(`Preview app '${appId}' is not running`, {
         status: 404,
