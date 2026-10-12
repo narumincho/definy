@@ -1,12 +1,45 @@
 /**
- * Cloudflare Workers Static Assets バインディングおよび環境変数の型定義
+ * Cloudflare Workers Static Assets / D1 バインディングおよび環境変数の型定義
  */
 export interface Fetcher {
   fetch(input: Request | URL | string, init?: RequestInit): Promise<Response>;
 }
 
+export interface D1Meta {
+  readonly changes?: number;
+  readonly duration?: number;
+  readonly last_row_id?: number;
+}
+
+export interface D1Result<T = Record<string, unknown>> {
+  readonly results: ReadonlyArray<T>;
+  readonly success: boolean;
+  readonly meta?: D1Meta;
+}
+
+export interface D1ExecResult {
+  readonly count: number;
+  readonly duration: number;
+}
+
+export interface D1PreparedStatement {
+  bind(...values: ReadonlyArray<unknown>): D1PreparedStatement;
+  first<T = Record<string, unknown>>(colName?: string): Promise<T | null>;
+  run<T = Record<string, unknown>>(): Promise<D1Result<T>>;
+  all<T = Record<string, unknown>>(): Promise<D1Result<T>>;
+}
+
+export interface D1Database {
+  prepare(query: string): D1PreparedStatement;
+  batch<T = Record<string, unknown>>(
+    statements: ReadonlyArray<D1PreparedStatement>,
+  ): Promise<ReadonlyArray<D1Result<T>>>;
+  exec(query: string): Promise<D1ExecResult>;
+}
+
 export interface Env {
   readonly ASSETS?: Fetcher;
+  readonly DB?: D1Database;
   readonly DEFINY_ADMIN_ACCOUNT_ID?: string;
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
   readonly DEFINY_ROOT_DOMAIN?: string;
