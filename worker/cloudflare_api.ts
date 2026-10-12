@@ -136,16 +136,21 @@ export async function deployWorkerToCloudflare(
   fetchFn: typeof fetch = fetch,
   apiBaseUrl: string = DEFAULT_API_BASE_URL,
 ): Promise<DeployCloudflareResponse> {
-  const apiToken = (req.api_token || env.CLOUDFLARE_API_TOKEN || "").trim();
+  const apiToken = (
+    req.apiToken ||
+    req.api_token ||
+    env.CLOUDFLARE_API_TOKEN ||
+    ""
+  ).trim();
   if (!apiToken) {
     throw new Error(
-      "CLOUDFLARE_API_TOKEN is not configured and api_token was not provided",
+      "CLOUDFLARE_API_TOKEN is not configured and apiToken was not provided",
     );
   }
 
   const accountId = await resolveAccountId(
     apiToken,
-    req.account_id || env.CLOUDFLARE_ACCOUNT_ID,
+    req.accountId || req.account_id || env.CLOUDFLARE_ACCOUNT_ID,
     apiBaseUrl,
     fetchFn,
   );
@@ -153,11 +158,15 @@ export async function deployWorkerToCloudflare(
   const randomSuffix = Math.floor(Math.random() * 0xffffffff)
     .toString(16)
     .padStart(8, "0");
-  const scriptName = req.worker_name && req.worker_name.trim().length > 0
-    ? req.worker_name.trim()
+  const rawName = req.scriptName || req.script_name || req.worker_name;
+  const scriptName = rawName && rawName.trim().length > 0
+    ? rawName.trim()
     : `definy-worker-${randomSuffix}`;
 
-  const scriptContent = buildDefaultWorkerScript(wasmBytes);
+  const customScript = req.customScript || req.custom_script;
+  const scriptContent = customScript && customScript.trim().length > 0
+    ? customScript
+    : buildDefaultWorkerScript(wasmBytes);
   const metadata = JSON.stringify({ main_module: "worker.js" });
 
   const form = new FormData();
@@ -214,12 +223,10 @@ export async function deployWorkerToCloudflare(
     : `https://${scriptName}.${subdomain}.workers.dev`;
 
   return {
-    deployment_id: `cf-${scriptName}`,
-    worker_name: scriptName,
+    scriptName,
     status: "succeeded",
     url: publicUrl,
-    created_at: new Date().toISOString(),
-    wasm_hash: req.wasm_hash ?? null,
+    evaluatedResult: null,
   };
 }
 
@@ -232,14 +239,19 @@ export async function listWorkersFromCloudflare(
   fetchFn: typeof fetch = fetch,
   apiBaseUrl: string = DEFAULT_API_BASE_URL,
 ): Promise<ListCloudflareWorkersResponse> {
-  const apiToken = (req.api_token || env.CLOUDFLARE_API_TOKEN || "").trim();
+  const apiToken = (
+    req.apiToken ||
+    req.api_token ||
+    env.CLOUDFLARE_API_TOKEN ||
+    ""
+  ).trim();
   if (!apiToken) {
     return { workers: [] };
   }
 
   const accountId = await resolveAccountId(
     apiToken,
-    req.account_id || env.CLOUDFLARE_ACCOUNT_ID,
+    req.accountId || req.account_id || env.CLOUDFLARE_ACCOUNT_ID,
     apiBaseUrl,
     fetchFn,
   );
@@ -264,20 +276,11 @@ export async function listWorkersFromCloudflare(
     ReadonlyArray<CloudflareWorkerSummary>
   >;
   const summaries = parsed.result ?? [];
-  const subdomain = await getSubdomain(
-    apiToken,
-    accountId,
-    apiBaseUrl,
-    fetchFn,
-  );
 
   const workers: CloudflareWorkerItem[] = summaries.map((w) => ({
-    script_name: w.id,
-    created_on: w.created_on ?? "",
-    modified_on: w.modified_on ?? "",
-    url: subdomain === "workers.dev"
-      ? `https://${w.id}.workers.dev`
-      : `https://${w.id}.${subdomain}.workers.dev`,
+    id: w.id,
+    createdOn: w.created_on,
+    modifiedOn: w.modified_on,
   }));
 
   return { workers };

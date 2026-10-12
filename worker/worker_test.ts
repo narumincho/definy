@@ -25,6 +25,10 @@ Deno.test("isWorkerFirstPath matches Connect-RPC and dynamic endpoints", () => {
     true,
   );
   assertEquals(
+    isWorkerFirstPath("/definy.v1.EventService/GetEvent"),
+    true,
+  );
+  assertEquals(
     isWorkerFirstPath("/definy.v1.DeployService/DeployCloudflare"),
     true,
   );
@@ -74,22 +78,26 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
   const sampleSeed: SeedBundle = {
     events: [
       {
-        hash_hex: "1111",
-        event_type: "CreateAccount",
-        time_ms: 1000,
-        event_binary_base64: bytesToBase64(new Uint8Array([1, 2, 3])),
+        eventHash: "ev_hash_1",
+        signedEventBytes: bytesToBase64(new Uint8Array([1, 2, 3])),
+        accountId: "acc_1",
+        eventType: "create_account",
+        createdAtRfc3339: "2019-01-31T04:36:01Z",
+        timeMs: 1000,
       },
       {
-        hash_hex: "2222",
-        event_type: "ModuleCommit",
-        time_ms: 2000,
-        event_binary_base64: bytesToBase64(new Uint8Array([4, 5, 6])),
+        eventHash: "ev_hash_2",
+        signedEventBytes: bytesToBase64(new Uint8Array([4, 5, 6])),
+        accountId: "acc_1",
+        eventType: "module_commit",
+        createdAtRfc3339: "2019-01-31T04:36:02Z",
+        timeMs: 2000,
       },
     ],
     contents: [
       {
-        hash: "hash_builtin_1",
-        content_base64: bytesToBase64(new Uint8Array([10, 20, 30])),
+        contentHash: "hash_builtin_1",
+        contentBytes: bytesToBase64(new Uint8Array([10, 20, 30])),
       },
     ],
   };
@@ -112,7 +120,7 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
     },
   };
 
-  // 1. GetEvents returns seeded events sorted by time_ms DESC
+  // 1. GetEvents returns seeded EventItems sorted by timeMs DESC
   const getEventsRes = await handleWorkerRequest(
     new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
       method: "POST",
@@ -124,15 +132,29 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
   assertEquals(getEventsRes.status, 200);
   const getEventsJson = await getEventsRes.json();
   assertEquals(getEventsJson.events.length, 2);
+  assertEquals(getEventsJson.events[0].eventHash, "ev_hash_2");
 
-  // 2. SubmitEvent adds a new event and returns its SHA-256 hash
+  // 1b. GetEvent returns single event by eventHash
+  const getEventRes = await handleWorkerRequest(
+    new Request("https://definy.workers.dev/definy.v1.EventService/GetEvent", {
+      method: "POST",
+      body: JSON.stringify({ eventHash: "ev_hash_1" }),
+    }),
+    env,
+    store,
+  );
+  assertEquals(getEventRes.status, 200);
+  const getEventJson = await getEventRes.json();
+  assertEquals(getEventJson.event.eventHash, "ev_hash_1");
+
+  // 2. SubmitEvent adds a new event and returns its URL-safe base64 EventHashId
   const newEventB64 = bytesToBase64(new Uint8Array([7, 8, 9]));
   const submitRes = await handleWorkerRequest(
     new Request(
       "https://definy.workers.dev/definy.v1.EventService/SubmitEvent",
       {
         method: "POST",
-        body: JSON.stringify({ event_binary: newEventB64 }),
+        body: JSON.stringify({ signedEventBytes: newEventB64 }),
       },
     ),
     env,
@@ -140,8 +162,8 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
   );
   assertEquals(submitRes.status, 200);
   const submitJson = await submitRes.json();
-  assertEquals(typeof submitJson.event_hash, "string");
-  assertEquals(submitJson.event_hash.length, 64);
+  assertEquals(typeof submitJson.eventHash, "string");
+  assertEquals(submitJson.status, "accepted");
 
   // 3. CheckMissingHashes & UploadContent & GetContent
   const checkRes = await handleWorkerRequest(
@@ -150,7 +172,7 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
       {
         method: "POST",
         body: JSON.stringify({
-          hashes: ["hash_builtin_1", "hash_missing_2"],
+          contentHashes: ["hash_builtin_1", "hash_missing_2"],
         }),
       },
     ),
@@ -158,8 +180,8 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
     store,
   );
   const checkJson = await checkRes.json();
-  assertEquals(checkJson.missing_hashes.length, 1);
-  assertEquals(checkJson.missing_hashes[0], "hash_missing_2");
+  assertEquals(checkJson.missingContentHashes.length, 1);
+  assertEquals(checkJson.missingContentHashes[0], "hash_missing_2");
 
   const uploadRes = await handleWorkerRequest(
     new Request(
@@ -169,8 +191,10 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
         body: JSON.stringify({
           items: [
             {
-              hash: "hash_missing_2",
-              content: bytesToBase64(new Uint8Array([0x00, 0x61, 0x73, 0x6d])),
+              contentHash: "hash_missing_2",
+              contentBytes: bytesToBase64(
+                new Uint8Array([0x00, 0x61, 0x73, 0x6d]),
+              ),
             },
           ],
         }),
@@ -180,22 +204,22 @@ Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", 
     store,
   );
   const uploadJson = await uploadRes.json();
-  assertEquals(uploadJson.saved_count, 1);
+  assertEquals(uploadJson.storedContentHashes.length, 1);
+  assertEquals(uploadJson.storedContentHashes[0], "hash_missing_2");
 
   const getContentRes = await handleWorkerRequest(
     new Request(
       "https://definy.workers.dev/definy.v1.EventService/GetContent",
       {
         method: "POST",
-        body: JSON.stringify({ hashes: ["hash_missing_2"] }),
+        body: JSON.stringify({ contentHash: "hash_missing_2" }),
       },
     ),
     env,
     store,
   );
   const getContentJson = await getContentRes.json();
-  assertEquals(getContentJson.items.length, 1);
-  assertEquals(getContentJson.items[0].hash, "hash_missing_2");
+  assertEquals(getContentJson.item.contentHash, "hash_missing_2");
 
   // 4. Virtual Wasm endpoint serves uploaded Wasm binary
   const wasmRes = await handleWorkerRequest(
@@ -262,7 +286,7 @@ Deno.test("handleWorkerRequest handles DeployCloudflare and ListDeployments dire
       "https://definy.workers.dev/definy.v1.DeployService/DeployCloudflare",
       {
         method: "POST",
-        body: JSON.stringify({ worker_name: "definy-edge-1" }),
+        body: JSON.stringify({ scriptName: "definy-edge-1" }),
       },
     ),
     env,
@@ -271,7 +295,7 @@ Deno.test("handleWorkerRequest handles DeployCloudflare and ListDeployments dire
   );
   assertEquals(deployRes.status, 200);
   const deployJson = await deployRes.json();
-  assertEquals(deployJson.worker_name, "definy-edge-1");
+  assertEquals(deployJson.scriptName, "definy-edge-1");
   assertEquals(deployJson.status, "succeeded");
   assertEquals(
     deployJson.url,
@@ -293,7 +317,7 @@ Deno.test("handleWorkerRequest handles DeployCloudflare and ListDeployments dire
   );
   const listJson = await listRes.json();
   assertEquals(listJson.deployments.length, 1);
-  assertEquals(listJson.deployments[0].provider, "cloudflare");
+  assertEquals(listJson.deployments[0].provider, "cloudflare_workers");
 });
 
 Deno.test("handleWorkerRequest enforces admin check on PreviewService and serves preview apps", async () => {
@@ -312,8 +336,8 @@ Deno.test("handleWorkerRequest enforces admin check on PreviewService and serves
       {
         method: "POST",
         body: JSON.stringify({
-          app_id: "demo",
-          account_id: "non_admin",
+          appId: "demo",
+          accountId: "non_admin",
         }),
       },
     ),
@@ -329,10 +353,10 @@ Deno.test("handleWorkerRequest enforces admin check on PreviewService and serves
       {
         method: "POST",
         body: JSON.stringify({
-          app_id: "demo",
-          display_name: "Demo App",
-          part_id: "part-1",
-          account_id: adminAccount,
+          appId: "demo",
+          displayName: "Demo App",
+          partId: "part-1",
+          accountId: adminAccount,
         }),
       },
     ),
@@ -341,7 +365,7 @@ Deno.test("handleWorkerRequest enforces admin check on PreviewService and serves
   );
   assertEquals(regRes.status, 200);
   const regJson = await regRes.json();
-  assertEquals(regJson.preview_url, "https://demo.definy.workers.dev");
+  assertEquals(regJson.previewUrl, "https://demo.definy.workers.dev");
 
   // Access via /preview/demo
   const previewRes = await handleWorkerRequest(

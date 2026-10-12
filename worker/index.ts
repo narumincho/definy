@@ -8,6 +8,7 @@ import type {
   DeployCloudflareRequest,
   Env,
   GetContentRequest,
+  GetEventRequest,
   GetEventsRequest,
   ListCloudflareWorkersRequest,
   ListDeploymentsRequest,
@@ -139,9 +140,9 @@ function renderPreviewResponse(
   if (accept.includes("application/json")) {
     return new Response(
       JSON.stringify({
-        app_id: app.app_id,
-        display_name: app.display_name,
-        part_id: app.part_id,
+        appId: app.appId,
+        displayName: app.displayName,
+        partId: app.partId,
         status: app.status,
         path: subpath,
       }),
@@ -149,7 +150,7 @@ function renderPreviewResponse(
         status: 200,
         headers: {
           "Content-Type": "application/json; charset=utf-8",
-          "X-Definy-Preview-App": app.app_id,
+          "X-Definy-Preview-App": app.appId,
           ...CORS_HEADERS,
         },
       },
@@ -160,13 +161,13 @@ function renderPreviewResponse(
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>${app.display_name} - definy preview</title>
+  <title>${app.displayName} - definy preview</title>
 </head>
 <body>
-  <main data-preview-app="${app.app_id}">
-    <h1>${app.display_name}</h1>
-    <p>App ID: ${app.app_id}</p>
-    <p>Part ID: ${app.part_id}</p>
+  <main data-preview-app="${app.appId}">
+    <h1>${app.displayName}</h1>
+    <p>App ID: ${app.appId}</p>
+    <p>Part ID: ${app.partId}</p>
     <p>Path: ${subpath}</p>
   </main>
 </body>
@@ -176,7 +177,7 @@ function renderPreviewResponse(
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "X-Definy-Preview-App": app.app_id,
+      "X-Definy-Preview-App": app.appId,
       ...CORS_HEADERS,
     },
   });
@@ -195,9 +196,9 @@ export async function handleWorkerRequest(
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  await store.ensureSeeded(env);
-
   const url = new URL(request.url);
+  await store.ensureSeeded(env, url.origin);
+
   const { pathname } = url;
 
   // Subdomain preview routing
@@ -268,48 +269,96 @@ export async function handleWorkerRequest(
     return jsonResponse({ events });
   }
 
-  if (pathname === "/definy.v1.EventService/SubmitEvent") {
-    const req = await parseJsonRequest<SubmitEventRequest>(request);
-    if (!req.event_binary || req.event_binary.trim().length === 0) {
+  if (pathname === "/definy.v1.EventService/GetEvent") {
+    const req = await parseJsonRequest<GetEventRequest>(request);
+    const hash = (req.eventHash ?? req.event_hash ?? "").trim();
+    if (!hash) {
       return connectErrorResponse(
         "invalid_argument",
-        "event_binary is required",
+        "eventHash is required",
         400,
       );
     }
-    const eventHash = await store.submitEvent(req.event_binary);
-    return jsonResponse({ event_hash: eventHash });
+    const event = store.getEvent(hash);
+    if (!event) {
+      return connectErrorResponse(
+        "not_found",
+        `Event '${hash}' not found`,
+        404,
+      );
+    }
+    return jsonResponse({ event });
+  }
+
+  if (pathname === "/definy.v1.EventService/SubmitEvent") {
+    const req = await parseJsonRequest<SubmitEventRequest>(request);
+    const rawEvent = req.signedEventBytes ?? req.signed_event_bytes ??
+      req.event_binary;
+    if (!rawEvent || rawEvent.trim().length === 0) {
+      return connectErrorResponse(
+        "invalid_argument",
+        "signedEventBytes is required",
+        400,
+      );
+    }
+    const eventHash = await store.submitEvent(rawEvent);
+    return jsonResponse({
+      eventHash,
+      status: "accepted",
+      missingContentHashes: [],
+    });
   }
 
   if (pathname === "/definy.v1.EventService/CheckMissingHashes") {
     const req = await parseJsonRequest<CheckMissingHashesRequest>(request);
-    const missing = store.checkMissingHashes(req.hashes ?? []);
-    return jsonResponse({ missing_hashes: missing });
+    const hashes = req.contentHashes ?? req.content_hashes ?? req.hashes ?? [];
+    const missing = store.checkMissingHashes(hashes);
+    return jsonResponse({ missingContentHashes: missing });
   }
 
   if (pathname === "/definy.v1.EventService/UploadContent") {
     const req = await parseJsonRequest<UploadContentRequest>(request);
-    const savedCount = store.uploadContent(req.items ?? []);
-    return jsonResponse({ saved_count: savedCount });
+    const stored = store.uploadContent(req.items ?? []);
+    return jsonResponse({ storedContentHashes: stored });
   }
 
   if (pathname === "/definy.v1.EventService/GetContent") {
     const req = await parseJsonRequest<GetContentRequest>(request);
-    const items = store.getContent(req.hashes ?? []);
-    return jsonResponse({ items });
+    const singleHash = req.contentHash ?? req.content_hash;
+    if (singleHash) {
+      const item = store.getContentItem(singleHash.trim());
+      if (!item) {
+        return connectErrorResponse(
+          "not_found",
+          `Content '${singleHash}' not found`,
+          404,
+        );
+      }
+      return jsonResponse({ item });
+    }
+    if (req.hashes) {
+      const items = store.getContentItems(req.hashes);
+      return jsonResponse({ item: items[0], items });
+    }
+    return connectErrorResponse(
+      "invalid_argument",
+      "contentHash is required",
+      400,
+    );
   }
 
   // Connect-RPC: DeployService
   if (pathname === "/definy.v1.DeployService/DeployCloudflare") {
     try {
       const req = await parseJsonRequest<DeployCloudflareRequest>(request);
+      const wasmHash = req.wasmHash ?? req.wasm_hash;
       let wasmBytes: Uint8Array | undefined;
-      if (req.wasm_hash && req.wasm_hash.trim().length > 0) {
-        wasmBytes = store.getRawContentBytes(req.wasm_hash.trim());
+      if (wasmHash && wasmHash.trim().length > 0) {
+        wasmBytes = store.getRawContentBytes(wasmHash.trim());
         if (!wasmBytes) {
           return connectErrorResponse(
             "not_found",
-            `Wasm content hash '${req.wasm_hash}' not found in CAS`,
+            `Wasm content hash '${wasmHash}' not found in CAS`,
             404,
           );
         }
@@ -320,16 +369,17 @@ export async function handleWorkerRequest(
         env,
         fetchFn,
       );
+      const nowIso = new Date().toISOString();
       store.recordDeployment({
-        machine_id: res.deployment_id,
+        machineId: `cf-${res.scriptName}`,
         status: res.status,
         url: res.url,
-        app_url: res.url,
+        appUrl: res.url,
         region: "cloudflare-edge",
-        created_at: res.created_at,
-        commit_hash: req.commit_hash ?? null,
-        wasm_hash: res.wasm_hash ?? null,
-        provider: "cloudflare",
+        createdAtRfc3339: nowIso,
+        commitHash: req.commitHash ?? req.commit_hash ?? null,
+        wasmHash: wasmHash ?? null,
+        provider: "cloudflare_workers",
       });
       return jsonResponse(res);
     } catch (err) {
@@ -358,18 +408,19 @@ export async function handleWorkerRequest(
   // Connect-RPC: PreviewService
   if (pathname === "/definy.v1.PreviewService/RegisterPreviewApp") {
     const req = await parseJsonRequest<RegisterPreviewAppRequest>(request);
-    if (!isAdminAccount(req.account_id, env)) {
+    const accountId = req.accountId ?? req.account_id;
+    if (!isAdminAccount(accountId, env)) {
       return connectErrorResponse(
         "permission_denied",
         "Only administrator accounts configured in DEFINY_ADMIN_ACCOUNT_ID are allowed to register preview apps",
         403,
       );
     }
-    const appId = (req.app_id ?? "").trim().toLowerCase();
+    const appId = (req.appId ?? req.app_id ?? "").trim().toLowerCase();
     if (!appId) {
       return connectErrorResponse(
         "invalid_argument",
-        "app_id is required",
+        "appId is required",
         400,
       );
     }
@@ -379,47 +430,54 @@ export async function handleWorkerRequest(
       : "https";
     const previewUrl = `${protocol}://${appId}.${rootDomain}`;
     const pathUrl = `${protocol}://${rootDomain}/preview/${appId}/`;
-    const createdAt = new Date().toISOString();
+    const createdAtRfc3339 = new Date().toISOString();
 
     const item: PreviewAppItem = {
-      app_id: appId,
-      display_name: req.display_name || appId,
-      part_id: req.part_id || "",
-      owner_account_id: req.account_id || "",
-      preview_url: previewUrl,
-      path_url: pathUrl,
+      appId,
+      displayName: req.displayName ?? req.display_name ?? appId,
+      partId: req.partId ?? req.part_id ?? "",
+      ownerAccountId: accountId ?? "",
+      previewUrl,
+      pathUrl,
       status: "running",
-      created_at: createdAt,
+      createdAtRfc3339,
+      subdomain: appId,
     };
     store.registerPreviewApp(item);
 
     return jsonResponse({
-      app_id: item.app_id,
-      preview_url: item.preview_url,
-      path_url: item.path_url,
+      appId: item.appId,
+      previewUrl: item.previewUrl,
+      pathUrl: item.pathUrl,
       status: item.status,
-      created_at: item.created_at,
+      subdomain: item.subdomain,
     });
   }
 
   if (pathname === "/definy.v1.PreviewService/ListPreviewApps") {
     const req = await parseJsonRequest<ListPreviewAppsRequest>(request);
-    const apps = store.listPreviewApps(req.account_id);
+    const apps = store.listPreviewApps(req.accountId ?? req.account_id);
     return jsonResponse({ apps });
   }
 
   if (pathname === "/definy.v1.PreviewService/StopPreviewApp") {
     const req = await parseJsonRequest<StopPreviewAppRequest>(request);
-    if (!isAdminAccount(req.account_id, env)) {
+    const accountId = req.accountId ?? req.account_id;
+    if (!isAdminAccount(accountId, env)) {
       return connectErrorResponse(
         "permission_denied",
         "Only administrator accounts configured in DEFINY_ADMIN_ACCOUNT_ID are allowed to stop preview apps",
         403,
       );
     }
-    const appId = (req.app_id ?? "").trim().toLowerCase();
+    const appId = (req.appId ?? req.app_id ?? "").trim().toLowerCase();
     const success = store.stopPreviewApp(appId);
-    return jsonResponse({ app_id: appId, success });
+    return jsonResponse({
+      success,
+      message: success
+        ? `Preview app '${appId}' stopped`
+        : `Preview app '${appId}' not found`,
+    });
   }
 
   if (isWorkerFirstPath(pathname)) {
