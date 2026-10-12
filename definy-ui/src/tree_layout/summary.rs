@@ -88,7 +88,7 @@ pub fn ExpressionTreeSummary(
                     }
 
                     if show_expand_button {
-                        div { style: "margin-left: 0.2rem; display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.08rem 0.35rem; border-radius: 3px; font-family: monospace; line-height: 1; transition: all 0.12s ease; background: {expand_btn_bg}; color: {expand_btn_color}; border: {expand_btn_border};",
+                        div { style: "margin-left: 0.2rem; display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.08rem 0.35rem; border-radius: var(--radius-full); font-family: monospace; line-height: 1; transition: all 0.12s ease; background: {expand_btn_bg}; color: {expand_btn_color}; border: {expand_btn_border};",
                             span {
                                 if is_expanded() {
                                     "▲"
@@ -143,7 +143,7 @@ fn render_child_summary_chip(child: &LayoutNode) -> Element {
         rsx! {
             div {
                 key: "{child.id}",
-                style: "display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.08rem 0.32rem; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: var(--radius-xs); font-family: monospace; font-size: 0.74rem; color: var(--text-secondary);",
+                style: "display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.08rem 0.32rem; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: var(--radius-full); font-family: monospace; font-size: 0.74rem; color: var(--text-secondary);",
                 span { style: "color: var(--accent);", "{child.label}" }
                 span { style: "opacity: 0.6;", "…" }
             }
@@ -167,7 +167,7 @@ fn outer_bar_container_style(is_leaf: bool, is_expanded: bool) -> String {
     let cursor_style = if is_leaf { "default" } else { "pointer" };
 
     format!(
-        "display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.45rem; background: {outer_bg}; border: {outer_border}; border-radius: var(--radius-sm); cursor: {cursor_style}; transition: all 0.15s ease; user-select: none; max-width: 100%; overflow-x: auto; box-sizing: border-box;"
+        "display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.45rem; background: {outer_bg}; border: {outer_border}; border-radius: var(--radius-full); cursor: {cursor_style}; transition: all 0.15s ease; user-select: none; max-width: 100%; overflow-x: auto; box-sizing: border-box;"
     )
 }
 

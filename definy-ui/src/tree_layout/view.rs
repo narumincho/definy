@@ -18,6 +18,22 @@ struct RenderContext {
     on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
     on_change_boolean: Option<EventHandler<(Vec<PathStep>, bool)>>,
+    selection_anchor_id: Option<u64>,
+}
+
+/// 選択中ノードに付与する CSS `anchor-name`. ドロップダウンメニューをノード直下に表示するために使う
+pub fn tree_selection_anchor_name(anchor_id: u64) -> String {
+    format!("--tree-selection-{anchor_id}")
+}
+
+/// 選択中ノードであれば `anchor-name` の CSS 宣言を返す
+fn anchor_style(ctx: &RenderContext, is_selected: bool) -> String {
+    match ctx.selection_anchor_id {
+        Some(anchor_id) if is_selected => {
+            format!(" anchor-name: {};", tree_selection_anchor_name(anchor_id))
+        }
+        _ => String::new(),
+    }
 }
 
 #[component]
@@ -33,6 +49,9 @@ pub fn TreeLayoutRenderer(
     #[props(default = None)] on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     #[props(default = None)] on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
     #[props(default = None)] on_change_boolean: Option<EventHandler<(Vec<PathStep>, bool)>>,
+    /// 指定すると選択中ノードに [`tree_selection_anchor_name`] の `anchor-name` を付与する
+    #[props(default = None)]
+    selection_anchor_id: Option<u64>,
 ) -> Element {
     let internal_collapsed = use_signal(HashSet::<String>::new);
     let effective_collapsed = collapsed_node_ids.unwrap_or(internal_collapsed);
@@ -48,6 +67,7 @@ pub fn TreeLayoutRenderer(
         on_change_number,
         on_change_string,
         on_change_boolean,
+        selection_anchor_id,
     };
     render_node(&node, ctx)
 }
@@ -94,7 +114,11 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
 
     // 葉ノード（子要素なし：数値・文字列・識別子など）
     if node.children.is_empty() {
-        let badge_style = node_badge_style(&node.kind, is_selected, is_hovered, has_error);
+        let badge_style = format!(
+            "{}{}",
+            node_badge_style(&node.kind, is_selected, is_hovered, has_error),
+            anchor_style(&ctx, is_selected)
+        );
         let id_for_click = node.id.clone();
         let id_for_enter = node.id.clone();
         let path_for_click = node.path.clone();
@@ -185,6 +209,18 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
     let is_multiline = node.layout_mode == LayoutMode::Multiline;
     let badge_style = node_badge_style(&node.kind, is_selected, false, has_error);
     let container_style = capsule_container_style(is_multiline, is_selected, is_hovered, has_error);
+    // 複数行はヘッダーのバッジ直下、インラインはカプセル全体の直下にメニューを表示する
+    let (badge_style, container_style) = if is_multiline {
+        (
+            format!("{badge_style}{}", anchor_style(&ctx, is_selected)),
+            container_style,
+        )
+    } else {
+        (
+            badge_style,
+            format!("{container_style}{}", anchor_style(&ctx, is_selected)),
+        )
+    };
 
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
@@ -221,7 +257,7 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
                 // ヘッダー行（演算子/キーワードラベル ＋ 折りたたみトグル）
                 div { style: "display: flex; align-items: center; gap: 0.3rem;",
                     button {
-                        style: "background: transparent; border: none; padding: 0.05rem 0.2rem; cursor: pointer; color: var(--text-secondary); font-size: 0.72rem; line-height: 1; border-radius: 2px;",
+                        style: "background: transparent; border: none; padding: 0.05rem 0.2rem; cursor: pointer; color: var(--text-secondary); font-size: 0.72rem; line-height: 1; border-radius: var(--radius-full);",
                         title: if is_collapsed { "詳細を展開" } else { "折りたたむ" },
                         onclick: move |evt: MouseEvent| {
                             evt.stop_propagation();
@@ -325,6 +361,7 @@ fn render_table_node(
     let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node.id);
     let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node.id);
 
+    let table_anchor_style = anchor_style(&ctx, is_selected);
     let border_color = if has_error && is_selected {
         "#ef4444"
     } else if has_error {
@@ -344,7 +381,7 @@ fn render_table_node(
     rsx! {
         div {
             class: "tree-node-table-wrapper",
-            style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-md); background: rgb(0 0 0 / 0.25); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);",
+            style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-lg); background: rgb(0 0 0 / 0.25); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);{table_anchor_style}",
             title: "{tooltip}",
             onclick: move |evt: MouseEvent| {
                 evt.stop_propagation();
@@ -476,7 +513,7 @@ pub fn node_badge_style(
     };
 
     format!(
-        "display: inline-flex; align-items: center; padding: 0.12rem 0.42rem; border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: {}; color: {}; border: {}; cursor: pointer; user-select: none; transition: all 0.12s ease; white-space: nowrap; {}",
+        "display: inline-flex; align-items: center; padding: 0.12rem 0.42rem; border-radius: var(--radius-full); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: {}; color: {}; border: {}; cursor: pointer; user-select: none; transition: all 0.12s ease; white-space: nowrap; {}",
         bg, text_color, border, focus_style
     )
 }
@@ -507,11 +544,11 @@ fn capsule_container_style(
 
     if is_multiline {
         format!(
-            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {bg}; border: {border}; border-radius: var(--radius-sm); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;"
+            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {bg}; border: {border}; border-radius: var(--radius-lg); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;"
         )
     } else {
         format!(
-            "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; background: {bg}; border: {border}; border-radius: var(--radius-sm); transition: all 0.12s ease; white-space: nowrap;"
+            "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; background: {bg}; border: {border}; border-radius: var(--radius-full); transition: all 0.12s ease; white-space: nowrap;"
         )
     }
 }

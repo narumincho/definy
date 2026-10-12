@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use definy_event::EventHashId;
 use dioxus::prelude::*;
@@ -17,7 +18,10 @@ use crate::page_context::PageContext;
 
 use super::engine::{compute_layout, expression_to_layout_node};
 use super::types::LayoutOptions;
-use super::view::TreeLayoutRenderer;
+use super::view::{TreeLayoutRenderer, tree_selection_anchor_name};
+
+/// ページ内に複数のツリーエディタがあってもメニューのアンカー名が衝突しないようにするための連番
+static NEXT_TREE_EDITOR_ANCHOR_ID: AtomicU64 = AtomicU64::new(0);
 
 #[component]
 pub fn ExpressionTreeEditor(
@@ -32,6 +36,28 @@ pub fn ExpressionTreeEditor(
     let mut selected_node_id = use_signal(|| None::<String>);
     let hovered_node_id = use_signal(|| None::<String>);
     let mut selected_path = use_signal(|| None::<Vec<PathStep>>);
+
+    // 選択ノード直下に表示するドロップダウンメニュー (popover) 用の状態
+    let anchor_id = use_hook(|| NEXT_TREE_EDITOR_ANCHOR_ID.fetch_add(1, Ordering::Relaxed));
+    let menu_panel_id = format!("tree-editor-menu-{anchor_id}");
+    let menu_search_input_name = format!("tree-editor-menu-search-{anchor_id}");
+    let mut menu_search_query = use_signal(String::new);
+    let mut menu_highlighted_index = use_signal(|| None::<usize>);
+    // Some(検索欄にフォーカスするか) が設定されると, 描画後にメニューを開く
+    let mut menu_open_request = use_signal(|| None::<bool>);
+
+    use_effect({
+        let menu_panel_id = menu_panel_id.clone();
+        let menu_search_input_name = menu_search_input_name.clone();
+        move || {
+            if let Some(focus_search) = menu_open_request() {
+                crate::dropdown::show_popover(
+                    &menu_panel_id,
+                    focus_search.then_some(menu_search_input_name.as_str()),
+                );
+            }
+        }
+    });
 
     let expr_opt = expression();
 
@@ -365,83 +391,83 @@ pub fn ExpressionTreeEditor(
                 }
             }
 
-            // 2. ノード・インスペクタ / ツールバー（ノード選択時に表示）
+            // 2. 選択ノード直下に表示するドロップダウンメニュー（式・演算子の検索切り替え）
             if let Some(target_path) = sel_path_val {
-                div {
-                    class: "node-inspector-bar",
-                    style: "display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; padding: 0.4rem 0.75rem; background: rgb(124 192 216 / 0.12); border: 1.5px solid var(--accent); border-radius: var(--radius-sm); font-size: 0.8rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);",
-                    div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0;",
-                        span { style: "font-weight: 600; color: var(--accent); white-space: nowrap;",
-                            "{selected_label}"
-                        }
-                        span {
-                            class: "mono",
-                            style: "background: rgb(0 0 0 / 0.3); padding: 0.12rem 0.4rem; border-radius: var(--radius-xs); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1);",
-                            "{current_kind_label}"
-                        }
-                        if let Some(exp) = slot_expected_type {
-                            span { style: "color: var(--text-secondary); font-size: 0.76rem; white-space: nowrap;",
-                                "{expects_label} "
-                                span {
-                                    class: "mono",
-                                    style: "color: #93c5fd; font-weight: 600;",
-                                    "{exp.text()}"
+                crate::dropdown::SearchableDropdownPanel {
+                    panel_id: menu_panel_id.clone(),
+                    anchor_name: tree_selection_anchor_name(anchor_id),
+                    search_input_name: menu_search_input_name.clone(),
+                    current_value: String::new(),
+                    options: available_options,
+                    search_query: menu_search_query,
+                    highlighted_index: menu_highlighted_index,
+                    header: rsx! {
+                        div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.76rem;",
+                            span { style: "font-weight: 600; color: var(--accent); white-space: nowrap;", "{selected_label}" }
+                            span {
+                                class: "mono",
+                                style: "background: rgb(0 0 0 / 0.3); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1);",
+                                "{current_kind_label}"
+                            }
+                            if let Some(exp) = slot_expected_type {
+                                span { style: "color: var(--text-secondary); white-space: nowrap;",
+                                    "{expects_label} "
+                                    span {
+                                        class: "mono",
+                                        style: "color: #93c5fd; font-weight: 600;",
+                                        "{exp.text()}"
+                                    }
+                                }
+                            }
+                            // 選択解除ボタン
+                            button {
+                                r#type: "button",
+                                title: "{deselect_label}",
+                                style: "margin-left: auto; padding: 0.05rem 0.4rem; font-size: 0.72rem; border-radius: var(--radius-full); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; line-height: 1.4;",
+                                onclick: {
+                                    let menu_panel_id = menu_panel_id.clone();
+                                    move |_| {
+                                        crate::dropdown::hide_popover(&menu_panel_id);
+                                        selected_node_id.set(None);
+                                        selected_path.set(None);
+                                    }
+                                },
+                                "✕"
+                            }
+                            if let Some(diag) = slot_diagnostic {
+                                div { style: "flex-basis: 100%; color: #fca5a5; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 0.1rem 0.45rem; border-radius: var(--radius-sm);",
+                                    "⚠ {diag.message}"
                                 }
                             }
                         }
-                        if let Some(diag) = slot_diagnostic {
-                            span { style: "color: #fca5a5; font-size: 0.76rem; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
-                                "⚠ {diag.message}"
+                    },
+                    on_change: {
+                        let target_path = target_path.clone();
+                        let state = state.clone();
+                        move |selected_value: String| {
+                            let constructor_default = selected_value
+                                .strip_prefix("expr:constructor:")
+                                .and_then(|val| EventHashId::from_str(val).ok())
+                                .map(|hash| {
+                                    (
+                                        hash.clone(),
+                                        constructor_default_value_from_type_part(&state, &hash),
+                                    )
+                                });
+                            let mut current_opt = expression.read().clone();
+                            apply_selection(
+                                &state,
+                                &mut current_opt,
+                                &target_path,
+                                &selected_value,
+                                constructor_default,
+                            );
+                            expression.set(current_opt.clone());
+                            if let (Some(cb), Some(expr_val)) = (on_change, current_opt) {
+                                cb.call(expr_val);
                             }
                         }
-                        // SearchableDropdown による式・演算子の検索切り替え
-                        div { style: "min-width: 140px; max-width: 240px;",
-                            crate::dropdown::SearchableDropdown {
-                                name: format!("tree-edit-sel-{}", target_path.len()),
-                                current_value: "式・演算子を変更...".to_string(),
-                                options: available_options,
-                                compact: true,
-                                on_change: {
-                                    let target_path = target_path.clone();
-                                    let state = state.clone();
-                                    move |selected_value: String| {
-                                        let constructor_default = selected_value
-                                            .strip_prefix("expr:constructor:")
-                                            .and_then(|val| EventHashId::from_str(val).ok())
-                                            .map(|hash| {
-                                                (
-                                                    hash.clone(),
-                                                    constructor_default_value_from_type_part(&state, &hash),
-                                                )
-                                            });
-                                        let mut current_opt = expression.read().clone();
-                                        apply_selection(
-                                            &state,
-                                            &mut current_opt,
-                                            &target_path,
-                                            &selected_value,
-                                            constructor_default,
-                                        );
-                                        expression.set(current_opt.clone());
-                                        if let (Some(cb), Some(expr_val)) = (on_change, current_opt) {
-                                            cb.call(expr_val);
-                                        }
-                                    }
-                                },
-                            }
-                        }
-                    }
-
-                    // 選択解除ボタン
-                    button {
-                        r#type: "button",
-                        style: "padding: 0.18rem 0.5rem; font-size: 0.74rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); cursor: pointer; white-space: nowrap;",
-                        onclick: move |_| {
-                            selected_node_id.set(None);
-                            selected_path.set(None);
-                        },
-                        "✕ {deselect_label}"
-                    }
+                    },
                 }
             }
 
@@ -456,9 +482,25 @@ pub fn ExpressionTreeEditor(
                     diagnostics: diagnostics_sig,
                     expected_types: expected_types_sig,
                     editable: true,
+                    selection_anchor_id: Some(anchor_id),
                     on_select_node: move |(id, path): (String, Vec<PathStep>)| {
+                        // 数値・文字列リテラルはノード上で直接編集するので検索欄にフォーカスを移さない
+                        let mut cloned = expression.read().clone();
+                        let is_inline_editable_literal = cloned
+                            .as_mut()
+                            .and_then(|e| get_mut_expression_at_path(e, &path))
+                            .is_some_and(|sub| {
+                                matches!(
+                                    sub,
+                                    definy_event::event::Expression::Number(_)
+                                    | definy_event::event::Expression::String(_)
+                                )
+                            });
                         selected_node_id.set(Some(id));
                         selected_path.set(Some(path));
+                        menu_search_query.set(String::new());
+                        menu_highlighted_index.set(None);
+                        menu_open_request.set(Some(!is_inline_editable_literal));
                     },
                     on_change_number: move |(path, val): (Vec<PathStep>, i64)| {
                         let mut curr = expression.read().clone();
