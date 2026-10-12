@@ -67,6 +67,32 @@ Cloudflare Workers + カスタムドメイン (`narumincho.com`)
      フォールバックより先に Worker スクリプト (`worker/index.ts`)
      で判定・実行されます。
 
+#### Cloudflare 管理画面での1回限りの設定手順（GitHub Actions での権限付与不要）
+
+`wrangler.toml` にはあえて `routes` を記載していないため、**Cloudflare
+ダッシュボードで1度だけ以下の設定を行えば、以降の GitHub Actions による
+`wrangler deploy` でも上書き・消去されずに永続維持されます**（GitHub Actions の
+`CLOUDFLARE_API_TOKEN` に DNS や Zone Routes
+の編集権限を付与する必要もありません）。
+
+1. **メインドメイン (`definy.narumincho.com`) の登録**:
+   - Cloudflare ダッシュボード → **Workers & Pages** → **`definy`** →
+     **Settings** → **Domains & Routes** → **Add** → **Custom domain**
+   - `definy.narumincho.com` を入力して追加（DNS
+     レコードと証明書が自動構成されます）。
+2. **ワイルドカード DNS レコード (`*.narumincho.com` または個別) の追加**:
+   - Cloudflare ダッシュボード → **`narumincho.com` ゾーン** → **DNS** →
+     **Records** → **Add record**
+   - **Type**: `AAAA` / **Name**: `*` / **IPv6 address**: `100::` / **Proxy
+     status**: **Proxied (オレンジ雲 ON)**
+   - ※ 明示的に登録したサブドメイン（例: `mc.narumincho.com` や
+     `narumincho.com`）は最長一致ルールによりワイルドカードより常に優先されるため、他用途のサブドメインには一切影響しません。
+3. **ワイルドカード Worker Route (`*-definy.narumincho.com/*`) の追加**:
+   - Cloudflare ダッシュボード → **`narumincho.com` ゾーン** → **Workers
+     Routes** → **Add route**
+   - **Route**: `*-definy.narumincho.com/*`
+   - **Worker**: `definy`
+
 ### ② ローカル開発環境: `*.localhost` サブドメイン
 
 モダンブラウザ（Chrome, Firefox, Safari 等）は、RFC 6761 に基づき `*.localhost`
