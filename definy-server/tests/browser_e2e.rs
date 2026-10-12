@@ -42,13 +42,13 @@ async fn browser_can_render_and_navigate() -> Result<(), Box<dyn Error>> {
         );
     }
 
-    let _ = webdriver.wait_for_client_ready().await;
+    webdriver.wait_for_client_ready().await?;
     sleep(Duration::from_millis(500)).await;
     webdriver.click("a.cta-link").await?;
     webdriver
         .wait_for_url(&format!("{}/", test_server.base_url()))
         .await?;
-    let _ = webdriver.wait_for_client_ready().await;
+    webdriver.wait_for_client_ready().await?;
 
     let title = webdriver.text_content_of("header h1").await?;
     assert_eq!(title, "definy");
@@ -510,7 +510,7 @@ impl WebDriverClient {
     }
 
     async fn wait_for_client_ready(&self) -> Result<(), Box<dyn Error>> {
-        for _ in 0..50 {
+        for _ in 0..120 {
             let res = self
                 .execute_script(
                     "return Boolean(document.body && document.body.getAttribute('data-client-ready') === 'true');",
@@ -657,7 +657,7 @@ impl WebDriverClient {
 
     async fn wait_for_url(&self, expected_url: &str) -> Result<(), Box<dyn Error>> {
         let path = format!("/session/{}/url", self.session_id);
-        for _ in 0..40 {
+        for _ in 0..100 {
             if let Ok(res) =
                 webdriver_request(&self.client, &self.base_url, Method::GET, &path, None).await
                 && let Some(current_url) = res.get("value").and_then(serde_json::Value::as_str)

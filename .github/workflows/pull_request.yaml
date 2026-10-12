@@ -41,5 +41,5 @@ jobs:
           done
           WEBDRIVER_URL=http://localhost:4444 \
           E2E_BROWSER=chrome \
-          cargo test -p definy-server --test browser_e2e -- --ignored
+          cargo test -p definy-server --test browser_e2e -- --ignored --test-threads=1
       - run: cargo build -p definy-server --release
