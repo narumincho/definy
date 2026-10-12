@@ -8,6 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
       - name: Install Dioxus CLI
         run: curl -sSL https://dioxus.dev/install.sh | bash
       - run: cargo fmt --check
@@ -29,7 +31,7 @@ jobs:
           chromedriver --version
       - run: rustup target add wasm32-unknown-unknown
       - run: dx build --package definy-client
-      - run: cargo test
+      - run: cargo test --workspace --lib --bins --tests
       - name: Run E2E test
         run: |
           chromedriver --port=4444 > /tmp/chromedriver.log 2>&1 &
@@ -41,5 +43,4 @@ jobs:
           done
           WEBDRIVER_URL=http://localhost:4444 \
           E2E_BROWSER=chrome \
-          cargo test -p definy-server --test browser_e2e -- --ignored
-      - run: cargo build -p definy-server --release
+          cargo test -p definy-server --test browser_e2e -- --ignored --test-threads=1

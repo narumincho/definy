@@ -771,113 +771,79 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
         default: None,
     });
 
-    let body = Expression::Let(LetExpression {
-        variable_id: 6,
-        variable_name: "type_section".into(),
-        value: Box::new(type_section_expr),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 7,
-            variable_name: "memory_section".into(),
-            value: Box::new(memory_section_expr),
-            body: Box::new(Expression::Let(LetExpression {
-                variable_id: 8,
-                variable_name: "export_section".into(),
-                value: Box::new(export_section_expr),
-                body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 5,
-                    variable_name: "data_section".into(),
-                    value: Box::new(data_section_expr),
-                    body: Box::new(Expression::Let(LetExpression {
-                        variable_id: 1,
-                        variable_name: "full_instr".into(),
-                        value: Box::new(full_instructions),
-                        body: Box::new(Expression::Let(LetExpression {
-                            variable_id: 2,
-                            variable_name: "body_len".into(),
-                            value: Box::new(Expression::Add(AddExpression {
-                                left: Box::new(Expression::ListLength(ListLengthExpression {
-                                    value: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 1,
-                                    })),
-                                })),
-                                right: Box::new(Expression::Number(NumberExpression { value: 3 })),
-                            })),
-                            body: Box::new(Expression::Let(LetExpression {
-                                variable_id: 3,
-                                variable_name: "code_payload".into(),
-                                value: Box::new(Expression::ListConcat(ListConcatExpression {
-                                    left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                                        items: vec![
-                                            Expression::Number(NumberExpression { value: 0x01 }),
-                                            Expression::Variable(VariableExpression { variable_id: 2 }),
-                                            Expression::Number(NumberExpression { value: 0x01 }), // 1 local group
-                                            Expression::Number(NumberExpression { value: 0x40 }), // 64 locals
-                                            Expression::Number(NumberExpression { value: 0x7e }), // i64
-                                        ],
-                                    })),
-                                    right: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 1,
-                                    })),
-                                })),
-                                body: Box::new(Expression::Let(LetExpression {
-                                    variable_id: 4,
-                                    variable_name: "code_section".into(),
-                                    value: Box::new(Expression::ListConcat(ListConcatExpression {
-                                        left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                                            items: vec![
-                                                Expression::Number(NumberExpression { value: 0x0a }),
-                                                Expression::ListLength(ListLengthExpression {
-                                                    value: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 3 },
-                                                    )),
-                                                }),
-                                            ],
-                                        })),
-                                        right: Box::new(Expression::Variable(VariableExpression {
-                                            variable_id: 3,
-                                        })),
-                                    })),
-                                    body: Box::new(Expression::ListConcat(ListConcatExpression {
-                                        left: Box::new(wasm_header),
-                                        right: Box::new(Expression::ListConcat(ListConcatExpression {
-                                            left: Box::new(Expression::Variable(VariableExpression {
-                                                variable_id: 6,
-                                            })),
-                                            right: Box::new(Expression::ListConcat(ListConcatExpression {
-                                                left: Box::new(func_section),
-                                                right: Box::new(Expression::ListConcat(ListConcatExpression {
-                                                    left: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 7 },
-                                                    )),
-                                                    right: Box::new(Expression::ListConcat(
-                                                        ListConcatExpression {
-                                                            left: Box::new(Expression::Variable(
-                                                                VariableExpression { variable_id: 8 },
-                                                            )),
-                                                            right: Box::new(Expression::ListConcat(
-                                                                ListConcatExpression {
-                                                                    left: Box::new(Expression::Variable(
-                                                                        VariableExpression { variable_id: 4 },
-                                                                    )),
-                                                                    right: Box::new(Expression::Variable(
-                                                                        VariableExpression { variable_id: 5 },
-                                                                    )),
-                                                                },
-                                                            )),
-                                                        },
-                                                    )),
-                                                })),
-                                            })),
-                                        })),
-                                    })),
-                                })),
-                            })),
-                        })),
-                    })),
-                })),
-            })),
+    let body_len_expr = Expression::Add(AddExpression {
+        left: Box::new(Expression::ListLength(ListLengthExpression {
+            value: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
         })),
+        right: Box::new(Expression::Number(NumberExpression { value: 3 })),
     });
+
+    let code_payload_expr = Expression::ListConcat(ListConcatExpression {
+        left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                Expression::Number(NumberExpression { value: 0x01 }),
+                Expression::Variable(VariableExpression { variable_id: 2 }),
+                Expression::Number(NumberExpression { value: 0x01 }), // 1 local group
+                Expression::Number(NumberExpression { value: 0x40 }), // 64 locals
+                Expression::Number(NumberExpression { value: 0x7e }), // i64
+            ],
+        })),
+        right: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+    });
+
+    let code_section_expr = Expression::ListConcat(ListConcatExpression {
+        left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![
+                Expression::Number(NumberExpression { value: 0x0a }),
+                Expression::ListLength(ListLengthExpression {
+                    value: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
+                }),
+            ],
+        })),
+        right: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
+    });
+
+    let sections_concat = [
+        wasm_header,
+        Expression::Variable(VariableExpression { variable_id: 6 }),
+        func_section,
+        Expression::Variable(VariableExpression { variable_id: 7 }),
+        Expression::Variable(VariableExpression { variable_id: 8 }),
+        Expression::Variable(VariableExpression { variable_id: 4 }),
+    ]
+    .into_iter()
+    .rfold(
+        Expression::Variable(VariableExpression { variable_id: 5 }),
+        |right, left| {
+            Expression::ListConcat(ListConcatExpression {
+                left: Box::new(left),
+                right: Box::new(right),
+            })
+        },
+    );
+
+    let body = [
+        (6, "type_section", type_section_expr),
+        (7, "memory_section", memory_section_expr),
+        (8, "export_section", export_section_expr),
+        (5, "data_section", data_section_expr),
+        (1, "full_instr", full_instructions),
+        (2, "body_len", body_len_expr),
+        (3, "code_payload", code_payload_expr),
+        (4, "code_section", code_section_expr),
+    ]
+    .into_iter()
+    .rfold(
+        sections_concat,
+        |inner_body, (variable_id, variable_name, value)| {
+            Expression::Let(LetExpression {
+                variable_id,
+                variable_name: variable_name.into(),
+                value: Box::new(value),
+                body: Box::new(inner_body),
+            })
+        },
+    );
 
     let main_expr = fn_expr(&[("expr", 0)], body);
 

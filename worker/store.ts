@@ -1,7 +1,9 @@
 import type {
   ContentItem,
+  ContentItemInput,
   DeploymentHistoryItem,
   Env,
+  EventItem,
   GetEventsRequest,
   PreviewAppItem,
   SeedBundle,
@@ -9,7 +11,7 @@ import type {
 } from "./types.ts";
 
 /**
- * Base64 文字列を Uint8Array にデコードする
+ * Base64 文字列（標準 / URL-safe / パディング省略すべて対応）を Uint8Array にデコードする
  */
 export function base64ToBytes(base64: string): Uint8Array {
   const normalized = base64.replace(/-/g, "+").replace(/_/g, "/");
@@ -35,18 +37,23 @@ export function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /**
- * Uint8Array の SHA-256 ダイジェスト（小文字 hex 64文字）を計算する
+ * Uint8Array を URL-safe Base64 (パディングなし) にエンコードする
  */
-export async function sha256Hex(bytes: Uint8Array): Promise<string> {
+export function bytesToUrlSafeBase64NoPad(bytes: Uint8Array): string {
+  return bytesToBase64(bytes)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+/**
+ * Uint8Array の SHA-256 ダイジェストを計算し、URL-safe Base64 (`EventHashId` 形式) を返す
+ */
+export async function sha256EventHashId(bytes: Uint8Array): Promise<string> {
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);
   const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
-  const hashArray = new Uint8Array(digest);
-  let hex = "";
-  for (let i = 0; i < hashArray.length; i++) {
-    hex += hashArray[i].toString(16).padStart(2, "0");
-  }
-  return hex;
+  return bytesToUrlSafeBase64NoPad(new Uint8Array(digest));
 }
 
 /**
@@ -66,24 +73,24 @@ export class WorkerStore {
   /**
    * Static Assets バインディングから `__definy_seed_bundle.json` を一度だけロードする
    */
-  async ensureSeeded(env: Env): Promise<void> {
+  async ensureSeeded(env: Env, requestOrigin?: string): Promise<void> {
     if (this.seeded) {
       return;
     }
-    this.seeded = true;
-    if (!env.ASSETS) {
-      return;
-    }
-    try {
-      const res = await env.ASSETS.fetch(
-        new Request("https://internal/__definy_seed_bundle.json"),
-      );
-      if (res.ok) {
-        const bundle = (await res.json()) as SeedBundle;
-        this.loadSeedBundle(bundle);
+    const origin = requestOrigin || "https://definy.narumincho.workers.dev";
+    const assetUrl = new URL("/__definy_seed_bundle.json", origin).toString();
+
+    if (env.ASSETS) {
+      try {
+        const res = await env.ASSETS.fetch(new Request(assetUrl));
+        if (res.ok) {
+          const bundle = (await res.json()) as SeedBundle;
+          this.loadSeedBundle(bundle);
+          return;
+        }
+      } catch {
+        // Static Assets 取得失敗時は下のフォールバックを試行
       }
-    } catch {
-      // Static Assets にシードバンドルが存在しない環境（単体テスト等）では空ストアのまま動作
     }
   }
 
@@ -96,61 +103,89 @@ export class WorkerStore {
     const mergedEvents: SeedEventEntry[] = [...this.events];
 
     for (const ev of bundle.events) {
-      if (!nextHashes.has(ev.hash_hex)) {
-        nextHashes.add(ev.hash_hex);
+      if (!nextHashes.has(ev.eventHash)) {
+        nextHashes.add(ev.eventHash);
         mergedEvents.push(ev);
       }
     }
-    mergedEvents.sort((a, b) => b.time_ms - a.time_ms);
+    mergedEvents.sort((a, b) => b.timeMs - a.timeMs);
     this.events = mergedEvents;
     this.eventHashes = nextHashes;
 
     const nextContents = new Map<string, string>(this.contents);
     for (const item of bundle.contents) {
-      nextContents.set(item.hash, item.content_base64);
+      nextContents.set(item.contentHash, item.contentBytes);
     }
     this.contents = nextContents;
   }
 
   /**
-   * イベント一覧を取得する（`time_ms` 降順）
+   * イベント一覧を取得する（`timeMs` 降順）
    */
-  getEvents(req: GetEventsRequest): ReadonlyArray<string> {
+  getEvents(req: GetEventsRequest): ReadonlyArray<EventItem> {
     let filtered = this.events;
-    if (req.event_type) {
-      filtered = filtered.filter((e) => e.event_type === req.event_type);
+    const requestedType = req.eventType ?? req.event_type;
+    if (requestedType) {
+      const normalized = requestedType.toLowerCase().replace(/_/g, "");
+      filtered = filtered.filter(
+        (e) => e.eventType.toLowerCase().replace(/_/g, "") === normalized,
+      );
     }
     const offset = Math.max(0, req.offset ?? 0);
     const limit = Math.min(500, Math.max(1, req.limit ?? 50));
-    return filtered
-      .slice(offset, offset + limit)
-      .map((e) => e.event_binary_base64);
+    return filtered.slice(offset, offset + limit).map((e) => ({
+      eventHash: e.eventHash,
+      signedEventBytes: e.signedEventBytes,
+      accountId: e.accountId,
+      eventType: e.eventType,
+      createdAtRfc3339: e.createdAtRfc3339,
+    }));
   }
 
   /**
-   * 署名済みイベントバイナリ（Base64）を追加し、SHA-256 ハッシュを返す
+   * 単一イベントを `eventHash` で取得する
+   */
+  getEvent(eventHash: string): EventItem | undefined {
+    const found = this.events.find((e) => e.eventHash === eventHash);
+    if (!found) {
+      return undefined;
+    }
+    return {
+      eventHash: found.eventHash,
+      signedEventBytes: found.signedEventBytes,
+      accountId: found.accountId,
+      eventType: found.eventType,
+      createdAtRfc3339: found.createdAtRfc3339,
+    };
+  }
+
+  /**
+   * 署名済みイベントバイナリ（Base64）を追加し、`EventHashId` を返す
    */
   async submitEvent(
     eventBinaryBase64: string,
-    eventType = "ModuleCommit",
+    eventType = "module_commit",
   ): Promise<string> {
     const bytes = base64ToBytes(eventBinaryBase64);
-    const hashHex = await sha256Hex(bytes);
+    const eventHash = await sha256EventHashId(bytes);
 
-    if (!this.eventHashes.has(hashHex)) {
+    if (!this.eventHashes.has(eventHash)) {
       const nextHashes = new Set<string>(this.eventHashes);
-      nextHashes.add(hashHex);
+      nextHashes.add(eventHash);
+      const now = new Date();
       const entry: SeedEventEntry = {
-        hash_hex: hashHex,
-        event_type: eventType,
-        time_ms: Date.now(),
-        event_binary_base64: bytesToBase64(bytes),
+        eventHash,
+        signedEventBytes: bytesToBase64(bytes),
+        accountId: "",
+        eventType,
+        createdAtRfc3339: now.toISOString(),
+        timeMs: now.getTime(),
       };
       this.events = [entry, ...this.events];
       this.eventHashes = nextHashes;
     }
 
-    return hashHex;
+    return eventHash;
   }
 
   /**
@@ -161,30 +196,46 @@ export class WorkerStore {
   }
 
   /**
-   * CAS にコンテンツを保存する
+   * CAS にコンテンツを保存し、保存したハッシュ一覧を返す
    */
-  uploadContent(items: ReadonlyArray<ContentItem>): number {
+  uploadContent(
+    items: ReadonlyArray<ContentItemInput>,
+  ): ReadonlyArray<string> {
     const nextContents = new Map<string, string>(this.contents);
-    let saved = 0;
+    const stored: string[] = [];
     for (const item of items) {
-      if (item.hash && item.content) {
-        nextContents.set(item.hash, item.content);
-        saved++;
+      const hash = item.contentHash ?? item.content_hash ?? item.hash ?? "";
+      const bytes = item.contentBytes ?? item.content_bytes ?? item.content ??
+        "";
+      if (hash && bytes) {
+        nextContents.set(hash, bytes);
+        stored.push(hash);
       }
     }
     this.contents = nextContents;
-    return saved;
+    return stored;
+  }
+
+  /**
+   * 指定された単一ハッシュに対応する CAS コンテンツを取得する
+   */
+  getContentItem(hash: string): ContentItem | undefined {
+    const contentBytes = this.contents.get(hash);
+    if (contentBytes === undefined) {
+      return undefined;
+    }
+    return { contentHash: hash, contentBytes };
   }
 
   /**
    * 指定されたハッシュ一覧に対応する CAS コンテンツを取得する
    */
-  getContent(hashes: ReadonlyArray<string>): ReadonlyArray<ContentItem> {
+  getContentItems(hashes: ReadonlyArray<string>): ReadonlyArray<ContentItem> {
     const result: ContentItem[] = [];
     for (const h of hashes) {
-      const content = this.contents.get(h);
-      if (content !== undefined) {
-        result.push({ hash: h, content });
+      const item = this.getContentItem(h);
+      if (item !== undefined) {
+        result.push(item);
       }
     }
     return result;
@@ -223,7 +274,7 @@ export class WorkerStore {
    */
   registerPreviewApp(app: PreviewAppItem): void {
     const next = new Map<string, PreviewAppItem>(this.previewApps);
-    next.set(app.app_id, app);
+    next.set(app.appId, app);
     this.previewApps = next;
   }
 
@@ -244,7 +295,7 @@ export class WorkerStore {
     if (accountId && accountId.trim().length > 0) {
       const normalized = accountId.trim().toLowerCase();
       return all.filter(
-        (a) => a.owner_account_id.toLowerCase() === normalized,
+        (a) => a.ownerAccountId.toLowerCase() === normalized,
       );
     }
     return all;

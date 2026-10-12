@@ -11,20 +11,25 @@ use crate::db::{EventRecord, get_event, save_event};
 pub const COMPILER_SYSTEM_KEY_SEED: [u8; 32] = *b"definy-compiler-system-key-2026\0";
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SeedEventEntry {
-    pub hash_hex: String,
+    pub event_hash: String,
+    pub signed_event_bytes: String,
+    pub account_id: String,
     pub event_type: String,
+    pub created_at_rfc3339: String,
     pub time_ms: i64,
-    pub event_binary_base64: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SeedContentEntry {
-    pub hash: String,
-    pub content_base64: String,
+    pub content_hash: String,
+    pub content_bytes: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SeedBundle {
     pub events: Vec<SeedEventEntry>,
     pub contents: Vec<SeedContentEntry>,
@@ -111,15 +116,16 @@ pub fn build_builtin_seed_bundle() -> Result<SeedBundle, anyhow::Error> {
     for event in events {
         let event_binary = definy_event::sign_and_serialize(event.clone(), &signing_key)
             .map_err(|e| anyhow::anyhow!("Failed to serialize builtin event: {:?}", e))?;
-        let hash = sha2::Sha256::digest(&event_binary);
-        let hash_hex = hex::encode(hash);
-        let event_type = definy_event::event::EventType::from(&event.content).to_string();
+        let item = definy_event::rpc::EventItem::from_signed_bytes(event_binary.clone())
+            .map_err(|e| anyhow::anyhow!("Failed to build EventItem: {:?}", e))?;
 
         seed_events.push(SeedEventEntry {
-            hash_hex,
-            event_type,
+            event_hash: item.event_hash,
+            signed_event_bytes: base64::engine::general_purpose::STANDARD.encode(&event_binary),
+            account_id: item.account_id,
+            event_type: item.event_type,
+            created_at_rfc3339: item.created_at_rfc3339,
             time_ms: event.time.timestamp_millis(),
-            event_binary_base64: base64::engine::general_purpose::STANDARD.encode(&event_binary),
         });
 
         if let definy_event::event::EventContent::ModuleCommit(ref mc) = event.content {
@@ -131,9 +137,8 @@ pub fn build_builtin_seed_bundle() -> Result<SeedBundle, anyhow::Error> {
                     let hash_str = ch.to_string();
                     if seen_content_hashes.insert(hash_str.clone()) {
                         seed_contents.push(SeedContentEntry {
-                            hash: hash_str,
-                            content_base64: base64::engine::general_purpose::STANDARD
-                                .encode(&bytes),
+                            content_hash: hash_str,
+                            content_bytes: base64::engine::general_purpose::STANDARD.encode(&bytes),
                         });
                     }
                 }

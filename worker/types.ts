@@ -15,18 +15,26 @@ export interface Env {
 }
 
 /**
+ * Connect-RPC EventItem (`definy-event/src/rpc.rs` 準拠 camelCase)
+ */
+export interface EventItem {
+  readonly eventHash: string;
+  readonly signedEventBytes: string;
+  readonly accountId: string;
+  readonly eventType: string;
+  readonly createdAtRfc3339: string;
+}
+
+/**
  * ビルド時にエクスポートされるシードバンドル (`__definy_seed_bundle.json`) の型定義
  */
-export interface SeedEventEntry {
-  readonly hash_hex: string;
-  readonly event_type: string;
-  readonly time_ms: number;
-  readonly event_binary_base64: string;
+export interface SeedEventEntry extends EventItem {
+  readonly timeMs: number;
 }
 
 export interface SeedContentEntry {
-  readonly hash: string;
-  readonly content_base64: string;
+  readonly contentHash: string;
+  readonly contentBytes: string;
 }
 
 export interface SeedBundle {
@@ -35,73 +43,107 @@ export interface SeedBundle {
 }
 
 /**
- * Connect-RPC: EventService メッセージ型
+ * Connect-RPC: EventService メッセージ型 (camelCase & snake_case 双方の入力を受理)
  */
 export interface GetEventsRequest {
+  readonly eventType?: string | null;
   readonly event_type?: string | null;
   readonly limit?: number | null;
   readonly offset?: number | null;
 }
 
 export interface GetEventsResponse {
-  readonly events: ReadonlyArray<string>;
+  readonly events: ReadonlyArray<EventItem>;
+}
+
+export interface GetEventRequest {
+  readonly eventHash?: string;
+  readonly event_hash?: string;
+}
+
+export interface GetEventResponse {
+  readonly event?: EventItem;
 }
 
 export interface SubmitEventRequest {
+  readonly signedEventBytes?: string;
+  readonly signed_event_bytes?: string;
   readonly event_binary?: string;
 }
 
 export interface SubmitEventResponse {
-  readonly event_hash: string;
+  readonly eventHash: string;
+  readonly status: string;
+  readonly missingContentHashes: ReadonlyArray<string>;
 }
 
 export interface CheckMissingHashesRequest {
+  readonly contentHashes?: ReadonlyArray<string>;
+  readonly content_hashes?: ReadonlyArray<string>;
   readonly hashes?: ReadonlyArray<string>;
 }
 
 export interface CheckMissingHashesResponse {
-  readonly missing_hashes: ReadonlyArray<string>;
+  readonly missingContentHashes: ReadonlyArray<string>;
+}
+
+export interface ContentItemInput {
+  readonly contentHash?: string;
+  readonly content_hash?: string;
+  readonly hash?: string;
+  readonly contentBytes?: string;
+  readonly content_bytes?: string;
+  readonly content?: string;
 }
 
 export interface ContentItem {
-  readonly hash: string;
-  readonly content: string;
+  readonly contentHash: string;
+  readonly contentBytes: string;
 }
 
 export interface UploadContentRequest {
-  readonly items?: ReadonlyArray<ContentItem>;
+  readonly items?: ReadonlyArray<ContentItemInput>;
 }
 
 export interface UploadContentResponse {
-  readonly saved_count: number;
+  readonly storedContentHashes: ReadonlyArray<string>;
 }
 
 export interface GetContentRequest {
+  readonly contentHash?: string;
+  readonly content_hash?: string;
   readonly hashes?: ReadonlyArray<string>;
 }
 
 export interface GetContentResponse {
-  readonly items: ReadonlyArray<ContentItem>;
+  readonly item?: ContentItem;
+  readonly items?: ReadonlyArray<ContentItem>;
 }
 
 /**
  * Connect-RPC: DeployService メッセージ型
  */
 export interface DeployCloudflareRequest {
-  readonly commit_hash?: string | null;
-  readonly wasm_hash?: string | null;
-  readonly worker_name?: string | null;
-  readonly account_id?: string | null;
+  readonly apiToken?: string | null;
   readonly api_token?: string | null;
+  readonly accountId?: string | null;
+  readonly account_id?: string | null;
+  readonly scriptName?: string | null;
+  readonly script_name?: string | null;
+  readonly worker_name?: string | null;
+  readonly wasmHash?: string | null;
+  readonly wasm_hash?: string | null;
+  readonly customScript?: string | null;
+  readonly custom_script?: string | null;
+  readonly commitHash?: string | null;
+  readonly commit_hash?: string | null;
 }
 
 export interface DeployCloudflareResponse {
-  readonly deployment_id: string;
-  readonly worker_name: string;
+  readonly scriptName: string;
   readonly status: string;
   readonly url: string;
-  readonly created_at: string;
-  readonly wasm_hash?: string | null;
+  readonly evaluatedResult?: string | null;
 }
 
 export interface ListDeploymentsRequest {
@@ -109,14 +151,14 @@ export interface ListDeploymentsRequest {
 }
 
 export interface DeploymentHistoryItem {
-  readonly machine_id: string;
+  readonly machineId: string;
+  readonly commitHash?: string | null;
   readonly status: string;
   readonly url: string;
-  readonly app_url: string;
+  readonly appUrl: string;
   readonly region: string;
-  readonly created_at: string;
-  readonly commit_hash?: string | null;
-  readonly wasm_hash?: string | null;
+  readonly createdAtRfc3339: string;
+  readonly wasmHash?: string | null;
   readonly provider?: string | null;
 }
 
@@ -125,15 +167,16 @@ export interface ListDeploymentsResponse {
 }
 
 export interface ListCloudflareWorkersRequest {
-  readonly account_id?: string | null;
+  readonly apiToken?: string | null;
   readonly api_token?: string | null;
+  readonly accountId?: string | null;
+  readonly account_id?: string | null;
 }
 
 export interface CloudflareWorkerItem {
-  readonly script_name: string;
-  readonly created_on: string;
-  readonly modified_on: string;
-  readonly url: string;
+  readonly id: string;
+  readonly createdOn?: string;
+  readonly modifiedOn?: string;
 }
 
 export interface ListCloudflareWorkersResponse {
@@ -144,35 +187,42 @@ export interface ListCloudflareWorkersResponse {
  * Connect-RPC: PreviewService メッセージ型
  */
 export interface RegisterPreviewAppRequest {
+  readonly appId?: string;
   readonly app_id?: string;
+  readonly displayName?: string;
   readonly display_name?: string;
+  readonly partId?: string;
   readonly part_id?: string;
+  readonly accountId?: string;
   readonly account_id?: string;
   readonly signature?: string | null;
+  readonly wasmHash?: string | null;
   readonly wasm_hash?: string | null;
 }
 
 export interface RegisterPreviewAppResponse {
-  readonly app_id: string;
-  readonly preview_url: string;
-  readonly path_url: string;
+  readonly appId: string;
+  readonly previewUrl: string;
+  readonly pathUrl: string;
   readonly status: string;
-  readonly created_at: string;
+  readonly subdomain: string;
 }
 
 export interface ListPreviewAppsRequest {
+  readonly accountId?: string | null;
   readonly account_id?: string | null;
 }
 
 export interface PreviewAppItem {
-  readonly app_id: string;
-  readonly display_name: string;
-  readonly part_id: string;
-  readonly owner_account_id: string;
-  readonly preview_url: string;
-  readonly path_url: string;
+  readonly appId: string;
+  readonly displayName: string;
+  readonly partId: string;
+  readonly previewUrl: string;
+  readonly pathUrl: string;
+  readonly ownerAccountId: string;
+  readonly createdAtRfc3339: string;
   readonly status: string;
-  readonly created_at: string;
+  readonly subdomain: string;
 }
 
 export interface ListPreviewAppsResponse {
@@ -180,12 +230,14 @@ export interface ListPreviewAppsResponse {
 }
 
 export interface StopPreviewAppRequest {
+  readonly appId?: string;
   readonly app_id?: string;
+  readonly accountId?: string;
   readonly account_id?: string;
   readonly signature?: string | null;
 }
 
 export interface StopPreviewAppResponse {
-  readonly app_id: string;
   readonly success: boolean;
+  readonly message: string;
 }
