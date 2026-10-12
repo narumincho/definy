@@ -1,5 +1,11 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import {
+  deriveModuleIdBytes,
+  deriveModulePartId,
+  encodeCborItem,
+} from "./cbor.ts";
+import {
+  buildPreviewUrl,
   extractSubdomainFromHost,
   handleWorkerRequest,
   isAdminAccount,
@@ -147,7 +153,35 @@ Deno.test("isAdminAccount checks DEFINY_ADMIN_ACCOUNT_ID case-insensitively", ()
   assertEquals(isAdminAccount(undefined, {}), false);
 });
 
-Deno.test("extractSubdomainFromHost extracts preview subdomain from host", () => {
+Deno.test("extractSubdomainFromHost and buildPreviewUrl support {sub}-definy.narumincho.com and {sub}.definy.workers.dev", () => {
+  assertEquals(
+    extractSubdomainFromHost(
+      "my-app-definy.narumincho.com",
+      "definy.narumincho.com",
+    ),
+    "my-app",
+  );
+  assertEquals(
+    extractSubdomainFromHost(
+      "counter-app-definy.narumincho.com:443",
+      "definy.narumincho.com",
+    ),
+    "counter-app",
+  );
+  assertEquals(
+    extractSubdomainFromHost(
+      "definy.narumincho.com",
+      "definy.narumincho.com",
+    ),
+    undefined,
+  );
+  assertEquals(
+    extractSubdomainFromHost(
+      "blog.narumincho.com",
+      "definy.narumincho.com",
+    ),
+    undefined,
+  );
   assertEquals(
     extractSubdomainFromHost("my-app.definy.workers.dev", "definy.workers.dev"),
     "my-app",
@@ -162,6 +196,19 @@ Deno.test("extractSubdomainFromHost extracts preview subdomain from host", () =>
   assertEquals(
     extractSubdomainFromHost("definy.workers.dev", "definy.workers.dev"),
     undefined,
+  );
+
+  assertEquals(
+    buildPreviewUrl("my-app", "definy.narumincho.com"),
+    "https://my-app-definy.narumincho.com",
+  );
+  assertEquals(
+    buildPreviewUrl("my-app", "definy.workers.dev"),
+    "https://my-app.definy.workers.dev",
+  );
+  assertEquals(
+    buildPreviewUrl("my-app", "localhost:8000"),
+    "http://my-app.localhost:8000",
   );
 });
 
@@ -630,4 +677,146 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
   const listAppsJson = await listAppsRes.json();
   assertEquals(listAppsJson.apps.length, 1);
   assertEquals(listAppsJson.apps[0].appId, "persisted-app");
+});
+
+Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as an HTTP server", async () => {
+  const d1 = createSqliteD1Database();
+  const adminAccount = "admin_narumincho";
+  const env: Env = {
+    DB: d1,
+    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
+    DEFINY_ROOT_DOMAIN: "definy.narumincho.com",
+  };
+  const store = new WorkerStore();
+
+  // Construct a CBOR SignedEvent containing a ModuleCommit with a function part `http_server`
+  // fn(req) => { status: 200, contentType: "text/html; charset=utf-8", body: "<h1>Hello " + req.path + "</h1>" }
+  const accountBytes = new Uint8Array(32);
+  accountBytes[0] = 0x42;
+  const moduleName = "web_module";
+  const partName = "http_server";
+  const moduleIdBytes = await deriveModuleIdBytes(accountBytes, moduleName);
+  const derivedPartId = await deriveModulePartId(moduleIdBytes, partName);
+
+  const serverPartExpression = {
+    Function: {
+      parameters: [{ name: "req", variable_id: 1 }],
+      body: {
+        TypeLiteral: {
+          items: [
+            { name: "status", value: { Number: 200 } },
+            {
+              name: "contentType",
+              value: { String: "text/html; charset=utf-8" },
+            },
+            {
+              name: "body",
+              value: {
+                Add: {
+                  left: {
+                    Add: {
+                      left: { String: "<h1>Hello " },
+                      right: {
+                        RecordGet: {
+                          record: { Variable: 1 },
+                          key: "path",
+                        },
+                      },
+                    },
+                  },
+                  right: { String: "</h1>" },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  };
+
+  const innerEventBytes = encodeCborItem({
+    account_id: accountBytes,
+    time: { value: 1700000000 },
+    content: {
+      ModuleCommit: {
+        module_name: moduleName,
+        parts: [
+          {
+            name: partName,
+            expression: serverPartExpression,
+          },
+        ],
+      },
+    },
+  });
+
+  const signedEventBytes = encodeCborItem({
+    event_binary: innerEventBytes,
+    signature: new Uint8Array(64),
+  });
+
+  const submitRes = await handleWorkerRequest(
+    new Request(
+      "https://definy.narumincho.com/definy.v1.EventService/SubmitEvent",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          signedEventBytes: bytesToBase64(signedEventBytes),
+        }),
+      },
+    ),
+    env,
+    store,
+  );
+  assertEquals(submitRes.status, 200);
+
+  // Register preview app with derivedPartId on definy.narumincho.com
+  const regRes = await handleWorkerRequest(
+    new Request(
+      "https://definy.narumincho.com/definy.v1.PreviewService/RegisterPreviewApp",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          appId: "hello",
+          displayName: "Hello HTTP Server",
+          partId: derivedPartId,
+          accountId: adminAccount,
+        }),
+      },
+    ),
+    env,
+    store,
+  );
+  assertEquals(regRes.status, 200);
+  const regJson = await regRes.json();
+  assertEquals(regJson.previewUrl, "https://hello-definy.narumincho.com");
+
+  // Request to https://hello-definy.narumincho.com/world executes the part!
+  const subRes = await handleWorkerRequest(
+    new Request("https://hello-definy.narumincho.com/world"),
+    env,
+    store,
+  );
+  assertEquals(subRes.status, 200);
+  assertEquals(subRes.headers.get("X-Definy-Preview-App"), "hello");
+  assertEquals(
+    subRes.headers.get("Content-Type"),
+    "text/html; charset=utf-8",
+  );
+  assertEquals(subRes.headers.get("Content-Security-Policy"), null);
+  const subBody = await subRes.text();
+  assertEquals(subBody, "<h1>Hello /world</h1>");
+
+  // Request via same-origin path fallback (/preview/hello/world) includes CSP sandbox to protect IndexedDB
+  const pathRes = await handleWorkerRequest(
+    new Request("https://definy.narumincho.com/preview/hello/world"),
+    env,
+    store,
+  );
+  assertEquals(pathRes.status, 200);
+  assertEquals(
+    pathRes.headers.get("Content-Security-Policy"),
+    "sandbox allow-scripts allow-forms",
+  );
+  assertEquals(await pathRes.text(), "<h1>Hello /world</h1>");
 });

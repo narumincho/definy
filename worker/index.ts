@@ -1,4 +1,8 @@
 import {
+  definyValueToHttpResponse,
+  evaluatePartForHttpRequest,
+} from "./cbor_eval.ts";
+import {
   deployWorkerToCloudflare,
   listWorkersFromCloudflare,
 } from "./cloudflare_api.ts";
@@ -80,11 +84,21 @@ export function getRootDomain(env: Env, requestUrl: URL): string {
   if (env.DEFINY_ROOT_DOMAIN && env.DEFINY_ROOT_DOMAIN.trim().length > 0) {
     return env.DEFINY_ROOT_DOMAIN.trim();
   }
-  return requestUrl.host || "definy.workers.dev";
+  const hostname = requestUrl.hostname.toLowerCase();
+  if (
+    hostname === "definy.narumincho.com" ||
+    hostname.endsWith("-definy.narumincho.com") ||
+    hostname.endsWith(".definy.narumincho.com")
+  ) {
+    return "definy.narumincho.com";
+  }
+  return requestUrl.host || "definy.narumincho.com";
 }
 
 /**
- * Host ヘッダーからプレビュー用サブドメインを抽出する
+ * Host ヘッダーからプレビュー用サブドメインを抽出する。
+ * `https://{sub}-definy.narumincho.com` のようなハイフン連結形式（1階層ワイルドカード SSL 用）と
+ * `https://{sub}.definy.workers.dev` / `http://{sub}.localhost:8000` のドット区切り形式の両方に対応する。
  */
 export function extractSubdomainFromHost(
   host: string,
@@ -95,14 +109,45 @@ export function extractSubdomainFromHost(
   if (!cleanHost || !cleanRoot || cleanHost === cleanRoot) {
     return undefined;
   }
-  const suffix = `.${cleanRoot}`;
-  if (cleanHost.endsWith(suffix)) {
-    const sub = cleanHost.slice(0, cleanHost.length - suffix.length);
+
+  // 1. {sub}-{rootDomain} 形式 (例: my-app-definy.narumincho.com)
+  const hyphenSuffix = `-${cleanRoot}`;
+  if (cleanHost.endsWith(hyphenSuffix)) {
+    const sub = cleanHost.slice(0, cleanHost.length - hyphenSuffix.length);
     if (sub.length > 0 && !sub.includes(".")) {
       return sub;
     }
   }
+
+  // 2. {sub}.{rootDomain} 形式 (例: my-app.definy.workers.dev, my-app.localhost)
+  const dotSuffix = `.${cleanRoot}`;
+  if (cleanHost.endsWith(dotSuffix)) {
+    const sub = cleanHost.slice(0, cleanHost.length - dotSuffix.length);
+    if (sub.length > 0 && !sub.includes(".")) {
+      return sub;
+    }
+  }
+
   return undefined;
+}
+
+/**
+ * プレビューアプリのサブドメイン URL を構築する。
+ * `definy.narumincho.com` のようなカスタムサブドメイン（2つ以上のドットを含み `.workers.dev` でない）では、
+ * Cloudflare Universal SSL の1階層ワイルドカード（`*.narumincho.com`）でカバーできるよう
+ * `https://{appId}-{rootDomain}`（例: `https://my-app-definy.narumincho.com`）を返す。
+ */
+export function buildPreviewUrl(appId: string, rootDomain: string): string {
+  const protocol = rootDomain.startsWith("localhost") ||
+      rootDomain.includes("127.0.0.1")
+    ? "http"
+    : "https";
+  const cleanRoot = rootDomain.split(":")[0].trim().toLowerCase();
+  const useHyphenSubdomain = !cleanRoot.endsWith(".workers.dev") &&
+    cleanRoot.split(".").length >= 3;
+  return useHyphenSubdomain
+    ? `${protocol}://${appId}-${rootDomain}`
+    : `${protocol}://${appId}.${rootDomain}`;
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -131,11 +176,50 @@ async function parseJsonRequest<T>(request: Request): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-function renderPreviewResponse(
+async function renderPreviewResponse(
   app: PreviewAppItem,
   request: Request,
   subpath: string,
-): Response {
+  store: WorkerStore,
+  env: Env,
+  isSameOriginPathFallback = false,
+): Promise<Response> {
+  const extraSecurityHeaders: Record<string, string> = isSameOriginPathFallback
+    ? { "Content-Security-Policy": "sandbox allow-scripts allow-forms" }
+    : {};
+
+  if (app.partId && app.partId.trim().length > 0) {
+    try {
+      const evaluated = await evaluatePartForHttpRequest(
+        app.partId.trim(),
+        request,
+        subpath,
+        store,
+        env,
+      );
+      if (evaluated !== undefined) {
+        return definyValueToHttpResponse(evaluated, app.appId, {
+          ...CORS_HEADERS,
+          ...extraSecurityHeaders,
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return new Response(
+        `Error evaluating part '${app.partId}' for app '${app.appId}': ${msg}`,
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-Definy-Preview-App": app.appId,
+            ...CORS_HEADERS,
+            ...extraSecurityHeaders,
+          },
+        },
+      );
+    }
+  }
+
   const accept = request.headers.get("accept") ?? "";
   if (accept.includes("application/json")) {
     return new Response(
@@ -152,6 +236,7 @@ function renderPreviewResponse(
           "Content-Type": "application/json; charset=utf-8",
           "X-Definy-Preview-App": app.appId,
           ...CORS_HEADERS,
+          ...extraSecurityHeaders,
         },
       },
     );
@@ -179,6 +264,7 @@ function renderPreviewResponse(
       "Content-Type": "text/html; charset=utf-8",
       "X-Definy-Preview-App": app.appId,
       ...CORS_HEADERS,
+      ...extraSecurityHeaders,
     },
   });
 }
@@ -213,7 +299,7 @@ export async function handleWorkerRequest(
         headers: CORS_HEADERS,
       });
     }
-    return renderPreviewResponse(app, request, pathname);
+    return renderPreviewResponse(app, request, pathname, store, env, false);
   }
 
   // Health check
@@ -263,7 +349,7 @@ export async function handleWorkerRequest(
         headers: CORS_HEADERS,
       });
     }
-    return renderPreviewResponse(app, request, subpath);
+    return renderPreviewResponse(app, request, subpath, store, env, true);
   }
 
   // Connect-RPC: EventService
@@ -435,14 +521,16 @@ export async function handleWorkerRequest(
         rootDomain.includes("127.0.0.1")
       ? "http"
       : "https";
-    const previewUrl = `${protocol}://${appId}.${rootDomain}`;
+    const previewUrl = buildPreviewUrl(appId, rootDomain);
     const pathUrl = `${protocol}://${rootDomain}/preview/${appId}/`;
     const createdAtRfc3339 = new Date().toISOString();
+    const resolvedPartId =
+      (req.partId ?? req.part_id ?? req.wasmHash ?? req.wasm_hash ?? "").trim();
 
     const item: PreviewAppItem = {
       appId,
       displayName: req.displayName ?? req.display_name ?? appId,
-      partId: req.partId ?? req.part_id ?? "",
+      partId: resolvedPartId,
       ownerAccountId: accountId ?? "",
       previewUrl,
       pathUrl,

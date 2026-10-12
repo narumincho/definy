@@ -111,7 +111,19 @@ pub fn build_preview_url(subdomain: &str) -> String {
     if root.starts_with("localhost") || root.contains("127.0.0.1") {
         format!("http://{subdomain}.{root}")
     } else {
-        format!("https://{subdomain}.{root}")
+        let clean_root = root
+            .split(':')
+            .next()
+            .unwrap_or(&root)
+            .trim()
+            .to_lowercase();
+        let use_hyphen =
+            !clean_root.ends_with(".workers.dev") && clean_root.split('.').count() >= 3;
+        if use_hyphen {
+            format!("https://{subdomain}-{root}")
+        } else {
+            format!("https://{subdomain}.{root}")
+        }
     }
 }
 
@@ -128,6 +140,7 @@ pub fn build_path_url(app_id: &str) -> String {
 }
 
 /// HTTP の Host ヘッダーからサブドメイン名を抽出します。
+/// 例: `my-app-definy.narumincho.com` -> Some("my-app")
 /// 例: `my-app.localhost:8000` -> Some("my-app")
 /// 例: `my-app.definy.workers.dev` -> Some("my-app")
 /// ルートドメインそのものや無関係なホスト名の場合は None を返します。
@@ -151,6 +164,14 @@ pub fn extract_subdomain_from_host(host: &str) -> Option<String> {
         .unwrap_or(&root_domain)
         .trim()
         .to_lowercase();
+
+    let hyphen_suffix = format!("-{root_without_port}");
+    if let Some(sub) = host_without_port.strip_suffix(&hyphen_suffix)
+        && !sub.is_empty()
+        && !sub.contains('.')
+    {
+        return Some(sub.to_string());
+    }
 
     let expected_suffix = format!(".{root_without_port}");
     if let Some(sub) = host_without_port.strip_suffix(&expected_suffix)
@@ -719,6 +740,23 @@ mod tests {
             );
             assert_eq!(extract_subdomain_from_host("definy.workers.dev"), None);
             assert_eq!(extract_subdomain_from_host("other-domain.com"), None);
+        }
+
+        {
+            let _g = EnvGuard::set("DEFINY_ROOT_DOMAIN", "definy.narumincho.com");
+            assert_eq!(
+                extract_subdomain_from_host("my-app-definy.narumincho.com"),
+                Some("my-app".to_string())
+            );
+            assert_eq!(
+                extract_subdomain_from_host("my-app-definy.narumincho.com:443"),
+                Some("my-app".to_string())
+            );
+            assert_eq!(extract_subdomain_from_host("definy.narumincho.com"), None);
+            assert_eq!(
+                build_preview_url("my-app"),
+                "https://my-app-definy.narumincho.com"
+            );
         }
 
         // localhost

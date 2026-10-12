@@ -70,3 +70,97 @@ database_id = "${DB_UUID}"
 EOF
 
 echo "Successfully configured D1 binding in ${WRANGLER_TOML}."
+
+# --- Configure Custom Domain & Wildcard Subdomain Routes (narumincho.com) ---
+ZONE_NAME="${DEFINY_ZONE_NAME:-narumincho.com}"
+WORKER_NAME="${DEFINY_WORKER_NAME:-definy}"
+
+echo "Checking Cloudflare Zone '${ZONE_NAME}' for subdomain routing..."
+ZONES_JSON=$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+  "https://api.cloudflare.com/client/v4/zones?name=${ZONE_NAME}")
+
+ZONE_SUCCESS=$(echo "$ZONES_JSON" | jq -r '.success // false')
+ZONE_ID=$(echo "$ZONES_JSON" | jq -r '.result[0].id // empty')
+
+if [[ "$ZONE_SUCCESS" != "true" || -z "$ZONE_ID" ]]; then
+  echo "::warning::Zone '${ZONE_NAME}' not accessible with current CLOUDFLARE_API_TOKEN. To auto-configure definy.${ZONE_NAME} and *-definy.${ZONE_NAME}, grant 'Zone -> Zone -> Read', 'Zone -> Workers Routes -> Edit', and 'Zone -> DNS -> Edit' for ${ZONE_NAME}."
+  exit 0
+fi
+
+echo "Found Zone '${ZONE_NAME}' (${ZONE_ID}). Ensuring DNS records and Worker Routes..."
+
+ensure_proxied_dns() {
+  local record_name="$1"
+  local existing_json
+  existing_json=$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=${record_name}")
+  local existing_ok
+  existing_ok=$(echo "$existing_json" | jq -r '.success // false')
+  if [[ "$existing_ok" != "true" ]]; then
+    echo "::warning::Cannot read DNS records for ${record_name} (grant 'Zone -> DNS -> Edit' to auto-create)."
+    return 0
+  fi
+  local count
+  count=$(echo "$existing_json" | jq -r '.result | length')
+  if [[ "$count" -gt 0 ]]; then
+    echo "DNS record for '${record_name}' already exists."
+    return 0
+  fi
+  echo "Creating proxied AAAA (100::) DNS record for '${record_name}'..."
+  local create_dns_json
+  create_dns_json=$(curl -sS -X POST \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{\"type\":\"AAAA\",\"name\":\"${record_name}\",\"content\":\"100::\",\"ttl\":1,\"proxied\":true}" \
+    "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records")
+  local create_dns_ok
+  create_dns_ok=$(echo "$create_dns_json" | jq -r '.success // false')
+  if [[ "$create_dns_ok" == "true" ]]; then
+    echo "Created proxied DNS record for '${record_name}'."
+  else
+    local err
+    err=$(echo "$create_dns_json" | jq -r '.errors[0].message // "Unknown error"')
+    echo "::warning::Could not create DNS record '${record_name}' (${err}). Ensure 'Zone -> DNS -> Edit' permission is granted."
+  fi
+}
+
+ensure_worker_route() {
+  local pattern="$1"
+  local routes_json="$2"
+  local existing_id
+  existing_id=$(echo "$routes_json" | jq -r --arg PAT "$pattern" '.result[] | select(.pattern == $PAT) | .id' | head -n 1)
+  if [[ -n "$existing_id" ]]; then
+    echo "Worker route '${pattern}' already exists (${existing_id})."
+    return 0
+  fi
+  echo "Creating Worker route '${pattern}' -> '${WORKER_NAME}'..."
+  local create_route_json
+  create_route_json=$(curl -sS -X POST \
+    -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "{\"pattern\":\"${pattern}\",\"script\":\"${WORKER_NAME}\"}" \
+    "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/workers/routes")
+  local create_route_ok
+  create_route_ok=$(echo "$create_route_json" | jq -r '.success // false')
+  if [[ "$create_route_ok" == "true" ]]; then
+    echo "Created Worker route '${pattern}' -> '${WORKER_NAME}'."
+  else
+    local err
+    err=$(echo "$create_route_json" | jq -r '.errors[0].message // "Unknown error"')
+    echo "::warning::Could not create Worker route '${pattern}' (${err}). Ensure 'Zone -> Workers Routes -> Edit' permission is granted."
+  fi
+}
+
+ensure_proxied_dns "definy.${ZONE_NAME}"
+ensure_proxied_dns "*.${ZONE_NAME}"
+
+ROUTES_LIST_JSON=$(curl -sS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+  "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/workers/routes")
+ROUTES_OK=$(echo "$ROUTES_LIST_JSON" | jq -r '.success // false')
+if [[ "$ROUTES_OK" == "true" ]]; then
+  ensure_worker_route "definy.${ZONE_NAME}/*" "$ROUTES_LIST_JSON"
+  ensure_worker_route "*-definy.${ZONE_NAME}/*" "$ROUTES_LIST_JSON"
+else
+  ERR_MSG=$(echo "$ROUTES_LIST_JSON" | jq -r '.errors[0].message // "Unknown error"')
+  echo "::warning::Cannot list Worker routes for '${ZONE_NAME}' (${ERR_MSG}). Ensure 'Zone -> Workers Routes -> Edit' permission is granted."
+fi
