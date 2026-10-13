@@ -29,7 +29,7 @@ pub(crate) fn PartEditorCard(
     let expression = use_signal(|| snapshot.expression.clone());
     let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
     let mut commit_message = use_signal(String::new);
-    let eval_result = use_signal(|| None::<String>);
+    let mut eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
 
@@ -228,6 +228,80 @@ pub(crate) fn PartEditorCard(
         .as_ref()
         .and_then(definy_core::detect_preview_in_expression);
 
+    let detected_deploy = expression
+        .read()
+        .as_ref()
+        .and_then(definy_core::detect_deploy_in_expression);
+
+    let mut is_deploying = use_signal(|| false);
+
+    let on_deploy = {
+        let language = context.language;
+        let part_name_val = part_name.read().clone();
+        let target_part_id = if !part_name_val.is_empty() {
+            part_name_val
+        } else {
+            definition_event_hash.to_string()
+        };
+        let dep_opt = detected_deploy.clone();
+        move |_| {
+            let dep = dep_opt.clone();
+            let part_id = target_part_id.clone();
+            spawn(async move {
+                is_deploying.set(true);
+                eval_result.set(Some(
+                    language
+                        .label(
+                            "🚀 Deploying to Cloudflare Workers via backend server...",
+                            "🚀 サーバー経由で Cloudflare Workers へデプロイ中...",
+                            "🚀 Deplojante sur Cloudflare Workers per servilo...",
+                        )
+                        .to_string(),
+                ));
+
+                let req = definy_event::rpc::DeployCloudflareRequest {
+                    api_token: dep
+                        .as_ref()
+                        .and_then(|d| d.cloudflare_token.clone())
+                        .unwrap_or_default(),
+                    account_id: None,
+                    script_name: dep.as_ref().map(|d| d.cloudflare_worker_name.clone()),
+                    wasm_hash: None,
+                    custom_script: None,
+                    compile_self_hosted: Some(false),
+                    part_id: Some(part_id),
+                };
+
+                match crate::fetch::deploy_cloudflare(&req).await {
+                    Ok(res) => {
+                        eval_result.set(Some(format!(
+                            "{} {} ({})",
+                            language.label(
+                                "✅ Successfully deployed to Cloudflare Workers:",
+                                "✅ Cloudflare Workers へのデプロイに成功しました:",
+                                "✅ Sukcese deplojita al Cloudflare Workers:",
+                            ),
+                            res.url,
+                            res.script_name,
+                        )));
+                    }
+                    Err(err) => {
+                        eval_result.set(Some(format!(
+                            "{} {}",
+                            language.label(
+                                "❌ Deployment failed:",
+                                "❌ デプロイに失敗しました:",
+                                "❌ Deploja fiasko:",
+                            ),
+                            err,
+                        )));
+                    }
+                }
+                is_deploying.set(false);
+            });
+        }
+    };
+
     rsx! {
         div { style: "display: grid; gap: 0.85rem;",
             // 1. メタ情報＆アクションヘッダーカード
@@ -284,6 +358,26 @@ pub(crate) fn PartEditorCard(
                                 }
                             }
                         }
+                        if let Some(ref _dep) = detected_deploy {
+                            {
+                                rsx! {
+                                    button {
+                                        r#type: "button",
+                                        class: "btn-primary",
+                                        disabled: is_deploying(),
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(249, 115, 22, 0.25); background: #f97316; border-color: #ea580c;",
+                                        onclick: on_deploy.clone(),
+                                        span {
+                                            if is_deploying() {
+                                                "{context.language.label(\"🚀 Deploying...\", \"🚀 デプロイ中...\", \"🚀 Deplojante...\")}"
+                                            } else {
+                                                "{context.language.label(\"🚀 Deploy to Cloudflare\", \"🚀 Cloudflare にデプロイ\", \"🚀 Deploji sur Cloudflare\")}"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         button {
                             r#type: "button",
                             class: "btn-secondary",
@@ -300,8 +394,19 @@ pub(crate) fn PartEditorCard(
                             class: "btn-secondary",
                             onclick: {
                                 let state = state.clone();
-                                move |_| {
-                                    evaluate_and_set_result(&expression.read(), &state, language, eval_result);
+                                let on_deploy_trigger = on_deploy.clone();
+                                let has_deploy = detected_deploy.is_some();
+                                move |evt| {
+                                    if has_deploy {
+                                        on_deploy_trigger(evt);
+                                    } else {
+                                        evaluate_and_set_result(
+                                            &expression.read(),
+                                            &state,
+                                            language,
+                                            eval_result,
+                                        );
+                                    }
                                 }
                             },
                             crate::icon::PlayIcon {}
@@ -463,6 +568,67 @@ pub(crate) fn PartEditorCard(
                                     style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.5rem 0.85rem; font-size: 0.82rem; border-radius: var(--radius-sm);",
                                     span { "📁 {path_url}" }
                                     span { style: "font-size: 0.72rem; opacity: 0.8;", "↗" }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if let Some(ref dep) = detected_deploy {
+                {
+                    let worker_name = dep.cloudflare_worker_name.clone();
+                    rsx! {
+                        div {
+                            class: "preview-banner-card",
+                            style: "background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(234, 88, 12, 0.06)); border: 1px solid rgba(249, 115, 22, 0.35); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(249, 115, 22, 0.08);",
+                            div { style: "display: flex; align-items: center; gap: 0.85rem;",
+                                span { style: "font-size: 1.7rem;", "⚡" }
+                                div {
+                                    div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
+                                        span { style: "font-weight: 700; font-size: 1.05rem; color: #fb923c;",
+                                            "{context.language.label(\"Cloudflare Workers Deployment\", \"Cloudflare Workers デプロイ\", \"Cloudflare Workers Deplojo\")}"
+                                        }
+                                        span { style: "background: rgba(249, 115, 22, 0.2); color: #fb923c; font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(249, 115, 22, 0.35);",
+                                            "Worker: \"{worker_name}\""
+                                        }
+                                        span {
+                                            class: "preview-badge",
+                                            style: "background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); color: #fb923c; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px;",
+                                            {
+                                                context
+                                                    .language
+                                                    .label("Server Execution", "サーバー実行専用", "Servila Rulo")
+                                            }
+                                        }
+                                    }
+                                    div { style: "font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.45;",
+                                        {
+                                            context
+                                                .language
+                                                .label(
+                                                    "This part calls definy:deploy. Click Deploy or Evaluate to execute deployment on the backend server via Cloudflare Workers REST API v4.",
+                                                    "このパーツは definy:deploy を呼び出しています。「デプロイ」または「評価」をクリックすると、バックエンドサーバー経由で Cloudflare Workers へ自動配備されます。",
+                                                    "Ĉi tiu parto vokas definy:deploy por deploji al Cloudflare Workers.",
+                                                )
+                                        }
+                                    }
+                                }
+                            }
+                            div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
+                                button {
+                                    r#type: "button",
+                                    class: "btn-primary",
+                                    disabled: is_deploying(),
+                                    onclick: on_deploy.clone(),
+                                    style: "display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3); background: #f97316; border-color: #ea580c;",
+                                    span {
+                                        if is_deploying() {
+                                            "{context.language.label(\"🚀 Deploying to Cloudflare Workers...\", \"🚀 Cloudflare Workers へデプロイ中...\", \"🚀 Deplojante...\")}"
+                                        } else {
+                                            "{context.language.label(\"🚀 Deploy to Cloudflare Workers\", \"🚀 Cloudflare Workers にデプロイ\", \"🚀 Deploji sur Cloudflare Workers\")}"
+                                        }
+                                    }
                                 }
                             }
                         }

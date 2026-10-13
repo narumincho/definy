@@ -1,7 +1,9 @@
+pub mod deploy_detector;
 pub mod expression_eval;
 pub mod preview_detector;
 pub mod wasm_emitter;
 
+pub use deploy_detector::{DetectedDeploy, detect_deploy_in_expression};
 pub use expression_eval::{Value, evaluate_expression, expression_to_source};
 pub use preview_detector::{DetectedPreview, detect_preview_in_expression};
 

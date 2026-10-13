@@ -393,6 +393,395 @@
           }
         }
       }
+    },
+    {
+      "name": "deploy",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "config",
+              "type": {
+                "record": [
+                  {
+                    "key": "cloudflareToken",
+                    "value": "string"
+                  },
+                  {
+                    "key": "cloudflareWorkerName",
+                    "value": "string"
+                  },
+                  {
+                    "key": "handler",
+                    "value": {
+                      "function": {
+                        "parameters": [
+                          {
+                            "name": "req",
+                            "type": {
+                              "record": [
+                                {
+                                  "key": "method",
+                                  "value": "string"
+                                },
+                                {
+                                  "key": "url",
+                                  "value": "string"
+                                },
+                                {
+                                  "key": "headers",
+                                  "value": {
+                                    "list": {
+                                      "record": [
+                                        {
+                                          "key": "name",
+                                          "value": "string"
+                                        },
+                                        {
+                                          "key": "value",
+                                          "value": "string"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "body",
+                                  "value": {
+                                    "record": [
+                                      {
+                                        "key": "initialState",
+                                        "value": "number"
+                                      },
+                                      {
+                                        "key": "next",
+                                        "value": {
+                                          "function": {
+                                            "parameters": [
+                                              {
+                                                "name": "state",
+                                                "type": "number"
+                                              }
+                                            ],
+                                            "return_type": {
+                                              "union": [
+                                                {
+                                                  "tag": "yield",
+                                                  "payload": {
+                                                    "record": [
+                                                      {
+                                                        "key": "chunk",
+                                                        "value": {
+                                                          "list": "number"
+                                                        }
+                                                      },
+                                                      {
+                                                        "key": "nextState",
+                                                        "value": "number"
+                                                      }
+                                                    ]
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "done",
+                                                  "payload": null
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        ],
+                        "return_type": {
+                          "record": [
+                            {
+                              "key": "status",
+                              "value": "number"
+                            },
+                            {
+                              "key": "headers",
+                              "value": {
+                                "list": {
+                                  "record": [
+                                    {
+                                      "key": "name",
+                                      "value": "string"
+                                    },
+                                    {
+                                      "key": "value",
+                                      "value": "string"
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "key": "body",
+                              "value": {
+                                "record": [
+                                  {
+                                    "key": "initialState",
+                                    "value": "number"
+                                  },
+                                  {
+                                    "key": "next",
+                                    "value": {
+                                      "function": {
+                                        "parameters": [
+                                          {
+                                            "name": "state",
+                                            "type": "number"
+                                          }
+                                        ],
+                                        "return_type": {
+                                          "union": [
+                                            {
+                                              "tag": "yield",
+                                              "payload": {
+                                                "record": [
+                                                  {
+                                                    "key": "chunk",
+                                                    "value": {
+                                                      "list": "number"
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "nextState",
+                                                    "value": "number"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "tag": "done",
+                                              "payload": null
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "cloudflareToken",
+                "value": "string"
+              },
+              {
+                "key": "cloudflareWorkerName",
+                "value": "string"
+              },
+              {
+                "key": "handler",
+                "value": {
+                  "function": {
+                    "parameters": [
+                      {
+                        "name": "req",
+                        "type": {
+                          "record": [
+                            {
+                              "key": "method",
+                              "value": "string"
+                            },
+                            {
+                              "key": "url",
+                              "value": "string"
+                            },
+                            {
+                              "key": "headers",
+                              "value": {
+                                "list": {
+                                  "record": [
+                                    {
+                                      "key": "name",
+                                      "value": "string"
+                                    },
+                                    {
+                                      "key": "value",
+                                      "value": "string"
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "key": "body",
+                              "value": {
+                                "record": [
+                                  {
+                                    "key": "initialState",
+                                    "value": "number"
+                                  },
+                                  {
+                                    "key": "next",
+                                    "value": {
+                                      "function": {
+                                        "parameters": [
+                                          {
+                                            "name": "state",
+                                            "type": "number"
+                                          }
+                                        ],
+                                        "return_type": {
+                                          "union": [
+                                            {
+                                              "tag": "yield",
+                                              "payload": {
+                                                "record": [
+                                                  {
+                                                    "key": "chunk",
+                                                    "value": {
+                                                      "list": "number"
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "nextState",
+                                                    "value": "number"
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "tag": "done",
+                                              "payload": null
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ],
+                    "return_type": {
+                      "record": [
+                        {
+                          "key": "status",
+                          "value": "number"
+                        },
+                        {
+                          "key": "headers",
+                          "value": {
+                            "list": {
+                              "record": [
+                                {
+                                  "key": "name",
+                                  "value": "string"
+                                },
+                                {
+                                  "key": "value",
+                                  "value": "string"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "key": "body",
+                          "value": {
+                            "record": [
+                              {
+                                "key": "initialState",
+                                "value": "number"
+                              },
+                              {
+                                "key": "next",
+                                "value": {
+                                  "function": {
+                                    "parameters": [
+                                      {
+                                        "name": "state",
+                                        "type": "number"
+                                      }
+                                    ],
+                                    "return_type": {
+                                      "union": [
+                                        {
+                                          "tag": "yield",
+                                          "payload": {
+                                            "record": [
+                                              {
+                                                "key": "chunk",
+                                                "value": {
+                                                  "list": "number"
+                                                }
+                                              },
+                                              {
+                                                "key": "nextState",
+                                                "value": "number"
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        {
+                                          "tag": "done",
+                                          "payload": null
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Deploy an edge web application to Cloudflare Workers with API token, worker name, and HTTP handler: deploy({ cloudflareToken: String, cloudflareWorkerName: String, handler: HttpRequest -> HttpResponse })"
+        },
+        {
+          "language": "ja",
+          "text": "Cloudflare API トークン, Worker 名, HTTP ハンドラ関数を受け取り、サーバー経由で Cloudflare Workers へエッジデプロイを実行する: deploy({ cloudflareToken: String, cloudflareWorkerName: String, handler: HttpRequest -> HttpResponse })"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "config"
+            }
+          ],
+          "body": {
+            "Variable": {
+              "variable_id": 1
+            }
+          }
+        }
+      }
     }
   ]
 }

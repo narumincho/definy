@@ -102,15 +102,42 @@ pub async fn handle_deploy_cloudflare(
         Err(err) => return error_to_response(err),
     };
 
+    // part_id が指定されている場合、あらかじめ式を探索して definy:deploy 設定を解決
+    let mut resolved_part_expr = None;
+    let mut detected_deploy = None;
+    if let Some(ref part_id) = req.part_id {
+        let db = crate::ensure_db(&state).await;
+        let event_binaries = if let Some(db) = db {
+            crate::db::get_events(&db, None, Some(1000), Some(0))
+                .await
+                .unwrap_or_default()
+        } else {
+            Box::new([])
+        };
+
+        if let Ok(expr) = crate::self_hosted_wasm_compiler::find_part_expression_in_signed_events(
+            part_id,
+            &event_binaries,
+        ) {
+            detected_deploy = definy_core::detect_deploy_in_expression(&expr);
+            resolved_part_expr = Some(expr);
+        }
+    }
+
     let token = if !req.api_token.trim().is_empty() {
         req.api_token.trim().to_string()
+    } else if let Some(ref dep) = detected_deploy
+        && let Some(ref t) = dep.cloudflare_token
+        && !t.trim().is_empty()
+    {
+        t.trim().to_string()
     } else if let Ok(env_token) =
         std::env::var("CLOUDFLARE_API_TOKEN").or_else(|_| std::env::var("CF_API_TOKEN"))
     {
         env_token.trim().to_string()
     } else {
         return error_to_response(ConnectError::invalid_argument(
-            "Cloudflare API token (api_token) is required",
+            "Cloudflare API token (api_token or cloudflareToken in deploy part) is required",
         ));
     };
 
@@ -138,38 +165,31 @@ pub async fn handle_deploy_cloudflare(
     // または指定された wasm_hash からバイナリを取得
     let (wasm_bytes, evaluated_result) = if let Some(ref part_id) = req.part_id {
         // 1. 指定された definy パーツ (Part) の式を自己記述コンパイラでオンデマンドコンパイル
-        let db = crate::ensure_db(&state).await;
-        let event_binaries = if let Some(db) = db {
-            crate::db::get_events(&db, None, Some(1000), Some(0))
-                .await
-                .unwrap_or_default()
+        let target_expr = if let Some(ref dep) = detected_deploy
+            && let Some(ref handler) = dep.handler_expression
+        {
+            handler.clone()
+        } else if let Some(ref expr) = resolved_part_expr {
+            expr.clone()
         } else {
-            Box::new([])
+            return error_to_response(ConnectError::not_found(format!(
+                "Part '{part_id}' was not found in commits"
+            )));
         };
 
-        match crate::self_hosted_wasm_compiler::find_part_expression_in_signed_events(
-            part_id,
-            &event_binaries,
-        ) {
-            Ok(expr) => match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&expr) {
-                Ok(bytes) => {
-                    let eval_val = crate::self_hosted_wasm_compiler::evaluate_compiled_wasm(&bytes)
-                        .ok()
-                        .map(|val| match val {
-                            definy_core::expression_eval::Value::String(s) => s,
-                            other => other.to_string(),
-                        });
-                    (Some(bytes), eval_val)
-                }
-                Err(err) => {
-                    return error_to_response(ConnectError::internal(format!(
-                        "Failed to compile part '{part_id}' to Wasm: {err}"
-                    )));
-                }
-            },
+        match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&target_expr) {
+            Ok(bytes) => {
+                let eval_val = crate::self_hosted_wasm_compiler::evaluate_compiled_wasm(&bytes)
+                    .ok()
+                    .map(|val| match val {
+                        definy_core::expression_eval::Value::String(s) => s,
+                        other => other.to_string(),
+                    });
+                (Some(bytes), eval_val)
+            }
             Err(err) => {
-                return error_to_response(ConnectError::not_found(format!(
-                    "Part '{part_id}' was not found in commits: {err}"
+                return error_to_response(ConnectError::internal(format!(
+                    "Failed to compile part '{part_id}' to Wasm: {err}"
                 )));
             }
         }
@@ -229,9 +249,21 @@ pub async fn handle_deploy_cloudflare(
         (None, None)
     };
 
+    let target_script_name = if let Some(ref name) = req.script_name
+        && !name.trim().is_empty()
+    {
+        Some(name.trim())
+    } else if let Some(ref dep) = detected_deploy
+        && !dep.cloudflare_worker_name.trim().is_empty()
+    {
+        Some(dep.cloudflare_worker_name.as_str())
+    } else {
+        None
+    };
+
     match client
         .deploy(
-            req.script_name.as_deref(),
+            target_script_name,
             wasm_bytes.as_deref(),
             req.custom_script.as_deref(),
         )

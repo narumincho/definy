@@ -745,6 +745,102 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
     assert_eq!(web_data.script_name, "definy-web-service");
     assert_eq!(web_data.evaluated_result, Some(html_content.to_string()));
 
+    // 7b. definy:deploy を呼び出しているパーツのデプロイ (リクエストに api_token と script_name を渡さず自動抽出)
+    let deploy_part_name = "deploy-sample-app";
+    let deploy_call_expr =
+        definy_event::event::Expression::Call(definy_event::event::CallExpression {
+            function: Box::new(definy_event::event::Expression::PartReference(
+                definy_event::event::PartReferenceExpression {
+                    part_definition_event_hash: crate::builtin_definy_parts::definy_deploy_part_id(
+                    ),
+                    content_hash: None,
+                },
+            )),
+            arguments: vec![definy_event::event::CallArgument {
+                name: "config".into(),
+                value: Box::new(definy_event::event::Expression::TypeLiteral(
+                    definy_event::event::TypeLiteralExpression {
+                        items: vec![
+                            definy_event::event::TypeLiteralItemExpression {
+                                key: "cloudflareToken".into(),
+                                value: Box::new(definy_event::event::Expression::String(
+                                    definy_event::event::StringExpression {
+                                        value: "test_cf_token_123".into(),
+                                    },
+                                )),
+                            },
+                            definy_event::event::TypeLiteralItemExpression {
+                                key: "cloudflareWorkerName".into(),
+                                value: Box::new(definy_event::event::Expression::String(
+                                    definy_event::event::StringExpression {
+                                        value: "my-declarative-worker".into(),
+                                    },
+                                )),
+                            },
+                            definy_event::event::TypeLiteralItemExpression {
+                                key: "handler".into(),
+                                value: Box::new(definy_event::event::Expression::String(
+                                    definy_event::event::StringExpression {
+                                        value: "<h1>Hello from definy:deploy!</h1>".into(),
+                                    },
+                                )),
+                            },
+                        ],
+                    },
+                )),
+            }],
+        });
+    let deploy_module_event = definy_event::event::Event {
+        account_id: definy_event::event::AccountId(dummy_key.verifying_key()),
+        time: chrono::DateTime::UNIX_EPOCH,
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_event::event::ModuleCommitEvent {
+                module_name: "deploy-demo".into(),
+                module_description: definy_event::event::Description::Plain("deploy demo".into()),
+                parent_commit_hash: None,
+                message: "add deploy part".into(),
+                parts: vec![definy_event::event::ModulePartEntry {
+                    name: deploy_part_name.into(),
+                    part_type: Some(definy_event::event::PartType::String),
+                    description: definy_event::event::Description::Plain(
+                        "declarative deploy part".into(),
+                    ),
+                    content_hash: None,
+                    expression: Some(deploy_call_expr),
+                }],
+            },
+        ),
+    };
+    let signed_deploy_bytes =
+        definy_event::sign_and_serialize(deploy_module_event.clone(), &dummy_key).unwrap();
+    let (sig, deploy_event) = definy_event::verify_and_deserialize(&signed_deploy_bytes).unwrap();
+    crate::db::save_event(&deploy_event, &sig, &signed_deploy_bytes, client_addr, &db)
+        .await
+        .unwrap();
+
+    let auto_deploy_req = DeployCloudflareRequest {
+        api_token: "".to_string(), // 空文字 -> パーツ内 cloudflareToken を利用
+        account_id: None,
+        script_name: None, // None -> パーツ内 cloudflareWorkerName を利用
+        wasm_hash: None,
+        custom_script: None,
+        compile_self_hosted: None,
+        part_id: Some(deploy_part_name.to_string()),
+    };
+    let auto_res = handle_deploy_cloudflare(
+        State(state.clone()),
+        headers.clone(),
+        Bytes::from(serde_json::to_vec(&auto_deploy_req).unwrap()),
+    )
+    .await;
+    assert_eq!(auto_res.status(), StatusCode::OK);
+    let auto_bytes = axum::body::to_bytes(auto_res.into_body(), 1024 * 1024)
+        .await
+        .unwrap();
+    let auto_data: DeployCloudflareResponse = serde_json::from_slice(&auto_bytes).unwrap();
+    assert_eq!(auto_data.status, "succeeded");
+    assert_eq!(auto_data.script_name, "my-declarative-worker");
+
     // 8. ListCloudflareWorkers RPC - 空のトークン
     let empty_list_req = ListCloudflareWorkersRequest {
         api_token: "".to_string(),

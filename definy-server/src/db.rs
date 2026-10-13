@@ -437,6 +437,7 @@ mod tests {
         assert!(module_names.contains(&"std".to_string()));
         assert!(module_names.contains(&"wasi".to_string()));
         assert!(part_names.contains(&"preview".to_string()));
+        assert!(part_names.contains(&"deploy".to_string()));
         assert!(part_names.contains(&"let".to_string()));
         assert!(part_names.contains(&"plus".to_string()));
         assert!(part_names.contains(&"number-literal".to_string()));

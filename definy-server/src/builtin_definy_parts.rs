@@ -79,8 +79,30 @@ pub fn preview_config_record_type() -> PartType {
     ])
 }
 
+/// Cloudflare Workers デプロイ設定レコード型: `{ cloudflareToken: String, cloudflareWorkerName: String, handler: HttpRequest -> HttpResponse }`
+pub fn deploy_config_record_type() -> PartType {
+    PartType::Record(vec![
+        RecordFieldType {
+            key: "cloudflareToken".into(),
+            value: Box::new(PartType::String),
+        },
+        RecordFieldType {
+            key: "cloudflareWorkerName".into(),
+            value: Box::new(PartType::String),
+        },
+        RecordFieldType {
+            key: "handler".into(),
+            value: Box::new(fn_type(
+                &[("req", http_request_part_type())],
+                http_response_part_type(),
+            )),
+        },
+    ])
+}
+
 /// `definy` モジュールのパーツ一覧を生成します。
-/// `preview` パーツ: `preview: { code: String, handler: HttpRequest -> HttpResponse } -> { code: String, handler: HttpRequest -> HttpResponse }`
+/// - `preview`: `preview: { code: String, handler: HttpRequest -> HttpResponse } -> { code: String, handler: HttpRequest -> HttpResponse }`
+/// - `deploy`: `deploy: { cloudflareToken: String, cloudflareWorkerName: String, handler: HttpRequest -> HttpResponse } -> { ... }`
 #[must_use]
 pub fn create_definy_module_parts(
     _definy_module_id: &EventHashId,
@@ -96,22 +118,48 @@ pub fn create_definy_module_parts(
         definy_event::event::Expression::Variable(VariableExpression { variable_id: 1 });
     let preview_expr = fn_expr(&[("config", 1)], preview_body);
 
-    vec![ModulePartEntry {
-        name: "preview".into(),
-        part_type: Some(preview_type),
-        description: Description::localized(vec![
-            (
-                "en",
-                "Define an in-server web application preview with a subdomain code and HTTP handler: preview({ code: String, handler: HttpRequest -> HttpResponse })",
-            ),
-            (
-                "ja",
-                "サブドメイン識別子 code と HTTP ハンドラ関数を指定してインサーバー Web アプリのプレビューを定義する: preview({ code: String, handler: HttpRequest -> HttpResponse })",
-            ),
-        ]),
-        content_hash: None,
-        expression: Some(preview_expr),
-    }]
+    let deploy_type = fn_type(
+        &[("config", deploy_config_record_type())],
+        deploy_config_record_type(),
+    );
+    let deploy_body =
+        definy_event::event::Expression::Variable(VariableExpression { variable_id: 1 });
+    let deploy_expr = fn_expr(&[("config", 1)], deploy_body);
+
+    vec![
+        ModulePartEntry {
+            name: "preview".into(),
+            part_type: Some(preview_type),
+            description: Description::localized(vec![
+                (
+                    "en",
+                    "Define an in-server web application preview with a subdomain code and HTTP handler: preview({ code: String, handler: HttpRequest -> HttpResponse })",
+                ),
+                (
+                    "ja",
+                    "サブドメイン識別子 code と HTTP ハンドラ関数を指定してインサーバー Web アプリのプレビューを定義する: preview({ code: String, handler: HttpRequest -> HttpResponse })",
+                ),
+            ]),
+            content_hash: None,
+            expression: Some(preview_expr),
+        },
+        ModulePartEntry {
+            name: "deploy".into(),
+            part_type: Some(deploy_type),
+            description: Description::localized(vec![
+                (
+                    "en",
+                    "Deploy an edge web application to Cloudflare Workers with API token, worker name, and HTTP handler: deploy({ cloudflareToken: String, cloudflareWorkerName: String, handler: HttpRequest -> HttpResponse })",
+                ),
+                (
+                    "ja",
+                    "Cloudflare API トークン, Worker 名, HTTP ハンドラ関数を受け取り、サーバー経由で Cloudflare Workers へエッジデプロイを実行する: deploy({ cloudflareToken: String, cloudflareWorkerName: String, handler: HttpRequest -> HttpResponse })",
+                ),
+            ]),
+            content_hash: None,
+            expression: Some(deploy_expr),
+        },
+    ]
 }
 
 /// 組み込み `definy:preview` パーツの決定論的 EventHashId を返します。
@@ -122,4 +170,14 @@ pub fn definy_preview_part_id() -> EventHashId {
     let account_id = definy_event::event::AccountId(signing_key.verifying_key());
     let module_id = definy_event::event::derive_module_id(&account_id, "definy");
     definy_event::event::derive_module_part_id(&module_id, "preview")
+}
+
+/// 組み込み `definy:deploy` パーツの決定論的 EventHashId を返します。
+#[must_use]
+pub fn definy_deploy_part_id() -> EventHashId {
+    let signing_key =
+        ed25519_dalek::SigningKey::from_bytes(&crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED);
+    let account_id = definy_event::event::AccountId(signing_key.verifying_key());
+    let module_id = definy_event::event::derive_module_id(&account_id, "definy");
+    definy_event::event::derive_module_part_id(&module_id, "deploy")
 }

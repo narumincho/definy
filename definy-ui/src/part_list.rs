@@ -235,6 +235,22 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                                     }
                                                 }
                                             }
+                                            // デプロイバッジ
+                                            if let Some(dep) = part
+                                                .expression
+                                                .as_ref()
+                                                .and_then(definy_core::detect_deploy_in_expression)
+                                            {
+                                                {
+                                                    rsx! {
+                                                        span {
+                                                            title: "Cloudflare Workers Deploy Part",
+                                                            style: "display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 999px; background: rgba(249, 115, 22, 0.12); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); font-weight: 500;",
+                                                            "⚡ {dep.cloudflare_worker_name}"
+                                                        }
+                                                    }
+                                                }
+                                            }
                                             // 作成者
                                             a {
                                                 href: context.href_with_lang(Location::Account(part.account_id.clone())),
