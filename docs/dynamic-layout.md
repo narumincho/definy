@@ -56,10 +56,9 @@ data = [
     `[popover]` に `inset: auto; position: absolute;` を指定し,
     `position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline;`
     で自動反転配置を行う.
-  - CSS Anchor Positioning 未対応環境 (Safari や一部の Firefox) では,
-    `dom_show_popover_and_focus` 内で `CSS.supports` 判定を行い,
-    未対応時にアンカー要素の `getBoundingClientRect()` から `fixed`
-    座標を動的算出してフォールバック表示する.
+  - CSS Anchor Positioning (`position-area`, `position-anchor`, `position-try-fallbacks`)
+    は Chrome, Edge に加え Safari でも標準対応したため,
+    JavaScript による座標計算フォールバックは不要となり CSS のみでクリーンに配置する.
   - 数値・文字列リテラル選択時はノード上で直接編集するため,
     メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
     を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).

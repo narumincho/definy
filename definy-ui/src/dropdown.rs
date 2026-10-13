@@ -63,28 +63,6 @@ fn dom_show_popover_and_focus(
                         &wasm_bindgen::JsValue::from_str("var(--text)"),
                     );
 
-                    let supports_anchor =
-                        js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("CSS"))
-                            .ok()
-                            .and_then(|css| {
-                                js_sys::Reflect::get(
-                                    &css,
-                                    &wasm_bindgen::JsValue::from_str("supports"),
-                                )
-                                .ok()
-                            })
-                            .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
-                            .and_then(|f| {
-                                f.call2(
-                                    &wasm_bindgen::JsValue::NULL,
-                                    &wasm_bindgen::JsValue::from_str("position-area"),
-                                    &wasm_bindgen::JsValue::from_str("bottom span-right"),
-                                )
-                                .ok()
-                            })
-                            .and_then(|v| v.as_bool())
-                            .unwrap_or(false);
-
                     if let Some(anchor_name) = _anchor_name {
                         let _ = set_prop_fn.call2(
                             &style,
@@ -101,55 +79,6 @@ fn dom_show_popover_and_focus(
                             &wasm_bindgen::JsValue::from_str("position-try-fallbacks"),
                             &wasm_bindgen::JsValue::from_str("flip-block, flip-inline"),
                         );
-
-                        if !supports_anchor {
-                            // Safari や CSS Anchor Positioning 未対応環境向けのフォールバック座標計算
-                            let selector = format!("[style*=\"anchor-name: {}\"]", anchor_name);
-                            if let Ok(Some(anchor_el)) = doc.query_selector(&selector) {
-                                let rect = anchor_el.get_bounding_client_rect();
-                                let win_h = window
-                                    .inner_height()
-                                    .ok()
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(900.0);
-                                let win_w = window
-                                    .inner_width()
-                                    .ok()
-                                    .and_then(|v| v.as_f64())
-                                    .unwrap_or(1200.0);
-                                let menu_h = 320.0;
-                                let top = if rect.bottom() + menu_h > win_h && rect.top() > menu_h {
-                                    (rect.top() - menu_h - 4.0).max(4.0)
-                                } else {
-                                    (rect.bottom() + 4.0).min(win_h - 40.0)
-                                };
-                                let left = rect.left().max(4.0).min((win_w - 340.0).max(4.0));
-                                let _ = set_prop_fn.call2(
-                                    &style,
-                                    &wasm_bindgen::JsValue::from_str("top"),
-                                    &wasm_bindgen::JsValue::from_str(&format!("{top}px")),
-                                );
-                                let _ = set_prop_fn.call2(
-                                    &style,
-                                    &wasm_bindgen::JsValue::from_str("left"),
-                                    &wasm_bindgen::JsValue::from_str(&format!("{left}px")),
-                                );
-                                let _ = set_prop_fn.call2(
-                                    &style,
-                                    &wasm_bindgen::JsValue::from_str("position"),
-                                    &wasm_bindgen::JsValue::from_str("fixed"),
-                                );
-                            }
-                        } else if let Ok(rem_prop) = js_sys::Reflect::get(
-                            &style,
-                            &wasm_bindgen::JsValue::from_str("removeProperty"),
-                        ) && let Ok(rem_prop_fn) = rem_prop.dyn_into::<js_sys::Function>()
-                        {
-                            let _ =
-                                rem_prop_fn.call1(&style, &wasm_bindgen::JsValue::from_str("top"));
-                            let _ =
-                                rem_prop_fn.call1(&style, &wasm_bindgen::JsValue::from_str("left"));
-                        }
                     }
                 }
 
