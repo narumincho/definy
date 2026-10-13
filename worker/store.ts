@@ -173,6 +173,27 @@ export class WorkerStore {
     await this.ensureD1Schema(db);
     const statements: D1PreparedStatement[] = [];
 
+    // 組み込みシステムアカウントの古いシードイベント（過去デプロイ分）を D1 から削除し、最新シードに同期する
+    const seedAccounts = new Set<string>();
+    for (const ev of this.events) {
+      if (ev.accountId) {
+        seedAccounts.add(ev.accountId);
+      }
+    }
+    if (seedAccounts.size > 0 && this.events.length > 0) {
+      const hashPlaceholders = this.events.map(() => "?").join(", ");
+      const hashValues = this.events.map((ev) => ev.eventHash);
+      for (const accountId of seedAccounts) {
+        statements.push(
+          db
+            .prepare(
+              `DELETE FROM events WHERE account_id = ? AND event_hash NOT IN (${hashPlaceholders})`,
+            )
+            .bind(accountId, ...hashValues),
+        );
+      }
+    }
+
     for (const ev of this.events) {
       statements.push(
         db

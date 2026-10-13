@@ -30,21 +30,42 @@ fn dom_hide_popover(_panel_id: &str) {
     }
 }
 
-fn dom_show_popover_and_focus(_panel_id: &str, _search_input_name: &str) {
+fn dom_show_popover_and_focus(
+    _panel_id: &str,
+    _anchor_name: Option<&str>,
+    _search_input_name: Option<&str>,
+) {
     #[cfg(target_arch = "wasm32")]
     if let Some(window) = web_sys::window() {
         if let Some(doc) = window.document() {
             if let Some(elem) = doc.get_element_by_id(_panel_id) {
+                if let Some(anchor_name) = _anchor_name
+                    && let Ok(style) =
+                        js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("style"))
+                    && let Ok(set_prop) = js_sys::Reflect::get(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("setProperty"),
+                    )
+                    && let Ok(set_prop_fn) = set_prop.dyn_into::<js_sys::Function>()
+                {
+                    let _ = set_prop_fn.call2(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("position-anchor"),
+                        &wasm_bindgen::JsValue::from_str(anchor_name),
+                    );
+                }
                 let _ =
                     js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("showPopover"))
                         .ok()
                         .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
                         .and_then(|f| f.call0(&elem).ok());
             }
-            let selector = format!("input[name=\"{}\"]", _search_input_name);
-            if let Ok(Some(input)) = doc.query_selector(&selector) {
-                if let Ok(html_input) = input.dyn_into::<web_sys::HtmlElement>() {
-                    let _ = html_input.focus();
+            if let Some(search_input_name) = _search_input_name {
+                let selector = format!("input[name=\"{}\"]", search_input_name);
+                if let Ok(Some(input)) = doc.query_selector(&selector) {
+                    if let Ok(html_input) = input.dyn_into::<web_sys::HtmlElement>() {
+                        let _ = html_input.focus();
+                    }
                 }
             }
         }
@@ -75,6 +96,20 @@ fn initial_search_query_for_label(label: &str) -> String {
     }
 }
 
+/// アンカー要素を指定して popover を表示し、必要であれば検索入力欄にフォーカスする
+pub fn show_anchored_popover(
+    panel_id: &str,
+    anchor_name: &str,
+    focus_search_input_name: Option<&str>,
+) {
+    dom_show_popover_and_focus(panel_id, Some(anchor_name), focus_search_input_name);
+}
+
+/// popover を閉じる
+pub fn hide_popover(panel_id: &str) {
+    dom_hide_popover(panel_id);
+}
+
 #[component]
 pub fn SearchableDropdown(
     name: String,
@@ -90,33 +125,6 @@ pub fn SearchableDropdown(
     let current_label = get_current_label(&options, &current_value);
     let panel_id = dropdown_panel_id(&name);
     let anchor_name = anchor_name_id(&name);
-
-    let query = search_query.read().to_lowercase();
-    let filtered_options: Vec<(String, String)> = options
-        .iter()
-        .filter(|(_, label)| {
-            if query.is_empty() {
-                true
-            } else {
-                label.to_lowercase().contains(&query)
-            }
-        })
-        .cloned()
-        .collect();
-
-    let effective_highlighted_index = if filtered_options.is_empty() {
-        None
-    } else {
-        match *highlighted_index.read() {
-            Some(idx) if idx < filtered_options.len() => Some(idx),
-            _ => {
-                let cur_idx = filtered_options
-                    .iter()
-                    .position(|(val, _)| val == &current_value);
-                Some(cur_idx.unwrap_or(0))
-            }
-        }
-    };
 
     let container_style = if compact {
         "width: fit-content; min-width: 6.5rem; max-width: 100%; position: relative;"
@@ -137,7 +145,7 @@ pub fn SearchableDropdown(
         move || {
             search_query.set(initial_search_query_for_label(&current_label));
             highlighted_index.set(None);
-            dom_show_popover_and_focus(&panel_id, &format!("search-{}", name));
+            dom_show_popover_and_focus(&panel_id, None, Some(&format!("search-{}", name)));
         }
     };
 
@@ -170,102 +178,160 @@ pub fn SearchableDropdown(
                     }
                 }
             }
-            div {
-                id: "{panel_id}",
-                "popover": "auto",
-                style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
-                input {
-                    r#type: "text",
-                    autofocus: true,
-                    name: "search-{name}",
-                    value: "{search_query}",
-                    style: "width: 100%; padding: 0.4rem 0.6rem; border: none; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); outline: none; box-sizing: border-box;",
-                    onfocus: {
-                        let current_label = current_label.clone();
-                        move |_| {
-                            if search_query.read().is_empty() {
-                                search_query.set(initial_search_query_for_label(&current_label));
-                            }
+            SearchableDropdownPanel {
+                panel_id: panel_id.clone(),
+                anchor_name: anchor_name.clone(),
+                search_input_name: format!("search-{name}"),
+                current_value,
+                options,
+                search_query,
+                highlighted_index,
+                initial_query: initial_search_query_for_label(&current_label),
+                on_change,
+            }
+        }
+    }
+}
+
+/// 検索付き選択肢パネル (popover). `anchor_name` で指定した CSS アンカー要素の直下に表示される.
+///
+/// 表示は [`show_anchored_popover`] で行う.
+#[component]
+pub fn SearchableDropdownPanel(
+    panel_id: String,
+    anchor_name: String,
+    search_input_name: String,
+    current_value: String,
+    options: Vec<(String, String)>,
+    mut search_query: Signal<String>,
+    mut highlighted_index: Signal<Option<usize>>,
+    on_change: EventHandler<String>,
+    #[props(default)] initial_query: String,
+    #[props(default = None)] header: Option<Element>,
+) -> Element {
+    let query = search_query.read().to_lowercase();
+    let filtered_options: Vec<(String, String)> = options
+        .iter()
+        .filter(|(_, label)| {
+            if query.is_empty() {
+                true
+            } else {
+                label.to_lowercase().contains(&query)
+            }
+        })
+        .cloned()
+        .collect();
+
+    let effective_highlighted_index = if filtered_options.is_empty() {
+        None
+    } else {
+        match *highlighted_index.read() {
+            Some(idx) if idx < filtered_options.len() => Some(idx),
+            _ => {
+                let cur_idx = filtered_options
+                    .iter()
+                    .position(|(val, _)| val == &current_value);
+                Some(cur_idx.unwrap_or(0))
+            }
+        }
+    };
+
+    rsx! {
+        div {
+            id: "{panel_id}",
+            "popover": "auto",
+            style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+            {header}
+            input {
+                r#type: "text",
+                name: "{search_input_name}",
+                value: "{search_query}",
+                style: "width: 100%; padding: 0.4rem 0.6rem; border: none; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; color: var(--text); outline: none; box-shadow: none; backdrop-filter: none; box-sizing: border-box;",
+                onfocus: {
+                    let initial_query = initial_query.clone();
+                    move |_| {
+                        if search_query.read().is_empty() {
+                            search_query.set(initial_query.clone());
                         }
-                    },
-                    oninput: move |evt: FormEvent| {
-                        search_query.set(evt.value());
-                        highlighted_index.set(Some(0));
-                    },
-                    onkeydown: {
-                        let panel_id = panel_id.clone();
-                        let filtered_options = filtered_options.clone();
-                        move |evt: KeyboardEvent| {
-                            match evt.key() {
-                                Key::ArrowDown => {
-                                    evt.prevent_default();
-                                    if filtered_options.is_empty() {
-                                        return;
-                                    }
-                                    let next_idx = match effective_highlighted_index {
-                                        Some(idx) => (idx + 1).min(filtered_options.len() - 1),
-                                        None => 0,
-                                    };
-                                    highlighted_index.set(Some(next_idx));
-                                    let item_id = format!("{panel_id}-opt-{next_idx}");
-                                    dom_scroll_into_view(&item_id);
+                    }
+                },
+                oninput: move |evt: FormEvent| {
+                    search_query.set(evt.value());
+                    highlighted_index.set(Some(0));
+                },
+                onkeydown: {
+                    let panel_id = panel_id.clone();
+                    let filtered_options = filtered_options.clone();
+                    move |evt: KeyboardEvent| {
+                        match evt.key() {
+                            Key::ArrowDown => {
+                                evt.prevent_default();
+                                if filtered_options.is_empty() {
+                                    return;
                                 }
-                                Key::ArrowUp => {
-                                    evt.prevent_default();
-                                    if filtered_options.is_empty() {
-                                        return;
-                                    }
-                                    let prev_idx = match effective_highlighted_index {
-                                        Some(idx) => idx.saturating_sub(1),
-                                        None => 0,
-                                    };
-                                    highlighted_index.set(Some(prev_idx));
-                                    let item_id = format!("{panel_id}-opt-{prev_idx}");
-                                    dom_scroll_into_view(&item_id);
-                                }
-                                Key::Enter => {
-                                    evt.prevent_default();
-                                    let selected_opt = effective_highlighted_index
-                                        .and_then(|idx| filtered_options.get(idx));
-                                    if let Some((opt_val, _)) = selected_opt {
-                                        let val = opt_val.clone();
-                                        search_query.set(String::new());
-                                        highlighted_index.set(None);
-                                        on_change.call(val);
-                                        dom_hide_popover(&panel_id);
-                                    }
-                                }
-                                Key::Escape => {
-                                    search_query.set(String::new());
-                                    highlighted_index.set(None);
-                                    dom_hide_popover(&panel_id);
-                                }
-                                _ => {}
+                                let next_idx = match effective_highlighted_index {
+                                    Some(idx) => (idx + 1).min(filtered_options.len() - 1),
+                                    None => 0,
+                                };
+                                highlighted_index.set(Some(next_idx));
+                                let item_id = format!("{panel_id}-opt-{next_idx}");
+                                dom_scroll_into_view(&item_id);
                             }
-                        }
-                    },
-                }
-                div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
-                    for (idx, (opt_val, opt_label)) in filtered_options.iter().enumerate() {
-                        DropdownOptionItem {
-                            key: "{opt_val}",
-                            idx,
-                            opt_val: opt_val.clone(),
-                            opt_label: opt_label.clone(),
-                            panel_id: panel_id.clone(),
-                            is_selected: opt_val == &current_value,
-                            is_highlighted: effective_highlighted_index == Some(idx),
-                            on_highlight: move |i| highlighted_index.set(Some(i)),
-                            on_select: {
-                                let panel_id = panel_id.clone();
-                                move |val| {
+                            Key::ArrowUp => {
+                                evt.prevent_default();
+                                if filtered_options.is_empty() {
+                                    return;
+                                }
+                                let prev_idx = match effective_highlighted_index {
+                                    Some(idx) => idx.saturating_sub(1),
+                                    None => 0,
+                                };
+                                highlighted_index.set(Some(prev_idx));
+                                let item_id = format!("{panel_id}-opt-{prev_idx}");
+                                dom_scroll_into_view(&item_id);
+                            }
+                            Key::Enter => {
+                                evt.prevent_default();
+                                let selected_opt = effective_highlighted_index
+                                    .and_then(|idx| filtered_options.get(idx));
+                                if let Some((opt_val, _)) = selected_opt {
+                                    let val = opt_val.clone();
                                     search_query.set(String::new());
                                     highlighted_index.set(None);
                                     on_change.call(val);
                                     dom_hide_popover(&panel_id);
                                 }
-                            },
+                            }
+                            Key::Escape => {
+                                search_query.set(String::new());
+                                highlighted_index.set(None);
+                                dom_hide_popover(&panel_id);
+                            }
+                            _ => {}
                         }
+                    }
+                },
+            }
+            div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
+                for (idx, (opt_val, opt_label)) in filtered_options.iter().enumerate() {
+                    DropdownOptionItem {
+                        key: "{opt_val}",
+                        idx,
+                        opt_val: opt_val.clone(),
+                        opt_label: opt_label.clone(),
+                        panel_id: panel_id.clone(),
+                        is_selected: opt_val == &current_value,
+                        is_highlighted: effective_highlighted_index == Some(idx),
+                        on_highlight: move |i| highlighted_index.set(Some(i)),
+                        on_select: {
+                            let panel_id = panel_id.clone();
+                            move |val| {
+                                search_query.set(String::new());
+                                highlighted_index.set(None);
+                                on_change.call(val);
+                                dom_hide_popover(&panel_id);
+                            }
+                        },
                     }
                 }
             }

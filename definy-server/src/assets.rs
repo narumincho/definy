@@ -27,6 +27,7 @@ pub struct ResolvedAsset {
 struct CachedAsset {
     path: std::path::PathBuf,
     modified: std::time::SystemTime,
+    wasm_hash: Option<String>,
     asset: ResolvedAsset,
 }
 
@@ -179,6 +180,26 @@ fn find_client_wasm(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     None
 }
 
+fn find_newest_candidate<F>(
+    finder: F,
+) -> Option<(
+    std::path::PathBuf,
+    std::path::PathBuf,
+    std::time::SystemTime,
+)>
+where
+    F: Fn(&std::path::Path) -> Option<std::path::PathBuf>,
+{
+    get_public_dir_candidates()
+        .into_iter()
+        .filter_map(|dir| {
+            let path = finder(&dir)?;
+            let modified = std::fs::metadata(&path).ok()?.modified().ok()?;
+            Some((dir, path, modified))
+        })
+        .max_by_key(|(_, _, modified)| *modified)
+}
+
 fn resolve_cached_asset_by_finder<F>(
     cache: &std::sync::RwLock<Option<CachedAsset>>,
     finder: F,
@@ -187,57 +208,118 @@ fn resolve_cached_asset_by_finder<F>(
 where
     F: Fn(&std::path::Path) -> Option<std::path::PathBuf>,
 {
-    for dir in get_public_dir_candidates() {
-        if let Some(p) = finder(&dir)
-            && let Ok(metadata) = std::fs::metadata(&p)
-            && let Ok(modified) = metadata.modified()
-        {
-            if let Ok(guard) = cache.read()
-                && let Some(ref cached) = *guard
-                && cached.path == p
-                && cached.modified == modified
-            {
-                return Some(cached.asset.clone());
-            }
+    let (dir, p, modified) = find_newest_candidate(finder)?;
 
-            if let Ok(bytes) = std::fs::read(&p) {
-                let hash = sha2::Sha256::digest(&bytes);
-                let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
-                let rel_path = p
-                    .strip_prefix(&dir)
-                    .ok()
-                    .map(|rp| rp.to_string_lossy().replace('\\', "/"))
-                    .unwrap_or_else(|| {
-                        p.file_name()
-                            .map(|n| n.to_string_lossy().to_string())
-                            .unwrap_or_default()
-                    });
-                let asset = ResolvedAsset {
-                    bytes,
-                    hash: hash_hex,
-                    content_type,
-                    relative_path: rel_path,
-                };
-                if let Ok(mut guard) = cache.write() {
-                    *guard = Some(CachedAsset {
-                        path: p,
-                        modified,
-                        asset: asset.clone(),
-                    });
-                }
-                return Some(asset);
-            }
-        }
+    if let Ok(guard) = cache.read()
+        && let Some(ref cached) = *guard
+        && cached.path == p
+        && cached.modified == modified
+    {
+        return Some(cached.asset.clone());
     }
+
+    if let Ok(bytes) = std::fs::read(&p) {
+        let hash = sha2::Sha256::digest(&bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+        let rel_path = p
+            .strip_prefix(&dir)
+            .ok()
+            .map(|rp| rp.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|| {
+                p.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            });
+        let asset = ResolvedAsset {
+            bytes,
+            hash: hash_hex,
+            content_type,
+            relative_path: rel_path,
+        };
+        if let Ok(mut guard) = cache.write() {
+            *guard = Some(CachedAsset {
+                path: p,
+                modified,
+                wasm_hash: None,
+                asset: asset.clone(),
+            });
+        }
+        return Some(asset);
+    }
+
     None
 }
 
 pub fn resolve_client_js() -> Option<ResolvedAsset> {
-    resolve_cached_asset_by_finder(
-        &JS_CACHE,
-        find_client_js,
-        "application/javascript; charset=utf-8",
-    )
+    let wasm_hash = resolve_client_wasm().map(|w| w.hash);
+    let (dir, p, modified) = find_newest_candidate(find_client_js)?;
+
+    if let Ok(guard) = JS_CACHE.read()
+        && let Some(ref cached) = *guard
+        && cached.path == p
+        && cached.modified == modified
+        && cached.wasm_hash == wasm_hash
+    {
+        return Some(cached.asset.clone());
+    }
+
+    if let Ok(raw_bytes) = std::fs::read(&p) {
+        let bytes = if let Some(ref wh) = wasm_hash {
+            if let Ok(text) = String::from_utf8(raw_bytes.clone()) {
+                let replaced = text
+                    .replace(
+                        "\"/./wasm/definy_client_bg.wasm\"",
+                        &format!("\"/./wasm/definy_client_bg.wasm?v={wh}\""),
+                    )
+                    .replace(
+                        "'/./wasm/definy_client_bg.wasm'",
+                        &format!("'/./wasm/definy_client_bg.wasm?v={wh}'"),
+                    )
+                    .replace(
+                        "'definy_client_bg.wasm'",
+                        &format!("'definy_client_bg.wasm?v={wh}'"),
+                    )
+                    .replace(
+                        "\"definy_client_bg.wasm\"",
+                        &format!("\"definy_client_bg.wasm?v={wh}\""),
+                    );
+                replaced.into_bytes()
+            } else {
+                raw_bytes
+            }
+        } else {
+            raw_bytes
+        };
+
+        let hash = sha2::Sha256::digest(&bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+        let rel_path = p
+            .strip_prefix(&dir)
+            .ok()
+            .map(|rp| rp.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|| {
+                p.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            });
+        let asset = ResolvedAsset {
+            bytes,
+            hash: hash_hex,
+            content_type: "application/javascript; charset=utf-8",
+            relative_path: rel_path,
+        };
+        if let Ok(mut guard) = JS_CACHE.write() {
+            *guard = Some(CachedAsset {
+                path: p,
+                modified,
+                wasm_hash,
+                asset: asset.clone(),
+            });
+        }
+        return Some(asset);
+    }
+
+    None
 }
 
 pub fn resolve_client_wasm() -> Option<ResolvedAsset> {
@@ -249,13 +331,9 @@ pub fn resolve_icon() -> &'static ResolvedAsset {
 }
 
 pub fn resolve_snippet(snippet_path: &str) -> Option<Vec<u8>> {
-    for dir in get_public_dir_candidates() {
-        let full = dir.join("wasm").join("snippets").join(snippet_path);
-        if let Ok(bytes) = std::fs::read(&full) {
-            return Some(bytes);
-        }
-    }
-    None
+    let (_, full, _) =
+        find_newest_candidate(|dir| Some(dir.join("wasm").join("snippets").join(snippet_path)))?;
+    std::fs::read(&full).ok()
 }
 
 pub fn resolve_snippets_list() -> Vec<String> {

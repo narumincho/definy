@@ -220,7 +220,7 @@ export async function evaluateCborExpression(
   resolvePartExpr: (partHash: string) => Promise<unknown | undefined>,
   depth = 0,
 ): Promise<DefinyValue> {
-  if (depth > 256) {
+  if (depth > 4096) {
     throw new Error("Maximum evaluation recursion depth exceeded");
   }
   if (!expr || typeof expr !== "object") {

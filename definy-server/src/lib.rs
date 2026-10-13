@@ -302,46 +302,55 @@ async fn handle_fallback(
     let path = uri.path();
     let trimmed_path = path.trim_start_matches('/');
 
+    let normalized_path = trimmed_path
+        .trim_start_matches("./")
+        .trim_start_matches('/');
+
     // 1. Direct static file serving from public directory candidates
-    for dir in assets::get_public_dir_candidates() {
-        let candidate = dir.join(trimmed_path);
-        if candidate.is_file()
-            && let Ok(bytes) = std::fs::read(&candidate)
-        {
-            let content_type = mime_type_from_path(&candidate);
-            let is_hashed = trimmed_path.contains("-dxh")
-                || trimmed_path.starts_with("assets/")
-                || trimmed_path.ends_with(".wasm");
-            let cache_control = if is_hashed {
-                "public, max-age=31536000, immutable"
-            } else {
-                "no-cache, must-revalidate"
-            };
-            return (
-                StatusCode::OK,
-                [
-                    ("Content-Type", content_type),
-                    ("Cache-Control", cache_control),
-                ],
-                Bytes::from(bytes),
-            )
-                .into_response();
+    // definy_client.js, definy_client_bg.wasm, and snippets are handled specifically below with cache busting
+    let is_special_asset = normalized_path.ends_with("definy_client.js")
+        || normalized_path.ends_with("definy_client_bg.wasm")
+        || normalized_path.contains("snippets/");
+    if !is_special_asset {
+        for dir in assets::get_public_dir_candidates() {
+            let candidate = dir.join(normalized_path);
+            if candidate.is_file()
+                && let Ok(bytes) = std::fs::read(&candidate)
+            {
+                let content_type = mime_type_from_path(&candidate);
+                let is_hashed = normalized_path.contains("-dxh")
+                    || uri.query().map(|q| q.contains("v=")).unwrap_or(false);
+                let cache_control = if is_hashed {
+                    "public, max-age=31536000, immutable"
+                } else {
+                    "no-cache, must-revalidate"
+                };
+                return (
+                    StatusCode::OK,
+                    [
+                        ("Content-Type", content_type),
+                        ("Cache-Control", cache_control),
+                    ],
+                    Bytes::from(bytes),
+                )
+                    .into_response();
+            }
         }
     }
 
-    let clean_path = trimmed_path
+    let clean_path = normalized_path
         .strip_prefix("pkg/")
-        .or_else(|| trimmed_path.strip_prefix("wasm/"))
-        .unwrap_or(trimmed_path);
+        .or_else(|| normalized_path.strip_prefix("wasm/"))
+        .unwrap_or(normalized_path);
 
-    if let Some(pos) = trimmed_path.find("snippets/") {
-        let snippet_path = &trimmed_path[pos + "snippets/".len()..];
+    if let Some(pos) = normalized_path.find("snippets/") {
+        let snippet_path = &normalized_path[pos + "snippets/".len()..];
         if let Some(contents) = resolve_snippet(snippet_path) {
             return (
                 StatusCode::OK,
                 [
                     ("Content-Type", "application/javascript; charset=utf-8"),
-                    ("Cache-Control", "public, max-age=31536000, immutable"),
+                    ("Cache-Control", "no-cache, must-revalidate"),
                 ],
                 Bytes::from(contents),
             )
@@ -358,12 +367,13 @@ async fn handle_fallback(
 
     if let Some(js) = resolve_client_js() {
         let js_file_with_ext = format!("{}.js", js.hash);
-        let is_hashed = clean_path == js.hash || clean_path == js_file_with_ext;
-        if is_hashed
-            || clean_path == "definy_client.js"
+        let is_hash_in_path = clean_path == js.hash || clean_path == js_file_with_ext;
+        let is_js_name = clean_path == "definy_client.js"
             || clean_path == js_file_with_ext
-            || clean_path.ends_with("definy_client.js")
-        {
+            || clean_path.ends_with("definy_client.js");
+        if is_hash_in_path || is_js_name {
+            let has_version_query = uri.query().map(|q| q.contains("v=")).unwrap_or(false);
+            let is_hashed = is_hash_in_path || has_version_query;
             let cache_control = if is_hashed {
                 "public, max-age=31536000, immutable"
             } else {
@@ -383,12 +393,13 @@ async fn handle_fallback(
 
     if let Some(wasm) = resolve_client_wasm() {
         let wasm_file_with_ext = format!("{}.wasm", wasm.hash);
-        let is_hashed = clean_path == wasm.hash || clean_path == wasm_file_with_ext;
-        if is_hashed
-            || clean_path == "definy_client_bg.wasm"
+        let is_hash_in_path = clean_path == wasm.hash || clean_path == wasm_file_with_ext;
+        let is_wasm_name = clean_path == "definy_client_bg.wasm"
             || clean_path == wasm_file_with_ext
-            || clean_path.ends_with("definy_client_bg.wasm")
-        {
+            || clean_path.ends_with("definy_client_bg.wasm");
+        if is_hash_in_path || is_wasm_name {
+            let has_version_query = uri.query().map(|q| q.contains("v=")).unwrap_or(false);
+            let is_hashed = is_hash_in_path || has_version_query;
             let cache_control = if is_hashed {
                 "public, max-age=31536000, immutable"
             } else {

@@ -1,18 +1,69 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
-#[wasm_bindgen]
+#[wasm_bindgen(inline_js = r#"
+export async function getSilentPasswordCredential(timeoutMs) {
+    try {
+        if (typeof window === "undefined" || !window.navigator || !window.navigator.credentials || !window.navigator.credentials.get) {
+            return null;
+        }
+        if (typeof window.PasswordCredential === "undefined") {
+            return null;
+        }
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
+        const credPromise = window.navigator.credentials.get({
+            password: true,
+            mediation: "silent"
+        }).then((cred) => {
+            if (cred && typeof cred.password === "string") {
+                return cred.password;
+            }
+            return null;
+        }).catch(() => null);
+
+        return await Promise.race([credPromise, timeoutPromise]);
+    } catch {
+        return null;
+    }
+}
+
+export async function storePasswordCredential(username, password) {
+    try {
+        if (typeof window === "undefined" || !window.navigator || !window.navigator.credentials || !window.navigator.credentials.store) {
+            return false;
+        }
+        if (typeof window.PasswordCredential === "undefined") {
+            return false;
+        }
+        const cred = new window.PasswordCredential({
+            id: username,
+            name: username,
+            password: password
+        });
+        await window.navigator.credentials.store(cred);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export function sleepMs(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+"#)]
 extern "C" {
-    #[wasm_bindgen(js_namespace = "navigator.credentials", js_name = "get")]
-    fn navigator_credentials_get(s: js_sys::Object) -> js_sys::Promise;
+    #[wasm_bindgen(catch)]
+    async fn getSilentPasswordCredential(
+        timeout_ms: i32,
+    ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
 
-    #[wasm_bindgen(js_namespace = "navigator.credentials", js_name = "store")]
-    fn navigator_credentials_store(c: &wasm_bindgen::JsValue) -> js_sys::Promise;
+    #[wasm_bindgen(catch)]
+    async fn storePasswordCredential(
+        username: &str,
+        password: &str,
+    ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
 
-    #[wasm_bindgen(js_name = "PasswordCredential")]
-    type PasswordCredential;
-
-    #[wasm_bindgen(constructor, js_name = "PasswordCredential")]
-    fn new(data: &js_sys::Object) -> PasswordCredential;
+    #[wasm_bindgen(catch)]
+    async fn sleepMs(ms: i32) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
 }
 
 const STORAGE_KEY: &str = "definy_current_key";
@@ -40,38 +91,7 @@ pub async fn credential_store(
         key.to_bytes(),
     );
 
-    // PasswordCredential might not be supported in all contexts (e.g. non-HTTPS / tests)
-    // Check if the constructor exists before calling it
-    if let Some(window) = web_sys::window() {
-        let pc_exists = js_sys::Reflect::get(
-            &window,
-            &wasm_bindgen::JsValue::from_str("PasswordCredential"),
-        )
-        .ok()
-        .is_some_and(|v| v.is_function());
-
-        if pc_exists {
-            let data = js_sys::Object::new();
-            let _ = js_sys::Reflect::set(
-                &data,
-                &wasm_bindgen::JsValue::from_str("id"),
-                &wasm_bindgen::JsValue::from_str(username),
-            );
-            let _ = js_sys::Reflect::set(
-                &data,
-                &wasm_bindgen::JsValue::from_str("name"),
-                &wasm_bindgen::JsValue::from_str(username),
-            );
-            let _ = js_sys::Reflect::set(
-                &data,
-                &wasm_bindgen::JsValue::from_str("password"),
-                &wasm_bindgen::JsValue::from_str(&password_str),
-            );
-            let credential = PasswordCredential::new(&data);
-            let promise = navigator_credentials_store(&credential);
-            let _ = wasm_bindgen_futures::JsFuture::from(promise).await;
-        }
-    }
+    let _ = storePasswordCredential(username, &password_str).await;
 
     Ok(())
 }
@@ -88,21 +108,16 @@ pub async fn credential_get() -> Option<ed25519_dalek::SigningKey> {
         return Some(signing_key);
     }
 
-    let options = js_sys::Object::new();
-    js_sys::Reflect::set(
-        &options,
-        &wasm_bindgen::JsValue::from_str("password"),
-        &wasm_bindgen::JsValue::TRUE,
-    )
-    .ok()?;
-    let credential = wasm_bindgen_futures::JsFuture::from(navigator_credentials_get(options))
-        .await
-        .ok()?;
-    let password =
-        js_sys::Reflect::get(&credential, &wasm_bindgen::JsValue::from_str("password")).ok()?;
-    let key = parse_password(password.as_string()?)?;
+    // タイムアウト 200ms で silent モードで取得を試みる
+    let password_js = getSilentPasswordCredential(200).await.ok()?;
+    let password = password_js.as_string()?;
+    let key = parse_password(password)?;
     credential_save_sync(&key);
     Some(key)
+}
+
+pub async fn sleep(ms: i32) {
+    let _ = sleepMs(ms).await;
 }
 
 pub fn credential_clear() {
