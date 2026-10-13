@@ -27,6 +27,7 @@ pub struct ResolvedAsset {
 struct CachedAsset {
     path: std::path::PathBuf,
     modified: std::time::SystemTime,
+    wasm_hash: Option<String>,
     asset: ResolvedAsset,
 }
 
@@ -239,6 +240,7 @@ where
             *guard = Some(CachedAsset {
                 path: p,
                 modified,
+                wasm_hash: None,
                 asset: asset.clone(),
             });
         }
@@ -249,11 +251,75 @@ where
 }
 
 pub fn resolve_client_js() -> Option<ResolvedAsset> {
-    resolve_cached_asset_by_finder(
-        &JS_CACHE,
-        find_client_js,
-        "application/javascript; charset=utf-8",
-    )
+    let wasm_hash = resolve_client_wasm().map(|w| w.hash);
+    let (dir, p, modified) = find_newest_candidate(find_client_js)?;
+
+    if let Ok(guard) = JS_CACHE.read()
+        && let Some(ref cached) = *guard
+        && cached.path == p
+        && cached.modified == modified
+        && cached.wasm_hash == wasm_hash
+    {
+        return Some(cached.asset.clone());
+    }
+
+    if let Ok(raw_bytes) = std::fs::read(&p) {
+        let bytes = if let Some(ref wh) = wasm_hash {
+            if let Ok(text) = String::from_utf8(raw_bytes.clone()) {
+                let replaced = text
+                    .replace(
+                        "\"/./wasm/definy_client_bg.wasm\"",
+                        &format!("\"/./wasm/definy_client_bg.wasm?v={wh}\""),
+                    )
+                    .replace(
+                        "'/./wasm/definy_client_bg.wasm'",
+                        &format!("'/./wasm/definy_client_bg.wasm?v={wh}'"),
+                    )
+                    .replace(
+                        "'definy_client_bg.wasm'",
+                        &format!("'definy_client_bg.wasm?v={wh}'"),
+                    )
+                    .replace(
+                        "\"definy_client_bg.wasm\"",
+                        &format!("\"definy_client_bg.wasm?v={wh}\""),
+                    );
+                replaced.into_bytes()
+            } else {
+                raw_bytes
+            }
+        } else {
+            raw_bytes
+        };
+
+        let hash = sha2::Sha256::digest(&bytes);
+        let hash_hex = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hash);
+        let rel_path = p
+            .strip_prefix(&dir)
+            .ok()
+            .map(|rp| rp.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|| {
+                p.file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default()
+            });
+        let asset = ResolvedAsset {
+            bytes,
+            hash: hash_hex,
+            content_type: "application/javascript; charset=utf-8",
+            relative_path: rel_path,
+        };
+        if let Ok(mut guard) = JS_CACHE.write() {
+            *guard = Some(CachedAsset {
+                path: p,
+                modified,
+                wasm_hash,
+                asset: asset.clone(),
+            });
+        }
+        return Some(asset);
+    }
+
+    None
 }
 
 pub fn resolve_client_wasm() -> Option<ResolvedAsset> {

@@ -45,6 +45,10 @@ export async function storePasswordCredential(username, password) {
         return false;
     }
 }
+
+export function sleepMs(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 "#)]
 extern "C" {
     #[wasm_bindgen(catch)]
@@ -57,6 +61,9 @@ extern "C" {
         username: &str,
         password: &str,
     ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
+
+    #[wasm_bindgen(catch)]
+    async fn sleepMs(ms: i32) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
 }
 
 const STORAGE_KEY: &str = "definy_current_key";
@@ -101,12 +108,16 @@ pub async fn credential_get() -> Option<ed25519_dalek::SigningKey> {
         return Some(signing_key);
     }
 
-    // タイムアウト 300ms で silent モードで取得を試みる
-    let password_js = getSilentPasswordCredential(300).await.ok()?;
+    // タイムアウト 200ms で silent モードで取得を試みる
+    let password_js = getSilentPasswordCredential(200).await.ok()?;
     let password = password_js.as_string()?;
     let key = parse_password(password)?;
     credential_save_sync(&key);
     Some(key)
+}
+
+pub async fn sleep(ms: i32) {
+    let _ = sleepMs(ms).await;
 }
 
 pub fn credential_clear() {

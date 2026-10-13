@@ -106,6 +106,16 @@ fn AppRoot() -> Element {
             }
         }
 
+        // Failsafe timer: ensures `is_auth_loading` is cleared within 400ms under any circumstances
+        spawn(async move {
+            definy_ui::navigator_credential::sleep(400).await;
+            if state_signal.read().is_auth_loading {
+                let mut next = state_signal.read().clone();
+                next.is_auth_loading = false;
+                state_signal.set(next);
+            }
+        });
+
         spawn(async move {
             use futures_util::StreamExt;
 
