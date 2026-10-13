@@ -374,7 +374,8 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
                 div {
                     id: "dropdown-panel-language",
                     "popover": "auto",
-                    style: "position: absolute; inset: auto; position-anchor: --dropdown-language; position-area: bottom span-left; position-try-fallbacks: flip-block, flip-inline; width: max-content; min-width: 9rem; max-width: 14rem; margin: 4px 0 0 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+                    class: "dropdown-popover-panel",
+                    style: "position: absolute; inset: auto; position-anchor: --dropdown-language; position-area: bottom span-left; position-try-fallbacks: flip-block, flip-inline; width: max-content; min-width: 9rem; max-width: 14rem; margin: 4px 0 0 0; background-color: var(--surface-opaque); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
                     div { style: "display: flex; flex-direction: column;",
                         for lang in supported {
                             {
@@ -418,7 +419,8 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
         div {
             id: "header-popover",
             "popover": "auto",
-            style: "position: absolute; inset: auto; position-anchor: --header-popover-button; position-area: bottom span-left; position-try-fallbacks: flip-block, flip-inline; width: max-content; min-width: 10rem; max-width: 18rem; margin: 4px 0 0 0; padding: 0.42rem; border: 1px solid var(--border); background: var(--surface); color: var(--text); backdrop-filter: var(--glass-blur); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+            class: "dropdown-popover-panel",
+            style: "position: absolute; inset: auto; position-anchor: --header-popover-button; position-area: bottom span-left; position-try-fallbacks: flip-block, flip-inline; width: max-content; min-width: 10rem; max-width: 18rem; margin: 4px 0 0 0; padding: 0.42rem; border: 1px solid var(--border); background-color: var(--surface-opaque); color: var(--text); backdrop-filter: var(--glass-blur); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); box-sizing: border-box;",
             if let Some((account_id, account_name)) = account_link {
                 a {
                     href: context.href_with_lang(Location::Account(account_id)),

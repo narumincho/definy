@@ -52,6 +52,16 @@ fn dom_show_popover_and_focus(
                         &wasm_bindgen::JsValue::from_str("inset"),
                         &wasm_bindgen::JsValue::from_str("auto"),
                     );
+                    let _ = set_prop_fn.call2(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("background-color"),
+                        &wasm_bindgen::JsValue::from_str("var(--surface-opaque)"),
+                    );
+                    let _ = set_prop_fn.call2(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("color"),
+                        &wasm_bindgen::JsValue::from_str("var(--text)"),
+                    );
 
                     let supports_anchor =
                         js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("CSS"))
@@ -348,7 +358,8 @@ pub fn SearchableDropdownPanel(
         div {
             id: "{panel_id}",
             "popover": "auto",
-            style: "position: absolute; inset: auto; position-anchor: {anchor_name}; position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+            class: "dropdown-popover-panel",
+            style: "position: absolute; inset: auto; position-anchor: {anchor_name}; position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background-color: var(--surface-opaque); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
             {header}
             input {
                 r#type: "text",

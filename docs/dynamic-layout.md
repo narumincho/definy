@@ -70,3 +70,18 @@ data = [
 - ノードの枠は常に丸くする. 1 行に収まるバッジ・インラインカプセルは
   `--radius-full` (ピル型), 高さのある複数行カプセル・テーブルは `--radius-lg`
   を使う.
+- **ダークテーマの統一と Popover / ネイティブ要素対策**:
+  - ブラウザの User Agent Stylesheet は `:root` や `<meta name="color-scheme">`
+    で `color-scheme: dark;` を宣言しないと `Canvas` (`#ffffff`) や
+    `CanvasText` をライトモード基準で計算するため, `[popover]` や `<dialog>`,
+    `<select>`, `<option>`, オートフィルが白背景になって文字が読めなくなる.
+  - `:root` と `html`, `body`, `<meta>` に `color-scheme: dark;` を明示し,
+    `[popover]` および `:popover-open`, `.dropdown-popover-panel` に
+    `background-color: var(--surface-opaque); color: var(--text);` を指定して
+    Top Layer で確実に不透明ダーク背景を保つ.
+  - Dioxus の DOM パッチ適用処理 (`setAttributeInner`) では,
+    直接操作されたインラインスタイルとショートハンド (`background`, `border`)
+    の競合により再レンダリング時にスタイルが脱落する場合があるため,
+    装飾スタイルはインラインではなく CSS クラス (`.dropdown-popover-panel`)
+    で確実に管理する.
+

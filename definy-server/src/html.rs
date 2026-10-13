@@ -43,6 +43,7 @@ pub fn render_to_html(
 <head>
 <title>{escaped_title}</title>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="dark">
 <meta name="description" content="{escaped_desc}">
 <meta property="og:title" content="{escaped_title}">
 <meta property="og:description" content="{escaped_desc}">
