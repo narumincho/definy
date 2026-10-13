@@ -215,6 +215,26 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                                 class: "{type_badge_cls}",
                                                 "{type_str}"
                                             }
+                                            // プレビューリンク
+                                            if let Some(prev) = part
+                                                .expression
+                                                .as_ref()
+                                                .and_then(definy_core::detect_preview_in_expression)
+                                            {
+                                                {
+                                                    let sub_url = crate::preview_apps::build_preview_subdomain_url(&prev.code);
+                                                    rsx! {
+                                                        a {
+                                                            href: "{sub_url}",
+                                                            target: "_blank",
+                                                            rel: "noopener noreferrer", // 最終更新日時
+                                                            title: "Preview Web App",
+                                                            style: "display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 999px; background: rgba(56, 189, 248, 0.12); color: var(--primary); text-decoration: none; border: 1px solid rgba(56, 189, 248, 0.3); font-weight: 500;",
+                                                            "🌐 {prev.code} ↗"
+                                                        }
+                                                    }
+                                                }
+                                            }
                                             // 作成者
                                             a {
                                                 href: context.href_with_lang(Location::Account(part.account_id.clone())),

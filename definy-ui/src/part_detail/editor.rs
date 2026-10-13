@@ -8,6 +8,7 @@ use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::evaluate_expression;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
+use crate::preview_apps::{build_preview_path_url, build_preview_subdomain_url};
 
 #[component]
 pub(crate) fn PartEditorCard(
@@ -222,6 +223,11 @@ pub(crate) fn PartEditorCard(
         }
     };
 
+    let detected_preview = expression
+        .read()
+        .as_ref()
+        .and_then(definy_core::detect_preview_in_expression);
+
     rsx! {
         div { style: "display: grid; gap: 0.85rem;",
             // 1. メタ情報＆アクションヘッダーカード
@@ -252,6 +258,32 @@ pub(crate) fn PartEditorCard(
                         }
                     }
                     div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                        if let Some(ref prev) = detected_preview {
+                            {
+                                let sub_url = build_preview_subdomain_url(&prev.code);
+                                rsx! {
+                                    a {
+                                        href: "{sub_url}",
+                                        target: "_blank",
+                                        rel: "noopener noreferrer",
+                                        class: "btn-primary",
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);",
+                                        span {
+                                            {
+                                                context
+                                                    .language
+                                                    .label(
+                                                        "🚀 Preview Web App",
+                                                        "🚀 プレビューを開く",
+                                                        "🚀 Antaŭrigardo",
+                                                    )
+                                            }
+                                        }
+                                        span { style: "font-size: 0.72rem;", "↗" }
+                                    }
+                                }
+                            }
+                        }
                         button {
                             r#type: "button",
                             class: "btn-secondary",
@@ -366,6 +398,74 @@ pub(crate) fn PartEditorCard(
                         class: "mono",
                         style: "font-size: 0.82rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
                         "{result}"
+                    }
+                }
+            }
+
+            // プレビューバナーカード (definy:preview 検出時)
+            if let Some(ref prev) = detected_preview {
+                {
+                    let sub_url = build_preview_subdomain_url(&prev.code);
+                    let path_url = build_preview_path_url(&prev.code);
+                    rsx! {
+                        div {
+                            class: "preview-banner-card",
+                            style: "background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.07)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.08);",
+                            div { style: "display: flex; align-items: center; gap: 0.85rem;",
+                                span { style: "font-size: 1.7rem;", "🌐" }
+                                div {
+                                    div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
+                                        span { style: "font-weight: 700; font-size: 1.05rem; color: var(--text-primary);",
+                                            "{context.language.label(\"Web App Preview\", \"Web アプリ プレビュー\", \"Reteja Apo-Antaŭrigardo\")}"
+                                        }
+                                        span { style: "background: rgba(56, 189, 248, 0.2); color: var(--primary); font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(56, 189, 248, 0.35);",
+                                            "code: \"{prev.code}\""
+                                        }
+                                    }
+                                    div { style: "font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.45;",
+                                        {
+                                            context
+                                                .language
+                                                .label(
+                                                    "This part defines a web app using definy:preview. Click the preview button to test it on the live server.",
+                                                    "このパーツは definy:preview を呼び出して Web アプリを定義しています。プレビューボタンから即座に動作確認できます。",
+                                                    "Ĉi tiu parto difinas retejon per definy:preview.",
+                                                )
+                                        }
+                                    }
+                                }
+                            }
+                            div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
+                                a {
+                                    href: "{sub_url}",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    class: "btn-primary",
+                                    style: "display: inline-flex; align-items: center; gap: 0.45rem; text-decoration: none; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);",
+                                    span {
+                                        {
+                                            context
+                                                .language
+                                                .label(
+                                                    "🚀 Launch Preview",
+                                                    "🚀 プレビューを開く",
+                                                    "🚀 Lanĉi Antaŭrigardon",
+                                                )
+                                        }
+                                    }
+                                    span { style: "font-size: 0.75rem; opacity: 0.85;", "↗" }
+                                }
+                                a {
+                                    href: "{path_url}",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    class: "btn-secondary",
+                                    style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.5rem 0.85rem; font-size: 0.82rem; border-radius: var(--radius-sm);",
+                                    span { "📁 {path_url}" }
+                                    span { style: "font-size: 0.72rem; opacity: 0.8;", "↗" }
+                                }
+                            }
+                        }
                     }
                 }
             }

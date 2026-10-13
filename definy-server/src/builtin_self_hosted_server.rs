@@ -12,15 +12,15 @@
 //! 構築・起動できる対話型 Studio UI (`GET /`) と JSON API (`GET /healthz`, `GET /api/self-host`) を
 //! 純粋関数型 Pull ストリーム (`std.string-list-to-utf8-stream`, `std.string-to-utf8-stream`) として返します。
 
-use crate::ast_builder::{call_part, fn_expr, fn_type};
-use crate::builtin_std_functions::byte_stream_part_type;
+use crate::ast_builder::{call_part, fn_expr};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AndExpression, Description, EqualExpression, Expression, GreaterThanExpression, IfExpression,
-    LetExpression, ListGetExpression, ListLengthExpression, ListLiteralExpression, MatchArm,
-    MatchExpression, ModulePartEntry, NumberExpression, PartType, RecordFieldType,
-    RecordGetExpression, StringConcatExpression, StringExpression, TypeLiteralExpression,
-    TypeLiteralItemExpression, VariableExpression, VariantExpression, derive_module_part_id,
+    AndExpression, CallArgument, CallExpression, Description, EqualExpression, Expression,
+    GreaterThanExpression, IfExpression, LetExpression, ListGetExpression, ListLengthExpression,
+    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
+    PartReferenceExpression, RecordGetExpression, StringConcatExpression, StringExpression,
+    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
 fn str_expr(s: &str) -> Expression {
@@ -106,7 +106,9 @@ fn http_response_record(status: i64, content_type: &str, body_stream: Expression
 pub fn create_self_hosted_definy_server_part(
     core_module_id: &EventHashId,
     std_module_id: &EventHashId,
+    definy_module_id: &EventHashId,
 ) -> ModulePartEntry {
+    let preview_part_id = derive_module_part_id(definy_module_id, "preview");
     let expr_type_hash = derive_module_part_id(core_module_id, "expression");
     let to_source_hash = derive_module_part_id(core_module_id, "expression-to-source");
     let optimize_hash = derive_module_part_id(core_module_id, "optimize-expression");
@@ -425,70 +427,45 @@ pub fn create_self_hosted_definy_server_part(
         route_expr,
     );
 
-    let headers_list_type = || {
-        PartType::List(Box::new(PartType::Record(vec![
-            RecordFieldType {
-                key: "name".into(),
-                value: Box::new(PartType::String),
-            },
-            RecordFieldType {
-                key: "value".into(),
-                value: Box::new(PartType::String),
-            },
-        ])))
-    };
+    let preview_type = crate::builtin_definy_parts::preview_config_record_type();
+    let handler_fn = fn_expr(&[("req", 1)], body);
+    let preview_call_expr = Expression::Call(CallExpression {
+        function: Box::new(Expression::PartReference(PartReferenceExpression {
+            part_definition_event_hash: preview_part_id,
+            content_hash: None,
+        })),
+        arguments: vec![CallArgument {
+            name: "config".into(),
+            value: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "code".into(),
+                        value: Box::new(str_expr("self-definy")),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "handler".into(),
+                        value: Box::new(handler_fn),
+                    },
+                ],
+            })),
+        }],
+    });
 
     ModulePartEntry {
         name: "self-hosted-definy-server".into(),
-        part_type: Some(fn_type(
-            &[(
-                "req",
-                PartType::Record(vec![
-                    RecordFieldType {
-                        key: "method".into(),
-                        value: Box::new(PartType::String),
-                    },
-                    RecordFieldType {
-                        key: "url".into(),
-                        value: Box::new(PartType::String),
-                    },
-                    RecordFieldType {
-                        key: "headers".into(),
-                        value: Box::new(headers_list_type()),
-                    },
-                    RecordFieldType {
-                        key: "body".into(),
-                        value: Box::new(byte_stream_part_type()),
-                    },
-                ]),
-            )],
-            PartType::Record(vec![
-                RecordFieldType {
-                    key: "status".into(),
-                    value: Box::new(PartType::Number),
-                },
-                RecordFieldType {
-                    key: "headers".into(),
-                    value: Box::new(headers_list_type()),
-                },
-                RecordFieldType {
-                    key: "body".into(),
-                    value: Box::new(byte_stream_part_type()),
-                },
-            ]),
-        )),
+        part_type: Some(preview_type),
         description: Description::localized(vec![
             (
                 "en",
-                "Self-hosted definy HTTP server & Studio executing core.expression-to-source, core.optimize-expression, core.type-check, core.eval-ast, and core.compile-to-wasm",
+                "Self-hosted definy HTTP server & Studio executing core.expression-to-source, core.optimize-expression, core.type-check, core.eval-ast, and core.compile-to-wasm via definy:preview",
             ),
             (
                 "ja",
-                "definy 自身のコアパーツ群 (フォーマッタ・最適化器・型検査器・評価器・Wasmコンパイラ) を実行して definy Studio を提供するセルフホスト HTTP サーバーパーツ",
+                "definy 自身のコアパーツ群 (フォーマッタ・最適化器・型検査器・評価器・Wasmコンパイラ) を実行して definy Studio を提供する Web アプリ プレビュー (definy:preview) パーツ",
             ),
         ]),
         content_hash: None,
-        expression: Some(fn_expr(&[("req", 1)], body)),
+        expression: Some(preview_call_expr),
     }
 }
 

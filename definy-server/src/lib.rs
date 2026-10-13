@@ -1,6 +1,7 @@
 mod assets;
 pub(crate) mod ast_builder;
 pub mod builtin_core_parts;
+pub mod builtin_definy_parts;
 mod builtin_eval_match;
 mod builtin_evaluator;
 mod builtin_expression_type;

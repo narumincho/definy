@@ -17,20 +17,26 @@ Web ブラウザの JavaScript / WebAssembly サンドボックス内からは�
 的なプレビュー）を行うには、バックエンドサーバー（`definy-server`）内でアプリをホストし、HTTP
 リクエストを中継して実行する必要があります。
 
-### セキュリティと権限管理 (管理者制限)
+### 宣言的プレビューパーツ `definy:preview` による定義
 
-サーバー内で任意のコードを実行・ホストする機能をパブリックな全ユーザーに無制限で解放すると、リソース枯渇や不正アクセスのリスクが生じます。
-このため、definy では**起動時の環境変数に明示的に指定された管理者ユーザー（Admin
-User）のみがプレビューアプリを登録・開始・停止可能**とするセキュリティモデルを採用しています。
+手動で管理者アカウントIDを入力してサーバーに登録させる煩雑なUIを撤廃し、**プレビューを宣言的なパーツ式として定義する**モデルを採用しました。
 
-```bash
-# definy-server 起動時の管理者アカウント指定 (Ed25519 AccountId hex)
-# 単一指定、またはカンマ区切りで複数指定可能
-export DEFINY_ADMIN_ACCOUNT_ID="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+```text
+preview: { code: String, handler: HttpRequest -> HttpResponse }
 ```
 
-- 未設定時やアカウント ID が一致しない要求は、Connect-RPC において
-  `permission_denied` (HTTP 403 Forbidden) で即座に拒否されます。
+この `preview` 関数は `definy` モジュール内の定義パーツ `definy:preview` であり、通常のパーツと同様に定義画面が存在し、パーツ名や式の変更にも透過的に追従します。
+
+```text
+definy.preview({
+  code: "self-definy",
+  handler: fn(req: HttpRequest) => HttpResponse { ... }
+})
+```
+
+- **自動オンデマンド解決**: サーバー (`definy-server` および Cloudflare Workers) は、手動での事前登録を行わなくても、イベント履歴内のコミットされたパーツ式から `code == app_id` となるパーツを自動検出して HTTP リクエストをルーティング・実行します。
+- **自動プレビューリンク表示**: UI（パーツ編集画面やパーツ一覧）において `definy:preview` を呼び出しているパーツを検出し、その場でプレビューURL（サブドメインURLおよびパスURL）をリンクとして設置します。ワンクリックで即座にプレビューを開くことができます。
+- **権限管理**: パーツの作成・編集には通常のユーザー認証（Ed25519 署名）が適用されます。バックエンドの登録 API (`RegisterPreviewApp`) 経由での永続プレビュー登録・停止は管理者アカウント (`DEFINY_ADMIN_ACCOUNT_ID`) に制限されますが、宣言的パーツプレビューは全ユーザーが安全にパーツとして記述・利用できます。
 
 ---
 

@@ -211,8 +211,7 @@ async fn test_preview_connect_rpc_admin_permission_and_lifecycle() {
         .await
         .unwrap();
     let list_res: ListPreviewAppsResponse = serde_json::from_slice(&body_bytes).unwrap();
-    assert_eq!(list_res.apps.len(), 1);
-    assert_eq!(list_res.apps[0].app_id, "my-preview");
+    assert!(list_res.apps.iter().any(|a| a.app_id == "my-preview"));
 
     // 4. パスプレフィックス経由でプレビューアクセス (/preview/my-preview)
     let req = axum::http::Request::builder()

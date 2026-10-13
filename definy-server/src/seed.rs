@@ -20,7 +20,24 @@ pub fn get_builtin_module_seeds(account_id: &AccountId) -> Vec<ModuleSeed> {
     let std_module_id = definy_event::event::derive_module_id(account_id, "std");
     let wasi_module_id = definy_event::event::derive_module_id(account_id, "wasi");
 
+    let definy_module_id = definy_event::event::derive_module_id(account_id, "definy");
+
     vec![
+        ModuleSeed::new(
+            "definy",
+            Description::localized(vec![
+                ("en", "Definy platform runtime and preview features"),
+                (
+                    "ja",
+                    "definy プラットフォームのランタイムおよびプレビュー機能",
+                ),
+            ]),
+            "Initial commit for definy module",
+            crate::builtin_definy_parts::create_definy_module_parts(
+                &definy_module_id,
+                &std_module_id,
+            ),
+        ),
         ModuleSeed::new(
             "core",
             Description::localized(vec![
@@ -76,6 +93,7 @@ pub fn get_builtin_module_seeds(account_id: &AccountId) -> Vec<ModuleSeed> {
             crate::builtin_sample_parts::create_sample_module_parts(
                 &core_module_id,
                 &std_module_id,
+                &definy_module_id,
             ),
         ),
     ]

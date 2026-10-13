@@ -1,100 +1,78 @@
 use dioxus::prelude::*;
 
 use crate::page_context::PageContext;
-use definy_event::rpc::{
-    ListPreviewAppsRequest, PreviewAppItem, RegisterPreviewAppRequest, StopPreviewAppRequest,
-};
+use definy_event::rpc::{ListPreviewAppsRequest, PreviewAppItem, StopPreviewAppRequest};
+
+/// サブドメインURLを構築します
+pub fn build_preview_subdomain_url(code: &str) -> String {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        let loc = window.location();
+        let protocol = loc.protocol().unwrap_or_else(|_| "http:".into());
+        let hostname = loc.hostname().unwrap_or_else(|_| "localhost".into());
+        let port = loc.port().unwrap_or_default();
+
+        if hostname.ends_with(".localhost") || hostname == "localhost" || hostname == "127.0.0.1" {
+            let port_part = if port.is_empty() {
+                String::new()
+            } else {
+                format!(":{port}")
+            };
+            return format!("http://{code}.localhost{port_part}");
+        }
+
+        let clean_root = hostname.trim().to_lowercase();
+        let use_hyphen =
+            !clean_root.ends_with(".workers.dev") && clean_root.split('.').count() >= 3;
+        if use_hyphen {
+            return format!("{protocol}//{code}-{clean_root}");
+        } else {
+            return format!("{protocol}//{code}.{clean_root}");
+        }
+    }
+    format!("http://{code}.localhost:8000")
+}
+
+/// パスベースURLを構築します
+pub fn build_preview_path_url(code: &str) -> String {
+    format!("/preview/{code}/")
+}
 
 #[component]
 pub fn PreviewAppsCard(context: PageContext) -> Element {
     let lang = context.language;
 
-    let mut app_id = use_signal(String::new);
-    let mut display_name = use_signal(String::new);
-    let mut part_id = use_signal(String::new);
-    let mut account_id = use_signal(String::new);
+    let mut refresh_trigger = use_signal(|| 0usize);
 
-    let mut is_loading = use_signal(|| false);
-    let mut error_message = use_signal(|| Option::<String>::None);
-    let mut success_message = use_signal(|| Option::<String>::None);
-    let mut active_apps = use_signal(Vec::<PreviewAppItem>::new);
-
-    // 稼働中プレビューアプリの一覧取得
-    let refresh_apps = move || {
-        spawn(async move {
+    // 稼働中・定義済みプレビューアプリの一覧取得
+    let apps_resource = use_resource(move || {
+        let _ = *refresh_trigger.read();
+        async move {
             let req = ListPreviewAppsRequest { account_id: None };
-            match crate::fetch::list_preview_apps(&req).await {
-                Ok(res) => {
-                    active_apps.set(res.apps);
-                }
-                Err(err) => {
-                    println!("Failed to list preview apps: {err:?}");
-                }
-            }
-        });
-    };
-
-    use_effect(move || {
-        refresh_apps();
+            crate::fetch::list_preview_apps(&req)
+                .await
+                .ok()
+                .map(|res| res.apps)
+                .unwrap_or_default()
+        }
     });
 
-    let on_start_preview = move |_| {
-        let current_app_id = app_id.read().trim().to_string();
-        let current_display_name = display_name.read().trim().to_string();
-        let current_part_id = part_id.read().trim().to_string();
-        let current_account_id = account_id.read().trim().to_string();
+    let active_apps = apps_resource.read().clone().unwrap_or_default();
+    let is_loading = apps_resource.read().is_none();
 
-        if current_app_id.is_empty() {
-            error_message.set(Some(
-                lang.label(
-                    "App ID / Subdomain is required",
-                    "アプリ ID / サブドメインは必須です",
-                    "Apo ID / Subdomajno estas postulata",
-                )
-                .to_string(),
-            ));
-            return;
-        }
+    let on_refresh = move |_| {
+        refresh_trigger += 1;
+    };
 
-        if current_account_id.is_empty() {
-            error_message.set(Some(
-                lang.label(
-                    "Admin Account ID is required",
-                    "管理者アカウント ID は必須です",
-                    "Administranta Konto-ID estas postulata",
-                )
-                .to_string(),
-            ));
-            return;
-        }
-
-        is_loading.set(true);
-        error_message.set(None);
-        success_message.set(None);
-
+    let on_stop_app = move |app_id_to_stop: String| {
         spawn(async move {
-            let req = RegisterPreviewAppRequest {
-                app_id: current_app_id,
-                display_name: current_display_name,
-                part_id: current_part_id,
-                account_id: current_account_id,
+            let req = StopPreviewAppRequest {
+                app_id: app_id_to_stop,
+                account_id: String::new(),
                 signature: None,
-                wasm_hash: None,
             };
-
-            match crate::fetch::register_preview_app(&req).await {
-                Ok(res) => {
-                    is_loading.set(false);
-                    success_message.set(Some(format!(
-                        "Preview app '{}' is running! Subdomain: {}",
-                        res.app_id, res.preview_url
-                    )));
-                    refresh_apps();
-                }
-                Err(err) => {
-                    is_loading.set(false);
-                    error_message.set(Some(format!("{err}")));
-                }
+            if crate::fetch::stop_preview_app(&req).await.is_ok() {
+                refresh_trigger += 1;
             }
         });
     };
@@ -112,219 +90,105 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
                         h2 { style: "margin: 0; font-size: 1.25rem; font-weight: 700;",
                             {
                                 lang.label(
-                                    "In-Server App Preview (Localhost & Subdomain Runner)",
-                                    "インサーバー Web アプリ プレビュー (Localhost & サブドメイン実行)",
-                                    "Enservila Retejo-Antaŭrigardo (Localhost kaj Subdomajno)",
+                                    "In-Server Web App Preview (definy:preview)",
+                                    "インサーバー Web アプリ プレビュー (definy:preview)",
+                                    "Enservila Retejo-Antaŭrigardo (definy:preview)",
                                 )
                             }
                         }
                         span { style: "font-size: 0.85rem; color: var(--text-secondary);",
                             {
                                 lang.label(
-                                    "Execute and test definy web applications with custom subdomains or paths on definy server",
-                                    "definy サーバー上で Web アプリを動作検証。アプリごとのサブドメインまたはパスプレフィックスで即座にアクセス可能",
-                                    "Provu definy-retejajn apojn per subdomajnoj sur definy-servilo",
+                                    "Preview and test web applications defined as parts using definy:preview",
+                                    "definy:preview パーツを呼び出して定義された Web アプリケーションのプレビュー環境",
+                                    "Antaŭrigardu retejajn apojn difinitajn per definy:preview",
                                 )
                             }
                         }
                     }
                 }
                 div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                    span { style: "background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;",
-                        {
-                            lang.label(
-                                "Admin User Only (DEFINY_ADMIN_ACCOUNT_ID)",
-                                "管理者のみ実行可能 (DEFINY_ADMIN_ACCOUNT_ID)",
-                                "Nur Administranto (DEFINY_ADMIN_ACCOUNT_ID)",
-                            )
-                        }
+                    span { style: "background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;",
+                        "definy:preview"
                     }
                 }
             }
 
-            // 説明文
-            p { style: "margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55;",
-                {
-                    lang.label(
-                        "Web browsers cannot host backend web servers. definy-server hosts the application on-demand in-memory or Wasm runtime. To prevent unauthorized resource usage, only admin users specified in the DEFINY_ADMIN_ACCOUNT_ID environment variable can register and run preview apps.",
-                        "Web ブラウザ単体では Web サーバーを立てられないため、definy サーバー内でインメモリまたは Wasm ランタイムを用いてオンデマンド実行します。リスク防止のため、サーバー起動時に環境変数 DEFINY_ADMIN_ACCOUNT_ID に指定された管理者アカウントのみがプレビューを起動できます。",
-                        "Retejaj retumiloj ne povas mem gastigi servilojn. Nur administranto povas ruli antaŭrigardajn apojn por sekureco.",
-                    )
-                }
-            }
-
-            // 入力フォーム
-            div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;",
-                div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
-                    label { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-primary);",
+            // 説明カード (パーツ定義の案内)
+            div { style: "background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem;",
+                div { style: "display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.95rem; color: var(--text-primary);",
+                    span { "💡" }
+                    span {
                         {
                             lang.label(
-                                "App ID / Subdomain *",
-                                "アプリ ID / サブドメイン名 *",
-                                "Apo-ID / Subdomajno *",
+                                "How to define a preview Web App",
+                                "プレビュー Web アプリの作成方法",
+                                "Kiel difini antaŭrigardan retejon",
                             )
                         }
                     }
-                    input {
-                        r#type: "text",
-                        placeholder: "e.g. my-app, demo-web",
-                        value: "{app_id}",
-                        oninput: move |e| app_id.set(e.value()),
-                        style: "background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; color: var(--text-primary); font-size: 0.9rem;",
-                    }
                 }
-
-                div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
-                    label { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-primary);",
-                        {lang.label("Display Name", "表示名 (任意)", "Montra Nomo")}
-                    }
-                    input {
-                        r#type: "text",
-                        placeholder: "e.g. My Awesome Web App",
-                        value: "{display_name}",
-                        oninput: move |e| display_name.set(e.value()),
-                        style: "background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; color: var(--text-primary); font-size: 0.9rem;",
-                    }
-                }
-
-                div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
-                    label { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-primary);",
-                        {
-                            lang.label(
-                                "Target Part ID / Name",
-                                "実行対象パーツ ID / 名前",
-                                "Cela Part-ID",
-                            )
-                        }
-                    }
-                    input {
-                        r#type: "text",
-                        placeholder: "e.g. part-html-handler",
-                        value: "{part_id}",
-                        oninput: move |e| part_id.set(e.value()),
-                        style: "background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; color: var(--text-primary); font-size: 0.9rem;",
-                    }
-                }
-
-                div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
-                    label { style: "font-size: 0.85rem; font-weight: 600; color: var(--text-primary);",
-                        {
-                            lang.label(
-                                "Admin Account ID *",
-                                "管理者アカウント ID (Hex) *",
-                                "Administranta Konto-ID *",
-                            )
-                        }
-                    }
-                    input {
-                        r#type: "text",
-                        placeholder: "e.g. 0123456789abcdef...",
-                        value: "{account_id}",
-                        oninput: move |e| account_id.set(e.value()),
-                        style: "background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; color: var(--text-primary); font-size: 0.9rem; font-family: monospace;",
-                    }
-                }
-            }
-
-            // 起動ボタン
-            div { style: "display: flex; justify-content: flex-end; gap: 0.8rem; flex-wrap: wrap;",
-                button {
-                    onclick: move |_| {
-                        app_id.set("self-definy".to_string());
-                        display_name.set("Self-Hosted definy Studio (definy in definy)".to_string());
-                        part_id.set("sample.self-hosted-definy-server".to_string());
-                        if account_id.read().trim().is_empty() {
-                            account_id.set("local-dev-admin".to_string());
-                        }
-                    },
-                    style: "padding: 0.65rem 1.2rem; background: var(--bg-canvas); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; cursor: pointer;",
+                p { style: "margin: 0; font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;",
                     {
                         lang.label(
-                            "⚡ Fill Self-Hosted definy Preset",
-                            "⚡ セルフホスト definy (self-definy) をセット",
-                            "⚡ Plenigi Mem-Gastigitan definy",
+                            "In definy, web apps are defined declaratively as parts by calling definy:preview. No manual server registration is needed. Once defined, preview URLs are instantly active.",
+                            "definy では、Web アプリは definy:preview パーツを呼び出すパーツとして宣言的に定義します。手動でサーバーを起動・登録する必要はなく、パーツを保存するとプレビュー URL から即座にアクセスできます。",
+                            "En definy, retejaj apoj estas difinitaj kiel partoj vokantaj definy:preview sen mana registrado.",
                         )
                     }
                 }
-                button {
-                    onclick: on_start_preview,
-                    disabled: *is_loading.read(),
-                    style: "padding: 0.65rem 1.6rem; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: opacity 0.15s ease;",
-                    if *is_loading.read() {
-                        {lang.label("Starting Preview...", "プレビュー起動中...", "Lanĉante...")}
-                    } else {
-                        {
-                            lang.label(
-                                "🚀 Start Preview App",
-                                "🚀 プレビューアプリを起動",
-                                "🚀 Lanĉi Antaŭrigardon",
-                            )
-                        }
+                pre { style: "margin: 0; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: #38bdf8; overflow-x: auto;",
+                    "preview({{\n  code: \"my-app\",\n  handler: fn(req) => {{\n    status: 200,\n    headers: [ {{ name: \"content-type\", value: \"text/html\" }} ],\n    body: std.string-to-utf8-stream(\"<h1>Hello from definy!</h1>\")\n  }}\n}})"
+                }
+                div { style: "font-size: 0.82rem; color: var(--text-secondary);",
+                    {
+                        lang.label(
+                            "The preview function is a standard definy:preview part. Its name can be changed freely.",
+                            "preview 関数は definy モジュール内の標準パーツ (definy:preview) です。他のパーツと同様に定義画面があり、名前の変更も可能です。",
+                            "La preview-funkcio estas norma parto definy:preview.",
+                        )
                     }
                 }
             }
 
-            // メッセージ表示
-            if let Some(err) = error_message.read().as_ref() {
-                div { style: "padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: var(--radius-sm); color: #ef4444; font-size: 0.85rem;",
-                    "⚠️ {err}"
-                }
-            }
-            if let Some(msg) = success_message.read().as_ref() {
-                div { style: "padding: 0.75rem 1rem; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: var(--radius-sm); color: #22c55e; font-size: 0.85rem;",
-                    "✅ {msg}"
-                }
-            }
-
-            // 稼働中プレビューアプリ一覧
-            div { style: "display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem;",
+            // 稼働中・定義済みプレビューアプリ一覧
+            div { style: "display: flex; flex-direction: column; gap: 0.8rem;",
                 div { style: "display: flex; align-items: center; justify-content: space-between;",
                     h3 { style: "margin: 0; font-size: 1.05rem; font-weight: 700;",
                         {
                             lang.label(
-                                "Active Preview Apps",
-                                "稼働中のプレビューアプリ一覧",
+                                "Active Preview Web Apps",
+                                "定義済み・稼働中のプレビューアプリ一覧",
                                 "Aktivaj Antaŭrigardaj Apoj",
                             )
                         }
                     }
                     button {
-                        onclick: move |_| refresh_apps(),
+                        onclick: on_refresh,
+                        disabled: is_loading,
                         style: "background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.75rem; color: var(--text-secondary); cursor: pointer; font-size: 0.8rem;",
                         {lang.label("🔄 Refresh", "🔄 更新", "🔄 Reŝargi")}
                     }
                 }
 
-                if active_apps.read().is_empty() {
+                if active_apps.is_empty() {
                     div { style: "padding: 1.5rem; text-align: center; color: var(--text-secondary); background: var(--bg-canvas); border-radius: var(--radius-sm); border: 1px dashed var(--border); font-size: 0.85rem;",
                         {
                             lang.label(
-                                "No active preview apps. Register one above to test web apps.",
-                                "現在稼働中のプレビューアプリはありません。上のフォームから起動して動作を試せます。",
-                                "Neniuj aktivaj antaŭrigardaj apoj.",
+                                "No preview apps found. Create a part calling definy:preview to get started.",
+                                "現在定義されているプレビューアプリはありません。definy:preview を呼び出すパーツを作成するとここに表示されます。",
+                                "Neniuj antaŭrigardaj apoj trovitaj.",
                             )
                         }
                     }
                 } else {
                     div { style: "display: flex; flex-direction: column; gap: 0.6rem;",
-                        for app in active_apps.read().iter() {
+                        for app in active_apps.iter() {
                             PreviewAppRow {
                                 key: "{app.app_id}",
                                 app: app.clone(),
                                 lang,
-                                on_stop: move |app_id_to_stop: String| {
-                                    let current_account = account_id.read().trim().to_string();
-                                    spawn(async move {
-                                        let req = StopPreviewAppRequest {
-                                            app_id: app_id_to_stop,
-                                            account_id: current_account,
-                                            signature: None,
-                                        };
-                                        if crate::fetch::stop_preview_app(&req).await.is_ok() {
-                                            refresh_apps();
-                                        }
-                                    });
-                                },
+                                on_stop: on_stop_app,
                             }
                         }
                     }
@@ -341,10 +205,12 @@ fn PreviewAppRow(
     on_stop: EventHandler<String>,
 ) -> Element {
     let stop_id = app.app_id.clone();
+    let sub_url = build_preview_subdomain_url(&app.subdomain);
+    let path_url = build_preview_path_url(&app.app_id);
 
     rsx! {
-        div { style: "display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.1rem; background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.8rem;",
-            div { style: "display: flex; flex-direction: column; gap: 0.25rem;",
+        div { style: "display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.2rem; background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.8rem;",
+            div { style: "display: flex; flex-direction: column; gap: 0.3rem;",
                 div { style: "display: flex; align-items: center; gap: 0.6rem;",
                     strong { style: "font-size: 0.95rem; color: var(--text-primary);",
                         "{app.display_name}"
@@ -352,31 +218,38 @@ fn PreviewAppRow(
                     span { style: "background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
                         "{app.status}"
                     }
-                }
-                div { style: "display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem;",
-                    a {
-                        href: "{app.preview_url}",
-                        target: "_blank",
-                        rel: "noopener noreferrer",
-                        style: "color: var(--primary); text-decoration: underline;",
-                        "🔗 Subdomain: {app.preview_url}"
-                    }
-                    a {
-                        href: "{app.path_url}",
-                        target: "_blank",
-                        rel: "noopener noreferrer",
-                        style: "color: var(--text-secondary); text-decoration: underline;",
-                        "📁 Path: {app.path_url}"
+                    span { style: "font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--text-muted);",
+                        "code: {app.subdomain}"
                     }
                 }
-                div { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                    "Part: {app.part_id} | Owner: {app.owner_account_id}"
+                div { style: "display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.85rem; margin-top: 0.15rem;",
+                    a {
+                        href: "{sub_url}",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        class: "btn-primary",
+                        style: "padding: 0.35rem 0.75rem; font-size: 0.82rem; text-decoration: none; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.3rem;",
+                        span {
+                            "🌐 {lang.label(\"Open Preview\", \"プレビューを開く\", \"Malfermi Antaŭrigardon\")}"
+                        }
+                        span { style: "font-size: 0.7rem;", "↗" }
+                    }
+                    a {
+                        href: "{path_url}",
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        style: "color: var(--text-secondary); text-decoration: underline; font-size: 0.82rem; display: inline-flex; align-items: center;",
+                        "{path_url}"
+                    }
+                }
+                div { style: "font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;",
+                    "Target Part: {app.part_id}"
                 }
             }
 
             button {
                 onclick: move |_| on_stop.call(stop_id.clone()),
-                style: "padding: 0.4rem 0.9rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer;",
+                style: "padding: 0.4rem 0.85rem; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer;",
                 {lang.label("Stop", "停止", "Haltigi")}
             }
         }

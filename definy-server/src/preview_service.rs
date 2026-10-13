@@ -321,7 +321,7 @@ pub async fn handle_list_preview_apps(
 
     let filter_account = req.account_id.as_deref().map(str::trim);
 
-    let items: Vec<PreviewAppItem> = apps
+    let mut items: Vec<PreviewAppItem> = apps
         .into_iter()
         .filter(|app| {
             if let Some(filter) = filter_account
@@ -343,6 +343,45 @@ pub async fn handle_list_preview_apps(
             subdomain: app.subdomain,
         })
         .collect();
+
+    let verified_events = load_verified_events_for_preview(&state).await;
+    let mut seen_app_ids: std::collections::HashSet<String> =
+        items.iter().map(|it| it.app_id.clone()).collect();
+
+    for (_hash, result) in verified_events.iter().rev() {
+        if let Ok((_sig, event)) = result
+            && let definy_event::event::EventContent::ModuleCommit(ref mc) = event.content
+        {
+            let owner_account = hex::encode(event.account_id.0.as_bytes());
+            if let Some(filter) = filter_account
+                && !filter.is_empty()
+                && !owner_account.eq_ignore_ascii_case(filter)
+            {
+                continue;
+            }
+            for part in &mc.parts {
+                if let Some(ref expr) = part.expression {
+                    if let Some(detected) = definy_core::detect_preview_in_expression(expr) {
+                        let app_id = detected.code.clone();
+                        if !seen_app_ids.contains(&app_id) {
+                            seen_app_ids.insert(app_id.clone());
+                            items.push(PreviewAppItem {
+                                preview_url: build_preview_url(&app_id),
+                                path_url: build_path_url(&app_id),
+                                app_id: app_id.clone(),
+                                display_name: part.name.to_string(),
+                                part_id: part.name.to_string(),
+                                owner_account_id: owner_account.clone(),
+                                created_at_rfc3339: event.time.to_rfc3339(),
+                                status: "running".to_string(),
+                                subdomain: app_id,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     let res = ListPreviewAppsResponse { apps: items };
     encode_response_or_error(codec, &res)
@@ -465,6 +504,33 @@ async fn load_verified_events_for_preview(
     crate::builtin_migration::build_builtin_verified_events()
 }
 
+/// イベント群から `definy:preview` を呼んでいるパーツで、`code == app_id` となるものを探索します。
+pub fn find_preview_part_in_events(
+    app_id: &str,
+    events: &[crate::self_hosted_wasm_compiler::VerifiedCommitEvent],
+) -> Option<(String, Expression, String)> {
+    let target_code = app_id.trim().to_lowercase();
+    for (_hash, result) in events.iter().rev() {
+        if let Ok((_sig, event)) = result
+            && let definy_event::event::EventContent::ModuleCommit(ref mc) = event.content
+        {
+            let account_hex = hex::encode(event.account_id.0.as_bytes());
+            for part in &mc.parts {
+                if let Some(ref expr) = part.expression {
+                    if let Some(detected) = definy_core::detect_preview_in_expression(expr) {
+                        if detected.code.eq_ignore_ascii_case(&target_code) {
+                            let handler =
+                                detected.handler_expression.unwrap_or_else(|| expr.clone());
+                            return Some((part.name.to_string(), handler, account_hex));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
 /// サブドメインまたはパスプレフィックスからディスパッチされたプレビューアプリを実行します。
 pub async fn execute_preview_app(
     state: &AppState,
@@ -474,60 +540,74 @@ pub async fn execute_preview_app(
     headers: &HeaderMap,
     body: &Bytes,
 ) -> Response {
+    let verified_events = load_verified_events_for_preview(state).await;
+
     let app = {
         let store = state.preview_store.read().await;
         store.get(app_id).cloned()
     };
 
-    let app = match app {
-        Some(a) => a,
-        None => {
-            return (
-                StatusCode::NOT_FOUND,
-                [("Content-Type", "text/html; charset=utf-8")],
-                format!(
-                    "<!DOCTYPE html><html><head><title>Preview App Not Found</title></head><body>\
-                    <h1>404 Preview App Not Found</h1>\
-                    <p>No active preview application registered for <code>{app_id}</code>.</p>\
-                    </body></html>"
-                ),
-            )
-                .into_response();
-        }
-    };
-
-    // 1. Wasm バイナリが存在する場合は Wasmtime でストリーム実行
-    if let Some(ref wasm) = app.wasm_bytes {
-        match definy_core::wasm_emitter::execute_wasm_http_response(wasm) {
-            Ok(evaluated) => return evaluated_http_response_to_axum_response(evaluated, app_id),
-            Err(err) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    [("Content-Type", "text/plain; charset=utf-8")],
-                    format!("Error executing Wasm for preview app '{app_id}': {err}"),
-                )
-                    .into_response();
+    let (expression, target_display_name, owner_account) = if let Some(a) = app {
+        // 1. Wasm バイナリが存在する場合は Wasmtime でストリーム実行
+        if let Some(ref wasm) = a.wasm_bytes {
+            match definy_core::wasm_emitter::execute_wasm_http_response(wasm) {
+                Ok(evaluated) => {
+                    return evaluated_http_response_to_axum_response(evaluated, app_id);
+                }
+                Err(err) => {
+                    return (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        [("Content-Type", "text/plain; charset=utf-8")],
+                        format!("Error executing Wasm for preview app '{app_id}': {err}"),
+                    )
+                        .into_response();
+                }
             }
         }
-    }
 
-    let verified_events = load_verified_events_for_preview(state).await;
-
-    // 2. part_id から式を探索して評価
-    let expression = if let Some(ref expr) = app.cached_expression {
-        Some(expr.clone())
-    } else if let Ok(expr) = crate::self_hosted_wasm_compiler::find_part_expression_in_events(
-        &app.part_id,
-        &verified_events,
-    ) {
-        Some(expr)
-    } else if let Some(db) = crate::ensure_db(state).await
-        && let Ok(Some(content_bytes)) = crate::db::get_content(&db, app.part_id.trim()).await
-        && let Ok(expr) = serde_cbor::from_slice::<Expression>(&content_bytes)
+        // 2. part_id から式を探索して評価
+        let expr = if let Some(ref expr) = a.cached_expression {
+            Some(expr.clone())
+        } else if let Ok(expr) = crate::self_hosted_wasm_compiler::find_part_expression_in_events(
+            &a.part_id,
+            &verified_events,
+        ) {
+            Some(expr)
+        } else if let Some(db) = crate::ensure_db(state).await
+            && let Ok(Some(content_bytes)) = crate::db::get_content(&db, a.part_id.trim()).await
+            && let Ok(expr) = serde_cbor::from_slice::<Expression>(&content_bytes)
+        {
+            Some(expr)
+        } else {
+            None
+        };
+        let final_expr = if let Some(ref e) = expr {
+            if let Some(detected) = definy_core::detect_preview_in_expression(e) {
+                detected.handler_expression.or(expr)
+            } else {
+                expr
+            }
+        } else {
+            expr
+        };
+        (final_expr, a.display_name, a.owner_account_id)
+    } else if let Some((part_name, handler_expr, account_hex)) =
+        find_preview_part_in_events(app_id, &verified_events)
     {
-        Some(expr)
+        (Some(handler_expr), part_name, account_hex)
     } else {
-        None
+        return (
+            StatusCode::NOT_FOUND,
+            [("Content-Type", "text/html; charset=utf-8")],
+            format!(
+                "<!DOCTYPE html><html><head><title>Preview App Not Found</title></head><body>\
+                <h1>404 Preview App Not Found</h1>\
+                <p>No active preview application registered for <code>{app_id}</code>.</p>\
+                <p>Define a part with <code>preview({{ code: \"{app_id}\", handler: ... }})</code> to launch.</p>\
+                </body></html>"
+            ),
+        )
+            .into_response();
     };
 
     if let Some(expr) = expression {
@@ -558,8 +638,7 @@ pub async fn execute_preview_app(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 [("Content-Type", "text/plain; charset=utf-8")],
                 format!(
-                    "Error executing part '{}' for preview app '{app_id}': {err}",
-                    app.part_id
+                    "Error executing part '{target_display_name}' for preview app '{app_id}': {err}"
                 ),
             )
                 .into_response(),
@@ -585,12 +664,12 @@ pub async fn execute_preview_app(
                 <p>Owner: <code>{}</code></p>\
                 <p>Target Part: <code>{}</code></p>\
                 </div></body></html>",
-                app.display_name,
-                app.display_name,
-                app.app_id,
+                target_display_name,
+                target_display_name,
+                app_id,
                 uri.path(),
-                app.owner_account_id,
-                app.part_id
+                owner_account,
+                target_display_name
             ),
         )
             .into_response()

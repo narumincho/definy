@@ -52,14 +52,23 @@ fn build_builtin_events() -> (
     let first_commit_time = chrono::DateTime::from_timestamp(1548909361, 0).unwrap();
 
     let seeds = crate::seed::get_builtin_module_seeds(&account_id);
+    let definy_seed = seeds.iter().find(|s| &*s.module_name == "definy").unwrap();
     let core_seed = seeds.iter().find(|s| &*s.module_name == "core").unwrap();
     let std_seed = seeds.iter().find(|s| &*s.module_name == "std").unwrap();
     let wasi_seed = seeds.iter().find(|s| &*s.module_name == "wasi").unwrap();
     let sample_seed = seeds.iter().find(|s| &*s.module_name == "sample").unwrap();
 
-    let core_module_commit = definy_event::event::Event {
+    let definy_module_commit = definy_event::event::Event {
         account_id: account_id.clone(),
         time: first_commit_time + chrono::Duration::milliseconds(1),
+        content: definy_event::event::EventContent::ModuleCommit(
+            definy_seed.to_module_commit_event(),
+        ),
+    };
+
+    let core_module_commit = definy_event::event::Event {
+        account_id: account_id.clone(),
+        time: first_commit_time + chrono::Duration::milliseconds(5),
         content: definy_event::event::EventContent::ModuleCommit(
             core_seed.to_module_commit_event(),
         ),
@@ -97,6 +106,7 @@ fn build_builtin_events() -> (
                 },
             ),
         },
+        definy_module_commit,
         core_module_commit,
         std_module_commit,
         sample_module_commit,
