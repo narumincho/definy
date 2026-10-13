@@ -21,6 +21,71 @@ struct RenderContext {
     selection_anchor_id: Option<u64>,
 }
 
+impl RenderContext {
+    fn anchor_style(&self, node_id: &str) -> String {
+        match self.selection_anchor_id {
+            Some(anchor_id) => {
+                format!(
+                    " anchor-name: {};",
+                    tree_node_anchor_name(anchor_id, node_id)
+                )
+            }
+            None => String::new(),
+        }
+    }
+
+    fn select_node(mut self, id: &str, path: &[PathStep]) {
+        self.selected_node_id.set(Some(id.to_string()));
+        if let Some(cb) = self.on_select_node {
+            cb.call((id.to_string(), path.to_vec()));
+        }
+    }
+
+    fn set_hovered(mut self, id: Option<String>) {
+        self.hovered_node_id.set(id);
+    }
+
+    fn toggle_collapsed(mut self, id: &str) {
+        let mut current = self.collapsed_node_ids.read().clone();
+        if !current.remove(id) {
+            current.insert(id.to_string());
+        }
+        self.collapsed_node_ids.set(current);
+    }
+
+    fn expand_collapsed(mut self, id: &str) {
+        let mut current = self.collapsed_node_ids.read().clone();
+        current.remove(id);
+        self.collapsed_node_ids.set(current);
+    }
+
+    fn node_diagnostic_and_tooltip(&self, node: &LayoutNode) -> (bool, String) {
+        let error_message = self.diagnostics.and_then(|sig| {
+            sig.read()
+                .iter()
+                .find(|d| d.path == node.path)
+                .map(|d| d.message.clone())
+        });
+        let expected_type_str = self
+            .expected_types
+            .and_then(|sig| sig.read().get(&node.path).map(|t| t.text()));
+
+        let mut tooltip_parts = Vec::new();
+        if let Some(err) = &error_message {
+            tooltip_parts.push(format!("⚠ 型エラー: {err}"));
+        }
+        if let Some(exp) = &expected_type_str {
+            tooltip_parts.push(format!("期待する型: {exp}"));
+        }
+        tooltip_parts.push(format!(
+            "ID: {} ({:.0}x{:.0}px)",
+            node.id, node.computed_width, node.computed_height
+        ));
+
+        (error_message.is_some(), tooltip_parts.join("\n"))
+    }
+}
+
 /// ノードに付与する CSS `anchor-name`. ドロップダウンメニューをノード直下に表示するために使う
 pub fn tree_node_anchor_name(anchor_id: u64, node_id: &str) -> String {
     let sanitized: String = node_id
@@ -34,19 +99,6 @@ pub fn tree_node_anchor_name(anchor_id: u64, node_id: &str) -> String {
         })
         .collect();
     format!("--tree-node-{anchor_id}-{sanitized}")
-}
-
-/// `selection_anchor_id` が指定されていればノード固有の `anchor-name` CSS 宣言を返す
-fn anchor_style(ctx: &RenderContext, node_id: &str) -> String {
-    match ctx.selection_anchor_id {
-        Some(anchor_id) => {
-            format!(
-                " anchor-name: {};",
-                tree_node_anchor_name(anchor_id, node_id)
-            )
-        }
-        None => String::new(),
-    }
 }
 
 #[component]
@@ -86,276 +138,245 @@ pub fn TreeLayoutRenderer(
 }
 
 fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
-    let node_id = node.id.clone();
-    let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node_id);
-    let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node_id);
+    let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node.id);
+    let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node.id);
+    let (has_error, tooltip) = ctx.node_diagnostic_and_tooltip(node);
 
-    let (has_error, error_message) = if let Some(sig) = ctx.diagnostics {
-        let diags = sig.read();
-        if let Some(d) = diags.iter().find(|d| d.path == node.path) {
-            (true, Some(d.message.clone()))
-        } else {
-            (false, None)
-        }
-    } else {
-        (false, None)
-    };
-
-    let expected_type_str = if let Some(sig) = ctx.expected_types {
-        sig.read().get(&node.path).map(|t| t.text())
-    } else {
-        None
-    };
-
-    let mut tooltip_parts = Vec::new();
-    if let Some(err) = &error_message {
-        tooltip_parts.push(format!("⚠ 型エラー: {}", err));
-    }
-    if let Some(exp) = &expected_type_str {
-        tooltip_parts.push(format!("期待する型: {}", exp));
-    }
-    tooltip_parts.push(format!(
-        "ID: {} ({:.0}x{:.0}px)",
-        node.id, node.computed_width, node.computed_height
-    ));
-    let tooltip = tooltip_parts.join("\n");
-
-    // テーブル（スプレッドシート型）の場合は専用レンダラー
     if node.kind == NodeKind::Table {
-        return render_table_node(node, ctx, has_error, &tooltip);
+        return render_table_node(node, ctx, is_selected, is_hovered, has_error, &tooltip);
     }
 
-    // 葉ノード（子要素なし：数値・文字列・識別子など）
     if node.children.is_empty() {
-        let badge_style = format!(
-            "{}{}",
-            node_badge_style(&node.kind, is_selected, is_hovered, has_error),
-            anchor_style(&ctx, &node.id)
-        );
-        let id_for_click = node.id.clone();
-        let id_for_enter = node.id.clone();
-        let path_for_click = node.path.clone();
-
-        let inner_element = if ctx.editable && is_selected && node.kind == NodeKind::LiteralNumber {
-            let p = node.path.clone();
-            let raw_val = node.label.clone();
-            rsx! {
-                input {
-                    r#type: "number",
-                    value: "{raw_val}",
-                    style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
-                    autofocus: true,
-                    oninput: move |evt: FormEvent| {
-                        if let Ok(n) = evt.value().parse::<i64>()
-                            && let Some(cb) = ctx.on_change_number
-                        {
-                            cb.call((p.clone(), n));
-                        }
-                    },
-                }
-            }
-        } else if ctx.editable && is_selected && node.kind == NodeKind::LiteralString {
-            let p = node.path.clone();
-            let raw_str = node.label.trim_matches('"').to_string();
-            rsx! {
-                input {
-                    r#type: "text",
-                    value: "{raw_str}",
-                    style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
-                    autofocus: true,
-                    oninput: move |evt: FormEvent| {
-                        if let Some(cb) = ctx.on_change_string {
-                            cb.call((p.clone(), evt.value()));
-                        }
-                    },
-                }
-            }
-        } else {
-            rsx! { "{node.label}" }
-        };
-
-        let is_boolean = node.kind == NodeKind::LiteralBoolean;
-        let is_bool_true = node.label == "true";
-
-        return rsx! {
-            div {
-                class: "tree-node-leaf",
-                style: "display: inline-flex; align-items: center; vertical-align: middle; margin: 0.08rem 0.12rem;",
-                "data-node-id": "{node_id}",
-                onclick: move |evt: MouseEvent| {
-                    evt.stop_propagation();
-                    let mut sel = ctx.selected_node_id;
-                    sel.set(Some(id_for_click.clone()));
-                    if let Some(cb) = ctx.on_select_node {
-                        cb.call((id_for_click.clone(), path_for_click.clone()));
-                    }
-                    if ctx.editable && is_boolean
-                        && let Some(cb) = ctx.on_change_boolean
-                    {
-                        cb.call((path_for_click.clone(), !is_bool_true));
-                    }
-                },
-                onmouseenter: move |evt: MouseEvent| {
-                    evt.stop_propagation();
-                    let mut hov = ctx.hovered_node_id;
-                    hov.set(Some(id_for_enter.clone()));
-                },
-                onmouseleave: move |_| {
-                    let mut hov = ctx.hovered_node_id;
-                    hov.set(None);
-                },
-                div { style: "{badge_style}", title: "{tooltip}",
-                    if has_error {
-                        span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
-                            "⚠"
-                        }
-                    }
-                    {inner_element}
-                }
-            }
-        };
+        return render_leaf_node(node, ctx, is_selected, is_hovered, has_error, &tooltip);
     }
 
-    // 子要素がある複合ノード（Operator, Group, Block）
-    let is_multiline = node.layout_mode == LayoutMode::Multiline;
-    let badge_style = node_badge_style(&node.kind, is_selected, false, has_error);
-    let container_style = capsule_container_style(is_multiline, is_selected, is_hovered, has_error);
-    // 複数行はヘッダーのバッジ直下、インラインはカプセル全体の直下にメニューを表示する
-    let (badge_style, container_style) = if is_multiline {
-        (
-            format!("{badge_style}{}", anchor_style(&ctx, &node.id)),
-            container_style,
-        )
+    if node.layout_mode == LayoutMode::Multiline {
+        render_multiline_capsule_node(node, ctx, is_selected, is_hovered, has_error, &tooltip)
     } else {
-        (
-            badge_style,
-            format!("{container_style}{}", anchor_style(&ctx, &node.id)),
-        )
-    };
+        render_inline_capsule_node(node, ctx, is_selected, is_hovered, has_error, &tooltip)
+    }
+}
 
+fn render_node_badge(
+    badge_style: &str,
+    tooltip: &str,
+    has_error: bool,
+    content: Element,
+) -> Element {
+    rsx! {
+        div { style: "{badge_style}", title: "{tooltip}",
+            if has_error {
+                span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
+                    "⚠"
+                }
+            }
+            {content}
+        }
+    }
+}
+
+fn render_leaf_node(
+    node: &LayoutNode,
+    ctx: RenderContext,
+    is_selected: bool,
+    is_hovered: bool,
+    has_error: bool,
+    tooltip: &str,
+) -> Element {
+    let node_id = node.id.clone();
+    let badge_style = format!(
+        "{}{}",
+        node_badge_style(&node.kind, is_selected, is_hovered, has_error),
+        ctx.anchor_style(&node.id)
+    );
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
     let path_for_click = node.path.clone();
 
-    if is_multiline {
-        // 複数行（Multiline）展開：ヘッダー行＋インデントされた各引数スロット
-        let is_collapsed = ctx.collapsed_node_ids.read().contains(&node.id);
-        let toggle_id = node.id.clone();
-        let toggle_id_expand = node.id.clone();
-
+    let inner_element = if ctx.editable && is_selected && node.kind == NodeKind::LiteralNumber {
+        let p = node.path.clone();
+        let raw_val = node.label.clone();
         rsx! {
-            div {
-                class: "tree-node-capsule-multiline",
-                style: "{container_style}",
-                "data-node-id": "{node_id}",
-                onclick: move |evt: MouseEvent| {
-                    evt.stop_propagation();
-                    let mut sel = ctx.selected_node_id;
-                    sel.set(Some(id_for_click.clone()));
-                    if let Some(cb) = ctx.on_select_node {
-                        cb.call((id_for_click.clone(), path_for_click.clone()));
+            input {
+                r#type: "number",
+                value: "{raw_val}",
+                style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
+                autofocus: true,
+                oninput: move |evt: FormEvent| {
+                    if let Ok(n) = evt.value().parse::<i64>()
+                        && let Some(cb) = ctx.on_change_number
+                    {
+                        cb.call((p.clone(), n));
                     }
                 },
-                onmouseenter: move |evt: MouseEvent| {
-                    evt.stop_propagation();
-                    let mut hov = ctx.hovered_node_id;
-                    hov.set(Some(id_for_enter.clone()));
-                },
-                onmouseleave: move |_| {
-                    let mut hov = ctx.hovered_node_id;
-                    hov.set(None);
-                },
-                // ヘッダー行（演算子/キーワードラベル ＋ 折りたたみトグル）
-                div { style: "display: flex; align-items: center; gap: 0.3rem;",
-                    button {
-                        style: "background: transparent; border: none; padding: 0.05rem 0.2rem; cursor: pointer; color: var(--text-secondary); font-size: 0.72rem; line-height: 1; border-radius: var(--radius-full);",
-                        title: if is_collapsed { "詳細を展開" } else { "折りたたむ" },
-                        onclick: move |evt: MouseEvent| {
-                            evt.stop_propagation();
-                            let mut set = ctx.collapsed_node_ids;
-                            let mut current = set.read().clone();
-                            if current.contains(&toggle_id) {
-                                current.remove(&toggle_id);
-                            } else {
-                                current.insert(toggle_id.clone());
-                            }
-                            set.set(current);
-                        },
-                        if is_collapsed {
-                            "▸"
-                        } else {
-                            "▾"
-                        }
+            }
+        }
+    } else if ctx.editable && is_selected && node.kind == NodeKind::LiteralString {
+        let p = node.path.clone();
+        let raw_str = node.label.trim_matches('"').to_string();
+        rsx! {
+            input {
+                r#type: "text",
+                value: "{raw_str}",
+                style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
+                autofocus: true,
+                oninput: move |evt: FormEvent| {
+                    if let Some(cb) = ctx.on_change_string {
+                        cb.call((p.clone(), evt.value()));
                     }
-                    div { style: "{badge_style}", title: "{tooltip}",
-                        if has_error {
-                            span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
-                                "⚠"
-                            }
-                        }
-                        "{node.label}"
-                    }
+                },
+            }
+        }
+    } else {
+        rsx! { "{node.label}" }
+    };
+
+    let is_boolean = node.kind == NodeKind::LiteralBoolean;
+    let is_bool_true = node.label == "true";
+
+    rsx! {
+        div {
+            class: "tree-node-leaf",
+            style: "display: inline-flex; align-items: center; vertical-align: middle; margin: 0.08rem 0.12rem;",
+            "data-node-id": "{node_id}",
+            onclick: move |evt: MouseEvent| {
+                evt.stop_propagation();
+                ctx.select_node(&id_for_click, &path_for_click);
+                if ctx.editable && is_boolean
+                    && let Some(cb) = ctx.on_change_boolean
+                {
+                    cb.call((path_for_click.clone(), !is_bool_true));
+                }
+            },
+            onmouseenter: move |evt: MouseEvent| {
+                evt.stop_propagation();
+                ctx.set_hovered(Some(id_for_enter.clone()));
+            },
+            onmouseleave: move |_| {
+                ctx.set_hovered(None);
+            },
+            {render_node_badge(&badge_style, tooltip, has_error, inner_element)}
+        }
+    }
+}
+
+fn render_multiline_capsule_node(
+    node: &LayoutNode,
+    ctx: RenderContext,
+    is_selected: bool,
+    is_hovered: bool,
+    has_error: bool,
+    tooltip: &str,
+) -> Element {
+    let node_id = node.id.clone();
+    let badge_style = format!(
+        "{}{}",
+        node_badge_style(&node.kind, is_selected, false, has_error),
+        ctx.anchor_style(&node.id)
+    );
+    let container_style = capsule_container_style(true, is_selected, is_hovered, has_error);
+    let is_collapsed = ctx.collapsed_node_ids.read().contains(&node.id);
+    let id_for_click = node.id.clone();
+    let id_for_enter = node.id.clone();
+    let path_for_click = node.path.clone();
+    let toggle_id = node.id.clone();
+    let toggle_id_expand = node.id.clone();
+
+    rsx! {
+        div {
+            class: "tree-node-capsule-multiline",
+            style: "{container_style}",
+            "data-node-id": "{node_id}",
+            onclick: move |evt: MouseEvent| {
+                evt.stop_propagation();
+                ctx.select_node(&id_for_click, &path_for_click);
+            },
+            onmouseenter: move |evt: MouseEvent| {
+                evt.stop_propagation();
+                ctx.set_hovered(Some(id_for_enter.clone()));
+            },
+            onmouseleave: move |_| {
+                ctx.set_hovered(None);
+            },
+            // ヘッダー行（演算子/キーワードラベル ＋ 折りたたみトグル）
+            div { style: "display: flex; align-items: center; gap: 0.3rem;",
+                button {
+                    style: "background: transparent; border: none; padding: 0.05rem 0.2rem; cursor: pointer; color: var(--text-secondary); font-size: 0.72rem; line-height: 1; border-radius: var(--radius-full);",
+                    title: if is_collapsed { "詳細を展開" } else { "折りたたむ" },
+                    onclick: move |evt: MouseEvent| {
+                        evt.stop_propagation();
+                        ctx.toggle_collapsed(&toggle_id);
+                    },
                     if is_collapsed {
-                        span {
-                            style: "font-size: 0.72rem; color: var(--text-secondary); opacity: 0.75; font-family: monospace; font-style: italic; cursor: pointer;",
-                            onclick: move |evt: MouseEvent| {
-                                evt.stop_propagation();
-                                let mut set = ctx.collapsed_node_ids;
-                                let mut current = set.read().clone();
-                                current.remove(&toggle_id_expand);
-                                set.set(current);
-                            },
-                            "... ({node.children.len()} args)"
-                        }
+                        "▸"
+                    } else {
+                        "▾"
                     }
                 }
-                // 各引数（独立した行としてインデント展開、展開時のみ表示）
-                if !is_collapsed {
-                    div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
-                        for child in &node.children {
-                            div { style: "width: fit-content; max-width: 100%;",
-                                {render_node(child, ctx)}
-                            }
+                {render_node_badge(&badge_style, tooltip, has_error, rsx! { "{node.label}" })}
+                if is_collapsed {
+                    span {
+                        style: "font-size: 0.72rem; color: var(--text-secondary); opacity: 0.75; font-family: monospace; font-style: italic; cursor: pointer;",
+                        onclick: move |evt: MouseEvent| {
+                            evt.stop_propagation();
+                            ctx.expand_collapsed(&toggle_id_expand);
+                        },
+                        "... ({node.children.len()} args)"
+                    }
+                }
+            }
+            // 各引数（独立した行としてインデント展開、展開時のみ表示）
+            if !is_collapsed {
+                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
+                    for child in &node.children {
+                        div { style: "width: fit-content; max-width: 100%;",
+                            {render_node(child, ctx)}
                         }
                     }
                 }
             }
         }
-    } else {
-        // インライン（Inline）展開：薄いカプセル枠で囲むことで入れ子関係が一目瞭然（括弧テキストは不要）
-        rsx! {
-            div {
-                class: "tree-node-capsule-inline",
-                style: "{container_style}",
-                "data-node-id": "{node_id}",
-                onclick: move |evt: MouseEvent| {
-                    evt.stop_propagation();
-                    let mut sel = ctx.selected_node_id;
-                    sel.set(Some(id_for_click.clone()));
-                    if let Some(cb) = ctx.on_select_node {
-                        cb.call((id_for_click.clone(), path_for_click.clone()));
-                    }
-                },
-                onmouseenter: move |evt: MouseEvent| {
-                    evt.stop_propagation();
-                    let mut hov = ctx.hovered_node_id;
-                    hov.set(Some(id_for_enter.clone()));
-                },
-                onmouseleave: move |_| {
-                    let mut hov = ctx.hovered_node_id;
-                    hov.set(None);
-                },
-                div { style: "{badge_style}", title: "{tooltip}",
-                    if has_error {
-                        span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
-                            "⚠"
-                        }
-                    }
-                    "{node.label}"
-                }
-                for child in &node.children {
-                    {render_node(child, ctx)}
-                }
+    }
+}
+
+fn render_inline_capsule_node(
+    node: &LayoutNode,
+    ctx: RenderContext,
+    is_selected: bool,
+    is_hovered: bool,
+    has_error: bool,
+    tooltip: &str,
+) -> Element {
+    let node_id = node.id.clone();
+    let badge_style = node_badge_style(&node.kind, is_selected, false, has_error);
+    let container_style = format!(
+        "{}{}",
+        capsule_container_style(false, is_selected, is_hovered, has_error),
+        ctx.anchor_style(&node.id)
+    );
+    let id_for_click = node.id.clone();
+    let id_for_enter = node.id.clone();
+    let path_for_click = node.path.clone();
+
+    rsx! {
+        div {
+            class: "tree-node-capsule-inline",
+            style: "{container_style}",
+            "data-node-id": "{node_id}",
+            onclick: move |evt: MouseEvent| {
+                evt.stop_propagation();
+                ctx.select_node(&id_for_click, &path_for_click);
+            },
+            onmouseenter: move |evt: MouseEvent| {
+                evt.stop_propagation();
+                ctx.set_hovered(Some(id_for_enter.clone()));
+            },
+            onmouseleave: move |_| {
+                ctx.set_hovered(None);
+            },
+            {render_node_badge(&badge_style, tooltip, has_error, rsx! { "{node.label}" })}
+            for child in &node.children {
+                {render_node(child, ctx)}
             }
         }
     }
@@ -364,15 +385,14 @@ fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
 fn render_table_node(
     node: &LayoutNode,
     ctx: RenderContext,
+    is_selected: bool,
+    is_hovered: bool,
     has_error: bool,
     tooltip: &str,
 ) -> Element {
     let headers = &node.table_headers;
     let col_widths = &node.columns_width;
-    let is_selected = ctx.selected_node_id.read().as_ref() == Some(&node.id);
-    let is_hovered = ctx.hovered_node_id.read().as_ref() == Some(&node.id);
-
-    let table_anchor_style = anchor_style(&ctx, &node.id);
+    let table_anchor_style = ctx.anchor_style(&node.id);
     let border_color = if has_error && is_selected {
         "#ef4444"
     } else if has_error {
@@ -396,20 +416,14 @@ fn render_table_node(
             title: "{tooltip}",
             onclick: move |evt: MouseEvent| {
                 evt.stop_propagation();
-                let mut sel = ctx.selected_node_id;
-                sel.set(Some(id_for_click.clone()));
-                if let Some(cb) = ctx.on_select_node {
-                    cb.call((id_for_click.clone(), path_for_click.clone()));
-                }
+                ctx.select_node(&id_for_click, &path_for_click);
             },
             onmouseenter: move |evt: MouseEvent| {
                 evt.stop_propagation();
-                let mut hov = ctx.hovered_node_id;
-                hov.set(Some(id_for_enter.clone()));
+                ctx.set_hovered(Some(id_for_enter.clone()));
             },
             onmouseleave: move |_| {
-                let mut hov = ctx.hovered_node_id;
-                hov.set(None);
+                ctx.set_hovered(None);
             },
             // 横スクロール時はみ出しても背景・罫線が途切れないよう min-width: max-content を設定
             div { style: "display: flex; flex-direction: column; min-width: max-content; width: 100%;",

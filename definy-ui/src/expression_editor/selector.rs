@@ -2,73 +2,13 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use definy_event::EventHashId;
-use dioxus::prelude::*;
 
-use crate::app_state::{AppState, PathStep};
+use crate::app_state::AppState;
 use crate::language::Language;
 use crate::part_projection::collect_part_snapshots;
 
-use super::super::diagnostics::constructor_default_value_from_type_part;
-use super::super::mutation::{apply_selection, path_to_key};
-use super::super::types::{ExpressionType, FunctionParameterTypeInfo, ScopeVariable};
-
-pub fn allow_kind_change_for_nested_values(allow_kind_change: bool, path: &[PathStep]) -> bool {
-    if allow_kind_change {
-        return true;
-    }
-    path.iter()
-        .any(|step| matches!(step, PathStep::ConstructorValue))
-}
-
-pub fn expression_selector(
-    _state: &AppState,
-    path: Vec<PathStep>,
-    current_value: &str,
-    options: &[(String, String)],
-) -> Element {
-    let name = format!("expr-kind-{}", path_to_key(path.as_slice()));
-
-    let path_clone = path.clone();
-    let current_val_str = current_value.to_string();
-    let options_vec = options.to_vec();
-
-    rsx! {
-        crate::dropdown::SearchableDropdown {
-            name,
-            current_value: current_val_str,
-            options: options_vec,
-            compact: true,
-            show_arrow: false,
-            on_change: move |selected_value: String| {
-                let state_sig = use_context::<Signal<AppState>>();
-                let constructor_default = selected_value
-                    .strip_prefix("expr:constructor:")
-                    .and_then(|value| EventHashId::from_str(value).ok())
-                    .map(|type_part_definition_event_hash| {
-                        (
-                            type_part_definition_event_hash.clone(),
-                            constructor_default_value_from_type_part(
-                                &state_sig.read(),
-                                &type_part_definition_event_hash,
-                            ),
-                        )
-                    });
-                let mut expr_sig = use_context::<
-                    Signal<Option<definy_event::event::Expression>>,
-                >();
-                let mut expr = expr_sig.read().clone();
-                apply_selection(
-                    &state_sig.read(),
-                    &mut expr,
-                    path_clone.as_slice(),
-                    selected_value.as_str(),
-                    constructor_default,
-                );
-                expr_sig.set(expr);
-            },
-        }
-    }
-}
+use super::diagnostics::part_type_to_expression_type;
+use super::types::{ExpressionType, FunctionParameterTypeInfo, ScopeVariable};
 
 pub fn selector_options(
     state: &AppState,
@@ -209,7 +149,7 @@ pub fn selector_options(
         if let Some(part_type) = &snapshot.part_type {
             part_type_map.insert(
                 snapshot.definition_event_hash.clone(),
-                super::super::diagnostics::part_type_to_expression_type(part_type),
+                part_type_to_expression_type(part_type),
             );
             if *part_type == definy_event::event::PartType::Type && snapshot.expression.is_some() {
                 constructor_options.push((
@@ -503,250 +443,117 @@ fn option_match_rank(
     2
 }
 
-pub(crate) fn current_selection_value(
+fn compiler_builtin_fallback_value(builtin: definy_event::event::CompilerBuiltin) -> &'static str {
+    use definy_event::event::CompilerBuiltin;
+    match builtin {
+        CompilerBuiltin::Let => "expr:let",
+        CompilerBuiltin::Plus => "expr:add",
+        CompilerBuiltin::Minus => "expr:subtract",
+        CompilerBuiltin::Multiply => "expr:multiply",
+        CompilerBuiltin::Divide => "expr:divide",
+        CompilerBuiltin::Remainder => "expr:remainder",
+        CompilerBuiltin::BitAnd => "expr:bit_and",
+        CompilerBuiltin::BitOr => "expr:bit_or",
+        CompilerBuiltin::BitXor => "expr:bit_xor",
+        CompilerBuiltin::ShiftLeft => "expr:shift_left",
+        CompilerBuiltin::ShiftRight => "expr:shift_right",
+        CompilerBuiltin::Equal => "expr:equal",
+        CompilerBuiltin::NotEqual => "expr:not_equal",
+        CompilerBuiltin::LessThan => "expr:less_than",
+        CompilerBuiltin::LessThanOrEqual => "expr:less_than_or_equal",
+        CompilerBuiltin::GreaterThan => "expr:greater_than",
+        CompilerBuiltin::GreaterThanOrEqual => "expr:greater_than_or_equal",
+        CompilerBuiltin::Not => "expr:not",
+        CompilerBuiltin::And => "expr:and",
+        CompilerBuiltin::Or => "expr:or",
+        CompilerBuiltin::StringConcat => "expr:string_concat",
+        CompilerBuiltin::StringLength => "expr:string_length",
+        CompilerBuiltin::StringSlice => "expr:string_slice",
+        CompilerBuiltin::StringToBytes => "expr:string_to_bytes",
+        CompilerBuiltin::ListLength => "expr:list_length",
+        CompilerBuiltin::ListConcat => "expr:list_concat",
+        CompilerBuiltin::ListGet => "expr:list_get",
+        CompilerBuiltin::ListAppend => "expr:list_append",
+        CompilerBuiltin::NumberLiteral => "expr:number",
+        CompilerBuiltin::If => "expr:if",
+        CompilerBuiltin::Function => "expr:function",
+        CompilerBuiltin::Call => "expr:call",
+    }
+}
+
+fn expression_compiler_builtin(
+    expression: &definy_event::event::Expression,
+) -> Option<definy_event::event::CompilerBuiltin> {
+    use definy_event::event::{CompilerBuiltin, Expression};
+    match expression {
+        Expression::Number(_) => Some(CompilerBuiltin::NumberLiteral),
+        Expression::Add(_) => Some(CompilerBuiltin::Plus),
+        Expression::Subtract(_) => Some(CompilerBuiltin::Minus),
+        Expression::Multiply(_) => Some(CompilerBuiltin::Multiply),
+        Expression::Divide(_) => Some(CompilerBuiltin::Divide),
+        Expression::Remainder(_) => Some(CompilerBuiltin::Remainder),
+        Expression::BitAnd(_) => Some(CompilerBuiltin::BitAnd),
+        Expression::BitOr(_) => Some(CompilerBuiltin::BitOr),
+        Expression::BitXor(_) => Some(CompilerBuiltin::BitXor),
+        Expression::ShiftLeft(_) => Some(CompilerBuiltin::ShiftLeft),
+        Expression::ShiftRight(_) => Some(CompilerBuiltin::ShiftRight),
+        Expression::If(_) => Some(CompilerBuiltin::If),
+        Expression::Equal(_) => Some(CompilerBuiltin::Equal),
+        Expression::NotEqual(_) => Some(CompilerBuiltin::NotEqual),
+        Expression::LessThan(_) => Some(CompilerBuiltin::LessThan),
+        Expression::LessThanOrEqual(_) => Some(CompilerBuiltin::LessThanOrEqual),
+        Expression::GreaterThan(_) => Some(CompilerBuiltin::GreaterThan),
+        Expression::GreaterThanOrEqual(_) => Some(CompilerBuiltin::GreaterThanOrEqual),
+        Expression::Not(_) => Some(CompilerBuiltin::Not),
+        Expression::And(_) => Some(CompilerBuiltin::And),
+        Expression::Or(_) => Some(CompilerBuiltin::Or),
+        Expression::StringConcat(_) => Some(CompilerBuiltin::StringConcat),
+        Expression::StringLength(_) => Some(CompilerBuiltin::StringLength),
+        Expression::StringSlice(_) => Some(CompilerBuiltin::StringSlice),
+        Expression::StringToBytes(_) => Some(CompilerBuiltin::StringToBytes),
+        Expression::ListLength(_) => Some(CompilerBuiltin::ListLength),
+        Expression::ListConcat(_) => Some(CompilerBuiltin::ListConcat),
+        Expression::ListGet(_) => Some(CompilerBuiltin::ListGet),
+        Expression::ListAppend(_) => Some(CompilerBuiltin::ListAppend),
+        Expression::Let(_) => Some(CompilerBuiltin::Let),
+        Expression::Compiler(builtin) => Some(*builtin),
+        _ => None,
+    }
+}
+
+fn type_part_selection_value(state: &AppState, name: &str, fallback: &str) -> String {
+    find_part_hash_by_name(state, name, Some(definy_event::event::PartType::Type))
+        .map(|h| format!("ref:global:{h}"))
+        .unwrap_or_else(|| fallback.to_string())
+}
+
+pub fn current_selection_value(
     state: &AppState,
     expression: &definy_event::event::Expression,
 ) -> String {
+    if let Some(builtin) = expression_compiler_builtin(expression) {
+        return find_builtin_part_hash(state, builtin)
+            .map(|h| format!("ref:global:{h}"))
+            .unwrap_or_else(|| compiler_builtin_fallback_value(builtin).to_string());
+    }
+
     match expression {
-        definy_event::event::Expression::Number(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::NumberLiteral)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:number".to_string())
-        }
-        definy_event::event::Expression::Add(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Plus)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:add".to_string())
-        }
-        definy_event::event::Expression::Subtract(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Minus)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:subtract".to_string())
-        }
-        definy_event::event::Expression::Multiply(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Multiply)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:multiply".to_string())
-        }
-        definy_event::event::Expression::Divide(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Divide)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:divide".to_string())
-        }
-        definy_event::event::Expression::Remainder(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Remainder)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:remainder".to_string())
-        }
-        definy_event::event::Expression::BitAnd(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::BitAnd)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:bit_and".to_string())
-        }
-        definy_event::event::Expression::BitOr(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::BitOr)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:bit_or".to_string())
-        }
-        definy_event::event::Expression::BitXor(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::BitXor)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:bit_xor".to_string())
-        }
-        definy_event::event::Expression::ShiftLeft(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ShiftLeft)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:shift_left".to_string())
-        }
-        definy_event::event::Expression::ShiftRight(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ShiftRight)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:shift_right".to_string())
-        }
-        definy_event::event::Expression::If(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::If)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:if".to_string())
-        }
-        definy_event::event::Expression::Equal(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Equal)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:equal".to_string())
-        }
-        definy_event::event::Expression::NotEqual(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::NotEqual)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:not_equal".to_string())
-        }
-        definy_event::event::Expression::LessThan(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::LessThan)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:less_than".to_string())
-        }
-        definy_event::event::Expression::LessThanOrEqual(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::LessThanOrEqual)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:less_than_or_equal".to_string())
-        }
-        definy_event::event::Expression::GreaterThan(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::GreaterThan)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:greater_than".to_string())
-        }
-        definy_event::event::Expression::GreaterThanOrEqual(_) => find_builtin_part_hash(
-            state,
-            definy_event::event::CompilerBuiltin::GreaterThanOrEqual,
-        )
-        .map(|h| format!("ref:global:{}", h))
-        .unwrap_or_else(|| "expr:greater_than_or_equal".to_string()),
-        definy_event::event::Expression::Not(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Not)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:not".to_string())
-        }
-        definy_event::event::Expression::And(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::And)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:and".to_string())
-        }
-        definy_event::event::Expression::Or(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Or)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:or".to_string())
-        }
-        definy_event::event::Expression::StringConcat(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringConcat)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:string_concat".to_string())
-        }
-        definy_event::event::Expression::StringLength(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringLength)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:string_length".to_string())
-        }
-        definy_event::event::Expression::StringSlice(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringSlice)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:string_slice".to_string())
-        }
-        definy_event::event::Expression::StringToBytes(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::StringToBytes)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:string_to_bytes".to_string())
-        }
-        definy_event::event::Expression::ListLength(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListLength)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:list_length".to_string())
-        }
-        definy_event::event::Expression::ListConcat(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListConcat)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:list_concat".to_string())
-        }
-        definy_event::event::Expression::ListGet(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListGet)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:list_get".to_string())
-        }
-        definy_event::event::Expression::ListAppend(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::ListAppend)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:list_append".to_string())
-        }
-        definy_event::event::Expression::Let(_) => {
-            find_builtin_part_hash(state, definy_event::event::CompilerBuiltin::Let)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:let".to_string())
-        }
-        definy_event::event::Expression::Compiler(builtin) => {
-            find_builtin_part_hash(state, *builtin)
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| match builtin {
-                    definy_event::event::CompilerBuiltin::Let => "expr:let".to_string(),
-                    definy_event::event::CompilerBuiltin::Plus => "expr:add".to_string(),
-                    definy_event::event::CompilerBuiltin::Minus => "expr:subtract".to_string(),
-                    definy_event::event::CompilerBuiltin::Multiply => "expr:multiply".to_string(),
-                    definy_event::event::CompilerBuiltin::Divide => "expr:divide".to_string(),
-                    definy_event::event::CompilerBuiltin::Remainder => "expr:remainder".to_string(),
-                    definy_event::event::CompilerBuiltin::BitAnd => "expr:bit_and".to_string(),
-                    definy_event::event::CompilerBuiltin::BitOr => "expr:bit_or".to_string(),
-                    definy_event::event::CompilerBuiltin::BitXor => "expr:bit_xor".to_string(),
-                    definy_event::event::CompilerBuiltin::ShiftLeft => {
-                        "expr:shift_left".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::ShiftRight => {
-                        "expr:shift_right".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::Equal => "expr:equal".to_string(),
-                    definy_event::event::CompilerBuiltin::NotEqual => "expr:not_equal".to_string(),
-                    definy_event::event::CompilerBuiltin::LessThan => "expr:less_than".to_string(),
-                    definy_event::event::CompilerBuiltin::LessThanOrEqual => {
-                        "expr:less_than_or_equal".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::GreaterThan => {
-                        "expr:greater_than".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::GreaterThanOrEqual => {
-                        "expr:greater_than_or_equal".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::Not => "expr:not".to_string(),
-                    definy_event::event::CompilerBuiltin::And => "expr:and".to_string(),
-                    definy_event::event::CompilerBuiltin::Or => "expr:or".to_string(),
-                    definy_event::event::CompilerBuiltin::StringConcat => {
-                        "expr:string_concat".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::StringLength => {
-                        "expr:string_length".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::StringSlice => {
-                        "expr:string_slice".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::StringToBytes => {
-                        "expr:string_to_bytes".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::ListLength => {
-                        "expr:list_length".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::ListConcat => {
-                        "expr:list_concat".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::ListGet => "expr:list_get".to_string(),
-                    definy_event::event::CompilerBuiltin::ListAppend => {
-                        "expr:list_append".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::NumberLiteral => {
-                        "expr:number".to_string()
-                    }
-                    definy_event::event::CompilerBuiltin::If => "expr:if".to_string(),
-                    definy_event::event::CompilerBuiltin::Function => "expr:function".to_string(),
-                    definy_event::event::CompilerBuiltin::Call => "expr:call".to_string(),
-                })
-        }
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
         definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
         definy_event::event::Expression::RecordGet(_) => "expr:record_get".to_string(),
         definy_event::event::Expression::TypeNumber => {
-            find_part_hash_by_name(state, "number", Some(definy_event::event::PartType::Type))
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:type:number".to_string())
+            type_part_selection_value(state, "number", "expr:type:number")
         }
         definy_event::event::Expression::TypeString => {
-            find_part_hash_by_name(state, "string", Some(definy_event::event::PartType::Type))
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:type:string".to_string())
+            type_part_selection_value(state, "string", "expr:type:string")
         }
         definy_event::event::Expression::TypeBoolean => {
-            find_part_hash_by_name(state, "boolean", Some(definy_event::event::PartType::Type))
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:type:boolean".to_string())
+            type_part_selection_value(state, "boolean", "expr:type:boolean")
         }
         definy_event::event::Expression::TypeList(_) => {
-            find_part_hash_by_name(state, "list", Some(definy_event::event::PartType::Type))
-                .map(|h| format!("ref:global:{}", h))
-                .unwrap_or_else(|| "expr:type:list".to_string())
+            type_part_selection_value(state, "list", "expr:type:list")
         }
         definy_event::event::Expression::Constructor(constructor_expression) => format!(
             "expr:constructor:{}",
@@ -766,6 +573,7 @@ pub(crate) fn current_selection_value(
         definy_event::event::Expression::Variable(var_expr) => {
             format!("ref:local:{}", var_expr.variable_id)
         }
+        _ => String::new(),
     }
 }
 

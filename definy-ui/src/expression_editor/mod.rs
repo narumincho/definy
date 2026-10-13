@@ -1,12 +1,7 @@
 pub mod diagnostics;
 pub mod mutation;
+pub mod selector;
 pub mod types;
-pub mod view;
-
-use dioxus::prelude::*;
-
-use crate::app_state::AppState;
-use crate::page_context::PageContext;
 
 pub use diagnostics::{
     analyze_expression_types, collect_type_diagnostics, part_type_to_expression_type,
@@ -17,67 +12,8 @@ pub use mutation::{
     set_let_variable_name, set_number_value, set_record_item_key, set_string_value,
     upgrade_part_reference_content_hash,
 };
-pub use types::{
-    ConstructorValueShape, ExpressionEditorContext, ExpressionType, ScopeVariable, TypeDiagnostic,
-};
-pub use view::render_expression_editor;
-
-pub fn render_root_expression_editor(
-    state: &AppState,
-    page_context: &PageContext,
-    expression: &Option<definy_event::event::Expression>,
-    expected_type: Option<ExpressionType>,
-) -> Element {
-    match expression {
-        Some(expr) => {
-            let analysis = analyze_expression_types(state, expr, expected_type);
-            render_expression_editor(
-                state,
-                expr,
-                ExpressionEditorContext {
-                    path: Vec::new(),
-                    scope_variables: Vec::new(),
-                    diagnostics: analysis.diagnostics.as_slice(),
-                    expected_types: &analysis.expected_types,
-                    variable_types: &analysis.variable_types,
-                    structure_locked: false,
-                    allow_kind_change: true,
-                    language: page_context.language,
-                },
-            )
-        }
-        None => {
-            let empty_vars = std::collections::HashMap::new();
-            view::expression_selector(
-                state,
-                Vec::new(),
-                "expr:none",
-                &view::selector_options(
-                    state,
-                    page_context.language,
-                    &[],
-                    true,
-                    expected_type.as_ref(),
-                    &empty_vars,
-                ),
-            )
-        }
-    }
-}
-
-#[component]
-pub fn ExpressionEditorContainer(
-    state: AppState,
-    context: PageContext,
-    expression: Signal<Option<definy_event::event::Expression>>,
-    expected_type: Option<ExpressionType>,
-) -> Element {
-    use_context_provider(|| expression);
-    let expr_val = expression.read().clone();
-    rsx! {
-        {render_root_expression_editor(&state, &context, &expr_val, expected_type)}
-    }
-}
+pub use selector::{current_selection_value, selector_options};
+pub use types::{ConstructorValueShape, ExpressionType, ScopeVariable, TypeDiagnostic};
 
 #[cfg(test)]
 mod tests {

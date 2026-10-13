@@ -2,6 +2,10 @@ use std::str::FromStr;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use definy_event::EventHashId;
+use definy_event::event::{
+    AddExpression, BooleanExpression, Expression, NumberExpression, StringExpression,
+    TypeListExpression, TypeLiteralExpression, TypeLiteralItemExpression,
+};
 use dioxus::prelude::*;
 
 use crate::app_state::{AppState, PathStep};
@@ -12,8 +16,11 @@ use crate::expression_editor::mutation::{
     apply_selection, get_mut_expression_at_path, set_boolean_value, set_number_value,
     set_string_value,
 };
-use crate::expression_editor::view::selector::selector_options;
-use crate::expression_editor::{ExpressionType, analyze_expression_types};
+use crate::expression_editor::{
+    ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,
+    selector_options,
+};
+use crate::language::Language;
 use crate::page_context::PageContext;
 
 use super::engine::{compute_layout, expression_to_layout_node};
@@ -27,10 +34,10 @@ static NEXT_TREE_EDITOR_ANCHOR_ID: AtomicU64 = AtomicU64::new(0);
 pub fn ExpressionTreeEditor(
     state: AppState,
     context: PageContext,
-    mut expression: Signal<Option<definy_event::event::Expression>>,
+    expression: Signal<Option<Expression>>,
     #[props(default = None)] expected_type: Option<ExpressionType>,
     #[props(default = 720.0)] max_width: f32,
-    #[props(default = None)] on_change: Option<EventHandler<definy_event::event::Expression>>,
+    #[props(default = None)] on_change: Option<EventHandler<Expression>>,
 ) -> Element {
     let language = context.language;
     let mut selected_node_id = use_signal(|| None::<String>);
@@ -53,194 +60,20 @@ pub fn ExpressionTreeEditor(
         TypeAnalysis::default()
     };
 
-    let diagnostics_sig = use_signal(|| analysis.diagnostics.clone());
-    let mut d_sig = diagnostics_sig;
-    if *d_sig.peek() != analysis.diagnostics {
-        d_sig.set(analysis.diagnostics.clone());
+    let mut diagnostics_sig = use_signal(|| analysis.diagnostics.clone());
+    if *diagnostics_sig.peek() != analysis.diagnostics {
+        diagnostics_sig.set(analysis.diagnostics.clone());
     }
 
-    let expected_types_sig = use_signal(|| analysis.expected_types.clone());
-    let mut e_sig = expected_types_sig;
-    if *e_sig.peek() != analysis.expected_types {
-        e_sig.set(analysis.expected_types.clone());
+    let mut expected_types_sig = use_signal(|| analysis.expected_types.clone());
+    if *expected_types_sig.peek() != analysis.expected_types {
+        expected_types_sig.set(analysis.expected_types.clone());
     }
 
     let is_type_editor = expected_type.as_ref() == Some(&ExpressionType::Type);
 
-    let expr = match expr_opt {
-        Some(e) => e,
-        None => {
-            let empty_text = if is_type_editor {
-                language.label(
-                    "(No type specified)",
-                    "(型が指定されていません)",
-                    "(Neniu tipo difinita)",
-                )
-            } else {
-                language.label(
-                    "(No expression specified)",
-                    "(式が設定されていません)",
-                    "(Neniu esprimo difinita)",
-                )
-            };
-            return rsx! {
-                div { style: "display: grid; gap: 0.6rem; padding: 0.85rem 1rem; background: rgb(0 0 0 / 0.15); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); width: 100%; box-sizing: border-box;",
-                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
-                        div { style: "font-size: 0.82rem; color: var(--text-secondary);",
-                            "{empty_text}"
-                        }
-                    }
-                    div { style: "display: flex; gap: 0.45rem; flex-wrap: wrap;",
-                        if is_type_editor {
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::TypeNumber;
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ Number"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::TypeString;
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ String"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::TypeBoolean;
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ Boolean"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::TypeList(definy_event::event::TypeListExpression {
-                                        item_type: Box::new(definy_event::event::Expression::TypeString),
-                                    });
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ List<String>"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::TypeLiteral(definy_event::event::TypeLiteralExpression {
-                                        items: vec![
-                                            definy_event::event::TypeLiteralItemExpression {
-                                                key: "id".into(),
-                                                value: Box::new(definy_event::event::Expression::TypeNumber),
-                                            },
-                                        ],
-                                    });
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ Record"
-                            }
-                        } else {
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                                        value: 0,
-                                    });
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ 0 (Number)"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::String(definy_event::event::StringExpression {
-                                        value: "".into(),
-                                    });
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ \"\" (String)"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::Boolean(definy_event::event::BooleanExpression {
-                                        value: true,
-                                    });
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ true (Boolean)"
-                            }
-                            button {
-                                r#type: "button",
-                                class: "btn-secondary",
-                                style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
-                                onclick: move |_| {
-                                    let new_expr = definy_event::event::Expression::Add(definy_event::event::AddExpression {
-                                        left: Box::new(
-                                            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                                                value: 1,
-                                            }),
-                                        ),
-                                        right: Box::new(
-                                            definy_event::event::Expression::Number(definy_event::event::NumberExpression {
-                                                value: 2,
-                                            }),
-                                        ),
-                                    });
-                                    expression.set(Some(new_expr.clone()));
-                                    if let Some(cb) = on_change {
-                                        cb.call(new_expr);
-                                    }
-                                },
-                                "+ plus 1 2"
-                            }
-                        }
-                    }
-                }
-            };
-        }
+    let Some(expr) = expr_opt else {
+        return render_empty_expression_editor(language, is_type_editor, expression, on_change);
     };
 
     // レイアウト計算
@@ -260,39 +93,11 @@ pub fn ExpressionTreeEditor(
 
     let current_kind_label = selected_expr_info
         .as_ref()
-        .map(|sub| match sub {
-            definy_event::event::Expression::Number(n) => format!("number ({})", n.value),
-            definy_event::event::Expression::String(s) => format!("string (\"{}\")", s.value),
-            definy_event::event::Expression::Boolean(b) => format!("boolean ({})", b.value),
-            definy_event::event::Expression::TypeNumber => "type:Number".to_string(),
-            definy_event::event::Expression::TypeString => "type:String".to_string(),
-            definy_event::event::Expression::TypeBoolean => "type:Boolean".to_string(),
-            definy_event::event::Expression::TypeList(_) => "type:List".to_string(),
-            definy_event::event::Expression::TypeLiteral(_) => "type:Record".to_string(),
-            definy_event::event::Expression::TypeFunction(_) => "type:Function".to_string(),
-            definy_event::event::Expression::TypeUnion(_) => "type:Union".to_string(),
-            definy_event::event::Expression::Add(_) => "plus".to_string(),
-            definy_event::event::Expression::Subtract(_) => "minus".to_string(),
-            definy_event::event::Expression::Multiply(_) => "multiply".to_string(),
-            definy_event::event::Expression::Divide(_) => "divide".to_string(),
-            definy_event::event::Expression::Remainder(_) => "remainder".to_string(),
-            definy_event::event::Expression::Equal(_) => "equal".to_string(),
-            definy_event::event::Expression::NotEqual(_) => "not-equal".to_string(),
-            definy_event::event::Expression::LessThan(_) => "less-than".to_string(),
-            definy_event::event::Expression::LessThanOrEqual(_) => "less-than-or-equal".to_string(),
-            definy_event::event::Expression::GreaterThan(_) => "greater-than".to_string(),
-            definy_event::event::Expression::GreaterThanOrEqual(_) => {
-                "greater-than-or-equal".to_string()
-            }
-            definy_event::event::Expression::And(_) => "and".to_string(),
-            definy_event::event::Expression::Or(_) => "or".to_string(),
-            definy_event::event::Expression::Not(_) => "not".to_string(),
-            definy_event::event::Expression::If(_) => "if".to_string(),
-            definy_event::event::Expression::Let(_) => "let".to_string(),
-            definy_event::event::Expression::ListLiteral(_) => "list".to_string(),
-            definy_event::event::Expression::RecordGet(_) => "record_get".to_string(),
-            _ => "expression".to_string(),
-        })
+        .map(expression_kind_label)
+        .unwrap_or_default();
+    let current_selection_val = selected_expr_info
+        .as_ref()
+        .map(|sub| current_selection_value(&state, sub))
         .unwrap_or_default();
 
     let slot_expected_type = sel_path_val
@@ -322,9 +127,6 @@ pub fn ExpressionTreeEditor(
 
     let error_count = analysis.diagnostics.len();
     let type_errors_text = language.label("type error(s)", "件の型不一致", "tip-eraro(j)");
-    let selected_label = language.label("Selected:", "選択中:", "Elektita:");
-    let expects_label = language.label("Expects:", "期待:", "Atendas:");
-    let deselect_label = language.label("Deselect", "選択解除", "Malelekti");
     let active_anchor_name = selected_node_id()
         .map(|id| tree_node_anchor_name(anchor_id, &id))
         .unwrap_or_else(|| format!("--tree-node-{anchor_id}-none"));
@@ -351,50 +153,19 @@ pub fn ExpressionTreeEditor(
                 panel_id: menu_panel_id.clone(),
                 anchor_name: active_anchor_name,
                 search_input_name: menu_search_input_name.clone(),
-                current_value: String::new(),
+                current_value: current_selection_val,
                 options: available_options,
                 search_query: menu_search_query,
                 highlighted_index: menu_highlighted_index,
-                header: rsx! {
-                    div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.76rem;",
-                        span { style: "font-weight: 600; color: var(--accent); white-space: nowrap;", "{selected_label}" }
-                        span {
-                            class: "mono",
-                            style: "background: rgb(0 0 0 / 0.3); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1);",
-                            "{current_kind_label}"
-                        }
-                        if let Some(exp) = slot_expected_type {
-                            span { style: "color: var(--text-secondary); white-space: nowrap;",
-                                "{expects_label} "
-                                span {
-                                    class: "mono",
-                                    style: "color: #93c5fd; font-weight: 600;",
-                                    "{exp.text()}"
-                                }
-                            }
-                        }
-                        // 選択解除ボタン
-                        button {
-                            r#type: "button",
-                            title: "{deselect_label}",
-                            style: "margin-left: auto; padding: 0.05rem 0.4rem; font-size: 0.72rem; border-radius: var(--radius-full); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; line-height: 1.4;",
-                            onclick: {
-                                let menu_panel_id = menu_panel_id.clone();
-                                move |_| {
-                                    crate::dropdown::hide_popover(&menu_panel_id);
-                                    selected_node_id.set(None);
-                                    selected_path.set(None);
-                                }
-                            },
-                            "✕"
-                        }
-                        if let Some(diag) = slot_diagnostic {
-                            div { style: "flex-basis: 100%; color: #fca5a5; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 0.1rem 0.45rem; border-radius: var(--radius-sm);",
-                                "⚠ {diag.message}"
-                            }
-                        }
-                    }
-                },
+                header: render_menu_header(
+                    language,
+                    &current_kind_label,
+                    slot_expected_type,
+                    slot_diagnostic,
+                    &menu_panel_id,
+                    selected_node_id,
+                    selected_path,
+                ),
                 on_change: {
                     let state = state.clone();
                     move |selected_value: String| {
@@ -418,10 +189,7 @@ pub fn ExpressionTreeEditor(
                             &selected_value,
                             constructor_default,
                         );
-                        expression.set(current_opt.clone());
-                        if let (Some(cb), Some(expr_val)) = (on_change, current_opt) {
-                            cb.call(expr_val);
-                        }
+                        commit_expression_change(expression, on_change, current_opt);
                     }
                 },
             }
@@ -448,11 +216,7 @@ pub fn ExpressionTreeEditor(
                                 .as_mut()
                                 .and_then(|e| get_mut_expression_at_path(e, &path))
                                 .is_some_and(|sub| {
-                                    matches!(
-                                        sub,
-                                        definy_event::event::Expression::Number(_)
-                                        | definy_event::event::Expression::String(_)
-                                    )
+                                    matches!(sub, Expression::Number(_) | Expression::String(_))
                                 });
                             let node_anchor = tree_node_anchor_name(anchor_id, &id);
                             selected_node_id.set(Some(id));
@@ -470,29 +234,222 @@ pub fn ExpressionTreeEditor(
                     on_change_number: move |(path, val): (Vec<PathStep>, i64)| {
                         let mut curr = expression.read().clone();
                         set_number_value(&mut curr, &path, val);
-                        expression.set(curr.clone());
-                        if let (Some(cb), Some(expr_val)) = (on_change, curr) {
-                            cb.call(expr_val);
-                        }
+                        commit_expression_change(expression, on_change, curr);
                     },
                     on_change_string: move |(path, val): (Vec<PathStep>, String)| {
                         let mut curr = expression.read().clone();
                         set_string_value(&mut curr, &path, &val);
-                        expression.set(curr.clone());
-                        if let (Some(cb), Some(expr_val)) = (on_change, curr) {
-                            cb.call(expr_val);
-                        }
+                        commit_expression_change(expression, on_change, curr);
                     },
                     on_change_boolean: move |(path, val): (Vec<PathStep>, bool)| {
                         let mut curr = expression.read().clone();
                         set_boolean_value(&mut curr, &path, val);
-                        expression.set(curr.clone());
-                        if let (Some(cb), Some(expr_val)) = (on_change, curr) {
-                            cb.call(expr_val);
-                        }
+                        commit_expression_change(expression, on_change, curr);
                     },
                 }
             }
         }
+    }
+}
+
+fn commit_expression_change(
+    mut expression: Signal<Option<Expression>>,
+    on_change: Option<EventHandler<Expression>>,
+    next: Option<Expression>,
+) {
+    expression.set(next.clone());
+    if let (Some(cb), Some(expr_val)) = (on_change, next) {
+        cb.call(expr_val);
+    }
+}
+
+fn empty_expression_templates(is_type_editor: bool) -> Vec<(&'static str, Expression)> {
+    if is_type_editor {
+        vec![
+            ("+ Number", Expression::TypeNumber),
+            ("+ String", Expression::TypeString),
+            ("+ Boolean", Expression::TypeBoolean),
+            (
+                "+ List<String>",
+                Expression::TypeList(TypeListExpression {
+                    item_type: Box::new(Expression::TypeString),
+                }),
+            ),
+            (
+                "+ Record",
+                Expression::TypeLiteral(TypeLiteralExpression {
+                    items: vec![TypeLiteralItemExpression {
+                        key: "id".into(),
+                        value: Box::new(Expression::TypeNumber),
+                    }],
+                }),
+            ),
+        ]
+    } else {
+        vec![
+            (
+                "+ 0 (Number)",
+                Expression::Number(NumberExpression { value: 0 }),
+            ),
+            (
+                "+ \"\" (String)",
+                Expression::String(StringExpression { value: "".into() }),
+            ),
+            (
+                "+ true (Boolean)",
+                Expression::Boolean(BooleanExpression { value: true }),
+            ),
+            (
+                "+ plus 1 2",
+                Expression::Add(AddExpression {
+                    left: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+                }),
+            ),
+        ]
+    }
+}
+
+fn render_empty_expression_editor(
+    language: Language,
+    is_type_editor: bool,
+    expression: Signal<Option<Expression>>,
+    on_change: Option<EventHandler<Expression>>,
+) -> Element {
+    let empty_text = if is_type_editor {
+        language.label(
+            "(No type specified)",
+            "(型が指定されていません)",
+            "(Neniu tipo difinita)",
+        )
+    } else {
+        language.label(
+            "(No expression specified)",
+            "(式が設定されていません)",
+            "(Neniu esprimo difinita)",
+        )
+    };
+    let templates = empty_expression_templates(is_type_editor);
+
+    rsx! {
+        div { style: "display: grid; gap: 0.6rem; padding: 0.85rem 1rem; background: rgb(0 0 0 / 0.15); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); width: 100%; box-sizing: border-box;",
+            div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
+                div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{empty_text}" }
+            }
+            div { style: "display: flex; gap: 0.45rem; flex-wrap: wrap;",
+                for (label, template_expr) in templates {
+                    button {
+                        key: "{label}",
+                        r#type: "button",
+                        class: "btn-secondary",
+                        style: "padding: 0.22rem 0.55rem; font-size: 0.78rem;",
+                        onclick: move |_| {
+                            commit_expression_change(expression, on_change, Some(template_expr.clone()));
+                        },
+                        "{label}"
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn render_menu_header(
+    language: Language,
+    current_kind_label: &str,
+    slot_expected_type: Option<&ExpressionType>,
+    slot_diagnostic: Option<&TypeDiagnostic>,
+    menu_panel_id: &str,
+    mut selected_node_id: Signal<Option<String>>,
+    mut selected_path: Signal<Option<Vec<PathStep>>>,
+) -> Element {
+    let selected_label = language.label("Selected:", "選択中:", "Elektita:");
+    let expects_label = language.label("Expects:", "期待:", "Atendas:");
+    let deselect_label = language.label("Deselect", "選択解除", "Malelekti");
+    let menu_panel_id = menu_panel_id.to_string();
+
+    rsx! {
+        div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.76rem;",
+            span { style: "font-weight: 600; color: var(--accent); white-space: nowrap;",
+                "{selected_label}"
+            }
+            span {
+                class: "mono",
+                style: "background: rgb(0 0 0 / 0.3); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1);",
+                "{current_kind_label}"
+            }
+            if let Some(exp) = slot_expected_type {
+                span { style: "color: var(--text-secondary); white-space: nowrap;",
+                    "{expects_label} "
+                    span {
+                        class: "mono",
+                        style: "color: #93c5fd; font-weight: 600;",
+                        "{exp.text()}"
+                    }
+                }
+            }
+            button {
+                r#type: "button",
+                title: "{deselect_label}",
+                style: "margin-left: auto; padding: 0.05rem 0.4rem; font-size: 0.72rem; border-radius: var(--radius-full); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; line-height: 1.4;",
+                onclick: move |_| {
+                    crate::dropdown::hide_popover(&menu_panel_id);
+                    selected_node_id.set(None);
+                    selected_path.set(None);
+                },
+                "✕"
+            }
+            if let Some(diag) = slot_diagnostic {
+                div { style: "flex-basis: 100%; color: #fca5a5; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 0.1rem 0.45rem; border-radius: var(--radius-sm);",
+                    "⚠ {diag.message}"
+                }
+            }
+        }
+    }
+}
+
+fn expression_kind_label(expr: &Expression) -> String {
+    match expr {
+        Expression::Number(n) => format!("number ({})", n.value),
+        Expression::String(s) => format!("string (\"{}\")", s.value),
+        Expression::Boolean(b) => format!("boolean ({})", b.value),
+        Expression::TypeNumber => "type:Number".to_string(),
+        Expression::TypeString => "type:String".to_string(),
+        Expression::TypeBoolean => "type:Boolean".to_string(),
+        Expression::TypeList(_) => "type:List".to_string(),
+        Expression::TypeLiteral(_) => "type:Record".to_string(),
+        Expression::TypeFunction(_) => "type:Function".to_string(),
+        Expression::TypeUnion(_) => "type:Union".to_string(),
+        Expression::Add(_) => "plus".to_string(),
+        Expression::Subtract(_) => "minus".to_string(),
+        Expression::Multiply(_) => "multiply".to_string(),
+        Expression::Divide(_) => "divide".to_string(),
+        Expression::Remainder(_) => "remainder".to_string(),
+        Expression::BitAnd(_) => "bit_and".to_string(),
+        Expression::BitOr(_) => "bit_or".to_string(),
+        Expression::BitXor(_) => "bit_xor".to_string(),
+        Expression::ShiftLeft(_) => "shift_left".to_string(),
+        Expression::ShiftRight(_) => "shift_right".to_string(),
+        Expression::Equal(_) => "equal".to_string(),
+        Expression::NotEqual(_) => "not-equal".to_string(),
+        Expression::LessThan(_) => "less-than".to_string(),
+        Expression::LessThanOrEqual(_) => "less-than-or-equal".to_string(),
+        Expression::GreaterThan(_) => "greater-than".to_string(),
+        Expression::GreaterThanOrEqual(_) => "greater-than-or-equal".to_string(),
+        Expression::And(_) => "and".to_string(),
+        Expression::Or(_) => "or".to_string(),
+        Expression::Not(_) => "not".to_string(),
+        Expression::If(_) => "if".to_string(),
+        Expression::Let(_) => "let".to_string(),
+        Expression::ListLiteral(_) => "list".to_string(),
+        Expression::RecordGet(_) => "record_get".to_string(),
+        Expression::Function(_) => "function".to_string(),
+        Expression::Call(_) => "call".to_string(),
+        Expression::Match(_) => "match".to_string(),
+        Expression::Variant(v) => format!("variant ({})", v.tag),
+        Expression::Variable(v) => format!("local (#{})", v.variable_id),
+        Expression::PartReference(_) => "part_ref".to_string(),
+        Expression::Constructor(_) => "constructor".to_string(),
+        _ => "expression".to_string(),
     }
 }

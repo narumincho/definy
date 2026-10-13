@@ -179,6 +179,26 @@ fn find_client_wasm(dir: &std::path::Path) -> Option<std::path::PathBuf> {
     None
 }
 
+fn find_newest_candidate<F>(
+    finder: F,
+) -> Option<(
+    std::path::PathBuf,
+    std::path::PathBuf,
+    std::time::SystemTime,
+)>
+where
+    F: Fn(&std::path::Path) -> Option<std::path::PathBuf>,
+{
+    get_public_dir_candidates()
+        .into_iter()
+        .filter_map(|dir| {
+            let path = finder(&dir)?;
+            let modified = std::fs::metadata(&path).ok()?.modified().ok()?;
+            Some((dir, path, modified))
+        })
+        .max_by_key(|(_, _, modified)| *modified)
+}
+
 fn resolve_cached_asset_by_finder<F>(
     cache: &std::sync::RwLock<Option<CachedAsset>>,
     finder: F,
@@ -187,27 +207,7 @@ fn resolve_cached_asset_by_finder<F>(
 where
     F: Fn(&std::path::Path) -> Option<std::path::PathBuf>,
 {
-    let mut newest: Option<(
-        std::path::PathBuf,
-        std::path::PathBuf,
-        std::time::SystemTime,
-    )> = None;
-    for dir in get_public_dir_candidates() {
-        if let Some(p) = finder(&dir)
-            && let Ok(metadata) = std::fs::metadata(&p)
-            && let Ok(modified) = metadata.modified()
-        {
-            let is_newer = match &newest {
-                Some((_, _, best_modified)) => modified > *best_modified,
-                None => true,
-            };
-            if is_newer {
-                newest = Some((dir, p, modified));
-            }
-        }
-    }
-
-    let (dir, p, modified) = newest?;
+    let (dir, p, modified) = find_newest_candidate(finder)?;
 
     if let Ok(guard) = cache.read()
         && let Some(ref cached) = *guard
@@ -265,22 +265,8 @@ pub fn resolve_icon() -> &'static ResolvedAsset {
 }
 
 pub fn resolve_snippet(snippet_path: &str) -> Option<Vec<u8>> {
-    let mut newest: Option<(std::path::PathBuf, std::time::SystemTime)> = None;
-    for dir in get_public_dir_candidates() {
-        let full = dir.join("wasm").join("snippets").join(snippet_path);
-        if let Ok(metadata) = std::fs::metadata(&full)
-            && let Ok(modified) = metadata.modified()
-        {
-            let is_newer = match &newest {
-                Some((_, best_modified)) => modified > *best_modified,
-                None => true,
-            };
-            if is_newer {
-                newest = Some((full, modified));
-            }
-        }
-    }
-    let (full, _) = newest?;
+    let (_, full, _) =
+        find_newest_candidate(|dir| Some(dir.join("wasm").join("snippets").join(snippet_path)))?;
     std::fs::read(&full).ok()
 }
 

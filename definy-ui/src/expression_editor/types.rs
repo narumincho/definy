@@ -1,7 +1,6 @@
 use definy_event::EventHashId;
 
 use crate::app_state::PathStep;
-use crate::language::Language;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ScopeVariable {
@@ -90,36 +89,4 @@ pub enum ConstructorValueShape {
 pub struct TypeDiagnostic {
     pub path: Vec<PathStep>,
     pub message: String,
-}
-
-pub struct ExpressionEditorContext<'a> {
-    pub path: Vec<PathStep>,
-    pub scope_variables: Vec<ScopeVariable>,
-    pub diagnostics: &'a [TypeDiagnostic],
-    pub expected_types: &'a std::collections::HashMap<Vec<PathStep>, ExpressionType>,
-    pub variable_types: &'a std::collections::HashMap<i64, ExpressionType>,
-    pub structure_locked: bool,
-    pub allow_kind_change: bool,
-    pub language: Language,
-}
-
-impl<'a> ExpressionEditorContext<'a> {
-    pub fn child(
-        &self,
-        path: Vec<PathStep>,
-        scope_variables: Vec<ScopeVariable>,
-        structure_locked: bool,
-        allow_kind_change: bool,
-    ) -> ExpressionEditorContext<'a> {
-        ExpressionEditorContext {
-            path,
-            scope_variables,
-            diagnostics: self.diagnostics,
-            expected_types: self.expected_types,
-            variable_types: self.variable_types,
-            structure_locked,
-            allow_kind_change,
-            language: self.language,
-        }
-    }
 }
