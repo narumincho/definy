@@ -39,9 +39,8 @@ fn dom_show_popover_and_focus(
     if let Some(window) = web_sys::window() {
         if let Some(doc) = window.document() {
             if let Some(elem) = doc.get_element_by_id(_panel_id) {
-                if let Some(anchor_name) = _anchor_name
-                    && let Ok(style) =
-                        js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("style"))
+                if let Ok(style) =
+                    js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("style"))
                     && let Ok(set_prop) = js_sys::Reflect::get(
                         &style,
                         &wasm_bindgen::JsValue::from_str("setProperty"),
@@ -50,15 +49,120 @@ fn dom_show_popover_and_focus(
                 {
                     let _ = set_prop_fn.call2(
                         &style,
-                        &wasm_bindgen::JsValue::from_str("position-anchor"),
-                        &wasm_bindgen::JsValue::from_str(anchor_name),
+                        &wasm_bindgen::JsValue::from_str("inset"),
+                        &wasm_bindgen::JsValue::from_str("auto"),
                     );
+
+                    let supports_anchor =
+                        js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("CSS"))
+                            .ok()
+                            .and_then(|css| {
+                                js_sys::Reflect::get(
+                                    &css,
+                                    &wasm_bindgen::JsValue::from_str("supports"),
+                                )
+                                .ok()
+                            })
+                            .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
+                            .and_then(|f| {
+                                f.call2(
+                                    &wasm_bindgen::JsValue::NULL,
+                                    &wasm_bindgen::JsValue::from_str("position-area"),
+                                    &wasm_bindgen::JsValue::from_str("bottom span-right"),
+                                )
+                                .ok()
+                            })
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(false);
+
+                    if let Some(anchor_name) = _anchor_name {
+                        let _ = set_prop_fn.call2(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("position-anchor"),
+                            &wasm_bindgen::JsValue::from_str(anchor_name),
+                        );
+                        let _ = set_prop_fn.call2(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("position-area"),
+                            &wasm_bindgen::JsValue::from_str("bottom span-right"),
+                        );
+                        let _ = set_prop_fn.call2(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("position-try-fallbacks"),
+                            &wasm_bindgen::JsValue::from_str("flip-block, flip-inline"),
+                        );
+
+                        if !supports_anchor {
+                            // Safari や CSS Anchor Positioning 未対応環境向けのフォールバック座標計算
+                            let selector = format!("[style*=\"anchor-name: {}\"]", anchor_name);
+                            if let Ok(Some(anchor_el)) = doc.query_selector(&selector) {
+                                let rect = anchor_el.get_bounding_client_rect();
+                                let win_h = window
+                                    .inner_height()
+                                    .ok()
+                                    .and_then(|v| v.as_f64())
+                                    .unwrap_or(900.0);
+                                let win_w = window
+                                    .inner_width()
+                                    .ok()
+                                    .and_then(|v| v.as_f64())
+                                    .unwrap_or(1200.0);
+                                let menu_h = 320.0;
+                                let top = if rect.bottom() + menu_h > win_h && rect.top() > menu_h {
+                                    (rect.top() - menu_h - 4.0).max(4.0)
+                                } else {
+                                    (rect.bottom() + 4.0).min(win_h - 40.0)
+                                };
+                                let left = rect.left().max(4.0).min((win_w - 340.0).max(4.0));
+                                let _ = set_prop_fn.call2(
+                                    &style,
+                                    &wasm_bindgen::JsValue::from_str("top"),
+                                    &wasm_bindgen::JsValue::from_str(&format!("{top}px")),
+                                );
+                                let _ = set_prop_fn.call2(
+                                    &style,
+                                    &wasm_bindgen::JsValue::from_str("left"),
+                                    &wasm_bindgen::JsValue::from_str(&format!("{left}px")),
+                                );
+                                let _ = set_prop_fn.call2(
+                                    &style,
+                                    &wasm_bindgen::JsValue::from_str("position"),
+                                    &wasm_bindgen::JsValue::from_str("fixed"),
+                                );
+                            }
+                        } else if let Ok(rem_prop) = js_sys::Reflect::get(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("removeProperty"),
+                        ) && let Ok(rem_prop_fn) = rem_prop.dyn_into::<js_sys::Function>()
+                        {
+                            let _ =
+                                rem_prop_fn.call1(&style, &wasm_bindgen::JsValue::from_str("top"));
+                            let _ =
+                                rem_prop_fn.call1(&style, &wasm_bindgen::JsValue::from_str("left"));
+                        }
+                    }
                 }
-                let _ =
-                    js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("showPopover"))
+
+                let is_open =
+                    js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("matches"))
                         .ok()
                         .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
-                        .and_then(|f| f.call0(&elem).ok());
+                        .and_then(|f| {
+                            f.call1(&elem, &wasm_bindgen::JsValue::from_str(":popover-open"))
+                                .ok()
+                        })
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+
+                if !is_open {
+                    let _ = js_sys::Reflect::get(
+                        &elem,
+                        &wasm_bindgen::JsValue::from_str("showPopover"),
+                    )
+                    .ok()
+                    .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
+                    .and_then(|f| f.call0(&elem).ok());
+                }
             }
             if let Some(search_input_name) = _search_input_name {
                 let selector = format!("input[name=\"{}\"]", search_input_name);
@@ -145,7 +249,11 @@ pub fn SearchableDropdown(
         move || {
             search_query.set(initial_search_query_for_label(&current_label));
             highlighted_index.set(None);
-            dom_show_popover_and_focus(&panel_id, None, Some(&format!("search-{}", name)));
+            dom_show_popover_and_focus(
+                &panel_id,
+                Some(&anchor_name_id(&name)),
+                Some(&format!("search-{}", name)),
+            );
         }
     };
 
@@ -240,7 +348,7 @@ pub fn SearchableDropdownPanel(
         div {
             id: "{panel_id}",
             "popover": "auto",
-            style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+            style: "position: absolute; inset: auto; position-anchor: {anchor_name}; position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
             {header}
             input {
                 r#type: "text",

@@ -51,6 +51,15 @@ data = [
     上に常時配置した上で, クリックイベント内で同期的に `position-anchor`
     を対象ノードに切り替えて `showPopover()` (`show_anchored_popover`)
     を呼び出す.
+  - ブラウザの popover 既定スタイル (User Agent stylesheet の `inset: 0`)
+    がアンカー計算と干渉して画面最上部に飛ぶ問題を防ぐため,
+    `[popover]` に `inset: auto; position: absolute;` を指定し,
+    `position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline;`
+    で自動反転配置を行う.
+  - CSS Anchor Positioning 未対応環境 (Safari や一部の Firefox) では,
+    `dom_show_popover_and_focus` 内で `CSS.supports` 判定を行い,
+    未対応時にアンカー要素の `getBoundingClientRect()` から `fixed`
+    座標を動的算出してフォールバック表示する.
   - 数値・文字列リテラル選択時はノード上で直接編集するため,
     メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
     を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).

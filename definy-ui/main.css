@@ -769,7 +769,13 @@ textarea {
   animation: pulse-glow 2s infinite ease-in-out;
 }
 
-/* SearchableDropdown Styles */
+/* SearchableDropdown & Popover Styles */
+[popover] {
+  position: absolute;
+  inset: auto;
+  margin: 0;
+}
+
 .dropdown-item-link {
   display: inline-flex;
   align-items: center;
