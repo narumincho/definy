@@ -67,7 +67,7 @@ fn AppRoot() -> Element {
 
         let initial_key = definy_ui::navigator_credential::credential_get_sync();
 
-        definy_ui::build_initial_state(
+        let mut initial_state = definy_ui::build_initial_state(
             ssr_state.map_or(vec![], |state| {
                 state
                     .event_binaries
@@ -86,7 +86,9 @@ fn AppRoot() -> Element {
             filter_for_fetch,
             is_db_connected,
             is_db_initializing,
-        )
+        );
+        initial_state.is_auth_loading = false;
+        initial_state
     });
 
     use_context_provider(|| state_signal);
@@ -106,40 +108,16 @@ fn AppRoot() -> Element {
             }
         }
 
-        // Failsafe timer: ensures `is_auth_loading` is cleared within 400ms under any circumstances
-        spawn(async move {
-            definy_ui::navigator_credential::sleep(400).await;
-            if state_signal.read().is_auth_loading {
-                let mut next = state_signal.read().clone();
-                next.is_auth_loading = false;
-                state_signal.set(next);
-            }
-        });
-
         spawn(async move {
             use futures_util::StreamExt;
 
-            // Run initial data restore and auth on startup
+            // Run initial data restore on startup
             let ssr_state = read_ssr_state();
             let search_query = web_sys::window()
                 .and_then(|w| w.location().search().ok())
                 .unwrap_or_default();
             let query_params = definy_ui::query::parse_query(Some(search_query.as_str()));
             let filter_for_fetch = query_params.event_type;
-
-            let detected_key = if let Some(key) = state_signal.read().current_key.clone() {
-                Some(key)
-            } else if let Some(password) = definy_ui::navigator_credential::credential_get().await {
-                Some(password)
-            } else {
-                None
-            };
-            {
-                let mut next = state_signal.read().clone();
-                next.current_key = detected_key;
-                next.is_auth_loading = false;
-                state_signal.set(next);
-            }
 
             if let Some(decoded_ssr_state) = ssr_state.as_ref() {
                 let _ =

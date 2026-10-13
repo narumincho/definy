@@ -1,31 +1,6 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen(inline_js = r#"
-export async function getSilentPasswordCredential(timeoutMs) {
-    try {
-        if (typeof window === "undefined" || !window.navigator || !window.navigator.credentials || !window.navigator.credentials.get) {
-            return null;
-        }
-        if (typeof window.PasswordCredential === "undefined") {
-            return null;
-        }
-        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
-        const credPromise = window.navigator.credentials.get({
-            password: true,
-            mediation: "silent"
-        }).then((cred) => {
-            if (cred && typeof cred.password === "string") {
-                return cred.password;
-            }
-            return null;
-        }).catch(() => null);
-
-        return await Promise.race([credPromise, timeoutPromise]);
-    } catch {
-        return null;
-    }
-}
-
 export async function storePasswordCredential(username, password) {
     try {
         if (typeof window === "undefined" || !window.navigator || !window.navigator.credentials || !window.navigator.credentials.store) {
@@ -45,25 +20,13 @@ export async function storePasswordCredential(username, password) {
         return false;
     }
 }
-
-export function sleepMs(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
 "#)]
 extern "C" {
-    #[wasm_bindgen(catch)]
-    async fn getSilentPasswordCredential(
-        timeout_ms: i32,
-    ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
-
     #[wasm_bindgen(catch)]
     async fn storePasswordCredential(
         username: &str,
         password: &str,
     ) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
-
-    #[wasm_bindgen(catch)]
-    async fn sleepMs(ms: i32) -> Result<wasm_bindgen::JsValue, wasm_bindgen::JsValue>;
 }
 
 const STORAGE_KEY: &str = "definy_current_key";
@@ -101,23 +64,6 @@ pub fn credential_get_sync() -> Option<ed25519_dalek::SigningKey> {
     let storage = window.local_storage().ok()??;
     let stored = storage.get_item(STORAGE_KEY).ok()??;
     parse_password(stored)
-}
-
-pub async fn credential_get() -> Option<ed25519_dalek::SigningKey> {
-    if let Some(signing_key) = credential_get_sync() {
-        return Some(signing_key);
-    }
-
-    // タイムアウト 200ms で silent モードで取得を試みる
-    let password_js = getSilentPasswordCredential(200).await.ok()?;
-    let password = password_js.as_string()?;
-    let key = parse_password(password)?;
-    credential_save_sync(&key);
-    Some(key)
-}
-
-pub async fn sleep(ms: i32) {
-    let _ = sleepMs(ms).await;
 }
 
 pub fn credential_clear() {
