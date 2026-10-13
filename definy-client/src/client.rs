@@ -113,6 +113,11 @@ fn AppRoot() -> Element {
 
             // Run initial data restore on startup
             let ssr_state = read_ssr_state();
+            let search_query = web_sys::window()
+                .and_then(|w| w.location().search().ok())
+                .unwrap_or_default();
+            let query_params = definy_ui::query::parse_query(Some(search_query.as_str()));
+            let filter_for_fetch = query_params.event_type;
 
             if let Some(decoded_ssr_state) = ssr_state.as_ref() {
                 let _ =
