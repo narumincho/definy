@@ -28,7 +28,7 @@ dioxus-fullstack = { workspace = true }
 dioxus-ssr = { workspace = true }
 sha2 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
 serde_cbor = { workspace = true }
 prost = { workspace = true }
 surrealdb = { workspace = true, features = [

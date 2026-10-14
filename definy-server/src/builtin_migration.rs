@@ -8,7 +8,25 @@ use surrealdb::types::SurrealValue;
 
 use crate::db::{EventRecord, get_event, save_event};
 
-pub const COMPILER_SYSTEM_KEY_SEED: [u8; 32] = *b"definy-compiler-system-key-2026\0";
+/// ブートストラップ用イベントの時刻（リポジトリの最初のコミット 2019-01-31T04:36:01Z）。
+///
+/// seed から生成するイベントはこの時刻から数ミリ秒以内に置く。UI などから
+/// システムアカウントで投稿された編集イベント（現在時刻）とはこの時刻で区別する。
+pub const BOOTSTRAP_TIMESTAMP_SECONDS: i64 = 1548909361;
+
+/// ブートストラップ用イベントとみなす時刻の幅
+const BOOTSTRAP_WINDOW: chrono::Duration = chrono::Duration::seconds(1);
+
+fn bootstrap_time() -> chrono::DateTime<chrono::Utc> {
+    chrono::DateTime::from_timestamp(BOOTSTRAP_TIMESTAMP_SECONDS, 0).unwrap()
+}
+
+/// seed から生成したブートストラップ用イベントの時刻か
+#[must_use]
+pub fn is_bootstrap_time(time: chrono::DateTime<chrono::Utc>) -> bool {
+    let start = bootstrap_time();
+    time >= start && time < start + BOOTSTRAP_WINDOW
+}
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -38,18 +56,16 @@ pub struct SeedBundle {
 #[derive(serde::Deserialize, SurrealValue)]
 struct EventHashRow {
     event_binary_hash: Vec<u8>,
+    time: chrono::DateTime<chrono::Utc>,
 }
 
+/// seed からブートストラップ用イベント（署名前）を作ります。
 fn build_builtin_events() -> (
     definy_event::event::AccountId,
-    ed25519_dalek::SigningKey,
     Vec<definy_event::event::Event>,
 ) {
-    let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
-    let verifying_key = signing_key.verifying_key();
-    let account_id = definy_event::event::AccountId(verifying_key);
-    // Repository first commit timestamp: 2019-01-31T13:36:01+09:00 (2019-01-31T04:36:01Z)
-    let first_commit_time = chrono::DateTime::from_timestamp(1548909361, 0).unwrap();
+    let account_id = crate::system_account::system_account_id();
+    let first_commit_time = bootstrap_time();
 
     let seeds = crate::seed::get_builtin_module_seeds();
     let definy_seed = seeds.iter().find(|s| &*s.module_name == "definy").unwrap();
@@ -113,34 +129,38 @@ fn build_builtin_events() -> (
         wasi_module_commit,
     ];
 
-    (account_id, signing_key, events)
+    (account_id, events)
 }
 
 /// 組み込みシステムアカウントの公開鍵 16進文字列を返します。
 #[must_use]
 pub fn system_account_id_hex() -> String {
-    let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
-    hex::encode(signing_key.verifying_key().as_bytes())
+    hex::encode(crate::system_account::system_account_id().0.as_bytes())
 }
 
-/// 組み込みシードイベント群を検証済みイベントリスト (`VerifiedCommitEvent`) として返します。
+/// 組み込みシードイベント群を評価用イベントリスト (`VerifiedCommitEvent`) として返します。
+///
+/// 評価器は署名を検証しないため、秘密鍵がなくても使えるようダミー署名を付けます。
+/// イベントハッシュは「署名前のイベント CBOR」から計算した擬似的な値です。
 #[must_use]
 pub fn build_builtin_verified_events() -> Vec<crate::self_hosted_wasm_compiler::VerifiedCommitEvent>
 {
-    let (_account_id, signing_key, events) = build_builtin_events();
-    let mut verified = Vec::with_capacity(events.len());
-    for event in events {
-        if let Ok(bytes) = definy_event::sign_and_serialize(event, &signing_key) {
+    let (_account_id, events) = build_builtin_events();
+    let dummy_signature = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    events
+        .into_iter()
+        .map(|event| {
+            let bytes = serde_cbor::to_vec(&event).unwrap_or_default();
             let hash = definy_event::EventHashId::from_bytes(&bytes);
-            verified.push((hash, definy_event::verify_and_deserialize(&bytes)));
-        }
-    }
-    verified
+            (hash, Ok((dummy_signature, event)))
+        })
+        .collect()
 }
 
 /// Cloudflare Workers 等のエッジ環境向けに、組み込みシードイベントと CAS コンテンツをバンドル生成する。
 pub fn build_builtin_seed_bundle() -> Result<SeedBundle, anyhow::Error> {
-    let (_account_id, signing_key, events) = build_builtin_events();
+    let signing_key = crate::system_account::system_signing_key()?;
+    let (_account_id, events) = build_builtin_events();
     let mut seed_events = Vec::new();
     let mut seed_contents = Vec::new();
     let mut seen_content_hashes = HashSet::new();
@@ -188,7 +208,14 @@ pub fn build_builtin_seed_bundle() -> Result<SeedBundle, anyhow::Error> {
 }
 
 pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error> {
-    let (account_id, signing_key, events) = build_builtin_events();
+    let Ok(signing_key) = crate::system_account::system_signing_key() else {
+        println!(
+            "{} is not set; skipping builtin seed bootstrap (builtin modules must already exist in the database)",
+            crate::system_account::SECRET_KEY_ENV
+        );
+        return Ok(());
+    };
+    let (account_id, events) = build_builtin_events();
     let system_addr: std::net::SocketAddr = "127.0.0.1:0".parse().unwrap();
 
     // Prepare serialized binaries and expected hashes for all valid built-in events
@@ -204,9 +231,10 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
         prepared_events.push((event, event_binary, hash));
     }
 
-    // 1. Clean up outdated or unexpected events created by the definy system account
+    // 1. Clean up outdated bootstrap events created by the definy system account.
+    //    UI などからシステムアカウントで投稿された編集イベント（ブートストラップ時刻以外）は残す。
     let mut response = db
-        .query("SELECT event_binary_hash FROM events WHERE account_id = $account_id")
+        .query("SELECT event_binary_hash, time FROM events WHERE account_id = $account_id")
         .bind(("account_id", account_id.0.as_bytes().to_vec()))
         .await?
         .check()?;
@@ -214,7 +242,7 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
 
     for row in existing_rows {
         let hex_hash = hex::encode(&row.event_binary_hash);
-        if !valid_hashes.contains(&hex_hash) {
+        if is_bootstrap_time(row.time) && !valid_hashes.contains(&hex_hash) {
             println!(
                 "Cleaning up outdated or unexpected builtin event: {}",
                 hex_hash

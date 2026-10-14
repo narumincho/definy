@@ -4,7 +4,7 @@ use definy_event::event::ModuleSeed;
 use definy_server::seed::{
     builtin_system_account_id, export_seeds_to_disk, find_builtin_part, find_stale_seed_files,
     generate_module_seed_schema_json, get_builtin_module_seeds, load_module_seed_from_str,
-    render_seed_files,
+    module_seed_to_json, render_seed_files,
 };
 
 #[test]
@@ -40,6 +40,37 @@ fn test_committed_seeds_are_normalized() {
         .map(|seed| &*seed.module_name)
         .collect();
     assert_eq!(names, vec!["definy", "core", "std", "wasi", "sample"]);
+}
+
+/// seed はパーツ ID を名前参照で持つため、システムアカウントの鍵に依存しないことを検証します。
+#[test]
+fn test_seed_json_is_independent_of_system_account_key() {
+    let other_account = definy_event::event::AccountId(
+        ed25519_dalek::SigningKey::from_bytes(&[42u8; 32]).verifying_key(),
+    );
+    let seeds_dir = seeds_dir();
+    let mut loaded = Vec::new();
+    for name in ["definy", "core", "std", "wasi", "sample"] {
+        let json = std::fs::read_to_string(seeds_dir.join(format!("{name}.json"))).unwrap();
+        assert!(
+            json.contains("\"$part\""),
+            "{name}.json must use $part references"
+        );
+        loaded.push((
+            json.clone(),
+            load_module_seed_from_str(&json, &other_account).unwrap(),
+        ));
+    }
+    let seeds: Vec<ModuleSeed> = loaded.iter().map(|(_, seed)| seed.clone()).collect();
+
+    // 別アカウントで読み込んだ seed は、ビルトイン（システムアカウント）版とパーツ参照のハッシュが異なる
+    assert_ne!(seeds[1], get_builtin_module_seeds()[1]);
+
+    // 別アカウントで読み込んで書き戻しても、元の JSON と一致する
+    for (json, seed) in &loaded {
+        let rendered = module_seed_to_json(seed, &other_account, &seeds).unwrap();
+        assert!(&rendered == json, "{} must round-trip", seed.module_name);
+    }
 }
 
 /// パーツ名は全ビルトインモジュールで一意であること（`find_builtin_part` の前提）を検証します。
@@ -107,7 +138,7 @@ fn test_self_hosted_type_checking_of_seed_files() {
     let sample_content =
         std::fs::read_to_string(seeds_dir.join("sample.json")).expect("Read sample.json");
     let mut sample_seed: ModuleSeed =
-        load_module_seed_from_str(&sample_content).expect("Parse sample.json");
+        load_module_seed_from_str(&sample_content, &account_id).expect("Parse sample.json");
 
     // Filter out parts with expressions not yet represented in self-hosted core.expression (e.g. string_concat)
     // or external cross-module references (e.g. sample-ast-calc), or match requiring module-id for Variant type tag

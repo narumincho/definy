@@ -262,14 +262,31 @@
       }
     },
     "EventHashId": {
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "format": "uint8",
-        "minimum": 0.0
-      },
-      "maxItems": 32,
-      "minItems": 32
+      "anyOf": [
+        {
+          "description": "ビルトインパーツへの名前参照 (`module.part-name`)。読み込み時にシステムアカウントから ID を導出する",
+          "type": "object",
+          "required": [
+            "$part"
+          ],
+          "properties": {
+            "$part": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          },
+          "maxItems": 32,
+          "minItems": 32
+        }
+      ]
     },
     "Expression": {
       "oneOf": [

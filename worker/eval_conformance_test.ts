@@ -82,6 +82,7 @@ async function buildPartTables(): Promise<{
   const accountBytes = await builtinSystemAccountBytes();
   const partExpressions = new Map<string, unknown>();
   const partIdBytes = new Map<string, ReadonlyArray<number>>();
+  const expressionsWithPlaceholders = new Map<string, unknown>();
   for (const seed of seeds) {
     const moduleIdBytes = await deriveModuleIdBytes(
       accountBytes,
@@ -90,7 +91,7 @@ async function buildPartTables(): Promise<{
     for (const part of seed.parts) {
       const id = await deriveModulePartId(moduleIdBytes, part.name);
       if (part.expression !== undefined && part.expression !== null) {
-        partExpressions.set(id, part.expression);
+        expressionsWithPlaceholders.set(id, part.expression);
       }
       const b64 = id.replace(/-/g, "+").replace(/_/g, "/");
       const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
@@ -100,10 +101,14 @@ async function buildPartTables(): Promise<{
       );
     }
   }
+  // seed 中の `{"$part": ...}` もパーツ ID に置き換える
+  for (const [id, expr] of expressionsWithPlaceholders) {
+    partExpressions.set(id, resolvePartPlaceholders(expr, partIdBytes));
+  }
   return { partExpressions, partIdBytes };
 }
 
-/** `{"$part": "module.name"}` を PartReference 式に置き換える */
+/** `{"$part": "module.name"}` をパーツ ID（バイト列）に置き換える（seed と同じ形式） */
 function resolvePartPlaceholders(
   expr: unknown,
   partIdBytes: ReadonlyMap<string, ReadonlyArray<number>>,
@@ -118,7 +123,7 @@ function resolvePartPlaceholders(
       if (!bytes) {
         throw new Error(`unknown builtin part: ${obj.$part}`);
       }
-      return { PartReference: { part_definition_event_hash: bytes } };
+      return bytes;
     }
     return Object.fromEntries(
       Object.entries(obj).map((
