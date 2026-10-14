@@ -1,5 +1,5 @@
 name = "definy"
-main = "worker/index.ts"
+main = "worker/main.ts"
 compatibility_date = "2024-09-23"
 
 [vars]

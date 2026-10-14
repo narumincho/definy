@@ -223,31 +223,13 @@ pub fn find_part_expression_in_events(
     part_id: &str,
     events: &[VerifiedCommitEvent],
 ) -> Result<Expression, SelfHostedCompileError> {
-    let trimmed = part_id.trim();
-    for (_hash, res) in events.iter().rev() {
-        if let Ok((_sig, event)) = res
-            && let EventContent::ModuleCommit(ref mc) = event.content
-        {
-            let module_id = derive_module_id(&event.account_id, &mc.module_name);
-            for part in &mc.parts {
-                let derived_part_id = derive_module_part_id(&module_id, &part.name);
-                let qualified_name = format!("{}.{}", mc.module_name, part.name);
-                if derived_part_id.to_string() == trimmed
-                    || part.name.as_ref() == trimmed
-                    || qualified_name == trimmed
-                {
-                    if let Some(ref expr) = part.expression {
-                        return Ok(expr.clone());
-                    } else {
-                        return Err(SelfHostedCompileError::PartHasNoExpression(
-                            trimmed.to_string(),
-                        ));
-                    }
-                }
-            }
+    definy_core::http_app::find_part_expression(part_id, events).map_err(|message| {
+        if message.starts_with("Part not found") {
+            SelfHostedCompileError::PartNotFound(part_id.trim().to_string())
+        } else {
+            SelfHostedCompileError::PartHasNoExpression(part_id.trim().to_string())
         }
-    }
-    Err(SelfHostedCompileError::PartNotFound(trimmed.to_string()))
+    })
 }
 
 /// シリアライズされた署名付きイベント列バイトからパーツの Expression を探索します。
@@ -282,143 +264,9 @@ pub fn find_part_expression_in_signed_events(
     Err(SelfHostedCompileError::PartNotFound(trimmed.to_string()))
 }
 
-/// バイト列 `body_bytes` を純粋関数型 Pull ストリーム `{ initialState: 0, next: fn(state) => ... }` の AST 式として構築します。
-#[must_use]
-pub fn build_byte_stream_expression(body_bytes: &[u8]) -> Expression {
-    use definy_event::event::{
-        EqualExpression, FunctionExpression, FunctionParameter, IfExpression,
-        ListLiteralExpression, NumberExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-        VariableExpression, VariantExpression,
-    };
-
-    let done_variant = Expression::Variant(VariantExpression {
-        tag: "done".into(),
-        payload: None,
-        type_part_definition_event_hash: None,
-    });
-
-    let next_body = if body_bytes.is_empty() {
-        done_variant
-    } else {
-        let byte_items: Vec<Expression> = body_bytes
-            .iter()
-            .map(|&b| {
-                Expression::Number(NumberExpression {
-                    value: i64::from(b),
-                })
-            })
-            .collect();
-        let yield_variant = Expression::Variant(VariantExpression {
-            tag: "yield".into(),
-            payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
-                items: vec![
-                    TypeLiteralItemExpression {
-                        key: "chunk".into(),
-                        value: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                            items: byte_items,
-                        })),
-                    },
-                    TypeLiteralItemExpression {
-                        key: "nextState".into(),
-                        value: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                    },
-                ],
-            }))),
-            type_part_definition_event_hash: None,
-        });
-
-        Expression::If(IfExpression {
-            condition: Box::new(Expression::Equal(EqualExpression {
-                left: Box::new(Expression::Variable(VariableExpression {
-                    variable_id: 9001,
-                })),
-                right: Box::new(Expression::Number(NumberExpression { value: 0 })),
-            })),
-            then_expr: Box::new(yield_variant),
-            else_expr: Box::new(done_variant),
-        })
-    };
-
-    Expression::TypeLiteral(TypeLiteralExpression {
-        items: vec![
-            TypeLiteralItemExpression {
-                key: "initialState".into(),
-                value: Box::new(Expression::Number(NumberExpression { value: 0 })),
-            },
-            TypeLiteralItemExpression {
-                key: "next".into(),
-                value: Box::new(Expression::Function(FunctionExpression {
-                    parameters: vec![FunctionParameter {
-                        parameter_id: 9001,
-                        parameter_name: "state".into(),
-                    }],
-                    body: Box::new(next_body),
-                })),
-            },
-        ],
-    })
-}
-
-/// HTTP リクエスト情報 `{ method, url, headers, body }` を表す純粋な definy レコード式を構築します。
-/// - `headers`: `List<{ name: String, value: String }>`
-/// - `body`: `{ initialState: Number, next: fn(state: Number) => StreamStep }` (案A Pull 型ストリーム)
-#[must_use]
-pub fn build_http_request_record_expression(
-    method: &str,
-    url: &str,
-    headers: &[(String, String)],
-    body_bytes: &[u8],
-) -> Expression {
-    use definy_event::event::{
-        ListLiteralExpression, StringExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    };
-    let header_items: Vec<Expression> = headers
-        .iter()
-        .map(|(name, val)| {
-            Expression::TypeLiteral(TypeLiteralExpression {
-                items: vec![
-                    TypeLiteralItemExpression {
-                        key: "name".into(),
-                        value: Box::new(Expression::String(StringExpression {
-                            value: name.as_str().into(),
-                        })),
-                    },
-                    TypeLiteralItemExpression {
-                        key: "value".into(),
-                        value: Box::new(Expression::String(StringExpression {
-                            value: val.as_str().into(),
-                        })),
-                    },
-                ],
-            })
-        })
-        .collect();
-
-    Expression::TypeLiteral(TypeLiteralExpression {
-        items: vec![
-            TypeLiteralItemExpression {
-                key: "method".into(),
-                value: Box::new(Expression::String(StringExpression {
-                    value: method.into(),
-                })),
-            },
-            TypeLiteralItemExpression {
-                key: "url".into(),
-                value: Box::new(Expression::String(StringExpression { value: url.into() })),
-            },
-            TypeLiteralItemExpression {
-                key: "headers".into(),
-                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                    items: header_items,
-                })),
-            },
-            TypeLiteralItemExpression {
-                key: "body".into(),
-                value: Box::new(build_byte_stream_expression(body_bytes)),
-            },
-        ],
-    })
-}
+pub use definy_core::http_app::{
+    build_byte_stream_expression, build_http_request_record_expression,
+};
 
 /// HTTP リクエストを受け取るパーツ（またはハンドラ式）にリクエストを適用する式を、Wasm にコンパイルします。
 ///
@@ -431,43 +279,10 @@ pub fn compile_http_request_to_wasm(
     headers: &[(String, String)],
     body_bytes: &[u8],
 ) -> Result<Vec<u8>, SelfHostedCompileError> {
-    let first_param_name = if let Expression::Function(ref fn_expr) = *expression {
-        fn_expr
-            .parameters
-            .first()
-            .map(|p| p.parameter_name.as_ref())
-            .unwrap_or("req")
-    } else {
-        "req"
-    };
-
-    let req_expr = build_http_request_record_expression(method, url, headers, body_bytes);
-    let target_expr = if matches!(*expression, Expression::Function(_)) {
-        Expression::Call(CallExpression {
-            function: Box::new(expression.clone()),
-            arguments: vec![CallArgument {
-                name: first_param_name.into(),
-                value: Box::new(req_expr),
-            }],
-        })
-    } else {
-        let val = definy_core::evaluate_expression(expression, events)
-            .map_err(SelfHostedCompileError::Evaluation)?;
-        if matches!(val, Value::Function) {
-            Expression::Call(CallExpression {
-                function: Box::new(expression.clone()),
-                arguments: vec![CallArgument {
-                    name: "req".into(),
-                    value: Box::new(req_expr),
-                }],
-            })
-        } else {
-            expression.clone()
-        }
-    };
-
-    definy_core::wasm_emitter::compile_expression_to_wasm(&target_expr, events)
-        .map_err(SelfHostedCompileError::Evaluation)
+    definy_core::http_app::compile_http_request_to_wasm(
+        expression, events, method, url, headers, body_bytes,
+    )
+    .map_err(SelfHostedCompileError::Evaluation)
 }
 
 /// パーツ式 (`Expression`) を全イベントコンテキスト付きで HTTP リクエストに対して評価し、

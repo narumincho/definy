@@ -1,7 +1,4 @@
-import {
-  definyValueToHttpResponse,
-  evaluatePartForHttpRequest,
-} from "./cbor_eval.ts";
+import { runPartAsHttpServer } from "./http_stream.ts";
 import {
   deployWorkerToCloudflare,
   listWorkersFromCloudflare,
@@ -192,18 +189,19 @@ async function renderPreviewResponse(
     try {
       const effectiveUrl = new URL(request.url);
       effectiveUrl.pathname = subpath;
-      const evaluated = await evaluatePartForHttpRequest(
+      const response = await runPartAsHttpServer(
         app.partId.trim(),
         request,
         store,
         env,
-        effectiveUrl.toString(),
+        {
+          overrideUrl: effectiveUrl.toString(),
+          appId: app.appId,
+          extraHeaders: { ...CORS_HEADERS, ...extraSecurityHeaders },
+        },
       );
-      if (evaluated !== undefined) {
-        return definyValueToHttpResponse(evaluated, app.appId, {
-          ...CORS_HEADERS,
-          ...extraSecurityHeaders,
-        });
+      if (response !== undefined) {
+        return response;
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

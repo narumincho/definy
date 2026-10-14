@@ -63,7 +63,7 @@ import {
   bytesToBase64,
   parseSignedEventMetadata,
   sha256EventHashId,
-} from "./cbor_eval.ts";
+} from "./cbor.ts";
 
 export {
   base64ToBytes,
@@ -71,7 +71,7 @@ export {
   bytesToUrlSafeBase64NoPad,
   parseSignedEventMetadata,
   sha256EventHashId,
-} from "./cbor_eval.ts";
+} from "./cbor.ts";
 
 interface D1EventRow {
   readonly event_hash: string;

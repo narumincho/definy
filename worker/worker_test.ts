@@ -1,10 +1,5 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import {
-  deriveModuleIdBytes,
-  deriveModulePartId,
-  encodeCborItem,
-} from "./cbor.ts";
-import {
   buildPreviewUrl,
   extractSubdomainFromHost,
   handleWorkerRequest,
@@ -13,6 +8,7 @@ import {
   WorkerStore,
 } from "./index.ts";
 import { bytesToBase64 } from "./store.ts";
+import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
 import type {
   D1Database,
   D1ExecResult,
@@ -21,6 +17,9 @@ import type {
   Env,
   SeedBundle,
 } from "./types.ts";
+
+// プレビューアプリの実行に使う Rust 製ランタイム（ビルド済みのもの）を全テストで設定する
+await setupTestRuntime();
 
 function createSqliteD1Database(): D1Database {
   const sqlite = new DatabaseSync(":memory:");
@@ -680,249 +679,34 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
 });
 
 Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as an HTTP server", async () => {
+  // Rust が生成した本物の seed バンドル（開発用システムアカウントで署名）を使う
+  const bundle = await loadTestSeedBundle();
+
   const d1 = createSqliteD1Database();
   const adminAccount = "admin_narumincho";
   const env: Env = {
     DB: d1,
     DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
     DEFINY_ROOT_DOMAIN: "definy.narumincho.com",
+    ASSETS: {
+      fetch(input: Request | URL | string): Promise<Response> {
+        const url = typeof input === "string"
+          ? input
+          : input instanceof URL
+          ? input.toString()
+          : input.url;
+        if (url.endsWith("/__definy_seed_bundle.json")) {
+          return Promise.resolve(
+            new Response(JSON.stringify(bundle), { status: 200 }),
+          );
+        }
+        return Promise.resolve(new Response("SPA", { status: 200 }));
+      },
+    },
   };
   const store = new WorkerStore();
 
-  // Construct a CBOR SignedEvent containing a ModuleCommit with a pure functional HTTP server part `http_server`
-  // Extracts path from req.url ("https://hello-definy.narumincho.com" = 35 bytes) using StringSlice,
-  // and returns a 3-chunk Pull-based ByteStream:
-  //   state 0 -> yield({ chunk: StringToBytes("<h1>Hello "), nextState: 1 })
-  //   state 1 -> yield({ chunk: StringToBytes(path), nextState: 2 })
-  //   state 2 -> yield({ chunk: StringToBytes("</h1>"), nextState: 3 })
-  //   state 3 -> done
-  const accountBytes = new Uint8Array(32);
-  accountBytes[0] = 0x42;
-  const moduleName = "web_module";
-  const partName = "http_server";
-  const moduleIdBytes = await deriveModuleIdBytes(accountBytes, moduleName);
-  const derivedPartId = await deriveModulePartId(moduleIdBytes, partName);
-
-  const urlExpr = {
-    RecordGet: {
-      record: { Variable: 1 },
-      key: "url",
-    },
-  };
-  const extractedPathExpr = {
-    StringSlice: {
-      value: urlExpr,
-      start: { Number: 35 },
-      end: { StringLength: { value: urlExpr } },
-    },
-  };
-
-  const serverPartExpression = {
-    Function: {
-      parameters: [{ name: "req", variable_id: 1 }],
-      body: {
-        TypeLiteral: {
-          items: [
-            { name: "status", value: { Number: 200 } },
-            {
-              name: "headers",
-              value: {
-                ListLiteral: {
-                  items: [
-                    {
-                      TypeLiteral: {
-                        items: [
-                          { name: "name", value: { String: "content-type" } },
-                          {
-                            name: "value",
-                            value: { String: "text/html; charset=utf-8" },
-                          },
-                        ],
-                      },
-                    },
-                    {
-                      TypeLiteral: {
-                        items: [
-                          {
-                            name: "name",
-                            value: { String: "x-custom-header" },
-                          },
-                          { name: "value", value: { String: "from-definy" } },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-            {
-              name: "body",
-              value: {
-                TypeLiteral: {
-                  items: [
-                    { name: "initialState", value: { Number: 0 } },
-                    {
-                      name: "next",
-                      value: {
-                        Function: {
-                          parameters: [{ name: "state", variable_id: 2 }],
-                          body: {
-                            If: {
-                              condition: {
-                                Equal: {
-                                  left: { Variable: 2 },
-                                  right: { Number: 0 },
-                                },
-                              },
-                              then: {
-                                Variant: {
-                                  tag: "yield",
-                                  payload: {
-                                    TypeLiteral: {
-                                      items: [
-                                        {
-                                          name: "chunk",
-                                          value: {
-                                            StringToBytes: {
-                                              value: { String: "<h1>Hello " },
-                                            },
-                                          },
-                                        },
-                                        {
-                                          name: "nextState",
-                                          value: { Number: 1 },
-                                        },
-                                      ],
-                                    },
-                                  },
-                                },
-                              },
-                              else: {
-                                If: {
-                                  condition: {
-                                    Equal: {
-                                      left: { Variable: 2 },
-                                      right: { Number: 1 },
-                                    },
-                                  },
-                                  then: {
-                                    Variant: {
-                                      tag: "yield",
-                                      payload: {
-                                        TypeLiteral: {
-                                          items: [
-                                            {
-                                              name: "chunk",
-                                              value: {
-                                                StringToBytes: {
-                                                  value: extractedPathExpr,
-                                                },
-                                              },
-                                            },
-                                            {
-                                              name: "nextState",
-                                              value: { Number: 2 },
-                                            },
-                                          ],
-                                        },
-                                      },
-                                    },
-                                  },
-                                  else: {
-                                    If: {
-                                      condition: {
-                                        Equal: {
-                                          left: { Variable: 2 },
-                                          right: { Number: 2 },
-                                        },
-                                      },
-                                      then: {
-                                        Variant: {
-                                          tag: "yield",
-                                          payload: {
-                                            TypeLiteral: {
-                                              items: [
-                                                {
-                                                  name: "chunk",
-                                                  value: {
-                                                    StringToBytes: {
-                                                      value: {
-                                                        String: "</h1>",
-                                                      },
-                                                    },
-                                                  },
-                                                },
-                                                {
-                                                  name: "nextState",
-                                                  value: { Number: 3 },
-                                                },
-                                              ],
-                                            },
-                                          },
-                                        },
-                                      },
-                                      else: {
-                                        Variant: {
-                                          tag: "done",
-                                          payload: null,
-                                        },
-                                      },
-                                    },
-                                  },
-                                },
-                              },
-                            },
-                          },
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-  };
-
-  const innerEventBytes = encodeCborItem({
-    account_id: accountBytes,
-    time: { value: 1700000000 },
-    content: {
-      ModuleCommit: {
-        module_name: moduleName,
-        parts: [
-          {
-            name: partName,
-            expression: serverPartExpression,
-          },
-        ],
-      },
-    },
-  });
-
-  const signedEventBytes = encodeCborItem({
-    event_binary: innerEventBytes,
-    signature: new Uint8Array(64),
-  });
-
-  const submitRes = await handleWorkerRequest(
-    new Request(
-      "https://definy.narumincho.com/definy.v1.EventService/SubmitEvent",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          signedEventBytes: bytesToBase64(signedEventBytes),
-        }),
-      },
-    ),
-    env,
-    store,
-  );
-  assertEquals(submitRes.status, 200);
-
-  // Register preview app with derivedPartId on definy.narumincho.com
+  // セルフホスト HTTP サーバーのサンプルパーツをプレビューアプリとして登録
   const regRes = await handleWorkerRequest(
     new Request(
       "https://definy.narumincho.com/definy.v1.PreviewService/RegisterPreviewApp",
@@ -931,7 +715,7 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
         body: JSON.stringify({
           appId: "hello",
           displayName: "Hello HTTP Server",
-          partId: derivedPartId,
+          partId: "sample.self-hosted-definy-server",
           accountId: adminAccount,
         }),
       },
@@ -943,27 +727,33 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
   const regJson = await regRes.json();
   assertEquals(regJson.previewUrl, "https://hello-definy.narumincho.com");
 
-  // Request to https://hello-definy.narumincho.com/world executes the part and streams 3 chunks!
+  // https://hello-definy.narumincho.com/healthz でパーツが HTTP サーバーとして動く
   const subRes = await handleWorkerRequest(
-    new Request("https://hello-definy.narumincho.com/world"),
+    new Request("https://hello-definy.narumincho.com/healthz"),
     env,
     store,
   );
   assertEquals(subRes.status, 200);
   assertEquals(subRes.headers.get("X-Definy-Preview-App"), "hello");
-  assertEquals(
-    subRes.headers.get("Content-Type"),
-    "text/html; charset=utf-8",
-  );
-  assertEquals(subRes.headers.get("x-custom-header"), "from-definy");
   assertEquals(subRes.headers.get("Content-Security-Policy"), null);
-  const subBody = await subRes.text();
-  assertEquals(subBody, "<h1>Hello /world</h1>");
+  const health = await subRes.json();
+  assertEquals(health.status, "ok");
+  assertEquals(health.service, "self-hosted-definy-server");
 
-  // Request via same-origin path fallback (/preview/hello/world) includes CSP sandbox to protect IndexedDB
-  // Note: effectiveUrl is "https://definy.narumincho.com/world" (29 bytes before "/world")
+  // 本文は複数チャンクのストリームとして返る（自己記述コンパイラのパイプラインを実行するページ）
+  const homeRes = await handleWorkerRequest(
+    new Request("https://hello-definy.narumincho.com/"),
+    env,
+    store,
+  );
+  assertEquals(homeRes.status, 200);
+  const homeHtml = await homeRes.text();
+  assertEquals(homeHtml.includes("Self-Hosted definy Studio"), true);
+  assertEquals(homeHtml.includes("42 (verified: true)"), true);
+
+  // 同一オリジンのパスフォールバック (/preview/hello/...) では CSP sandbox を付けて IndexedDB を保護する
   const pathRes = await handleWorkerRequest(
-    new Request("https://definy.narumincho.com/preview/hello/world"),
+    new Request("https://definy.narumincho.com/preview/hello/healthz"),
     env,
     store,
   );
@@ -972,4 +762,5 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
     pathRes.headers.get("Content-Security-Policy"),
     "sandbox allow-scripts allow-forms",
   );
+  await pathRes.body?.cancel();
 });

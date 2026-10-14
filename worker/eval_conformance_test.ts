@@ -1,31 +1,30 @@
 /**
- * Rust (definy-core) と TypeScript (cbor_eval.ts) の評価器の挙動を揃えるための適合テスト。
+ * Worker 用ランタイム（`definy-worker-runtime` を wasm32 にビルドしたもの）が、
+ * Rust サーバーと同じ評価結果を返すことを検証する適合テスト。
  *
  * テストケースは `conformance/eval_cases.json` にあり、同じファイルを Rust 側の
- * `definy-server/tests/eval_conformance.rs` も読み込んで検証する。
+ * `definy-server/tests/eval_conformance.rs`（wasmtime）と `wasmi_backend.rs`（wasmi）も検証する。
+ * 実行前にランタイムと seed バンドルのビルドが必要（`worker/test_runtime.ts` を参照）。
  */
 import { assertEquals } from "@std/assert";
 import cases from "../conformance/eval_cases.json" with { type: "json" };
-import coreSeed from "../seeds/core.json" with { type: "json" };
-import definySeed from "../seeds/definy.json" with { type: "json" };
-import sampleSeed from "../seeds/sample.json" with { type: "json" };
-import stdSeed from "../seeds/std.json" with { type: "json" };
-import wasiSeed from "../seeds/wasi.json" with { type: "json" };
-import {
-  bytesToUrlSafeBase64NoPad,
-  type DefinyValue,
-  deriveModuleIdBytes,
-  deriveModulePartId,
-  evaluateCborExpression,
-} from "./cbor_eval.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import { getDefinyRuntime } from "./definy_runtime.ts";
+import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
 
-/** `definy-server` の `COMPILER_SYSTEM_KEY_SEED` と同じ値 */
-const COMPILER_SYSTEM_KEY_SEED = new TextEncoder().encode(
+/** `definy-server` の開発用システムアカウント鍵 (`DEV_SYSTEM_KEY_SEED`) と同じ値 */
+const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
   "definy-compiler-system-key-2026\0",
 );
 
-/** Ed25519 秘密鍵シードからビルトインシステムアカウントの公開鍵を導出する */
-async function builtinSystemAccountBytes(): Promise<Uint8Array> {
+function base64UrlToBytes(text: string): Uint8Array {
+  const b64 = text.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+  return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
+}
+
+/** Ed25519 秘密鍵シードから開発用システムアカウントの公開鍵を導出する */
+async function devSystemAccountBytes(): Promise<Uint8Array> {
   // PKCS#8 の Ed25519 秘密鍵ヘッダー (RFC 8410) + 32 バイトのシード
   const header = [
     0x30,
@@ -45,141 +44,73 @@ async function builtinSystemAccountBytes(): Promise<Uint8Array> {
     0x04,
     0x20,
   ];
-  const pkcs8 = new Uint8Array([...header, ...COMPILER_SYSTEM_KEY_SEED]);
   const key = await crypto.subtle.importKey(
     "pkcs8",
-    pkcs8,
+    new Uint8Array([...header, ...DEV_SYSTEM_KEY_SEED]),
     { name: "Ed25519" },
     true,
     ["sign"],
   );
   const jwk = await crypto.subtle.exportKey("jwk", key);
-  const b64 = (jwk.x ?? "").replace(/-/g, "+").replace(/_/g, "/");
-  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-  return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
-}
-
-type Seed = {
-  readonly module_name: string;
-  readonly parts: ReadonlyArray<
-    { readonly name: string; expression?: unknown }
-  >;
-};
-
-const seeds: ReadonlyArray<Seed> = [
-  definySeed,
-  coreSeed,
-  stdSeed,
-  wasiSeed,
-  sampleSeed,
-] as ReadonlyArray<Seed>;
-
-/** パーツ ID (URL-safe base64) → 式 と、"module.name" → パーツ ID (バイト列) の対応を作る */
-async function buildPartTables(): Promise<{
-  readonly partExpressions: ReadonlyMap<string, unknown>;
-  readonly partIdBytes: ReadonlyMap<string, ReadonlyArray<number>>;
-}> {
-  const accountBytes = await builtinSystemAccountBytes();
-  const partExpressions = new Map<string, unknown>();
-  const partIdBytes = new Map<string, ReadonlyArray<number>>();
-  const expressionsWithPlaceholders = new Map<string, unknown>();
-  for (const seed of seeds) {
-    const moduleIdBytes = await deriveModuleIdBytes(
-      accountBytes,
-      seed.module_name,
-    );
-    for (const part of seed.parts) {
-      const id = await deriveModulePartId(moduleIdBytes, part.name);
-      if (part.expression !== undefined && part.expression !== null) {
-        expressionsWithPlaceholders.set(id, part.expression);
-      }
-      const b64 = id.replace(/-/g, "+").replace(/_/g, "/");
-      const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-      partIdBytes.set(
-        `${seed.module_name}.${part.name}`,
-        Array.from(atob(padded), (c) => c.charCodeAt(0)),
-      );
-    }
-  }
-  // seed 中の `{"$part": ...}` もパーツ ID に置き換える
-  for (const [id, expr] of expressionsWithPlaceholders) {
-    partExpressions.set(id, resolvePartPlaceholders(expr, partIdBytes));
-  }
-  return { partExpressions, partIdBytes };
+  return base64UrlToBytes(jwk.x ?? "");
 }
 
 /** `{"$part": "module.name"}` をパーツ ID（バイト列）に置き換える（seed と同じ形式） */
-function resolvePartPlaceholders(
+async function resolvePartPlaceholders(
   expr: unknown,
-  partIdBytes: ReadonlyMap<string, ReadonlyArray<number>>,
-): unknown {
+  accountBytes: Uint8Array,
+): Promise<unknown> {
   if (Array.isArray(expr)) {
-    return expr.map((item) => resolvePartPlaceholders(item, partIdBytes));
+    return await Promise.all(
+      expr.map((item) => resolvePartPlaceholders(item, accountBytes)),
+    );
   }
   if (expr && typeof expr === "object") {
     const obj = expr as Record<string, unknown>;
     if (typeof obj.$part === "string") {
-      const bytes = partIdBytes.get(obj.$part);
-      if (!bytes) {
-        throw new Error(`unknown builtin part: ${obj.$part}`);
-      }
-      return bytes;
+      const dot = obj.$part.indexOf(".");
+      const moduleId = await deriveModuleIdBytes(
+        accountBytes,
+        obj.$part.slice(0, dot),
+      );
+      const partId = await deriveModulePartId(
+        moduleId,
+        obj.$part.slice(dot + 1),
+      );
+      return Array.from(base64UrlToBytes(partId));
     }
-    return Object.fromEntries(
-      Object.entries(obj).map((
+    const entries = await Promise.all(
+      Object.entries(obj).map(async (
         [key, value],
-      ) => [key, resolvePartPlaceholders(value, partIdBytes)]),
+      ) => [key, await resolvePartPlaceholders(value, accountBytes)]),
     );
+    return Object.fromEntries(entries);
   }
   return expr;
 }
 
-/** TypeScript 評価器の値を、テストケースの期待値と同じ正規化表現へ変換する */
-function normalize(value: DefinyValue): unknown {
-  if (value === null || typeof value !== "object") {
-    return value;
-  }
-  if (Array.isArray(value)) {
-    return value.map(normalize);
-  }
-  if ("__variant" in value) {
-    const v = value as { __variant: string; payload: DefinyValue };
-    return {
-      $variant: v.__variant,
-      payload: v.payload === undefined || v.payload === null
-        ? null
-        : normalize(v.payload),
-    };
-  }
-  if ("__fn" in value || "__nativeFn" in value) {
-    return { $function: true };
-  }
-  return {
-    $record: Object.entries(value as Record<string, DefinyValue>).map((
-      [key, item],
-    ) => [key, normalize(item)]),
-  };
-}
-
-const tables = await buildPartTables();
+await setupTestRuntime();
+const runtime = await getDefinyRuntime();
+const bundle = await loadTestSeedBundle();
+runtime.callOrThrow({
+  op: "loadEvents",
+  events: bundle.events.map((ev) => ev.signedEventBytes),
+});
+const accountBytes = await devSystemAccountBytes();
 
 for (const testCase of cases.cases) {
-  Deno.test(`eval conformance: ${testCase.name}`, async () => {
-    const expr = resolvePartPlaceholders(
+  Deno.test(`eval conformance (worker runtime): ${testCase.name}`, async () => {
+    const expression = await resolvePartPlaceholders(
       testCase.expression,
-      tables.partIdBytes,
+      accountBytes,
     );
-    const result = await evaluateCborExpression(
-      expr,
-      new Map(),
-      (partHash) => Promise.resolve(tables.partExpressions.get(partHash)),
-    );
-    assertEquals(normalize(result), testCase.expected);
+    const response = runtime.call({ op: "evaluateExpression", expression });
+    if (response.type === "error") {
+      throw new Error(response.message);
+    }
+    assertEquals(response.type, "value");
+    if (response.type === "value") {
+      assertEquals(response.value, testCase.expected);
+    }
   });
 }
-
-Deno.test("builtin system account bytes are 32 bytes", async () => {
-  const bytes = await builtinSystemAccountBytes();
-  assertEquals(bytes.length, 32);
-  assertEquals(bytesToUrlSafeBase64NoPad(bytes).length, 43);
-});

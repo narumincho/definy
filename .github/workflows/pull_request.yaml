@@ -19,11 +19,10 @@ jobs:
       - run: cargo clippy --workspace --all-targets --message-format=short -- -D warnings
       - name: Setup Deno
         uses: denoland/setup-deno@v2
-      - name: Deno fmt, lint and test
+      - name: Deno fmt and lint
         run: |
           deno fmt --check
           deno lint
-          deno test worker/
       - name: Setup ChromeDriver
         run: |
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d '.' -f 1)
@@ -32,8 +31,16 @@ jobs:
           sudo ln -sf "$CHROMEDRIVER_BIN" /usr/local/bin/chromedriver
           chromedriver --version
       - run: rustup target add wasm32-unknown-unknown
+      - name: Build Worker runtime (definy-worker-runtime for wasm32)
+        run: |
+          cargo clippy -p definy-worker-runtime --target wasm32-unknown-unknown --message-format=short -- -D warnings
+          bash scripts/build-worker-runtime.sh
       - run: dx build --package definy-client
       - run: cargo test --workspace --lib --bins --tests
+      - name: Deno test (Worker with the Rust runtime and seed bundle)
+        run: |
+          cargo run -p definy-server -- --export-seed-bundle worker/generated/test_seed_bundle.json
+          deno test --allow-read worker/
       - name: Run E2E test
         run: |
           chromedriver --port=4444 > /tmp/chromedriver.log 2>&1 &

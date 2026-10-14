@@ -1,4 +1,6 @@
+#[cfg(not(all(target_arch = "wasm32", feature = "wasmi")))]
 use super::memory::read_value_from_memory;
+#[cfg(not(all(target_arch = "wasm32", feature = "wasmi")))]
 use crate::expression_eval::Value;
 
 #[cfg(all(target_arch = "wasm32", not(feature = "wasmi")))]
