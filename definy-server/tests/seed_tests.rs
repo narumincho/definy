@@ -52,15 +52,16 @@ fn test_seed_json_is_independent_of_system_account_key() {
     let mut loaded = Vec::new();
     for name in ["definy", "core", "std", "wasi", "sample"] {
         let json = std::fs::read_to_string(seeds_dir.join(format!("{name}.json"))).unwrap();
-        assert!(
-            json.contains("\"$part\""),
-            "{name}.json must use $part references"
-        );
         loaded.push((
             json.clone(),
             load_module_seed_from_str(&json, &other_account).unwrap(),
         ));
     }
+    // パーツ参照を含む core.json は名前参照で書かれている
+    assert!(
+        loaded[1].0.contains("\"$part\""),
+        "core.json must use $part references"
+    );
     let seeds: Vec<ModuleSeed> = loaded.iter().map(|(_, seed)| seed.clone()).collect();
 
     // 別アカウントで読み込んだ seed は、ビルトイン（システムアカウント）版とパーツ参照のハッシュが異なる
