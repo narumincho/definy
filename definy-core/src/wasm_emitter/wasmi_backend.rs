@@ -181,7 +181,7 @@ pub fn execute_wasm_http_response(wasm_bytes: &[u8]) -> Result<WasmiHttpResponse
         })?;
     let next_func = table_elem
         .funcref()
-        .and_then(|func_ref| func_ref.val().copied())
+        .and_then(|func_ref| func_ref.val().map(|func| **func))
         .ok_or_else(|| "Closure table entry is null".to_string())?;
 
     Ok(WasmiHttpResponse {
