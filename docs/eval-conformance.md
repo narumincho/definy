@@ -1,14 +1,13 @@
 # 評価器の適合テスト (Rust ⇔ TypeScript)
 
-definy の式は 2 か所で評価されています。
+definy の式は「Wasm にコンパイルして実行」で評価します。実行バックエンドは 3 通りあります。
 
-- **Rust**: `definy-core` の `evaluate_expression`。式を WebAssembly にコンパイルして実行します
-  （`definy-server` やテストで使用）。
-- **TypeScript**: `worker/cbor_eval.ts` の `evaluateCborExpression`。Cloudflare Workers 上で
-  プレビューやセルフホスト HTTP サーバーのパーツを評価する木構造インタプリタです。
+- **wasmtime**: Rust サーバー（`definy_core::evaluate_expression`）
+- **wasmi（ネイティブ）**: `definy_core::wasm_emitter::wasmi_backend`
+- **wasmi（wasm32、Cloudflare Workers）**: `definy-worker-runtime`（[worker-runtime.md](worker-runtime.md)）
 
-二重実装なので、言語機能を追加・変更すると挙動がずれやすくなります。そこで、
-両方が同じテストケースを読み込んで結果を比べる適合テストを用意しています。
+以前は Worker 側に TypeScript の評価器（`worker/cbor_eval.ts`）がありましたが、Rust 製ランタイムに置き換えて削除しました。
+3 つのバックエンドが同じテストケースを読み込んで結果を比べる適合テストを用意しています。
 
 ## テストケース
 
@@ -24,14 +23,13 @@ definy の式は 2 か所で評価されています。
 
 ## 実行
 
-- Rust: `cargo test -p definy-server --test eval_conformance`
+- wasmtime: `cargo test -p definy-server --test eval_conformance`
   （失敗したケースをまとめて 1 つのメッセージで報告します）
-- TypeScript: `deno test worker/eval_conformance_test.ts`
+- wasmi（ネイティブ）: `cargo test -p definy-server --test wasmi_backend`
+- Worker ランタイム: `deno test --allow-read worker/eval_conformance_test.ts`（事前のビルドは [worker-runtime.md](worker-runtime.md)）
 
-どちらも CI（`pull_request.yaml`）で実行されます。
+いずれも CI（`pull_request.yaml`）で実行されます。
 
 ## 今後
 
 - 非 ASCII 文字列に対する `StringLength` / `StringSlice` など、意味論を決める必要があるケースは未収録です。
-- 最終的には Worker でも Rust 由来（または自己記述コンパイラ `core.compile-to-wasm` 由来）の
-  Wasm を実行し、TypeScript の評価器をなくすことを検討しています。

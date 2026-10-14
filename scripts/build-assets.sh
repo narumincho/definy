@@ -24,6 +24,9 @@ if [ -f "${ROOT_DIR}/worker-assets/_headers" ]; then
   cp "${ROOT_DIR}/worker-assets/_headers" "${OUTPUT_DIR}/"
 fi
 
+# Worker でパーツを実行する Rust 製ランタイム (worker/generated/definy_worker_runtime.wasm)
+bash "${ROOT_DIR}/scripts/build-worker-runtime.sh"
+
 # 組み込みシードイベントと CAS コンテンツバンドルを出力
 echo "=== Exporting builtin seed bundle into ${OUTPUT_DIR}/__definy_seed_bundle.json ==="
 cd "${ROOT_DIR}"

@@ -1,5 +1,6 @@
 pub mod deploy_detector;
 pub mod expression_eval;
+pub mod http_app;
 pub mod preview_detector;
 pub mod wasm_emitter;
 

@@ -5,7 +5,8 @@ members = [
   "definy-core",
   "definy-event",
   "definy-server",
-  "definy-ui"
+  "definy-ui",
+  "definy-worker-runtime"
 ]
 default-members = ["definy-client"]
 resolver = "3"
@@ -17,6 +18,7 @@ definy-core = { path = "definy-core" }
 definy-event = { path = "definy-event" }
 definy-server = { path = "definy-server" }
 definy-ui = { path = "definy-ui" }
+definy-worker-runtime = { path = "definy-worker-runtime" }
 
 # External crates
 anyhow = "1.0.104"

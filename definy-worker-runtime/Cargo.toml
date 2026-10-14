@@ -1,0 +1,20 @@
+[package]
+name = "definy-worker-runtime"
+version = "0.1.0"
+edition = "2024"
+description = "Cloudflare Workers で definy のパーツを実行する Wasm モジュール (コンパイラ + wasmi)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+definy-core = { workspace = true, features = ["wasmi"] }
+definy-event = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_cbor = { workspace = true }
+base64 = { workspace = true }
+
+[dev-dependencies]
+# Cloudflare Workers 用 seed バンドルを作ってネイティブで動作確認するため
+definy-server = { workspace = true }
