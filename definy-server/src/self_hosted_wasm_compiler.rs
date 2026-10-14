@@ -4,8 +4,8 @@
 use chrono::DateTime;
 use definy_core::expression_eval::Value;
 use definy_event::event::{
-    AccountId, AddExpression, CallArgument, CallExpression, Description, Event, EventContent,
-    Expression, ModuleCommitEvent, NumberExpression, PartReferenceExpression, derive_module_id,
+    AddExpression, CallArgument, CallExpression, Description, Event, EventContent, Expression,
+    ModuleCommitEvent, NumberExpression, PartReferenceExpression, derive_module_id,
     derive_module_part_id,
 };
 use definy_event::{EventHashId, VerifyAndDeserializeError};
@@ -55,10 +55,8 @@ pub type VerifiedCommitEvent = (
 
 /// 自己記述コンパイラパーツ (`core.compile-to-wasm`) によるメタ循環コンパイルを試行します。
 fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfHostedCompileError> {
-    // 決定論的なダミーアカウントと core モジュール ID を準備
-    let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32])
-        .map_err(|e| SelfHostedCompileError::Evaluation(format!("invalid dummy key: {e}")))?;
-    let dummy_account = AccountId(dummy_key);
+    // seed JSON 内のパーツ参照ハッシュはビルトインシステムアカウントの core モジュールを前提とする
+    let dummy_account = crate::seed::builtin_system_account_id();
     let core_module_id = derive_module_id(&dummy_account, "core");
 
     let expr_type_hash = derive_module_part_id(&core_module_id, "expression");
@@ -70,10 +68,12 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
             .map_err(SelfHostedCompileError::AstConversion)?;
 
     // 自己記述コンパイラパーツを準備
-    let compile_instr_part =
-        crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&core_module_id);
-    let compile_to_wasm_part =
-        crate::builtin_wasm_compiler::create_compile_to_wasm_part(&core_module_id);
+    let compile_instr_part = crate::seed::find_builtin_part("compile-expr-instructions")
+        .expect("builtin part compile-expr-instructions")
+        .clone();
+    let compile_to_wasm_part = crate::seed::find_builtin_part("compile-to-wasm")
+        .expect("builtin part compile-to-wasm")
+        .clone();
 
     let parts = vec![compile_instr_part, compile_to_wasm_part];
 
@@ -579,7 +579,7 @@ mod tests {
     #[test]
     fn test_find_and_compile_part_expression() {
         let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[1u8; 32]).unwrap();
-        let dummy_account = AccountId(dummy_key);
+        let dummy_account = definy_event::event::AccountId(dummy_key);
         let mod_id = derive_module_id(&dummy_account, "math_module");
 
         let part_name = "calculate_answer";

@@ -190,6 +190,24 @@ graph TD
 
 ---
 
+## seed JSON が正本
+
+ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）のパーツ定義の正本は
+`seeds/*.json` です。以前は `definy-server/src/builtin_*.rs`（約 17,000 行）の Rust コードで
+AST を手組みし、そこから JSON を生成していましたが、このコードは削除しました。
+本文中に出てくる `builtin_type_checker/record_ops.rs` などのファイル名は、その時点の実装場所を指す履歴です。
+
+- 読み込み: `definy_server::seed::get_builtin_module_seeds()` が `include_str!` で埋め込んだ JSON を
+  パースします。名前でのパーツ取得は `find_builtin_part(name)`（パーツ名は全モジュールで一意）。
+- パーツ間参照のハッシュは、ビルトインシステムアカウント（`builtin_system_account_id()`）の
+  モジュール ID から `derive_module_part_id` で計算済みです。テストも同じアカウントを使います。
+- テスト: `self_hosting_tests` は `seed_part("type-check")` のように seed からパーツを取得して検証します。
+  `seed_tests.rs` は、コミット済み seed が正規化済み（パースして整形し直した結果と一致）であることと、
+  JSON Schema が最新であることを検証します。
+- 編集方法（段階移行）: 今後は definy の UI / MCP でパーツを編集し、その結果を `seeds/*.json` に
+  書き出してコミットする流れを目指します。手で JSON を編集した場合は
+  `cargo run -p definy-server -- --export-seeds seeds` で整形とスキーマ更新を行ってください。
+
 ## セルフホストのロードマップと到達状況
 
 - [x] **Phase 1: 完全動的値評価器 (Self-Evaluating Interpreter)**
@@ -321,11 +339,9 @@ graph TD
     に分離（1000行制限ルールを遵守）
   - `seed_tests.rs`
     テストスイートにより、スキーマ適合性、完全デシリアライズ性、および自己記述型チェッカー（`core.validate-module`）によるモジュール型妥当性検証の自動テスト実証完了
-  - **seed のドリフト検出**: `seed_tests.rs` はディスクへ書き込まず、コミット済みの
-    `seeds/` が現在のビルトイン定義から生成される内容とバイト単位で一致するかだけを検証する
-    （`definy_server::seed::find_stale_seed_files`）。ビルトイン定義を変更したら
-    `cargo run -p definy-server -- --export-seeds seeds` で再生成してコミットする。
-    再生成し忘れると CI の `cargo test` が失敗する。
+  - **seed の正本化**: Rust の AST 構築コードを削除し、`seeds/*.json` を正本とした
+    （[seed JSON が正本](#seed-json-が正本) を参照）。`seed_tests.rs` はディスクへ書き込まず、
+    コミット済み seed が正規化済みであることだけを検証する（`find_stale_seed_files`）。
 
 ---
 

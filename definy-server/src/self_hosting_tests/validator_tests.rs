@@ -21,8 +21,8 @@ fn test_self_hosted_validate_part_execution() {
     let validate_part_hash = derive_module_part_id(&mod_id, "validate-part");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let mut parts = all_type_checker_parts(&mod_id);
-    parts.extend(all_validator_parts(&mod_id));
+    let mut parts = all_type_checker_parts();
+    parts.extend(all_validator_parts());
 
     let events = create_test_module_events(account, parts, 127);
 
@@ -370,8 +370,8 @@ fn test_self_hosted_validate_module_execution() {
     let validate_module_hash = derive_module_part_id(&mod_id, "validate-module");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let mut parts = all_type_checker_parts(&mod_id);
-    parts.extend(all_validator_parts(&mod_id));
+    let mut parts = all_type_checker_parts();
+    parts.extend(all_validator_parts());
 
     let events = create_test_module_events(account, parts, 130);
 

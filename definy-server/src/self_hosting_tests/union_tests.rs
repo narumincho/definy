@@ -199,7 +199,7 @@ fn expr_add(left: Expression, right: Expression) -> Expression {
 #[test]
 fn test_self_hosted_variant_type_inference_and_subtyping() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
     let type_assignable_hash = derive_module_part_id(&mod_id, "type-assignable");
@@ -283,7 +283,7 @@ fn test_self_hosted_variant_type_inference_and_subtyping() {
 #[test]
 fn test_self_hosted_match_expression_type_checking() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 101);
@@ -331,7 +331,7 @@ fn test_self_hosted_match_expression_type_checking() {
 #[test]
 fn test_self_hosted_match_expression_detects_type_mismatch() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 102);
@@ -387,7 +387,7 @@ fn test_self_hosted_match_expression_detects_type_mismatch() {
 #[test]
 fn test_self_hosted_match_expression_detects_non_exhaustive_arms() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 103);
@@ -443,7 +443,7 @@ fn test_self_hosted_match_expression_detects_non_exhaustive_arms() {
 #[test]
 fn test_self_hosted_match_expression_detects_unknown_variant() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 104);
@@ -500,7 +500,7 @@ fn test_self_hosted_match_expression_detects_unknown_variant() {
 #[test]
 fn test_self_hosted_variant_none_inference_and_against() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 

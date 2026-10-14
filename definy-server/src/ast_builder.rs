@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+//! テスト用の AST 構築ヘルパー（パーツ定義の正本は `seeds/*.json`）。
+
 use definy_event::EventHashId;
 use definy_event::event::{
     CallArgument, CallExpression, Expression, FunctionExpression, FunctionParameter,

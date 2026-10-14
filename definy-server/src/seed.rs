@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use definy_event::event::{AccountId, Description, ModuleSeed};
+use definy_event::event::{AccountId, ModulePartEntry, ModuleSeed};
 use schemars::schema_for;
 
 /// ModuleSeed の JSON Schema を生成します。
@@ -14,89 +14,51 @@ pub fn generate_module_seed_schema_json() -> Result<String, serde_json::Error> {
     serde_json::to_string_pretty(&schema)
 }
 
-/// ビルトインモジュール（core, std, wasi, sample）の ModuleSeed リストを取得します。
-pub fn get_builtin_module_seeds(account_id: &AccountId) -> Vec<ModuleSeed> {
-    let core_module_id = definy_event::event::derive_module_id(account_id, "core");
-    let std_module_id = definy_event::event::derive_module_id(account_id, "std");
-    let wasi_module_id = definy_event::event::derive_module_id(account_id, "wasi");
+/// リポジトリにコミットされたビルトインモジュールの seed JSON（正本）。
+///
+/// 並び順はブートストラップ時のイベント発行順に影響しないが、出力の安定性のため固定する。
+const BUILTIN_SEED_JSONS: [(&str, &str); 5] = [
+    ("definy", include_str!("../../seeds/definy.json")),
+    ("core", include_str!("../../seeds/core.json")),
+    ("std", include_str!("../../seeds/std.json")),
+    ("wasi", include_str!("../../seeds/wasi.json")),
+    ("sample", include_str!("../../seeds/sample.json")),
+];
 
-    let definy_module_id = definy_event::event::derive_module_id(account_id, "definy");
+static BUILTIN_MODULE_SEEDS: std::sync::OnceLock<Vec<ModuleSeed>> = std::sync::OnceLock::new();
 
-    vec![
-        ModuleSeed::new(
-            "definy",
-            Description::localized(vec![
-                ("en", "Definy platform runtime and preview features"),
-                (
-                    "ja",
-                    "definy プラットフォームのランタイムおよびプレビュー機能",
-                ),
-            ]),
-            "Initial commit for definy module",
-            crate::builtin_definy_parts::create_definy_module_parts(
-                &definy_module_id,
-                &std_module_id,
-            ),
-        ),
-        ModuleSeed::new(
-            "core",
-            Description::localized(vec![
-                ("en", "Core built-in module for definy"),
-                ("ja", "definy のコア組み込みモジュール"),
-            ]),
-            "Initial commit for core module",
-            crate::builtin_core_parts::create_core_module_parts(&core_module_id),
-        ),
-        ModuleSeed::new(
-            "std",
-            Description::localized(vec![
-                (
-                    "en",
-                    "Definy standard utility functions (pure math, logic, list, UTF-8 stream, URL operations)",
-                ),
-                (
-                    "ja",
-                    "definy の標準ユーティリティ関数群 (数学・論理・リスト・UTF-8ストリーム・URL操作)",
-                ),
-            ]),
-            "Initial commit for std module",
-            crate::builtin_std_functions::create_std_module_parts(&std_module_id),
-        ),
-        ModuleSeed::new(
-            "wasi",
-            Description::localized(vec![
-                (
-                    "en",
-                    "WASI 0.3 capabilities (Clocks, Random, I/O) for capability-based DI",
-                ),
-                (
-                    "ja",
-                    "WASI 0.3 能力インターフェース (時計・乱数・I/O) と能力注入基盤",
-                ),
-            ]),
-            "Initial commit for wasi module",
-            crate::builtin_wasi::create_wasi_module_parts(&wasi_module_id),
-        ),
-        ModuleSeed::new(
-            "sample",
-            Description::localized(vec![
-                (
-                    "en",
-                    "Sample programs showcasing definy expressions and computations",
-                ),
-                (
-                    "ja",
-                    "definy の計算式や機能を体験できるサンプルプログラム集",
-                ),
-            ]),
-            "Initial commit for sample module",
-            crate::builtin_sample_parts::create_sample_module_parts(
-                &core_module_id,
-                &std_module_id,
-                &definy_module_id,
-            ),
-        ),
-    ]
+/// ビルトインモジュール（definy, core, std, wasi, sample）の ModuleSeed リストを取得します。
+///
+/// 正本は `seeds/*.json` で、バイナリに埋め込まれています。パーツ間参照のハッシュは
+/// ビルトインシステムアカウント（[`builtin_system_account_id`]）を前提に計算済みです。
+///
+/// # Panics
+///
+/// 埋め込まれた seed JSON が不正な場合（`seed_tests` で検出されます）。
+pub fn get_builtin_module_seeds() -> &'static [ModuleSeed] {
+    BUILTIN_MODULE_SEEDS.get_or_init(|| {
+        BUILTIN_SEED_JSONS
+            .iter()
+            .map(|(name, json)| {
+                let seed = load_module_seed_from_str(json)
+                    .unwrap_or_else(|e| panic!("invalid builtin seed seeds/{name}.json: {e}"));
+                assert_eq!(
+                    &*seed.module_name, *name,
+                    "module_name mismatch in seeds/{name}.json"
+                );
+                seed
+            })
+            .collect()
+    })
+}
+
+/// ビルトインモジュールから名前でパーツ定義を取得します（パーツ名は全モジュールで一意）。
+#[must_use]
+pub fn find_builtin_part(name: &str) -> Option<&'static ModulePartEntry> {
+    get_builtin_module_seeds()
+        .iter()
+        .flat_map(|seed| seed.parts.iter())
+        .find(|part| &*part.name == name)
 }
 
 /// JSON 文字列から ModuleSeed をパースします。
@@ -118,13 +80,16 @@ pub struct RenderedSeedFile {
     pub content: String,
 }
 
-/// JSON Schema とビルトイン Seed JSON ファイル群の内容を、ディスクに触れずに生成します。
-pub fn render_seed_files(account_id: &AccountId) -> Result<Vec<RenderedSeedFile>, anyhow::Error> {
+/// JSON Schema とビルトイン Seed JSON ファイル群の正規化済み内容を、ディスクに触れずに生成します。
+///
+/// seed JSON はそれ自体が正本なので、ここでの生成内容は「パースして整形し直した結果」です。
+/// 手編集した seed の整形・スキーマ更新には `--export-seeds` を使います。
+pub fn render_seed_files() -> Result<Vec<RenderedSeedFile>, anyhow::Error> {
     let mut files = vec![RenderedSeedFile {
         relative_path: Path::new("schemas").join("module-seed.schema.json"),
         content: generate_module_seed_schema_json()?,
     }];
-    for seed in get_builtin_module_seeds(account_id) {
+    for seed in get_builtin_module_seeds() {
         files.push(RenderedSeedFile {
             relative_path: PathBuf::from(format!("{}.json", seed.module_name)),
             content: serde_json::to_string_pretty(&seed)?,
@@ -136,8 +101,8 @@ pub fn render_seed_files(account_id: &AccountId) -> Result<Vec<RenderedSeedFile>
 /// ディスク上に JSON Schema とビルトイン Seed JSON ファイル群を書き出します。
 ///
 /// `cargo run -p definy-server -- --export-seeds seeds` から呼び出されます。
-pub fn export_seeds_to_disk(base_dir: &Path, account_id: &AccountId) -> Result<(), anyhow::Error> {
-    for file in render_seed_files(account_id)? {
+pub fn export_seeds_to_disk(base_dir: &Path) -> Result<(), anyhow::Error> {
+    for file in render_seed_files()? {
         let path = base_dir.join(&file.relative_path);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -147,15 +112,12 @@ pub fn export_seeds_to_disk(base_dir: &Path, account_id: &AccountId) -> Result<(
     Ok(())
 }
 
-/// ディスク上の Seed ファイル群が、現在のビルトイン定義から生成される内容とバイト単位で一致するか検証します。
+/// ディスク上の Seed ファイル群が、正規化済みの内容（[`render_seed_files`]）とバイト単位で一致するか検証します。
 ///
 /// 一致しないファイル（存在しない場合を含む）の相対パス一覧を返します。空なら最新です。
-pub fn find_stale_seed_files(
-    base_dir: &Path,
-    account_id: &AccountId,
-) -> Result<Vec<PathBuf>, anyhow::Error> {
+pub fn find_stale_seed_files(base_dir: &Path) -> Result<Vec<PathBuf>, anyhow::Error> {
     let mut stale = Vec::new();
-    for file in render_seed_files(account_id)? {
+    for file in render_seed_files()? {
         let on_disk = std::fs::read_to_string(base_dir.join(&file.relative_path)).ok();
         if on_disk.as_deref() != Some(file.content.as_str()) {
             stale.push(file.relative_path);
@@ -188,7 +150,7 @@ pub fn validate_module_seed_with_type_checker(
 
     let signing_key =
         ed25519_dalek::SigningKey::from_bytes(&crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED);
-    let seeds = get_builtin_module_seeds(account_id);
+    let seeds = get_builtin_module_seeds();
     let mut events = Vec::new();
 
     // core モジュールのイベントを準備（型チェッカー自体の定義を含む）

@@ -9,21 +9,20 @@ use definy_event::event::{
     RecordGetExpression, VariableExpression, derive_module_part_id,
 };
 
+use super::helpers::seed_part;
 use super::helpers::{create_test_module_events, get_test_account_and_mod_id};
-use crate::ast_builder::{call_expr, call_part, fn_expr, fn_type};
-use crate::builtin_wasi::{
+use super::wasi_helpers::{
     create_mock_clock_capability, create_mock_monotonic_clock_capability,
     create_mock_random_capability, create_mock_wasi_env, create_system_clock_capability,
-    create_system_wasi_env, create_wasi_clock_get_seconds_part, create_wasi_clock_is_expired_part,
-    create_wasi_clock_now_part, create_wasi_monotonic_now_part, create_wasi_random_u64_part,
-    wasi_datetime_type, wasi_env_type, wasi_wall_clock_type,
+    create_system_wasi_env, wasi_datetime_type, wasi_env_type, wasi_wall_clock_type,
 };
+use crate::ast_builder::{call_expr, call_part, fn_expr, fn_type};
 
 #[test]
 fn test_wasi_clock_now_with_mock() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let clock_now_part = create_wasi_clock_now_part(&mod_id);
+    let clock_now_part = seed_part("clock-now");
     let now_hash = derive_module_part_id(&mod_id, "clock-now");
 
     let events = create_test_module_events(account, vec![clock_now_part], 211);
@@ -50,7 +49,7 @@ fn test_wasi_clock_now_with_mock() {
 fn test_wasi_clock_get_seconds_with_mock() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let clock_get_seconds_part = create_wasi_clock_get_seconds_part(&mod_id);
+    let clock_get_seconds_part = seed_part("clock-get-seconds");
     let get_sec_hash = derive_module_part_id(&mod_id, "clock-get-seconds");
 
     let events = create_test_module_events(account, vec![clock_get_seconds_part], 212);
@@ -70,7 +69,7 @@ fn test_wasi_clock_get_seconds_with_mock() {
 fn test_wasi_clock_is_expired_business_logic_deterministic_testing() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let is_expired_part = create_wasi_clock_is_expired_part(&mod_id);
+    let is_expired_part = seed_part("clock-is-expired");
     let is_expired_hash = derive_module_part_id(&mod_id, "clock-is-expired");
 
     let events = create_test_module_events(account, vec![is_expired_part], 213);
@@ -124,7 +123,7 @@ fn test_wasi_clock_is_expired_business_logic_deterministic_testing() {
 fn test_wasi_clock_with_system_time_injection() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let clock_get_seconds_part = create_wasi_clock_get_seconds_part(&mod_id);
+    let clock_get_seconds_part = seed_part("clock-get-seconds");
     let get_sec_hash = derive_module_part_id(&mod_id, "clock-get-seconds");
 
     let events = create_test_module_events(account, vec![clock_get_seconds_part], 214);
@@ -202,7 +201,7 @@ fn test_wasi_clock_user_main_pattern() {
 fn test_wasi_monotonic_clock_with_mock() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let monotonic_part = create_wasi_monotonic_now_part(&mod_id);
+    let monotonic_part = seed_part("monotonic-now");
     let mono_hash = derive_module_part_id(&mod_id, "monotonic-now");
 
     let events = create_test_module_events(account, vec![monotonic_part], 216);
@@ -219,7 +218,7 @@ fn test_wasi_monotonic_clock_with_mock() {
 fn test_wasi_random_with_mock() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let random_part = create_wasi_random_u64_part(&mod_id);
+    let random_part = seed_part("random-u64");
     let rand_hash = derive_module_part_id(&mod_id, "random-u64");
 
     let events = create_test_module_events(account, vec![random_part], 217);

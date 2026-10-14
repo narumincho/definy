@@ -7,108 +7,86 @@ use std::collections::HashSet;
 
 use definy_event::event::{Expression, MatchArm};
 
-use super::helpers::get_dummy_core_id;
+use super::helpers::seed_part;
 
 /// 全セルフホスティング用パーツの重複なき登録、型定義、説明文の存在を検証します。
 #[test]
 fn test_self_hosting_parts_registration() {
-    let core_id = get_dummy_core_id();
-
     // Phase 1 parts
-    let val_part = crate::builtin_value_type::create_value_type_part(&core_id);
-    let env_part = crate::builtin_value_type::create_env_type_part(&core_id);
-    let env_lookup_part = crate::builtin_value_type::create_env_lookup_part(&core_id);
-    let env_lookup_inner_part = crate::builtin_value_type::create_env_lookup_inner_part(&core_id);
-    let env_extend_part = crate::builtin_value_type::create_env_extend_part(&core_id);
-    let eval_value_part = crate::builtin_evaluator::create_eval_value_part(&core_id);
+    let val_part = seed_part("value");
+    let env_part = seed_part("env");
+    let env_lookup_part = seed_part("env-lookup");
+    let env_lookup_inner_part = seed_part("env-lookup-inner");
+    let env_extend_part = seed_part("env-extend");
+    let eval_value_part = seed_part("eval-value");
 
     // Phase 2 parts
-    let type_err_part = crate::builtin_type_checker::create_type_error_part(&core_id);
-    let type_res_part = crate::builtin_type_checker::create_type_result_part(&core_id);
-    let type_env_part = crate::builtin_type_checker::create_type_env_part(&core_id);
-    let type_env_lookup = crate::builtin_type_checker::create_type_env_lookup_part(&core_id);
-    let type_env_lookup_inner =
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(&core_id);
-    let type_env_extend = crate::builtin_type_checker::create_type_env_extend_part(&core_id);
-    let part_type_env = crate::builtin_type_checker::create_part_type_env_part(&core_id);
-    let part_type_lookup = crate::builtin_type_checker::create_part_type_lookup_part(&core_id);
-    let part_type_lookup_inner =
-        crate::builtin_type_checker::create_part_type_lookup_inner_part(&core_id);
-    let type_env_lookup_part =
-        crate::builtin_type_checker::create_type_env_lookup_part_part(&core_id);
-    let type_equals = crate::builtin_type_checker::create_type_equals_part(&core_id);
-    let type_equals_record_fields =
-        crate::builtin_type_checker::create_type_equals_record_fields_part(&core_id);
-    let type_equals_union_variants =
-        crate::builtin_type_checker::create_type_equals_union_variants_part(&core_id);
-    let type_assignable_record_fields =
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(&core_id);
-    let union_variant_type_lookup =
-        crate::builtin_type_checker::create_union_variant_type_lookup_part(&core_id);
-    let find_tag_in_arms = crate::builtin_type_checker::create_find_tag_in_arms_part(&core_id);
-    let check_union_exhaustiveness =
-        crate::builtin_type_checker::create_check_union_exhaustiveness_part(&core_id);
-    let type_assignable_union_variants =
-        crate::builtin_type_checker::create_type_assignable_union_variants_part(&core_id);
-    let type_check_match_arms_inner =
-        crate::builtin_type_checker::create_type_check_match_arms_inner_part(&core_id);
-    let type_check_match_arms =
-        crate::builtin_type_checker::create_type_check_match_arms_part(&core_id);
-    let type_check_list_items =
-        crate::builtin_type_checker::create_type_check_list_items_part(&core_id);
-    let type_check_list = crate::builtin_type_checker::create_type_check_list_part(&core_id);
-    let type_assignable = crate::builtin_type_checker::create_type_assignable_part(&core_id);
-    let type_check = crate::builtin_type_checker::create_type_check_part(&core_id);
-    let type_check_against = crate::builtin_type_checker::create_type_check_against_part(&core_id);
+    let type_err_part = seed_part("type-error");
+    let type_res_part = seed_part("type-result");
+    let type_env_part = seed_part("type-env");
+    let type_env_lookup = seed_part("type-env-lookup");
+    let type_env_lookup_inner = seed_part("type-env-lookup-inner");
+    let type_env_extend = seed_part("type-env-extend");
+    let part_type_env = seed_part("part-type-env");
+    let part_type_lookup = seed_part("part-type-lookup");
+    let part_type_lookup_inner = seed_part("part-type-lookup-inner");
+    let type_env_lookup_part = seed_part("type-env-lookup-part");
+    let type_equals = seed_part("type-equals");
+    let type_equals_record_fields = seed_part("type-equals-record-fields");
+    let type_equals_union_variants = seed_part("type-equals-union-variants");
+    let type_assignable_record_fields = seed_part("type-assignable-record-fields");
+    let union_variant_type_lookup = seed_part("union-variant-type-lookup");
+    let find_tag_in_arms = seed_part("find-tag-in-arms");
+    let check_union_exhaustiveness = seed_part("check-union-exhaustiveness");
+    let type_assignable_union_variants = seed_part("type-assignable-union-variants");
+    let type_check_match_arms_inner = seed_part("type-check-match-arms-inner");
+    let type_check_match_arms = seed_part("type-check-match-arms");
+    let type_check_list_items = seed_part("type-check-list-items");
+    let type_check_list = seed_part("type-check-list");
+    let type_assignable = seed_part("type-assignable");
+    let type_check = seed_part("type-check");
+    let type_check_against = seed_part("type-check-against");
 
     // Phase 3 parts
-    let compile_instr =
-        crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&core_id);
-    let compile_to_wasm = crate::builtin_wasm_compiler::create_compile_to_wasm_part(&core_id);
+    let compile_instr = seed_part("compile-expr-instructions");
+    let compile_to_wasm = seed_part("compile-to-wasm");
 
     // Formatter part
-    let expr_to_source = crate::builtin_formatter::create_expression_to_source_part(&core_id);
+    let expr_to_source = seed_part("expression-to-source");
 
     // Validator parts
-    let collect_part_type_env_inner =
-        crate::builtin_validator::create_collect_part_type_env_inner_part(&core_id);
-    let collect_part_type_env =
-        crate::builtin_validator::create_collect_part_type_env_part(&core_id);
-    let validate_part_in_env = crate::builtin_validator::create_validate_part_in_env_part(&core_id);
-    let validate_part = crate::builtin_validator::create_validate_part_part(&core_id);
-    let validate_parts_in_env =
-        crate::builtin_validator::create_validate_parts_in_env_part(&core_id);
-    let validate_parts = crate::builtin_validator::create_validate_parts_part(&core_id);
-    let validate_module = crate::builtin_validator::create_validate_module_part(&core_id);
+    let collect_part_type_env_inner = seed_part("collect-part-type-env-inner");
+    let collect_part_type_env = seed_part("collect-part-type-env");
+    let validate_part_in_env = seed_part("validate-part-in-env");
+    let validate_part = seed_part("validate-part");
+    let validate_parts_in_env = seed_part("validate-parts-in-env");
+    let validate_parts = seed_part("validate-parts");
+    let validate_module = seed_part("validate-module");
 
     // Optimizer part
-    let optimize_expr = crate::builtin_optimizer::create_optimize_expression_part(&core_id);
+    let optimize_expr = seed_part("optimize-expression");
 
     // Value equals parts
-    let val_equals = crate::builtin_value_type::create_value_equals_part(&core_id);
-    let val_equals_record_fields =
-        crate::builtin_value_type::create_value_equals_record_fields_part(&core_id);
+    let val_equals = seed_part("value-equals");
+    let val_equals_record_fields = seed_part("value-equals-record-fields");
 
     // Record evaluation parts
-    let record_field_lookup = crate::builtin_evaluator::create_record_field_lookup_part(&core_id);
-    let eval_record_fields = crate::builtin_evaluator::create_eval_record_fields_part(&core_id);
+    let record_field_lookup = seed_part("record-field-lookup");
+    let eval_record_fields = seed_part("eval-record-fields");
 
     // Record type checking parts
-    let record_field_type_lookup =
-        crate::builtin_type_checker::create_record_field_type_lookup_part(&core_id);
-    let check_record_fields =
-        crate::builtin_type_checker::create_type_check_record_fields_part(&core_id);
+    let record_field_type_lookup = seed_part("record-field-type-lookup");
+    let check_record_fields = seed_part("type-check-record-fields");
 
     // Pattern match evaluation parts
-    let eval_match_arms = crate::builtin_eval_match::create_eval_match_arms_part(&core_id);
-    let eval_match_arms_inner =
-        crate::builtin_eval_match::create_eval_match_arms_inner_part(&core_id);
+    let eval_match_arms = seed_part("eval-match-arms");
+    let eval_match_arms_inner = seed_part("eval-match-arms-inner");
 
     // List operations parts
-    let list_map = crate::builtin_list_ops::create_list_map_part(&core_id);
-    let list_map_inner = crate::builtin_list_ops::create_list_map_inner_part(&core_id);
-    let list_fold = crate::builtin_list_ops::create_list_fold_part(&core_id);
-    let list_fold_inner = crate::builtin_list_ops::create_list_fold_inner_part(&core_id);
+    let list_map = seed_part("list-map");
+    let list_map_inner = seed_part("list-map-inner");
+    let list_fold = seed_part("list-fold");
+    let list_fold_inner = seed_part("list-fold-inner");
 
     let all_parts = vec![
         val_part,
@@ -189,8 +167,7 @@ fn test_self_hosting_parts_registration() {
 
 #[test]
 fn test_phase1_evaluator_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let eval_part = crate::builtin_evaluator::create_eval_value_part(&core_id);
+    let eval_part = seed_part("eval-value");
     let expr = eval_part
         .expression
         .expect("eval-value must have expression");
@@ -250,8 +227,7 @@ fn test_phase1_evaluator_ast_structure() {
 
 #[test]
 fn test_phase2_type_checker_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let type_check_part = crate::builtin_type_checker::create_type_check_part(&core_id);
+    let type_check_part = seed_part("type-check");
     let expr = type_check_part
         .expression
         .expect("type-check must have expression");
@@ -308,15 +284,13 @@ fn test_phase2_type_checker_ast_structure() {
     }
 
     // Test type-equals part
-    let type_equals_part = crate::builtin_type_checker::create_type_equals_part(&core_id);
+    let type_equals_part = seed_part("type-equals");
     assert!(type_equals_part.expression.is_some());
 }
 
 #[test]
 fn test_phase3_wasm_compiler_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let compile_instr_part =
-        crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&core_id);
+    let compile_instr_part = seed_part("compile-expr-instructions");
     let expr = compile_instr_part
         .expression
         .expect("compile-expr-instructions must have expression");
@@ -354,7 +328,7 @@ fn test_phase3_wasm_compiler_ast_structure() {
     }
 
     // Test compile-to-wasm module generator structure
-    let compile_to_wasm_part = crate::builtin_wasm_compiler::create_compile_to_wasm_part(&core_id);
+    let compile_to_wasm_part = seed_part("compile-to-wasm");
     let to_wasm_expr = compile_to_wasm_part
         .expression
         .expect("compile-to-wasm must have expression");
@@ -435,8 +409,7 @@ fn test_phase3_wasm_binary_structure_validation() {
 
 #[test]
 fn test_formatter_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let formatter_part = crate::builtin_formatter::create_expression_to_source_part(&core_id);
+    let formatter_part = seed_part("expression-to-source");
     let expr = formatter_part
         .expression
         .expect("expression-to-source must have expression");
@@ -481,8 +454,7 @@ fn test_formatter_ast_structure() {
 
 #[test]
 fn test_validator_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let val_part = crate::builtin_validator::create_validate_part_part(&core_id);
+    let val_part = seed_part("validate-part");
     let expr = val_part
         .expression
         .expect("validate-part must have expression");
@@ -499,7 +471,7 @@ fn test_validator_ast_structure() {
     }
 
     // validate-part-in-env: Function([part, env] => Match(...))
-    let val_in_env_part = crate::builtin_validator::create_validate_part_in_env_part(&core_id);
+    let val_in_env_part = seed_part("validate-part-in-env");
     let in_env_expr = val_in_env_part
         .expression
         .expect("validate-part-in-env must have expression");
@@ -529,8 +501,7 @@ fn test_validator_ast_structure() {
 /// `core.optimize-expression` の AST 構造（関数、マッチアームのタグ構成）を検証します。
 #[test]
 fn test_optimizer_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let opt_part = crate::builtin_optimizer::create_optimize_expression_part(&core_id);
+    let opt_part = seed_part("optimize-expression");
     let expr = opt_part
         .expression
         .expect("optimize-expression must have expression");
@@ -563,8 +534,7 @@ fn test_optimizer_ast_structure() {
 /// `core.validate-module` の AST 構造（関数、モジュール名・パーツ検証の論理結合）を検証します。
 #[test]
 fn test_validate_module_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let val_mod_part = crate::builtin_validator::create_validate_module_part(&core_id);
+    let val_mod_part = seed_part("validate-module");
     let expr = val_mod_part
         .expression
         .expect("validate-module must have expression");
@@ -586,8 +556,7 @@ fn test_validate_module_ast_structure() {
 /// `core.value-equals` の AST 構造（複数引数関数、パターンマッチ）を検証します。
 #[test]
 fn test_value_equals_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let val_eq_part = crate::builtin_value_type::create_value_equals_part(&core_id);
+    let val_eq_part = seed_part("value-equals");
     let expr = val_eq_part.expression.expect("value-equals expression");
 
     match expr {
@@ -618,9 +587,8 @@ fn test_value_equals_ast_structure() {
 /// `core.list-map` および `core.list-fold` の AST 構造を検証します。
 #[test]
 fn test_list_ops_ast_structure() {
-    let core_id = get_dummy_core_id();
-    let list_map_part = crate::builtin_list_ops::create_list_map_part(&core_id);
-    let list_fold_part = crate::builtin_list_ops::create_list_fold_part(&core_id);
+    let list_map_part = seed_part("list-map");
+    let list_fold_part = seed_part("list-fold");
 
     match list_map_part.expression.expect("list-map expression") {
         Expression::Function(f) => {

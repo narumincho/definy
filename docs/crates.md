@@ -37,9 +37,11 @@ web-sys）に依存しない純粋な言語処理系として `definy-core` に�
 
 ### 3. `definy-server`
 
-- `builtin_*`: セルフホスティング用のビルトインパーツ（`builtin_evaluator`,
-  `builtin_type_checker`, `builtin_wasm_compiler`, `builtin_validator`,
-  `builtin_formatter`）。
+- `seed`: ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）の読み込み。
+  パーツ定義の正本はリポジトリ直下の `seeds/*.json` で、`include_str!` で埋め込まれる
+  （詳細は [self-hosting.md](self-hosting.md#seed-json-が正本)）。
+- `builtin_migration`: seed からシステムアカウント署名付きのブートストラップイベントを生成し、DB /
+  Cloudflare Workers 用 seed バンドルへ書き出す。
 - `self_hosting_tests`:
   セルフホスティング機能の静的検証・メタ循環実行実証テストスイート。
 - `connect_rpc`, `mcp`, `html`, `db`: API サーバー、SurrealDB 接続層、MCP

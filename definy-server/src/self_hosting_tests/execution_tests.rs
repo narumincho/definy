@@ -11,18 +11,18 @@ use definy_event::event::{
 
 use super::helpers::{
     all_evaluator_parts, all_type_checker_parts, ast_add, ast_mul, ast_num,
-    create_test_module_events, empty_type_env, get_test_account_and_mod_id, test_val_bool,
-    test_val_num, test_val_str, value_list_to_u8_vec,
+    create_test_module_events, empty_type_env, get_test_account_and_mod_id, seed_part,
+    test_val_bool, test_val_num, test_val_str, value_list_to_u8_vec,
 };
 use crate::ast_builder::{call_part, fn_expr};
 
 /// `core.eval-ast` パーツに AST 式 `(100 - (10 * 3)) + (50 / 2)` を与え、自己評価結果が 95 になることを実証します。
 #[test]
 fn test_self_hosted_meta_circular_eval_ast_execution() {
-    let (account, mod_id) = get_test_account_and_mod_id();
+    let (account, _) = get_test_account_and_mod_id();
 
-    let eval_ast_part = crate::builtin_expression_type::create_eval_ast_part(&mod_id);
-    let sample_calc_part = crate::builtin_expression_type::create_sample_ast_calc_part(&mod_id);
+    let eval_ast_part = seed_part("eval-ast");
+    let sample_calc_part = seed_part("sample-ast-calc");
 
     let events = create_test_module_events(account, vec![eval_ast_part], 123);
 
@@ -38,7 +38,7 @@ fn test_self_hosted_meta_circular_eval_ast_execution() {
 fn test_self_hosted_expression_to_source_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let expr_to_source_part = crate::builtin_formatter::create_expression_to_source_part(&mod_id);
+    let expr_to_source_part = seed_part("expression-to-source");
     let to_source_hash = derive_module_part_id(&mod_id, "expression-to-source");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
@@ -63,7 +63,7 @@ fn test_self_hosted_expression_to_source_execution() {
 fn test_self_hosted_meta_circular_eval_value_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
@@ -98,7 +98,7 @@ fn test_self_hosted_type_checker_execution() {
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let events = create_test_module_events(account, all_type_checker_parts(&mod_id), 126);
+    let events = create_test_module_events(account, all_type_checker_parts(), 126);
 
     let expr_type_opt = Some(expr_type_hash);
     // Expression: 10 + 20
@@ -426,9 +426,8 @@ fn test_self_hosted_type_checker_execution() {
 fn test_self_hosted_compile_to_wasm_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let compile_instr =
-        crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&mod_id);
-    let compile_to_wasm = crate::builtin_wasm_compiler::create_compile_to_wasm_part(&mod_id);
+    let compile_instr = seed_part("compile-expr-instructions");
+    let compile_to_wasm = seed_part("compile-to-wasm");
 
     let compile_to_wasm_hash = derive_module_part_id(&mod_id, "compile-to-wasm");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
@@ -464,10 +463,9 @@ fn test_self_hosted_compile_to_wasm_execution() {
 fn test_self_hosted_optimize_expression_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let optimize_part = crate::builtin_optimizer::create_optimize_expression_part(&mod_id);
-    let compile_instr =
-        crate::builtin_wasm_compiler::create_compile_expr_instructions_part(&mod_id);
-    let compile_to_wasm = crate::builtin_wasm_compiler::create_compile_to_wasm_part(&mod_id);
+    let optimize_part = seed_part("optimize-expression");
+    let compile_instr = seed_part("compile-expr-instructions");
+    let compile_to_wasm = seed_part("compile-to-wasm");
 
     let optimize_hash = derive_module_part_id(&mod_id, "optimize-expression");
     let compile_to_wasm_hash = derive_module_part_id(&mod_id, "compile-to-wasm");
@@ -524,7 +522,7 @@ fn test_self_hosted_optimize_expression_execution() {
 #[test]
 fn test_self_hosted_value_equals_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
     let val_eq_hash = derive_module_part_id(&mod_id, "value-equals");
 
     let events = create_test_module_events(account, parts, 201);
@@ -571,7 +569,7 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
 
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
 
     let events = create_test_module_events(account, parts, 202);
@@ -700,10 +698,10 @@ fn test_self_hosted_eval_value_variant_and_match_execution() {
 fn test_self_hosted_list_map_and_fold_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let list_map = crate::builtin_list_ops::create_list_map_part(&mod_id);
-    let list_map_inner = crate::builtin_list_ops::create_list_map_inner_part(&mod_id);
-    let list_fold = crate::builtin_list_ops::create_list_fold_part(&mod_id);
-    let list_fold_inner = crate::builtin_list_ops::create_list_fold_inner_part(&mod_id);
+    let list_map = seed_part("list-map");
+    let list_map_inner = seed_part("list-map-inner");
+    let list_fold = seed_part("list-fold");
+    let list_fold_inner = seed_part("list-fold-inner");
 
     let map_hash = derive_module_part_id(&mod_id, "list-map");
     let fold_hash = derive_module_part_id(&mod_id, "list-fold");
