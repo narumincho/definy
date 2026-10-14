@@ -375,15 +375,17 @@ fn render_menu_header(
             }
             span {
                 class: "mono",
-                style: "background: rgb(0 0 0 / 0.3); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1);",
+                style: "background: rgb(0 0 0 / 0.3); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1); max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; display: inline-block;",
+                title: "{current_kind_label}",
                 "{current_kind_label}"
             }
             if let Some(exp) = slot_expected_type {
-                span { style: "color: var(--text-secondary); white-space: nowrap;",
+                span { style: "color: var(--text-secondary); white-space: nowrap; display: inline-flex; align-items: center; gap: 0.2rem;",
                     "{expects_label} "
                     span {
                         class: "mono",
-                        style: "color: #93c5fd; font-weight: 600;",
+                        style: "color: #93c5fd; font-weight: 600; max-width: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;",
+                        title: "{exp.text()}",
                         "{exp.text()}"
                     }
                 }

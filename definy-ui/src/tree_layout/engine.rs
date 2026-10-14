@@ -284,16 +284,29 @@ pub fn expression_to_layout_node_with_path(
                 .with_children(vec![cond, then_n, else_n])
         }
         Expression::Let(let_expr) => {
-            let name_node = LayoutNode::new(
-                format!("{}.var", id_prefix),
-                let_expr.variable_name.as_ref(),
-                NodeKind::Identifier,
-            );
-            let val_node = expression_to_layout_node_with_path(
-                &let_expr.value,
-                &format!("{}.val", id_prefix),
-                &child_path(current_path, PathStep::LetValue),
-            );
+            let binding_nodes: Vec<LayoutNode> = let_expr
+                .bindings
+                .iter()
+                .enumerate()
+                .map(|(idx, binding)| {
+                    let name_node = LayoutNode::new(
+                        format!("{}.b_{}.var", id_prefix, idx),
+                        binding.variable_name.as_ref(),
+                        NodeKind::Identifier,
+                    );
+                    let val_node = expression_to_layout_node_with_path(
+                        &binding.value,
+                        &format!("{}.b_{}.val", id_prefix, idx),
+                        &child_path(current_path, PathStep::LetBindingValue(idx)),
+                    );
+                    LayoutNode::new(format!("{}.b_{}", id_prefix, idx), "=", NodeKind::Operator)
+                        .with_children(vec![name_node, val_node])
+                })
+                .collect();
+            let bindings_list_node =
+                LayoutNode::new(format!("{}.bindings", id_prefix), "list", NodeKind::Block)
+                    .with_children(binding_nodes);
+
             let body_node = expression_to_layout_node_with_path(
                 &let_expr.body,
                 &format!("{}.body", id_prefix),
@@ -301,7 +314,7 @@ pub fn expression_to_layout_node_with_path(
             );
             LayoutNode::new(id_prefix, "let", NodeKind::Block)
                 .with_path(p)
-                .with_children(vec![name_node, val_node, body_node])
+                .with_children(vec![bindings_list_node, body_node])
         }
         Expression::Function(func) => {
             let mut children: Vec<LayoutNode> = func

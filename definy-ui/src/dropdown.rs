@@ -64,6 +64,63 @@ fn dom_show_popover_and_focus(
                     );
 
                     if let Some(anchor_name) = _anchor_name {
+                        let selector = format!("[style*=\"{}\"]", anchor_name);
+                        let anchor_el_opt = doc.query_selector(&selector).ok().flatten();
+                        let anchor_rect = anchor_el_opt
+                            .as_ref()
+                            .map(|el| el.get_bounding_client_rect());
+
+                        let win_w = window
+                            .inner_width()
+                            .ok()
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(1200.0);
+                        let win_h = window
+                            .inner_height()
+                            .ok()
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(900.0);
+
+                        let menu_w = 320.0;
+                        let menu_h = 320.0;
+
+                        // アンカーの右側にドロップダウンを展開すると画面右端を飛び出すか判定 (またはアンカーが画面右寄りにあるか)
+                        let is_right_aligned = anchor_rect.as_ref().is_some_and(|r| {
+                            r.left() + menu_w > win_w - 16.0 || r.left() > win_w * 0.55
+                        });
+                        let is_bottom_aligned = anchor_rect.as_ref().is_some_and(|r| {
+                            r.bottom() + menu_h > win_h - 16.0 && r.top() > menu_h
+                        });
+
+                        let position_area = match (is_bottom_aligned, is_right_aligned) {
+                            (true, true) => "top span-left",
+                            (true, false) => "top span-right",
+                            (false, true) => "bottom span-left",
+                            (false, false) => "bottom span-right",
+                        };
+
+                        let supports_anchor =
+                            js_sys::Reflect::get(&window, &wasm_bindgen::JsValue::from_str("CSS"))
+                                .ok()
+                                .and_then(|css| {
+                                    js_sys::Reflect::get(
+                                        &css,
+                                        &wasm_bindgen::JsValue::from_str("supports"),
+                                    )
+                                    .ok()
+                                })
+                                .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
+                                .and_then(|f| {
+                                    f.call2(
+                                        &wasm_bindgen::JsValue::NULL,
+                                        &wasm_bindgen::JsValue::from_str("position-area"),
+                                        &wasm_bindgen::JsValue::from_str("bottom span-right"),
+                                    )
+                                    .ok()
+                                })
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+
                         let _ = set_prop_fn.call2(
                             &style,
                             &wasm_bindgen::JsValue::from_str("position-anchor"),
@@ -72,13 +129,54 @@ fn dom_show_popover_and_focus(
                         let _ = set_prop_fn.call2(
                             &style,
                             &wasm_bindgen::JsValue::from_str("position-area"),
-                            &wasm_bindgen::JsValue::from_str("bottom span-right"),
+                            &wasm_bindgen::JsValue::from_str(position_area),
                         );
                         let _ = set_prop_fn.call2(
                             &style,
                             &wasm_bindgen::JsValue::from_str("position-try-fallbacks"),
-                            &wasm_bindgen::JsValue::from_str("flip-block, flip-inline"),
+                            &wasm_bindgen::JsValue::from_str(
+                                "flip-inline, flip-block, flip-block flip-inline",
+                            ),
                         );
+
+                        if !supports_anchor {
+                            if let Some(rect) = anchor_rect {
+                                let top = if is_bottom_aligned {
+                                    (rect.top() - menu_h - 4.0).max(4.0)
+                                } else {
+                                    (rect.bottom() + 4.0).min(win_h - 40.0)
+                                };
+                                let left = if is_right_aligned {
+                                    (rect.right() - menu_w).max(4.0)
+                                } else {
+                                    rect.left().max(4.0).min((win_w - menu_w - 4.0).max(4.0))
+                                };
+                                let _ = set_prop_fn.call2(
+                                    &style,
+                                    &wasm_bindgen::JsValue::from_str("top"),
+                                    &wasm_bindgen::JsValue::from_str(&format!("{top}px")),
+                                );
+                                let _ = set_prop_fn.call2(
+                                    &style,
+                                    &wasm_bindgen::JsValue::from_str("left"),
+                                    &wasm_bindgen::JsValue::from_str(&format!("{left}px")),
+                                );
+                                let _ = set_prop_fn.call2(
+                                    &style,
+                                    &wasm_bindgen::JsValue::from_str("position"),
+                                    &wasm_bindgen::JsValue::from_str("fixed"),
+                                );
+                            }
+                        } else if let Ok(rem_prop) = js_sys::Reflect::get(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("removeProperty"),
+                        ) && let Ok(rem_prop_fn) = rem_prop.dyn_into::<js_sys::Function>()
+                        {
+                            let _ =
+                                rem_prop_fn.call1(&style, &wasm_bindgen::JsValue::from_str("top"));
+                            let _ =
+                                rem_prop_fn.call1(&style, &wasm_bindgen::JsValue::from_str("left"));
+                        }
                     }
                 }
 
@@ -288,7 +386,7 @@ pub fn SearchableDropdownPanel(
             id: "{panel_id}",
             "popover": "auto",
             class: "dropdown-popover-panel",
-            style: "position: absolute; inset: auto; position-anchor: {anchor_name}; position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background-color: var(--surface-opaque); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+            style: "position: absolute; inset: auto; position-anchor: {anchor_name}; position-area: bottom span-right; position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background-color: var(--surface-opaque); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box; overflow: hidden;",
             {header}
             input {
                 r#type: "text",
@@ -360,7 +458,7 @@ pub fn SearchableDropdownPanel(
                     }
                 },
             }
-            div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto;",
+            div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto; overflow-x: hidden;",
                 for (idx, (opt_val, opt_label)) in filtered_options.iter().enumerate() {
                     DropdownOptionItem {
                         key: "{opt_val}",
@@ -463,7 +561,7 @@ fn DropdownOptionItem(
                 if let Some(ref meta) = display_meta {
                     div {
                         class: "mono",
-                        style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 0; white-space: nowrap; text-align: right;",
+                        style: "font-size: 0.72rem; opacity: 0.65; margin-left: 0.8rem; flex-shrink: 1; max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;",
                         "{meta}"
                     }
                 }

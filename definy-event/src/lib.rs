@@ -4,6 +4,7 @@ pub mod cbor_datetime_tag1;
 pub mod content_hash;
 pub mod event;
 mod event_hash_id;
+pub mod expression;
 pub mod naming;
 pub mod preview_rpc;
 pub mod rpc;

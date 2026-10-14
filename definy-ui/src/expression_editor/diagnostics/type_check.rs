@@ -452,14 +452,24 @@ fn check_expression_type_with_context(
             }
         }
         definy_event::event::Expression::Let(let_expression) => {
-            let mut value_path = path.to_vec();
-            value_path.push(PathStep::LetValue);
-            let value_type = ctx.check(let_expression.value.as_ref(), &value_path, None);
-
             let mut body_env = ctx.env.clone();
-            body_env.insert(let_expression.variable_id, value_type.clone());
-            ctx.variable_types
-                .insert(let_expression.variable_id, value_type);
+            for (idx, binding) in let_expression.bindings.iter().enumerate() {
+                let mut value_path = path.to_vec();
+                value_path.push(PathStep::LetBindingValue(idx));
+
+                let mut child_ctx = TypeCheckContext {
+                    env: &body_env,
+                    part_type_map: ctx.part_type_map,
+                    part_snapshot_map: ctx.part_snapshot_map,
+                    diagnostics: ctx.diagnostics,
+                    expected_types: ctx.expected_types,
+                    variable_types: ctx.variable_types,
+                };
+                let value_type = child_ctx.check(binding.value.as_ref(), &value_path, None);
+                body_env.insert(binding.variable_id, value_type.clone());
+                ctx.variable_types.insert(binding.variable_id, value_type);
+            }
+
             let mut body_path = path.to_vec();
             body_path.push(PathStep::LetBody);
 

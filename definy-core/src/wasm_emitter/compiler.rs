@@ -472,23 +472,19 @@ pub(crate) fn emit_expression(
 
             out.push(END);
         }
-        Expression::Let(LetExpression {
-            variable_id,
-            value,
-            body,
-            ..
-        }) => {
-            emit_expression(value, out, env, next_local_idx, ctx)?;
-            let current_idx = *next_local_idx;
-            *next_local_idx += 1;
+        Expression::Let(LetExpression { bindings, body }) => {
+            let mut current_env = env.clone();
+            for binding in bindings {
+                emit_expression(&binding.value, out, &current_env, next_local_idx, ctx)?;
+                let current_idx = *next_local_idx;
+                *next_local_idx += 1;
 
-            out.push(LOCAL_SET);
-            encode_u32_leb128(out, current_idx);
+                out.push(LOCAL_SET);
+                encode_u32_leb128(out, current_idx);
 
-            let mut new_env = env.clone();
-            new_env.insert(*variable_id, current_idx);
-
-            emit_expression(body, out, &new_env, next_local_idx, ctx)?;
+                current_env.insert(binding.variable_id, current_idx);
+            }
+            emit_expression(body, out, &current_env, next_local_idx, ctx)?;
         }
         Expression::Variable(VariableExpression { variable_id }) => {
             let idx = env
@@ -771,8 +767,12 @@ pub(crate) fn encode_mem_arg(out: &mut Vec<u8>, align: u32, offset: u32) {
 
 pub(crate) fn count_locals(expr: &Expression) -> u32 {
     match expr {
-        Expression::Let(LetExpression { value, body, .. }) => {
-            8 + count_locals(value) + count_locals(body)
+        Expression::Let(LetExpression { bindings, body }) => {
+            bindings
+                .iter()
+                .map(|b| 8 + count_locals(&b.value))
+                .sum::<u32>()
+                + count_locals(body)
         }
         Expression::Add(a) => 4 + count_locals(&a.left) + count_locals(&a.right),
         Expression::Subtract(s) => 4 + count_locals(&s.left) + count_locals(&s.right),

@@ -1,10 +1,10 @@
 use crate::ast_builder::{call_part, fn_expr, fn_type};
 use definy_event::EventHashId;
 use definy_event::event::{
-    AddExpression, Description, Expression, IfExpression, LessThanExpression, LetExpression,
-    ListAppendExpression, ListConcatExpression, ListLengthExpression, ListLiteralExpression,
-    MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType, RecordGetExpression,
-    VariableExpression, derive_module_part_id,
+    AddExpression, Description, Expression, IfExpression, LessThanExpression, LetBinding,
+    LetExpression, ListAppendExpression, ListConcatExpression, ListLengthExpression,
+    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression, PartType,
+    RecordGetExpression, VariableExpression, derive_module_part_id,
 };
 
 /// WebAssembly 式命令列コンパイラ (`core.compile-expr-instructions`):
@@ -822,28 +822,51 @@ pub fn create_compile_to_wasm_part(core_module_id: &EventHashId) -> ModulePartEn
         },
     );
 
-    let body = [
-        (6, "type_section", type_section_expr),
-        (7, "memory_section", memory_section_expr),
-        (8, "export_section", export_section_expr),
-        (5, "data_section", data_section_expr),
-        (1, "full_instr", full_instructions),
-        (2, "body_len", body_len_expr),
-        (3, "code_payload", code_payload_expr),
-        (4, "code_section", code_section_expr),
-    ]
-    .into_iter()
-    .rfold(
-        sections_concat,
-        |inner_body, (variable_id, variable_name, value)| {
-            Expression::Let(LetExpression {
-                variable_id,
-                variable_name: variable_name.into(),
-                value: Box::new(value),
-                body: Box::new(inner_body),
-            })
-        },
-    );
+    let body = Expression::Let(LetExpression {
+        bindings: vec![
+            LetBinding {
+                variable_id: 6,
+                variable_name: "type_section".into(),
+                value: Box::new(type_section_expr),
+            },
+            LetBinding {
+                variable_id: 7,
+                variable_name: "memory_section".into(),
+                value: Box::new(memory_section_expr),
+            },
+            LetBinding {
+                variable_id: 8,
+                variable_name: "export_section".into(),
+                value: Box::new(export_section_expr),
+            },
+            LetBinding {
+                variable_id: 5,
+                variable_name: "data_section".into(),
+                value: Box::new(data_section_expr),
+            },
+            LetBinding {
+                variable_id: 1,
+                variable_name: "full_instr".into(),
+                value: Box::new(full_instructions),
+            },
+            LetBinding {
+                variable_id: 2,
+                variable_name: "body_len".into(),
+                value: Box::new(body_len_expr),
+            },
+            LetBinding {
+                variable_id: 3,
+                variable_name: "code_payload".into(),
+                value: Box::new(code_payload_expr),
+            },
+            LetBinding {
+                variable_id: 4,
+                variable_name: "code_section".into(),
+                value: Box::new(code_section_expr),
+            },
+        ],
+        body: Box::new(sections_concat),
+    });
 
     let main_expr = fn_expr(&[("expr", 0)], body);
 

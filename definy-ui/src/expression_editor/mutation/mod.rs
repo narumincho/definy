@@ -20,6 +20,7 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::Then => "T".to_string(),
             PathStep::Else => "E".to_string(),
             PathStep::LetValue => "LV".to_string(),
+            PathStep::LetBindingValue(index) => format!("LBV{}", index),
             PathStep::LetBody => "LB".to_string(),
             PathStep::ListItemValue(index) => format!("LI{}", index),
             PathStep::RecordItemValue(index) => format!("RV{}", index),
@@ -204,8 +205,22 @@ pub fn get_mut_expression_at_path<'a>(
             _ => None,
         },
         definy_event::event::Expression::Let(let_expression) => match path[0] {
+            PathStep::LetBindingValue(index) => {
+                if index < let_expression.bindings.len() {
+                    get_mut_expression_at_path(
+                        let_expression.bindings[index].value.as_mut(),
+                        &path[1..],
+                    )
+                } else {
+                    None
+                }
+            }
             PathStep::LetValue => {
-                get_mut_expression_at_path(let_expression.value.as_mut(), &path[1..])
+                if let Some(first) = let_expression.bindings.first_mut() {
+                    get_mut_expression_at_path(first.value.as_mut(), &path[1..])
+                } else {
+                    None
+                }
             }
             PathStep::LetBody => {
                 get_mut_expression_at_path(let_expression.body.as_mut(), &path[1..])

@@ -7,10 +7,10 @@ pub use diagnostics::{
     analyze_expression_types, collect_type_diagnostics, part_type_to_expression_type,
 };
 pub use mutation::{
-    add_list_item, add_record_item, apply_selection, get_mut_expression_at_path,
-    next_local_variable_id, path_to_key, remove_list_item, remove_record_item, set_boolean_value,
-    set_let_variable_name, set_number_value, set_record_item_key, set_string_value,
-    upgrade_part_reference_content_hash,
+    add_let_binding, add_list_item, add_record_item, apply_selection, get_mut_expression_at_path,
+    next_local_variable_id, path_to_key, remove_let_binding, remove_list_item, remove_record_item,
+    set_boolean_value, set_let_variable_name, set_number_value, set_record_item_key,
+    set_string_value, upgrade_part_reference_content_hash,
 };
 pub use selector::{current_selection_value, selector_options};
 pub use types::{ConstructorValueShape, ExpressionType, ScopeVariable, TypeDiagnostic};
@@ -18,7 +18,8 @@ pub use types::{ConstructorValueShape, ExpressionType, ScopeVariable, TypeDiagno
 #[cfg(test)]
 mod tests {
     use super::mutation::{
-        get_mut_expression_at_path, path_to_key, remove_list_item, set_number_value,
+        add_let_binding, get_mut_expression_at_path, path_to_key, remove_let_binding,
+        remove_list_item, set_number_value,
     };
     use crate::app_state::PathStep;
 
@@ -87,5 +88,48 @@ mod tests {
             crate::expression_eval::expression_to_source(expression.as_ref().unwrap()),
             "[]"
         );
+    }
+
+    #[test]
+    fn add_and_remove_let_binding_behavior() {
+        let mut expression = Some(definy_event::event::Expression::Let(
+            definy_event::event::LetExpression {
+                bindings: vec![definy_event::event::LetBinding {
+                    variable_id: 1,
+                    variable_name: "x".into(),
+                    value: Box::new(definy_event::event::Expression::Number(
+                        definy_event::event::NumberExpression { value: 10 },
+                    )),
+                }],
+                body: Box::new(definy_event::event::Expression::Variable(
+                    definy_event::event::VariableExpression { variable_id: 1 },
+                )),
+            },
+        ));
+
+        add_let_binding(&mut expression, &[]);
+        let let_expr = match expression.as_ref().unwrap() {
+            definy_event::event::Expression::Let(l) => l,
+            _ => panic!("expected let"),
+        };
+        assert_eq!(let_expr.bindings.len(), 2);
+        assert_eq!(let_expr.bindings[1].variable_id, 2);
+
+        // Cannot remove when only 1 binding left
+        remove_let_binding(&mut expression, &[], 0);
+        let let_expr = match expression.as_ref().unwrap() {
+            definy_event::event::Expression::Let(l) => l,
+            _ => panic!("expected let"),
+        };
+        assert_eq!(let_expr.bindings.len(), 1);
+        assert_eq!(let_expr.bindings[0].variable_id, 2);
+
+        // Removing single remaining binding is a no-op
+        remove_let_binding(&mut expression, &[], 0);
+        let let_expr = match expression.as_ref().unwrap() {
+            definy_event::event::Expression::Let(l) => l,
+            _ => panic!("expected let"),
+        };
+        assert_eq!(let_expr.bindings.len(), 1);
     }
 }

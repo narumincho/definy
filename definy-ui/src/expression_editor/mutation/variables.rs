@@ -136,10 +136,15 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                     .max(max_local_variable_id(if_expression.then_expr.as_ref()))
                     .max(max_local_variable_id(if_expression.else_expr.as_ref()))
             }
-            definy_event::event::Expression::Let(let_expression) => let_expression
-                .variable_id
-                .max(max_local_variable_id(let_expression.value.as_ref()))
-                .max(max_local_variable_id(let_expression.body.as_ref())),
+            definy_event::event::Expression::Let(let_expression) => {
+                let max_binding_id = let_expression
+                    .bindings
+                    .iter()
+                    .map(|b| b.variable_id.max(max_local_variable_id(b.value.as_ref())))
+                    .max()
+                    .unwrap_or(0);
+                max_binding_id.max(max_local_variable_id(let_expression.body.as_ref()))
+            }
             definy_event::event::Expression::Variable(var_expression) => var_expression.variable_id,
             definy_event::event::Expression::Constructor(constructor_expression) => {
                 max_local_variable_id(constructor_expression.value.as_ref())

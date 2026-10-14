@@ -28,8 +28,12 @@ pub fn detect_deploy_in_expression(expr: &Expression) -> Option<DetectedDeploy> 
 
     // 2. 子ノードの再帰的探索 (Let 式, If 式, Function 式など)
     match expr {
-        Expression::Let(let_expr) => detect_deploy_in_expression(&let_expr.body)
-            .or_else(|| detect_deploy_in_expression(&let_expr.value)),
+        Expression::Let(let_expr) => detect_deploy_in_expression(&let_expr.body).or_else(|| {
+            let_expr
+                .bindings
+                .iter()
+                .find_map(|b| detect_deploy_in_expression(&b.value))
+        }),
         Expression::If(if_expr) => detect_deploy_in_expression(&if_expr.then_expr)
             .or_else(|| detect_deploy_in_expression(&if_expr.else_expr)),
         Expression::Function(fn_expr) => detect_deploy_in_expression(&fn_expr.body),

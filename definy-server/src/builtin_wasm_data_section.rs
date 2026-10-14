@@ -135,53 +135,53 @@ pub fn create_data_section_for_string(s_expr: Expression) -> Expression {
     });
 
     Expression::Let(LetExpression {
-        variable_id: 30,
-        variable_name: "bytes".into(),
-        value: Box::new(bytes_expr),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 31,
-            variable_name: "str_len".into(),
-            value: Box::new(Expression::ListLength(ListLengthExpression {
-                value: Box::new(Expression::Variable(VariableExpression { variable_id: 30 })),
-            })),
-            body: Box::new(Expression::Let(LetExpression {
+        bindings: vec![
+            LetBinding {
+                variable_id: 30,
+                variable_name: "bytes".into(),
+                value: Box::new(bytes_expr),
+            },
+            LetBinding {
+                variable_id: 31,
+                variable_name: "str_len".into(),
+                value: Box::new(Expression::ListLength(ListLengthExpression {
+                    value: Box::new(Expression::Variable(VariableExpression { variable_id: 30 })),
+                })),
+            },
+            LetBinding {
                 variable_id: 32,
                 variable_name: "data_len".into(),
                 value: Box::new(Expression::Add(AddExpression {
                     left: Box::new(Expression::Variable(VariableExpression { variable_id: 31 })),
                     right: Box::new(Expression::Number(NumberExpression { value: 8 })),
                 })),
-                body: Box::new({
-                    let len_bytes_expr =
-                        encode_u32_le_expr(Expression::Variable(VariableExpression {
-                            variable_id: 31,
-                        }));
+            },
+        ],
+        body: Box::new({
+            let len_bytes_expr =
+                encode_u32_le_expr(Expression::Variable(VariableExpression { variable_id: 31 }));
 
-                    let static_header = Expression::ListConcat(ListConcatExpression {
-                        left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                            items: vec![
-                                Expression::Number(NumberExpression { value: 0x02 }),
-                                Expression::Number(NumberExpression { value: 0x00 }),
-                                Expression::Number(NumberExpression { value: 0x00 }),
-                                Expression::Number(NumberExpression { value: 0x00 }),
-                            ],
-                        })),
-                        right: Box::new(len_bytes_expr),
-                    });
-                    let data_body = Expression::ListConcat(ListConcatExpression {
-                        left: Box::new(static_header),
-                        right: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 30,
-                        })),
-                    });
+            let static_header = Expression::ListConcat(ListConcatExpression {
+                left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                    ],
+                })),
+                right: Box::new(len_bytes_expr),
+            });
+            let data_body = Expression::ListConcat(ListConcatExpression {
+                left: Box::new(static_header),
+                right: Box::new(Expression::Variable(VariableExpression { variable_id: 30 })),
+            });
 
-                    wrap_in_active_data_section(
-                        Expression::Variable(VariableExpression { variable_id: 32 }),
-                        data_body,
-                    )
-                }),
-            })),
-        })),
+            wrap_in_active_data_section(
+                Expression::Variable(VariableExpression { variable_id: 32 }),
+                data_body,
+            )
+        }),
     })
 }
 
@@ -216,9 +216,11 @@ pub fn wrap_in_active_data_section(
     });
 
     Expression::Let(LetExpression {
-        variable_id: 33,
-        variable_name: "sec_payload".into(),
-        value: Box::new(sec_payload),
+        bindings: vec![LetBinding {
+            variable_id: 33,
+            variable_name: "sec_payload".into(),
+            value: Box::new(sec_payload),
+        }],
         body: Box::new(Expression::ListConcat(ListConcatExpression {
             left: Box::new(Expression::ListConcat(ListConcatExpression {
                 left: Box::new(Expression::ListLiteral(ListLiteralExpression {
@@ -257,45 +259,48 @@ fn encode_record_field_val(val_ast: Expression) -> (Expression, Expression) {
                 tag: "string".into(),
                 variable_id: Some(51),
                 variable_name: Some("s".into()),
-                // Tag 2 (4 bytes) + len (4 bytes) + bytes + padding
                 body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 52,
-                    variable_name: "s_bytes".into(),
-                    value: Box::new(Expression::StringToBytes(StringToBytesExpression {
-                        value: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 51,
-                        })),
-                    })),
-                    body: Box::new(Expression::Let(LetExpression {
-                        variable_id: 53,
-                        variable_name: "s_len".into(),
-                        value: Box::new(Expression::ListLength(ListLengthExpression {
-                            value: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 52,
-                            })),
-                        })),
-                        body: Box::new(Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(Expression::ListConcat(ListConcatExpression {
-                                left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                                    items: vec![
-                                        Expression::Number(NumberExpression { value: 0x02 }),
-                                        Expression::Number(NumberExpression { value: 0x00 }),
-                                        Expression::Number(NumberExpression { value: 0x00 }),
-                                        Expression::Number(NumberExpression { value: 0x00 }),
-                                    ],
+                    bindings: vec![
+                        LetBinding {
+                            variable_id: 52,
+                            variable_name: "s_bytes".into(),
+                            value: Box::new(Expression::StringToBytes(StringToBytesExpression {
+                                value: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 51,
                                 })),
-                                right: Box::new(encode_u32_le_expr(Expression::Variable(
-                                    VariableExpression { variable_id: 53 },
-                                ))),
                             })),
-                            right: Box::new(Expression::ListConcat(ListConcatExpression {
-                                left: Box::new(Expression::Variable(VariableExpression {
+                        },
+                        LetBinding {
+                            variable_id: 53,
+                            variable_name: "s_len".into(),
+                            value: Box::new(Expression::ListLength(ListLengthExpression {
+                                value: Box::new(Expression::Variable(VariableExpression {
                                     variable_id: 52,
                                 })),
-                                right: Box::new(align8_padding_expr(Expression::Variable(
-                                    VariableExpression { variable_id: 53 },
-                                ))),
                             })),
+                        },
+                    ],
+                    body: Box::new(Expression::ListConcat(ListConcatExpression {
+                        left: Box::new(Expression::ListConcat(ListConcatExpression {
+                            left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                                items: vec![
+                                    Expression::Number(NumberExpression { value: 0x02 }),
+                                    Expression::Number(NumberExpression { value: 0x00 }),
+                                    Expression::Number(NumberExpression { value: 0x00 }),
+                                    Expression::Number(NumberExpression { value: 0x00 }),
+                                ],
+                            })),
+                            right: Box::new(encode_u32_le_expr(Expression::Variable(
+                                VariableExpression { variable_id: 53 },
+                            ))),
+                        })),
+                        right: Box::new(Expression::ListConcat(ListConcatExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 52,
+                            })),
+                            right: Box::new(align8_padding_expr(Expression::Variable(
+                                VariableExpression { variable_id: 53 },
+                            ))),
                         })),
                     })),
                 })),
@@ -365,35 +370,39 @@ fn encode_record_key(key_str_expr: Expression) -> (Expression, Expression) {
     });
 
     let block = Expression::Let(LetExpression {
-        variable_id: 60,
-        variable_name: "k_bytes".into(),
-        value: Box::new(key_bytes),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 61,
-            variable_name: "k_len".into(),
-            value: Box::new(Expression::ListLength(ListLengthExpression {
-                value: Box::new(Expression::Variable(VariableExpression { variable_id: 60 })),
+        bindings: vec![
+            LetBinding {
+                variable_id: 60,
+                variable_name: "k_bytes".into(),
+                value: Box::new(key_bytes),
+            },
+            LetBinding {
+                variable_id: 61,
+                variable_name: "k_len".into(),
+                value: Box::new(Expression::ListLength(ListLengthExpression {
+                    value: Box::new(Expression::Variable(VariableExpression { variable_id: 60 })),
+                })),
+            },
+        ],
+        body: Box::new(Expression::ListConcat(ListConcatExpression {
+            left: Box::new(Expression::ListConcat(ListConcatExpression {
+                left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                    ],
+                })),
+                right: Box::new(encode_u32_le_expr(Expression::Variable(
+                    VariableExpression { variable_id: 61 },
+                ))),
             })),
-            body: Box::new(Expression::ListConcat(ListConcatExpression {
-                left: Box::new(Expression::ListConcat(ListConcatExpression {
-                    left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                        items: vec![
-                            Expression::Number(NumberExpression { value: 0x02 }),
-                            Expression::Number(NumberExpression { value: 0x00 }),
-                            Expression::Number(NumberExpression { value: 0x00 }),
-                            Expression::Number(NumberExpression { value: 0x00 }),
-                        ],
-                    })),
-                    right: Box::new(encode_u32_le_expr(Expression::Variable(
-                        VariableExpression { variable_id: 61 },
-                    ))),
-                })),
-                right: Box::new(Expression::ListConcat(ListConcatExpression {
-                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 60 })),
-                    right: Box::new(align8_padding_expr(Expression::Variable(
-                        VariableExpression { variable_id: 61 },
-                    ))),
-                })),
+            right: Box::new(Expression::ListConcat(ListConcatExpression {
+                left: Box::new(Expression::Variable(VariableExpression { variable_id: 60 })),
+                right: Box::new(align8_padding_expr(Expression::Variable(
+                    VariableExpression { variable_id: 61 },
+                ))),
             })),
         })),
     });
@@ -450,196 +459,124 @@ pub fn create_data_section_for_record(items_expr: Expression) -> Expression {
     // v1_ptr = k1_ptr + k1_size
     // total_data_len = v1_ptr + v1_size - 1024
     let two_items_payload = Expression::Let(LetExpression {
-        variable_id: 70,
-        variable_name: "k0_b".into(),
-        value: Box::new(k0_block.clone()),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 71,
-            variable_name: "v0_b".into(),
-            value: Box::new(v0_block.clone()),
-            body: Box::new(Expression::Let(LetExpression {
+        bindings: vec![
+            LetBinding {
+                variable_id: 70,
+                variable_name: "k0_b".into(),
+                value: Box::new(k0_block.clone()),
+            },
+            LetBinding {
+                variable_id: 71,
+                variable_name: "v0_b".into(),
+                value: Box::new(v0_block.clone()),
+            },
+            LetBinding {
                 variable_id: 72,
                 variable_name: "k1_b".into(),
                 value: Box::new(k1_block),
-                body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 73,
-                    variable_name: "v1_b".into(),
-                    value: Box::new(v1_block),
-                    body: Box::new(Expression::Let(LetExpression {
-                        variable_id: 74,
-                        variable_name: "v0_ptr".into(),
-                        value: Box::new(Expression::Add(AddExpression {
-                            left: Box::new(Expression::Number(NumberExpression { value: 1048 })),
-                            right: Box::new(k0_size.clone()),
+            },
+            LetBinding {
+                variable_id: 73,
+                variable_name: "v1_b".into(),
+                value: Box::new(v1_block),
+            },
+            LetBinding {
+                variable_id: 74,
+                variable_name: "v0_ptr".into(),
+                value: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Number(NumberExpression { value: 1048 })),
+                    right: Box::new(k0_size.clone()),
+                })),
+            },
+            LetBinding {
+                variable_id: 75,
+                variable_name: "k1_ptr".into(),
+                value: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 74 })),
+                    right: Box::new(v0_size.clone()),
+                })),
+            },
+            LetBinding {
+                variable_id: 76,
+                variable_name: "v1_ptr".into(),
+                value: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 75 })),
+                    right: Box::new(k1_size),
+                })),
+            },
+            LetBinding {
+                variable_id: 77,
+                variable_name: "total_len".into(),
+                value: Box::new(Expression::Subtract(SubtractExpression {
+                    left: Box::new(Expression::Add(AddExpression {
+                        left: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 76,
                         })),
-                        body: Box::new(Expression::Let(LetExpression {
-                            variable_id: 75,
-                            variable_name: "k1_ptr".into(),
-                            value: Box::new(Expression::Add(AddExpression {
-                                left: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 74,
-                                })),
-                                right: Box::new(v0_size.clone()),
+                        right: Box::new(v1_size),
+                    })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1024 })),
+                })),
+            },
+        ],
+        body: Box::new({
+            let rec_header = Expression::ListConcat(ListConcatExpression {
+                left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x04 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x02 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                    ],
+                })),
+                right: Box::new(Expression::ListConcat(ListConcatExpression {
+                    left: Box::new(encode_u32_le_expr(Expression::Number(NumberExpression {
+                        value: 1048,
+                    }))),
+                    right: Box::new(Expression::ListConcat(ListConcatExpression {
+                        left: Box::new(encode_u32_le_expr(Expression::Variable(
+                            VariableExpression { variable_id: 74 },
+                        ))),
+                        right: Box::new(Expression::ListConcat(ListConcatExpression {
+                            left: Box::new(encode_u32_le_expr(Expression::Variable(
+                                VariableExpression { variable_id: 75 },
+                            ))),
+                            right: Box::new(encode_u32_le_expr(Expression::Variable(
+                                VariableExpression { variable_id: 76 },
+                            ))),
+                        })),
+                    })),
+                })),
+            });
+
+            let full_body = Expression::ListConcat(ListConcatExpression {
+                left: Box::new(rec_header),
+                right: Box::new(Expression::ListConcat(ListConcatExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 70 })),
+                    right: Box::new(Expression::ListConcat(ListConcatExpression {
+                        left: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 71,
+                        })),
+                        right: Box::new(Expression::ListConcat(ListConcatExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 72,
                             })),
-                            body: Box::new(Expression::Let(LetExpression {
-                                variable_id: 76,
-                                variable_name: "v1_ptr".into(),
-                                value: Box::new(Expression::Add(AddExpression {
-                                    left: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 75,
-                                    })),
-                                    right: Box::new(k1_size),
-                                })),
-                                body: Box::new(Expression::Let(LetExpression {
-                                    variable_id: 77,
-                                    variable_name: "total_len".into(),
-                                    value: Box::new(Expression::Subtract(SubtractExpression {
-                                        left: Box::new(Expression::Add(AddExpression {
-                                            left: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 76 },
-                                            )),
-                                            right: Box::new(v1_size),
-                                        })),
-                                        right: Box::new(Expression::Number(NumberExpression {
-                                            value: 1024,
-                                        })),
-                                    })),
-                                    body: Box::new({
-                                        let rec_header =
-                                            Expression::ListConcat(ListConcatExpression {
-                                                left: Box::new(Expression::ListLiteral(
-                                                    ListLiteralExpression {
-                                                        items: vec![
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x04,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x02,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                        ],
-                                                    },
-                                                )),
-                                                right: Box::new(Expression::ListConcat(
-                                                    ListConcatExpression {
-                                                        left: Box::new(encode_u32_le_expr(
-                                                            Expression::Number(NumberExpression {
-                                                                value: 1048,
-                                                            }),
-                                                        )),
-                                                        right: Box::new(Expression::ListConcat(
-                                                            ListConcatExpression {
-                                                                left: Box::new(encode_u32_le_expr(
-                                                                    Expression::Variable(
-                                                                        VariableExpression {
-                                                                            variable_id: 74,
-                                                                        },
-                                                                    ),
-                                                                )),
-                                                                right: Box::new(
-                                                                    Expression::ListConcat(
-                                                                        ListConcatExpression {
-                                                                            left: Box::new(
-                                                                                encode_u32_le_expr(
-                                                                                    Expression::Variable(
-                                                                                        VariableExpression {
-                                                                                            variable_id: 75,
-                                                                                        },
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                            right: Box::new(
-                                                                                encode_u32_le_expr(
-                                                                                    Expression::Variable(
-                                                                                        VariableExpression {
-                                                                                            variable_id: 76,
-                                                                                        },
-                                                                                    ),
-                                                                                ),
-                                                                            ),
-                                                                        },
-                                                                    ),
-                                                                ),
-                                                            },
-                                                        )),
-                                                    },
-                                                )),
-                                            });
-
-                                        let full_body =
-                                            Expression::ListConcat(ListConcatExpression {
-                                                left: Box::new(rec_header),
-                                                right: Box::new(Expression::ListConcat(
-                                                    ListConcatExpression {
-                                                        left: Box::new(Expression::Variable(
-                                                            VariableExpression { variable_id: 70 },
-                                                        )),
-                                                        right: Box::new(Expression::ListConcat(
-                                                            ListConcatExpression {
-                                                                left: Box::new(
-                                                                    Expression::Variable(
-                                                                        VariableExpression {
-                                                                            variable_id: 71,
-                                                                        },
-                                                                    ),
-                                                                ),
-                                                                right: Box::new(
-                                                                    Expression::ListConcat(
-                                                                        ListConcatExpression {
-                                                                            left: Box::new(
-                                                                                Expression::Variable(
-                                                                                    VariableExpression {
-                                                                                        variable_id: 72,
-                                                                                    },
-                                                                                ),
-                                                                            ),
-                                                                            right: Box::new(
-                                                                                Expression::Variable(
-                                                                                    VariableExpression {
-                                                                                        variable_id: 73,
-                                                                                    },
-                                                                                ),
-                                                                            ),
-                                                                        },
-                                                                    ),
-                                                                ),
-                                                            },
-                                                        )),
-                                                    },
-                                                )),
-                                            });
-
-                                        wrap_in_active_data_section(
-                                            Expression::Variable(VariableExpression {
-                                                variable_id: 77,
-                                            }),
-                                            full_body,
-                                        )
-                                    }),
-                                })),
+                            right: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 73,
                             })),
                         })),
                     })),
                 })),
-            })),
-        })),
+            });
+
+            wrap_in_active_data_section(
+                Expression::Variable(VariableExpression { variable_id: 77 }),
+                full_body,
+            )
+        }),
     });
 
     // 1要素レコードのペイロード組み立て
@@ -647,76 +584,76 @@ pub fn create_data_section_for_record(items_expr: Expression) -> Expression {
     // k0_ptr = 1024 + 16 = 1040
     // v0_ptr = 1040 + k0_size
     let one_item_payload = Expression::Let(LetExpression {
-        variable_id: 80,
-        variable_name: "k0_b".into(),
-        value: Box::new(k0_block),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 81,
-            variable_name: "v0_b".into(),
-            value: Box::new(v0_block),
-            body: Box::new(Expression::Let(LetExpression {
+        bindings: vec![
+            LetBinding {
+                variable_id: 80,
+                variable_name: "k0_b".into(),
+                value: Box::new(k0_block),
+            },
+            LetBinding {
+                variable_id: 81,
+                variable_name: "v0_b".into(),
+                value: Box::new(v0_block),
+            },
+            LetBinding {
                 variable_id: 82,
                 variable_name: "v0_ptr".into(),
                 value: Box::new(Expression::Add(AddExpression {
                     left: Box::new(Expression::Number(NumberExpression { value: 1040 })),
                     right: Box::new(k0_size),
                 })),
-                body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 83,
-                    variable_name: "total_len".into(),
-                    value: Box::new(Expression::Subtract(SubtractExpression {
-                        left: Box::new(Expression::Add(AddExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 82,
-                            })),
-                            right: Box::new(v0_size),
+            },
+            LetBinding {
+                variable_id: 83,
+                variable_name: "total_len".into(),
+                value: Box::new(Expression::Subtract(SubtractExpression {
+                    left: Box::new(Expression::Add(AddExpression {
+                        left: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 82,
                         })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 1024 })),
+                        right: Box::new(v0_size),
                     })),
-                    body: Box::new({
-                        let rec_header = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(Expression::ListLiteral(ListLiteralExpression {
-                                items: vec![
-                                    Expression::Number(NumberExpression { value: 0x04 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x01 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                    Expression::Number(NumberExpression { value: 0x00 }),
-                                ],
-                            })),
-                            right: Box::new(Expression::ListConcat(ListConcatExpression {
-                                left: Box::new(encode_u32_le_expr(Expression::Number(
-                                    NumberExpression { value: 1040 },
-                                ))),
-                                right: Box::new(encode_u32_le_expr(Expression::Variable(
-                                    VariableExpression { variable_id: 82 },
-                                ))),
-                            })),
-                        });
-
-                        let full_body = Expression::ListConcat(ListConcatExpression {
-                            left: Box::new(rec_header),
-                            right: Box::new(Expression::ListConcat(ListConcatExpression {
-                                left: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 80,
-                                })),
-                                right: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 81,
-                                })),
-                            })),
-                        });
-
-                        wrap_in_active_data_section(
-                            Expression::Variable(VariableExpression { variable_id: 83 }),
-                            full_body,
-                        )
-                    }),
+                    right: Box::new(Expression::Number(NumberExpression { value: 1024 })),
                 })),
-            })),
-        })),
+            },
+        ],
+        body: Box::new({
+            let rec_header = Expression::ListConcat(ListConcatExpression {
+                left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: vec![
+                        Expression::Number(NumberExpression { value: 0x04 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x01 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                        Expression::Number(NumberExpression { value: 0x00 }),
+                    ],
+                })),
+                right: Box::new(Expression::ListConcat(ListConcatExpression {
+                    left: Box::new(encode_u32_le_expr(Expression::Number(NumberExpression {
+                        value: 1040,
+                    }))),
+                    right: Box::new(encode_u32_le_expr(Expression::Variable(
+                        VariableExpression { variable_id: 82 },
+                    ))),
+                })),
+            });
+
+            let full_body = Expression::ListConcat(ListConcatExpression {
+                left: Box::new(rec_header),
+                right: Box::new(Expression::ListConcat(ListConcatExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 80 })),
+                    right: Box::new(Expression::Variable(VariableExpression { variable_id: 81 })),
+                })),
+            });
+
+            wrap_in_active_data_section(
+                Expression::Variable(VariableExpression { variable_id: 83 }),
+                full_body,
+            )
+        }),
     });
 
     Expression::If(IfExpression {
@@ -758,21 +695,25 @@ pub fn create_data_section_for_variant(var_record_expr: Expression) -> Expressio
                             variable_id: 90,
                         }));
                     Expression::Let(LetExpression {
-                        variable_id: 91,
-                        variable_name: "p_b".into(),
-                        value: Box::new(p_block),
-                        body: Box::new(Expression::Let(LetExpression {
-                            variable_id: 92,
-                            variable_name: "p_ptr".into(),
-                            value: Box::new(Expression::Add(AddExpression {
-                                left: Box::new(Expression::Number(NumberExpression {
-                                    value: 1040,
+                        bindings: vec![
+                            LetBinding {
+                                variable_id: 91,
+                                variable_name: "p_b".into(),
+                                value: Box::new(p_block),
+                            },
+                            LetBinding {
+                                variable_id: 92,
+                                variable_name: "p_ptr".into(),
+                                value: Box::new(Expression::Add(AddExpression {
+                                    left: Box::new(Expression::Number(NumberExpression {
+                                        value: 1040,
+                                    })),
+                                    right: Box::new(Expression::Variable(VariableExpression {
+                                        variable_id: 88,
+                                    })),
                                 })),
-                                right: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 88,
-                                })),
-                            })),
-                            body: Box::new(Expression::Let(LetExpression {
+                            },
+                            LetBinding {
                                 variable_id: 93,
                                 variable_name: "total_len".into(),
                                 value: Box::new(Expression::Subtract(SubtractExpression {
@@ -786,89 +727,63 @@ pub fn create_data_section_for_variant(var_record_expr: Expression) -> Expressio
                                         value: 1024,
                                     })),
                                 })),
-                                body: Box::new({
-                                    let var_header = Expression::ListConcat(ListConcatExpression {
-                                        left: Box::new(Expression::ListLiteral(
-                                            ListLiteralExpression {
-                                                items: vec![
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x06,
-                                                    }),
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x00,
-                                                    }),
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x00,
-                                                    }),
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x00,
-                                                    }),
-                                                    // tag_ptr: 1040 (0x10, 0x04, 0x00, 0x00)
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x10,
-                                                    }),
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x04,
-                                                    }),
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x00,
-                                                    }),
-                                                    Expression::Number(NumberExpression {
-                                                        value: 0x00,
-                                                    }),
-                                                ],
-                                            },
-                                        )),
-                                        right: Box::new(Expression::ListConcat(
-                                            ListConcatExpression {
-                                                left: Box::new(encode_u32_le_expr(
-                                                    Expression::Variable(VariableExpression {
-                                                        variable_id: 92,
-                                                    }),
-                                                )),
-                                                right: Box::new(Expression::ListLiteral(
-                                                    ListLiteralExpression {
-                                                        items: vec![
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                            Expression::Number(NumberExpression {
-                                                                value: 0x00,
-                                                            }),
-                                                        ],
-                                                    },
-                                                )),
-                                            },
-                                        )),
-                                    });
-                                    let full_body = Expression::ListConcat(ListConcatExpression {
-                                        left: Box::new(var_header),
-                                        right: Box::new(Expression::ListConcat(
-                                            ListConcatExpression {
-                                                left: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 89 },
-                                                )),
-                                                right: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 91 },
-                                                )),
-                                            },
-                                        )),
-                                    });
-                                    wrap_in_active_data_section(
-                                        Expression::Variable(VariableExpression {
-                                            variable_id: 93,
-                                        }),
-                                        full_body,
-                                    )
-                                }),
-                            })),
-                        })),
+                            },
+                        ],
+                        body: Box::new({
+                            let var_header = Expression::ListConcat(ListConcatExpression {
+                                left: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                                    items: vec![
+                                        Expression::Number(NumberExpression { value: 0x06 }),
+                                        Expression::Number(NumberExpression { value: 0x00 }),
+                                        Expression::Number(NumberExpression { value: 0x00 }),
+                                        Expression::Number(NumberExpression { value: 0x00 }),
+                                        // tag_ptr: 1040 (0x10, 0x04, 0x00, 0x00)
+                                        Expression::Number(NumberExpression { value: 0x10 }),
+                                        Expression::Number(NumberExpression { value: 0x04 }),
+                                        Expression::Number(NumberExpression { value: 0x00 }),
+                                        Expression::Number(NumberExpression { value: 0x00 }),
+                                    ],
+                                })),
+                                right: Box::new(Expression::ListConcat(ListConcatExpression {
+                                    left: Box::new(encode_u32_le_expr(Expression::Variable(
+                                        VariableExpression { variable_id: 92 },
+                                    ))),
+                                    right: Box::new(Expression::ListLiteral(
+                                        ListLiteralExpression {
+                                            items: vec![
+                                                Expression::Number(NumberExpression {
+                                                    value: 0x00,
+                                                }),
+                                                Expression::Number(NumberExpression {
+                                                    value: 0x00,
+                                                }),
+                                                Expression::Number(NumberExpression {
+                                                    value: 0x00,
+                                                }),
+                                                Expression::Number(NumberExpression {
+                                                    value: 0x00,
+                                                }),
+                                            ],
+                                        },
+                                    )),
+                                })),
+                            });
+                            let full_body = Expression::ListConcat(ListConcatExpression {
+                                left: Box::new(var_header),
+                                right: Box::new(Expression::ListConcat(ListConcatExpression {
+                                    left: Box::new(Expression::Variable(VariableExpression {
+                                        variable_id: 89,
+                                    })),
+                                    right: Box::new(Expression::Variable(VariableExpression {
+                                        variable_id: 91,
+                                    })),
+                                })),
+                            });
+                            wrap_in_active_data_section(
+                                Expression::Variable(VariableExpression { variable_id: 93 }),
+                                full_body,
+                            )
+                        }),
                     })
                 }),
             },
@@ -931,14 +846,18 @@ pub fn create_data_section_for_variant(var_record_expr: Expression) -> Expressio
     });
 
     Expression::Let(LetExpression {
-        variable_id: 88,
-        variable_name: "tag_sz".into(),
-        value: Box::new(tag_size),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 89,
-            variable_name: "tag_b".into(),
-            value: Box::new(tag_block),
-            body: Box::new(match_payload),
-        })),
+        bindings: vec![
+            LetBinding {
+                variable_id: 88,
+                variable_name: "tag_sz".into(),
+                value: Box::new(tag_size),
+            },
+            LetBinding {
+                variable_id: 89,
+                variable_name: "tag_b".into(),
+                value: Box::new(tag_block),
+            },
+        ],
+        body: Box::new(match_payload),
     })
 }

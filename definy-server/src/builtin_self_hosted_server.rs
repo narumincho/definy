@@ -16,11 +16,11 @@ use crate::ast_builder::{call_part, fn_expr};
 use definy_event::EventHashId;
 use definy_event::event::{
     AndExpression, CallArgument, CallExpression, Description, EqualExpression, Expression,
-    GreaterThanExpression, IfExpression, LetExpression, ListGetExpression, ListLengthExpression,
-    ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry, NumberExpression,
-    PartReferenceExpression, RecordGetExpression, StringConcatExpression, StringExpression,
-    TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression, VariantExpression,
-    derive_module_part_id,
+    GreaterThanExpression, IfExpression, LetBinding, LetExpression, ListGetExpression,
+    ListLengthExpression, ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry,
+    NumberExpression, PartReferenceExpression, RecordGetExpression, StringConcatExpression,
+    StringExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
+    VariantExpression, derive_module_part_id,
 };
 
 fn str_expr(s: &str) -> Expression {
@@ -49,17 +49,17 @@ fn concat_all(parts: Vec<Expression>) -> Expression {
 }
 
 fn let_chain(bindings: Vec<(i64, &str, Expression)>, body: Expression) -> Expression {
-    bindings
-        .into_iter()
-        .rev()
-        .fold(body, |acc, (id, name, val)| {
-            Expression::Let(LetExpression {
+    Expression::Let(LetExpression {
+        bindings: bindings
+            .into_iter()
+            .map(|(id, name, val)| LetBinding {
                 variable_id: id,
                 variable_name: name.into(),
                 value: Box::new(val),
-                body: Box::new(acc),
             })
-        })
+            .collect(),
+        body: Box::new(body),
+    })
 }
 
 fn http_header_item(name: &str, value: &str) -> Expression {

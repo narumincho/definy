@@ -64,24 +64,26 @@ pub fn all_samples() -> Vec<LayoutSample> {
         },
         LayoutSample {
             id: "let_binding",
-            title_ja: "4. 変数定義 (let a = 100 in let b = 200 in plus a b)",
-            title_en: "4. Variable Binding (let a = 100 in let b = 200 in plus a b)",
+            title_ja: "4. 変数定義 (let [(price, 100), (tax, 10)] in plus price tax)",
+            title_en: "4. Variable Binding (let [(price, 100), (tax, 10)] in plus price tax)",
             description_ja: "スコープと変数束縛の階層をインデント付きブロックで表現します。",
             description_en: "Scope and variable binding hierarchy with indentation.",
             expression: Expression::Let(LetExpression {
-                variable_id: 1,
-                variable_name: "price".into(),
-                value: Box::new(Expression::Number(NumberExpression { value: 100 })),
-                body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 2,
-                    variable_name: "tax".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                    body: Box::new(Expression::Add(AddExpression {
-                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
-                        right: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 2,
-                        })),
-                    })),
+                bindings: vec![
+                    LetBinding {
+                        variable_id: 1,
+                        variable_name: "price".into(),
+                        value: Box::new(Expression::Number(NumberExpression { value: 100 })),
+                    },
+                    LetBinding {
+                        variable_id: 2,
+                        variable_name: "tax".into(),
+                        value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+                    },
+                ],
+                body: Box::new(Expression::Add(AddExpression {
+                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                    right: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
                 })),
             }),
         },

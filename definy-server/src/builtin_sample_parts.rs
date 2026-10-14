@@ -1,7 +1,7 @@
 use definy_event::EventHashId;
 use definy_event::event::{
     AddExpression, Description, DivideExpression, EqualExpression, Expression, IfExpression,
-    LetExpression, ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry,
+    LetBinding, LetExpression, ListLiteralExpression, MatchArm, MatchExpression, ModulePartEntry,
     MultiplyExpression, NumberExpression, PartType, RemainderExpression, StringConcatExpression,
     StringExpression, TypeUnionExpression, TypeUnionVariant, VariableExpression, VariantExpression,
 };
@@ -24,24 +24,26 @@ pub fn create_sample_module_parts(
             ]),
             content_hash: None,
             expression: Some(Expression::Let(LetExpression {
-                variable_id: 1,
-                variable_name: "base".into(),
-                value: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                body: Box::new(Expression::Let(LetExpression {
-                    variable_id: 2,
-                    variable_name: "height".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 5 })),
-                    body: Box::new(Expression::Divide(DivideExpression {
-                        left: Box::new(Expression::Multiply(MultiplyExpression {
-                            left: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 1,
-                            })),
-                            right: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 2,
-                            })),
+                bindings: vec![
+                    LetBinding {
+                        variable_id: 1,
+                        variable_name: "base".into(),
+                        value: Box::new(Expression::Number(NumberExpression { value: 10 })),
+                    },
+                    LetBinding {
+                        variable_id: 2,
+                        variable_name: "height".into(),
+                        value: Box::new(Expression::Number(NumberExpression { value: 5 })),
+                    },
+                ],
+                body: Box::new(Expression::Divide(DivideExpression {
+                    left: Box::new(Expression::Multiply(MultiplyExpression {
+                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+                        right: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 2,
                         })),
-                        right: Box::new(Expression::Number(NumberExpression { value: 2 })),
                     })),
+                    right: Box::new(Expression::Number(NumberExpression { value: 2 })),
                 })),
             })),
         },
@@ -74,9 +76,11 @@ pub fn create_sample_module_parts(
             ]),
             content_hash: None,
             expression: Some(Expression::Let(LetExpression {
-                variable_id: 1,
-                variable_name: "n".into(),
-                value: Box::new(Expression::Number(NumberExpression { value: 4 })),
+                bindings: vec![LetBinding {
+                    variable_id: 1,
+                    variable_name: "n".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 4 })),
+                }],
                 body: Box::new(Expression::If(IfExpression {
                     condition: Box::new(Expression::Equal(EqualExpression {
                         left: Box::new(Expression::Remainder(RemainderExpression {

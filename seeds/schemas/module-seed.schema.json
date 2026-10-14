@@ -963,18 +963,14 @@
         }
       }
     },
-    "LetExpression": {
+    "LetBinding": {
       "type": "object",
       "required": [
-        "body",
         "value",
         "variable_id",
         "variable_name"
       ],
       "properties": {
-        "body": {
-          "$ref": "#/definitions/Expression"
-        },
         "value": {
           "$ref": "#/definitions/Expression"
         },
@@ -984,6 +980,24 @@
         },
         "variable_name": {
           "type": "string"
+        }
+      }
+    },
+    "LetExpression": {
+      "type": "object",
+      "required": [
+        "bindings",
+        "body"
+      ],
+      "properties": {
+        "bindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LetBinding"
+          }
+        },
+        "body": {
+          "$ref": "#/definitions/Expression"
         }
       }
     },

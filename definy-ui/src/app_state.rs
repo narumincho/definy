@@ -13,6 +13,7 @@ pub enum PathStep {
     Then,
     Else,
     LetValue,
+    LetBindingValue(usize),
     LetBody,
     ListItemValue(usize),
     RecordItemValue(usize),
@@ -44,6 +45,7 @@ impl std::fmt::Display for PathStep {
             PathStep::Then => "Then",
             PathStep::Else => "Else",
             PathStep::LetValue => "LetValue",
+            PathStep::LetBindingValue(index) => return write!(f, "LetBindingValue({})", index),
             PathStep::LetBody => "LetBody",
             PathStep::ListItemValue(index) => return write!(f, "ListItemValue({})", index),
             PathStep::RecordItemValue(index) => return write!(f, "RecordItemValue({})", index),
@@ -116,6 +118,12 @@ impl std::str::FromStr for PathStep {
                 .parse()
                 .map(PathStep::TypeUnionVariant)
                 .map_err(|_| ());
+        }
+        if let Some(inner) = s
+            .strip_prefix("LetBindingValue(")
+            .and_then(|r| r.strip_suffix(')'))
+        {
+            return inner.parse().map(PathStep::LetBindingValue).map_err(|_| ());
         }
         match s {
             "Left" => Ok(PathStep::Left),
@@ -673,6 +681,8 @@ mod tests {
             PathStep::Then,
             PathStep::Else,
             PathStep::LetValue,
+            PathStep::LetBindingValue(0),
+            PathStep::LetBindingValue(5),
             PathStep::LetBody,
             PathStep::ListItemValue(0),
             PathStep::ListItemValue(42),

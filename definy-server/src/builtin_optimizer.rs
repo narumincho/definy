@@ -195,26 +195,28 @@ pub fn create_optimize_expression_part(core_module_id: &EventHashId) -> ModulePa
                 default: None,
             });
 
-            // Let r_opt = ... in Match l_opt
-            let with_r_let = Expression::Let(definy_event::event::LetExpression {
-                variable_id: r_opt_var,
-                variable_name: "r_opt".into(),
-                value: Box::new(r_opt),
+            // Let l_opt = ..., r_opt = ... in Match l_opt
+            let with_let = Expression::Let(definy_event::event::LetExpression {
+                bindings: vec![
+                    definy_event::event::LetBinding {
+                        variable_id: l_opt_var,
+                        variable_name: "l_opt".into(),
+                        value: Box::new(l_opt),
+                    },
+                    definy_event::event::LetBinding {
+                        variable_id: r_opt_var,
+                        variable_name: "r_opt".into(),
+                        value: Box::new(r_opt),
+                    },
+                ],
                 body: Box::new(l_match),
-            });
-
-            let with_l_let = Expression::Let(definy_event::event::LetExpression {
-                variable_id: l_opt_var,
-                variable_name: "l_opt".into(),
-                value: Box::new(l_opt),
-                body: Box::new(with_r_let),
             });
 
             MatchArm {
                 tag: tag.into(),
                 variable_id: Some(var_id),
                 variable_name: Some("bin".into()),
-                body: Box::new(with_l_let),
+                body: Box::new(with_let),
             }
         };
 
@@ -330,9 +332,11 @@ pub fn create_optimize_expression_part(core_module_id: &EventHashId) -> ModulePa
         });
 
         let if_let = Expression::Let(definy_event::event::LetExpression {
-            variable_id: cond_opt_var,
-            variable_name: "cond_opt".into(),
-            value: Box::new(cond_opt),
+            bindings: vec![definy_event::event::LetBinding {
+                variable_id: cond_opt_var,
+                variable_name: "cond_opt".into(),
+                value: Box::new(cond_opt),
+            }],
             body: Box::new(match_cond),
         });
 
@@ -385,9 +389,11 @@ pub fn create_optimize_expression_part(core_module_id: &EventHashId) -> ModulePa
         });
 
         let not_let = Expression::Let(definy_event::event::LetExpression {
-            variable_id: val_opt_var,
-            variable_name: "val_opt".into(),
-            value: Box::new(val_opt),
+            bindings: vec![definy_event::event::LetBinding {
+                variable_id: val_opt_var,
+                variable_name: "val_opt".into(),
+                value: Box::new(val_opt),
+            }],
             body: Box::new(match_val),
         });
 

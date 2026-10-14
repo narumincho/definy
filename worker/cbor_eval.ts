@@ -539,14 +539,31 @@ export async function evaluateCborExpression(
       );
   }
   if ("Let" in node) {
-    const val = await evaluateCborExpression(
-      node.Let.value,
-      vars,
-      resolvePartExpr,
-      depth + 1,
-    );
     const nextVars = new Map<number, DefinyValue>(vars);
-    nextVars.set(Number(node.Let.variable_id), val);
+    if (Array.isArray(node.Let.bindings)) {
+      const bindings = node.Let.bindings as ReadonlyArray<{
+        readonly variable_id: number | bigint;
+        readonly variable_name: string;
+        readonly value: unknown;
+      }>;
+      for (const binding of bindings) {
+        const val = await evaluateCborExpression(
+          binding.value,
+          nextVars,
+          resolvePartExpr,
+          depth + 1,
+        );
+        nextVars.set(Number(binding.variable_id), val);
+      }
+    } else if (node.Let.value !== undefined) {
+      const val = await evaluateCborExpression(
+        node.Let.value,
+        vars,
+        resolvePartExpr,
+        depth + 1,
+      );
+      nextVars.set(Number(node.Let.variable_id), val);
+    }
     return await evaluateCborExpression(
       node.Let.body,
       nextVars,

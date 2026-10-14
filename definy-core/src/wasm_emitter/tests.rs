@@ -295,31 +295,37 @@ fn test_compile_and_execute_multi_parameter_function() {
 
 #[test]
 fn test_compile_and_execute_closure_capture() {
-    // let a = 100 in let add_a = (fn x -> x + a) in add_a(x: 23) -> 123
+    // let a = 100, add_a = (fn x -> x + a) in add_a(x: 23) -> 123
     let expr = Expression::Let(LetExpression {
-        variable_id: 1,
-        variable_name: "a".into(),
-        value: Box::new(Expression::Number(NumberExpression { value: 100 })),
-        body: Box::new(Expression::Let(LetExpression {
-            variable_id: 2,
-            variable_name: "add_a".into(),
-            value: Box::new(Expression::Function(FunctionExpression {
-                parameters: vec![FunctionParameter {
-                    parameter_id: 3,
-                    parameter_name: "x".into(),
-                }],
-                body: Box::new(Expression::Add(AddExpression {
-                    left: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
-                    right: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        bindings: vec![
+            definy_event::event::LetBinding {
+                variable_id: 1,
+                variable_name: "a".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 100 })),
+            },
+            definy_event::event::LetBinding {
+                variable_id: 2,
+                variable_name: "add_a".into(),
+                value: Box::new(Expression::Function(FunctionExpression {
+                    parameters: vec![FunctionParameter {
+                        parameter_id: 3,
+                        parameter_name: "x".into(),
+                    }],
+                    body: Box::new(Expression::Add(AddExpression {
+                        left: Box::new(Expression::Variable(VariableExpression { variable_id: 3 })),
+                        right: Box::new(Expression::Variable(VariableExpression {
+                            variable_id: 1,
+                        })),
+                    })),
                 })),
-            })),
-            body: Box::new(Expression::Call(CallExpression {
-                function: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
-                arguments: vec![CallArgument {
-                    name: "x".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 23 })),
-                }],
-            })),
+            },
+        ],
+        body: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::Variable(VariableExpression { variable_id: 2 })),
+            arguments: vec![CallArgument {
+                name: "x".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 23 })),
+            }],
         })),
     });
 
@@ -430,20 +436,22 @@ fn test_compile_and_execute_record_get() {
 #[test]
 fn test_compile_and_execute_record_get_with_variable() {
     let expr = Expression::Let(LetExpression {
-        variable_id: 1,
-        variable_name: "r".into(),
-        value: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
-            items: vec![
-                TypeLiteralItemExpression {
-                    key: "x".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 99 })),
-                },
-                TypeLiteralItemExpression {
-                    key: "y".into(),
-                    value: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                },
-            ],
-        })),
+        bindings: vec![definy_event::event::LetBinding {
+            variable_id: 1,
+            variable_name: "r".into(),
+            value: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "x".into(),
+                        value: Box::new(Expression::Number(NumberExpression { value: 99 })),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "y".into(),
+                        value: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                    },
+                ],
+            })),
+        }],
         body: Box::new(Expression::Add(AddExpression {
             left: Box::new(Expression::RecordGet(RecordGetExpression {
                 record: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),

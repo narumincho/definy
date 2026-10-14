@@ -154,9 +154,11 @@ pub(crate) fn default_expression_for_compiler_builtin(
             else_expr: num(0),
         }),
         CompilerBuiltin::Let => Expression::Let(LetExpression {
-            variable_id: next_variable_id,
-            variable_name: "x".into(),
-            value: num(0),
+            bindings: vec![LetBinding {
+                variable_id: next_variable_id,
+                variable_name: "x".into(),
+                value: num(0),
+            }],
             body: var_expr(next_variable_id),
         }),
         CompilerBuiltin::Function => Expression::Function(FunctionExpression {
