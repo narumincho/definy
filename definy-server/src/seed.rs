@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use definy_event::event::{AccountId, Description, ModuleSeed};
 use schemars::schema_for;
@@ -104,23 +104,64 @@ pub fn load_module_seed_from_str(json: &str) -> Result<ModuleSeed, serde_json::E
     serde_json::from_str(json)
 }
 
-/// ディスク上に JSON Schema とビルトイン Seed JSON ファイル群を書き出します。
-pub fn export_seeds_to_disk(base_dir: &Path, account_id: &AccountId) -> Result<(), anyhow::Error> {
-    let schema_dir = base_dir.join("schemas");
-    std::fs::create_dir_all(&schema_dir)?;
+/// ビルトインモジュールを所有するシステムアカウントの ID を返します。
+#[must_use]
+pub fn builtin_system_account_id() -> AccountId {
+    let signing_key =
+        ed25519_dalek::SigningKey::from_bytes(&crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED);
+    AccountId(signing_key.verifying_key())
+}
 
-    let schema_json = generate_module_seed_schema_json()?;
-    std::fs::write(schema_dir.join("module-seed.schema.json"), schema_json)?;
+/// seed ディレクトリからの相対パスと、そこに書き出すべきファイル内容の組。
+pub struct RenderedSeedFile {
+    pub relative_path: PathBuf,
+    pub content: String,
+}
 
-    let seeds = get_builtin_module_seeds(account_id);
-    for seed in seeds {
-        let file_name = format!("{}.json", seed.module_name);
-        let file_path = base_dir.join(file_name);
-        let json = serde_json::to_string_pretty(&seed)?;
-        std::fs::write(file_path, json)?;
+/// JSON Schema とビルトイン Seed JSON ファイル群の内容を、ディスクに触れずに生成します。
+pub fn render_seed_files(account_id: &AccountId) -> Result<Vec<RenderedSeedFile>, anyhow::Error> {
+    let mut files = vec![RenderedSeedFile {
+        relative_path: Path::new("schemas").join("module-seed.schema.json"),
+        content: generate_module_seed_schema_json()?,
+    }];
+    for seed in get_builtin_module_seeds(account_id) {
+        files.push(RenderedSeedFile {
+            relative_path: PathBuf::from(format!("{}.json", seed.module_name)),
+            content: serde_json::to_string_pretty(&seed)?,
+        });
     }
+    Ok(files)
+}
 
+/// ディスク上に JSON Schema とビルトイン Seed JSON ファイル群を書き出します。
+///
+/// `cargo run -p definy-server -- --export-seeds seeds` から呼び出されます。
+pub fn export_seeds_to_disk(base_dir: &Path, account_id: &AccountId) -> Result<(), anyhow::Error> {
+    for file in render_seed_files(account_id)? {
+        let path = base_dir.join(&file.relative_path);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(path, file.content)?;
+    }
     Ok(())
+}
+
+/// ディスク上の Seed ファイル群が、現在のビルトイン定義から生成される内容とバイト単位で一致するか検証します。
+///
+/// 一致しないファイル（存在しない場合を含む）の相対パス一覧を返します。空なら最新です。
+pub fn find_stale_seed_files(
+    base_dir: &Path,
+    account_id: &AccountId,
+) -> Result<Vec<PathBuf>, anyhow::Error> {
+    let mut stale = Vec::new();
+    for file in render_seed_files(account_id)? {
+        let on_disk = std::fs::read_to_string(base_dir.join(&file.relative_path)).ok();
+        if on_disk.as_deref() != Some(file.content.as_str()) {
+            stale.push(file.relative_path);
+        }
+    }
+    Ok(stale)
 }
 
 /// 自己ホスト型チェッカー (`core.validate-module`) を用いて、

@@ -321,6 +321,11 @@ graph TD
     に分離（1000行制限ルールを遵守）
   - `seed_tests.rs`
     テストスイートにより、スキーマ適合性、完全デシリアライズ性、および自己記述型チェッカー（`core.validate-module`）によるモジュール型妥当性検証の自動テスト実証完了
+  - **seed のドリフト検出**: `seed_tests.rs` はディスクへ書き込まず、コミット済みの
+    `seeds/` が現在のビルトイン定義から生成される内容とバイト単位で一致するかだけを検証する
+    （`definy_server::seed::find_stale_seed_files`）。ビルトイン定義を変更したら
+    `cargo run -p definy-server -- --export-seeds seeds` で再生成してコミットする。
+    再生成し忘れると CI の `cargo test` が失敗する。
 
 ---
 
