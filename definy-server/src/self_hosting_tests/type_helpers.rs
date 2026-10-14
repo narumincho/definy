@@ -2,7 +2,7 @@
 //!
 //! 以前は `builtin_type_checker/helpers.rs` にあり、ビルトインパーツの構築にも使われていた。
 //! パーツ定義の正本が `seeds/*.json` になったため、テスト専用に移動した。
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 use definy_event::EventHashId;
 use definy_event::event::{
