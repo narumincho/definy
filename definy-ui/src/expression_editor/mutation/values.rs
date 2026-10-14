@@ -1,6 +1,7 @@
 use crate::app_state::PathStep;
 
 use super::get_mut_expression_at_path;
+use super::variables::next_local_variable_id;
 
 pub fn set_number_value(
     root_expression_opt: &mut Option<definy_event::event::Expression>,
@@ -25,6 +26,46 @@ pub fn set_boolean_value(
             get_mut_expression_at_path(root_expression, path)
     {
         bool_expr.value = value;
+    }
+}
+
+pub fn add_let_binding(
+    root_expression_opt: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+) {
+    let next_variable_id = match root_expression_opt.as_ref() {
+        Some(root) => next_local_variable_id(root),
+        None => return,
+    };
+    if let Some(root_expression) = root_expression_opt.as_mut()
+        && let Some(definy_event::event::Expression::Let(let_expr)) =
+            get_mut_expression_at_path(root_expression, path)
+    {
+        let_expr.bindings.push(definy_event::event::LetBinding {
+            variable_id: next_variable_id,
+            variable_name: String::new().into(),
+            value: Box::new(definy_event::event::Expression::Number(
+                definy_event::event::NumberExpression { value: 0 },
+            )),
+        });
+    }
+}
+
+pub fn remove_let_binding(
+    root_expression_opt: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+    binding_index: usize,
+) {
+    if let Some(root_expression) = root_expression_opt.as_mut()
+        && let Some(definy_event::event::Expression::Let(let_expr)) =
+            get_mut_expression_at_path(root_expression, path)
+    {
+        if let_expr.bindings.len() <= 1 {
+            return;
+        }
+        if binding_index < let_expr.bindings.len() {
+            let_expr.bindings.remove(binding_index);
+        }
     }
 }
 

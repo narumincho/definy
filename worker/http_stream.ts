@@ -209,7 +209,7 @@ export async function evaluatePartForHttpRequest(
     typeof handlerFn === "object" &&
     ("__fn" in handlerFn || "__nativeFn" in handlerFn)
   ) {
-    const reqHeaders: Array<DefinyValue> = [];
+    const reqHeaders: DefinyValue[] = [];
     request.headers.forEach((value, name) => {
       reqHeaders.push({ name, value });
     });

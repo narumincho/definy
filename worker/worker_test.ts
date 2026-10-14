@@ -75,7 +75,7 @@ function createSqliteD1Database(): D1Database {
             },
           });
         }
-        const rows = stmt.all(...normalizeParams()) as Array<
+        const rows = stmt.all(...normalizeParams()) as ReadonlyArray<
           Record<string, unknown>
         >;
         return Promise.resolve({
