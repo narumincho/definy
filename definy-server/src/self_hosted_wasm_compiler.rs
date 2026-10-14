@@ -75,7 +75,16 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
         .expect("builtin part compile-to-wasm")
         .clone();
 
-    let parts = vec![compile_instr_part, compile_to_wasm_part];
+    // Bool の match のアーム本体を取り出すために compile-expr-instructions が使う
+    let match_arm_body_part = crate::seed::find_builtin_part("match-arm-body")
+        .expect("builtin part match-arm-body")
+        .clone();
+
+    let parts = vec![
+        compile_instr_part,
+        compile_to_wasm_part,
+        match_arm_body_part,
+    ];
 
     // 評価器で直接参照可能なコミットイベント列を構築
     let dummy_commit_hash = EventHashId::from_bytes(&[200u8; 32]);

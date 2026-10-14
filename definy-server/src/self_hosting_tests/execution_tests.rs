@@ -432,7 +432,12 @@ fn test_self_hosted_compile_to_wasm_execution() {
     let compile_to_wasm_hash = derive_module_part_id(&mod_id, "compile-to-wasm");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let events = create_test_module_events(account, vec![compile_instr, compile_to_wasm], 128);
+    let match_arm_body = seed_part("match-arm-body");
+    let events = create_test_module_events(
+        account,
+        vec![compile_instr, compile_to_wasm, match_arm_body],
+        128,
+    );
 
     let expr_type_opt = Some(expr_type_hash);
     // Expression to compile: 15 + 27 = 42
@@ -473,7 +478,12 @@ fn test_self_hosted_optimize_expression_execution() {
 
     let events = create_test_module_events(
         account,
-        vec![optimize_part, compile_instr, compile_to_wasm],
+        vec![
+            optimize_part,
+            compile_instr,
+            compile_to_wasm,
+            seed_part("match-arm-body"),
+        ],
         129,
     );
 
