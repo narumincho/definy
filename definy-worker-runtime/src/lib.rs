@@ -155,9 +155,8 @@ impl Runtime {
                 headers,
                 body,
             } => {
-                let expression = definy_core::http_app::resolve_http_handler(
-                    self.find_expression(&part_id)?,
-                );
+                let expression =
+                    definy_core::http_app::resolve_http_handler(self.find_expression(&part_id)?);
                 let wasm = definy_core::http_app::compile_http_request_to_wasm(
                     &expression,
                     &self.events,
@@ -218,9 +217,8 @@ impl Runtime {
 
     /// パーツ ID・`module.part`・パーツ名、または読み込んだコンテンツのハッシュから式を探します。
     fn find_expression(&self, part_id: &str) -> Result<Expression, String> {
-        definy_core::http_app::find_part_expression(part_id, &self.events).or_else(|error| {
-            self.contents.get(part_id.trim()).cloned().ok_or(error)
-        })
+        definy_core::http_app::find_part_expression(part_id, &self.events)
+            .or_else(|error| self.contents.get(part_id.trim()).cloned().ok_or(error))
     }
 
     fn load_event(&mut self, bytes: &[u8]) {
