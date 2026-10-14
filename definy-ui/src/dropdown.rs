@@ -395,6 +395,9 @@ pub fn SearchableDropdownPanel(
     #[props(default = None)] header: Option<Element>,
     #[props(default)] secondary_values: HashSet<String>,
     #[props(default)] secondary_heading: String,
+    /// 検索欄が空のときに Delete / Backspace キーが押されたら呼ばれる
+    #[props(default = None)]
+    on_delete_key: Option<EventHandler<()>>,
 ) -> Element {
     let query = search_query.read().to_lowercase();
     let filtered_options: Vec<(String, String)> = options
@@ -500,6 +503,13 @@ pub fn SearchableDropdownPanel(
                                 search_query.set(String::new());
                                 highlighted_index.set(None);
                                 dom_hide_popover(&panel_id);
+                            }
+                            Key::Delete | Key::Backspace if search_query.read().is_empty() => {
+                                if let Some(on_delete_key) = on_delete_key {
+                                    evt.prevent_default();
+                                    highlighted_index.set(None);
+                                    on_delete_key.call(());
+                                }
                             }
                             _ => {}
                         }

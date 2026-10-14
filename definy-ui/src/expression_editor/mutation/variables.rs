@@ -198,7 +198,8 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                     .unwrap_or(0);
                 target_max.max(arms_max).max(default_max)
             }
-            definy_event::event::Expression::Compiler(_) => 0,
+            definy_event::event::Expression::Compiler(_)
+            | definy_event::event::Expression::Hole => 0,
         }
     }
     max_local_variable_id(expression).saturating_add(1).max(1)

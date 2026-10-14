@@ -54,6 +54,8 @@ pub enum Expression {
     Variant(VariantExpression),
     Match(MatchExpression),
     Compiler(CompilerBuiltin),
+    /// 未入力の式. エディタで式を消したときに入る. 評価・コンパイルはエラーになる
+    Hole,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

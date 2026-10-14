@@ -3,6 +3,24 @@ use crate::app_state::PathStep;
 use super::get_mut_expression_at_path;
 use super::variables::next_local_variable_id;
 
+/// `path` の式だけを未入力にする. ルートなら式全体を `None` に, それ以外は [`Expression::Hole`] に置き換える
+///
+/// [`Expression::Hole`]: definy_event::event::Expression::Hole
+pub fn clear_expression_at_path(
+    root_expression_opt: &mut Option<definy_event::event::Expression>,
+    path: &[PathStep],
+) {
+    if path.is_empty() {
+        *root_expression_opt = None;
+        return;
+    }
+    if let Some(root_expression) = root_expression_opt.as_mut()
+        && let Some(target) = get_mut_expression_at_path(root_expression, path)
+    {
+        *target = definy_event::event::Expression::Hole;
+    }
+}
+
 pub fn set_number_value(
     root_expression_opt: &mut Option<definy_event::event::Expression>,
     path: &[PathStep],

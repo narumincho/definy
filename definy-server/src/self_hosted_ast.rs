@@ -318,6 +318,7 @@ pub(crate) fn expression_to_self_hosted_ast(
             Err("core.expression does not represent type declarations".into())
         }
         E::Compiler(_) => Err("core.expression does not represent compiler builtins".into()),
+        E::Hole => Err("core.expression does not represent unfilled expressions".into()),
     }
 }
 

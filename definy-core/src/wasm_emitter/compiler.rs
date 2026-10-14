@@ -556,6 +556,9 @@ pub(crate) fn emit_expression(
         Expression::Compiler(_) => {
             return Err("Compiler built-in cannot be evaluated directly as value".into());
         }
+        Expression::Hole => {
+            return Err("Unfilled expression (hole) cannot be compiled".into());
+        }
     }
     Ok(())
 }
