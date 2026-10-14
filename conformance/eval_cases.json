@@ -1,5 +1,5 @@
 {
-  "$comment": "Rust (definy-core の Wasm コンパイラ経由評価) と TypeScript (worker/cbor_eval.ts) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID（システムアカウントから導出）に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。",
+  "$comment": "Rust (definy-core の Wasm コンパイラ経由評価) と TypeScript (worker/cbor_eval.ts) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID（システムアカウントから導出）に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。 文字列の長さ・添字は UTF-8 のバイト単位で、範囲外の添字は文字列の範囲に丸める。",
   "cases": [
     {
       "name": "number literal",
@@ -1208,6 +1208,154 @@
         7,
         11
       ]
+    },
+    {
+      "name": "string length counts UTF-8 bytes",
+      "expression": {
+        "StringLength": {
+          "value": {
+            "String": {
+              "value": "こんにちは"
+            }
+          }
+        }
+      },
+      "expected": 15
+    },
+    {
+      "name": "string length mixed",
+      "expression": {
+        "StringLength": {
+          "value": {
+            "String": {
+              "value": "aé🎉"
+            }
+          }
+        }
+      },
+      "expected": 7
+    },
+    {
+      "name": "string slice by UTF-8 byte offsets",
+      "expression": {
+        "StringSlice": {
+          "value": {
+            "String": {
+              "value": "こんにちは"
+            }
+          },
+          "start": {
+            "Number": {
+              "value": 3
+            }
+          },
+          "end": {
+            "Number": {
+              "value": 9
+            }
+          }
+        }
+      },
+      "expected": "んに"
+    },
+    {
+      "name": "string slice clamps out of range",
+      "expression": {
+        "StringSlice": {
+          "value": {
+            "String": {
+              "value": "definy"
+            }
+          },
+          "start": {
+            "Number": {
+              "value": -3
+            }
+          },
+          "end": {
+            "Number": {
+              "value": 100
+            }
+          }
+        }
+      },
+      "expected": "definy"
+    },
+    {
+      "name": "string slice end before start is empty",
+      "expression": {
+        "StringSlice": {
+          "value": {
+            "String": {
+              "value": "definy"
+            }
+          },
+          "start": {
+            "Number": {
+              "value": 4
+            }
+          },
+          "end": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": ""
+    },
+    {
+      "name": "string to bytes is UTF-8",
+      "expression": {
+        "StringToBytes": {
+          "value": {
+            "String": {
+              "value": "aé"
+            }
+          }
+        }
+      },
+      "expected": [
+        97,
+        195,
+        169
+      ]
+    },
+    {
+      "name": "equal non-ascii strings",
+      "expression": {
+        "Equal": {
+          "left": {
+            "String": {
+              "value": "定義"
+            }
+          },
+          "right": {
+            "String": {
+              "value": "定義"
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "string concat non-ascii",
+      "expression": {
+        "StringConcat": {
+          "left": {
+            "String": {
+              "value": "でふぃ"
+            }
+          },
+          "right": {
+            "String": {
+              "value": "にー"
+            }
+          }
+        }
+      },
+      "expected": "でふぃにー"
     }
   ]
 }
