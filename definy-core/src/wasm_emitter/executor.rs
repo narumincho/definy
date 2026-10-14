@@ -1,7 +1,7 @@
 use super::memory::read_value_from_memory;
 use crate::expression_eval::Value;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", not(feature = "wasmi")))]
 pub fn execute_wasm(wasm_bytes: &[u8]) -> Result<Value, String> {
     let uint8_array = js_sys::Uint8Array::from(wasm_bytes);
     let module_result = js_sys::WebAssembly::Module::new(&uint8_array)
@@ -39,7 +39,7 @@ pub fn execute_wasm(wasm_bytes: &[u8]) -> Result<Value, String> {
     read_value_from_memory(&rust_mem, ret_ptr).map_err(|e| e.to_string())
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", not(feature = "wasmi")))]
 fn format_js_error(context: &str, err: wasm_bindgen::JsValue) -> String {
     if let Ok(msg) = js_sys::Reflect::get(&err, &wasm_bindgen::JsValue::from_str("message")) {
         if let Some(msg_str) = msg.as_string() {
