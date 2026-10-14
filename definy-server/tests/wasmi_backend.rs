@@ -31,45 +31,21 @@ fn normalize(value: &Value) -> Json {
     }
 }
 
-/// `{"$part": "module.name"}` を、式の位置なら PartReference、ハッシュの位置ならパーツ ID に置き換える
-fn resolve_placeholders(json: Json) -> Json {
-    match json {
-        Json::Array(items) => Json::Array(items.into_iter().map(resolve_placeholders).collect()),
-        Json::Object(map) => {
-            if let Some(Json::String(qualified)) = map.get("$part") {
-                let (module_name, part_name) = qualified.split_once('.').expect("module.part");
-                let account = definy_server::seed::builtin_system_account_id();
-                let hash = definy_event::event::derive_module_part_id(
-                    &definy_event::event::derive_module_id(&account, module_name),
-                    part_name,
-                );
-                return serde_json::to_value(Expression::PartReference(
-                    definy_event::event::PartReferenceExpression::new(hash),
-                ))
-                .expect("serialize PartReference");
-            }
-            Json::Object(
-                map.into_iter()
-                    .map(|(key, value)| (key, resolve_placeholders(value)))
-                    .collect(),
-            )
-        }
-        other => other,
-    }
-}
-
 #[test]
 fn test_wasmi_backend_passes_eval_conformance_cases() {
     let cases: Json = serde_json::from_str(CASES_JSON).expect("parse eval_cases.json");
     let events = definy_server::builtin_migration::build_builtin_verified_events();
+    let account_id = definy_server::seed::builtin_system_account_id();
 
     let mut failures = Vec::new();
     let cases = cases["cases"].as_array().expect("cases array");
     for case in cases {
         let name = case["name"].as_str().expect("case name");
-        let expression: Expression =
-            serde_json::from_value(resolve_placeholders(case["expression"].clone()))
-                .unwrap_or_else(|e| panic!("{name}: invalid expression: {e}"));
+        let mut expression_json = case["expression"].clone();
+        definy_server::seed::resolve_part_references(&mut expression_json, &account_id)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        let expression: Expression = serde_json::from_value(expression_json)
+            .unwrap_or_else(|e| panic!("{name}: invalid expression: {e}"));
         let wasm = match definy_core::wasm_emitter::compile_expression_to_wasm(&expression, &events)
         {
             Ok(wasm) => wasm,
