@@ -53,12 +53,22 @@ data = [
     を呼び出す.
   - ブラウザの popover 既定スタイル (User Agent stylesheet の `inset: 0`)
     がアンカー計算と干渉して画面最上部に飛ぶ問題を防ぐため,
-    `[popover]` に `inset: auto; position: absolute;` を指定し,
-    `position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline;`
-    で自動反転配置を行う.
-  - CSS Anchor Positioning (`position-area`, `position-anchor`, `position-try-fallbacks`)
-    は Chrome, Edge に加え Safari でも標準対応したため,
-    JavaScript による座標計算フォールバックは不要となり CSS のみでクリーンに配置する.
+    `[popover]` に `inset: auto; position: absolute;` を指定する.
+  - アンカー要素が画面右寄りにあったり画面右端に近い場合,
+    `span-right` だとドロップダウンが画面右外に飛び出してしまうため,
+    `dom_show_popover_and_focus` でアンカー要素の画面内座標 (`getBoundingClientRect`)
+    を動的に判定し, 右余白が不足している場合は `bottom span-left`
+    (右端揃えで左に展開) または `top span-left` に自動切り替えを行う.
+  - CSS Anchor Positioning の反転フォールバックには
+    `position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline;`
+    を指定し, 水平反転 (`flip-inline`) を優先するとともに対角線反転
+    (`flip-block flip-inline`) も含めることで画面端での飛び出しを防止する.
+  - Anchor Positioning 未対応ブラウザ (古い Safari 等) に対しては,
+    `CSS.supports` で `position-area` の対応を確認し,
+    未対応時に `fixed` 座標で安全にフォールバック配置する.
+  - ドロップダウンパネル本体 (`.dropdown-popover-panel`), オプションリスト (`overflow-x: hidden`),
+    ヘッダーおよびオプションのメタデータ (`display_meta`) にも省略表示 (`ellipsis`)
+    や最大幅制限を設け, 長い識別子や型名による右はみ出しを確実に防止する.
   - 数値・文字列リテラル選択時はノード上で直接編集するため,
     メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
     を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).

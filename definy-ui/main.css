@@ -833,6 +833,7 @@ textarea {
   backdrop-filter: var(--glass-blur);
   box-sizing: border-box;
   color-scheme: dark;
+  overflow: hidden;
 }
 
 .dropdown-item-link {
