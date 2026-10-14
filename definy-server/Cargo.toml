@@ -53,3 +53,7 @@ utoipa = { workspace = true, features = ["axum_extras", "chrono"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipa-axum = { workspace = true }
 rustls = { workspace = true }
+
+[dev-dependencies]
+# wasmi バックエンド（Cloudflare Workers 向け）を wasmtime と突き合わせるテスト用
+definy-core = { workspace = true, features = ["wasmi"] }

@@ -420,16 +420,17 @@ pub fn build_http_request_record_expression(
     })
 }
 
-/// パーツ式 (`Expression`) を全イベントコンテキスト付きで HTTP リクエストに対して評価し、
-/// ステータス・ヘッダー・Pull 型ボディストリーム (`EvaluatedHttpResponse`) を返します。
-pub fn evaluate_part_expression_for_http_request_stream(
+/// HTTP リクエストを受け取るパーツ（またはハンドラ式）にリクエストを適用する式を、Wasm にコンパイルします。
+///
+/// 実行は wasmtime（`execute_wasm_http_response`）でも wasmi（Cloudflare Workers 向け）でもできます。
+pub fn compile_http_request_to_wasm(
     expression: &Expression,
     events: &[VerifiedCommitEvent],
     method: &str,
     url: &str,
     headers: &[(String, String)],
     body_bytes: &[u8],
-) -> Result<definy_core::wasm_emitter::EvaluatedHttpResponse, SelfHostedCompileError> {
+) -> Result<Vec<u8>, SelfHostedCompileError> {
     let first_param_name = if let Expression::Function(ref fn_expr) = *expression {
         fn_expr
             .parameters
@@ -465,8 +466,22 @@ pub fn evaluate_part_expression_for_http_request_stream(
         }
     };
 
-    let wasm_bytes = definy_core::wasm_emitter::compile_expression_to_wasm(&target_expr, events)
-        .map_err(SelfHostedCompileError::Evaluation)?;
+    definy_core::wasm_emitter::compile_expression_to_wasm(&target_expr, events)
+        .map_err(SelfHostedCompileError::Evaluation)
+}
+
+/// パーツ式 (`Expression`) を全イベントコンテキスト付きで HTTP リクエストに対して評価し、
+/// ステータス・ヘッダー・Pull 型ボディストリーム (`EvaluatedHttpResponse`) を返します。
+pub fn evaluate_part_expression_for_http_request_stream(
+    expression: &Expression,
+    events: &[VerifiedCommitEvent],
+    method: &str,
+    url: &str,
+    headers: &[(String, String)],
+    body_bytes: &[u8],
+) -> Result<definy_core::wasm_emitter::EvaluatedHttpResponse, SelfHostedCompileError> {
+    let wasm_bytes =
+        compile_http_request_to_wasm(expression, events, method, url, headers, body_bytes)?;
     definy_core::wasm_emitter::execute_wasm_http_response(&wasm_bytes)
         .map_err(SelfHostedCompileError::WasmExecution)
 }

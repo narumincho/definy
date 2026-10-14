@@ -11,6 +11,8 @@ pub mod memory;
 pub mod module_builder;
 pub mod record_ops;
 pub mod string_ops;
+#[cfg(feature = "wasmi")]
+pub mod wasmi_backend;
 
 #[cfg(test)]
 mod gc_compiler_tests;
@@ -19,6 +21,7 @@ mod tests;
 
 pub use bytecode::{encode_i32_sleb128, encode_u32_leb128};
 pub use compiler::compile_expression_to_wasm;
+#[cfg(not(all(target_arch = "wasm32", feature = "wasmi")))]
 pub use executor::execute_wasm;
 #[cfg(not(target_arch = "wasm32"))]
 pub use executor::{EvaluatedHttpResponse, WasmPullStream, execute_wasm_http_response};
@@ -26,3 +29,5 @@ pub use memory::{
     RawWasmHttpResponse, RawWasmStreamStep, read_http_response_and_stream_ptrs,
     read_stream_step_from_memory, read_value_from_memory,
 };
+#[cfg(all(target_arch = "wasm32", feature = "wasmi"))]
+pub use wasmi_backend::execute_wasm;
