@@ -17,8 +17,6 @@ pub fn path_to_key(path: &[PathStep]) -> String {
             PathStep::Left => "L".to_string(),
             PathStep::Right => "R".to_string(),
             PathStep::Condition => "C".to_string(),
-            PathStep::Then => "T".to_string(),
-            PathStep::Else => "E".to_string(),
             PathStep::LetValue => "LV".to_string(),
             PathStep::LetBindingValue(index) => format!("LBV{}", index),
             PathStep::LetBody => "LB".to_string(),
@@ -189,18 +187,6 @@ pub fn get_mut_expression_at_path<'a>(
             PathStep::Left => get_mut_expression_at_path(append_expr.list.as_mut(), &path[1..]),
             PathStep::Item | PathStep::Right => {
                 get_mut_expression_at_path(append_expr.item.as_mut(), &path[1..])
-            }
-            _ => None,
-        },
-        definy_event::event::Expression::If(if_expression) => match path[0] {
-            PathStep::Condition => {
-                get_mut_expression_at_path(if_expression.condition.as_mut(), &path[1..])
-            }
-            PathStep::Then => {
-                get_mut_expression_at_path(if_expression.then_expr.as_mut(), &path[1..])
-            }
-            PathStep::Else => {
-                get_mut_expression_at_path(if_expression.else_expr.as_mut(), &path[1..])
             }
             _ => None,
         },

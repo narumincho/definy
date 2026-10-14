@@ -375,10 +375,10 @@
       "expected": "fin"
     },
     {
-      "name": "if then",
+      "name": "boolean match true",
       "expression": {
-        "If": {
-          "condition": {
+        "Match": {
+          "target": {
             "LessThan": {
               "left": {
                 "Number": {
@@ -392,39 +392,65 @@
               }
             }
           },
-          "then_expr": {
-            "String": {
-              "value": "yes"
+          "arms": [
+            {
+              "tag": "true",
+              "variable_id": null,
+              "variable_name": null,
+              "body": {
+                "String": {
+                  "value": "yes"
+                }
+              }
+            },
+            {
+              "tag": "false",
+              "variable_id": null,
+              "variable_name": null,
+              "body": {
+                "String": {
+                  "value": "no"
+                }
+              }
             }
-          },
-          "else_expr": {
-            "String": {
-              "value": "no"
-            }
-          }
+          ],
+          "default": null
         }
       },
       "expected": "yes"
     },
     {
-      "name": "if else",
+      "name": "boolean match false",
       "expression": {
-        "If": {
-          "condition": {
+        "Match": {
+          "target": {
             "Boolean": {
               "value": false
             }
           },
-          "then_expr": {
-            "Number": {
-              "value": 1
+          "arms": [
+            {
+              "tag": "true",
+              "variable_id": null,
+              "variable_name": null,
+              "body": {
+                "Number": {
+                  "value": 1
+                }
+              }
+            },
+            {
+              "tag": "false",
+              "variable_id": null,
+              "variable_name": null,
+              "body": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          },
-          "else_expr": {
-            "Number": {
-              "value": 2
-            }
-          }
+          ],
+          "default": null
         }
       },
       "expected": 2

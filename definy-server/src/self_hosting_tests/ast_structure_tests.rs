@@ -203,7 +203,6 @@ fn test_phase1_evaluator_ast_structure() {
         "equal",
         "less_than",
         "variable",
-        "if",
         "function",
         "call",
         "let",
@@ -261,7 +260,6 @@ fn test_phase2_type_checker_ast_structure() {
         "equal",
         "less_than",
         "variable",
-        "if",
         "let",
         "record",
         "record_get",
@@ -438,7 +436,7 @@ fn test_formatter_ast_structure() {
         "or",
         "not",
         "variable",
-        "if",
+        "match",
         "call",
         "_",
     ];
@@ -520,7 +518,7 @@ fn test_optimizer_ast_structure() {
                     assert!(arm_tags.contains("add"));
                     assert!(arm_tags.contains("subtract"));
                     assert!(arm_tags.contains("multiply"));
-                    assert!(arm_tags.contains("if"));
+                    assert!(arm_tags.contains("match"));
                     assert!(arm_tags.contains("not"));
                     assert!(arm_tags.contains("_"));
                 }
@@ -545,8 +543,13 @@ fn test_validate_module_ast_structure() {
             assert_eq!(f.parameters[0].parameter_id, 0);
             assert_eq!(&*f.parameters[0].parameter_name, "mod_def");
             match *f.body {
-                Expression::If(_) => {}
-                other => panic!("Expected If in validate-module, got: {:?}", other),
+                Expression::Match(m) => {
+                    let arm_tags: HashSet<String> =
+                        m.arms.into_iter().map(|a| a.tag.to_string()).collect();
+                    assert!(arm_tags.contains("true"));
+                    assert!(arm_tags.contains("false"));
+                }
+                other => panic!("Expected boolean Match in validate-module, got: {:?}", other),
             }
         }
         other => panic!("Expected Function, got: {:?}", other),

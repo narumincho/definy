@@ -371,7 +371,7 @@ mod tests {
         let p_left: Vec<PathStep> = vec![PathStep::Left];
         let p_right: Vec<PathStep> = vec![PathStep::Right];
         let p_left_cond: Vec<PathStep> = vec![PathStep::Left, PathStep::Condition];
-        let p_left_then: Vec<PathStep> = vec![PathStep::Left, PathStep::Then];
+        let p_left_then: Vec<PathStep> = vec![PathStep::Left, PathStep::Right];
 
         let all_paths = vec![
             p_root.clone(),

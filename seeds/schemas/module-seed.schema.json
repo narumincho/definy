@@ -183,7 +183,6 @@
         "list_get",
         "list_append",
         "number_literal",
-        "if",
         "function",
         "call",
         "bit_and",
@@ -685,18 +684,6 @@
         {
           "type": "object",
           "required": [
-            "If"
-          ],
-          "properties": {
-            "If": {
-              "$ref": "#/definitions/IfExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
             "Equal"
           ],
           "properties": {
@@ -927,25 +914,6 @@
           "$ref": "#/definitions/Expression"
         },
         "right": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "IfExpression": {
-      "type": "object",
-      "required": [
-        "condition",
-        "else_expr",
-        "then_expr"
-      ],
-      "properties": {
-        "condition": {
-          "$ref": "#/definitions/Expression"
-        },
-        "else_expr": {
-          "$ref": "#/definitions/Expression"
-        },
-        "then_expr": {
           "$ref": "#/definitions/Expression"
         }
       }

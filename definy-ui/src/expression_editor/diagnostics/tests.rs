@@ -465,3 +465,35 @@ fn test_record_structural_width_subtyping_allows_extra_fields() {
         "Missing required field 'clock' should produce a diagnostic"
     );
 }
+
+#[test]
+fn test_boolean_match_type_check() {
+    let expr = Expression::match_boolean(
+        Expression::LessThan(LessThanExpression {
+            left: Box::new(Expression::Number(NumberExpression { value: 1 })),
+            right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+        }),
+        Expression::String(StringExpression {
+            value: "yes".into(),
+        }),
+        Expression::String(StringExpression { value: "no".into() }),
+    );
+
+    let part_type_map = HashMap::new();
+    let part_snapshot_map = HashMap::new();
+    let mut diagnostics = Vec::new();
+    let mut expected_types = HashMap::new();
+    let mut variable_types = HashMap::new();
+    let env = HashMap::new();
+    let mut ctx = TypeCheckContext::new(
+        &env,
+        &part_type_map,
+        &part_snapshot_map,
+        &mut diagnostics,
+        &mut expected_types,
+        &mut variable_types,
+    );
+    let result = ctx.check(&expr, &[], None);
+    assert_eq!(result, ExpressionType::String);
+    assert!(diagnostics.is_empty(), "{diagnostics:?}");
+}

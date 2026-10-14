@@ -379,7 +379,7 @@ eval-value: expression -> env -> value
 - リテラル（数値・文字列・真偽値）、算術演算（`add`, `subtract`, `multiply`,
   `divide`, `remainder`）、等価比較（`equal`）、小なり比較（`less_than`）
 - レキシカルスコープ環境による変数解決（`variable`）
-- 条件分岐（`if`）
+- 条件分岐（Bool に対する `match`。対象が `boolean` のときタグ `"true"` / `"false"` のアームを選ぶ）
 - 関数定義時における環境キャプチャ（クロージャ生成）
 - 関数呼び出し（`call`）時におけるキャプチャ環境の復元と引数束縛
 
@@ -392,7 +392,6 @@ eval-value: expression -> env -> value
 - `core.type-error`:
   - `type_mismatch({ expected: type-ast, actual: type-ast })`: 型の不一致
   - `undefined_variable({ variable_id: number })`: 未定義の変数参照
-  - `condition_not_boolean({ actual: type-ast })`: 条件式の型が boolean 以外
   - `part_not_found({ part_definition_event_hash: string })`:
     モジュール型環境にパーツ定義が存在しない
   - `cannot_infer_empty_list`: 期待型のない空リストの型推論失敗
@@ -509,7 +508,7 @@ definy パーツ。
 - `equal`, `less_than`: 比較式文字列（例: `"(a < b)"`）
 - `and`, `or`: 論理結合文字列（例: `"(a && b)"`）
 - `not`: 単項否定文字列（例: `"!a"`）
-- `if`: `"if (cond) then then_expr else else_expr"`
+- `match`: `"match (target) { ... }"`
 - `call`: `"fn(arg)"`
 - `variable`: 変数参照文字列
 
@@ -563,10 +562,8 @@ Elimination）を行う純粋な最適化パーツ。
 - `subtract(number(a), number(b))` => `number(a - b)`
 - `multiply(number(a), number(b))` => `number(a * b)`
 - `not(boolean(b))` => `boolean(!b)`
-- `if({ condition: boolean(true), then_expr, else_expr })` =>
-  `optimize(then_expr)`
-- `if({ condition: boolean(false), then_expr, else_expr })` =>
-  `optimize(else_expr)`
+- `match({ target: boolean(true), arms })` => `optimize(true アームの本体)`
+- `match({ target: boolean(false), arms })` => `optimize(false アームの本体)`
 
 最適化された AST は、`core.compile-to-wasm`
 を介して単一の定数命令（`i64.const 42`）などに凝縮され、WebAssembly
@@ -728,7 +725,7 @@ validate-module: module-definition -> boolean
   `remainder`）、比較演算型（`equal`, `less_than`）、論理演算型（`and`, `or`,
   `not`）のマッチアーム生成。
 - **`control_arms.rs`**:
-  制御・関数適用（`call`）、変数参照（`variable`）、条件分岐（`if`）、let
+  制御・関数適用（`call`）、変数参照（`variable`）、let
   束縛（`let`）のマッチアーム生成。
 - **`record_ops.rs`**:
   レコード構築（`record`）およびフィールドアクセス（`record_get`）の型検査。
@@ -840,7 +837,7 @@ Arms）を持つため、単一ファイル（約 950 行）から以下の 5
   `divide`, `remainder`, `equal`, `less_than`）の評価分岐。
 - **`logical_arms.rs`**: 論理演算（`not`, `and`,
   `or`）の短絡評価を含む評価分岐。
-- **`control_arms.rs`**: 制御構文・バリアント・マッチ（`variable`, `if`,
+- **`control_arms.rs`**: 制御構文・バリアント・マッチ（`variable`,
   `function`, `call`, `let`, `variant`, `match`）の評価分岐。
 
 ### 4. 動的値等価判定器（`builtin_value_type`）の二重 Match 共通化

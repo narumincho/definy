@@ -49,7 +49,7 @@ pub fn resolve_http_handler(expression: Expression) -> Expression {
 #[must_use]
 pub fn build_byte_stream_expression(body_bytes: &[u8]) -> Expression {
     use definy_event::event::{
-        EqualExpression, FunctionExpression, FunctionParameter, IfExpression,
+        EqualExpression, FunctionExpression, FunctionParameter,
         ListLiteralExpression, NumberExpression, TypeLiteralExpression, TypeLiteralItemExpression,
         VariableExpression, VariantExpression,
     };
@@ -90,16 +90,16 @@ pub fn build_byte_stream_expression(body_bytes: &[u8]) -> Expression {
             type_part_definition_event_hash: None,
         });
 
-        Expression::If(IfExpression {
-            condition: Box::new(Expression::Equal(EqualExpression {
+        Expression::match_boolean(
+            Expression::Equal(EqualExpression {
                 left: Box::new(Expression::Variable(VariableExpression {
                     variable_id: 9001,
                 })),
                 right: Box::new(Expression::Number(NumberExpression { value: 0 })),
-            })),
-            then_expr: Box::new(yield_variant),
-            else_expr: Box::new(done_variant),
-        })
+            }),
+            yield_variant,
+            done_variant,
+        )
     };
 
     Expression::TypeLiteral(TypeLiteralExpression {

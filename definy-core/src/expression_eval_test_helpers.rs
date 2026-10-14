@@ -158,12 +158,8 @@ pub fn or_op(left: Expression, right: Expression) -> Expression {
 }
 
 #[allow(dead_code)]
-pub fn if_op(condition: Expression, then_expr: Expression, else_expr: Expression) -> Expression {
-    Expression::If(IfExpression {
-        condition: Box::new(condition),
-        then_expr: Box::new(then_expr),
-        else_expr: Box::new(else_expr),
-    })
+pub fn bool_match_op(condition: Expression, then_expr: Expression, else_expr: Expression) -> Expression {
+    Expression::match_boolean(condition, then_expr, else_expr)
 }
 
 #[allow(dead_code)]

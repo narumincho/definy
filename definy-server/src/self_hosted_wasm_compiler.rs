@@ -164,10 +164,18 @@ pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
             is_supported_by_self_hosted_compiler(&e.left)
                 && is_supported_by_self_hosted_compiler(&e.right)
         }
-        Expression::If(e) => {
-            is_supported_by_self_hosted_compiler(&e.condition)
-                && is_supported_by_self_hosted_compiler(&e.then_expr)
-                && is_supported_by_self_hosted_compiler(&e.else_expr)
+        // 自己記述コンパイラは Bool に対する match (true / false アーム) のみ対応
+        Expression::Match(e) => {
+            e.default.is_none()
+                && e.arms.iter().any(|arm| arm.tag.as_ref() == "true")
+                && e.arms.iter().any(|arm| arm.tag.as_ref() == "false")
+                && e.arms
+                    .iter()
+                    .all(|arm| matches!(arm.tag.as_ref(), "true" | "false") && arm.variable_id.is_none())
+                && is_supported_by_self_hosted_compiler(&e.target)
+                && e.arms
+                    .iter()
+                    .all(|arm| is_supported_by_self_hosted_compiler(&arm.body))
         }
         Expression::And(e) => {
             is_supported_by_self_hosted_compiler(&e.left)

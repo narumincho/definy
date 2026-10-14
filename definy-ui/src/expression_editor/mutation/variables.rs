@@ -131,11 +131,6 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
                 max_local_variable_id(append_expr.list.as_ref())
                     .max(max_local_variable_id(append_expr.item.as_ref()))
             }
-            definy_event::event::Expression::If(if_expression) => {
-                max_local_variable_id(if_expression.condition.as_ref())
-                    .max(max_local_variable_id(if_expression.then_expr.as_ref()))
-                    .max(max_local_variable_id(if_expression.else_expr.as_ref()))
-            }
             definy_event::event::Expression::Let(let_expression) => {
                 let max_binding_id = let_expression
                     .bindings

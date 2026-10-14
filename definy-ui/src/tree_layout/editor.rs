@@ -441,7 +441,6 @@ fn expression_kind_label(expr: &Expression) -> String {
         Expression::And(_) => "and".to_string(),
         Expression::Or(_) => "or".to_string(),
         Expression::Not(_) => "not".to_string(),
-        Expression::If(_) => "if".to_string(),
         Expression::Let(_) => "let".to_string(),
         Expression::ListLiteral(_) => "list".to_string(),
         Expression::RecordGet(_) => "record_get".to_string(),

@@ -231,9 +231,9 @@ pub(crate) fn expression_to_self_hosted_ast(
                 .arms
                 .iter()
                 .map(|arm| {
-                    let variable_id = arm.variable_id.ok_or_else(|| {
-                        "core.expression requires a variable_id for every match arm".to_string()
-                    })?;
+                    // ペイロードを束縛しないアーム (Bool の true / false など) は
+                    // 参照されない変数 ID として -1 を使う
+                    let variable_id = arm.variable_id.unwrap_or(-1);
                     record(vec![
                         ("tag", E::String(string(arm.tag.as_ref()))),
                         ("variable_id", E::Number(number(variable_id))),
@@ -261,21 +261,6 @@ pub(crate) fn expression_to_self_hosted_ast(
             E::String(string(&value.part_definition_event_hash.to_string())),
         )])
         .map(|payload| expression_variant("part_reference", Some(payload), expression_type_hash)),
-        E::If(value) => record(vec![
-            (
-                "condition",
-                expression_to_self_hosted_ast(&value.condition, expression_type_hash)?,
-            ),
-            (
-                "then_expr",
-                expression_to_self_hosted_ast(&value.then_expr, expression_type_hash)?,
-            ),
-            (
-                "else_expr",
-                expression_to_self_hosted_ast(&value.else_expr, expression_type_hash)?,
-            ),
-        ])
-        .map(|payload| expression_variant("if", Some(payload), expression_type_hash)),
         E::Let(value) => value.bindings.iter().rev().try_fold(
             expression_to_self_hosted_ast(&value.body, expression_type_hash)?,
             |acc_expr, b| {

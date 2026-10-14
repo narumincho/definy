@@ -129,8 +129,8 @@
             }
           ],
           "body": {
-            "If": {
-              "condition": {
+            "Match": {
+              "target": {
                 "Equal": {
                   "left": {
                     "Remainder": {
@@ -153,16 +153,29 @@
                   }
                 }
               },
-              "then_expr": {
-                "String": {
-                  "value": "even"
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "String": {
+                      "value": "even"
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "String": {
+                      "value": "odd"
+                    }
+                  }
                 }
-              },
-              "else_expr": {
-                "String": {
-                  "value": "odd"
-                }
-              }
+              ],
+              "default": null
             }
           }
         }
@@ -1143,8 +1156,8 @@
                                   "variable_id": 19,
                                   "variable_name": "pipeline_ok",
                                   "value": {
-                                    "If": {
-                                      "condition": {
+                                    "Match": {
+                                      "target": {
                                         "And": {
                                           "left": {
                                             "And": {
@@ -1252,23 +1265,36 @@
                                           }
                                         }
                                       },
-                                      "then_expr": {
-                                        "String": {
-                                          "value": "true"
+                                      "arms": [
+                                        {
+                                          "tag": "true",
+                                          "variable_id": null,
+                                          "variable_name": null,
+                                          "body": {
+                                            "String": {
+                                              "value": "true"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "tag": "false",
+                                          "variable_id": null,
+                                          "variable_name": null,
+                                          "body": {
+                                            "String": {
+                                              "value": "false"
+                                            }
+                                          }
                                         }
-                                      },
-                                      "else_expr": {
-                                        "String": {
-                                          "value": "false"
-                                        }
-                                      }
+                                      ],
+                                      "default": null
                                     }
                                   }
                                 }
                               ],
                               "body": {
-                                "If": {
-                                  "condition": {
+                                "Match": {
+                                  "target": {
                                     "Equal": {
                                       "left": {
                                         "Variable": {
@@ -1282,150 +1308,12 @@
                                       }
                                     }
                                   },
-                                  "then_expr": {
-                                    "TypeLiteral": {
-                                      "items": [
-                                        {
-                                          "key": "status",
-                                          "value": {
-                                            "Number": {
-                                              "value": 200
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "key": "headers",
-                                          "value": {
-                                            "ListLiteral": {
-                                              "items": [
-                                                {
-                                                  "TypeLiteral": {
-                                                    "items": [
-                                                      {
-                                                        "key": "name",
-                                                        "value": {
-                                                          "String": {
-                                                            "value": "content-type"
-                                                          }
-                                                        }
-                                                      },
-                                                      {
-                                                        "key": "value",
-                                                        "value": {
-                                                          "String": {
-                                                            "value": "application/json; charset=utf-8"
-                                                          }
-                                                        }
-                                                      }
-                                                    ]
-                                                  }
-                                                },
-                                                {
-                                                  "TypeLiteral": {
-                                                    "items": [
-                                                      {
-                                                        "key": "name",
-                                                        "value": {
-                                                          "String": {
-                                                            "value": "x-powered-by"
-                                                          }
-                                                        }
-                                                      },
-                                                      {
-                                                        "key": "value",
-                                                        "value": {
-                                                          "String": {
-                                                            "value": "definy-self-hosted"
-                                                          }
-                                                        }
-                                                      }
-                                                    ]
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "key": "body",
-                                          "value": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "std.string-to-utf8-stream"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "text",
-                                                  "value": {
-                                                    "StringConcat": {
-                                                      "left": {
-                                                        "StringConcat": {
-                                                          "left": {
-                                                            "StringConcat": {
-                                                              "left": {
-                                                                "StringConcat": {
-                                                                  "left": {
-                                                                    "String": {
-                                                                      "value": "{\"status\":\"ok\",\"service\":\"self-hosted-definy-server\",\"selfHostingPipelineVerified\":"
-                                                                    }
-                                                                  },
-                                                                  "right": {
-                                                                    "Variable": {
-                                                                      "variable_id": 19
-                                                                    }
-                                                                  }
-                                                                }
-                                                              },
-                                                              "right": {
-                                                                "String": {
-                                                                  "value": ",\"typeCheck\":\""
-                                                                }
-                                                              }
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "Variable": {
-                                                              "variable_id": 17
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      "right": {
-                                                        "String": {
-                                                          "value": "\"}"
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "else_expr": {
-                                    "If": {
-                                      "condition": {
-                                        "Equal": {
-                                          "left": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          },
-                                          "right": {
-                                            "String": {
-                                              "value": "/api/self-host"
-                                            }
-                                          }
-                                        }
-                                      },
-                                      "then_expr": {
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
                                         "TypeLiteral": {
                                           "items": [
                                             {
@@ -1512,6 +1400,155 @@
                                                                   "left": {
                                                                     "StringConcat": {
                                                                       "left": {
+                                                                        "String": {
+                                                                          "value": "{\"status\":\"ok\",\"service\":\"self-hosted-definy-server\",\"selfHostingPipelineVerified\":"
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "Variable": {
+                                                                          "variable_id": 19
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "right": {
+                                                                    "String": {
+                                                                      "value": ",\"typeCheck\":\""
+                                                                    }
+                                                                  }
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "Variable": {
+                                                                  "variable_id": 17
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "String": {
+                                                              "value": "\"}"
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Match": {
+                                          "target": {
+                                            "Equal": {
+                                              "left": {
+                                                "Variable": {
+                                                  "variable_id": 2
+                                                }
+                                              },
+                                              "right": {
+                                                "String": {
+                                                  "value": "/api/self-host"
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "arms": [
+                                            {
+                                              "tag": "true",
+                                              "variable_id": null,
+                                              "variable_name": null,
+                                              "body": {
+                                                "TypeLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "key": "status",
+                                                      "value": {
+                                                        "Number": {
+                                                          "value": 200
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "key": "headers",
+                                                      "value": {
+                                                        "ListLiteral": {
+                                                          "items": [
+                                                            {
+                                                              "TypeLiteral": {
+                                                                "items": [
+                                                                  {
+                                                                    "key": "name",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "content-type"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "key": "value",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "application/json; charset=utf-8"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            },
+                                                            {
+                                                              "TypeLiteral": {
+                                                                "items": [
+                                                                  {
+                                                                    "key": "name",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "x-powered-by"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "key": "value",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "definy-self-hosted"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "key": "body",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "std.string-to-utf8-stream"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "text",
+                                                              "value": {
+                                                                "StringConcat": {
+                                                                  "left": {
+                                                                    "StringConcat": {
+                                                                      "left": {
                                                                         "StringConcat": {
                                                                           "left": {
                                                                             "StringConcat": {
@@ -1532,275 +1569,288 @@
                                                                                                           "left": {
                                                                                                             "StringConcat": {
                                                                                                               "left": {
-                                                                                                                "String": {
-                                                                                                                  "value": "{\"engine\":\"definy-self-hosted\",\"method\":\""
+                                                                                                                "StringConcat": {
+                                                                                                                  "left": {
+                                                                                                                    "StringConcat": {
+                                                                                                                      "left": {
+                                                                                                                        "String": {
+                                                                                                                          "value": "{\"engine\":\"definy-self-hosted\",\"method\":\""
+                                                                                                                        }
+                                                                                                                      },
+                                                                                                                      "right": {
+                                                                                                                        "Variable": {
+                                                                                                                          "variable_id": 3
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  },
+                                                                                                                  "right": {
+                                                                                                                    "String": {
+                                                                                                                      "value": "\",\"path\":\""
+                                                                                                                    }
+                                                                                                                  }
                                                                                                                 }
                                                                                                               },
                                                                                                               "right": {
                                                                                                                 "Variable": {
-                                                                                                                  "variable_id": 3
+                                                                                                                  "variable_id": 2
                                                                                                                 }
                                                                                                               }
                                                                                                             }
                                                                                                           },
                                                                                                           "right": {
                                                                                                             "String": {
-                                                                                                              "value": "\",\"path\":\""
+                                                                                                              "value": "\",\"query\":\""
                                                                                                             }
                                                                                                           }
                                                                                                         }
                                                                                                       },
                                                                                                       "right": {
                                                                                                         "Variable": {
-                                                                                                          "variable_id": 2
+                                                                                                          "variable_id": 5
                                                                                                         }
                                                                                                       }
                                                                                                     }
                                                                                                   },
                                                                                                   "right": {
                                                                                                     "String": {
-                                                                                                      "value": "\",\"query\":\""
+                                                                                                      "value": "\",\"sourceBefore\":\""
                                                                                                     }
                                                                                                   }
                                                                                                 }
                                                                                               },
                                                                                               "right": {
                                                                                                 "Variable": {
-                                                                                                  "variable_id": 5
+                                                                                                  "variable_id": 11
                                                                                                 }
                                                                                               }
                                                                                             }
                                                                                           },
                                                                                           "right": {
                                                                                             "String": {
-                                                                                              "value": "\",\"sourceBefore\":\""
+                                                                                              "value": "\",\"sourceAfter\":\""
                                                                                             }
                                                                                           }
                                                                                         }
                                                                                       },
                                                                                       "right": {
                                                                                         "Variable": {
-                                                                                          "variable_id": 11
+                                                                                          "variable_id": 13
                                                                                         }
                                                                                       }
                                                                                     }
                                                                                   },
                                                                                   "right": {
                                                                                     "String": {
-                                                                                      "value": "\",\"sourceAfter\":\""
+                                                                                      "value": "\",\"typeCheck\":\""
                                                                                     }
                                                                                   }
                                                                                 }
                                                                               },
                                                                               "right": {
                                                                                 "Variable": {
-                                                                                  "variable_id": 13
+                                                                                  "variable_id": 17
                                                                                 }
                                                                               }
                                                                             }
                                                                           },
                                                                           "right": {
                                                                             "String": {
-                                                                              "value": "\",\"typeCheck\":\""
+                                                                              "value": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
                                                                             }
                                                                           }
                                                                         }
                                                                       },
                                                                       "right": {
                                                                         "Variable": {
-                                                                          "variable_id": 17
+                                                                          "variable_id": 19
                                                                         }
                                                                       }
                                                                     }
                                                                   },
                                                                   "right": {
                                                                     "String": {
-                                                                      "value": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
+                                                                      "value": "}"
                                                                     }
                                                                   }
                                                                 }
-                                                              },
-                                                              "right": {
-                                                                "Variable": {
-                                                                  "variable_id": 19
-                                                                }
                                                               }
                                                             }
-                                                          },
-                                                          "right": {
-                                                            "String": {
-                                                              "value": "}"
-                                                            }
-                                                          }
+                                                          ]
                                                         }
                                                       }
                                                     }
                                                   ]
                                                 }
                                               }
-                                            }
-                                          ]
-                                        }
-                                      },
-                                      "else_expr": {
-                                        "TypeLiteral": {
-                                          "items": [
-                                            {
-                                              "key": "status",
-                                              "value": {
-                                                "Number": {
-                                                  "value": 200
-                                                }
-                                              }
                                             },
                                             {
-                                              "key": "headers",
-                                              "value": {
-                                                "ListLiteral": {
+                                              "tag": "false",
+                                              "variable_id": null,
+                                              "variable_name": null,
+                                              "body": {
+                                                "TypeLiteral": {
                                                   "items": [
                                                     {
-                                                      "TypeLiteral": {
-                                                        "items": [
-                                                          {
-                                                            "key": "name",
-                                                            "value": {
-                                                              "String": {
-                                                                "value": "content-type"
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "key": "value",
-                                                            "value": {
-                                                              "String": {
-                                                                "value": "text/html; charset=utf-8"
-                                                              }
-                                                            }
-                                                          }
-                                                        ]
+                                                      "key": "status",
+                                                      "value": {
+                                                        "Number": {
+                                                          "value": 200
+                                                        }
                                                       }
                                                     },
                                                     {
-                                                      "TypeLiteral": {
-                                                        "items": [
-                                                          {
-                                                            "key": "name",
-                                                            "value": {
-                                                              "String": {
-                                                                "value": "x-powered-by"
-                                                              }
-                                                            }
-                                                          },
-                                                          {
-                                                            "key": "value",
-                                                            "value": {
-                                                              "String": {
-                                                                "value": "definy-self-hosted"
-                                                              }
-                                                            }
-                                                          }
-                                                        ]
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "key": "body",
-                                              "value": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "std.string-list-to-utf8-stream"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "chunks",
+                                                      "key": "headers",
                                                       "value": {
                                                         "ListLiteral": {
                                                           "items": [
                                                             {
-                                                              "String": {
-                                                                "value": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n<title>Self-Hosted definy Studio (definy in definy)</title>\n<style>\n:root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #38bdf8; --ok: #22c55e; --text: #f8fafc; --muted: #94a3b8; }\n* { box-sizing: border-box; }\nbody { margin: 0; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1.25rem; }\n.container { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }\n.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }\n.badge { display: inline-block; background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.35); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }\nh1 { margin: 0.5rem 0; font-size: 1.6rem; color: var(--accent); }\nh2 { margin: 0 0 1rem 0; font-size: 1.15rem; color: var(--text); }\np { margin: 0.35rem 0; color: var(--muted); line-height: 1.55; font-size: 0.92rem; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 0.85rem; margin-top: 1rem; }\n.metric { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }\n.label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }\ncode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88rem; color: #e2e8f0; word-break: break-all; }\ncode.ok { color: var(--ok); font-weight: 700; }\ninput, select { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }\nbutton { background: #0284c7; color: white; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }\nbutton:hover { background: #0369a1; }\n.app-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }\n.app-row { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 8px; flex-wrap: wrap; gap: 0.5rem; }\na { color: var(--accent); text-decoration: none; }\na:hover { text-decoration: underline; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"card\">\n<span class=\"badge\">🧬 Executed by Self-Hosted definy Part (sample.self-hosted-definy-server)</span>\n<h1>🚀 Self-Hosted definy Studio</h1>\n<p>このページ自体が definy の関数パーツ (<code>fn(req) =&gt; { status, contentType, body }</code>) として WebAssembly / AST 評価器上で動的に生成されています。</p>\n<div class=\"grid\">\n<div class=\"metric\"><span class=\"label\">0. Incoming HTTP Request</span><code>"
+                                                              "TypeLiteral": {
+                                                                "items": [
+                                                                  {
+                                                                    "key": "name",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "content-type"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "key": "value",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "text/html; charset=utf-8"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
                                                               }
                                                             },
                                                             {
-                                                              "Variable": {
-                                                                "variable_id": 3
+                                                              "TypeLiteral": {
+                                                                "items": [
+                                                                  {
+                                                                    "key": "name",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "x-powered-by"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "key": "value",
+                                                                    "value": {
+                                                                      "String": {
+                                                                        "value": "definy-self-hosted"
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
                                                               }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": " "
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "key": "body",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "std.string-list-to-utf8-stream"
                                                               }
-                                                            },
+                                                            }
+                                                          },
+                                                          "arguments": [
                                                             {
-                                                              "Variable": {
-                                                                "variable_id": 2
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>"
-                                                              }
-                                                            },
-                                                            {
-                                                              "Variable": {
-                                                                "variable_id": 11
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>"
-                                                              }
-                                                            },
-                                                            {
-                                                              "Variable": {
-                                                                "variable_id": 13
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">"
-                                                              }
-                                                            },
-                                                            {
-                                                              "Variable": {
-                                                                "variable_id": 17
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: "
-                                                              }
-                                                            },
-                                                            {
-                                                              "Variable": {
-                                                                "variable_id": 19
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified ("
-                                                              }
-                                                            },
-                                                            {
-                                                              "Variable": {
-                                                                "variable_id": 19
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": ")</code></div></div>"
-                                                              }
-                                                            },
-                                                            {
-                                                              "String": {
-                                                                "value": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から新しいサブドメインアプリを起動 (Self-Host App Launcher)</h2>\n<p>このセルフホスト画面から Connect-RPC (<code>/definy.v1.PreviewService/RegisterPreviewApp</code>) を呼び出し、任意のパーツを新しいサブドメインで即座にホストできます。</p>\n<div class=\"grid\">\n<div><label class=\"label\">Subdomain / App ID</label><input id=\"sub\" value=\"my-definy\" placeholder=\"e.g. my-definy\" /></div>\n<div><label class=\"label\">Target Part (module.part or EventHashId)</label>\n<input id=\"part\" list=\"part-presets\" value=\"sample.self-hosted-definy-server\" placeholder=\"e.g. sample.self-hosted-definy-server\" />\n<datalist id=\"part-presets\">\n<option value=\"sample.self-hosted-definy-server\">Self-Hosted definy Studio (fn(req) =&gt; Response)</option>\n<option value=\"sample.greet\">sample.greet (\"Hello, definy!\")</option>\n<option value=\"sample.triangle-area\">sample.triangle-area (25)</option>\n<option value=\"sample.sample-ast-calc\">sample.sample-ast-calc (core.eval-ast =&gt; 95)</option>\n<option value=\"sample.prime-numbers\">sample.prime-numbers ([2, 3, 5, 7, 11])</option>\n</datalist>\n</div>\n<div><label class=\"label\">Admin Account ID</label><input id=\"admin\" value=\"local-dev-admin\" /></div>\n</div>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<button onclick=\"launchApp()\">🚀 Launch Subdomain Server</button>\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n<span id=\"msg\" style=\"font-size:0.85rem;color:var(--ok);\"></span>\n</div>\n<div id=\"apps\" class=\"app-list\"></div>\n</div>\n</div>\n<script>\nasync function refreshApps() {\n  try {\n    const res = await fetch('/definy.v1.PreviewService/ListPreviewApps', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({})\n    });\n    const data = await res.json();\n    const box = document.getElementById('apps');\n    box.innerHTML = (data.apps || []).map(a =>\n      `<div class=\"app-row\"><div><strong>${a.displayName}</strong> (<code>${a.partId}</code>)</div><div><a href=\"${a.previewUrl}\" target=\"_blank\">🔗 ${a.previewUrl}</a></div></div>`\n    ).join('');\n  } catch (e) { console.error(e); }\n}\nasync function launchApp() {\n  const appId = document.getElementById('sub').value.trim();\n  const partId = document.getElementById('part').value.trim();\n  const accountId = document.getElementById('admin').value.trim();\n  const msg = document.getElementById('msg');\n  msg.textContent = 'Starting...';\n  try {\n    const res = await fetch('/definy.v1.PreviewService/RegisterPreviewApp', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({ appId, displayName: appId + ' (Self-Hosted)', partId, accountId })\n    });\n    const data = await res.json();\n    if (res.ok) {\n      msg.textContent = 'Launched: ' + data.previewUrl;\n      refreshApps();\n    } else {\n      msg.textContent = 'Error: ' + (data.message || res.statusText);\n    }\n  } catch (e) { msg.textContent = String(e); }\n}\nrefreshApps();\n</script>\n</body>\n</html>"
+                                                              "name": "chunks",
+                                                              "value": {
+                                                                "ListLiteral": {
+                                                                  "items": [
+                                                                    {
+                                                                      "String": {
+                                                                        "value": "<!DOCTYPE html>\n<html lang=\"ja\">\n<head>\n<meta charset=\"utf-8\" />\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n<title>Self-Hosted definy Studio (definy in definy)</title>\n<style>\n:root { --bg: #0b1120; --card: #111827; --border: #1f2937; --accent: #38bdf8; --ok: #22c55e; --text: #f8fafc; --muted: #94a3b8; }\n* { box-sizing: border-box; }\nbody { margin: 0; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1.25rem; }\n.container { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }\n.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }\n.badge { display: inline-block; background: rgba(34, 197, 94, 0.15); color: var(--ok); border: 1px solid rgba(34, 197, 94, 0.35); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }\nh1 { margin: 0.5rem 0; font-size: 1.6rem; color: var(--accent); }\nh2 { margin: 0 0 1rem 0; font-size: 1.15rem; color: var(--text); }\np { margin: 0.35rem 0; color: var(--muted); line-height: 1.55; font-size: 0.92rem; }\n.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 0.85rem; margin-top: 1rem; }\n.metric { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; display: flex; flex-direction: column; gap: 0.35rem; }\n.label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }\ncode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88rem; color: #e2e8f0; word-break: break-all; }\ncode.ok { color: var(--ok); font-weight: 700; }\ninput, select { width: 100%; background: #0f172a; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.9rem; }\nbutton { background: #0284c7; color: white; border: none; padding: 0.65rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }\nbutton:hover { background: #0369a1; }\n.app-list { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.8rem; }\n.app-row { display: flex; justify-content: space-between; align-items: center; background: #0f172a; border: 1px solid var(--border); padding: 0.75rem 1rem; border-radius: 8px; flex-wrap: wrap; gap: 0.5rem; }\na { color: var(--accent); text-decoration: none; }\na:hover { text-decoration: underline; }\n</style>\n</head>\n<body>\n<div class=\"container\">\n<div class=\"card\">\n<span class=\"badge\">🧬 Executed by Self-Hosted definy Part (sample.self-hosted-definy-server)</span>\n<h1>🚀 Self-Hosted definy Studio</h1>\n<p>このページ自体が definy の関数パーツ (<code>fn(req) =&gt; { status, contentType, body }</code>) として WebAssembly / AST 評価器上で動的に生成されています。</p>\n<div class=\"grid\">\n<div class=\"metric\"><span class=\"label\">0. Incoming HTTP Request</span><code>"
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 3
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": " "
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 2
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": "</code></div><div class=\"metric\"><span class=\"label\">1. core.expression-to-source (Before)</span><code>"
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 11
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": "</code></div><div class=\"metric\"><span class=\"label\">2. core.optimize-expression + Formatter</span><code>"
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 13
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": "</code></div><div class=\"metric\"><span class=\"label\">3. core.type-check</span><code class=\"ok\">"
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 17
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": "</code></div><div class=\"metric\"><span class=\"label\">4. core.eval-ast (Meta-Circular)</span><code class=\"ok\">42 (verified: "
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 19
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": ")</code></div><div class=\"metric\"><span class=\"label\">5. core.compile-to-wasm (\\0asm Magic)</span><code class=\"ok\">Verified ("
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "Variable": {
+                                                                        "variable_id": 19
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": ")</code></div></div>"
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "String": {
+                                                                        "value": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から新しいサブドメインアプリを起動 (Self-Host App Launcher)</h2>\n<p>このセルフホスト画面から Connect-RPC (<code>/definy.v1.PreviewService/RegisterPreviewApp</code>) を呼び出し、任意のパーツを新しいサブドメインで即座にホストできます。</p>\n<div class=\"grid\">\n<div><label class=\"label\">Subdomain / App ID</label><input id=\"sub\" value=\"my-definy\" placeholder=\"e.g. my-definy\" /></div>\n<div><label class=\"label\">Target Part (module.part or EventHashId)</label>\n<input id=\"part\" list=\"part-presets\" value=\"sample.self-hosted-definy-server\" placeholder=\"e.g. sample.self-hosted-definy-server\" />\n<datalist id=\"part-presets\">\n<option value=\"sample.self-hosted-definy-server\">Self-Hosted definy Studio (fn(req) =&gt; Response)</option>\n<option value=\"sample.greet\">sample.greet (\"Hello, definy!\")</option>\n<option value=\"sample.triangle-area\">sample.triangle-area (25)</option>\n<option value=\"sample.sample-ast-calc\">sample.sample-ast-calc (core.eval-ast =&gt; 95)</option>\n<option value=\"sample.prime-numbers\">sample.prime-numbers ([2, 3, 5, 7, 11])</option>\n</datalist>\n</div>\n<div><label class=\"label\">Admin Account ID</label><input id=\"admin\" value=\"local-dev-admin\" /></div>\n</div>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<button onclick=\"launchApp()\">🚀 Launch Subdomain Server</button>\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n<span id=\"msg\" style=\"font-size:0.85rem;color:var(--ok);\"></span>\n</div>\n<div id=\"apps\" class=\"app-list\"></div>\n</div>\n</div>\n<script>\nasync function refreshApps() {\n  try {\n    const res = await fetch('/definy.v1.PreviewService/ListPreviewApps', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({})\n    });\n    const data = await res.json();\n    const box = document.getElementById('apps');\n    box.innerHTML = (data.apps || []).map(a =>\n      `<div class=\"app-row\"><div><strong>${a.displayName}</strong> (<code>${a.partId}</code>)</div><div><a href=\"${a.previewUrl}\" target=\"_blank\">🔗 ${a.previewUrl}</a></div></div>`\n    ).join('');\n  } catch (e) { console.error(e); }\n}\nasync function launchApp() {\n  const appId = document.getElementById('sub').value.trim();\n  const partId = document.getElementById('part').value.trim();\n  const accountId = document.getElementById('admin').value.trim();\n  const msg = document.getElementById('msg');\n  msg.textContent = 'Starting...';\n  try {\n    const res = await fetch('/definy.v1.PreviewService/RegisterPreviewApp', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({ appId, displayName: appId + ' (Self-Hosted)', partId, accountId })\n    });\n    const data = await res.json();\n    if (res.ok) {\n      msg.textContent = 'Launched: ' + data.previewUrl;\n      refreshApps();\n    } else {\n      msg.textContent = 'Error: ' + (data.message || res.statusText);\n    }\n  } catch (e) { msg.textContent = String(e); }\n}\nrefreshApps();\n</script>\n</body>\n</html>"
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
                                                               }
                                                             }
                                                           ]
@@ -1811,11 +1861,13 @@
                                                 }
                                               }
                                             }
-                                          ]
+                                          ],
+                                          "default": null
                                         }
                                       }
                                     }
-                                  }
+                                  ],
+                                  "default": null
                                 }
                               }
                             }
