@@ -88,25 +88,61 @@ pub(crate) fn emit_match(
     out.push(LOCAL_SET);
     encode_u32_leb128(out, target_ptr_local);
 
-    // Load target's tag string ptr from target_ptr + 4
+    // Bool (Tag 1) の値も match できるようにする。
+    // Bool のときはタグ文字列を "true" / "false"、ペイロードを 0 とみなし、
+    // Variant (Tag 6) のときは target_ptr + 4 のタグ文字列と target_ptr + 8 のペイロードを使う。
+    let true_tag_ptr = ctx.alloc_static_string("true");
+    let false_tag_ptr = ctx.alloc_static_string("false");
+
     let target_tag_ptr_local = *next_local_idx;
     *next_local_idx += 1;
-    out.push(LOCAL_GET);
-    encode_u32_leb128(out, target_ptr_local);
-    out.push(I32_LOAD);
-    encode_mem_arg(out, 2, 4);
-    out.push(LOCAL_SET);
-    encode_u32_leb128(out, target_tag_ptr_local);
-
-    // Load target's payload ptr from target_ptr + 8
     let target_payload_ptr_local = *next_local_idx;
     *next_local_idx += 1;
+
     out.push(LOCAL_GET);
     encode_u32_leb128(out, target_ptr_local);
-    out.push(I32_LOAD);
-    encode_mem_arg(out, 2, 8);
-    out.push(LOCAL_SET);
-    encode_u32_leb128(out, target_payload_ptr_local);
+    out.push(I32_LOAD8_U);
+    encode_mem_arg(out, 0, 0);
+    out.push(I32_CONST);
+    encode_i32_sleb128(out, 1);
+    out.push(I32_EQ);
+    out.push(IF);
+    out.push(BLOCK_TYPE_EMPTY);
+    {
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, true_tag_ptr as i32);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, false_tag_ptr as i32);
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, target_ptr_local);
+        out.push(I32_LOAD8_U);
+        encode_mem_arg(out, 0, 8);
+        out.push(SELECT);
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, target_tag_ptr_local);
+
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 0);
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, target_payload_ptr_local);
+    }
+    out.push(ELSE);
+    {
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, target_ptr_local);
+        out.push(I32_LOAD);
+        encode_mem_arg(out, 2, 4);
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, target_tag_ptr_local);
+
+        out.push(LOCAL_GET);
+        encode_u32_leb128(out, target_ptr_local);
+        out.push(I32_LOAD);
+        encode_mem_arg(out, 2, 8);
+        out.push(LOCAL_SET);
+        encode_u32_leb128(out, target_payload_ptr_local);
+    }
+    out.push(END);
 
     emit_match_arms(
         &match_expr.arms,

@@ -13,6 +13,8 @@ pub(crate) struct CompileContext<'a> {
     pub(crate) part_functions:
         HashMap<(definy_event::EventHashId, Option<definy_event::ContentHash>), u32>,
     pub(crate) temp_i64_local: u32,
+    /// 同じ文字列リテラルを 1 か所にまとめるためのキャッシュ (match のタグ比較でポインタ一致の高速パスを使える)
+    static_strings: HashMap<String, u32>,
 }
 
 impl<'a> CompileContext<'a> {
@@ -25,6 +27,7 @@ impl<'a> CompileContext<'a> {
             pending_functions: Vec::new(),
             part_functions: HashMap::new(),
             temp_i64_local: 0,
+            static_strings: HashMap::new(),
         }
     }
 
@@ -41,6 +44,15 @@ impl<'a> CompileContext<'a> {
     }
 
     pub(crate) fn alloc_static_string(&mut self, s: &str) -> u32 {
+        if let Some(ptr) = self.static_strings.get(s) {
+            return *ptr;
+        }
+        let ptr = self.alloc_static_string_uncached(s);
+        self.static_strings.insert(s.to_string(), ptr);
+        ptr
+    }
+
+    fn alloc_static_string_uncached(&mut self, s: &str) -> u32 {
         let mut buf = Vec::new();
         buf.push(2); // Tag 2: String
         buf.extend_from_slice(&[0, 0, 0]); // 3 bytes padding
@@ -451,27 +463,6 @@ pub(crate) fn emit_expression(
         Expression::ListAppend(ListAppendExpression { list, item }) => {
             super::list_ops::emit_list_append(list, item, out, env, next_local_idx, ctx)?;
         }
-        Expression::If(IfExpression {
-            condition,
-            then_expr,
-            else_expr,
-        }) => {
-            emit_expression(condition, out, env, next_local_idx, ctx)?;
-            // Load bool from cond_ptr + 8
-            out.push(I32_LOAD8_U);
-            encode_mem_arg(out, 0, 8);
-
-            out.push(IF);
-            out.push(BLOCK_TYPE_I32);
-
-            emit_expression(then_expr, out, env, next_local_idx, ctx)?;
-
-            out.push(ELSE);
-
-            emit_expression(else_expr, out, env, next_local_idx, ctx)?;
-
-            out.push(END);
-        }
         Expression::Let(LetExpression { bindings, body }) => {
             let mut current_env = env.clone();
             for binding in bindings {
@@ -803,9 +794,6 @@ pub(crate) fn count_locals(expr: &Expression) -> u32 {
         Expression::ListConcat(l) => 8 + count_locals(&l.left) + count_locals(&l.right),
         Expression::ListGet(l) => 6 + count_locals(&l.list) + count_locals(&l.index),
         Expression::ListAppend(l) => 8 + count_locals(&l.list) + count_locals(&l.item),
-        Expression::If(i) => {
-            4 + count_locals(&i.condition) + count_locals(&i.then_expr) + count_locals(&i.else_expr)
-        }
         Expression::ListLiteral(list) => 4 + list.items.iter().map(count_locals).sum::<u32>(),
         Expression::TypeLiteral(record) => {
             4 + record

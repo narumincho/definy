@@ -457,13 +457,14 @@ pub fn emit_expression_gc(
             emit_expression_gc(&o.right, out, env, next_local_idx, ctx)?;
             out.push(END);
         }
-        Expression::If(IfExpression {
-            condition,
-            then_expr,
-            else_expr,
-        }) => {
-            // Evaluate condition (returns $Bool struct)
-            emit_expression_gc(condition, out, env, next_local_idx, ctx)?;
+        Expression::Match(match_expr) if is_boolean_match(match_expr) => {
+            // Bool に対する match (true / false / _ アームのみ) は Wasm の if に変換する
+            let then_expr = boolean_match_arm_body(match_expr, "true")
+                .ok_or("match on boolean is missing a `true` arm")?;
+            let else_expr = boolean_match_arm_body(match_expr, "false")
+                .ok_or("match on boolean is missing a `false` arm")?;
+
+            emit_expression_gc(&match_expr.target, out, env, next_local_idx, ctx)?;
             emit_ref_cast(out, TYPE_IDX_BOOL);
             emit_struct_get(out, TYPE_IDX_BOOL, 1);
 
@@ -486,6 +487,30 @@ pub fn emit_expression_gc(
     }
 
     Ok(())
+}
+
+/// アームが `true` / `false` / `_` だけで構成された (Bool を対象とする) match か
+fn is_boolean_match(match_expr: &MatchExpression) -> bool {
+    match_expr
+        .arms
+        .iter()
+        .any(|arm| matches!(arm.tag.as_ref(), "true" | "false"))
+        && match_expr.arms.iter().all(|arm| {
+            matches!(arm.tag.as_ref(), "true" | "false" | "_") && arm.variable_id.is_none()
+        })
+}
+
+/// 指定したタグに対応するアーム本体 (なければ `_` アーム、default) を返す
+fn boolean_match_arm_body<'e>(
+    match_expr: &'e MatchExpression,
+    tag: &str,
+) -> Option<&'e Expression> {
+    match_expr
+        .arms
+        .iter()
+        .find(|arm| arm.tag.as_ref() == tag || arm.tag.as_ref() == "_")
+        .map(|arm| arm.body.as_ref())
+        .or(match_expr.default.as_deref())
 }
 
 fn emit_binary_arithmetic(

@@ -43,8 +43,8 @@ fn test_selector_options_sorted_for_boolean() {
     // First options should be Boolean compatible
     let first_three_keys: Vec<&str> = options.iter().take(3).map(|(k, _)| k.as_str()).collect();
     assert!(
-        first_three_keys.contains(&"expr:boolean"),
-        "Expected 'expr:boolean' near top when expecting Boolean, got: {:?}",
+        first_three_keys.contains(&"expr:boolean:true"),
+        "Expected 'expr:boolean:true' near top when expecting Boolean, got: {:?}",
         first_three_keys
     );
     assert!(

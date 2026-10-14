@@ -77,18 +77,18 @@ fn test_compile_and_execute_bitwise_operations() {
 }
 
 #[test]
-fn test_compile_and_execute_comparisons_and_if() {
-    let expr = Expression::If(IfExpression {
-        condition: Box::new(Expression::LessThan(LessThanExpression {
+fn test_compile_and_execute_comparisons_and_boolean_match() {
+    let expr = Expression::match_boolean(
+        Expression::LessThan(LessThanExpression {
             left: Box::new(Expression::Number(NumberExpression { value: 5 })),
             right: Box::new(Expression::Number(NumberExpression { value: 10 })),
-        })),
-        then_expr: Box::new(Expression::Subtract(SubtractExpression {
+        }),
+        Expression::Subtract(SubtractExpression {
             left: Box::new(Expression::Number(NumberExpression { value: 50 })),
             right: Box::new(Expression::Number(NumberExpression { value: 8 })),
-        })),
-        else_expr: Box::new(Expression::Number(NumberExpression { value: 0 })),
-    });
+        }),
+        Expression::Number(NumberExpression { value: 0 }),
+    );
     let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
     let val = execute_wasm(&wasm).unwrap();
     assert_eq!(val, Value::Number(42));
@@ -501,17 +501,15 @@ fn test_compile_and_execute_recursive_function_part() {
                         parameter_id: 1,
                         parameter_name: "n".into(),
                     }],
-                    body: Box::new(Expression::If(IfExpression {
-                        condition: Box::new(Expression::LessThanOrEqual(
-                            LessThanOrEqualExpression {
-                                left: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 1,
-                                })),
-                                right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                            },
-                        )),
-                        then_expr: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                        else_expr: Box::new(Expression::Multiply(MultiplyExpression {
+                    body: Box::new(Expression::match_boolean(
+                        Expression::LessThanOrEqual(LessThanOrEqualExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 1,
+                            })),
+                            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                        }),
+                        Expression::Number(NumberExpression { value: 1 }),
+                        Expression::Multiply(MultiplyExpression {
                             left: Box::new(Expression::Variable(VariableExpression {
                                 variable_id: 1,
                             })),
@@ -531,8 +529,8 @@ fn test_compile_and_execute_recursive_function_part() {
                                     })),
                                 }],
                             })),
-                        })),
-                    })),
+                        }),
+                    )),
                 })),
             }],
         }),
@@ -862,4 +860,53 @@ fn test_string_to_bytes() {
             Value::Number(111),
         ])
     );
+}
+
+#[test]
+fn test_boolean_match_with_wildcard_arm() {
+    // match (1 == 2) { true => "eq", _ => "ne" }
+    let expr = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Equal(EqualExpression {
+            left: Box::new(Expression::Number(NumberExpression { value: 1 })),
+            right: Box::new(Expression::Number(NumberExpression { value: 2 })),
+        })),
+        arms: vec![
+            MatchArm {
+                tag: "true".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(Expression::String(StringExpression { value: "eq".into() })),
+            },
+            MatchArm {
+                tag: "_".into(),
+                variable_id: None,
+                variable_name: None,
+                body: Box::new(Expression::String(StringExpression { value: "ne".into() })),
+            },
+        ],
+        default: None,
+    });
+    let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::String("ne".into()));
+}
+
+#[test]
+fn test_variant_named_like_boolean_is_not_treated_as_boolean() {
+    // ユーザー定義の Variant のタグが "true" でも Bool とは区別される
+    let expr = Expression::Match(MatchExpression {
+        target: Box::new(Expression::Variant(VariantExpression {
+            tag: "true".into(),
+            payload: Some(Box::new(Expression::Number(NumberExpression { value: 7 }))),
+            type_part_definition_event_hash: None,
+        })),
+        arms: vec![MatchArm {
+            tag: "true".into(),
+            variable_id: Some(1),
+            variable_name: Some("n".into()),
+            body: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        }],
+        default: Some(Box::new(Expression::Number(NumberExpression { value: 0 }))),
+    });
+    let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
+    assert_eq!(execute_wasm(&wasm).unwrap(), Value::Number(7));
 }

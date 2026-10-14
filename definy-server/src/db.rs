@@ -441,7 +441,7 @@ mod tests {
         assert!(part_names.contains(&"let".to_string()));
         assert!(part_names.contains(&"plus".to_string()));
         assert!(part_names.contains(&"number-literal".to_string()));
-        assert!(part_names.contains(&"if".to_string()));
+        assert!(!part_names.contains(&"if".to_string()));
         assert!(part_names.contains(&"number".to_string()));
         assert!(part_names.contains(&"string".to_string()));
         assert!(part_names.contains(&"boolean".to_string()));

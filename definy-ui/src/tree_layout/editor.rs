@@ -13,8 +13,7 @@ use crate::expression_editor::diagnostics::{
     TypeAnalysis, constructor_default_value_from_type_part,
 };
 use crate::expression_editor::mutation::{
-    apply_selection, get_mut_expression_at_path, set_boolean_value, set_number_value,
-    set_string_value,
+    apply_selection, get_mut_expression_at_path, set_number_value, set_string_value,
 };
 use crate::expression_editor::{
     ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,
@@ -241,11 +240,6 @@ pub fn ExpressionTreeEditor(
                         set_string_value(&mut curr, &path, &val);
                         commit_expression_change(expression, on_change, curr);
                     },
-                    on_change_boolean: move |(path, val): (Vec<PathStep>, bool)| {
-                        let mut curr = expression.read().clone();
-                        set_boolean_value(&mut curr, &path, val);
-                        commit_expression_change(expression, on_change, curr);
-                    },
                 }
             }
         }
@@ -441,7 +435,6 @@ fn expression_kind_label(expr: &Expression) -> String {
         Expression::And(_) => "and".to_string(),
         Expression::Or(_) => "or".to_string(),
         Expression::Not(_) => "not".to_string(),
-        Expression::If(_) => "if".to_string(),
         Expression::Let(_) => "let".to_string(),
         Expression::ListLiteral(_) => "list".to_string(),
         Expression::RecordGet(_) => "record_get".to_string(),

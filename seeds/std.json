@@ -45,8 +45,8 @@
             }
           ],
           "body": {
-            "If": {
-              "condition": {
+            "Match": {
+              "target": {
                 "LessThan": {
                   "left": {
                     "Variable": {
@@ -60,25 +60,38 @@
                   }
                 }
               },
-              "then_expr": {
-                "Subtract": {
-                  "left": {
-                    "Number": {
-                      "value": 0
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Subtract": {
+                      "left": {
+                        "Number": {
+                          "value": 0
+                        }
+                      },
+                      "right": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
                     }
-                  },
-                  "right": {
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
                     "Variable": {
                       "variable_id": 1
                     }
                   }
                 }
-              },
-              "else_expr": {
-                "Variable": {
-                  "variable_id": 1
-                }
-              }
+              ],
+              "default": null
             }
           }
         }
@@ -124,8 +137,8 @@
             }
           ],
           "body": {
-            "If": {
-              "condition": {
+            "Match": {
+              "target": {
                 "LessThan": {
                   "left": {
                     "Variable": {
@@ -139,16 +152,29 @@
                   }
                 }
               },
-              "then_expr": {
-                "Variable": {
-                  "variable_id": 1
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
                 }
-              },
-              "else_expr": {
-                "Variable": {
-                  "variable_id": 2
-                }
-              }
+              ],
+              "default": null
             }
           }
         }
@@ -194,8 +220,8 @@
             }
           ],
           "body": {
-            "If": {
-              "condition": {
+            "Match": {
+              "target": {
                 "GreaterThan": {
                   "left": {
                     "Variable": {
@@ -209,16 +235,29 @@
                   }
                 }
               },
-              "then_expr": {
-                "Variable": {
-                  "variable_id": 1
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
                 }
-              },
-              "else_expr": {
-                "Variable": {
-                  "variable_id": 2
-                }
-              }
+              ],
+              "default": null
             }
           }
         }
@@ -256,8 +295,8 @@
             }
           ],
           "body": {
-            "If": {
-              "condition": {
+            "Match": {
+              "target": {
                 "GreaterThan": {
                   "left": {
                     "Variable": {
@@ -271,39 +310,65 @@
                   }
                 }
               },
-              "then_expr": {
-                "Number": {
-                  "value": 1
-                }
-              },
-              "else_expr": {
-                "If": {
-                  "condition": {
-                    "LessThan": {
-                      "left": {
-                        "Variable": {
-                          "variable_id": 1
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Number": {
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "LessThan": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          },
+                          "right": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
                         }
                       },
-                      "right": {
-                        "Number": {
-                          "value": 0
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Number": {
+                              "value": -1
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
                         }
-                      }
-                    }
-                  },
-                  "then_expr": {
-                    "Number": {
-                      "value": -1
-                    }
-                  },
-                  "else_expr": {
-                    "Number": {
-                      "value": 0
+                      ],
+                      "default": null
                     }
                   }
                 }
-              }
+              ],
+              "default": null
             }
           }
         }
@@ -341,22 +406,35 @@
             }
           ],
           "body": {
-            "If": {
-              "condition": {
+            "Match": {
+              "target": {
                 "Variable": {
                   "variable_id": 1
                 }
               },
-              "then_expr": {
-                "String": {
-                  "value": "true"
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "String": {
+                      "value": "true"
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "String": {
+                      "value": "false"
+                    }
+                  }
                 }
-              },
-              "else_expr": {
-                "String": {
-                  "value": "false"
-                }
-              }
+              ],
+              "default": null
             }
           }
         }
@@ -611,8 +689,8 @@
                         }
                       ],
                       "body": {
-                        "If": {
-                          "condition": {
+                        "Match": {
+                          "target": {
                             "And": {
                               "left": {
                                 "Equal": {
@@ -648,41 +726,54 @@
                               }
                             }
                           },
-                          "then_expr": {
-                            "Variant": {
-                              "tag": "yield",
-                              "payload": {
-                                "TypeLiteral": {
-                                  "items": [
-                                    {
-                                      "key": "chunk",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 1
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "yield",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "chunk",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "nextState",
+                                          "value": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
                                         }
-                                      }
-                                    },
-                                    {
-                                      "key": "nextState",
-                                      "value": {
-                                        "Number": {
-                                          "value": 1
-                                        }
-                                      }
+                                      ]
                                     }
-                                  ]
+                                  },
+                                  "type_part_definition_event_hash": null
                                 }
-                              },
-                              "type_part_definition_event_hash": null
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "done",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
-                          },
-                          "else_expr": {
-                            "Variant": {
-                              "tag": "done",
-                              "payload": null,
-                              "type_part_definition_event_hash": null
-                            }
-                          }
+                          ],
+                          "default": null
                         }
                       }
                     }
@@ -792,8 +883,8 @@
                         }
                       ],
                       "body": {
-                        "If": {
-                          "condition": {
+                        "Match": {
+                          "target": {
                             "And": {
                               "left": {
                                 "Equal": {
@@ -829,45 +920,58 @@
                               }
                             }
                           },
-                          "then_expr": {
-                            "Variant": {
-                              "tag": "yield",
-                              "payload": {
-                                "TypeLiteral": {
-                                  "items": [
-                                    {
-                                      "key": "chunk",
-                                      "value": {
-                                        "StringToBytes": {
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "yield",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "chunk",
                                           "value": {
-                                            "Variable": {
-                                              "variable_id": 1
+                                            "StringToBytes": {
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "nextState",
+                                          "value": {
+                                            "Number": {
+                                              "value": 1
                                             }
                                           }
                                         }
-                                      }
-                                    },
-                                    {
-                                      "key": "nextState",
-                                      "value": {
-                                        "Number": {
-                                          "value": 1
-                                        }
-                                      }
+                                      ]
                                     }
-                                  ]
+                                  },
+                                  "type_part_definition_event_hash": null
                                 }
-                              },
-                              "type_part_definition_event_hash": null
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "done",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
-                          },
-                          "else_expr": {
-                            "Variant": {
-                              "tag": "done",
-                              "payload": null,
-                              "type_part_definition_event_hash": null
-                            }
-                          }
+                          ],
+                          "default": null
                         }
                       }
                     }
@@ -979,8 +1083,8 @@
                         }
                       ],
                       "body": {
-                        "If": {
-                          "condition": {
+                        "Match": {
+                          "target": {
                             "LessThan": {
                               "left": {
                                 "Variable": {
@@ -998,63 +1102,76 @@
                               }
                             }
                           },
-                          "then_expr": {
-                            "Variant": {
-                              "tag": "yield",
-                              "payload": {
-                                "TypeLiteral": {
-                                  "items": [
-                                    {
-                                      "key": "chunk",
-                                      "value": {
-                                        "StringToBytes": {
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "yield",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "chunk",
                                           "value": {
-                                            "ListGet": {
-                                              "list": {
-                                                "Variable": {
-                                                  "variable_id": 1
+                                            "StringToBytes": {
+                                              "value": {
+                                                "ListGet": {
+                                                  "list": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  },
+                                                  "index": {
+                                                    "Variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
                                                 }
-                                              },
-                                              "index": {
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "nextState",
+                                          "value": {
+                                            "Add": {
+                                              "left": {
                                                 "Variable": {
                                                   "variable_id": 2
+                                                }
+                                              },
+                                              "right": {
+                                                "Number": {
+                                                  "value": 1
                                                 }
                                               }
                                             }
                                           }
                                         }
-                                      }
-                                    },
-                                    {
-                                      "key": "nextState",
-                                      "value": {
-                                        "Add": {
-                                          "left": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          },
-                                          "right": {
-                                            "Number": {
-                                              "value": 1
-                                            }
-                                          }
-                                        }
-                                      }
+                                      ]
                                     }
-                                  ]
+                                  },
+                                  "type_part_definition_event_hash": null
                                 }
-                              },
-                              "type_part_definition_event_hash": null
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "done",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
-                          },
-                          "else_expr": {
-                            "Variant": {
-                              "tag": "done",
-                              "payload": null,
-                              "type_part_definition_event_hash": null
-                            }
-                          }
+                          ],
+                          "default": null
                         }
                       }
                     }
@@ -1144,8 +1261,8 @@
                 }
               ],
               "body": {
-                "If": {
-                  "condition": {
+                "Match": {
+                  "target": {
                     "GreaterThan": {
                       "left": {
                         "Add": {
@@ -1168,103 +1285,129 @@
                       }
                     }
                   },
-                  "then_expr": {
-                    "Number": {
-                      "value": -1
-                    }
-                  },
-                  "else_expr": {
-                    "If": {
-                      "condition": {
-                        "Equal": {
-                          "left": {
-                            "StringSlice": {
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 1
-                                }
-                              },
-                              "start": {
-                                "Variable": {
-                                  "variable_id": 3
-                                }
-                              },
-                              "end": {
-                                "Add": {
-                                  "left": {
+                  "arms": [
+                    {
+                      "tag": "true",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "Number": {
+                          "value": -1
+                        }
+                      }
+                    },
+                    {
+                      "tag": "false",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "Match": {
+                          "target": {
+                            "Equal": {
+                              "left": {
+                                "StringSlice": {
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "start": {
                                     "Variable": {
                                       "variable_id": 3
                                     }
                                   },
-                                  "right": {
-                                    "Variable": {
-                                      "variable_id": 5
+                                  "end": {
+                                    "Add": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      },
+                                      "right": {
+                                        "Variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
                                     }
                                   }
                                 }
-                              }
-                            }
-                          },
-                          "right": {
-                            "Variable": {
-                              "variable_id": 2
-                            }
-                          }
-                        }
-                      },
-                      "then_expr": {
-                        "Variable": {
-                          "variable_id": 3
-                        }
-                      },
-                      "else_expr": {
-                        "Call": {
-                          "function": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "std.string-index-of"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "text",
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 1
-                                }
-                              }
-                            },
-                            {
-                              "name": "target",
-                              "value": {
+                              },
+                              "right": {
                                 "Variable": {
                                   "variable_id": 2
                                 }
                               }
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              }
                             },
                             {
-                              "name": "startIndex",
-                              "value": {
-                                "Add": {
-                                  "left": {
-                                    "Variable": {
-                                      "variable_id": 3
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "std.string-index-of"
+                                      }
                                     }
                                   },
-                                  "right": {
-                                    "Number": {
-                                      "value": 1
+                                  "arguments": [
+                                    {
+                                      "name": "text",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "target",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "startIndex",
+                                      "value": {
+                                        "Add": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 3
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      }
                                     }
-                                  }
+                                  ]
                                 }
                               }
                             }
-                          ]
+                          ],
+                          "default": null
                         }
                       }
                     }
-                  }
+                  ],
+                  "default": null
                 }
               }
             }
@@ -1351,8 +1494,8 @@
                   "variable_id": 3,
                   "variable_name": "searchStart",
                   "value": {
-                    "If": {
-                      "condition": {
+                    "Match": {
+                      "target": {
                         "GreaterThanOrEqual": {
                           "left": {
                             "Variable": {
@@ -1366,25 +1509,38 @@
                           }
                         }
                       },
-                      "then_expr": {
-                        "Add": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 2
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Add": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 3
+                                }
+                              }
                             }
-                          },
-                          "right": {
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
                             "Number": {
-                              "value": 3
+                              "value": 0
                             }
                           }
                         }
-                      },
-                      "else_expr": {
-                        "Number": {
-                          "value": 0
-                        }
-                      }
+                      ],
+                      "default": null
                     }
                   }
                 },
@@ -1472,8 +1628,8 @@
                 }
               ],
               "body": {
-                "If": {
-                  "condition": {
+                "Match": {
+                  "target": {
                     "LessThan": {
                       "left": {
                         "Variable": {
@@ -1487,95 +1643,134 @@
                       }
                     }
                   },
-                  "then_expr": {
-                    "String": {
-                      "value": "/"
-                    }
-                  },
-                  "else_expr": {
-                    "Let": {
-                      "bindings": [
-                        {
-                          "variable_id": 6,
-                          "variable_name": "endIdx",
-                          "value": {
-                            "If": {
-                              "condition": {
-                                "GreaterThanOrEqual": {
+                  "arms": [
+                    {
+                      "tag": "true",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "String": {
+                          "value": "/"
+                        }
+                      }
+                    },
+                    {
+                      "tag": "false",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "Let": {
+                          "bindings": [
+                            {
+                              "variable_id": 6,
+                              "variable_name": "endIdx",
+                              "value": {
+                                "Match": {
+                                  "target": {
+                                    "GreaterThanOrEqual": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 5
+                                        }
+                                      },
+                                      "right": {
+                                        "Number": {
+                                          "value": 0
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "StringLength": {
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "default": null
+                                }
+                              }
+                            }
+                          ],
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "LessThanOrEqual": {
                                   "left": {
                                     "Variable": {
-                                      "variable_id": 5
+                                      "variable_id": 6
                                     }
                                   },
                                   "right": {
-                                    "Number": {
-                                      "value": 0
-                                    }
-                                  }
-                                }
-                              },
-                              "then_expr": {
-                                "Variable": {
-                                  "variable_id": 5
-                                }
-                              },
-                              "else_expr": {
-                                "StringLength": {
-                                  "value": {
                                     "Variable": {
-                                      "variable_id": 1
+                                      "variable_id": 4
                                     }
                                   }
                                 }
-                              }
-                            }
-                          }
-                        }
-                      ],
-                      "body": {
-                        "If": {
-                          "condition": {
-                            "LessThanOrEqual": {
-                              "left": {
-                                "Variable": {
-                                  "variable_id": 6
-                                }
                               },
-                              "right": {
-                                "Variable": {
-                                  "variable_id": 4
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "String": {
+                                      "value": "/"
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "StringSlice": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      },
+                                      "start": {
+                                        "Variable": {
+                                          "variable_id": 4
+                                        }
+                                      },
+                                      "end": {
+                                        "Variable": {
+                                          "variable_id": 6
+                                        }
+                                      }
+                                    }
+                                  }
                                 }
-                              }
-                            }
-                          },
-                          "then_expr": {
-                            "String": {
-                              "value": "/"
-                            }
-                          },
-                          "else_expr": {
-                            "StringSlice": {
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 1
-                                }
-                              },
-                              "start": {
-                                "Variable": {
-                                  "variable_id": 4
-                                }
-                              },
-                              "end": {
-                                "Variable": {
-                                  "variable_id": 6
-                                }
-                              }
+                              ],
+                              "default": null
                             }
                           }
                         }
                       }
                     }
-                  }
+                  ],
+                  "default": null
                 }
               }
             }
@@ -1660,8 +1855,8 @@
                 }
               ],
               "body": {
-                "If": {
-                  "condition": {
+                "Match": {
+                  "target": {
                     "LessThan": {
                       "left": {
                         "Variable": {
@@ -1675,43 +1870,56 @@
                       }
                     }
                   },
-                  "then_expr": {
-                    "String": {
-                      "value": ""
-                    }
-                  },
-                  "else_expr": {
-                    "StringSlice": {
-                      "value": {
-                        "Variable": {
-                          "variable_id": 1
+                  "arms": [
+                    {
+                      "tag": "true",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "String": {
+                          "value": ""
                         }
-                      },
-                      "start": {
-                        "Add": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 2
-                            }
-                          },
-                          "right": {
-                            "Number": {
-                              "value": 1
-                            }
-                          }
-                        }
-                      },
-                      "end": {
-                        "StringLength": {
+                      }
+                    },
+                    {
+                      "tag": "false",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "StringSlice": {
                           "value": {
                             "Variable": {
                               "variable_id": 1
+                            }
+                          },
+                          "start": {
+                            "Add": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 1
+                                }
+                              }
+                            }
+                          },
+                          "end": {
+                            "StringLength": {
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
                             }
                           }
                         }
                       }
                     }
-                  }
+                  ],
+                  "default": null
                 }
               }
             }

@@ -99,7 +99,6 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                 definy_event::event::CompilerBuiltin::NumberLiteral => {
                     "[compiler number literal]".to_string()
                 }
-                definy_event::event::CompilerBuiltin::If => "[compiler if]".to_string(),
                 definy_event::event::CompilerBuiltin::StringConcat => {
                     "[compiler string concat]".to_string()
                 }
@@ -274,19 +273,6 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     "True".to_string()
                 } else {
                     "False".to_string()
-                }
-            }
-            definy_event::event::Expression::If(if_expression) => {
-                let source = format!(
-                    "if {} {} {}",
-                    render(if_expression.condition.as_ref(), true, scope),
-                    render(if_expression.then_expr.as_ref(), true, scope),
-                    render(if_expression.else_expr.as_ref(), true, scope)
-                );
-                if is_child {
-                    format!("({})", source)
-                } else {
-                    source
                 }
             }
             definy_event::event::Expression::Equal(equal_expression) => {

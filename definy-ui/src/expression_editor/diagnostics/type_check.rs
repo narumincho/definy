@@ -416,41 +416,6 @@ fn check_expression_type_with_context(
             let final_item = inferred_item.unwrap_or(item_type);
             ExpressionType::List(Box::new(final_item))
         }
-        definy_event::event::Expression::If(if_expression) => {
-            let mut condition_path = path.to_vec();
-            condition_path.push(PathStep::Condition);
-            ctx.check(
-                if_expression.condition.as_ref(),
-                &condition_path,
-                Some(ExpressionType::Boolean),
-            );
-            let mut then_path = path.to_vec();
-            then_path.push(PathStep::Then);
-            let then_type = ctx.check(
-                if_expression.then_expr.as_ref(),
-                &then_path,
-                expected_type.clone(),
-            );
-            let mut else_path = path.to_vec();
-            else_path.push(PathStep::Else);
-            let else_type = ctx.check(
-                if_expression.else_expr.as_ref(),
-                &else_path,
-                expected_type.clone(),
-            );
-
-            if then_type != ExpressionType::Unknown
-                && else_type != ExpressionType::Unknown
-                && then_type != else_type
-            {
-                ctx.push_mismatch(&else_path, &then_type, &else_type);
-                ExpressionType::Unknown
-            } else if then_type != ExpressionType::Unknown {
-                then_type
-            } else {
-                else_type
-            }
-        }
         definy_event::event::Expression::Let(let_expression) => {
             let mut body_env = ctx.env.clone();
             for (idx, binding) in let_expression.bindings.iter().enumerate() {
@@ -722,7 +687,11 @@ fn check_expression_type_with_context(
             target_path.push(PathStep::MatchTarget);
             let target_type = ctx.check(match_expression.target.as_ref(), &target_path, None);
             match &target_type {
-                ExpressionType::Union | ExpressionType::TypePart(_) | ExpressionType::Unknown => {}
+                // Bool も true / false アームで match できる (definy には if 式がない)
+                ExpressionType::Union
+                | ExpressionType::Boolean
+                | ExpressionType::TypePart(_)
+                | ExpressionType::Unknown => {}
                 actual => {
                     ctx.push_mismatch(&target_path, &ExpressionType::Union, actual);
                 }

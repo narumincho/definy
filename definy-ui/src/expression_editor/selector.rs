@@ -41,7 +41,14 @@ pub fn selector_options(
         options.extend([
             ("expr:number".to_string(), "number\tLiteral\t".to_string()),
             ("expr:string".to_string(), "string\tLiteral\t".to_string()),
-            ("expr:boolean".to_string(), "boolean\tLiteral\t".to_string()),
+            (
+                "expr:boolean:true".to_string(),
+                "true\tLiteral\tBoolean".to_string(),
+            ),
+            (
+                "expr:boolean:false".to_string(),
+                "false\tLiteral\tBoolean".to_string(),
+            ),
             ("expr:list".to_string(), "list\tLiteral\t".to_string()),
             ("expr:equal".to_string(), "equal\tFunction\t".to_string()),
             (
@@ -126,7 +133,10 @@ pub fn selector_options(
                 "expr:list_append".to_string(),
                 "list_append\tFunction\t".to_string(),
             ),
-            ("expr:if".to_string(), "if\tSyntax\t".to_string()),
+            (
+                "expr:match_boolean".to_string(),
+                "match (true / false)\tSyntax\t".to_string(),
+            ),
             ("expr:let".to_string(), "let\tSyntax\t".to_string()),
             ("expr:type:number".to_string(), "number\ttype\t".to_string()),
             ("expr:type:string".to_string(), "string\ttype\t".to_string()),
@@ -262,7 +272,14 @@ pub fn selector_options(
     // Generic syntax constructors not backed by a snapshot part
     options.extend([
         ("expr:string".to_string(), "string\tLiteral\t".to_string()),
-        ("expr:boolean".to_string(), "boolean\tLiteral\t".to_string()),
+        (
+            "expr:boolean:true".to_string(),
+            "true\tLiteral\tBoolean".to_string(),
+        ),
+        (
+            "expr:boolean:false".to_string(),
+            "false\tLiteral\tBoolean".to_string(),
+        ),
         ("expr:list".to_string(), "list\tLiteral\t".to_string()),
         (
             "expr:type_literal".to_string(),
@@ -278,6 +295,10 @@ pub fn selector_options(
         ),
         ("expr:call".to_string(), "call\tSyntax\t".to_string()),
         ("expr:match".to_string(), "match\tSyntax\t".to_string()),
+        (
+            "expr:match_boolean".to_string(),
+            "match (true / false)\tSyntax\t".to_string(),
+        ),
         (
             "expr:type:function".to_string(),
             "function\ttype\t".to_string(),
@@ -310,7 +331,7 @@ fn classify_option_type(
     if opt_val == "expr:string" {
         return Some(ExpressionType::String);
     }
-    if opt_val == "expr:boolean" {
+    if opt_val == "expr:boolean" || opt_val.starts_with("expr:boolean:") {
         return Some(ExpressionType::Boolean);
     }
     if opt_val == "expr:list" {
@@ -435,7 +456,7 @@ fn option_match_rank(
 
     if matches!(
         opt_val,
-        "expr:if" | "expr:let" | "expr:call" | "expr:match" | "expr:list_get"
+        "expr:match_boolean" | "expr:let" | "expr:call" | "expr:match" | "expr:list_get"
     ) {
         return 1;
     }
@@ -475,7 +496,6 @@ fn compiler_builtin_fallback_value(builtin: definy_event::event::CompilerBuiltin
         CompilerBuiltin::ListGet => "expr:list_get",
         CompilerBuiltin::ListAppend => "expr:list_append",
         CompilerBuiltin::NumberLiteral => "expr:number",
-        CompilerBuiltin::If => "expr:if",
         CompilerBuiltin::Function => "expr:function",
         CompilerBuiltin::Call => "expr:call",
     }
@@ -497,7 +517,6 @@ fn expression_compiler_builtin(
         Expression::BitXor(_) => Some(CompilerBuiltin::BitXor),
         Expression::ShiftLeft(_) => Some(CompilerBuiltin::ShiftLeft),
         Expression::ShiftRight(_) => Some(CompilerBuiltin::ShiftRight),
-        Expression::If(_) => Some(CompilerBuiltin::If),
         Expression::Equal(_) => Some(CompilerBuiltin::Equal),
         Expression::NotEqual(_) => Some(CompilerBuiltin::NotEqual),
         Expression::LessThan(_) => Some(CompilerBuiltin::LessThan),
@@ -539,7 +558,9 @@ pub fn current_selection_value(
 
     match expression {
         definy_event::event::Expression::String(_) => "expr:string".to_string(),
-        definy_event::event::Expression::Boolean(_) => "expr:boolean".to_string(),
+        definy_event::event::Expression::Boolean(boolean_expression) => {
+            format!("expr:boolean:{}", boolean_expression.value)
+        }
         definy_event::event::Expression::ListLiteral(_) => "expr:list".to_string(),
         definy_event::event::Expression::TypeLiteral(_) => "expr:type_literal".to_string(),
         definy_event::event::Expression::RecordGet(_) => "expr:record_get".to_string(),
@@ -566,6 +587,11 @@ pub fn current_selection_value(
         definy_event::event::Expression::Variant(variant_expr) => {
             format!("expr:variant:{}", variant_expr.tag)
         }
+        definy_event::event::Expression::Match(match_expression)
+            if is_boolean_match(match_expression) =>
+        {
+            "expr:match_boolean".to_string()
+        }
         definy_event::event::Expression::Match(_) => "expr:match".to_string(),
         definy_event::event::Expression::PartReference(part_ref) => {
             format!("ref:global:{}", part_ref.part_definition_event_hash)
@@ -575,6 +601,15 @@ pub fn current_selection_value(
         }
         _ => String::new(),
     }
+}
+
+/// アームが `true` / `false` (と `_`) だけの、Bool に対する match か
+fn is_boolean_match(match_expression: &definy_event::event::MatchExpression) -> bool {
+    !match_expression.arms.is_empty()
+        && match_expression
+            .arms
+            .iter()
+            .all(|arm| matches!(arm.tag.as_ref(), "true" | "false" | "_"))
 }
 
 pub(crate) fn find_builtin_part_hash(

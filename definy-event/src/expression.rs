@@ -40,7 +40,6 @@ pub enum Expression {
     ListAppend(ListAppendExpression),
     PartReference(PartReferenceExpression),
     Boolean(BooleanExpression),
-    If(IfExpression),
     Equal(EqualExpression),
     Let(LetExpression),
     Variable(VariableExpression),
@@ -85,7 +84,6 @@ pub enum CompilerBuiltin {
     ListGet,
     ListAppend,
     NumberLiteral,
-    If,
     Function,
     Call,
     BitAnd,
@@ -333,14 +331,6 @@ pub struct BooleanExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct IfExpression {
-    pub condition: Box<Expression>,
-    pub then_expr: Box<Expression>,
-    pub else_expr: Box<Expression>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct EqualExpression {
     pub left: Box<Expression>,
     pub right: Box<Expression>,
@@ -477,4 +467,34 @@ pub struct MatchArm {
     #[serde(default)]
     pub variable_name: Option<Box<str>>,
     pub body: Box<Expression>,
+}
+
+impl Expression {
+    /// Bool を対象とする match 式 (`match condition { true => when_true, false => when_false }`) を作る。
+    ///
+    /// definy には if 式がなく、条件分岐は Bool に対する match で表す。
+    pub fn match_boolean(
+        condition: Expression,
+        when_true: Expression,
+        when_false: Expression,
+    ) -> Self {
+        Expression::Match(MatchExpression {
+            target: Box::new(condition),
+            arms: vec![
+                MatchArm {
+                    tag: "true".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(when_true),
+                },
+                MatchArm {
+                    tag: "false".into(),
+                    variable_id: None,
+                    variable_name: None,
+                    body: Box::new(when_false),
+                },
+            ],
+            default: None,
+        })
+    }
 }

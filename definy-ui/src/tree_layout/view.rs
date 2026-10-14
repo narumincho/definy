@@ -17,7 +17,6 @@ struct RenderContext {
     on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
-    on_change_boolean: Option<EventHandler<(Vec<PathStep>, bool)>>,
     selection_anchor_id: Option<u64>,
 }
 
@@ -113,7 +112,6 @@ pub fn TreeLayoutRenderer(
     #[props(default = None)] on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     #[props(default = None)] on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     #[props(default = None)] on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
-    #[props(default = None)] on_change_boolean: Option<EventHandler<(Vec<PathStep>, bool)>>,
     /// 指定すると各ノードに [`tree_node_anchor_name`] の `anchor-name` を付与する
     #[props(default = None)]
     selection_anchor_id: Option<u64>,
@@ -131,7 +129,6 @@ pub fn TreeLayoutRenderer(
         on_select_node,
         on_change_number,
         on_change_string,
-        on_change_boolean,
         selection_anchor_id,
     };
     render_node(&node, ctx)
@@ -231,9 +228,6 @@ fn render_leaf_node(
         rsx! { "{node.label}" }
     };
 
-    let is_boolean = node.kind == NodeKind::LiteralBoolean;
-    let is_bool_true = node.label == "true";
-
     rsx! {
         div {
             class: "tree-node-leaf",
@@ -241,12 +235,8 @@ fn render_leaf_node(
             "data-node-id": "{node_id}",
             onclick: move |evt: MouseEvent| {
                 evt.stop_propagation();
+                // Bool リテラルはクリックで反転させず, ドロップダウンの true / false から選ぶ
                 ctx.select_node(&id_for_click, &path_for_click);
-                if ctx.editable && is_boolean
-                    && let Some(cb) = ctx.on_change_boolean
-                {
-                    cb.call((path_for_click.clone(), !is_bool_true));
-                }
             },
             onmouseenter: move |evt: MouseEvent| {
                 evt.stop_propagation();

@@ -44,23 +44,23 @@ pub fn all_samples() -> Vec<LayoutSample> {
             }),
         },
         LayoutSample {
-            id: "if_expression",
-            title_ja: "3. 条件分岐 (if (greater_than x 10) ...)",
-            title_en: "3. Conditional (if (greater_than x 10) ...)",
-            description_ja: "条件式、真の場合、偽の場合を構造的に展開表示します。",
-            description_en: "Structural display of condition, then, and else branches.",
-            expression: Expression::If(IfExpression {
-                condition: Box::new(Expression::GreaterThan(GreaterThanExpression {
+            id: "boolean_match",
+            title_ja: "3. 条件分岐 (match (greater_than x 10) { true => ..., false => ... })",
+            title_en: "3. Conditional (match (greater_than x 10) { true => ..., false => ... })",
+            description_ja: "Bool に対する match で、条件式と true / false それぞれの場合を構造的に展開表示します。",
+            description_en: "Structural display of a match on a boolean condition with true and false arms.",
+            expression: Expression::match_boolean(
+                Expression::GreaterThan(GreaterThanExpression {
                     left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                     right: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                })),
-                then_expr: Box::new(Expression::String(StringExpression {
+                }),
+                Expression::String(StringExpression {
                     value: "大きい値 (High)".into(),
-                })),
-                else_expr: Box::new(Expression::String(StringExpression {
+                }),
+                Expression::String(StringExpression {
                     value: "小さい値 (Low)".into(),
-                })),
-            }),
+                }),
+            ),
         },
         LayoutSample {
             id: "let_binding",

@@ -67,6 +67,7 @@ pub const I32_CONST: u8 = 0x41;
 pub const I64_CONST: u8 = 0x42;
 pub const I32_EQZ: u8 = 0x45;
 pub const I32_EQ: u8 = 0x46;
+pub const SELECT: u8 = 0x1B;
 pub const I32_NE: u8 = 0x47;
 pub const I32_LT_S: u8 = 0x48;
 pub const I32_GT_S: u8 = 0x4A;

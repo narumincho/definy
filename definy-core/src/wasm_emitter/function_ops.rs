@@ -143,11 +143,6 @@ pub(crate) fn collect_free_variables(
             collect_free_variables(&la.list, bound, free);
             collect_free_variables(&la.item, bound, free);
         }
-        Expression::If(i) => {
-            collect_free_variables(&i.condition, bound, free);
-            collect_free_variables(&i.then_expr, bound, free);
-            collect_free_variables(&i.else_expr, bound, free);
-        }
         Expression::ListLiteral(ll) => {
             for item in &ll.items {
                 collect_free_variables(item, bound, free);

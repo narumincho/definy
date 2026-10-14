@@ -148,11 +148,6 @@ pub(crate) fn default_expression_for_compiler_builtin(
             item: num(0),
         }),
         CompilerBuiltin::NumberLiteral => Expression::Number(NumberExpression { value: 0 }),
-        CompilerBuiltin::If => Expression::If(IfExpression {
-            condition: bool_expr(false),
-            then_expr: num(0),
-            else_expr: num(0),
-        }),
         CompilerBuiltin::Let => Expression::Let(LetExpression {
             bindings: vec![LetBinding {
                 variable_id: next_variable_id,
@@ -214,7 +209,6 @@ pub(crate) fn build_expression_from_selection(
         "expr:list_concat" => Some(CompilerBuiltin::ListConcat),
         "expr:list_get" => Some(CompilerBuiltin::ListGet),
         "expr:list_append" => Some(CompilerBuiltin::ListAppend),
-        "expr:if" => Some(CompilerBuiltin::If),
         "expr:let" => Some(CompilerBuiltin::Let),
         "expr:function" => Some(CompilerBuiltin::Function),
         "expr:call" => Some(CompilerBuiltin::Call),
@@ -227,7 +221,10 @@ pub(crate) fn build_expression_from_selection(
 
     match selected_value {
         "expr:string" => Expression::String(StringExpression { value: "".into() }),
-        "expr:boolean" => Expression::Boolean(BooleanExpression { value: false }),
+        "expr:boolean" | "expr:boolean:false" => {
+            Expression::Boolean(BooleanExpression { value: false })
+        }
+        "expr:boolean:true" => Expression::Boolean(BooleanExpression { value: true }),
         "expr:list" => Expression::ListLiteral(ListLiteralExpression {
             items: vec![Expression::Number(NumberExpression { value: 0 })],
         }),
@@ -272,6 +269,7 @@ pub(crate) fn build_expression_from_selection(
             ],
         }),
         "expr:variant" => build_variant_expression(state, "some", current_expr),
+        "expr:match_boolean" => Expression::match_boolean(*bool_expr(false), *num(0), *num(0)),
         "expr:match" => Expression::Match(MatchExpression {
             target: num(0),
             arms: vec![MatchArm {

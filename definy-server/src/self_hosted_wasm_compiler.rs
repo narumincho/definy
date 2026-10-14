@@ -75,7 +75,16 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
         .expect("builtin part compile-to-wasm")
         .clone();
 
-    let parts = vec![compile_instr_part, compile_to_wasm_part];
+    // Bool の match のアーム本体を取り出すために compile-expr-instructions が使う
+    let match_arm_body_part = crate::seed::find_builtin_part("match-arm-body")
+        .expect("builtin part match-arm-body")
+        .clone();
+
+    let parts = vec![
+        compile_instr_part,
+        compile_to_wasm_part,
+        match_arm_body_part,
+    ];
 
     // 評価器で直接参照可能なコミットイベント列を構築
     let dummy_commit_hash = EventHashId::from_bytes(&[200u8; 32]);
@@ -164,10 +173,18 @@ pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
             is_supported_by_self_hosted_compiler(&e.left)
                 && is_supported_by_self_hosted_compiler(&e.right)
         }
-        Expression::If(e) => {
-            is_supported_by_self_hosted_compiler(&e.condition)
-                && is_supported_by_self_hosted_compiler(&e.then_expr)
-                && is_supported_by_self_hosted_compiler(&e.else_expr)
+        // 自己記述コンパイラは Bool に対する match (true / false アーム) のみ対応
+        Expression::Match(e) => {
+            e.default.is_none()
+                && e.arms.iter().any(|arm| arm.tag.as_ref() == "true")
+                && e.arms.iter().any(|arm| arm.tag.as_ref() == "false")
+                && e.arms.iter().all(|arm| {
+                    matches!(arm.tag.as_ref(), "true" | "false") && arm.variable_id.is_none()
+                })
+                && is_supported_by_self_hosted_compiler(&e.target)
+                && e.arms
+                    .iter()
+                    .all(|arm| is_supported_by_self_hosted_compiler(&arm.body))
         }
         Expression::And(e) => {
             is_supported_by_self_hosted_compiler(&e.left)

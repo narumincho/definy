@@ -263,26 +263,6 @@ pub fn expression_to_layout_node_with_path(
                 .with_path(p)
                 .with_children(vec![list, item])
         }
-        Expression::If(if_expr) => {
-            let cond = expression_to_layout_node_with_path(
-                &if_expr.condition,
-                &format!("{}.cond", id_prefix),
-                &child_path(current_path, PathStep::Condition),
-            );
-            let then_n = expression_to_layout_node_with_path(
-                &if_expr.then_expr,
-                &format!("{}.then", id_prefix),
-                &child_path(current_path, PathStep::Then),
-            );
-            let else_n = expression_to_layout_node_with_path(
-                &if_expr.else_expr,
-                &format!("{}.else", id_prefix),
-                &child_path(current_path, PathStep::Else),
-            );
-            LayoutNode::new(id_prefix, "if", NodeKind::Block)
-                .with_path(p)
-                .with_children(vec![cond, then_n, else_n])
-        }
         Expression::Let(let_expr) => {
             let binding_nodes: Vec<LayoutNode> = let_expr
                 .bindings

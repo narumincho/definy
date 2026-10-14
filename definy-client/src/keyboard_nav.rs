@@ -371,14 +371,14 @@ mod tests {
         let p_left: Vec<PathStep> = vec![PathStep::Left];
         let p_right: Vec<PathStep> = vec![PathStep::Right];
         let p_left_cond: Vec<PathStep> = vec![PathStep::Left, PathStep::Condition];
-        let p_left_then: Vec<PathStep> = vec![PathStep::Left, PathStep::Then];
+        let p_left_right: Vec<PathStep> = vec![PathStep::Left, PathStep::Right];
 
         let all_paths = vec![
             p_root.clone(),
             p_left.clone(),
             p_right.clone(),
             p_left_cond.clone(),
-            p_left_then.clone(),
+            p_left_right.clone(),
         ];
 
         let path_slices: Vec<&[PathStep]> = all_paths.iter().map(|p| p.as_slice()).collect();
@@ -393,14 +393,14 @@ mod tests {
             Some(p_right.clone())
         );
 
-        // Left children: LeftCondition and LeftThen
+        // Left children: LeftCondition and LeftRight
         assert_eq!(
             find_first_or_last_child(path_slices.iter().copied(), &p_left, false),
             Some(p_left_cond.clone())
         );
         assert_eq!(
             find_first_or_last_child(path_slices.iter().copied(), &p_left, true),
-            Some(p_left_then.clone())
+            Some(p_left_right.clone())
         );
 
         // Right has no children
