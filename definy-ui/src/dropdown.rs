@@ -423,9 +423,11 @@ pub fn SearchableDropdownPanel(
         }
     };
 
-    let first_secondary_index = filtered_options
+    // 区切りの見出しは最初の secondary の選択肢の直前に出す (先頭なら区切る必要がないので出さない)
+    let secondary_heading_index = filtered_options
         .iter()
-        .position(|(val, _)| secondary_values.contains(val));
+        .position(|(val, _)| secondary_values.contains(val))
+        .filter(|&idx| idx > 0 && !secondary_heading.is_empty());
 
     rsx! {
         div {
@@ -511,9 +513,7 @@ pub fn SearchableDropdownPanel(
                     DropdownOptionItem {
                         key: "{opt_val}",
                         idx,
-                        heading_before: (first_secondary_index == Some(idx) && idx > 0
-                                                    && !secondary_heading.is_empty())
-                            .then(|| secondary_heading.clone()),
+                        heading_before: (secondary_heading_index == Some(idx)).then(|| secondary_heading.clone()),
                         opt_val: opt_val.clone(),
                         opt_label: opt_label.clone(),
                         panel_id: panel_id.clone(),
