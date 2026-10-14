@@ -17,7 +17,7 @@ use crate::expression_editor::mutation::{
 };
 use crate::expression_editor::{
     ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,
-    selector_options,
+    selector_options_ranked,
 };
 use crate::language::Language;
 use crate::page_context::PageContext;
@@ -106,13 +106,13 @@ pub fn ExpressionTreeEditor(
         .as_ref()
         .and_then(|p| analysis.diagnostics.iter().find(|d| d.path == *p));
 
-    let available_options = if let Some(target_path) = sel_path_val.as_ref() {
+    let ranked_options = if let Some(target_path) = sel_path_val.as_ref() {
         let is_root = target_path.is_empty();
         let target_expected = analysis
             .expected_types
             .get(target_path)
             .or(expected_type.as_ref());
-        selector_options(
+        selector_options_ranked(
             &state,
             language,
             &[],
@@ -123,6 +123,16 @@ pub fn ExpressionTreeEditor(
     } else {
         Vec::new()
     };
+    // 期待型に合わない選択肢は区切りの下に薄く表示する
+    let type_mismatch_values: std::collections::HashSet<String> = ranked_options
+        .iter()
+        .filter(|option| option.is_type_mismatch)
+        .map(|option| option.value.clone())
+        .collect();
+    let available_options: Vec<(String, String)> = ranked_options
+        .into_iter()
+        .map(|option| (option.value, option.label))
+        .collect();
 
     let error_count = analysis.diagnostics.len();
     let type_errors_text = language.label("type error(s)", "件の型不一致", "tip-eraro(j)");
@@ -156,6 +166,14 @@ pub fn ExpressionTreeEditor(
                 options: available_options,
                 search_query: menu_search_query,
                 highlighted_index: menu_highlighted_index,
+                secondary_values: type_mismatch_values,
+                secondary_heading: language
+                    .label(
+                        "Other (type does not match)",
+                        "その他 (型が合わない)",
+                        "aliaj (tipo ne kongruas)",
+                    )
+                    .to_string(),
                 header: render_menu_header(
                     language,
                     &current_kind_label,

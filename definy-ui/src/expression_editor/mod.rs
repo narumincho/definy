@@ -12,7 +12,9 @@ pub use mutation::{
     set_boolean_value, set_let_variable_name, set_number_value, set_record_item_key,
     set_string_value, upgrade_part_reference_content_hash,
 };
-pub use selector::{current_selection_value, selector_options};
+pub use selector::{
+    RankedSelectorOption, current_selection_value, selector_options, selector_options_ranked,
+};
 pub use types::{ConstructorValueShape, ExpressionType, ScopeVariable, TypeDiagnostic};
 
 #[cfg(test)]

@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 #[cfg(target_arch = "wasm32")]
@@ -12,6 +13,40 @@ fn dom_scroll_into_view(_id: &str) {
                 elem.scroll_into_view();
             }
         }
+    }
+}
+
+/// 描画の反映後に, パネル内の選択中の選択肢がリストの表示範囲に入るようにスクロールする
+fn dom_scroll_selected_option_into_view_after_render(_panel_id: &str) {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(window) = web_sys::window() {
+        let panel_id = _panel_id.to_string();
+        let callback = wasm_bindgen::closure::Closure::once_into_js(move || {
+            let Some(doc) = web_sys::window().and_then(|w| w.document()) else {
+                return;
+            };
+            let selector = format!("#{panel_id} [data-selected=\"true\"]");
+            let Ok(Some(item)) = doc.query_selector(&selector) else {
+                return;
+            };
+            let list_selector = format!("#{panel_id} .dropdown-option-list");
+            let Ok(Some(list)) = doc.query_selector(&list_selector) else {
+                return;
+            };
+            let item_rect = item.get_bounding_client_rect();
+            let list_rect = list.get_bounding_client_rect();
+            // 選択中の選択肢をリストの中央付近に置く
+            let offset = item_rect.top() - list_rect.top() + f64::from(list.scroll_top());
+            let centered = offset - (list_rect.height() - item_rect.height()) / 2.0;
+            list.set_scroll_top(centered.max(0.0) as i32);
+        });
+        // Dioxus の再描画 (新しい選択肢の反映) を待つために 2 フレーム後に実行する
+        let outer = wasm_bindgen::closure::Closure::once_into_js(move || {
+            if let Some(window) = web_sys::window() {
+                let _ = window.request_animation_frame(callback.unchecked_ref());
+            }
+        });
+        let _ = window.request_animation_frame(outer.unchecked_ref());
     }
 }
 
@@ -244,6 +279,7 @@ pub fn show_anchored_popover(
     focus_search_input_name: Option<&str>,
 ) {
     dom_show_popover_and_focus(panel_id, Some(anchor_name), focus_search_input_name);
+    dom_scroll_selected_option_into_view_after_render(panel_id);
 }
 
 /// popover を閉じる
@@ -291,6 +327,7 @@ pub fn SearchableDropdown(
                 Some(&anchor_name_id(&name)),
                 Some(&format!("search-{}", name)),
             );
+            dom_scroll_selected_option_into_view_after_render(&panel_id);
         }
     };
 
@@ -341,6 +378,9 @@ pub fn SearchableDropdown(
 /// 検索付き選択肢パネル (popover). `anchor_name` で指定した CSS アンカー要素の直下に表示される.
 ///
 /// 表示は [`show_anchored_popover`] で行う.
+///
+/// `secondary_values` に含まれる選択肢は, `secondary_heading` の区切りの下に薄く表示する.
+/// (選択肢は呼び出し側で secondary が後ろになるように並べておく)
 #[component]
 pub fn SearchableDropdownPanel(
     panel_id: String,
@@ -353,6 +393,8 @@ pub fn SearchableDropdownPanel(
     on_change: EventHandler<String>,
     #[props(default)] initial_query: String,
     #[props(default = None)] header: Option<Element>,
+    #[props(default)] secondary_values: HashSet<String>,
+    #[props(default)] secondary_heading: String,
 ) -> Element {
     let query = search_query.read().to_lowercase();
     let filtered_options: Vec<(String, String)> = options
@@ -380,6 +422,10 @@ pub fn SearchableDropdownPanel(
             }
         }
     };
+
+    let first_secondary_index = filtered_options
+        .iter()
+        .position(|(val, _)| secondary_values.contains(val));
 
     rsx! {
         div {
@@ -458,16 +504,22 @@ pub fn SearchableDropdownPanel(
                     }
                 },
             }
-            div { style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto; overflow-x: hidden;",
+            div {
+                class: "dropdown-option-list",
+                style: "display: flex; flex-direction: column; max-height: 15rem; overflow-y: auto; overflow-x: hidden;",
                 for (idx, (opt_val, opt_label)) in filtered_options.iter().enumerate() {
                     DropdownOptionItem {
                         key: "{opt_val}",
                         idx,
+                        heading_before: (first_secondary_index == Some(idx) && idx > 0
+                                                    && !secondary_heading.is_empty())
+                            .then(|| secondary_heading.clone()),
                         opt_val: opt_val.clone(),
                         opt_label: opt_label.clone(),
                         panel_id: panel_id.clone(),
                         is_selected: opt_val == &current_value,
                         is_highlighted: effective_highlighted_index == Some(idx),
+                        is_secondary: secondary_values.contains(opt_val),
                         on_highlight: move |i| highlighted_index.set(Some(i)),
                         on_select: {
                             let panel_id = panel_id.clone();
@@ -493,6 +545,10 @@ fn DropdownOptionItem(
     panel_id: String,
     is_selected: bool,
     is_highlighted: bool,
+    #[props(default = false)] is_secondary: bool,
+    /// この選択肢の直前に表示する区切りの見出し
+    #[props(default = None)]
+    heading_before: Option<String>,
     on_highlight: EventHandler<usize>,
     on_select: EventHandler<String>,
 ) -> Element {
@@ -509,6 +565,11 @@ fn DropdownOptionItem(
         "var(--text)"
     } else {
         "var(--text-secondary)"
+    };
+    let opacity = if is_secondary && !is_selected && !is_highlighted {
+        "0.55"
+    } else {
+        "1"
     };
 
     let part_detail_url = resolve_part_detail_url(&opt_val, &parts);
@@ -529,8 +590,14 @@ fn DropdownOptionItem(
     };
 
     rsx! {
+        if let Some(heading) = heading_before {
+            div { style: "padding: 0.3rem 0.65rem; font-size: 0.7rem; color: var(--text-secondary); background: rgb(0 0 0 / 0.18); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);",
+                "{heading}"
+            }
+        }
         div {
-            style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; transition: background 0.08s ease;",
+            style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; opacity: {opacity}; transition: background 0.08s ease;",
+            "data-selected": if is_selected { "true" } else { "false" },
             onmouseenter: move |_| on_highlight.call(idx),
             button {
                 id: "{item_id}",
