@@ -5,9 +5,8 @@ async fn main() -> Result<(), anyhow::Error> {
         let out_dir = args
             .get(idx + 1)
             .ok_or_else(|| anyhow::anyhow!("Missing output directory after --export-seeds"))?;
-        let account_id = definy_server::seed::builtin_system_account_id();
-        definy_server::seed::export_seeds_to_disk(std::path::Path::new(out_dir), &account_id)?;
-        println!("Exported builtin module seeds to {out_dir}");
+        definy_server::seed::export_seeds_to_disk(std::path::Path::new(out_dir))?;
+        println!("Exported normalized builtin module seeds to {out_dir}");
         return Ok(());
     }
     if let Some(idx) = args.iter().position(|a| a == "--export-seed-bundle") {

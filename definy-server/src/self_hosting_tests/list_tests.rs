@@ -152,7 +152,7 @@ fn get_field<'a>(fields: &'a [(String, Value)], key: &str) -> &'a Value {
 #[test]
 fn test_self_hosted_list_number_type_inference() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 110);
@@ -201,7 +201,7 @@ fn test_self_hosted_list_number_type_inference() {
 #[test]
 fn test_self_hosted_list_string_type_inference() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 111);
@@ -250,7 +250,7 @@ fn test_self_hosted_list_string_type_inference() {
 #[test]
 fn test_self_hosted_empty_list_inference_fails_without_expected_type() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 112);
@@ -283,7 +283,7 @@ fn test_self_hosted_empty_list_inference_fails_without_expected_type() {
 #[test]
 fn test_self_hosted_empty_list_checked_against_expected_type() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 
     let events = create_test_module_events(account, parts, 113);
@@ -338,7 +338,7 @@ fn test_self_hosted_empty_list_checked_against_expected_type() {
 #[test]
 fn test_self_hosted_list_heterogeneous_items_detects_mismatch() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 114);
@@ -371,7 +371,7 @@ fn test_self_hosted_list_heterogeneous_items_detects_mismatch() {
 #[test]
 fn test_self_hosted_list_covariant_subtyping() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_assignable_hash = derive_module_part_id(&mod_id, "type-assignable");
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 
@@ -459,7 +459,7 @@ fn expr_add(left: Expression, right: Expression) -> Expression {
 #[test]
 fn test_self_hosted_list_eval_value_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
 
     let events = create_test_module_events(account, parts, 185);
@@ -509,7 +509,7 @@ fn test_self_hosted_list_eval_value_execution() {
 #[test]
 fn test_self_hosted_list_value_equals_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
     let val_equals_hash = derive_module_part_id(&mod_id, "value-equals");
 
     let events = create_test_module_events(account, parts, 186);

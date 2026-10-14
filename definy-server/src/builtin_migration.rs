@@ -51,7 +51,7 @@ fn build_builtin_events() -> (
     // Repository first commit timestamp: 2019-01-31T13:36:01+09:00 (2019-01-31T04:36:01Z)
     let first_commit_time = chrono::DateTime::from_timestamp(1548909361, 0).unwrap();
 
-    let seeds = crate::seed::get_builtin_module_seeds(&account_id);
+    let seeds = crate::seed::get_builtin_module_seeds();
     let definy_seed = seeds.iter().find(|s| &*s.module_name == "definy").unwrap();
     let core_seed = seeds.iter().find(|s| &*s.module_name == "core").unwrap();
     let std_seed = seeds.iter().find(|s| &*s.module_name == "std").unwrap();

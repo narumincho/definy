@@ -17,7 +17,7 @@ use super::helpers::{
 #[test]
 fn test_self_hosted_record_type_checking_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
@@ -116,7 +116,7 @@ fn test_self_hosted_record_type_checking_execution() {
 #[test]
 fn test_self_hosted_record_get_type_checking_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
@@ -291,7 +291,7 @@ fn test_self_hosted_record_get_type_checking_execution() {
 #[test]
 fn test_self_hosted_record_eval_value_and_get_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
     let eval_hash = derive_module_part_id(&mod_id, "eval-value");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
@@ -470,7 +470,7 @@ fn test_self_hosted_record_eval_value_and_get_execution() {
 #[test]
 fn test_self_hosted_record_value_equals_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_evaluator_parts(&mod_id);
+    let parts = all_evaluator_parts();
 
     let val_equals_hash = derive_module_part_id(&mod_id, "value-equals");
     let val_part_hash = derive_module_part_id(&mod_id, "value");
@@ -555,8 +555,8 @@ fn test_self_hosted_record_value_equals_execution() {
 #[test]
 fn test_self_hosted_validate_part_with_record_expression() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let mut parts = all_type_checker_parts(&mod_id);
-    parts.extend(all_validator_parts(&mod_id));
+    let mut parts = all_type_checker_parts();
+    parts.extend(all_validator_parts());
 
     let validate_part_hash = derive_module_part_id(&mod_id, "validate-part");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
@@ -657,7 +657,7 @@ fn test_self_hosted_validate_part_with_record_expression() {
 #[test]
 fn test_self_hosted_record_width_subtyping_in_call_and_against() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_assignable_hash = derive_module_part_id(&mod_id, "type-assignable");
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");

@@ -7,19 +7,20 @@ use definy_event::event::{
 };
 use definy_event::{EventHashId, VerifyAndDeserializeError};
 
-pub use crate::builtin_type_checker::{empty_type_env, type_env_single_var, type_env_with_parts};
+pub use super::type_helpers::{empty_type_env, type_env_single_var, type_env_with_parts};
 
-/// テスト用のダミー core モジュール ID を取得します。
-pub fn get_dummy_core_id() -> EventHashId {
-    EventHashId::from_bytes(&[1u8; 32])
+/// ビルトインシステムアカウント ID と、その `core` モジュール ID のペアを返します。
+pub fn get_test_account_and_mod_id() -> (AccountId, EventHashId) {
+    let account = crate::seed::builtin_system_account_id();
+    let mod_id = derive_module_id(&account, "core");
+    (account, mod_id)
 }
 
-/// テスト用のダミーアカウント ID と `core` モジュール ID のペアを生成します。
-pub fn get_test_account_and_mod_id() -> (AccountId, EventHashId) {
-    let dummy_key = ed25519_dalek::VerifyingKey::from_bytes(&[0u8; 32]).unwrap();
-    let dummy_account = AccountId(dummy_key);
-    let mod_id = derive_module_id(&dummy_account, "core");
-    (dummy_account, mod_id)
+/// 正本の seed JSON（`seeds/*.json`）からビルトインパーツ定義を名前で取得します。
+pub fn seed_part(name: &str) -> ModulePartEntry {
+    crate::seed::find_builtin_part(name)
+        .unwrap_or_else(|| panic!("builtin part `{name}` not found in seeds"))
+        .clone()
 }
 
 /// 式評価器 `evaluate_expression` に渡すための署名検証済みイベント列の型エイリアス。
@@ -161,76 +162,76 @@ pub fn test_val_bool(b: bool) -> Expression {
 }
 
 /// 自己記述型チェッカーが必要とする全パーツ（レコード、直和型、リスト、基本演算）を返却します。
-pub fn all_type_checker_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
+pub fn all_type_checker_parts() -> Vec<ModulePartEntry> {
     vec![
-        crate::builtin_type_checker::create_type_error_part(mod_id),
-        crate::builtin_type_checker::create_type_result_part(mod_id),
-        crate::builtin_type_checker::create_type_env_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_env_extend_part(mod_id),
-        crate::builtin_type_checker::create_part_type_env_part(mod_id),
-        crate::builtin_type_checker::create_part_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_part_type_lookup_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_env_lookup_part_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_function_parameters_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_equals_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_record_field_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_type_check_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_function_parameters_part(mod_id),
-        crate::builtin_type_checker::create_union_variant_type_lookup_part(mod_id),
-        crate::builtin_type_checker::create_find_tag_in_arms_part(mod_id),
-        crate::builtin_type_checker::create_check_union_exhaustiveness_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_type_check_match_arms_inner_part(mod_id),
-        crate::builtin_type_checker::create_type_check_match_arms_part(mod_id),
-        crate::builtin_type_checker::create_type_check_list_items_part(mod_id),
-        crate::builtin_type_checker::create_type_check_list_part(mod_id),
-        crate::builtin_type_checker::create_type_assignable_part(mod_id),
-        crate::builtin_type_checker::create_type_check_part(mod_id),
-        crate::builtin_type_checker::create_list_contains_string_part(mod_id),
-        crate::builtin_type_checker::create_type_check_type_record_fields_part(mod_id),
-        crate::builtin_type_checker::create_type_check_type_union_variants_part(mod_id),
-        crate::builtin_type_checker::create_type_check_type_function_parameters_part(mod_id),
-        crate::builtin_type_checker::create_type_check_call_arguments_part(mod_id),
-        crate::builtin_type_checker::create_type_check_function_part(mod_id),
-        crate::builtin_type_checker::create_type_check_against_part(mod_id),
+        seed_part("type-error"),
+        seed_part("type-result"),
+        seed_part("type-env"),
+        seed_part("type-env-lookup"),
+        seed_part("type-env-lookup-inner"),
+        seed_part("type-env-extend"),
+        seed_part("part-type-env"),
+        seed_part("part-type-lookup"),
+        seed_part("part-type-lookup-inner"),
+        seed_part("type-env-lookup-part"),
+        seed_part("type-equals"),
+        seed_part("type-equals-function-parameters"),
+        seed_part("type-equals-record-fields"),
+        seed_part("type-equals-union-variants"),
+        seed_part("record-field-type-lookup"),
+        seed_part("type-check-record-fields"),
+        seed_part("type-assignable-record-fields"),
+        seed_part("type-assignable-function-parameters"),
+        seed_part("union-variant-type-lookup"),
+        seed_part("find-tag-in-arms"),
+        seed_part("check-union-exhaustiveness"),
+        seed_part("type-assignable-union-variants"),
+        seed_part("type-check-match-arms-inner"),
+        seed_part("type-check-match-arms"),
+        seed_part("type-check-list-items"),
+        seed_part("type-check-list"),
+        seed_part("type-assignable"),
+        seed_part("type-check"),
+        seed_part("list-contains-string"),
+        seed_part("type-check-type-record-fields"),
+        seed_part("type-check-type-union-variants"),
+        seed_part("type-check-type-function-parameters"),
+        seed_part("type-check-call-arguments"),
+        seed_part("type-check-function"),
+        seed_part("type-check-against"),
     ]
 }
 
 /// 汎用自己評価器 `core.eval-value` および `core.value-equals` が必要とする全パーツを返却します。
-pub fn all_evaluator_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
+pub fn all_evaluator_parts() -> Vec<ModulePartEntry> {
     vec![
-        crate::builtin_value_type::create_value_type_part(mod_id),
-        crate::builtin_value_type::create_env_type_part(mod_id),
-        crate::builtin_value_type::create_env_lookup_part(mod_id),
-        crate::builtin_value_type::create_env_lookup_inner_part(mod_id),
-        crate::builtin_value_type::create_env_extend_part(mod_id),
-        crate::builtin_value_type::create_value_equals_part(mod_id),
-        crate::builtin_value_type::create_value_equals_record_fields_part(mod_id),
-        crate::builtin_value_type::create_value_equals_list_items_part(mod_id),
-        crate::builtin_evaluator::create_record_field_lookup_part(mod_id),
-        crate::builtin_evaluator::create_eval_record_fields_part(mod_id),
-        crate::builtin_evaluator::create_eval_list_items_part(mod_id),
-        crate::builtin_eval_match::create_eval_match_arms_part(mod_id),
-        crate::builtin_eval_match::create_eval_match_arms_inner_part(mod_id),
-        crate::builtin_evaluator::create_eval_call_arguments_part(mod_id),
-        crate::builtin_evaluator::create_eval_value_part(mod_id),
+        seed_part("value"),
+        seed_part("env"),
+        seed_part("env-lookup"),
+        seed_part("env-lookup-inner"),
+        seed_part("env-extend"),
+        seed_part("value-equals"),
+        seed_part("value-equals-record-fields"),
+        seed_part("value-equals-list-items"),
+        seed_part("record-field-lookup"),
+        seed_part("eval-record-fields"),
+        seed_part("eval-list-items"),
+        seed_part("eval-match-arms"),
+        seed_part("eval-match-arms-inner"),
+        seed_part("eval-call-arguments"),
+        seed_part("eval-value"),
     ]
 }
 
 /// 自己検証器 `core.validate-module`, `core.validate-part` 等が必要とする全パーツを返却します。
-pub fn all_validator_parts(mod_id: &EventHashId) -> Vec<ModulePartEntry> {
+pub fn all_validator_parts() -> Vec<ModulePartEntry> {
     vec![
-        crate::builtin_validator::create_collect_part_type_env_inner_part(mod_id),
-        crate::builtin_validator::create_collect_part_type_env_part(mod_id),
-        crate::builtin_validator::create_validate_part_in_env_part(mod_id),
-        crate::builtin_validator::create_validate_part_part(mod_id),
-        crate::builtin_validator::create_validate_parts_in_env_part(mod_id),
-        crate::builtin_validator::create_validate_parts_part(mod_id),
-        crate::builtin_validator::create_validate_module_part(mod_id),
+        seed_part("collect-part-type-env-inner"),
+        seed_part("collect-part-type-env"),
+        seed_part("validate-part-in-env"),
+        seed_part("validate-part"),
+        seed_part("validate-parts-in-env"),
+        seed_part("validate-parts"),
+        seed_part("validate-module"),
     ]
 }

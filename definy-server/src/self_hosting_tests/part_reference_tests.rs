@@ -13,7 +13,7 @@ use super::helpers::{
     all_type_checker_parts, all_validator_parts, call_part, create_test_module_events,
     empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
 };
-use crate::builtin_type_checker::{type_num, type_str};
+use super::type_helpers::{type_num, type_str};
 
 /// 式 AST のパーツ参照: `part_reference({ part_definition_event_hash })`
 fn expr_part_ref(part_hash: &str) -> Expression {
@@ -81,7 +81,7 @@ fn make_part_env_entry(part_hash: &str, part_type: Expression) -> Expression {
 #[test]
 fn test_self_hosted_part_type_lookup_direct() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let lookup_hash = derive_module_part_id(&mod_id, "part-type-lookup");
 
     let events = create_test_module_events(account, parts, 110);
@@ -192,7 +192,7 @@ fn test_self_hosted_part_type_lookup_direct() {
 #[test]
 fn test_self_hosted_part_reference_type_checking() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");
 
     let events = create_test_module_events(account, parts, 111);
@@ -291,7 +291,7 @@ fn test_self_hosted_part_reference_type_checking() {
 #[test]
 fn test_self_hosted_part_reference_check_against() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 
     let events = create_test_module_events(account, parts, 112);
@@ -356,8 +356,8 @@ fn test_self_hosted_part_reference_check_against() {
 #[test]
 fn test_self_hosted_validate_module_with_part_references() {
     let (account, mod_id) = get_test_account_and_mod_id();
-    let mut parts = all_type_checker_parts(&mod_id);
-    parts.extend(all_validator_parts(&mod_id));
+    let mut parts = all_type_checker_parts();
+    parts.extend(all_validator_parts());
     let validate_module_hash = derive_module_part_id(&mod_id, "validate-module");
 
     let events = create_test_module_events(account, parts, 115);

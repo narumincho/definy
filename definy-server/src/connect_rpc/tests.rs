@@ -756,7 +756,12 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         definy_event::event::Expression::Call(definy_event::event::CallExpression {
             function: Box::new(definy_event::event::Expression::PartReference(
                 definy_event::event::PartReferenceExpression {
-                    part_definition_event_hash: crate::builtin_definy_parts::definy_deploy_part_id(
+                    part_definition_event_hash: definy_event::event::derive_module_part_id(
+                        &definy_event::event::derive_module_id(
+                            &crate::seed::builtin_system_account_id(),
+                            "definy",
+                        ),
+                        "deploy",
                     ),
                     content_hash: None,
                 },

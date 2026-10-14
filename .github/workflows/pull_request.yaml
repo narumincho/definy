@@ -12,9 +12,11 @@ jobs:
           cache-on-failure: true
       - name: Install Dioxus CLI
         run: curl -sSL https://dioxus.dev/install.sh | bash
+      - name: Register Rust problem matcher
+        run: echo "::add-matcher::.github/problem-matchers/rust.json"
       - run: cargo fmt --check
       - run: dx fmt --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-targets --message-format=short -- -D warnings
       - name: Setup Deno
         uses: denoland/setup-deno@v2
       - name: Deno fmt, lint and test

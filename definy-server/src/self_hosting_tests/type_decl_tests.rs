@@ -16,7 +16,7 @@ use super::helpers::{
     all_type_checker_parts, all_validator_parts, call_part, create_test_module_events,
     empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
 };
-use crate::builtin_type_checker::type_type;
+use super::type_helpers::type_type;
 use crate::self_hosted_ast::module_commit_to_self_hosted_ast;
 
 fn ast_type_num() -> Expression {
@@ -213,7 +213,7 @@ fn test_self_hosted_type_constructors_valid() {
     let (account, mod_id) = get_test_account_and_mod_id();
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let events = create_test_module_events(account, parts, 140);
     let eval = |expr: Expression| -> Value {
         let call = call_part(
@@ -261,7 +261,7 @@ fn test_self_hosted_type_constructors_invalid() {
     let (account, mod_id) = get_test_account_and_mod_id();
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
 
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let events = create_test_module_events(account, parts, 141);
     let eval = |expr: Expression| -> Value {
         let call = call_part(
@@ -326,8 +326,8 @@ fn test_self_hosted_type_part_reference_in_module_validation() {
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
     let type_ast_hash = derive_module_part_id(&mod_id, "type-ast");
 
-    let mut parts = all_type_checker_parts(&mod_id);
-    parts.extend(all_validator_parts(&mod_id));
+    let mut parts = all_type_checker_parts();
+    parts.extend(all_validator_parts());
     let events = create_test_module_events(account, parts, 142);
 
     // モジュール内に2つの型パーツと1つの値パーツを定義：
@@ -414,7 +414,7 @@ fn test_self_hosted_type_part_reference_in_module_validation() {
 fn test_self_hosted_type_part_reference_errors() {
     let (account, mod_id) = get_test_account_and_mod_id();
     let type_check_against_hash = derive_module_part_id(&mod_id, "type-check-against");
-    let parts = all_type_checker_parts(&mod_id);
+    let parts = all_type_checker_parts();
     let events = create_test_module_events(account, parts, 143);
 
     let eval_in_env = |expr: Expression, env: Expression| -> Value {
@@ -443,7 +443,7 @@ fn test_self_hosted_type_part_reference_errors() {
                 },
                 TypeLiteralItemExpression {
                     key: "part_type".into(),
-                    value: Box::new(crate::builtin_type_checker::type_num()),
+                    value: Box::new(super::type_helpers::type_num()),
                 },
             ],
         })],

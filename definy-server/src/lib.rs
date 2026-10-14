@@ -1,24 +1,7 @@
 mod assets;
-pub(crate) mod ast_builder;
-pub mod builtin_core_parts;
-pub mod builtin_definy_parts;
-mod builtin_eval_match;
-mod builtin_evaluator;
-mod builtin_expression_type;
-mod builtin_formatter;
-mod builtin_list_ops;
+#[cfg(test)]
+mod ast_builder;
 pub mod builtin_migration;
-mod builtin_optimizer;
-pub mod builtin_sample_parts;
-pub mod builtin_self_hosted_server;
-mod builtin_std_functions;
-mod builtin_type_ast;
-mod builtin_type_checker;
-mod builtin_validator;
-mod builtin_value_type;
-pub mod builtin_wasi;
-mod builtin_wasm_compiler;
-mod builtin_wasm_data_section;
 pub mod cloudflare_workers;
 mod connect_rpc;
 mod db;
