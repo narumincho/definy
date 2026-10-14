@@ -276,18 +276,18 @@ pub(crate) fn expression_to_self_hosted_ast(
             ),
         ])
         .map(|payload| expression_variant("if", Some(payload), expression_type_hash)),
-        E::Let(value) => record(vec![
-            ("variable_id", E::Number(number(value.variable_id))),
-            (
-                "value",
-                expression_to_self_hosted_ast(&value.value, expression_type_hash)?,
-            ),
-            (
-                "body",
-                expression_to_self_hosted_ast(&value.body, expression_type_hash)?,
-            ),
-        ])
-        .map(|payload| expression_variant("let", Some(payload), expression_type_hash)),
+        E::Let(value) => value.bindings.iter().rev().try_fold(
+            expression_to_self_hosted_ast(&value.body, expression_type_hash)?,
+            |acc_expr, b| {
+                let val_expr = expression_to_self_hosted_ast(&b.value, expression_type_hash)?;
+                record(vec![
+                    ("variable_id", E::Number(number(b.variable_id))),
+                    ("value", val_expr),
+                    ("body", acc_expr),
+                ])
+                .map(|payload| expression_variant("let", Some(payload), expression_type_hash))
+            },
+        ),
         E::Not(value) => unary("not", &value.value),
         E::And(value) => binary("and", &value.left, &value.right),
         E::Or(value) => binary("or", &value.left, &value.right),

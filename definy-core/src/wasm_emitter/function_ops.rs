@@ -25,17 +25,17 @@ pub(crate) fn collect_free_variables(
                 free.insert(v.variable_id);
             }
         }
-        Expression::Let(LetExpression {
-            variable_id,
-            value,
-            body,
-            ..
-        }) => {
-            collect_free_variables(value, bound, free);
-            let inserted = bound.insert(*variable_id);
+        Expression::Let(LetExpression { bindings, body }) => {
+            let mut newly_bound = Vec::new();
+            for binding in bindings {
+                collect_free_variables(&binding.value, bound, free);
+                if bound.insert(binding.variable_id) {
+                    newly_bound.push(binding.variable_id);
+                }
+            }
             collect_free_variables(body, bound, free);
-            if inserted {
-                bound.remove(variable_id);
+            for var_id in newly_bound {
+                bound.remove(&var_id);
             }
         }
         Expression::Function(FunctionExpression {

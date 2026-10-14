@@ -493,16 +493,17 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
                     .to_string()
             }
             definy_event::event::Expression::Let(let_expression) => {
-                let mut body_scope = scope.to_vec();
-                body_scope.push((
-                    let_expression.variable_id,
-                    let_expression.variable_name.to_string(),
-                ));
+                let mut current_scope = scope.to_vec();
+                let mut bindings_str = Vec::new();
+                for binding in &let_expression.bindings {
+                    let val_rendered = render(binding.value.as_ref(), false, &current_scope);
+                    bindings_str.push(format!("{} = {}", binding.variable_name, val_rendered));
+                    current_scope.push((binding.variable_id, binding.variable_name.to_string()));
+                }
                 let source = format!(
-                    "let {} = {} in {}",
-                    let_expression.variable_name,
-                    render(let_expression.value.as_ref(), false, scope),
-                    render(let_expression.body.as_ref(), false, &body_scope)
+                    "let {} in {}",
+                    bindings_str.join(", "),
+                    render(let_expression.body.as_ref(), false, &current_scope)
                 );
                 if is_child {
                     format!("({})", source)

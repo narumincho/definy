@@ -174,9 +174,26 @@ pub fn let_bind(
     body: Expression,
 ) -> Expression {
     Expression::Let(LetExpression {
-        variable_id,
-        variable_name: variable_name.into(),
-        value: Box::new(value),
+        bindings: vec![definy_event::event::LetBinding {
+            variable_id,
+            variable_name: variable_name.into(),
+            value: Box::new(value),
+        }],
+        body: Box::new(body),
+    })
+}
+
+#[allow(dead_code)]
+pub fn let_binds(bindings: Vec<(i64, &str, Expression)>, body: Expression) -> Expression {
+    Expression::Let(LetExpression {
+        bindings: bindings
+            .into_iter()
+            .map(|(id, name, val)| definy_event::event::LetBinding {
+                variable_id: id,
+                variable_name: name.into(),
+                value: Box::new(val),
+            })
+            .collect(),
         body: Box::new(body),
     })
 }

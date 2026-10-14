@@ -31,13 +31,15 @@ pub fn set_boolean_value(
 pub fn set_let_variable_name(
     root_expression_opt: &mut Option<definy_event::event::Expression>,
     path: &[PathStep],
+    binding_index: usize,
     value: &str,
 ) {
     if let Some(root_expression) = root_expression_opt.as_mut()
         && let Some(definy_event::event::Expression::Let(let_expr)) =
             get_mut_expression_at_path(root_expression, path)
+        && let Some(binding) = let_expr.bindings.get_mut(binding_index)
     {
-        let_expr.variable_name = value.into();
+        binding.variable_name = value.into();
     }
 }
 

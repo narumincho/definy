@@ -788,10 +788,16 @@ pub struct EqualExpression {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-pub struct LetExpression {
+pub struct LetBinding {
     pub variable_id: i64,
     pub variable_name: Box<str>,
     pub value: Box<Expression>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
+pub struct LetExpression {
+    pub bindings: Vec<LetBinding>,
     pub body: Box<Expression>,
 }
 

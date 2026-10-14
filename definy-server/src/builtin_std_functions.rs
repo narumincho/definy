@@ -3,10 +3,11 @@ use definy_event::EventHashId;
 use definy_event::event::{
     AddExpression, AndExpression, Description, EqualExpression, Expression, GreaterThanExpression,
     GreaterThanOrEqualExpression, IfExpression, LessThanExpression, LessThanOrEqualExpression,
-    LetExpression, ListGetExpression, ListLengthExpression, ModulePartEntry, NumberExpression,
-    PartType, RecordFieldType, StringExpression, StringLengthExpression, StringSliceExpression,
-    StringToBytesExpression, SubtractExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-    UnionVariantType, VariableExpression, VariantExpression, derive_module_part_id,
+    LetBinding, LetExpression, ListGetExpression, ListLengthExpression, ModulePartEntry,
+    NumberExpression, PartType, RecordFieldType, StringExpression, StringLengthExpression,
+    StringSliceExpression, StringToBytesExpression, SubtractExpression, TypeLiteralExpression,
+    TypeLiteralItemExpression, UnionVariantType, VariableExpression, VariantExpression,
+    derive_module_part_id,
 };
 
 /// 純粋関数型 Pull 型バイトストリーム (案A) の型定義:
@@ -527,92 +528,90 @@ pub fn create_std_module_parts(std_module_id: &EventHashId) -> Vec<ModulePartEnt
             expression: Some(fn_expr(
                 &[("text", 1), ("target", 2), ("startIndex", 3)],
                 Expression::Let(LetExpression {
-                    variable_id: 4,
-                    variable_name: "textLen".into(),
-                    value: Box::new(Expression::StringLength(StringLengthExpression {
-                        value: Box::new(Expression::Variable(VariableExpression {
-                            variable_id: 1,
-                        })),
-                    })),
-                    body: Box::new(Expression::Let(LetExpression {
-                        variable_id: 5,
-                        variable_name: "targetLen".into(),
-                        value: Box::new(Expression::StringLength(StringLengthExpression {
-                            value: Box::new(Expression::Variable(VariableExpression {
-                                variable_id: 2,
+                    bindings: vec![
+                        LetBinding {
+                            variable_id: 4,
+                            variable_name: "textLen".into(),
+                            value: Box::new(Expression::StringLength(StringLengthExpression {
+                                value: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 1,
+                                })),
+                            })),
+                        },
+                        LetBinding {
+                            variable_id: 5,
+                            variable_name: "targetLen".into(),
+                            value: Box::new(Expression::StringLength(StringLengthExpression {
+                                value: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 2,
+                                })),
+                            })),
+                        },
+                    ],
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::GreaterThan(GreaterThanExpression {
+                            left: Box::new(Expression::Add(AddExpression {
+                                left: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 3,
+                                })),
+                                right: Box::new(Expression::Variable(VariableExpression {
+                                    variable_id: 5,
+                                })),
+                            })),
+                            right: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 4,
                             })),
                         })),
-                        body: Box::new(Expression::If(IfExpression {
-                            condition: Box::new(Expression::GreaterThan(GreaterThanExpression {
-                                left: Box::new(Expression::Add(AddExpression {
-                                    left: Box::new(Expression::Variable(VariableExpression {
+                        then_expr: Box::new(Expression::Number(NumberExpression { value: -1 })),
+                        else_expr: Box::new(Expression::If(IfExpression {
+                            condition: Box::new(Expression::Equal(EqualExpression {
+                                left: Box::new(Expression::StringSlice(StringSliceExpression {
+                                    value: Box::new(Expression::Variable(VariableExpression {
+                                        variable_id: 1,
+                                    })),
+                                    start: Box::new(Expression::Variable(VariableExpression {
                                         variable_id: 3,
                                     })),
-                                    right: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 5,
+                                    end: Box::new(Expression::Add(AddExpression {
+                                        left: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 3,
+                                        })),
+                                        right: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 5,
+                                        })),
                                     })),
                                 })),
                                 right: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 4,
+                                    variable_id: 2,
                                 })),
                             })),
-                            then_expr: Box::new(Expression::Number(NumberExpression { value: -1 })),
-                            else_expr: Box::new(Expression::If(IfExpression {
-                                condition: Box::new(Expression::Equal(EqualExpression {
-                                    left: Box::new(Expression::StringSlice(
-                                        StringSliceExpression {
-                                            value: Box::new(Expression::Variable(
-                                                VariableExpression { variable_id: 1 },
-                                            )),
-                                            start: Box::new(Expression::Variable(
+                            then_expr: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 3,
+                            })),
+                            else_expr: Box::new(call_part(
+                                &string_index_of_hash,
+                                &[
+                                    (
+                                        "text",
+                                        Expression::Variable(VariableExpression { variable_id: 1 }),
+                                    ),
+                                    (
+                                        "target",
+                                        Expression::Variable(VariableExpression { variable_id: 2 }),
+                                    ),
+                                    (
+                                        "startIndex",
+                                        Expression::Add(AddExpression {
+                                            left: Box::new(Expression::Variable(
                                                 VariableExpression { variable_id: 3 },
                                             )),
-                                            end: Box::new(Expression::Add(AddExpression {
-                                                left: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 3 },
-                                                )),
-                                                right: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 5 },
-                                                )),
+                                            right: Box::new(Expression::Number(NumberExpression {
+                                                value: 1,
                                             })),
-                                        },
-                                    )),
-                                    right: Box::new(Expression::Variable(VariableExpression {
-                                        variable_id: 2,
-                                    })),
-                                })),
-                                then_expr: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 3,
-                                })),
-                                else_expr: Box::new(call_part(
-                                    &string_index_of_hash,
-                                    &[
-                                        (
-                                            "text",
-                                            Expression::Variable(VariableExpression {
-                                                variable_id: 1,
-                                            }),
-                                        ),
-                                        (
-                                            "target",
-                                            Expression::Variable(VariableExpression {
-                                                variable_id: 2,
-                                            }),
-                                        ),
-                                        (
-                                            "startIndex",
-                                            Expression::Add(AddExpression {
-                                                left: Box::new(Expression::Variable(
-                                                    VariableExpression { variable_id: 3 },
-                                                )),
-                                                right: Box::new(Expression::Number(
-                                                    NumberExpression { value: 1 },
-                                                )),
-                                            }),
-                                        ),
-                                    ],
-                                )),
-                            })),
+                                        }),
+                                    ),
+                                ],
+                            )),
                         })),
                     })),
                 }),
@@ -636,50 +635,58 @@ pub fn create_std_module_parts(std_module_id: &EventHashId) -> Vec<ModulePartEnt
             expression: Some(fn_expr(
                 &[("url", 1)],
                 Expression::Let(LetExpression {
-                    variable_id: 2,
-                    variable_name: "schemeIdx".into(),
-                    value: Box::new(call_part(
-                        &string_index_of_hash,
-                        &[
-                            (
-                                "text",
-                                Expression::Variable(VariableExpression { variable_id: 1 }),
-                            ),
-                            (
-                                "target",
-                                Expression::String(StringExpression {
-                                    value: "://".into(),
-                                }),
-                            ),
-                            (
-                                "startIndex",
-                                Expression::Number(NumberExpression { value: 0 }),
-                            ),
-                        ],
-                    )),
-                    body: Box::new(Expression::Let(LetExpression {
-                        variable_id: 3,
-                        variable_name: "searchStart".into(),
-                        value: Box::new(Expression::If(IfExpression {
-                            condition: Box::new(Expression::GreaterThanOrEqual(
-                                GreaterThanOrEqualExpression {
+                    bindings: vec![
+                        LetBinding {
+                            variable_id: 2,
+                            variable_name: "schemeIdx".into(),
+                            value: Box::new(call_part(
+                                &string_index_of_hash,
+                                &[
+                                    (
+                                        "text",
+                                        Expression::Variable(VariableExpression { variable_id: 1 }),
+                                    ),
+                                    (
+                                        "target",
+                                        Expression::String(StringExpression {
+                                            value: "://".into(),
+                                        }),
+                                    ),
+                                    (
+                                        "startIndex",
+                                        Expression::Number(NumberExpression { value: 0 }),
+                                    ),
+                                ],
+                            )),
+                        },
+                        LetBinding {
+                            variable_id: 3,
+                            variable_name: "searchStart".into(),
+                            value: Box::new(Expression::If(IfExpression {
+                                condition: Box::new(Expression::GreaterThanOrEqual(
+                                    GreaterThanOrEqualExpression {
+                                        left: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 2,
+                                        })),
+                                        right: Box::new(Expression::Number(NumberExpression {
+                                            value: 0,
+                                        })),
+                                    },
+                                )),
+                                then_expr: Box::new(Expression::Add(AddExpression {
                                     left: Box::new(Expression::Variable(VariableExpression {
                                         variable_id: 2,
                                     })),
                                     right: Box::new(Expression::Number(NumberExpression {
-                                        value: 0,
+                                        value: 3,
                                     })),
-                                },
-                            )),
-                            then_expr: Box::new(Expression::Add(AddExpression {
-                                left: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 2,
                                 })),
-                                right: Box::new(Expression::Number(NumberExpression { value: 3 })),
+                                else_expr: Box::new(Expression::Number(NumberExpression {
+                                    value: 0,
+                                })),
                             })),
-                            else_expr: Box::new(Expression::Number(NumberExpression { value: 0 })),
-                        })),
-                        body: Box::new(Expression::Let(LetExpression {
+                        },
+                        LetBinding {
                             variable_id: 4,
                             variable_name: "slashIdx".into(),
                             value: Box::new(call_part(
@@ -699,99 +706,93 @@ pub fn create_std_module_parts(std_module_id: &EventHashId) -> Vec<ModulePartEnt
                                     ),
                                 ],
                             )),
-                            body: Box::new(Expression::Let(LetExpression {
-                                variable_id: 5,
-                                variable_name: "queryIdx".into(),
-                                value: Box::new(call_part(
-                                    &string_index_of_hash,
-                                    &[
-                                        (
-                                            "text",
-                                            Expression::Variable(VariableExpression {
-                                                variable_id: 1,
-                                            }),
-                                        ),
-                                        (
-                                            "target",
-                                            Expression::String(StringExpression {
-                                                value: "?".into(),
-                                            }),
-                                        ),
-                                        (
-                                            "startIndex",
-                                            Expression::Variable(VariableExpression {
-                                                variable_id: 3,
-                                            }),
-                                        ),
-                                    ],
-                                )),
-                                body: Box::new(Expression::If(IfExpression {
-                                    condition: Box::new(Expression::LessThan(LessThanExpression {
-                                        left: Box::new(Expression::Variable(VariableExpression {
-                                            variable_id: 4,
-                                        })),
-                                        right: Box::new(Expression::Number(NumberExpression {
-                                            value: 0,
-                                        })),
-                                    })),
-                                    then_expr: Box::new(Expression::String(StringExpression {
-                                        value: "/".into(),
-                                    })),
-                                    else_expr: Box::new(Expression::Let(LetExpression {
-                                        variable_id: 6,
-                                        variable_name: "endIdx".into(),
-                                        value: Box::new(Expression::If(IfExpression {
-                                            condition: Box::new(Expression::GreaterThanOrEqual(
-                                                GreaterThanOrEqualExpression {
-                                                    left: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 5 },
-                                                    )),
-                                                    right: Box::new(Expression::Number(
-                                                        NumberExpression { value: 0 },
-                                                    )),
-                                                },
-                                            )),
-                                            then_expr: Box::new(Expression::Variable(
+                        },
+                        LetBinding {
+                            variable_id: 5,
+                            variable_name: "queryIdx".into(),
+                            value: Box::new(call_part(
+                                &string_index_of_hash,
+                                &[
+                                    (
+                                        "text",
+                                        Expression::Variable(VariableExpression { variable_id: 1 }),
+                                    ),
+                                    (
+                                        "target",
+                                        Expression::String(StringExpression { value: "?".into() }),
+                                    ),
+                                    (
+                                        "startIndex",
+                                        Expression::Variable(VariableExpression { variable_id: 3 }),
+                                    ),
+                                ],
+                            )),
+                        },
+                    ],
+                    body: Box::new(Expression::If(IfExpression {
+                        condition: Box::new(Expression::LessThan(LessThanExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 4,
+                            })),
+                            right: Box::new(Expression::Number(NumberExpression { value: 0 })),
+                        })),
+                        then_expr: Box::new(Expression::String(StringExpression {
+                            value: "/".into(),
+                        })),
+                        else_expr: Box::new(Expression::Let(LetExpression {
+                            bindings: vec![LetBinding {
+                                variable_id: 6,
+                                variable_name: "endIdx".into(),
+                                value: Box::new(Expression::If(IfExpression {
+                                    condition: Box::new(Expression::GreaterThanOrEqual(
+                                        GreaterThanOrEqualExpression {
+                                            left: Box::new(Expression::Variable(
                                                 VariableExpression { variable_id: 5 },
                                             )),
-                                            else_expr: Box::new(Expression::StringLength(
-                                                StringLengthExpression {
-                                                    value: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 1 },
-                                                    )),
-                                                },
-                                            )),
-                                        })),
-                                        body: Box::new(Expression::If(IfExpression {
-                                            condition: Box::new(Expression::LessThanOrEqual(
-                                                LessThanOrEqualExpression {
-                                                    left: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 6 },
-                                                    )),
-                                                    right: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 4 },
-                                                    )),
-                                                },
-                                            )),
-                                            then_expr: Box::new(Expression::String(
-                                                StringExpression { value: "/".into() },
-                                            )),
-                                            else_expr: Box::new(Expression::StringSlice(
-                                                StringSliceExpression {
-                                                    value: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 1 },
-                                                    )),
-                                                    start: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 4 },
-                                                    )),
-                                                    end: Box::new(Expression::Variable(
-                                                        VariableExpression { variable_id: 6 },
-                                                    )),
-                                                },
-                                            )),
-                                        })),
+                                            right: Box::new(Expression::Number(NumberExpression {
+                                                value: 0,
+                                            })),
+                                        },
+                                    )),
+                                    then_expr: Box::new(Expression::Variable(VariableExpression {
+                                        variable_id: 5,
                                     })),
+                                    else_expr: Box::new(Expression::StringLength(
+                                        StringLengthExpression {
+                                            value: Box::new(Expression::Variable(
+                                                VariableExpression { variable_id: 1 },
+                                            )),
+                                        },
+                                    )),
                                 })),
+                            }],
+                            body: Box::new(Expression::If(IfExpression {
+                                condition: Box::new(Expression::LessThanOrEqual(
+                                    LessThanOrEqualExpression {
+                                        left: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 6,
+                                        })),
+                                        right: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 4,
+                                        })),
+                                    },
+                                )),
+                                then_expr: Box::new(Expression::String(StringExpression {
+                                    value: "/".into(),
+                                })),
+                                else_expr: Box::new(Expression::StringSlice(
+                                    StringSliceExpression {
+                                        value: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 1,
+                                        })),
+                                        start: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 4,
+                                        })),
+                                        end: Box::new(Expression::Variable(VariableExpression {
+                                            variable_id: 6,
+                                        })),
+                                    },
+                                )),
                             })),
                         })),
                     })),
@@ -816,25 +817,27 @@ pub fn create_std_module_parts(std_module_id: &EventHashId) -> Vec<ModulePartEnt
             expression: Some(fn_expr(
                 &[("url", 1)],
                 Expression::Let(LetExpression {
-                    variable_id: 2,
-                    variable_name: "queryIdx".into(),
-                    value: Box::new(call_part(
-                        &string_index_of_hash,
-                        &[
-                            (
-                                "text",
-                                Expression::Variable(VariableExpression { variable_id: 1 }),
-                            ),
-                            (
-                                "target",
-                                Expression::String(StringExpression { value: "?".into() }),
-                            ),
-                            (
-                                "startIndex",
-                                Expression::Number(NumberExpression { value: 0 }),
-                            ),
-                        ],
-                    )),
+                    bindings: vec![LetBinding {
+                        variable_id: 2,
+                        variable_name: "queryIdx".into(),
+                        value: Box::new(call_part(
+                            &string_index_of_hash,
+                            &[
+                                (
+                                    "text",
+                                    Expression::Variable(VariableExpression { variable_id: 1 }),
+                                ),
+                                (
+                                    "target",
+                                    Expression::String(StringExpression { value: "?".into() }),
+                                ),
+                                (
+                                    "startIndex",
+                                    Expression::Number(NumberExpression { value: 0 }),
+                                ),
+                            ],
+                        )),
+                    }],
                     body: Box::new(Expression::If(IfExpression {
                         condition: Box::new(Expression::LessThan(LessThanExpression {
                             left: Box::new(Expression::Variable(VariableExpression {

@@ -1115,19 +1115,21 @@
           ],
           "body": {
             "Let": {
-              "variable_id": 4,
-              "variable_name": "textLen",
-              "value": {
-                "StringLength": {
+              "bindings": [
+                {
+                  "variable_id": 4,
+                  "variable_name": "textLen",
                   "value": {
-                    "Variable": {
-                      "variable_id": 1
+                    "StringLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
                     }
                   }
-                }
-              },
-              "body": {
-                "Let": {
+                },
+                {
                   "variable_id": 5,
                   "variable_name": "targetLen",
                   "value": {
@@ -1138,318 +1140,84 @@
                         }
                       }
                     }
-                  },
-                  "body": {
-                    "If": {
-                      "condition": {
-                        "GreaterThan": {
+                  }
+                }
+              ],
+              "body": {
+                "If": {
+                  "condition": {
+                    "GreaterThan": {
+                      "left": {
+                        "Add": {
                           "left": {
-                            "Add": {
-                              "left": {
-                                "Variable": {
-                                  "variable_id": 3
-                                }
-                              },
-                              "right": {
-                                "Variable": {
-                                  "variable_id": 5
-                                }
-                              }
-                            }
-                          },
-                          "right": {
-                            "Variable": {
-                              "variable_id": 4
-                            }
-                          }
-                        }
-                      },
-                      "then_expr": {
-                        "Number": {
-                          "value": -1
-                        }
-                      },
-                      "else_expr": {
-                        "If": {
-                          "condition": {
-                            "Equal": {
-                              "left": {
-                                "StringSlice": {
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  },
-                                  "start": {
-                                    "Variable": {
-                                      "variable_id": 3
-                                    }
-                                  },
-                                  "end": {
-                                    "Add": {
-                                      "left": {
-                                        "Variable": {
-                                          "variable_id": 3
-                                        }
-                                      },
-                                      "right": {
-                                        "Variable": {
-                                          "variable_id": 5
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              },
-                              "right": {
-                                "Variable": {
-                                  "variable_id": 2
-                                }
-                              }
-                            }
-                          },
-                          "then_expr": {
                             "Variable": {
                               "variable_id": 3
                             }
                           },
-                          "else_expr": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": [
-                                    25,
-                                    213,
-                                    211,
-                                    189,
-                                    6,
-                                    85,
-                                    25,
-                                    177,
-                                    183,
-                                    82,
-                                    38,
-                                    156,
-                                    35,
-                                    103,
-                                    54,
-                                    102,
-                                    147,
-                                    239,
-                                    175,
-                                    249,
-                                    22,
-                                    185,
-                                    104,
-                                    34,
-                                    110,
-                                    19,
-                                    127,
-                                    34,
-                                    141,
-                                    182,
-                                    203,
-                                    147
-                                  ]
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "text",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "target",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 2
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "startIndex",
-                                  "value": {
-                                    "Add": {
-                                      "left": {
-                                        "Variable": {
-                                          "variable_id": 3
-                                        }
-                                      },
-                                      "right": {
-                                        "Number": {
-                                          "value": 1
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              ]
+                          "right": {
+                            "Variable": {
+                              "variable_id": 5
                             }
                           }
                         }
+                      },
+                      "right": {
+                        "Variable": {
+                          "variable_id": 4
+                        }
                       }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "url-path",
-      "part_type": {
-        "function": {
-          "parameters": [
-            {
-              "name": "url",
-              "type": "string"
-            }
-          ],
-          "return_type": "string"
-        }
-      },
-      "description": [
-        {
-          "language": "en",
-          "text": "Extract the path component (e.g. \"/api/self-host\") from a URL string"
-        },
-        {
-          "language": "ja",
-          "text": "URL 文字列からパス部分 (例: \"/api/self-host\", \"/\") を抽出する純粋関数"
-        }
-      ],
-      "expression": {
-        "Function": {
-          "parameters": [
-            {
-              "parameter_id": 1,
-              "parameter_name": "url"
-            }
-          ],
-          "body": {
-            "Let": {
-              "variable_id": 2,
-              "variable_name": "schemeIdx",
-              "value": {
-                "Call": {
-                  "function": {
-                    "PartReference": {
-                      "part_definition_event_hash": [
-                        25,
-                        213,
-                        211,
-                        189,
-                        6,
-                        85,
-                        25,
-                        177,
-                        183,
-                        82,
-                        38,
-                        156,
-                        35,
-                        103,
-                        54,
-                        102,
-                        147,
-                        239,
-                        175,
-                        249,
-                        22,
-                        185,
-                        104,
-                        34,
-                        110,
-                        19,
-                        127,
-                        34,
-                        141,
-                        182,
-                        203,
-                        147
-                      ]
                     }
                   },
-                  "arguments": [
-                    {
-                      "name": "text",
-                      "value": {
-                        "Variable": {
-                          "variable_id": 1
-                        }
-                      }
-                    },
-                    {
-                      "name": "target",
-                      "value": {
-                        "String": {
-                          "value": "://"
-                        }
-                      }
-                    },
-                    {
-                      "name": "startIndex",
-                      "value": {
-                        "Number": {
-                          "value": 0
-                        }
-                      }
+                  "then_expr": {
+                    "Number": {
+                      "value": -1
                     }
-                  ]
-                }
-              },
-              "body": {
-                "Let": {
-                  "variable_id": 3,
-                  "variable_name": "searchStart",
-                  "value": {
+                  },
+                  "else_expr": {
                     "If": {
                       "condition": {
-                        "GreaterThanOrEqual": {
+                        "Equal": {
                           "left": {
-                            "Variable": {
-                              "variable_id": 2
+                            "StringSlice": {
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "start": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              },
+                              "end": {
+                                "Add": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "right": {
+                                    "Variable": {
+                                      "variable_id": 5
+                                    }
+                                  }
+                                }
+                              }
                             }
                           },
                           "right": {
-                            "Number": {
-                              "value": 0
+                            "Variable": {
+                              "variable_id": 2
                             }
                           }
                         }
                       },
                       "then_expr": {
-                        "Add": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 2
-                            }
-                          },
-                          "right": {
-                            "Number": {
-                              "value": 3
-                            }
-                          }
+                        "Variable": {
+                          "variable_id": 3
                         }
                       },
                       "else_expr": {
-                        "Number": {
-                          "value": 0
-                        }
-                      }
-                    }
-                  },
-                  "body": {
-                    "Let": {
-                      "variable_id": 4,
-                      "variable_name": "slashIdx",
-                      "value": {
                         "Call": {
                           "function": {
                             "PartReference": {
@@ -1501,101 +1269,366 @@
                             {
                               "name": "target",
                               "value": {
-                                "String": {
-                                  "value": "/"
+                                "Variable": {
+                                  "variable_id": 2
                                 }
                               }
                             },
                             {
                               "name": "startIndex",
                               "value": {
-                                "Variable": {
-                                  "variable_id": 3
+                                "Add": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 1
+                                    }
+                                  }
                                 }
                               }
                             }
                           ]
                         }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "url-path",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "url",
+              "type": "string"
+            }
+          ],
+          "return_type": "string"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Extract the path component (e.g. \"/api/self-host\") from a URL string"
+        },
+        {
+          "language": "ja",
+          "text": "URL 文字列からパス部分 (例: \"/api/self-host\", \"/\") を抽出する純粋関数"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 1,
+              "parameter_name": "url"
+            }
+          ],
+          "body": {
+            "Let": {
+              "bindings": [
+                {
+                  "variable_id": 2,
+                  "variable_name": "schemeIdx",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": [
+                            25,
+                            213,
+                            211,
+                            189,
+                            6,
+                            85,
+                            25,
+                            177,
+                            183,
+                            82,
+                            38,
+                            156,
+                            35,
+                            103,
+                            54,
+                            102,
+                            147,
+                            239,
+                            175,
+                            249,
+                            22,
+                            185,
+                            104,
+                            34,
+                            110,
+                            19,
+                            127,
+                            34,
+                            141,
+                            182,
+                            203,
+                            147
+                          ]
+                        }
                       },
-                      "body": {
-                        "Let": {
-                          "variable_id": 5,
-                          "variable_name": "queryIdx",
+                      "arguments": [
+                        {
+                          "name": "text",
                           "value": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": [
-                                    25,
-                                    213,
-                                    211,
-                                    189,
-                                    6,
-                                    85,
-                                    25,
-                                    177,
-                                    183,
-                                    82,
-                                    38,
-                                    156,
-                                    35,
-                                    103,
-                                    54,
-                                    102,
-                                    147,
-                                    239,
-                                    175,
-                                    249,
-                                    22,
-                                    185,
-                                    104,
-                                    34,
-                                    110,
-                                    19,
-                                    127,
-                                    34,
-                                    141,
-                                    182,
-                                    203,
-                                    147
-                                  ]
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "text",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "target",
-                                  "value": {
-                                    "String": {
-                                      "value": "?"
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "startIndex",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 3
-                                    }
-                                  }
-                                }
-                              ]
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "target",
+                          "value": {
+                            "String": {
+                              "value": "://"
+                            }
+                          }
+                        },
+                        {
+                          "name": "startIndex",
+                          "value": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "variable_id": 3,
+                  "variable_name": "searchStart",
+                  "value": {
+                    "If": {
+                      "condition": {
+                        "GreaterThanOrEqual": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 2
                             }
                           },
-                          "body": {
+                          "right": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        }
+                      },
+                      "then_expr": {
+                        "Add": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          },
+                          "right": {
+                            "Number": {
+                              "value": 3
+                            }
+                          }
+                        }
+                      },
+                      "else_expr": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "variable_id": 4,
+                  "variable_name": "slashIdx",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": [
+                            25,
+                            213,
+                            211,
+                            189,
+                            6,
+                            85,
+                            25,
+                            177,
+                            183,
+                            82,
+                            38,
+                            156,
+                            35,
+                            103,
+                            54,
+                            102,
+                            147,
+                            239,
+                            175,
+                            249,
+                            22,
+                            185,
+                            104,
+                            34,
+                            110,
+                            19,
+                            127,
+                            34,
+                            141,
+                            182,
+                            203,
+                            147
+                          ]
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "target",
+                          "value": {
+                            "String": {
+                              "value": "/"
+                            }
+                          }
+                        },
+                        {
+                          "name": "startIndex",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "variable_id": 5,
+                  "variable_name": "queryIdx",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": [
+                            25,
+                            213,
+                            211,
+                            189,
+                            6,
+                            85,
+                            25,
+                            177,
+                            183,
+                            82,
+                            38,
+                            156,
+                            35,
+                            103,
+                            54,
+                            102,
+                            147,
+                            239,
+                            175,
+                            249,
+                            22,
+                            185,
+                            104,
+                            34,
+                            110,
+                            19,
+                            127,
+                            34,
+                            141,
+                            182,
+                            203,
+                            147
+                          ]
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "target",
+                          "value": {
+                            "String": {
+                              "value": "?"
+                            }
+                          }
+                        },
+                        {
+                          "name": "startIndex",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "body": {
+                "If": {
+                  "condition": {
+                    "LessThan": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 4
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  },
+                  "then_expr": {
+                    "String": {
+                      "value": "/"
+                    }
+                  },
+                  "else_expr": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 6,
+                          "variable_name": "endIdx",
+                          "value": {
                             "If": {
                               "condition": {
-                                "LessThan": {
+                                "GreaterThanOrEqual": {
                                   "left": {
                                     "Variable": {
-                                      "variable_id": 4
+                                      "variable_id": 5
                                     }
                                   },
                                   "right": {
@@ -1606,88 +1639,59 @@
                                 }
                               },
                               "then_expr": {
-                                "String": {
-                                  "value": "/"
+                                "Variable": {
+                                  "variable_id": 5
                                 }
                               },
                               "else_expr": {
-                                "Let": {
-                                  "variable_id": 6,
-                                  "variable_name": "endIdx",
+                                "StringLength": {
                                   "value": {
-                                    "If": {
-                                      "condition": {
-                                        "GreaterThanOrEqual": {
-                                          "left": {
-                                            "Variable": {
-                                              "variable_id": 5
-                                            }
-                                          },
-                                          "right": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      },
-                                      "then_expr": {
-                                        "Variable": {
-                                          "variable_id": 5
-                                        }
-                                      },
-                                      "else_expr": {
-                                        "StringLength": {
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "body": {
-                                    "If": {
-                                      "condition": {
-                                        "LessThanOrEqual": {
-                                          "left": {
-                                            "Variable": {
-                                              "variable_id": 6
-                                            }
-                                          },
-                                          "right": {
-                                            "Variable": {
-                                              "variable_id": 4
-                                            }
-                                          }
-                                        }
-                                      },
-                                      "then_expr": {
-                                        "String": {
-                                          "value": "/"
-                                        }
-                                      },
-                                      "else_expr": {
-                                        "StringSlice": {
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
-                                            }
-                                          },
-                                          "start": {
-                                            "Variable": {
-                                              "variable_id": 4
-                                            }
-                                          },
-                                          "end": {
-                                            "Variable": {
-                                              "variable_id": 6
-                                            }
-                                          }
-                                        }
-                                      }
+                                    "Variable": {
+                                      "variable_id": 1
                                     }
                                   }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "If": {
+                          "condition": {
+                            "LessThanOrEqual": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 6
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              }
+                            }
+                          },
+                          "then_expr": {
+                            "String": {
+                              "value": "/"
+                            }
+                          },
+                          "else_expr": {
+                            "StringSlice": {
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "start": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              },
+                              "end": {
+                                "Variable": {
+                                  "variable_id": 6
                                 }
                               }
                             }
@@ -1736,76 +1740,80 @@
           ],
           "body": {
             "Let": {
-              "variable_id": 2,
-              "variable_name": "queryIdx",
-              "value": {
-                "Call": {
-                  "function": {
-                    "PartReference": {
-                      "part_definition_event_hash": [
-                        25,
-                        213,
-                        211,
-                        189,
-                        6,
-                        85,
-                        25,
-                        177,
-                        183,
-                        82,
-                        38,
-                        156,
-                        35,
-                        103,
-                        54,
-                        102,
-                        147,
-                        239,
-                        175,
-                        249,
-                        22,
-                        185,
-                        104,
-                        34,
-                        110,
-                        19,
-                        127,
-                        34,
-                        141,
-                        182,
-                        203,
-                        147
+              "bindings": [
+                {
+                  "variable_id": 2,
+                  "variable_name": "queryIdx",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": [
+                            25,
+                            213,
+                            211,
+                            189,
+                            6,
+                            85,
+                            25,
+                            177,
+                            183,
+                            82,
+                            38,
+                            156,
+                            35,
+                            103,
+                            54,
+                            102,
+                            147,
+                            239,
+                            175,
+                            249,
+                            22,
+                            185,
+                            104,
+                            34,
+                            110,
+                            19,
+                            127,
+                            34,
+                            141,
+                            182,
+                            203,
+                            147
+                          ]
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "text",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "target",
+                          "value": {
+                            "String": {
+                              "value": "?"
+                            }
+                          }
+                        },
+                        {
+                          "name": "startIndex",
+                          "value": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        }
                       ]
                     }
-                  },
-                  "arguments": [
-                    {
-                      "name": "text",
-                      "value": {
-                        "Variable": {
-                          "variable_id": 1
-                        }
-                      }
-                    },
-                    {
-                      "name": "target",
-                      "value": {
-                        "String": {
-                          "value": "?"
-                        }
-                      }
-                    },
-                    {
-                      "name": "startIndex",
-                      "value": {
-                        "Number": {
-                          "value": 0
-                        }
-                      }
-                    }
-                  ]
+                  }
                 }
-              },
+              ],
               "body": {
                 "If": {
                   "condition": {

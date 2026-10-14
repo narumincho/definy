@@ -506,22 +506,18 @@ pub fn emit_expression_gc(
             }
             emit_struct_new(out, TYPE_IDX_VARIANT);
         }
-        Expression::Let(LetExpression {
-            variable_id,
-            value,
-            body,
-            ..
-        }) => {
-            let local_idx = *next_local_idx;
-            *next_local_idx += 1;
-            let mut new_env = env.clone();
-            new_env.insert(*variable_id, local_idx);
+        Expression::Let(LetExpression { bindings, body }) => {
+            let mut current_env = env.clone();
+            for binding in bindings {
+                let local_idx = *next_local_idx;
+                *next_local_idx += 1;
+                emit_expression_gc(&binding.value, out, &current_env, next_local_idx, ctx)?;
+                out.push(LOCAL_SET);
+                encode_u32_leb128(out, local_idx);
 
-            emit_expression_gc(value, out, env, next_local_idx, ctx)?;
-            out.push(LOCAL_SET);
-            encode_u32_leb128(out, local_idx);
-
-            emit_expression_gc(body, out, &new_env, next_local_idx, ctx)?;
+                current_env.insert(binding.variable_id, local_idx);
+            }
+            emit_expression_gc(body, out, &current_env, next_local_idx, ctx)?;
         }
         Expression::Variable(VariableExpression { variable_id }) => {
             let local_idx = env

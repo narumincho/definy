@@ -36,9 +36,11 @@ fn test_compile_gc_boolean_and_if() {
 #[test]
 fn test_compile_gc_let_and_record() {
     let expr = Expression::Let(LetExpression {
-        variable_id: 1,
-        variable_name: "x".into(),
-        value: Box::new(Expression::Number(NumberExpression { value: 99 })),
+        bindings: vec![definy_event::event::LetBinding {
+            variable_id: 1,
+            variable_name: "x".into(),
+            value: Box::new(Expression::Number(NumberExpression { value: 99 })),
+        }],
         body: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
             items: vec![TypeLiteralItemExpression {
                 key: "count".into(),
