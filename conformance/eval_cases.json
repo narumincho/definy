@@ -1,0 +1,1165 @@
+{
+  "$comment": "Rust (definy-core の Wasm コンパイラ経由評価) と TypeScript (worker/cbor_eval.ts) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} はビルトインパーツへの PartReference に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。",
+  "cases": [
+    {
+      "name": "number literal",
+      "expression": {
+        "Number": {
+          "value": 42
+        }
+      },
+      "expected": 42
+    },
+    {
+      "name": "add",
+      "expression": {
+        "Add": {
+          "left": {
+            "Number": {
+              "value": 40
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": 42
+    },
+    {
+      "name": "subtract negative",
+      "expression": {
+        "Subtract": {
+          "left": {
+            "Number": {
+              "value": 3
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 10
+            }
+          }
+        }
+      },
+      "expected": -7
+    },
+    {
+      "name": "multiply",
+      "expression": {
+        "Multiply": {
+          "left": {
+            "Number": {
+              "value": 6
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 7
+            }
+          }
+        }
+      },
+      "expected": 42
+    },
+    {
+      "name": "divide",
+      "expression": {
+        "Divide": {
+          "left": {
+            "Number": {
+              "value": 17
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 5
+            }
+          }
+        }
+      },
+      "expected": 3
+    },
+    {
+      "name": "divide negative truncates toward zero",
+      "expression": {
+        "Divide": {
+          "left": {
+            "Number": {
+              "value": -7
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": -3
+    },
+    {
+      "name": "remainder",
+      "expression": {
+        "Remainder": {
+          "left": {
+            "Number": {
+              "value": 17
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 5
+            }
+          }
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "remainder negative",
+      "expression": {
+        "Remainder": {
+          "left": {
+            "Number": {
+              "value": -7
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": -1
+    },
+    {
+      "name": "less than",
+      "expression": {
+        "LessThan": {
+          "left": {
+            "Number": {
+              "value": 1
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "less than or equal",
+      "expression": {
+        "LessThanOrEqual": {
+          "left": {
+            "Number": {
+              "value": 2
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "greater than",
+      "expression": {
+        "GreaterThan": {
+          "left": {
+            "Number": {
+              "value": 1
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "greater than or equal",
+      "expression": {
+        "GreaterThanOrEqual": {
+          "left": {
+            "Number": {
+              "value": 3
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal numbers",
+      "expression": {
+        "Equal": {
+          "left": {
+            "Number": {
+              "value": 5
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 5
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "not equal numbers",
+      "expression": {
+        "NotEqual": {
+          "left": {
+            "Number": {
+              "value": 5
+            }
+          },
+          "right": {
+            "Number": {
+              "value": 6
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "equal strings",
+      "expression": {
+        "Equal": {
+          "left": {
+            "String": {
+              "value": "abc"
+            }
+          },
+          "right": {
+            "String": {
+              "value": "abc"
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "not",
+      "expression": {
+        "Not": {
+          "value": {
+            "Boolean": {
+              "value": false
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "and",
+      "expression": {
+        "And": {
+          "left": {
+            "Boolean": {
+              "value": true
+            }
+          },
+          "right": {
+            "Boolean": {
+              "value": false
+            }
+          }
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "or",
+      "expression": {
+        "Or": {
+          "left": {
+            "Boolean": {
+              "value": false
+            }
+          },
+          "right": {
+            "Boolean": {
+              "value": true
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "string literal",
+      "expression": {
+        "String": {
+          "value": "こんにちは"
+        }
+      },
+      "expected": "こんにちは"
+    },
+    {
+      "name": "string concat",
+      "expression": {
+        "StringConcat": {
+          "left": {
+            "String": {
+              "value": "Hello, "
+            }
+          },
+          "right": {
+            "String": {
+              "value": "definy!"
+            }
+          }
+        }
+      },
+      "expected": "Hello, definy!"
+    },
+    {
+      "name": "string length ascii",
+      "expression": {
+        "StringLength": {
+          "value": {
+            "String": {
+              "value": "definy"
+            }
+          }
+        }
+      },
+      "expected": 6
+    },
+    {
+      "name": "string slice",
+      "expression": {
+        "StringSlice": {
+          "value": {
+            "String": {
+              "value": "definy"
+            }
+          },
+          "start": {
+            "Number": {
+              "value": 2
+            }
+          },
+          "end": {
+            "Number": {
+              "value": 5
+            }
+          }
+        }
+      },
+      "expected": "fin"
+    },
+    {
+      "name": "if then",
+      "expression": {
+        "If": {
+          "condition": {
+            "LessThan": {
+              "left": {
+                "Number": {
+                  "value": 1
+                }
+              },
+              "right": {
+                "Number": {
+                  "value": 2
+                }
+              }
+            }
+          },
+          "then_expr": {
+            "String": {
+              "value": "yes"
+            }
+          },
+          "else_expr": {
+            "String": {
+              "value": "no"
+            }
+          }
+        }
+      },
+      "expected": "yes"
+    },
+    {
+      "name": "if else",
+      "expression": {
+        "If": {
+          "condition": {
+            "Boolean": {
+              "value": false
+            }
+          },
+          "then_expr": {
+            "Number": {
+              "value": 1
+            }
+          },
+          "else_expr": {
+            "Number": {
+              "value": 2
+            }
+          }
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "let single",
+      "expression": {
+        "Let": {
+          "bindings": [
+            {
+              "variable_id": 1,
+              "variable_name": "x",
+              "value": {
+                "Number": {
+                  "value": 20
+                }
+              }
+            }
+          ],
+          "body": {
+            "Add": {
+              "left": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              },
+              "right": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              }
+            }
+          }
+        }
+      },
+      "expected": 40
+    },
+    {
+      "name": "let multiple bindings",
+      "expression": {
+        "Let": {
+          "bindings": [
+            {
+              "variable_id": 1,
+              "variable_name": "base",
+              "value": {
+                "Number": {
+                  "value": 10
+                }
+              }
+            },
+            {
+              "variable_id": 2,
+              "variable_name": "height",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
+            }
+          ],
+          "body": {
+            "Divide": {
+              "left": {
+                "Multiply": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              },
+              "right": {
+                "Number": {
+                  "value": 2
+                }
+              }
+            }
+          }
+        }
+      },
+      "expected": 25
+    },
+    {
+      "name": "let later binding refers earlier",
+      "expression": {
+        "Let": {
+          "bindings": [
+            {
+              "variable_id": 1,
+              "variable_name": "a",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            },
+            {
+              "variable_id": 2,
+              "variable_name": "b",
+              "value": {
+                "Multiply": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 4
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "body": {
+            "Add": {
+              "left": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              },
+              "right": {
+                "Variable": {
+                  "variable_id": 2
+                }
+              }
+            }
+          }
+        }
+      },
+      "expected": 15
+    },
+    {
+      "name": "list literal",
+      "expression": {
+        "ListLiteral": {
+          "items": [
+            {
+              "Number": {
+                "value": 1
+              }
+            },
+            {
+              "Number": {
+                "value": 2
+              }
+            },
+            {
+              "Number": {
+                "value": 3
+              }
+            }
+          ]
+        }
+      },
+      "expected": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "list length",
+      "expression": {
+        "ListLength": {
+          "value": {
+            "ListLiteral": {
+              "items": [
+                {
+                  "Number": {
+                    "value": 1
+                  }
+                },
+                {
+                  "Number": {
+                    "value": 2
+                  }
+                },
+                {
+                  "Number": {
+                    "value": 3
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": 3
+    },
+    {
+      "name": "list get",
+      "expression": {
+        "ListGet": {
+          "list": {
+            "ListLiteral": {
+              "items": [
+                {
+                  "Number": {
+                    "value": 10
+                  }
+                },
+                {
+                  "Number": {
+                    "value": 20
+                  }
+                },
+                {
+                  "Number": {
+                    "value": 30
+                  }
+                }
+              ]
+            }
+          },
+          "index": {
+            "Number": {
+              "value": 1
+            }
+          }
+        }
+      },
+      "expected": 20
+    },
+    {
+      "name": "list concat",
+      "expression": {
+        "ListConcat": {
+          "left": {
+            "ListLiteral": {
+              "items": [
+                {
+                  "Number": {
+                    "value": 1
+                  }
+                }
+              ]
+            }
+          },
+          "right": {
+            "ListLiteral": {
+              "items": [
+                {
+                  "Number": {
+                    "value": 2
+                  }
+                },
+                {
+                  "Number": {
+                    "value": 3
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "expected": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "list append",
+      "expression": {
+        "ListAppend": {
+          "list": {
+            "ListLiteral": {
+              "items": [
+                {
+                  "Number": {
+                    "value": 1
+                  }
+                },
+                {
+                  "Number": {
+                    "value": 2
+                  }
+                }
+              ]
+            }
+          },
+          "item": {
+            "Number": {
+              "value": 3
+            }
+          }
+        }
+      },
+      "expected": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "name": "record literal",
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "name",
+              "value": {
+                "String": {
+                  "value": "definy"
+                }
+              }
+            },
+            {
+              "key": "version",
+              "value": {
+                "Number": {
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "$record": [
+          [
+            "name",
+            "definy"
+          ],
+          [
+            "version",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "name": "record get",
+      "expression": {
+        "RecordGet": {
+          "record": {
+            "TypeLiteral": {
+              "items": [
+                {
+                  "key": "a",
+                  "value": {
+                    "Number": {
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "key": "b",
+                  "value": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "key": "b"
+        }
+      },
+      "expected": 2
+    },
+    {
+      "name": "variant without payload",
+      "expression": {
+        "Variant": {
+          "tag": "none",
+          "payload": null
+        }
+      },
+      "expected": {
+        "$variant": "none",
+        "payload": null
+      }
+    },
+    {
+      "name": "variant with payload",
+      "expression": {
+        "Variant": {
+          "tag": "some",
+          "payload": {
+            "Number": {
+              "value": 5
+            }
+          }
+        }
+      },
+      "expected": {
+        "$variant": "some",
+        "payload": 5
+      }
+    },
+    {
+      "name": "match some",
+      "expression": {
+        "Match": {
+          "target": {
+            "Variant": {
+              "tag": "some",
+              "payload": {
+                "Number": {
+                  "value": 5
+                }
+              }
+            }
+          },
+          "arms": [
+            {
+              "tag": "none",
+              "variable_id": null,
+              "variable_name": null,
+              "body": {
+                "Number": {
+                  "value": 0
+                }
+              }
+            },
+            {
+              "tag": "some",
+              "variable_id": 1,
+              "variable_name": "v",
+              "body": {
+                "Multiply": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "default": null
+        }
+      },
+      "expected": 10
+    },
+    {
+      "name": "match none",
+      "expression": {
+        "Match": {
+          "target": {
+            "Variant": {
+              "tag": "none",
+              "payload": null
+            }
+          },
+          "arms": [
+            {
+              "tag": "none",
+              "variable_id": null,
+              "variable_name": null,
+              "body": {
+                "Number": {
+                  "value": 0
+                }
+              }
+            },
+            {
+              "tag": "some",
+              "variable_id": 1,
+              "variable_name": "v",
+              "body": {
+                "Variable": {
+                  "variable_id": 1
+                }
+              }
+            }
+          ],
+          "default": null
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "call std.abs",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.abs"
+          },
+          "arguments": [
+            {
+              "name": "x",
+              "value": {
+                "Number": {
+                  "value": -5
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 5
+    },
+    {
+      "name": "call std.min",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.min"
+          },
+          "arguments": [
+            {
+              "name": "a",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            },
+            {
+              "name": "b",
+              "value": {
+                "Number": {
+                  "value": 8
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 3
+    },
+    {
+      "name": "call std.max",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.max"
+          },
+          "arguments": [
+            {
+              "name": "a",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            },
+            {
+              "name": "b",
+              "value": {
+                "Number": {
+                  "value": 8
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 8
+    },
+    {
+      "name": "call std.sign",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.sign"
+          },
+          "arguments": [
+            {
+              "name": "x",
+              "value": {
+                "Number": {
+                  "value": -9
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": -1
+    },
+    {
+      "name": "call std.bool-to-string",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.bool-to-string"
+          },
+          "arguments": [
+            {
+              "name": "b",
+              "value": {
+                "Boolean": {
+                  "value": true
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": "true"
+    },
+    {
+      "name": "call std.list-is-empty",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.list-is-empty"
+          },
+          "arguments": [
+            {
+              "name": "xs",
+              "value": {
+                "ListLiteral": {
+                  "items": []
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "call std.string-index-of",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.string-index-of"
+          },
+          "arguments": [
+            {
+              "name": "text",
+              "value": {
+                "String": {
+                  "value": "hello world"
+                }
+              }
+            },
+            {
+              "name": "target",
+              "value": {
+                "String": {
+                  "value": "world"
+                }
+              }
+            },
+            {
+              "name": "startIndex",
+              "value": {
+                "Number": {
+                  "value": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": 6
+    },
+    {
+      "name": "call std.url-path",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.url-path"
+          },
+          "arguments": [
+            {
+              "name": "url",
+              "value": {
+                "String": {
+                  "value": "https://example.com/a/b?q=1"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": "/a/b"
+    },
+    {
+      "name": "call std.url-query",
+      "expression": {
+        "Call": {
+          "function": {
+            "$part": "std.url-query"
+          },
+          "arguments": [
+            {
+              "name": "url",
+              "value": {
+                "String": {
+                  "value": "https://example.com/a/b?q=1"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": "q=1"
+    },
+    {
+      "name": "sample.triangle-area",
+      "expression": {
+        "$part": "sample.triangle-area"
+      },
+      "expected": 25
+    },
+    {
+      "name": "sample.is-even-sample",
+      "expression": {
+        "$part": "sample.is-even-sample"
+      },
+      "expected": "even"
+    },
+    {
+      "name": "sample.prime-numbers",
+      "expression": {
+        "$part": "sample.prime-numbers"
+      },
+      "expected": [
+        2,
+        3,
+        5,
+        7,
+        11
+      ]
+    }
+  ]
+}

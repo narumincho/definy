@@ -1,7 +1,7 @@
 {
   "tasks": {
     "test": "deno test worker/",
-    "check": "deno check worker/index.ts worker/proxy_test.ts",
+    "check": "deno check worker/",
     "fmt": "deno fmt",
     "lint": "deno lint"
   },
