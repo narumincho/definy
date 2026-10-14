@@ -151,12 +151,15 @@ fn evaluate_boolean_and_if() {
     );
     assert_eq!(expression_to_source(&bool_expr), "True");
 
-    let if_expr = bool_match_op(bool_lit(false), num(10), num(20));
+    let match_expr = bool_match_op(bool_lit(false), num(10), num(20));
     assert_eq!(
-        evaluate_expression(&if_expr, &[]),
+        evaluate_expression(&match_expr, &[]),
         Ok(crate::expression_eval::Value::Number(20))
     );
-    assert_eq!(expression_to_source(&if_expr), "if False 10 20");
+    assert_eq!(
+        expression_to_source(&match_expr),
+        "match False {true => 10, false => 20}"
+    );
 }
 
 #[test]
