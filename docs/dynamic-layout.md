@@ -51,6 +51,14 @@ data = [
     上に常時配置した上で, クリックイベント内で同期的に `position-anchor`
     を対象ノードに切り替えて `showPopover()` (`show_anchored_popover`)
     を呼び出す.
+  - ブラウザの popover 既定スタイル (User Agent stylesheet の `inset: 0`)
+    がアンカー計算と干渉して画面最上部に飛ぶ問題を防ぐため,
+    `[popover]` に `inset: auto; position: absolute;` を指定し,
+    `position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline;`
+    で自動反転配置を行う.
+  - CSS Anchor Positioning (`position-area`, `position-anchor`, `position-try-fallbacks`)
+    は Chrome, Edge に加え Safari でも標準対応したため,
+    JavaScript による座標計算フォールバックは不要となり CSS のみでクリーンに配置する.
   - 数値・文字列リテラル選択時はノード上で直接編集するため,
     メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
     を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).
@@ -61,3 +69,18 @@ data = [
 - ノードの枠は常に丸くする. 1 行に収まるバッジ・インラインカプセルは
   `--radius-full` (ピル型), 高さのある複数行カプセル・テーブルは `--radius-lg`
   を使う.
+- **ダークテーマの統一と Popover / ネイティブ要素対策**:
+  - ブラウザの User Agent Stylesheet は `:root` や `<meta name="color-scheme">`
+    で `color-scheme: dark;` を宣言しないと `Canvas` (`#ffffff`) や
+    `CanvasText` をライトモード基準で計算するため, `[popover]` や `<dialog>`,
+    `<select>`, `<option>`, オートフィルが白背景になって文字が読めなくなる.
+  - `:root` と `html`, `body`, `<meta>` に `color-scheme: dark;` を明示し,
+    `[popover]` および `:popover-open`, `.dropdown-popover-panel` に
+    `background-color: var(--surface-opaque); color: var(--text);` を指定して
+    Top Layer で確実に不透明ダーク背景を保つ.
+  - Dioxus の DOM パッチ適用処理 (`setAttributeInner`) では,
+    直接操作されたインラインスタイルとショートハンド (`background`, `border`)
+    の競合により再レンダリング時にスタイルが脱落する場合があるため,
+    装飾スタイルはインラインではなく CSS クラス (`.dropdown-popover-panel`)
+    で確実に管理する.
+

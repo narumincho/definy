@@ -39,9 +39,8 @@ fn dom_show_popover_and_focus(
     if let Some(window) = web_sys::window() {
         if let Some(doc) = window.document() {
             if let Some(elem) = doc.get_element_by_id(_panel_id) {
-                if let Some(anchor_name) = _anchor_name
-                    && let Ok(style) =
-                        js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("style"))
+                if let Ok(style) =
+                    js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("style"))
                     && let Ok(set_prop) = js_sys::Reflect::get(
                         &style,
                         &wasm_bindgen::JsValue::from_str("setProperty"),
@@ -50,15 +49,59 @@ fn dom_show_popover_and_focus(
                 {
                     let _ = set_prop_fn.call2(
                         &style,
-                        &wasm_bindgen::JsValue::from_str("position-anchor"),
-                        &wasm_bindgen::JsValue::from_str(anchor_name),
+                        &wasm_bindgen::JsValue::from_str("inset"),
+                        &wasm_bindgen::JsValue::from_str("auto"),
                     );
+                    let _ = set_prop_fn.call2(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("background-color"),
+                        &wasm_bindgen::JsValue::from_str("var(--surface-opaque)"),
+                    );
+                    let _ = set_prop_fn.call2(
+                        &style,
+                        &wasm_bindgen::JsValue::from_str("color"),
+                        &wasm_bindgen::JsValue::from_str("var(--text)"),
+                    );
+
+                    if let Some(anchor_name) = _anchor_name {
+                        let _ = set_prop_fn.call2(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("position-anchor"),
+                            &wasm_bindgen::JsValue::from_str(anchor_name),
+                        );
+                        let _ = set_prop_fn.call2(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("position-area"),
+                            &wasm_bindgen::JsValue::from_str("bottom span-right"),
+                        );
+                        let _ = set_prop_fn.call2(
+                            &style,
+                            &wasm_bindgen::JsValue::from_str("position-try-fallbacks"),
+                            &wasm_bindgen::JsValue::from_str("flip-block, flip-inline"),
+                        );
+                    }
                 }
-                let _ =
-                    js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("showPopover"))
+
+                let is_open =
+                    js_sys::Reflect::get(&elem, &wasm_bindgen::JsValue::from_str("matches"))
                         .ok()
                         .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
-                        .and_then(|f| f.call0(&elem).ok());
+                        .and_then(|f| {
+                            f.call1(&elem, &wasm_bindgen::JsValue::from_str(":popover-open"))
+                                .ok()
+                        })
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+
+                if !is_open {
+                    let _ = js_sys::Reflect::get(
+                        &elem,
+                        &wasm_bindgen::JsValue::from_str("showPopover"),
+                    )
+                    .ok()
+                    .and_then(|f| f.dyn_into::<js_sys::Function>().ok())
+                    .and_then(|f| f.call0(&elem).ok());
+                }
             }
             if let Some(search_input_name) = _search_input_name {
                 let selector = format!("input[name=\"{}\"]", search_input_name);
@@ -145,7 +188,11 @@ pub fn SearchableDropdown(
         move || {
             search_query.set(initial_search_query_for_label(&current_label));
             highlighted_index.set(None);
-            dom_show_popover_and_focus(&panel_id, None, Some(&format!("search-{}", name)));
+            dom_show_popover_and_focus(
+                &panel_id,
+                Some(&anchor_name_id(&name)),
+                Some(&format!("search-{}", name)),
+            );
         }
     };
 
@@ -240,7 +287,8 @@ pub fn SearchableDropdownPanel(
         div {
             id: "{panel_id}",
             "popover": "auto",
-            style: "position-anchor: {anchor_name}; top: anchor(bottom); left: anchor(left); position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
+            class: "dropdown-popover-panel",
+            style: "position: absolute; inset: auto; position-anchor: {anchor_name}; position-area: bottom span-right; position-try-fallbacks: flip-block, flip-inline; min-width: max(16rem, anchor-size(width)); max-width: min(90vw, 32rem); margin: 4px 0; background-color: var(--surface-opaque); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); box-sizing: border-box;",
             {header}
             input {
                 r#type: "text",

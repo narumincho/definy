@@ -28,30 +28,58 @@ Workers は definy の設計思想に最も適合するクラウド実行基盤�
 
 ---
 
-## 2. デプロイフローとアーキテクチャ
+## 2. 宣言的デプロイパーツ (`definy:deploy`) とサーバー実行モデル
+
+definy では、手動のフォームで API トークンや Worker 名を入力して送信するのではなく、**パーツとして宣言的にデプロイを記述する**モデルを採用しています。
+
+```text
+definy.deploy({
+  cloudflareToken: "$CLOUDFLARE_API_TOKEN",
+  cloudflareWorkerName: "my-edge-service",
+  handler: fn(req: HttpRequest) => HttpResponse { ... }
+})
+```
+
+- **唯一サーバーで実行される特殊なパーツ**:
+  通常のパーツはクライアント（ブラウザ内 Wasm / 評価器）で評価されますが、`deploy` パーツは唯一バックエンドサーバー（`definy-server`）上で実行されます。
+- **オンデマンドプレビュー (`definy:preview`) との違い**:
+  プレビューはパーツを定義・コミットした瞬間からローカル/サブドメインでルーティングされますが、デプロイはパーツ詳細画面で「デプロイを実行」または「評価」をクリックしたタイミングで Cloudflare Workers REST API v4 が呼び出され、エッジ環境に配備されます。
+- **`/deployments` ページの役割**:
+  実行系の手動入力フォームは廃止され、`definy:deploy` パーツの使い方・説明と、過去のデプロイ履歴一覧（SurrealDB に永続化）を確認するためのダッシュボードとして機能します。
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as 開発者 / ユーザー
-    participant UI as definy Web UI (/deployments)
-    participant Server as definy-server (親インスタンス)
+    participant UI as definy Web UI (パーツ詳細画面)
+    participant Server as definy-server (バックエンド)
     participant DB as SurrealDB (deployments)
     participant CFAPI as Cloudflare REST API v4 (api.cloudflare.com)
     participant Edge as Cloudflare Workers Edge Network
 
-    User->>UI: API Token & Worker 名を入力して「Deploy」クリック
-    UI->>Server: Connect-RPC POST /definy.v1.DeployService/DeployCloudflare
-    Note over Server: Wasm バイナリ埋め込み worker.js と metadata を multipart/form-data に構築
+    User->>UI: definy:deploy パーツ詳細画面で「デプロイを実行」または「評価」クリック
+    UI->>Server: Connect-RPC POST /definy.v1.DeployService/DeployCloudflare (part_id 指定)
+    Note over Server: 式から token, workerName, handler を自動抽出し Wasm / worker.js を構築
     Server->>CFAPI: GET /accounts (Account ID 未指定時の自動解決)
     Server->>CFAPI: PUT /accounts/{account}/workers/scripts/{script} (スクリプト配備)
     Server->>CFAPI: POST /accounts/{account}/workers/scripts/{script}/subdomain (enabled: true)
     Server->>CFAPI: GET /accounts/{account}/workers/subdomain (サブドメイン取得)
-    Server->>DB: deployments テーブルに履歴保存 (provider: "cloudflare_workers")
-    Server-->>UI: DeployCloudflareResponse (URL, script_name, status, evaluated_result)
-    UI-->>User: デプロイ完了URL (https://<script>.<subdomain>.workers.dev) を表示
+    Server->>Edge: GET https://<script>.<subdomain>.workers.dev (健全性確認 Ping / Health Check)
+    Edge-->>Server: 200 OK (レイテンシ・稼働確認レスポンス)
+    Server->>DB: deployments テーブルに履歴保存 (status に Health Check 結果を記録)
+    Server-->>UI: DeployCloudflareResponse (URL, health_check_status, health_check_latency_ms, health_check_message)
+    UI-->>User: デプロイ完了URL & ⚡ エッジ稼働確認: 200 OK (85ms) を表示
     User->>Edge: ブラウザでアクセス (V8 Isolate 上でサブミリ秒起動)
 ```
+
+---
+
+### デプロイ直後の健全性確認 (Edge Health Check Ping)
+
+デプロイ完了時、`definy-server` は Cloudflare REST API v4 から返却された公開 URL に対して自動的に HTTP GET リクエスト（Health Check Ping）を発行します。
+- **即時稼働検証**: V8 Isolate のプロビジョニング完了とルーティングの反映をサーバー側で検証します。
+- **レイテンシ測定**: 初回コールドスタートを含む初期レスポンス時間（ミリ秒）を計測し、UI のバナーおよび SurrealDB のデプロイ履歴に `succeeded (Health: 200 OK (85ms))` として記録します。
+- **テスト・自動化対応**: テスト環境や外部接続を行わない場合には、リクエストに `skipHealthCheck: true` を指定することでヘルスチェックをスキップできます。
 
 ---
 

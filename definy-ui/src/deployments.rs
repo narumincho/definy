@@ -1,9 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::Location;
-use crate::deployments_cloudflare::CloudflareWorkersCard;
 use crate::page_context::PageContext;
-use crate::preview_apps::PreviewAppsCard;
 
 #[component]
 pub fn DeploymentsView(context: PageContext) -> Element {
@@ -84,11 +82,8 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                     }
                 }
 
-                // インサーバープレビュー実行フォーム (Localhost / サブドメイン動作検証)
-                PreviewAppsCard { context: context.clone() }
-
-                // Cloudflare Workers インタラクティブ実行フォーム
-                CloudflareWorkersCard { context: context.clone() }
+                // 宣言的デプロイパーツ (definy:deploy) の仕様と解説カード
+                DeployPartGuideCard { context: context.clone() }
 
                 // 3つのブートストラップ階層
                 div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;",
@@ -154,6 +149,120 @@ pub fn DeploymentsView(context: PageContext) -> Element {
 
                 // デプロイ履歴一覧 (SurrealDB 永続化)
                 DeploymentsHistoryCard { context: context.clone() }
+            }
+        }
+    }
+}
+
+#[component]
+fn DeployPartGuideCard(context: PageContext) -> Element {
+    let lang = context.language;
+    let code_sample = "definy.deploy(\n  cloudflareToken: \"$CLOUDFLARE_API_TOKEN\",\n  cloudflareWorkerName: \"my-production-app\",\n  handler: fn(req: HttpRequest) => HttpResponse {\n    status: 200,\n    headers: [],\n    body: std.string-to-utf8-stream(\"Hello from Cloudflare Workers!\")\n  }\n)";
+
+    rsx! {
+        div {
+            class: "event-detail-card",
+            style: "background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: var(--radius-lg); padding: 1.6rem; display: flex; flex-direction: column; gap: 1.1rem;",
+
+            div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;",
+                div { style: "display: flex; align-items: center; gap: 0.6rem;",
+                    span { style: "font-size: 1.5rem;", "⚡" }
+                    h2 { style: "font-size: 1.25rem; font-weight: 700; margin: 0; color: #fb923c;",
+                        {
+                            lang.label(
+                                "Declarative Edge Deployment (definy:deploy)",
+                                "宣言的エッジデプロイパーツ (definy:deploy)",
+                                "Deklara Deploj-parto (definy:deploy)",
+                            )
+                        }
+                    }
+                }
+                span {
+                    class: "preview-badge",
+                    style: "background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); color: #fb923c; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 999px;",
+                    {
+                        lang.label(
+                            "Executed on Server",
+                            "サーバー実行専用パーツ",
+                            "Rulata sur Servilo",
+                        )
+                    }
+                }
+            }
+
+            p { style: "font-size: 0.92rem; color: var(--text-secondary); margin: 0; line-height: 1.6;",
+                {
+                    lang.label(
+                        "In definy, deployments are not triggered by manual input forms, but defined as pure parts using definy:deploy. The deploy part is the ONLY part executed on the backend server, bridging pure functional expressions with Cloudflare Workers REST API v4.",
+                        "definy では、手動の入力フォームではなくパーツとして definy:deploy を定義します。deploy パーツは唯一サーバー側で実行される特殊なパーツであり、純粋関数型式を Cloudflare Workers REST API v4 経由で世界中の V8 Isolate に配備します。",
+                        "En definy, deplojoj estas difinitaj kiel puraj partoj per definy:deploy. Ĝi estas la nura parto rulata sur la servilo.",
+                    )
+                }
+            }
+
+            // コード例表示
+            div { style: "background: #090d16; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); padding: 1.1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; color: #e2e8f0; white-space: pre;",
+                "{code_sample}"
+            }
+
+            div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; margin-top: 0.2rem;",
+                div { style: "padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
+                    div { style: "font-weight: 700; color: #fb923c; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
+                        span { "1." }
+                        {lang.label("Define Part", "パーツとして定義", "Difini Parton")}
+                    }
+                    div { style: "color: var(--text-secondary);",
+                        {
+                            lang.label(
+                                "Create a part that calls definy:deploy with your token, worker name, and HTTP handler function.",
+                                "token, worker 名, HTTP ハンドラ関数を指定して definy:deploy を呼び出すパーツを作成・保存します。",
+                                "Kreu parton vokantan definy:deploy.",
+                            )
+                        }
+                    }
+                }
+                div { style: "padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
+                    div { style: "font-weight: 700; color: #60a5fa; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
+                        span { "2." }
+                        {
+                            lang.label(
+                                "Execute on Server",
+                                "サーバーで実行 / デプロイ",
+                                "Ruli sur Servilo",
+                            )
+                        }
+                    }
+                    div { style: "color: var(--text-secondary);",
+                        {
+                            lang.label(
+                                "Click 'Deploy to Cloudflare Workers' on the part editor screen. The server executes deployment and records history in SurrealDB.",
+                                "パーツ詳細画面の「Cloudflare Workers にデプロイ」または「評価」を実行すると、サーバー側がデプロイを行い、履歴に記録されます。",
+                                "Alklaku 'Deploji sur Cloudflare Workers' en la redaktilo.",
+                            )
+                        }
+                    }
+                }
+                div { style: "padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
+                    div { style: "font-weight: 700; color: #a855f7; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
+                        span { "3." }
+                        {
+                            lang.label(
+                                "Preview vs Deploy",
+                                "プレビューとデプロイの違い",
+                                "Antaŭrigardo vs Deplojo",
+                            )
+                        }
+                    }
+                    div { style: "color: var(--text-secondary);",
+                        {
+                            lang.label(
+                                "definy:preview works instantly upon definition. In contrast, definy:deploy is executed on demand to deploy to global edge.",
+                                "preview は定義した瞬間からルーティングされますが、deploy は実行したタイミングで世界中のエッジに配備されます。",
+                                "preview aktiviĝas tuj, dum deploy aktiviĝas post eksplicita rulo.",
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -411,5 +520,39 @@ fn BootstrappingLayerCard(
                 "{description}"
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deployments_view_renders_deploy_part_guide_and_history() {
+        let context = crate::PageContext::from_path_and_query("/", "", Some("ja"));
+        let mut renderer = dioxus_ssr::Renderer::new();
+        let html = renderer.render_element(rsx! {
+            DeploymentsView { context }
+        });
+
+        // 1. 宣言的デプロイパーツ (definy:deploy) のガイドが含まれていること
+        assert!(
+            html.contains("definy:deploy"),
+            "Should contain definy:deploy guide, got: {html}"
+        );
+        assert!(
+            html.contains("cloudflareWorkerName"),
+            "Should contain cloudflareWorkerName example, got: {html}"
+        );
+        assert!(
+            html.contains("サーバー実行専用パーツ"),
+            "Should contain server execution label, got: {html}"
+        );
+
+        // 2. 廃止された手動デプロイフォーム（APIトークン入力フィールド）が存在しないこと
+        assert!(
+            !html.contains("Cloudflare ダッシュボードでトークンを発行"),
+            "Should NOT contain deprecated manual token prompt, got: {html}"
+        );
     }
 }

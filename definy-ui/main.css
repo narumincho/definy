@@ -1,7 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
+  color-scheme: dark;
   --background: #0b0f17;
+  --bg: var(--background);
+  --bg-canvas: #070a10;
+  --bg-surface: var(--surface);
   --surface: rgba(18, 25, 38, 0.78);
   --surface-hover: rgba(28, 38, 56, 0.9);
   --surface-card: linear-gradient(180deg, rgba(22, 32, 48, 0.72) 0%, rgba(14, 21, 33, 0.82) 100%);
@@ -70,7 +74,14 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: dark;
+  background-color: var(--background);
+  color: var(--text);
+}
+
 body {
+  color-scheme: dark;
   background-color: var(--background);
   /* グリッドの子要素が中身の幅で広がって横スクロールが発生しないようにする */
   grid-template-columns: minmax(0, 1fr);
@@ -307,6 +318,25 @@ select {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
   backdrop-filter: blur(6px);
+  color-scheme: dark;
+}
+
+option,
+optgroup {
+  background-color: var(--surface-opaque);
+  color: var(--text);
+}
+
+/* ブラウザのオートフィルによる白背景・黒文字を防止してダークテーマに固定 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #0b0f17 inset !important;
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 input:hover,
@@ -769,7 +799,42 @@ textarea {
   animation: pulse-glow 2s infinite ease-in-out;
 }
 
-/* SearchableDropdown Styles */
+/* SearchableDropdown & Popover Styles */
+[popover] {
+  position: absolute;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  background-color: var(--surface-opaque);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--glass-blur);
+  color-scheme: dark;
+}
+
+:popover-open {
+  background-color: var(--surface-opaque);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.dropdown-popover-panel {
+  position: absolute;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  background-color: var(--surface-opaque);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--glass-blur);
+  box-sizing: border-box;
+  color-scheme: dark;
+}
+
 .dropdown-item-link {
   display: inline-flex;
   align-items: center;

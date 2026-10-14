@@ -9,6 +9,7 @@ use definy_event::event::{
 pub fn create_sample_module_parts(
     core_module_id: &EventHashId,
     std_module_id: &EventHashId,
+    definy_module_id: &EventHashId,
 ) -> Vec<ModulePartEntry> {
     vec![
         ModulePartEntry {
@@ -179,6 +180,7 @@ pub fn create_sample_module_parts(
         crate::builtin_self_hosted_server::create_self_hosted_definy_server_part(
             core_module_id,
             std_module_id,
+            definy_module_id,
         ),
     ]
 }

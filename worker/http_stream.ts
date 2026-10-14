@@ -192,11 +192,22 @@ export async function evaluatePartForHttpRequest(
     resolvePartExpr,
   );
 
-  // トップレベルが関数の場合、純粋な HTTP リクエストレコード { method, url, headers, body } を第1引数に渡して呼び出す
+  // トップレベルがプレビュー設定レコード { code, handler } の場合、handler を取り出す
+  let handlerFn = evaluated;
   if (
     evaluated &&
     typeof evaluated === "object" &&
-    ("__fn" in evaluated || "__nativeFn" in evaluated)
+    !("__fn" in evaluated || "__nativeFn" in evaluated) &&
+    "handler" in (evaluated as Record<string, unknown>)
+  ) {
+    handlerFn = (evaluated as Record<string, unknown>).handler as DefinyValue;
+  }
+
+  // トップレベル（またはプレビューの handler）が関数の場合、純粋な HTTP リクエストレコード { method, url, headers, body } を第1引数に渡して呼び出す
+  if (
+    handlerFn &&
+    typeof handlerFn === "object" &&
+    ("__fn" in handlerFn || "__nativeFn" in handlerFn)
   ) {
     const reqHeaders: Array<DefinyValue> = [];
     request.headers.forEach((value, name) => {
@@ -212,7 +223,7 @@ export async function evaluatePartForHttpRequest(
       headers: reqHeaders,
       body: createByteStreamDefinyValue(reqBodyBytes),
     };
-    return await callDefinyFunction(evaluated, reqValue);
+    return await callDefinyFunction(handlerFn, reqValue);
   }
 
   return evaluated;

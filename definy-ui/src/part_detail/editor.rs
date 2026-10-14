@@ -3,11 +3,13 @@ use std::str::FromStr;
 use definy_event::EventHashId;
 use dioxus::prelude::*;
 
+use super::banners::{DeployBanner, PreviewBanner};
 use crate::app_state::AppState;
 use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::evaluate_expression;
 use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
+use crate::preview_apps::build_preview_subdomain_url;
 
 #[component]
 pub(crate) fn PartEditorCard(
@@ -28,7 +30,7 @@ pub(crate) fn PartEditorCard(
     let expression = use_signal(|| snapshot.expression.clone());
     let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
     let mut commit_message = use_signal(String::new);
-    let eval_result = use_signal(|| None::<String>);
+    let mut eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
 
@@ -222,6 +224,98 @@ pub(crate) fn PartEditorCard(
         }
     };
 
+    let detected_preview = expression
+        .read()
+        .as_ref()
+        .and_then(definy_core::detect_preview_in_expression);
+
+    let detected_deploy = expression
+        .read()
+        .as_ref()
+        .and_then(definy_core::detect_deploy_in_expression);
+
+    let mut is_deploying = use_signal(|| false);
+
+    let on_deploy = {
+        let language = context.language;
+        let part_name_val = part_name.read().clone();
+        let target_part_id = if !part_name_val.is_empty() {
+            part_name_val
+        } else {
+            definition_event_hash.to_string()
+        };
+        let dep_opt = detected_deploy.clone();
+        move |_| {
+            let dep = dep_opt.clone();
+            let part_id = target_part_id.clone();
+            spawn(async move {
+                is_deploying.set(true);
+                eval_result.set(Some(
+                    language
+                        .label(
+                            "🚀 Deploying to Cloudflare Workers via backend server...",
+                            "🚀 サーバー経由で Cloudflare Workers へデプロイ中...",
+                            "🚀 Deplojante sur Cloudflare Workers per servilo...",
+                        )
+                        .to_string(),
+                ));
+
+                let req = definy_event::rpc::DeployCloudflareRequest {
+                    api_token: dep
+                        .as_ref()
+                        .and_then(|d| d.cloudflare_token.clone())
+                        .unwrap_or_default(),
+                    account_id: None,
+                    script_name: dep.as_ref().map(|d| d.cloudflare_worker_name.clone()),
+                    wasm_hash: None,
+                    custom_script: None,
+                    compile_self_hosted: Some(false),
+                    part_id: Some(part_id),
+                    skip_health_check: None,
+                };
+
+                match crate::fetch::deploy_cloudflare(&req).await {
+                    Ok(res) => {
+                        let health_info = if let Some(ref msg) = res.health_check_message {
+                            format!(
+                                "\n⚡ {} {msg}",
+                                language.label(
+                                    "Edge Health Check:",
+                                    "エッジ稼働確認:",
+                                    "Randa Sancirkonstanco:",
+                                )
+                            )
+                        } else {
+                            String::new()
+                        };
+                        eval_result.set(Some(format!(
+                            "{} {} ({}){health_info}",
+                            language.label(
+                                "✅ Successfully deployed to Cloudflare Workers:",
+                                "✅ Cloudflare Workers へのデプロイに成功しました:",
+                                "✅ Sukcese deplojita al Cloudflare Workers:",
+                            ),
+                            res.url,
+                            res.script_name,
+                        )));
+                    }
+                    Err(err) => {
+                        eval_result.set(Some(format!(
+                            "{} {}",
+                            language.label(
+                                "❌ Deployment failed:",
+                                "❌ デプロイに失敗しました:",
+                                "❌ Deploja fiasko:",
+                            ),
+                            err,
+                        )));
+                    }
+                }
+                is_deploying.set(false);
+            });
+        }
+    };
+
     rsx! {
         div { style: "display: grid; gap: 0.85rem;",
             // 1. メタ情報＆アクションヘッダーカード
@@ -252,6 +346,52 @@ pub(crate) fn PartEditorCard(
                         }
                     }
                     div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
+                        if let Some(ref prev) = detected_preview {
+                            {
+                                let sub_url = build_preview_subdomain_url(&prev.code);
+                                rsx! {
+                                    a {
+                                        href: "{sub_url}",
+                                        target: "_blank",
+                                        rel: "noopener noreferrer",
+                                        class: "btn-primary",
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);",
+                                        span {
+                                            {
+                                                context
+                                                    .language
+                                                    .label(
+                                                        "🚀 Preview Web App",
+                                                        "🚀 プレビューを開く",
+                                                        "🚀 Antaŭrigardo",
+                                                    )
+                                            }
+                                        }
+                                        span { style: "font-size: 0.72rem;", "↗" }
+                                    }
+                                }
+                            }
+                        }
+                        if let Some(ref _dep) = detected_deploy {
+                            {
+                                rsx! {
+                                    button {
+                                        r#type: "button",
+                                        class: "btn-primary",
+                                        disabled: is_deploying(),
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(249, 115, 22, 0.25); background: #f97316; border-color: #ea580c;",
+                                        onclick: on_deploy.clone(),
+                                        span {
+                                            if is_deploying() {
+                                                "{context.language.label(\"🚀 Deploying...\", \"🚀 デプロイ中...\", \"🚀 Deplojante...\")}"
+                                            } else {
+                                                "{context.language.label(\"🚀 Deploy to Cloudflare\", \"🚀 Cloudflare にデプロイ\", \"🚀 Deploji sur Cloudflare\")}"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         button {
                             r#type: "button",
                             class: "btn-secondary",
@@ -268,8 +408,19 @@ pub(crate) fn PartEditorCard(
                             class: "btn-secondary",
                             onclick: {
                                 let state = state.clone();
-                                move |_| {
-                                    evaluate_and_set_result(&expression.read(), &state, language, eval_result);
+                                let on_deploy_trigger = on_deploy.clone();
+                                let has_deploy = detected_deploy.is_some();
+                                move |evt| {
+                                    if has_deploy {
+                                        on_deploy_trigger(evt);
+                                    } else {
+                                        evaluate_and_set_result(
+                                            &expression.read(),
+                                            &state,
+                                            language,
+                                            eval_result,
+                                        );
+                                    }
                                 }
                             },
                             crate::icon::PlayIcon {}
@@ -367,6 +518,21 @@ pub(crate) fn PartEditorCard(
                         style: "font-size: 0.82rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
                         "{result}"
                     }
+                }
+            }
+
+            // プレビューバナーカード (definy:preview 検出時)
+            if let Some(ref prev) = detected_preview {
+                PreviewBanner { context: context.clone(), preview: prev.clone() }
+            }
+
+            // デプロイバナーカード (definy:deploy 検出時)
+            if let Some(ref dep) = detected_deploy {
+                DeployBanner {
+                    context: context.clone(),
+                    deploy: dep.clone(),
+                    is_deploying: is_deploying(),
+                    on_deploy: on_deploy.clone(),
                 }
             }
 

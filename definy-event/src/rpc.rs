@@ -348,6 +348,14 @@ pub struct DeployCloudflareRequest {
     #[prost(string, optional, tag = "7")]
     #[serde(default, skip_serializing_if = "Option::is_none", alias = "part_id")]
     pub part_id: Option<String>,
+
+    #[prost(bool, optional, tag = "8")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "skip_health_check"
+    )]
+    pub skip_health_check: Option<bool>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
@@ -374,6 +382,30 @@ pub struct DeployCloudflareResponse {
         alias = "evaluated_result"
     )]
     pub evaluated_result: Option<String>,
+
+    #[prost(uint32, optional, tag = "5")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "health_check_status"
+    )]
+    pub health_check_status: Option<u32>,
+
+    #[prost(uint64, optional, tag = "6")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "health_check_latency_ms"
+    )]
+    pub health_check_latency_ms: Option<u64>,
+
+    #[prost(string, optional, tag = "7")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        alias = "health_check_message"
+    )]
+    pub health_check_message: Option<String>,
 }
 
 #[derive(Clone, PartialEq, Message, Serialize, Deserialize)]
@@ -531,6 +563,7 @@ mod tests {
             custom_script: None,
             compile_self_hosted: Some(true),
             part_id: None,
+            skip_health_check: Some(false),
         };
         let mut buf = Vec::new();
         req.encode(&mut buf).unwrap();
@@ -542,6 +575,9 @@ mod tests {
             status: "succeeded".into(),
             url: "https://test-worker.definy.workers.dev".into(),
             evaluated_result: Some("42".into()),
+            health_check_status: Some(200),
+            health_check_latency_ms: Some(42),
+            health_check_message: Some("200 OK (42ms)".into()),
         };
         let mut buf_res = Vec::new();
         res.encode(&mut buf_res).unwrap();
