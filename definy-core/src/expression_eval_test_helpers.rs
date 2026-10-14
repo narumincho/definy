@@ -158,7 +158,11 @@ pub fn or_op(left: Expression, right: Expression) -> Expression {
 }
 
 #[allow(dead_code)]
-pub fn bool_match_op(condition: Expression, then_expr: Expression, else_expr: Expression) -> Expression {
+pub fn bool_match_op(
+    condition: Expression,
+    then_expr: Expression,
+    else_expr: Expression,
+) -> Expression {
     Expression::match_boolean(condition, then_expr, else_expr)
 }
 

@@ -549,7 +549,10 @@ fn test_validate_module_ast_structure() {
                     assert!(arm_tags.contains("true"));
                     assert!(arm_tags.contains("false"));
                 }
-                other => panic!("Expected boolean Match in validate-module, got: {:?}", other),
+                other => panic!(
+                    "Expected boolean Match in validate-module, got: {:?}",
+                    other
+                ),
             }
         }
         other => panic!("Expected Function, got: {:?}", other),

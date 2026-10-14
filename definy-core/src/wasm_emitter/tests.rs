@@ -78,13 +78,17 @@ fn test_compile_and_execute_bitwise_operations() {
 
 #[test]
 fn test_compile_and_execute_comparisons_and_boolean_match() {
-    let expr = Expression::match_boolean(Expression::LessThan(LessThanExpression {
+    let expr = Expression::match_boolean(
+        Expression::LessThan(LessThanExpression {
             left: Box::new(Expression::Number(NumberExpression { value: 5 })),
             right: Box::new(Expression::Number(NumberExpression { value: 10 })),
-        }), Expression::Subtract(SubtractExpression {
+        }),
+        Expression::Subtract(SubtractExpression {
             left: Box::new(Expression::Number(NumberExpression { value: 50 })),
             right: Box::new(Expression::Number(NumberExpression { value: 8 })),
-        }), Expression::Number(NumberExpression { value: 0 }));
+        }),
+        Expression::Number(NumberExpression { value: 0 }),
+    );
     let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
     let val = execute_wasm(&wasm).unwrap();
     assert_eq!(val, Value::Number(42));
@@ -497,14 +501,15 @@ fn test_compile_and_execute_recursive_function_part() {
                         parameter_id: 1,
                         parameter_name: "n".into(),
                     }],
-                    body: Box::new(Expression::match_boolean(Expression::LessThanOrEqual(
-                            LessThanOrEqualExpression {
-                                left: Box::new(Expression::Variable(VariableExpression {
-                                    variable_id: 1,
-                                })),
-                                right: Box::new(Expression::Number(NumberExpression { value: 1 })),
-                            },
-                        ), Expression::Number(NumberExpression { value: 1 }), Expression::Multiply(MultiplyExpression {
+                    body: Box::new(Expression::match_boolean(
+                        Expression::LessThanOrEqual(LessThanOrEqualExpression {
+                            left: Box::new(Expression::Variable(VariableExpression {
+                                variable_id: 1,
+                            })),
+                            right: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                        }),
+                        Expression::Number(NumberExpression { value: 1 }),
+                        Expression::Multiply(MultiplyExpression {
                             left: Box::new(Expression::Variable(VariableExpression {
                                 variable_id: 1,
                             })),
@@ -524,7 +529,8 @@ fn test_compile_and_execute_recursive_function_part() {
                                     })),
                                 }],
                             })),
-                        }))),
+                        }),
+                    )),
                 })),
             }],
         }),

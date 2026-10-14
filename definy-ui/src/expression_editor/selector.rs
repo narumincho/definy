@@ -273,13 +273,13 @@ pub fn selector_options(
     options.extend([
         ("expr:string".to_string(), "string\tLiteral\t".to_string()),
         (
-                "expr:boolean:true".to_string(),
-                "true\tLiteral\tBoolean".to_string(),
-            ),
-            (
-                "expr:boolean:false".to_string(),
-                "false\tLiteral\tBoolean".to_string(),
-            ),
+            "expr:boolean:true".to_string(),
+            "true\tLiteral\tBoolean".to_string(),
+        ),
+        (
+            "expr:boolean:false".to_string(),
+            "false\tLiteral\tBoolean".to_string(),
+        ),
         ("expr:list".to_string(), "list\tLiteral\t".to_string()),
         (
             "expr:type_literal".to_string(),

@@ -20,9 +20,13 @@ fn test_compile_gc_number_and_arithmetic() {
 
 #[test]
 fn test_compile_gc_boolean_match() {
-    let expr = Expression::match_boolean(Expression::Boolean(BooleanExpression { value: true }), Expression::String(StringExpression {
+    let expr = Expression::match_boolean(
+        Expression::Boolean(BooleanExpression { value: true }),
+        Expression::String(StringExpression {
             value: "yes".into(),
-        }), Expression::String(StringExpression { value: "no".into() }));
+        }),
+        Expression::String(StringExpression { value: "no".into() }),
+    );
 
     let wasm = compile_expression_to_wasm_gc(&expr, &[]).expect("compilation failed");
     let result = execute_wasm(&wasm).expect("execution failed");

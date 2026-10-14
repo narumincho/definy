@@ -13,8 +13,7 @@ use crate::expression_editor::diagnostics::{
     TypeAnalysis, constructor_default_value_from_type_part,
 };
 use crate::expression_editor::mutation::{
-    apply_selection, get_mut_expression_at_path, set_number_value,
-    set_string_value,
+    apply_selection, get_mut_expression_at_path, set_number_value, set_string_value,
 };
 use crate::expression_editor::{
     ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,

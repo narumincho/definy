@@ -169,9 +169,9 @@ pub fn is_supported_by_self_hosted_compiler(expr: &Expression) -> bool {
             e.default.is_none()
                 && e.arms.iter().any(|arm| arm.tag.as_ref() == "true")
                 && e.arms.iter().any(|arm| arm.tag.as_ref() == "false")
-                && e.arms
-                    .iter()
-                    .all(|arm| matches!(arm.tag.as_ref(), "true" | "false") && arm.variable_id.is_none())
+                && e.arms.iter().all(|arm| {
+                    matches!(arm.tag.as_ref(), "true" | "false") && arm.variable_id.is_none()
+                })
                 && is_supported_by_self_hosted_compiler(&e.target)
                 && e.arms
                     .iter()

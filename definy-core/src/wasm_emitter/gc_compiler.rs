@@ -495,14 +495,16 @@ fn is_boolean_match(match_expr: &MatchExpression) -> bool {
         .arms
         .iter()
         .any(|arm| matches!(arm.tag.as_ref(), "true" | "false"))
-        && match_expr
-            .arms
-            .iter()
-            .all(|arm| matches!(arm.tag.as_ref(), "true" | "false" | "_") && arm.variable_id.is_none())
+        && match_expr.arms.iter().all(|arm| {
+            matches!(arm.tag.as_ref(), "true" | "false" | "_") && arm.variable_id.is_none()
+        })
 }
 
 /// 指定したタグに対応するアーム本体 (なければ `_` アーム、default) を返す
-fn boolean_match_arm_body<'e>(match_expr: &'e MatchExpression, tag: &str) -> Option<&'e Expression> {
+fn boolean_match_arm_body<'e>(
+    match_expr: &'e MatchExpression,
+    tag: &str,
+) -> Option<&'e Expression> {
     match_expr
         .arms
         .iter()

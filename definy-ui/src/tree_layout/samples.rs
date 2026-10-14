@@ -49,14 +49,18 @@ pub fn all_samples() -> Vec<LayoutSample> {
             title_en: "3. Conditional (match (greater_than x 10) { true => ..., false => ... })",
             description_ja: "Bool に対する match で、条件式と true / false それぞれの場合を構造的に展開表示します。",
             description_en: "Structural display of a match on a boolean condition with true and false arms.",
-            expression: Expression::match_boolean(Expression::GreaterThan(GreaterThanExpression {
+            expression: Expression::match_boolean(
+                Expression::GreaterThan(GreaterThanExpression {
                     left: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
                     right: Box::new(Expression::Number(NumberExpression { value: 10 })),
-                }), Expression::String(StringExpression {
+                }),
+                Expression::String(StringExpression {
                     value: "大きい値 (High)".into(),
-                }), Expression::String(StringExpression {
+                }),
+                Expression::String(StringExpression {
                     value: "小さい値 (Low)".into(),
-                })),
+                }),
+            ),
         },
         LayoutSample {
             id: "let_binding",

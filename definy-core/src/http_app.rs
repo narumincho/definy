@@ -49,9 +49,9 @@ pub fn resolve_http_handler(expression: Expression) -> Expression {
 #[must_use]
 pub fn build_byte_stream_expression(body_bytes: &[u8]) -> Expression {
     use definy_event::event::{
-        EqualExpression, FunctionExpression, FunctionParameter,
-        ListLiteralExpression, NumberExpression, TypeLiteralExpression, TypeLiteralItemExpression,
-        VariableExpression, VariantExpression,
+        EqualExpression, FunctionExpression, FunctionParameter, ListLiteralExpression,
+        NumberExpression, TypeLiteralExpression, TypeLiteralItemExpression, VariableExpression,
+        VariantExpression,
     };
 
     let done_variant = Expression::Variant(VariantExpression {

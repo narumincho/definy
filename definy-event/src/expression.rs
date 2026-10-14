@@ -473,7 +473,11 @@ impl Expression {
     /// Bool を対象とする match 式 (`match condition { true => when_true, false => when_false }`) を作る。
     ///
     /// definy には if 式がなく、条件分岐は Bool に対する match で表す。
-    pub fn match_boolean(condition: Expression, when_true: Expression, when_false: Expression) -> Self {
+    pub fn match_boolean(
+        condition: Expression,
+        when_true: Expression,
+        when_false: Expression,
+    ) -> Self {
         Expression::Match(MatchExpression {
             target: Box::new(condition),
             arms: vec![
