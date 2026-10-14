@@ -202,6 +202,11 @@ fn PreviewAppRow(app: PreviewAppItem, lang: crate::language::Language) -> Elemen
                     span { style: "font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 0.1rem 0.4rem; border-radius: 3px;",
                         "code: \"{app.subdomain}\""
                     }
+                    if !definy_core::is_valid_preview_code(&app.subdomain) {
+                        span { style: "background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;",
+                            "⚠️ RFC 1123 Error"
+                        }
+                    }
                 }
                 div { style: "display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.85rem; margin-top: 0.15rem;",
                     a {

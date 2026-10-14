@@ -271,12 +271,25 @@ pub(crate) fn PartEditorCard(
                     custom_script: None,
                     compile_self_hosted: Some(false),
                     part_id: Some(part_id),
+                    skip_health_check: None,
                 };
 
                 match crate::fetch::deploy_cloudflare(&req).await {
                     Ok(res) => {
+                        let health_info = if let Some(ref msg) = res.health_check_message {
+                            format!(
+                                "\n⚡ {} {msg}",
+                                language.label(
+                                    "Edge Health Check:",
+                                    "エッジ稼働確認:",
+                                    "Randa Sancirkonstanco:",
+                                )
+                            )
+                        } else {
+                            String::new()
+                        };
                         eval_result.set(Some(format!(
-                            "{} {} ({})",
+                            "{} {} ({}){health_info}",
                             language.label(
                                 "✅ Successfully deployed to Cloudflare Workers:",
                                 "✅ Cloudflare Workers へのデプロイに成功しました:",

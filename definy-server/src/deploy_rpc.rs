@@ -249,11 +249,25 @@ pub async fn handle_deploy_cloudflare(
         .await
     {
         Ok(result) => {
+            // デプロイ直後の健全性確認 (Health Check Ping)
+            let (health_status, latency_ms, health_msg) =
+                if req.skip_health_check.unwrap_or(false) || result.url.is_empty() {
+                    (None, None, None)
+                } else {
+                    ping_deployed_worker(&result.url).await
+                };
+
+            let record_status = if let Some(ref msg) = health_msg {
+                format!("{} (Health: {msg})", result.status)
+            } else {
+                result.status.clone()
+            };
+
             if let Some(db) = crate::ensure_db(&state).await {
                 let deployment_record = crate::db::DeploymentRecord {
                     machine_id: format!("cf:{}", result.script_name),
                     commit_hash: None,
-                    status: result.status.clone(),
+                    status: record_status,
                     url: result.url.clone(),
                     app_url: result.url.clone(),
                     region: "global-edge".to_string(),
@@ -274,6 +288,9 @@ pub async fn handle_deploy_cloudflare(
                 status: result.status,
                 url: result.url,
                 evaluated_result,
+                health_check_status: health_status,
+                health_check_latency_ms: latency_ms,
+                health_check_message: health_msg,
             };
             encode_response_or_error(codec, &response)
         }
@@ -429,6 +446,47 @@ fn resolve_deploy_target_expression(
     )))
 }
 
+/// デプロイ先のエッジ URL に対して健全性確認 (Health Check Ping) を行います。
+async fn ping_deployed_worker(url: &str) -> (Option<u32>, Option<u64>, Option<String>) {
+    if url.trim().is_empty() {
+        return (None, None, None);
+    }
+
+    let http_client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => {
+            return (
+                None,
+                None,
+                Some("Failed to initialize HTTP client for ping".to_string()),
+            );
+        }
+    };
+
+    let start = std::time::Instant::now();
+    match http_client.get(url).send().await {
+        Ok(resp) => {
+            let latency_ms = start.elapsed().as_millis() as u64;
+            let status = resp.status().as_u16() as u32;
+            let status_text = resp.status().canonical_reason().unwrap_or("OK");
+            let msg = format!("{status} {status_text} ({latency_ms}ms)");
+            (Some(status), Some(latency_ms), Some(msg))
+        }
+        Err(err) => {
+            let latency_ms = start.elapsed().as_millis() as u64;
+            let msg = if err.is_timeout() {
+                format!("Health check timed out after 5s ({latency_ms}ms)")
+            } else {
+                format!("Health check ping failed: {err}")
+            };
+            (None, Some(latency_ms), Some(msg))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -485,5 +543,13 @@ mod tests {
     fn test_resolve_deploy_target_expression_not_found() {
         let res = resolve_deploy_target_expression("nonexistent-part", None, None);
         assert!(res.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_ping_deployed_worker_empty_url() {
+        let (status, latency, msg) = ping_deployed_worker("").await;
+        assert_eq!(status, None);
+        assert_eq!(latency, None);
+        assert_eq!(msg, None);
     }
 }

@@ -9,13 +9,24 @@ use crate::preview_apps::{build_preview_path_url, build_preview_subdomain_url};
 pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element {
     let sub_url = build_preview_subdomain_url(&preview.code);
     let path_url = build_preview_path_url(&preview.code);
+    let has_validation_error = preview.validation_error.is_some();
+
+    let banner_style = if has_validation_error {
+        "background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.08)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1);"
+    } else {
+        "background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.07)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.08);"
+    };
 
     rsx! {
-        div {
-            class: "preview-banner-card",
-            style: "background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.07)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.08);",
+        div { class: "preview-banner-card", style: "{banner_style}",
             div { style: "display: flex; align-items: center; gap: 0.85rem;",
-                span { style: "font-size: 1.7rem;", "🌐" }
+                span { style: "font-size: 1.7rem;",
+                    if has_validation_error {
+                        "⚠️"
+                    } else {
+                        "🌐"
+                    }
+                }
                 div {
                     div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                         span { style: "font-weight: 700; font-size: 1.05rem; color: var(--text-primary);",
@@ -24,16 +35,27 @@ pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element 
                         span { style: "background: rgba(56, 189, 248, 0.2); color: var(--primary); font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(56, 189, 248, 0.35);",
                             "code: \"{preview.code}\""
                         }
+                        if let Some(ref _err) = preview.validation_error {
+                            span { style: "background: rgba(239, 68, 68, 0.2); color: #f87171; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(239, 68, 68, 0.4);",
+                                "{context.language.label(\"⚠️ Invalid Subdomain (RFC 1123)\", \"⚠️ 不正なサブドメイン名 (RFC 1123違反)\", \"⚠️ Nevalida Subdomajno\")}"
+                            }
+                        }
                     }
-                    div { style: "font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.45;",
-                        {
-                            context
-                                .language
-                                .label(
-                                    "This part defines a web app using definy:preview. Click the preview button to test it on the live server.",
-                                    "このパーツは definy:preview を呼び出して Web アプリを定義しています。プレビューボタンから即座に動作確認できます。",
-                                    "Ĉi tiu parto difinas retejon per definy:preview.",
-                                )
+                    if let Some(ref err) = preview.validation_error {
+                        div { style: "font-size: 0.82rem; color: #f87171; margin-top: 0.3rem; font-family: ui-monospace, monospace;",
+                            "Error: {err}"
+                        }
+                    } else {
+                        div { style: "font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.25rem; line-height: 1.45;",
+                            {
+                                context
+                                    .language
+                                    .label(
+                                        "This part defines a web app using definy:preview. Click the preview button to test it on the live server.",
+                                        "このパーツは definy:preview を呼び出して Web アプリを定義しています。プレビューボタンから即座に動作確認できます。",
+                                        "Ĉi tiu parto difinas retejon per definy:preview.",
+                                    )
+                            }
                         }
                     }
                 }
@@ -43,7 +65,7 @@ pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element 
                     href: "{sub_url}",
                     target: "_blank",
                     rel: "noopener noreferrer",
-                    class: "btn-primary",
+                    class: if has_validation_error { "btn-secondary" } else { "btn-primary" },
                     style: "display: inline-flex; align-items: center; gap: 0.45rem; text-decoration: none; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);",
                     span {
                         {

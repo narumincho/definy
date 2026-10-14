@@ -576,6 +576,7 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         custom_script: None,
         compile_self_hosted: None,
         part_id: None,
+        skip_health_check: Some(true),
     };
     let empty_res = handle_deploy_cloudflare(
         State(state.clone()),
@@ -594,6 +595,7 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         custom_script: None,
         compile_self_hosted: None,
         part_id: None,
+        skip_health_check: Some(true),
     };
     let deploy_res = handle_deploy_cloudflare(
         State(state.clone()),
@@ -644,6 +646,7 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         custom_script: None,
         compile_self_hosted: Some(true),
         part_id: None,
+        skip_health_check: Some(true),
     };
     let self_hosted_res = handle_deploy_cloudflare(
         State(state.clone()),
@@ -670,6 +673,7 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         ),
         compile_self_hosted: None,
         part_id: None,
+        skip_health_check: Some(true),
     };
     let custom_res = handle_deploy_cloudflare(
         State(state.clone()),
@@ -729,6 +733,7 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         custom_script: None,
         compile_self_hosted: None,
         part_id: Some(web_part_name.to_string()),
+        skip_health_check: Some(true),
     };
     let web_res = handle_deploy_cloudflare(
         State(state.clone()),
@@ -826,6 +831,7 @@ async fn test_connect_rpc_deploy_cloudflare_success() {
         custom_script: None,
         compile_self_hosted: None,
         part_id: Some(deploy_part_name.to_string()),
+        skip_health_check: Some(true),
     };
     let auto_res = handle_deploy_cloudflare(
         State(state.clone()),
