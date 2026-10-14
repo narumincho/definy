@@ -1,5 +1,5 @@
 {
-  "$comment": "Rust (definy-core の Wasm コンパイラ経由評価) と TypeScript (worker/cbor_eval.ts) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} はビルトインパーツへの PartReference に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。",
+  "$comment": "Rust (definy-core の Wasm コンパイラ経由評価) と TypeScript (worker/cbor_eval.ts) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID（システムアカウントから導出）に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。",
   "cases": [
     {
       "name": "number literal",
@@ -918,7 +918,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.abs"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.abs"
+              }
+            }
           },
           "arguments": [
             {
@@ -939,7 +943,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.min"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.min"
+              }
+            }
           },
           "arguments": [
             {
@@ -968,7 +976,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.max"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.max"
+              }
+            }
           },
           "arguments": [
             {
@@ -997,7 +1009,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.sign"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.sign"
+              }
+            }
           },
           "arguments": [
             {
@@ -1018,7 +1034,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.bool-to-string"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.bool-to-string"
+              }
+            }
           },
           "arguments": [
             {
@@ -1039,7 +1059,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.list-is-empty"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.list-is-empty"
+              }
+            }
           },
           "arguments": [
             {
@@ -1060,7 +1084,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.string-index-of"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.string-index-of"
+              }
+            }
           },
           "arguments": [
             {
@@ -1097,7 +1125,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.url-path"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.url-path"
+              }
+            }
           },
           "arguments": [
             {
@@ -1118,7 +1150,11 @@
       "expression": {
         "Call": {
           "function": {
-            "$part": "std.url-query"
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "std.url-query"
+              }
+            }
           },
           "arguments": [
             {
@@ -1137,21 +1173,33 @@
     {
       "name": "sample.triangle-area",
       "expression": {
-        "$part": "sample.triangle-area"
+        "PartReference": {
+          "part_definition_event_hash": {
+            "$part": "sample.triangle-area"
+          }
+        }
       },
       "expected": 25
     },
     {
       "name": "sample.is-even-sample",
       "expression": {
-        "$part": "sample.is-even-sample"
+        "PartReference": {
+          "part_definition_event_hash": {
+            "$part": "sample.is-even-sample"
+          }
+        }
       },
       "expected": "even"
     },
     {
       "name": "sample.prime-numbers",
       "expression": {
-        "$part": "sample.prime-numbers"
+        "PartReference": {
+          "part_definition_event_hash": {
+            "$part": "sample.prime-numbers"
+          }
+        }
       },
       "expected": [
         2,

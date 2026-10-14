@@ -1,6 +1,36 @@
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--generate-system-key") {
+        println!("# 新しいシステムアカウントの鍵ペア。秘密鍵は公開しないでください。");
+        println!("# 秘密鍵は UI の「秘密鍵でログイン」にもそのまま使えます。");
+        print!(
+            "{}",
+            definy_server::system_account::generate_system_key_env_lines()
+        );
+        return Ok(());
+    }
+    if let Some(idx) = args.iter().position(|a| a == "--export-seeds-from") {
+        let base_url = args
+            .get(idx + 1)
+            .ok_or_else(|| anyhow::anyhow!("Missing server URL after --export-seeds-from"))?;
+        let out_dir = args.get(idx + 2).map_or("seeds", String::as_str);
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let exported = definy_server::seed_export::export_seeds_from_server(
+            base_url,
+            std::path::Path::new(out_dir),
+        )
+        .await?;
+        if exported.is_empty() {
+            println!("No module commits by the system account were found on {base_url}");
+        } else {
+            println!(
+                "Exported {} from {base_url} to {out_dir}",
+                exported.join(", ")
+            );
+        }
+        return Ok(());
+    }
     if let Some(idx) = args.iter().position(|a| a == "--export-seeds") {
         let out_dir = args
             .get(idx + 1)

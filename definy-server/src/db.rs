@@ -370,7 +370,7 @@ pub async fn get_deployment(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED;
+    use crate::system_account::DEV_SYSTEM_KEY_SEED;
 
     #[tokio::test]
     async fn test_save_and_get_create_account_event() {
@@ -494,13 +494,17 @@ mod tests {
         let events = get_events(&db, None, Some(50), Some(0)).await.unwrap();
         assert_eq!(events.len(), 6);
 
-        // Insert an outdated/unexpected event created by the definy system account
-        let signing_key = ed25519_dalek::SigningKey::from_bytes(&COMPILER_SYSTEM_KEY_SEED);
+        // Insert an outdated bootstrap event (bootstrap timestamp) created by the definy system account
+        let signing_key = ed25519_dalek::SigningKey::from_bytes(&DEV_SYSTEM_KEY_SEED);
         let verifying_key = signing_key.verifying_key();
         let account_id = definy_event::event::AccountId(verifying_key);
         let outdated_event = definy_event::event::Event {
             account_id: account_id.clone(),
-            time: chrono::Utc::now(),
+            time: chrono::DateTime::from_timestamp(
+                crate::builtin_migration::BOOTSTRAP_TIMESTAMP_SECONDS,
+                500_000_000,
+            )
+            .unwrap(),
             content: definy_event::event::EventContent::ModuleCommit(
                 definy_event::event::ModuleCommitEvent {
                     module_name: "obsolete_builtin_module".into(),
@@ -544,16 +548,45 @@ mod tests {
             .await
             .unwrap();
 
-        // Total 8 events (6 builtin + 1 outdated builtin + 1 normal user)
-        let events_total = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        assert_eq!(events_total.len(), 8);
+        // Also insert an edit made as the system account (e.g. from the UI) at the current time.
+        // It is not a bootstrap event, so it must be kept.
+        let system_edit_event = definy_event::event::Event {
+            account_id: account_id.clone(),
+            time: chrono::Utc::now(),
+            content: definy_event::event::EventContent::ModuleCommit(
+                definy_event::event::ModuleCommitEvent {
+                    module_name: "core".into(),
+                    module_description: definy_event::event::Description::localized(vec![(
+                        "en",
+                        "Edited from UI",
+                    )]),
+                    parent_commit_hash: None,
+                    message: "Edit".into(),
+                    parts: vec![],
+                },
+            ),
+        };
+        let system_edit_binary =
+            definy_event::sign_and_serialize(system_edit_event, &signing_key).unwrap();
+        let (edit_sig, edit_verified) =
+            definy_event::verify_and_deserialize(&system_edit_binary).unwrap();
+        save_event(&edit_verified, &edit_sig, &system_edit_binary, addr, &db)
+            .await
+            .unwrap();
 
-        // Run migrate_builtin_data - it should delete the outdated builtin part, but keep normal_user event!
+        // Total 9 events (6 builtin + 1 outdated builtin + 1 normal user + 1 system edit)
+        let events_total = get_events(&db, None, Some(50), Some(0)).await.unwrap();
+        assert_eq!(events_total.len(), 9);
+
+        // Run migrate_builtin_data - it should delete the outdated bootstrap event only
         migrate_builtin_data(&db).await.unwrap();
 
         let events_cleaned = get_events(&db, None, Some(50), Some(0)).await.unwrap();
-        // 6 built-in events + 1 user event = 7 events (outdated builtin deleted)
-        assert_eq!(events_cleaned.len(), 7);
+        // 6 built-in events + 1 user event + 1 system edit = 8 events (outdated bootstrap deleted)
+        assert_eq!(events_cleaned.len(), 8);
+
+        let system_edit_hash = sha2::Sha256::digest(&system_edit_binary);
+        assert!(get_event(&db, &system_edit_hash).await.unwrap().is_some());
 
         let user_event_hash = sha2::Sha256::digest(&user_binary);
         assert!(get_event(&db, &user_event_hash).await.unwrap().is_some());

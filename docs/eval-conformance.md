@@ -16,8 +16,8 @@ definy の式は 2 か所で評価されています。
 
 - `expression` は `definy_event::event::Expression` の serde JSON 表現です
   （CBOR をデコードした形と同じなので、TypeScript 側もそのまま読めます）。
-- `{"$part": "std.abs"}` はビルトインパーツへの `PartReference` に置き換えられます。
-  ハッシュはビルトインシステムアカウントから導出します。
+- `{"$part": "std.abs"}` は seed と同じく、ビルトインパーツの ID（システムアカウントから導出）に
+  置き換えられます。パーツ参照は `{"PartReference": {"part_definition_event_hash": {"$part": "std.abs"}}}` と書きます。
 - `expected` は値の正規化表現です。数値・文字列・真偽値・リストは JSON のまま、
   record は `{"$record": [[key, value], ...]}`（フィールド順を含めて比較）、
   variant は `{"$variant": tag, "payload": value | null}` で表します。

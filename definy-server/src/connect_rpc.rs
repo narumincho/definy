@@ -540,9 +540,7 @@ async fn validate_module_commit(
         }
     }
 
-    let system_key =
-        ed25519_dalek::SigningKey::from_bytes(&crate::builtin_migration::COMPILER_SYSTEM_KEY_SEED);
-    let system_account = definy_event::event::AccountId(system_key.verifying_key());
+    let system_account = crate::system_account::system_account_id();
     let core_module_id = definy_event::event::derive_module_id(&system_account, "core");
     let expression_type_hash =
         definy_event::event::derive_module_part_id(&core_module_id, "expression");

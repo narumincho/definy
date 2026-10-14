@@ -1221,40 +1221,9 @@
                         "Call": {
                           "function": {
                             "PartReference": {
-                              "part_definition_event_hash": [
-                                25,
-                                213,
-                                211,
-                                189,
-                                6,
-                                85,
-                                25,
-                                177,
-                                183,
-                                82,
-                                38,
-                                156,
-                                35,
-                                103,
-                                54,
-                                102,
-                                147,
-                                239,
-                                175,
-                                249,
-                                22,
-                                185,
-                                104,
-                                34,
-                                110,
-                                19,
-                                127,
-                                34,
-                                141,
-                                182,
-                                203,
-                                147
-                              ]
+                              "part_definition_event_hash": {
+                                "$part": "std.string-index-of"
+                              }
                             }
                           },
                           "arguments": [
@@ -1344,40 +1313,9 @@
                     "Call": {
                       "function": {
                         "PartReference": {
-                          "part_definition_event_hash": [
-                            25,
-                            213,
-                            211,
-                            189,
-                            6,
-                            85,
-                            25,
-                            177,
-                            183,
-                            82,
-                            38,
-                            156,
-                            35,
-                            103,
-                            54,
-                            102,
-                            147,
-                            239,
-                            175,
-                            249,
-                            22,
-                            185,
-                            104,
-                            34,
-                            110,
-                            19,
-                            127,
-                            34,
-                            141,
-                            182,
-                            203,
-                            147
-                          ]
+                          "part_definition_event_hash": {
+                            "$part": "std.string-index-of"
+                          }
                         }
                       },
                       "arguments": [
@@ -1457,40 +1395,9 @@
                     "Call": {
                       "function": {
                         "PartReference": {
-                          "part_definition_event_hash": [
-                            25,
-                            213,
-                            211,
-                            189,
-                            6,
-                            85,
-                            25,
-                            177,
-                            183,
-                            82,
-                            38,
-                            156,
-                            35,
-                            103,
-                            54,
-                            102,
-                            147,
-                            239,
-                            175,
-                            249,
-                            22,
-                            185,
-                            104,
-                            34,
-                            110,
-                            19,
-                            127,
-                            34,
-                            141,
-                            182,
-                            203,
-                            147
-                          ]
+                          "part_definition_event_hash": {
+                            "$part": "std.string-index-of"
+                          }
                         }
                       },
                       "arguments": [
@@ -1529,40 +1436,9 @@
                     "Call": {
                       "function": {
                         "PartReference": {
-                          "part_definition_event_hash": [
-                            25,
-                            213,
-                            211,
-                            189,
-                            6,
-                            85,
-                            25,
-                            177,
-                            183,
-                            82,
-                            38,
-                            156,
-                            35,
-                            103,
-                            54,
-                            102,
-                            147,
-                            239,
-                            175,
-                            249,
-                            22,
-                            185,
-                            104,
-                            34,
-                            110,
-                            19,
-                            127,
-                            34,
-                            141,
-                            182,
-                            203,
-                            147
-                          ]
+                          "part_definition_event_hash": {
+                            "$part": "std.string-index-of"
+                          }
                         }
                       },
                       "arguments": [
@@ -1748,40 +1624,9 @@
                     "Call": {
                       "function": {
                         "PartReference": {
-                          "part_definition_event_hash": [
-                            25,
-                            213,
-                            211,
-                            189,
-                            6,
-                            85,
-                            25,
-                            177,
-                            183,
-                            82,
-                            38,
-                            156,
-                            35,
-                            103,
-                            54,
-                            102,
-                            147,
-                            239,
-                            175,
-                            249,
-                            22,
-                            185,
-                            104,
-                            34,
-                            110,
-                            19,
-                            127,
-                            34,
-                            141,
-                            182,
-                            203,
-                            147
-                          ]
+                          "part_definition_event_hash": {
+                            "$part": "std.string-index-of"
+                          }
                         }
                       },
                       "arguments": [
