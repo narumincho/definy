@@ -131,6 +131,11 @@ pub fn render(state: &AppState, context: &PageContext) -> Element {
 }
 
 fn render_inner(state: &AppState, context: &PageContext) -> Element {
+    let page_key = context
+        .location
+        .as_ref()
+        .map(Location::to_url)
+        .unwrap_or_else(|| "not-found".to_string());
     let page_content = match &context.location {
         Some(Location::Home) => {
             rsx! {
@@ -251,7 +256,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
                         status: state.connection_status,
                     }
                 }
-                {page_content}
+                // URL (パス) ごとにページを作り直す. 同じ種類のページ間 (/parts/A → /parts/B) を移動したとき,
+                // コンポーネント内の use_signal が前のページの値のまま残り, URL だけが変わったように見えるのを防ぐ
+                for (page_key, page) in [(page_key, page_content)] {
+                    div { key: "{page_key}", style: "display: contents;", {page} }
+                }
             }
             login_or_create_account_dialog::LoginOrCreateAccountDialog { context: context.clone() }
         }

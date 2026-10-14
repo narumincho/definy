@@ -13,7 +13,7 @@ use crate::expression_editor::diagnostics::{
     TypeAnalysis, constructor_default_value_from_type_part,
 };
 use crate::expression_editor::mutation::{
-    apply_selection, get_mut_expression_at_path, set_boolean_value, set_number_value,
+    apply_selection, get_mut_expression_at_path, set_number_value,
     set_string_value,
 };
 use crate::expression_editor::{
@@ -239,11 +239,6 @@ pub fn ExpressionTreeEditor(
                     on_change_string: move |(path, val): (Vec<PathStep>, String)| {
                         let mut curr = expression.read().clone();
                         set_string_value(&mut curr, &path, &val);
-                        commit_expression_change(expression, on_change, curr);
-                    },
-                    on_change_boolean: move |(path, val): (Vec<PathStep>, bool)| {
-                        let mut curr = expression.read().clone();
-                        set_boolean_value(&mut curr, &path, val);
                         commit_expression_change(expression, on_change, curr);
                     },
                 }

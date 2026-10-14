@@ -221,7 +221,10 @@ pub(crate) fn build_expression_from_selection(
 
     match selected_value {
         "expr:string" => Expression::String(StringExpression { value: "".into() }),
-        "expr:boolean" => Expression::Boolean(BooleanExpression { value: false }),
+        "expr:boolean" | "expr:boolean:false" => {
+            Expression::Boolean(BooleanExpression { value: false })
+        }
+        "expr:boolean:true" => Expression::Boolean(BooleanExpression { value: true }),
         "expr:list" => Expression::ListLiteral(ListLiteralExpression {
             items: vec![Expression::Number(NumberExpression { value: 0 })],
         }),
