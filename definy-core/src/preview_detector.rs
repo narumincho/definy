@@ -14,21 +14,16 @@ pub struct DetectedPreview {
 /// 式の中から `preview({ code: String, handler: HttpRequest -> HttpResponse })` の呼び出しまたは設定を探索します。
 #[must_use]
 pub fn detect_preview_in_expression(expr: &Expression) -> Option<DetectedPreview> {
-    // 1. 直接 Call 式をチェック
-    if let Expression::Call(call) = expr {
-        if let Some(detected) = extract_preview_from_call(call) {
-            return Some(detected);
-        }
+    // 1. 直接 Call 式またはレコード式からプレビュー設定を抽出
+    if let Some(detected) = match expr {
+        Expression::Call(call) => extract_preview_from_call(call),
+        Expression::TypeLiteral(record) => extract_preview_from_record(record),
+        _ => None,
+    } {
+        return Some(detected);
     }
 
-    // 2. 直接 `{ code: "...", handler: ... }` レコード式をチェック
-    if let Expression::TypeLiteral(record) = expr {
-        if let Some(detected) = extract_preview_from_record(record) {
-            return Some(detected);
-        }
-    }
-
-    // 3. 子ノードの再帰的探索 (Let 式, If 式, Function 式など)
+    // 2. 子ノードの再帰的探索 (Let 式, If 式, Function 式など)
     match expr {
         Expression::Let(let_expr) => detect_preview_in_expression(&let_expr.body)
             .or_else(|| detect_preview_in_expression(&let_expr.value)),
@@ -90,16 +85,15 @@ fn extract_preview_from_record(record: &TypeLiteralExpression) -> Option<Detecte
         }
     }
 
-    if let Some(code) = code {
-        // handler の存在（または空でない code）でプレビューとして判定
-        if !code.trim().is_empty() && handler_expression.is_some() {
-            return Some(DetectedPreview {
-                code: code.trim().to_lowercase(),
-                handler_expression,
-            });
-        }
+    let code = code?.trim().to_lowercase();
+    if code.is_empty() || handler_expression.is_none() {
+        return None;
     }
-    None
+
+    Some(DetectedPreview {
+        code,
+        handler_expression,
+    })
 }
 
 #[cfg(test)]

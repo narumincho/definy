@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::page_context::PageContext;
-use definy_event::rpc::{ListPreviewAppsRequest, PreviewAppItem, StopPreviewAppRequest};
+use definy_event::rpc::{ListPreviewAppsRequest, PreviewAppItem};
 
 /// サブドメインURLを構築します
 pub fn build_preview_subdomain_url(code: &str) -> String {
@@ -62,19 +62,6 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
 
     let on_refresh = move |_| {
         refresh_trigger += 1;
-    };
-
-    let on_stop_app = move |app_id_to_stop: String| {
-        spawn(async move {
-            let req = StopPreviewAppRequest {
-                app_id: app_id_to_stop,
-                account_id: String::new(),
-                signature: None,
-            };
-            if crate::fetch::stop_preview_app(&req).await.is_ok() {
-                refresh_trigger += 1;
-            }
-        });
     };
 
     rsx! {
@@ -188,7 +175,6 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
                                 key: "{app.app_id}",
                                 app: app.clone(),
                                 lang,
-                                on_stop: on_stop_app,
                             }
                         }
                     }
@@ -199,27 +185,22 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
 }
 
 #[component]
-fn PreviewAppRow(
-    app: PreviewAppItem,
-    lang: crate::language::Language,
-    on_stop: EventHandler<String>,
-) -> Element {
-    let stop_id = app.app_id.clone();
+fn PreviewAppRow(app: PreviewAppItem, lang: crate::language::Language) -> Element {
     let sub_url = build_preview_subdomain_url(&app.subdomain);
     let path_url = build_preview_path_url(&app.app_id);
 
     rsx! {
         div { style: "display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.2rem; background: var(--bg-canvas); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; gap: 0.8rem;",
-            div { style: "display: flex; flex-direction: column; gap: 0.3rem;",
-                div { style: "display: flex; align-items: center; gap: 0.6rem;",
+            div { style: "display: flex; flex-direction: column; gap: 0.35rem;",
+                div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                     strong { style: "font-size: 0.95rem; color: var(--text-primary);",
                         "{app.display_name}"
                     }
                     span { style: "background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
                         "{app.status}"
                     }
-                    span { style: "font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--text-muted);",
-                        "code: {app.subdomain}"
+                    span { style: "font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 0.1rem 0.4rem; border-radius: 3px;",
+                        "code: \"{app.subdomain}\""
                     }
                 }
                 div { style: "display: flex; gap: 0.8rem; flex-wrap: wrap; font-size: 0.85rem; margin-top: 0.15rem;",
@@ -242,15 +223,12 @@ fn PreviewAppRow(
                         "{path_url}"
                     }
                 }
-                div { style: "font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.1rem;",
-                    "Target Part: {app.part_id}"
-                }
             }
 
-            button {
-                onclick: move |_| on_stop.call(stop_id.clone()),
-                style: "padding: 0.4rem 0.85rem; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer;",
-                {lang.label("Stop", "停止", "Haltigi")}
+            div { style: "display: flex; align-items: center; gap: 0.5rem;",
+                span { style: "font-size: 0.76rem; color: var(--text-muted); font-family: ui-monospace, monospace; background: var(--surface); padding: 0.3rem 0.6rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                    "Part: {app.part_id}"
+                }
             }
         }
     }

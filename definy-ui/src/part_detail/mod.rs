@@ -1,3 +1,4 @@
+mod banners;
 mod editor;
 mod history;
 

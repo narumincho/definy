@@ -360,23 +360,25 @@ pub async fn handle_list_preview_apps(
                 continue;
             }
             for part in &mc.parts {
-                if let Some(ref expr) = part.expression {
-                    if let Some(detected) = definy_core::detect_preview_in_expression(expr) {
-                        let app_id = detected.code.clone();
-                        if !seen_app_ids.contains(&app_id) {
-                            seen_app_ids.insert(app_id.clone());
-                            items.push(PreviewAppItem {
-                                preview_url: build_preview_url(&app_id),
-                                path_url: build_path_url(&app_id),
-                                app_id: app_id.clone(),
-                                display_name: part.name.to_string(),
-                                part_id: part.name.to_string(),
-                                owner_account_id: owner_account.clone(),
-                                created_at_rfc3339: event.time.to_rfc3339(),
-                                status: "running".to_string(),
-                                subdomain: app_id,
-                            });
-                        }
+                if let Some(detected) = part
+                    .expression
+                    .as_ref()
+                    .and_then(definy_core::detect_preview_in_expression)
+                {
+                    let app_id = detected.code.clone();
+                    if !seen_app_ids.contains(&app_id) {
+                        seen_app_ids.insert(app_id.clone());
+                        items.push(PreviewAppItem {
+                            preview_url: build_preview_url(&app_id),
+                            path_url: build_path_url(&app_id),
+                            app_id: app_id.clone(),
+                            display_name: part.name.to_string(),
+                            part_id: part.name.to_string(),
+                            owner_account_id: owner_account.clone(),
+                            created_at_rfc3339: event.time.to_rfc3339(),
+                            status: "running".to_string(),
+                            subdomain: app_id,
+                        });
                     }
                 }
             }
@@ -516,14 +518,16 @@ pub fn find_preview_part_in_events(
         {
             let account_hex = hex::encode(event.account_id.0.as_bytes());
             for part in &mc.parts {
-                if let Some(ref expr) = part.expression {
-                    if let Some(detected) = definy_core::detect_preview_in_expression(expr) {
-                        if detected.code.eq_ignore_ascii_case(&target_code) {
-                            let handler =
-                                detected.handler_expression.unwrap_or_else(|| expr.clone());
-                            return Some((part.name.to_string(), handler, account_hex));
-                        }
-                    }
+                if let Some(detected) = part
+                    .expression
+                    .as_ref()
+                    .and_then(definy_core::detect_preview_in_expression)
+                    .filter(|d| d.code.eq_ignore_ascii_case(&target_code))
+                {
+                    let handler = detected
+                        .handler_expression
+                        .unwrap_or_else(|| part.expression.as_ref().cloned().unwrap());
+                    return Some((part.name.to_string(), handler, account_hex));
                 }
             }
         }

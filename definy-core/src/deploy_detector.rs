@@ -17,21 +17,16 @@ pub struct DetectedDeploy {
 /// の呼び出しまたは設定レコードを探索します。
 #[must_use]
 pub fn detect_deploy_in_expression(expr: &Expression) -> Option<DetectedDeploy> {
-    // 1. 直接 Call 式をチェック
-    if let Expression::Call(call) = expr {
-        if let Some(detected) = extract_deploy_from_call(call) {
-            return Some(detected);
-        }
+    // 1. 直接 Call 式またはレコード式からデプロイ設定を抽出
+    if let Some(detected) = match expr {
+        Expression::Call(call) => extract_deploy_from_call(call),
+        Expression::TypeLiteral(record) => extract_deploy_from_record(record),
+        _ => None,
+    } {
+        return Some(detected);
     }
 
-    // 2. 直接 レコード式をチェック
-    if let Expression::TypeLiteral(record) = expr {
-        if let Some(detected) = extract_deploy_from_record(record) {
-            return Some(detected);
-        }
-    }
-
-    // 3. 子ノードの再帰的探索 (Let 式, If 式, Function 式など)
+    // 2. 子ノードの再帰的探索 (Let 式, If 式, Function 式など)
     match expr {
         Expression::Let(let_expr) => detect_deploy_in_expression(&let_expr.body)
             .or_else(|| detect_deploy_in_expression(&let_expr.value)),
@@ -104,18 +99,16 @@ fn extract_deploy_from_record(record: &TypeLiteralExpression) -> Option<Detected
         }
     }
 
-    // cloudflare_worker_name または handler のいずれかが存在すればデプロイ設定として判定
-    if let Some(worker_name) = cloudflare_worker_name {
-        if !worker_name.trim().is_empty() {
-            return Some(DetectedDeploy {
-                cloudflare_token,
-                cloudflare_worker_name: worker_name.trim().to_string(),
-                handler_expression,
-            });
-        }
+    let worker_name = cloudflare_worker_name?.trim().to_string();
+    if worker_name.is_empty() {
+        return None;
     }
 
-    None
+    Some(DetectedDeploy {
+        cloudflare_token,
+        cloudflare_worker_name: worker_name,
+        handler_expression,
+    })
 }
 
 #[cfg(test)]

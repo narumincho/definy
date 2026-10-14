@@ -124,28 +124,10 @@ pub async fn handle_deploy_cloudflare(
         }
     }
 
-    let token = if !req.api_token.trim().is_empty() {
-        req.api_token.trim().to_string()
-    } else if let Some(ref dep) = detected_deploy
-        && let Some(ref t) = dep.cloudflare_token
-        && !t.trim().is_empty()
-    {
-        t.trim().to_string()
-    } else if let Ok(env_token) =
-        std::env::var("CLOUDFLARE_API_TOKEN").or_else(|_| std::env::var("CF_API_TOKEN"))
-    {
-        env_token.trim().to_string()
-    } else {
-        return error_to_response(ConnectError::invalid_argument(
-            "Cloudflare API token (api_token or cloudflareToken in deploy part) is required",
-        ));
+    let token = match resolve_deploy_token(&req.api_token, detected_deploy.as_ref()) {
+        Ok(t) => t,
+        Err(err) => return error_to_response(err),
     };
-
-    if token.is_empty() {
-        return error_to_response(ConnectError::invalid_argument(
-            "Cloudflare API token cannot be empty",
-        ));
-    }
 
     let mut config = crate::cloudflare_workers::CloudflareWorkersConfig::new(token);
     if let Some(ref acc_id) = req.account_id
@@ -165,16 +147,13 @@ pub async fn handle_deploy_cloudflare(
     // または指定された wasm_hash からバイナリを取得
     let (wasm_bytes, evaluated_result) = if let Some(ref part_id) = req.part_id {
         // 1. 指定された definy パーツ (Part) の式を自己記述コンパイラでオンデマンドコンパイル
-        let target_expr = if let Some(ref dep) = detected_deploy
-            && let Some(ref handler) = dep.handler_expression
-        {
-            handler.clone()
-        } else if let Some(ref expr) = resolved_part_expr {
-            expr.clone()
-        } else {
-            return error_to_response(ConnectError::not_found(format!(
-                "Part '{part_id}' was not found in commits"
-            )));
+        let target_expr = match resolve_deploy_target_expression(
+            part_id,
+            detected_deploy.as_ref(),
+            resolved_part_expr.as_ref(),
+        ) {
+            Ok(expr) => expr,
+            Err(err) => return error_to_response(err),
         };
 
         match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&target_expr) {
@@ -398,5 +377,113 @@ pub async fn handle_list_cloudflare_workers(headers: HeaderMap, body: Bytes) -> 
                 "Failed to list Cloudflare Workers: {err}"
             )))
         }
+    }
+}
+
+/// デプロイリクエスト、パーツ設定、環境変数から Cloudflare API トークンを解決します
+fn resolve_deploy_token(
+    req_token: &str,
+    detected_deploy: Option<&definy_core::deploy_detector::DetectedDeploy>,
+) -> Result<String, ConnectError> {
+    if !req_token.trim().is_empty() {
+        return Ok(req_token.trim().to_string());
+    }
+
+    if let Some(dep) = detected_deploy
+        && let Some(ref t) = dep.cloudflare_token
+        && !t.trim().is_empty()
+    {
+        return Ok(t.trim().to_string());
+    }
+
+    if let Ok(env_token) =
+        std::env::var("CLOUDFLARE_API_TOKEN").or_else(|_| std::env::var("CF_API_TOKEN"))
+        && !env_token.trim().is_empty()
+    {
+        return Ok(env_token.trim().to_string());
+    }
+
+    Err(ConnectError::invalid_argument(
+        "Cloudflare API token (api_token or cloudflareToken in deploy part) is required",
+    ))
+}
+
+/// デプロイ対象パーツから Wasm コンパイル対象のハンドラ式を解決します
+fn resolve_deploy_target_expression(
+    part_id: &str,
+    detected_deploy: Option<&definy_core::deploy_detector::DetectedDeploy>,
+    resolved_part_expr: Option<&definy_event::event::Expression>,
+) -> Result<definy_event::event::Expression, ConnectError> {
+    if let Some(dep) = detected_deploy
+        && let Some(ref handler) = dep.handler_expression
+    {
+        return Ok(handler.clone());
+    }
+
+    if let Some(expr) = resolved_part_expr {
+        return Ok(expr.clone());
+    }
+
+    Err(ConnectError::not_found(format!(
+        "Part '{part_id}' was not found in commits"
+    )))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use definy_core::deploy_detector::DetectedDeploy;
+    use definy_event::event::{Expression, StringExpression};
+
+    #[test]
+    fn test_resolve_deploy_token_from_request() {
+        let res = resolve_deploy_token("  my-request-token  ", None);
+        assert_eq!(res.unwrap(), "my-request-token");
+    }
+
+    #[test]
+    fn test_resolve_deploy_token_from_detected_deploy() {
+        let dep = DetectedDeploy {
+            cloudflare_token: Some("part-token-123".to_string()),
+            cloudflare_worker_name: "test-worker".to_string(),
+            handler_expression: None,
+        };
+        let res = resolve_deploy_token("", Some(&dep));
+        assert_eq!(res.unwrap(), "part-token-123");
+    }
+
+    #[test]
+    fn test_resolve_deploy_token_missing() {
+        let res = resolve_deploy_token("", None);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_resolve_deploy_target_expression_from_handler() {
+        let handler = Expression::String(StringExpression {
+            value: "handler-expr".into(),
+        });
+        let dep = DetectedDeploy {
+            cloudflare_token: None,
+            cloudflare_worker_name: "test-worker".to_string(),
+            handler_expression: Some(handler.clone()),
+        };
+        let res = resolve_deploy_target_expression("my-part", Some(&dep), None);
+        assert_eq!(res.unwrap(), handler);
+    }
+
+    #[test]
+    fn test_resolve_deploy_target_expression_from_part_fallback() {
+        let part_expr = Expression::String(StringExpression {
+            value: "fallback-part-expr".into(),
+        });
+        let res = resolve_deploy_target_expression("my-part", None, Some(&part_expr));
+        assert_eq!(res.unwrap(), part_expr);
+    }
+
+    #[test]
+    fn test_resolve_deploy_target_expression_not_found() {
+        let res = resolve_deploy_target_expression("nonexistent-part", None, None);
+        assert!(res.is_err());
     }
 }
