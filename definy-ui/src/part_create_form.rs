@@ -14,12 +14,15 @@ pub fn PartDefinitionFormView(
     context: PageContext,
     mut is_form_open: Signal<bool>,
     mut eval_result: Signal<Option<String>>,
+    /// エクスプローラーのモジュールから作成を始めたときに選んでおくモジュール
+    #[props(default = None)]
+    initial_module: Option<EventHashId>,
 ) -> Element {
     let language = context.language;
     let mut part_name = use_signal(String::new);
     let mut part_description = use_signal(String::new);
     let mut part_type_expr = use_signal(|| None::<definy_event::event::Expression>);
-    let module_hash = use_signal(|| None::<EventHashId>);
+    let module_hash = use_signal(|| initial_module.clone());
     let mut composing_expression = use_signal(|| None::<definy_event::event::Expression>);
     let is_logged_in = state.current_key.is_some()
         || try_use_context::<Signal<AppState>>()
@@ -348,16 +351,12 @@ pub fn PartDefinitionFormView(
                     .map(|result| {
                         let is_error = result.starts_with("Error")
                             || result.starts_with("エラー");
-                        let (bg, border, text_color) = if is_error {
-                            ("var(--error-bg)", "var(--error)", "#fca5a5")
-                        } else {
-                            ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
-                        };
+                        let tone = if is_error { "error" } else { "info" };
                         rsx! {
                             div {
-                                class: "mono eval-result",
+                                class: "mono eval-result tone-message",
                                 "data-eval-result": "true",
-                                style: "padding: 0.5rem 0.8rem; font-size: 0.84rem; background: {bg}; border: 1px solid {border}; color: {text_color}; border-radius: var(--radius-sm); word-break: break-word;",
+                                "data-tone": tone,
                                 "{result}"
                             }
                         }

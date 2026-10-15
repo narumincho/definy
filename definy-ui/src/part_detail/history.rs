@@ -137,13 +137,13 @@ fn PartCommitHistoryItem(
     let parent_title = parent_hash.as_ref().map(ToString::to_string);
 
     rsx! {
-        div { style: "display: grid; gap: 0.45rem; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: rgb(255 255 255 / 0.02);",
+        div { style: "display: grid; gap: 0.45rem; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--overlay-1);",
             div { style: "display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap;",
                 div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;",
                     if is_latest {
                         span {
                             class: "badge",
-                            style: "font-size: 0.68rem; font-weight: 600; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.3); padding: 0.05rem 0.4rem; border-radius: var(--radius-full);",
+                            style: "font-size: 0.68rem; font-weight: 600; color: var(--green); background: var(--green-bg-strong); border: 1px solid var(--green-border); padding: 0.05rem 0.4rem; border-radius: var(--radius-full);",
                             "HEAD"
                         }
                     }
@@ -161,7 +161,7 @@ fn PartCommitHistoryItem(
                 a {
                     href: context.href_with_lang(Location::Event(event_hash.clone())),
                     class: "mono",
-                    style: "color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(124 192 216 / 0.08); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                    style: "color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: var(--blue-bg); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
                     title: "{event_hash}",
                     span { "Commit:" }
                     span { "{short_event_hash}" }
@@ -169,7 +169,7 @@ fn PartCommitHistoryItem(
                 if let Some(ch_str) = ch_display {
                     div {
                         class: "mono",
-                        style: "color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.45rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.25rem;",
+                        style: "color: var(--blue); background: var(--blue-bg); border: 1px solid var(--blue-border); padding: 0.1rem 0.45rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.25rem;",
                         title: "{ch_full_title}",
                         span { "📌 Part Hash:" }
                         span { "{ch_str}" }
@@ -179,13 +179,13 @@ fn PartCommitHistoryItem(
                     a {
                         href: context.href_with_lang(Location::Event(p_hash)),
                         class: "mono",
-                        style: "color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: rgb(255 255 255 / 0.04); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                        style: "color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 0.2rem; background: var(--overlay-2); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
                         title: parent_title.as_deref().unwrap_or_default(),
                         span { "Parent:" }
                         span { "{p_short}" }
                     }
                 } else {
-                    span { style: "color: #a78bfa; font-size: 0.72rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
+                    span { style: "color: var(--purple); font-size: 0.72rem; background: var(--purple-bg); border: 1px solid var(--purple-border); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);",
                         "🌱 Initial Commit"
                     }
                 }

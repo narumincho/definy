@@ -13,11 +13,12 @@ fn status_label(language: Language, status: &LocalEventStatus) -> &'static str {
     }
 }
 
-fn status_color(status: &LocalEventStatus) -> &'static str {
+/// main.css の .status-chip[data-status] と対応する
+fn status_key(status: &LocalEventStatus) -> &'static str {
     match status {
-        LocalEventStatus::Queued => "#fbbf24",
-        LocalEventStatus::Sent => "#34d399",
-        LocalEventStatus::Failed => "#f87171",
+        LocalEventStatus::Queued => "queued",
+        LocalEventStatus::Sent => "sent",
+        LocalEventStatus::Failed => "failed",
     }
 }
 
@@ -46,7 +47,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                 div { style: "display: flex; gap: 0.5rem;",
                     button {
                         r#type: "button",
-                        style: "background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
+                        style: "background: var(--overlay-3); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
                         onclick: move |_| {
                             let mut state_sig = use_context::<Signal<AppState>>();
                             state_sig.write().local_event_queue.is_loading = true;
@@ -87,7 +88,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                     {
                         button {
                             r#type: "button",
-                            style: "background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer;",
+                            style: "background: var(--primary-solid); color: var(--primary-content); border: none; padding: 0.4rem 0.8rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer;",
                             onclick: move |_| {
                                 let mut state_sig = use_context::<Signal<AppState>>();
                                 let unsent_binaries: Vec<Vec<u8>> = state_sig
@@ -129,7 +130,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                     }
                     button {
                         r#type: "button",
-                        style: "background: rgb(255 255 255 / 0.08); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
+                        style: "background: var(--overlay-3); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.8rem; border-radius: 0.5rem; cursor: pointer;",
                         onclick: move |_| {
                             let mut state_sig = use_context::<Signal<AppState>>();
                             let current = state_sig.read().force_offline;
@@ -158,7 +159,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
             } else if let Some(error) = &state.local_event_queue.last_error {
                 div {
                     class: "error-card",
-                    style: "font-size: 0.86rem; color: var(--error); padding: 0.8rem; background: rgb(248 113 113 / 0.1); border-radius: var(--radius-sm);",
+                    style: "font-size: 0.86rem; color: var(--error); padding: 0.8rem; background: var(--red-bg); border-radius: var(--radius-sm);",
                     "{error}"
                 }
             }
@@ -191,7 +192,6 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                 }
                             };
                             let time_formatted = format_time_ms(context.language, record.updated_at_ms);
-                            let bg_color = status_color(&status);
                             let lbl = status_label(context.language, &status);
                             let err_msg = record.last_error.clone();
                             rsx! {
@@ -200,9 +200,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                     class: "event-card",
                                     style: "display: grid; gap: 0.4rem; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
                                     div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;",
-                                        div { style: "background: {bg_color}; color: #0b0f19; padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; display: inline-flex;",
-                                            "{lbl}"
-                                        }
+                                        div { class: "status-chip", "data-status": status_key(&status), "{lbl}" }
                                         div {
                                             class: "mono",
                                             style: "color: var(--text-secondary); font-size: 0.78rem;",
@@ -212,7 +210,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                     div { style: "font-weight: 600; font-size: 0.92rem;", "{summary}" }
                                     div { style: "color: var(--text-secondary); font-size: 0.78rem;", "{time_formatted}" }
                                     if let Some(err) = err_msg {
-                                        div { style: "color: #fca5a5; font-size: 0.78rem; word-break: break-word;",
+                                        div { style: "color: var(--red-text); font-size: 0.78rem; word-break: break-word;",
                                             "{err}"
                                         }
                                     }
@@ -220,7 +218,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                         div { style: "display: flex; gap: 0.4rem;",
                                             button {
                                                 r#type: "button",
-                                                style: "background: var(--primary); color: #0e1720; border: none; padding: 0.3rem 0.6rem; border-radius: 0.45rem; font-weight: 600; cursor: pointer;",
+                                                style: "background: var(--primary-solid); color: var(--primary-content); border: none; padding: 0.3rem 0.6rem; border-radius: 0.45rem; font-weight: 600; cursor: pointer;",
                                                 onclick: {
                                                     let binary_c = record.event_binary.clone();
                                                     move |_| {

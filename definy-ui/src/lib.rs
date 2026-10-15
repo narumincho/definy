@@ -4,6 +4,7 @@ mod account_list;
 pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
+mod command_palette;
 mod deployments;
 mod deployments_flow;
 pub mod dom;
@@ -41,6 +42,7 @@ mod rpc_architecture;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
+mod workbench;
 pub use definy_core::{expression_eval, wasm_emitter};
 pub mod wasm_inspector;
 
@@ -245,25 +247,17 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
 
     rsx! {
         style { {include_str!("../main.css")} }
-        div { style: "display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; align-content: start; padding-bottom: 5rem;",
-            header::HeaderView { state: state.clone(), context: context.clone() }
-            div {
-                key: "main-wrapper",
-                style: "display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.8rem; width: 100%;",
-                if state.connection_status != app_state::ConnectionStatus::Connected {
-                    ConnectionWarningBanner {
-                        context: context.clone(),
-                        status: state.connection_status,
-                    }
-                }
-                // URL (パス) ごとにページを作り直す. 同じ種類のページ間 (/parts/A → /parts/B) を移動したとき,
-                // コンポーネント内の use_signal が前のページの値のまま残り, URL だけが変わったように見えるのを防ぐ
-                for (page_key, page) in [(page_key, page_content)] {
-                    div { key: "{page_key}", style: "display: contents;", {page} }
-                }
+        workbench::Workbench { state: state.clone(), context: context.clone(),
+            if state.connection_status != app_state::ConnectionStatus::Connected {
+                ConnectionWarningBanner { context: context.clone(), status: state.connection_status }
             }
-            login_or_create_account_dialog::LoginOrCreateAccountDialog { context: context.clone() }
+            // URL (パス) ごとにページを作り直す. 同じ種類のページ間 (/parts/A → /parts/B) を移動したとき,
+            // コンポーネント内の use_signal が前のページの値のまま残り, URL だけが変わったように見えるのを防ぐ
+            for (page_key, page) in [(page_key, page_content)] {
+                div { key: "{page_key}", style: "display: contents;", {page} }
+            }
         }
+        login_or_create_account_dialog::LoginOrCreateAccountDialog { context: context.clone() }
     }
 }
 
@@ -287,7 +281,7 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             (
                 msg,
                 rsx! {
-                    span { style: "background: rgb(239 68 68 / 0.2); border: 1px solid rgb(239 68 68 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #fca5a5;",
+                    span { style: "background: var(--red-bg-strong); border: 1px solid var(--red-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--red-text);",
                         "{badge_text}"
                     }
                 },
@@ -311,10 +305,10 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             (
                 msg,
                 rsx! {
-                    span { style: "background: rgb(34 197 94 / 0.15); border: 1px solid rgb(34 197 94 / 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #86efac; margin-right: 0.3rem;",
+                    span { style: "background: var(--green-bg-strong); border: 1px solid var(--green-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--green); margin-right: 0.3rem;",
                         "{api_ok_text}"
                     }
-                    span { style: "background: rgb(59 130 246 / 0.2); border: 1px solid rgb(59 130 246 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #93c5fd;",
+                    span { style: "background: var(--blue-bg-strong); border: 1px solid var(--blue-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--blue-text);",
                         "{db_init_text}"
                     }
                 },
@@ -338,10 +332,10 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             (
                 msg,
                 rsx! {
-                    span { style: "background: rgb(34 197 94 / 0.15); border: 1px solid rgb(34 197 94 / 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #86efac; margin-right: 0.3rem;",
+                    span { style: "background: var(--green-bg-strong); border: 1px solid var(--green-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--green); margin-right: 0.3rem;",
                         "{api_ok_text}"
                     }
-                    span { style: "background: rgb(245 158 11 / 0.2); border: 1px solid rgb(245 158 11 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #fde047;",
+                    span { style: "background: var(--yellow-bg-strong); border: 1px solid var(--yellow-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--yellow);",
                         "{db_bad_text}"
                     }
                 },
@@ -351,9 +345,7 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
     };
 
     rsx! {
-        div {
-            class: "connection-warning-banner",
-            style: "width: calc(100% - 1.8rem); max-width: 920px; margin: 0.4rem auto 0; padding: 0.65rem 1rem; background: rgb(245 158 11 / 0.12); border: 1px solid rgb(245 158 11 / 0.35); border-radius: var(--radius-md); color: #fcd34d; font-size: 0.86rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;",
+        div { class: "connection-warning-banner",
             div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                 div { style: "font-size: 1rem;", "⚠️" }
                 div { "{message}" }

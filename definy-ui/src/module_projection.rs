@@ -58,7 +58,13 @@ pub fn collect_module_snapshots(state: &AppState) -> Vec<ModuleSnapshot> {
     }
 
     let mut snapshots = map.into_values().collect::<Vec<ModuleSnapshot>>();
-    snapshots.sort_by_key(|b| std::cmp::Reverse(b.updated_at));
+    // 更新日時が同じ (seed のパーツなど) ときは HashMap の順に左右されないよう名前・ハッシュの順にする
+    snapshots.sort_by(|a, b| {
+        b.updated_at
+            .cmp(&a.updated_at)
+            .then_with(|| a.module_name.cmp(&b.module_name))
+            .then_with(|| a.definition_event_hash.cmp(&b.definition_event_hash))
+    });
     snapshots
 }
 

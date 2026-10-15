@@ -95,14 +95,14 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
                     }
                 }
                 div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                    span { style: "background: rgba(56, 189, 248, 0.15); color: var(--primary); border: 1px solid rgba(56, 189, 248, 0.3); padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;",
+                    span { style: "background: var(--blue-bg-strong); color: var(--primary); border: 1px solid var(--blue-border); padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;",
                         "definy:preview"
                     }
                 }
             }
 
             // 説明カード (パーツ定義の案内)
-            div { style: "background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-md); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem;",
+            div { style: "background: linear-gradient(135deg, var(--blue-bg), var(--purple-bg)); border: 1px solid var(--blue-border); border-radius: var(--radius-md); padding: 1.2rem; display: flex; flex-direction: column; gap: 0.75rem;",
                 div { style: "display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.95rem; color: var(--text-primary);",
                     span { "💡" }
                     span {
@@ -124,7 +124,7 @@ pub fn PreviewAppsCard(context: PageContext) -> Element {
                         )
                     }
                 }
-                pre { style: "margin: 0; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: #38bdf8; overflow-x: auto;",
+                pre { style: "margin: 0; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; color: var(--blue); overflow-x: auto;",
                     "preview({{\n  code: \"my-app\",\n  handler: fn(req) => {{\n    status: 200,\n    headers: [ {{ name: \"content-type\", value: \"text/html\" }} ],\n    body: std.string-to-utf8-stream(\"<h1>Hello from definy!</h1>\")\n  }}\n}})"
                 }
                 div { style: "font-size: 0.82rem; color: var(--text-secondary);",
@@ -196,14 +196,14 @@ fn PreviewAppRow(app: PreviewAppItem, lang: crate::language::Language) -> Elemen
                     strong { style: "font-size: 0.95rem; color: var(--text-primary);",
                         "{app.display_name}"
                     }
-                    span { style: "background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
+                    span { style: "background: var(--green-bg-strong); color: var(--green); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;",
                         "{app.status}"
                     }
-                    span { style: "font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--text-muted); background: rgba(255, 255, 255, 0.05); padding: 0.1rem 0.4rem; border-radius: 3px;",
+                    span { style: "font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--text-muted); background: var(--overlay-2); padding: 0.1rem 0.4rem; border-radius: 3px;",
                         "code: \"{app.subdomain}\""
                     }
                     if !definy_core::is_valid_preview_code(&app.subdomain) {
-                        span { style: "background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;",
+                        span { style: "background: var(--red-bg-strong); color: var(--red); padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.72rem; font-weight: 600;",
                             "⚠️ RFC 1123 Error"
                         }
                     }

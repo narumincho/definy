@@ -82,7 +82,7 @@ fn RenderEventDetail(
                         }
                         div {
                             class: "mono",
-                            style: "font-size: 0.84rem; color: var(--primary); background: rgb(0 0 0 / 0.2); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); overflow-x: auto;",
+                            style: "font-size: 0.84rem; color: var(--primary); background: var(--bg-inset); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); overflow-x: auto;",
                             "{hash_str}"
                         }
                     }
@@ -206,13 +206,13 @@ fn RenderDetailContent(
                                 a {
                                     href: context.href_with_lang(Location::Event(p_hash)),
                                     class: "mono",
-                                    style: "color: var(--primary); text-decoration: none; background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
+                                    style: "color: var(--primary); text-decoration: none; background: var(--blue-bg); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs); border: 1px solid var(--border);",
                                     title: parent_title.as_deref().unwrap_or_default(),
                                     "{p_short}"
                                 }
                             }
                         } else {
-                            span { style: "color: #a78bfa; font-size: 0.75rem; background: rgba(167, 139, 250, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); padding: 0.15rem 0.45rem; border-radius: var(--radius-xs);",
+                            span { style: "color: var(--purple); font-size: 0.75rem; background: var(--purple-bg); border: 1px solid var(--purple-border); padding: 0.15rem 0.45rem; border-radius: var(--radius-xs);",
                                 "🌱 Initial Commit (root)"
                             }
                         }
@@ -255,7 +255,7 @@ fn RenderDetailContent(
                                             if let (Some(full_ch), Some(short_ch)) = (ch_str, short_ch) {
                                                 span {
                                                     class: "mono",
-                                                    style: "font-size: 0.72rem; color: #38bdf8; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); padding: 0.1rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
+                                                    style: "font-size: 0.72rem; color: var(--blue); background: var(--blue-bg); border: 1px solid var(--blue-border); padding: 0.1rem 0.35rem; border-radius: var(--radius-xs); display: inline-flex; align-items: center; gap: 0.2rem;",
                                                     title: "ContentHash: {full_ch}",
                                                     span { "📌" }
                                                     span { "{short_ch}" }

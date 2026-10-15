@@ -24,7 +24,7 @@ pub fn Lifeline(x: u32, y_start: u32, y_end: u32) -> Element {
             y1: "{y_start}",
             x2: "{x}",
             y2: "{y_end}",
-            stroke: "#1e293b",
+            stroke: "var(--border-strong)",
             stroke_width: "1.5",
             stroke_dasharray: "5 5",
         }
@@ -48,7 +48,7 @@ pub fn ActorBox(
             width: "{width}",
             height: "38",
             rx: "8",
-            fill: "#0f172a",
+            fill: "var(--surface)",
             stroke: "{border}",
             stroke_width: "1.8",
         }
@@ -182,7 +182,7 @@ pub fn StepDetailCard(
     rsx! {
         div {
             class: "event-detail-card",
-            style: "background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem;",
+            style: "background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.45rem;",
             div { style: "display: flex; align-items: center; justify-content: space-between;",
                 span { style: "font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: {color}; letter-spacing: 0.05em;",
                     "{step_number}"

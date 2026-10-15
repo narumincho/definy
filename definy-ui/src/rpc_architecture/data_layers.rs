@@ -20,12 +20,12 @@ pub fn DataLayersExplanation(language: Language) -> Element {
             // テーブル・カード比較
             div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;",
                 // 外側
-                div { style: "border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.05); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.8rem;",
+                div { style: "border: 1px solid var(--blue-border); background: var(--blue-bg); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.8rem;",
                     div { style: "display: flex; justify-content: space-between; align-items: center;",
-                        span { style: "font-weight: 700; color: #60a5fa; font-size: 1rem;",
+                        span { style: "font-weight: 700; color: var(--blue); font-size: 1rem;",
                             "Outer: Connect-RPC Envelope"
                         }
-                        span { style: "background: rgba(59, 130, 246, 0.2); color: #93c5fd; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;",
+                        span { style: "background: var(--blue-bg-strong); color: var(--blue-text); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;",
                             "Transport Layer"
                         }
                     }
@@ -68,7 +68,7 @@ pub fn DataLayersExplanation(language: Language) -> Element {
                             }
                         }
                     }
-                    div { style: "font-family: monospace; font-size: 0.74rem; background: rgba(0, 0, 0, 0.3); padding: 0.6rem; border-radius: 4px; color: #bfdbfe; overflow-x: auto; white-space: pre;",
+                    div { style: "font-family: monospace; font-size: 0.74rem; background: var(--bg-inset); padding: 0.6rem; border-radius: 4px; color: var(--blue-text); overflow-x: auto; white-space: pre;",
                         {
                             "message EventItem {\n  string event_hash = 1;\n  bytes signed_event_bytes = 2;\n  string account_id = 3;\n  string event_type = 4;\n  string created_at_rfc3339 = 5;\n}"
                         }
@@ -76,12 +76,12 @@ pub fn DataLayersExplanation(language: Language) -> Element {
                 }
 
                 // 内側
-                div { style: "border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.8rem;",
+                div { style: "border: 1px solid var(--green-border); background: var(--green-bg); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.8rem;",
                     div { style: "display: flex; justify-content: space-between; align-items: center;",
-                        span { style: "font-weight: 700; color: #34d399; font-size: 1rem;",
+                        span { style: "font-weight: 700; color: var(--green); font-size: 1rem;",
                             "Inner: Deterministic CBOR"
                         }
-                        span { style: "background: rgba(16, 185, 129, 0.2); color: #a7f3d0; font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;",
+                        span { style: "background: var(--green-bg-strong); color: var(--green-text); font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;",
                             "Cryptographic Layer"
                         }
                     }
@@ -124,7 +124,7 @@ pub fn DataLayersExplanation(language: Language) -> Element {
                             }
                         }
                     }
-                    div { style: "font-family: monospace; font-size: 0.74rem; background: rgba(0, 0, 0, 0.3); padding: 0.6rem; border-radius: 4px; color: #a7f3d0; overflow-x: auto; white-space: pre;",
+                    div { style: "font-family: monospace; font-size: 0.74rem; background: var(--bg-inset); padding: 0.6rem; border-radius: 4px; color: var(--green-text); overflow-x: auto; white-space: pre;",
                         {
                             "SignedEvent {\n  signature: [u8; 64], // Ed25519\n  event_binary: Tag(24, Event {\n    account_id,\n    created_at,\n    content: ModuleCommit { ... }\n  })\n}"
                         }

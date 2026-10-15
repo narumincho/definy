@@ -42,16 +42,16 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
             }
 
             // SVG 自己デプロイ図
-            div { style: "background: #090d16; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.6rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
+            div { style: "background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.6rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
                     view_box: "0 0 1080 540",
                     style: "width: 100%; min-width: 880px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px;",
 
                     defs {
-                        MarkerDef { id: "self-arrow-blue", color: "#38bdf8" }
-                        MarkerDef { id: "self-arrow-purple", color: "#c084fc" }
-                        MarkerDef { id: "self-arrow-orange", color: "#fb923c" }
-                        MarkerDef { id: "self-arrow-green", color: "#34d399" }
+                        MarkerDef { id: "self-arrow-blue", color: "var(--blue)" }
+                        MarkerDef { id: "self-arrow-purple", color: "var(--purple)" }
+                        MarkerDef { id: "self-arrow-orange", color: "var(--orange)" }
+                        MarkerDef { id: "self-arrow-green", color: "var(--green)" }
                     }
 
                     // ライフライン（縦線）
@@ -66,40 +66,40 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         x: 20,
                         y: 12,
                         width: 170,
-                        color: "#94a3b8",
-                        border: "#475569",
+                        color: "var(--text-secondary)",
+                        border: "var(--border-strong)",
                         title: actor_user,
                     }
                     ActorBox {
                         x: 230,
                         y: 12,
                         width: 180,
-                        color: "#38bdf8",
-                        border: "#0284c7",
+                        color: "var(--blue)",
+                        border: "var(--blue)",
                         title: actor_parent,
                     }
                     ActorBox {
                         x: 450,
                         y: 12,
                         width: 170,
-                        color: "#c084fc",
-                        border: "#9333ea",
+                        color: "var(--purple)",
+                        border: "var(--purple)",
                         title: actor_db,
                     }
                     ActorBox {
                         x: 660,
                         y: 12,
                         width: 180,
-                        color: "#fb923c",
-                        border: "#ea580c",
+                        color: "var(--orange)",
+                        border: "var(--orange)",
                         title: actor_cf,
                     }
                     ActorBox {
                         x: 880,
                         y: 12,
                         width: 180,
-                        color: "#34d399",
-                        border: "#059669",
+                        color: "var(--green)",
+                        border: "var(--green)",
                         title: actor_child,
                     }
 
@@ -109,7 +109,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 85,
                         x2: 315,
                         y2: 85,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "self-arrow-blue",
                         dashed: false,
                         label: "1. DeployCloudflare(wasm_hash, worker_name)",
@@ -121,7 +121,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 125,
                         x2: 530,
                         y2: 125,
-                        color: "#c084fc",
+                        color: "var(--purple)",
                         marker: "self-arrow-purple",
                         dashed: false,
                         label: "2. Fetch Wasm binary from CAS",
@@ -133,7 +133,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 170,
                         x2: 745,
                         y2: 170,
-                        color: "#fb923c",
+                        color: "var(--orange)",
                         marker: "self-arrow-orange",
                         dashed: false,
                         label: "3. PUT /accounts/:id/workers/scripts/:name (multipart: worker.mjs + app.wasm)",
@@ -145,9 +145,9 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y: 195,
                         width: 160,
                         height: 38,
-                        bg: "#1c1917",
-                        border: "#fb923c",
-                        text_color: "#fdba74",
+                        bg: "var(--surface)",
+                        border: "var(--orange)",
+                        text_color: "var(--orange)",
                         line1: "Direct Wasm Bundle",
                         line2: Some("ES Module + application/wasm"),
                     }
@@ -158,7 +158,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 250,
                         x2: 325,
                         y2: 250,
-                        color: "#fb923c",
+                        color: "var(--orange)",
                         marker: "self-arrow-orange",
                         dashed: true,
                         label: "4. 200 OK + Enable workers.dev subdomain",
@@ -170,7 +170,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 290,
                         x2: 530,
                         y2: 290,
-                        color: "#c084fc",
+                        color: "var(--purple)",
                         marker: "self-arrow-purple",
                         dashed: false,
                         label: "5. Save URL to deployments history",
@@ -182,9 +182,9 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y: 325,
                         width: 170,
                         height: 42,
-                        bg: "#064e3b",
-                        border: "#34d399",
-                        text_color: "#a7f3d0",
+                        bg: "var(--green-bg-strong)",
+                        border: "var(--green)",
+                        text_color: "var(--green-text)",
                         line1: "V8 Isolate + WebAssembly",
                         line2: Some("0ms Cold Start at Edge"),
                     }
@@ -195,7 +195,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 395,
                         x2: 110,
                         y2: 395,
-                        color: "#34d399",
+                        color: "var(--green)",
                         marker: "self-arrow-green",
                         dashed: true,
                         label: "6. Deploy OK: https://<worker>.<sub >.workers.dev",
@@ -207,7 +207,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                         y1: 445,
                         x2: 965,
                         y2: 445,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "self-arrow-blue",
                         dashed: false,
                         label: "7. Access Next-Gen definy instance (Generational Shift) ★",
@@ -225,7 +225,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                             "運用層の自己完結 (Worker to Worker)",
                             "Operacia Memgastigo",
                         ),
-                    color: "#38bdf8",
+                    color: "var(--blue)",
                     description: language
                         .label(
                             "definy itself calls Cloudflare REST API v4, deploying new edge Worker instances on demand without local developer terminals or external CI.",
@@ -241,7 +241,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                             "Wasm モジュール直接バンドル配信",
                             "Rekta Wasm-Alŝuto",
                         ),
-                    color: "#a855f7",
+                    color: "var(--purple)",
                     description: language
                         .label(
                             "Instead of container builds, definy uploads ES Module glue code and the compiled Wasm binary directly via multipart/form-data to Cloudflare's edge.",
@@ -257,7 +257,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                             "WASI 0.3 による自己記述 (能力注入)",
                             "WASI 0.3 Kapabla Rultempo",
                         ),
-                    color: "#fb923c",
+                    color: "var(--orange)",
                     description: language
                         .label(
                             "HTTP handlers and Cloudflare deployment requests expressed as pure definy expression parts via WASI 0.3 Capability Dependency Injection.",
@@ -273,7 +273,7 @@ pub fn SelfDeploySequenceDiagram(language: Language) -> Element {
                             "definy で definy を表現する閉ループ",
                             "Plena Mempriskriba Buklo",
                         ),
-                    color: "#34d399",
+                    color: "var(--green)",
                     description: language
                         .label(
                             "When the UI, compiler, and deployment runtime are all expressed as definy parts, definy achieves complete self-hosting: creating and deploying itself eternally.",

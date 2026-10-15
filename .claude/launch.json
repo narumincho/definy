@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "definy",
+      "runtimeExecutable": "dx",
+      "runtimeArgs": ["serve", "--fullstack", "--interactive", "false", "--open", "false"],
+      "port": 8080
+    }
+  ]
+}

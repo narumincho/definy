@@ -68,9 +68,7 @@ pub fn ExpressionTreeSummary(
                 ) },
 
                 // ルートノードのバッジ（外枠の骨格）
-                div { style: "{node_badge_style(&root_layout_node.kind, false, false, false)}",
-                    "{root_layout_node.label}"
-                }
+                div { style: "{node_badge_style(&root_layout_node.kind)}", "{root_layout_node.label}" }
 
                 // 直下の子要素たちのプレビューチップ（外側ノード）
                 if !is_leaf {
@@ -112,7 +110,7 @@ pub fn ExpressionTreeSummary(
             if is_expanded() && !is_leaf {
                 div {
                     class: "expression-tree-expanded-card",
-                    style: "margin-top: 0.25rem; padding: 0.6rem 0.8rem; background: rgba(0, 0, 0, 0.3); border: 1.5px solid rgba(124, 192, 216, 0.35); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.45rem; width: 100%; box-sizing: border-box; overflow-x: auto; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);",
+                    style: "margin-top: 0.25rem; padding: 0.6rem 0.8rem; background: var(--bg-inset); border: 1.5px solid var(--blue-border); border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.45rem; width: 100%; box-sizing: border-box; overflow-x: auto; box-shadow: 0 4px 12px var(--shadow-color);",
                     div { style: "padding: 0.2rem 0; width: 100%; box-sizing: border-box; overflow-x: auto;",
                         TreeLayoutRenderer {
                             node: layout_result.root,
@@ -131,7 +129,7 @@ fn render_child_summary_chip(child: &LayoutNode) -> Element {
     let child_is_leaf = child.children.is_empty();
 
     if child_is_leaf {
-        let badge = node_badge_style(child_kind, false, false, false);
+        let badge = node_badge_style(child_kind);
         rsx! {
             div {
                 key: "{child.id}",
@@ -143,7 +141,7 @@ fn render_child_summary_chip(child: &LayoutNode) -> Element {
         rsx! {
             div {
                 key: "{child.id}",
-                style: "display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.08rem 0.32rem; background: rgba(255, 255, 255, 0.04); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: var(--radius-full); font-family: monospace; font-size: 0.74rem; color: var(--text-secondary);",
+                style: "display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.08rem 0.32rem; background: var(--overlay-2); border: 1px dashed var(--overlay-3); border-radius: var(--radius-full); font-family: monospace; font-size: 0.74rem; color: var(--text-secondary);",
                 span { style: "color: var(--accent);", "{child.label}" }
                 span { style: "opacity: 0.6;", "…" }
             }
@@ -153,15 +151,15 @@ fn render_child_summary_chip(child: &LayoutNode) -> Element {
 
 fn outer_bar_container_style(is_leaf: bool, is_expanded: bool) -> String {
     let outer_border = if is_expanded {
-        "1px solid rgba(124, 192, 216, 0.45)"
+        "1px solid var(--blue-border)"
     } else {
         "1px solid var(--border)"
     };
 
     let outer_bg = if is_expanded {
-        "rgba(124, 192, 216, 0.08)"
+        "var(--blue-bg)"
     } else {
-        "rgba(255, 255, 255, 0.03)"
+        "var(--overlay-1)"
     };
 
     let cursor_style = if is_leaf { "default" } else { "pointer" };
@@ -174,13 +172,13 @@ fn outer_bar_container_style(is_leaf: bool, is_expanded: bool) -> String {
 fn expand_button_style(is_expanded: bool) -> (&'static str, &'static str, &'static str) {
     if is_expanded {
         (
-            "rgba(59, 130, 246, 0.2)",
-            "#93c5fd",
-            "1px solid rgba(147, 197, 253, 0.3)",
+            "var(--blue-bg-strong)",
+            "var(--blue-text)",
+            "1px solid var(--blue-border)",
         )
     } else {
         (
-            "rgba(255, 255, 255, 0.06)",
+            "var(--overlay-2)",
             "var(--text-secondary)",
             "1px solid transparent",
         )

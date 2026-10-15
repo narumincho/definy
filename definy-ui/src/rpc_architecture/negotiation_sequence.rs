@@ -157,7 +157,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
             // フル幅 SVG シーケンス図コンテナ
             div {
                 class: "event-detail-card",
-                style: "background: #080c14; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.8rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
+                style: "background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.8rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
                     view_box: "0 0 1140 700",
                     style: "width: 100%; min-width: 900px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px;",
@@ -171,7 +171,10 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#38bdf8" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--blue)",
+                            }
                         }
                         marker {
                             id: "neg-arrow-amber",
@@ -181,7 +184,10 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#fbbf24" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--yellow)",
+                            }
                         }
                         marker {
                             id: "neg-arrow-green",
@@ -191,7 +197,10 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#34d399" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--green)",
+                            }
                         }
                         marker {
                             id: "neg-arrow-purple",
@@ -201,7 +210,10 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#c084fc" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--purple)",
+                            }
                         }
                     }
 
@@ -211,7 +223,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "90",
                         y2: "675",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -220,7 +232,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "310",
                         y2: "675",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -229,7 +241,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "580",
                         y2: "675",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -238,7 +250,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "860",
                         y2: "675",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -247,7 +259,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "1050",
                         y2: "675",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -260,14 +272,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "140",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#3b82f6",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "90",
                         y: "36",
-                        fill: "#93c5fd",
+                        fill: "var(--blue-text)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -281,14 +293,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "180",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#8b5cf6",
+                        fill: "var(--surface)",
+                        stroke: "var(--purple)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "310",
                         y: "36",
-                        fill: "#c4b5fd",
+                        fill: "var(--purple-text)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -302,14 +314,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "190",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#0284c7",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "580",
                         y: "36",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -323,14 +335,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "190",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#f59e0b",
+                        fill: "var(--surface)",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "860",
                         y: "36",
-                        fill: "#fbbf24",
+                        fill: "var(--yellow)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -344,14 +356,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "170",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#ec4899",
+                        fill: "var(--surface)",
+                        stroke: "var(--pink)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "1050",
                         y: "36",
-                        fill: "#f472b6",
+                        fill: "var(--pink)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -365,14 +377,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "80",
                         x2: "305",
                         y2: "80",
-                        stroke: "#3b82f6",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-blue)",
                     }
                     text {
                         x: "197",
                         y: "73",
-                        fill: "#93c5fd",
+                        fill: "var(--blue-text)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step1_title}"
@@ -382,14 +394,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     path {
                         d: "M 310 95 H 410 V 128 H 315",
                         fill: "none",
-                        stroke: "#c084fc",
+                        stroke: "var(--purple)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-purple)",
                     }
                     text {
                         x: "420",
                         y: "107",
-                        fill: "#d8b4fe",
+                        fill: "var(--purple-text)",
                         font_weight: "600",
                         font_size: "13px",
                         text_anchor: "start",
@@ -398,7 +410,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "420",
                         y: "124",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "start",
                         "{step2_sub}"
@@ -410,7 +422,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "158",
                         x2: "575",
                         y2: "158",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "2.2",
                         marker_end: "url(#neg-arrow-blue)",
                     }
@@ -420,13 +432,13 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "230",
                         height: "20",
                         rx: "4",
-                        fill: "rgba(15, 23, 42, 0.95)",
-                        stroke: "#0284c7",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                     }
                     text {
                         x: "470",
                         y: "156",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "bold",
                         font_size: "12.5px",
                         text_anchor: "middle",
@@ -435,7 +447,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "470",
                         y: "176",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "middle",
                         "{step3_sub}"
@@ -447,14 +459,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "200",
                         x2: "855",
                         y2: "200",
-                        stroke: "#fbbf24",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-amber)",
                     }
                     text {
                         x: "717",
                         y: "193",
-                        fill: "#fbbf24",
+                        fill: "var(--yellow)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step4_title}"
@@ -465,7 +477,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "226",
                         x2: "585",
                         y2: "226",
-                        stroke: "#fbbf24",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                         stroke_dasharray: "4 4",
                         marker_end: "url(#neg-arrow-amber)",
@@ -473,7 +485,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "717",
                         y: "219",
-                        fill: "#fde68a",
+                        fill: "var(--yellow)",
                         font_size: "12px",
                         text_anchor: "middle",
                         "{step4_sub}"
@@ -485,7 +497,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "258",
                         x2: "315",
                         y2: "258",
-                        stroke: "#f59e0b",
+                        stroke: "var(--yellow)",
                         stroke_width: "2.2",
                         marker_end: "url(#neg-arrow-amber)",
                     }
@@ -495,13 +507,13 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "230",
                         height: "20",
                         rx: "4",
-                        fill: "rgba(15, 23, 42, 0.95)",
-                        stroke: "#d97706",
+                        fill: "var(--surface)",
+                        stroke: "var(--orange)",
                     }
                     text {
                         x: "475",
                         y: "256",
-                        fill: "#fbbf24",
+                        fill: "var(--yellow)",
                         font_weight: "bold",
                         font_size: "12.5px",
                         text_anchor: "middle",
@@ -510,7 +522,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "475",
                         y: "276",
-                        fill: "#fde68a",
+                        fill: "var(--yellow)",
                         font_size: "11.5px",
                         text_anchor: "middle",
                         "{step5_sub}"
@@ -520,14 +532,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     path {
                         d: "M 310 295 H 410 V 328 H 315",
                         fill: "none",
-                        stroke: "#c084fc",
+                        stroke: "var(--purple)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-purple)",
                     }
                     text {
                         x: "420",
                         y: "307",
-                        fill: "#d8b4fe",
+                        fill: "var(--purple-text)",
                         font_weight: "600",
                         font_size: "13px",
                         text_anchor: "start",
@@ -536,7 +548,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "420",
                         y: "324",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "start",
                         "{step6_sub}"
@@ -548,7 +560,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "358",
                         x2: "575",
                         y2: "358",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "2.2",
                         marker_end: "url(#neg-arrow-blue)",
                     }
@@ -558,13 +570,13 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "210",
                         height: "20",
                         rx: "4",
-                        fill: "rgba(15, 23, 42, 0.95)",
-                        stroke: "#0284c7",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                     }
                     text {
                         x: "475",
                         y: "356",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "bold",
                         font_size: "12.5px",
                         text_anchor: "middle",
@@ -573,7 +585,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "475",
                         y: "376",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "middle",
                         "{step7_sub}"
@@ -583,14 +595,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     path {
                         d: "M 580 395 H 680 V 425 H 585",
                         fill: "none",
-                        stroke: "#34d399",
+                        stroke: "var(--green)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-green)",
                     }
                     text {
                         x: "690",
                         y: "414",
-                        fill: "#6ee7b7",
+                        fill: "var(--green)",
                         font_weight: "600",
                         font_size: "13px",
                         text_anchor: "start",
@@ -602,14 +614,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "445",
                         x2: "855",
                         y2: "445",
-                        stroke: "#fbbf24",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-amber)",
                     }
                     text {
                         x: "717",
                         y: "438",
-                        fill: "#fbbf24",
+                        fill: "var(--yellow)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step9_title}"
@@ -621,7 +633,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "470",
                         x2: "315",
                         y2: "470",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                         stroke_dasharray: "4 4",
                         marker_end: "url(#neg-arrow-blue)",
@@ -629,7 +641,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "447",
                         y: "463",
-                        fill: "#7dd3fc",
+                        fill: "var(--blue)",
                         font_size: "12px",
                         text_anchor: "middle",
                         "{step10_title}"
@@ -641,7 +653,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "505",
                         x2: "575",
                         y2: "505",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "2.2",
                         marker_end: "url(#neg-arrow-blue)",
                     }
@@ -651,13 +663,13 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "220",
                         height: "20",
                         rx: "4",
-                        fill: "rgba(15, 23, 42, 0.95)",
-                        stroke: "#0284c7",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                     }
                     text {
                         x: "475",
                         y: "503",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "bold",
                         font_size: "12.5px",
                         text_anchor: "middle",
@@ -670,14 +682,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "532",
                         x2: "855",
                         y2: "532",
-                        stroke: "#fbbf24",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-amber)",
                     }
                     text {
                         x: "717",
                         y: "525",
-                        fill: "#fde68a",
+                        fill: "var(--yellow)",
                         font_size: "12.5px",
                         text_anchor: "middle",
                         "{step12_title}"
@@ -689,14 +701,14 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "565",
                         x2: "1045",
                         y2: "565",
-                        stroke: "#ec4899",
+                        stroke: "var(--pink)",
                         stroke_width: "1.8",
                         marker_end: "url(#neg-arrow-purple)",
                     }
                     text {
                         x: "812",
                         y: "558",
-                        fill: "#f472b6",
+                        fill: "var(--pink)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step13_title}"
@@ -708,7 +720,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "605",
                         x2: "315",
                         y2: "605",
-                        stroke: "#34d399",
+                        stroke: "var(--green)",
                         stroke_width: "2.2",
                         marker_end: "url(#neg-arrow-green)",
                     }
@@ -718,13 +730,13 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         width: "210",
                         height: "20",
                         rx: "4",
-                        fill: "rgba(15, 23, 42, 0.95)",
-                        stroke: "#059669",
+                        fill: "var(--surface)",
+                        stroke: "var(--green)",
                     }
                     text {
                         x: "475",
                         y: "603",
-                        fill: "#34d399",
+                        fill: "var(--green)",
                         font_weight: "bold",
                         font_size: "12.5px",
                         text_anchor: "middle",
@@ -737,7 +749,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                         y1: "645",
                         x2: "95",
                         y2: "645",
-                        stroke: "#34d399",
+                        stroke: "var(--green)",
                         stroke_width: "1.8",
                         stroke_dasharray: "4 4",
                         marker_end: "url(#neg-arrow-green)",
@@ -745,7 +757,7 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "202",
                         y: "638",
-                        fill: "#86efac",
+                        fill: "var(--green)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step15_title}"
@@ -755,8 +767,8 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
 
             // 説明ブロック
             div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; margin-top: 0.5rem;",
-                div { style: "background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.5rem;",
-                    h4 { style: "font-size: 0.95rem; font-weight: 700; color: #fbbf24; margin: 0; display: flex; align-items: center; gap: 0.5rem;",
+                div { style: "background: var(--yellow-bg); border: 1px solid var(--yellow-border); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.5rem;",
+                    h4 { style: "font-size: 0.95rem; font-weight: 700; color: var(--yellow); margin: 0; display: flex; align-items: center; gap: 0.5rem;",
                         span { "💡" }
                         span {
                             {
@@ -781,8 +793,8 @@ pub fn NegotiationSequenceDiagram(language: Language) -> Element {
                     }
                 }
 
-                div { style: "background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.5rem;",
-                    h4 { style: "font-size: 0.95rem; font-weight: 700; color: #34d399; margin: 0; display: flex; align-items: center; gap: 0.5rem;",
+                div { style: "background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius-sm); padding: 1.2rem; display: grid; gap: 0.5rem;",
+                    h4 { style: "font-size: 0.95rem; font-weight: 700; color: var(--green); margin: 0; display: flex; align-items: center; gap: 0.5rem;",
                         span { "🛡️" }
                         span {
                             {

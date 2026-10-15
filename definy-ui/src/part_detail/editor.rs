@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use definy_event::EventHashId;
 use dioxus::prelude::*;
 
@@ -7,7 +5,6 @@ use super::banners::{DeployBanner, PreviewBanner};
 use crate::app_state::AppState;
 use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::evaluate_expression;
-use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::preview_apps::build_preview_subdomain_url;
 
@@ -19,41 +16,20 @@ pub(crate) fn PartEditorCard(
     snapshot: crate::part_projection::PartSnapshot,
 ) -> Element {
     let language = context.language;
-    let mut part_name = use_signal(|| snapshot.part_name.clone());
-    let mut part_description = use_signal(|| snapshot.description_for(language));
-    let mut part_type_expr = use_signal(|| {
+    let part_name = use_signal(|| snapshot.part_name.clone());
+    let part_description = use_signal(|| snapshot.description_for(language));
+    let part_type_expr = use_signal(|| {
         snapshot
             .part_type
             .as_ref()
             .map(definy_event::event::PartType::to_expression)
     });
     let expression = use_signal(|| snapshot.expression.clone());
-    let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
+    let module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
     let mut commit_message = use_signal(String::new);
     let mut eval_result = use_signal(|| None::<String>);
     let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
-
-    let hash_as_base64 = definition_event_hash.to_string();
-    let dropdown_name = format!("part-update-module-{}", hash_as_base64);
-    let modules = collect_module_snapshots(&state);
-    let module_options: Vec<(String, String)> = modules
-        .iter()
-        .map(|module| {
-            (
-                module.definition_event_hash.to_string(),
-                module.module_name.clone(),
-            )
-        })
-        .collect();
-    let current_module_value = module_hash()
-        .map(|hash| hash.to_string())
-        .unwrap_or_else(|| {
-            modules
-                .first()
-                .map(|m| m.definition_event_hash.to_string())
-                .unwrap_or_default()
-        });
 
     let updated_at_str = snapshot.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at_label = format!(
@@ -355,7 +331,7 @@ pub(crate) fn PartEditorCard(
                                         target: "_blank",
                                         rel: "noopener noreferrer",
                                         class: "btn-primary",
-                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);",
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px var(--blue-border);",
                                         span {
                                             {
                                                 context
@@ -379,7 +355,7 @@ pub(crate) fn PartEditorCard(
                                         r#type: "button",
                                         class: "btn-primary",
                                         disabled: is_deploying(),
-                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(249, 115, 22, 0.25); background: #f97316; border-color: #ea580c;",
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px var(--orange-border); background: var(--orange); border-color: var(--orange);",
                                         onclick: on_deploy.clone(),
                                         span {
                                             if is_deploying() {
@@ -396,7 +372,6 @@ pub(crate) fn PartEditorCard(
                             r#type: "button",
                             class: "btn-secondary",
                             "aria-pressed": if show_wasm_inspector() { "true" } else { "false" },
-                            style: if show_wasm_inspector() { "background: rgba(56, 189, 248, 0.16); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);" } else { "" },
                             onclick: move |_| show_wasm_inspector.toggle(),
                             crate::icon::SearchIcon {}
                             span {
@@ -426,96 +401,17 @@ pub(crate) fn PartEditorCard(
                             crate::icon::PlayIcon {}
                             span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
                         }
-                        button {
-                            r#type: "button",
-                            class: if is_logged_in { "btn-primary" } else { "btn-secondary" },
-                            disabled: !is_logged_in,
-                            onclick: on_save,
-                            "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
-                        }
-                    }
-                }
-                // 入力グリッド：パーツ名とモジュール（2カラム）
-                div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;",
-                    div { style: "display: grid; gap: 0.3rem;",
-                        label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
-                            "{context.language.label(\"Part Name\", \"パーツ名\", \"Parto-nomo\")}"
-                        }
-                        input {
-                            r#type: "text",
-                            name: "part-update-name",
-                            value: "{part_name}",
-                            placeholder: "my-part",
-                            style: "padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.9rem;",
-                            oninput: move |evt: FormEvent| {
-                                part_name.set(evt.value());
-                            },
-                        }
-                    }
-                    div { style: "display: grid; gap: 0.3rem;",
-                        label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
-                            "{context.language.label(\"Module\", \"所属モジュール\", \"Modulo\")}"
-                        }
-                        crate::dropdown::SearchableDropdown {
-                            name: dropdown_name,
-                            current_value: current_module_value,
-                            options: module_options,
-                            on_change: move |val: String| {
-                                module_hash.set(EventHashId::from_str(&val).ok());
-                            },
-                        }
-                    }
-                }
-                // 説明文
-                div { style: "display: grid; gap: 0.3rem;",
-                    label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
-                        "{context.language.label(\"Description\", \"説明文\", \"Priskribo\")}"
-                    }
-                    textarea {
-                        name: "part-update-description",
-                        value: "{part_description}",
-                        placeholder: "{context.language.label(\"Enter part description...\", \"パーツの説明を入力...\", \"Enigu partan priskribon...\")}",
-                        style: "min-height: 3.2rem; padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-family: inherit; font-size: 0.85rem; resize: vertical;",
-                        oninput: move |evt: FormEvent| {
-                            part_description.set(evt.value());
-                        },
-                    }
-                }
-                // コミットメッセージ
-                div { style: "display: grid; gap: 0.3rem;",
-                    label { style: "font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);",
-                        {
-                            context
-                                .language
-                                .label("Commit Message", "コミットメッセージ", "Enmeta mesaĝo")
-                        }
-                    }
-                    input {
-                        r#type: "text",
-                        name: "part-update-commit-message",
-                        value: "{commit_message}",
-                        placeholder: context
-                            .language
-                            .label(
-                                "e.g. Update part expression or type",
-                                "例: パーツの式や型を更新",
-                                "ekz. Ĝisdatigi partan esprimon aŭ tipon",
-                            ),
-                        style: "padding: 0.42rem 0.65rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font-size: 0.9rem;",
-                        oninput: move |evt: FormEvent| {
-                            commit_message.set(evt.value());
-                        },
                     }
                 }
                 if !is_logged_in {
-                    div { style: "font-size: 0.78rem; color: var(--text-secondary); background: rgb(255 255 255 / 0.03); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
+                    div { style: "font-size: 0.78rem; color: var(--text-secondary); background: var(--overlay-1); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
                         "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por konservi ŝanĝojn.\")}"
                     }
                 }
                 if let Some(result) = submit_result() {
                     div {
                         class: "mono",
-                        style: "font-size: 0.82rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
+                        style: "font-size: 0.82rem; word-break: break-word; background: var(--blue-bg); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
                         "{result}"
                     }
                 }
@@ -536,81 +432,61 @@ pub(crate) fn PartEditorCard(
                 }
             }
 
-            // 2. パーツ型エディタカード
+            // 2. パーツ定義 (名前・モジュール・説明・型・式) の木構造
             div {
                 class: "event-detail-card",
-                style: "display: grid; gap: 0.85rem; padding: 1.25rem 1.4rem;",
-                div { style: "display: flex; justify-content: space-between; align-items: center;",
-                    span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
-                        "{context.language.label(\"Part Type\", \"パーツ型\", \"Parto-tipo\")}"
-                    }
-                    if part_type_expr.read().is_some() {
-                        button {
-                            r#type: "button",
-                            class: "btn-secondary btn-sm",
-                            onclick: move |_| part_type_expr.set(None),
-                            "{context.language.label(\"Clear (no type)\", \"クリア (型指定なし)\", \"Forigi (sen tipo)\")}"
-                        }
-                    }
-                }
-                crate::tree_layout::ExpressionTreeEditor {
+                style: "display: grid; gap: 0.6rem; padding: 0.9rem 1rem;",
+                super::definition_tree::PartDefinitionTree {
                     state: state.clone(),
                     context: context.clone(),
-                    expression: part_type_expr,
-                    expected_type: Some(crate::expression_editor::ExpressionType::Type),
-                    max_width: 800.0,
-                }
-            }
-
-            // 3. 式エディタカード（メインワークスペース）
-            div {
-                class: "event-detail-card",
-                style: "display: grid; gap: 0.85rem; padding: 1.25rem 1.4rem;",
-                div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;",
-                    div { style: "display: flex; align-items: baseline; gap: 0.6rem;",
-                        span { style: "font-size: 1.05rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em;",
-                            "{context.language.label(\"Expression\", \"式\", \"Esprimo\")}"
-                        }
-                    }
-                    button {
-                        r#type: "button",
-                        class: "btn-secondary btn-sm",
-                        onclick: {
-                            let state = state.clone();
-                            move |_| {
-                                evaluate_and_set_result(&expression.read(), &state, language, eval_result);
-                            }
-                        },
-                        crate::icon::PlayIcon {}
-                        span { "{context.language.label(\"Evaluate\", \"評価\", \"Taksi\")}" }
-                    }
-                }
-                crate::tree_layout::ExpressionTreeEditor {
-                    state: state.clone(),
-                    context: context.clone(),
+                    part_name,
+                    part_description,
+                    part_type_expr,
                     expression,
+                    module_hash,
                     expected_type,
-                    max_width: 800.0,
                 }
                 {
                     eval_result()
                         .map(|eval| {
                             let is_error = eval.starts_with("Error")
                                 || eval.starts_with("エラー");
-                            let (bg, border, text_color) = if is_error {
-                                ("var(--error-bg)", "var(--error)", "#fca5a5")
-                            } else {
-                                ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
-                            };
+                            let tone = if is_error { "error" } else { "info" };
                             rsx! {
                                 div {
-                                    class: "mono eval-result",
+                                    class: "mono eval-result tone-message",
                                     "data-eval-result": "true",
-                                    style: "font-size: 0.86rem; word-break: break-word; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);",
+                                    "data-tone": tone,
                                     "{eval}"
                                 }
                             }
                         })
+                }
+                // 保存: コミットメッセージと保存ボタン
+                div { class: "def-save-row",
+                    input {
+                        r#type: "text",
+                        name: "part-update-commit-message",
+                        class: "def-commit-input",
+                        value: "{commit_message}",
+                        placeholder: context
+                            .language
+                            .label(
+                                "Commit message (optional)",
+                                "コミットメッセージ (省略可)",
+                                "Enmeta mesaĝo (nedeviga)",
+                            ),
+                        oninput: move |evt: FormEvent| {
+                            commit_message.set(evt.value());
+                        },
+                    }
+                    button {
+                        r#type: "button",
+                        class: if is_logged_in { "btn-primary" } else { "btn-secondary" },
+                        disabled: !is_logged_in,
+                        onclick: on_save,
+                        "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
+                    }
                 }
             }
 
@@ -636,7 +512,7 @@ pub(crate) fn PartEditorCard(
                                     err,
                                 );
                                 rsx! {
-                                    div { style: "padding: 0.8rem; background: rgb(239 68 68 / 0.1); border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fca5a5; font-size: 0.85rem;",
+                                    div { style: "padding: 0.8rem; background: var(--red-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--red-text); font-size: 0.85rem;",
                                         "{err_msg}"
                                     }
                                 }

@@ -52,9 +52,9 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
 
     let tab_link_style = |tab: ArchDiagramTab| -> &'static str {
         if current_tab() == tab {
-            "display: inline-block; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; border: none; background: #0284c7; color: #fff; cursor: pointer; transition: background 0.15s ease;"
+            "display: inline-block; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; border: none; background: var(--blue); color: var(--text-primary); cursor: pointer; transition: background 0.15s ease;"
         } else {
-            "display: inline-block; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.04); color: var(--text-primary); cursor: pointer; transition: background 0.15s ease;"
+            "display: inline-block; padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; border: 1px solid var(--border); background: var(--overlay-2); color: var(--text-primary); cursor: pointer; transition: background 0.15s ease;"
         }
     };
 
@@ -205,25 +205,25 @@ pub fn RpcArchitecturePageView(context: PageContext) -> Element {
                                     }
                                     a {
                                         href: "#section-negotiation",
-                                        style: "color: #38bdf8; text-decoration: none;",
+                                        style: "color: var(--blue); text-decoration: none;",
                                         "§1. Diff Hash Negotiation"
                                     }
                                     span { style: "color: var(--border);", "•" }
                                     a {
                                         href: "#section-submit",
-                                        style: "color: #38bdf8; text-decoration: none;",
+                                        style: "color: var(--blue); text-decoration: none;",
                                         "§2. Event Submission"
                                     }
                                     span { style: "color: var(--border);", "•" }
                                     a {
                                         href: "#section-fetch",
-                                        style: "color: #38bdf8; text-decoration: none;",
+                                        style: "color: var(--blue); text-decoration: none;",
                                         "§3. Event Fetching"
                                     }
                                     span { style: "color: var(--border);", "•" }
                                     a {
                                         href: "#section-datalayers",
-                                        style: "color: #38bdf8; text-decoration: none;",
+                                        style: "color: var(--blue); text-decoration: none;",
                                         "§4. Data Layers Architecture"
                                     }
                                 }

@@ -77,7 +77,13 @@ pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
     }
 
     let mut snapshots = map.into_values().collect::<Vec<PartSnapshot>>();
-    snapshots.sort_by_key(|b| std::cmp::Reverse(b.updated_at));
+    // 更新日時が同じ (seed のパーツなど) ときは HashMap の順に左右されないよう名前・ハッシュの順にする
+    snapshots.sort_by(|a, b| {
+        b.updated_at
+            .cmp(&a.updated_at)
+            .then_with(|| a.part_name.cmp(&b.part_name))
+            .then_with(|| a.definition_event_hash.cmp(&b.definition_event_hash))
+    });
     snapshots
 }
 

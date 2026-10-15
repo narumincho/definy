@@ -114,7 +114,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
             // フル幅 SVG シーケンス図コンテナ
             div {
                 class: "event-detail-card",
-                style: "background: #080c14; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.8rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
+                style: "background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.8rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
                     view_box: "0 0 1100 540",
                     style: "width: 100%; min-width: 860px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px;",
@@ -128,7 +128,10 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#38bdf8" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--blue)",
+                            }
                         }
                         marker {
                             id: "sub-arrow-green",
@@ -138,7 +141,10 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#34d399" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--green)",
+                            }
                         }
                         marker {
                             id: "sub-arrow-purple",
@@ -148,7 +154,10 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                             marker_width: "6",
                             marker_height: "6",
                             orient: "auto-start-reverse",
-                            path { d: "M 0 1 L 10 5 L 0 9 z", fill: "#c084fc" }
+                            path {
+                                d: "M 0 1 L 10 5 L 0 9 z",
+                                fill: "var(--purple)",
+                            }
                         }
                     }
 
@@ -158,7 +167,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "100",
                         y2: "510",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -167,7 +176,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "330",
                         y2: "510",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -176,7 +185,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "570",
                         y2: "510",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -185,7 +194,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "800",
                         y2: "510",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -194,7 +203,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "55",
                         x2: "990",
                         y2: "510",
-                        stroke: "#1e293b",
+                        stroke: "var(--border-strong)",
                         stroke_width: "1.5",
                         stroke_dasharray: "5 5",
                     }
@@ -207,14 +216,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         width: "150",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#3b82f6",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "100",
                         y: "36",
-                        fill: "#93c5fd",
+                        fill: "var(--blue-text)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -228,14 +237,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         width: "190",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#8b5cf6",
+                        fill: "var(--surface)",
+                        stroke: "var(--purple)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "330",
                         y: "36",
-                        fill: "#c4b5fd",
+                        fill: "var(--purple-text)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -249,14 +258,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         width: "190",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#f59e0b",
+                        fill: "var(--surface)",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "570",
                         y: "36",
-                        fill: "#fbbf24",
+                        fill: "var(--yellow)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -270,14 +279,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         width: "190",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#10b981",
+                        fill: "var(--surface)",
+                        stroke: "var(--green)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "800",
                         y: "36",
-                        fill: "#6ee7b7",
+                        fill: "var(--green)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -291,14 +300,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         width: "160",
                         height: "38",
                         rx: "8",
-                        fill: "#0f172a",
-                        stroke: "#ec4899",
+                        fill: "var(--surface)",
+                        stroke: "var(--pink)",
                         stroke_width: "1.8",
                     }
                     text {
                         x: "990",
                         y: "36",
-                        fill: "#f472b6",
+                        fill: "var(--pink)",
                         font_weight: "bold",
                         font_size: "13.5px",
                         text_anchor: "middle",
@@ -312,14 +321,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "80",
                         x2: "325",
                         y2: "80",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                         marker_end: "url(#sub-arrow-blue)",
                     }
                     text {
                         x: "212",
                         y: "73",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step1_title}"
@@ -329,14 +338,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     path {
                         d: "M 330 95 H 430 V 128 H 335",
                         fill: "none",
-                        stroke: "#c084fc",
+                        stroke: "var(--purple)",
                         stroke_width: "1.8",
                         marker_end: "url(#sub-arrow-purple)",
                     }
                     text {
                         x: "440",
                         y: "107",
-                        fill: "#d8b4fe",
+                        fill: "var(--purple-text)",
                         font_weight: "600",
                         font_size: "13px",
                         text_anchor: "start",
@@ -345,7 +354,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "440",
                         y: "124",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "start",
                         "{step2_sub}"
@@ -355,14 +364,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     path {
                         d: "M 330 145 H 430 V 178 H 335",
                         fill: "none",
-                        stroke: "#c084fc",
+                        stroke: "var(--purple)",
                         stroke_width: "1.8",
                         marker_end: "url(#sub-arrow-purple)",
                     }
                     text {
                         x: "440",
                         y: "157",
-                        fill: "#d8b4fe",
+                        fill: "var(--purple-text)",
                         font_weight: "600",
                         font_size: "13px",
                         text_anchor: "start",
@@ -371,7 +380,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "440",
                         y: "174",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "start",
                         "{step3_sub}"
@@ -383,14 +392,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "205",
                         x2: "565",
                         y2: "205",
-                        stroke: "#fbbf24",
+                        stroke: "var(--yellow)",
                         stroke_width: "1.8",
                         marker_end: "url(#sub-arrow-purple)",
                     }
                     text {
                         x: "450",
                         y: "198",
-                        fill: "#fde68a",
+                        fill: "var(--yellow)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step4_title}"
@@ -402,7 +411,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "248",
                         x2: "795",
                         y2: "248",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "2.2",
                         marker_end: "url(#sub-arrow-blue)",
                     }
@@ -412,13 +421,13 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         width: "270",
                         height: "20",
                         rx: "4",
-                        fill: "rgba(15, 23, 42, 0.95)",
-                        stroke: "#0284c7",
+                        fill: "var(--surface)",
+                        stroke: "var(--blue)",
                     }
                     text {
                         x: "565",
                         y: "246",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "bold",
                         font_size: "12.5px",
                         text_anchor: "middle",
@@ -427,7 +436,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "565",
                         y: "266",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "middle",
                         "{step5_sub}"
@@ -437,14 +446,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     path {
                         d: "M 800 285 H 900 V 315 H 805",
                         fill: "none",
-                        stroke: "#34d399",
+                        stroke: "var(--green)",
                         stroke_width: "1.8",
                         marker_end: "url(#sub-arrow-green)",
                     }
                     text {
                         x: "910",
                         y: "297",
-                        fill: "#6ee7b7",
+                        fill: "var(--green)",
                         font_weight: "600",
                         font_size: "13px",
                         text_anchor: "start",
@@ -453,7 +462,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "910",
                         y: "314",
-                        fill: "#94a3b8",
+                        fill: "var(--text-secondary)",
                         font_size: "11.5px",
                         text_anchor: "start",
                         "{step6_sub}"
@@ -465,14 +474,14 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "345",
                         x2: "985",
                         y2: "345",
-                        stroke: "#ec4899",
+                        stroke: "var(--pink)",
                         stroke_width: "1.8",
                         marker_end: "url(#sub-arrow-purple)",
                     }
                     text {
                         x: "892",
                         y: "338",
-                        fill: "#f472b6",
+                        fill: "var(--pink)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step7_title}"
@@ -484,7 +493,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "375",
                         x2: "805",
                         y2: "375",
-                        stroke: "#ec4899",
+                        stroke: "var(--pink)",
                         stroke_width: "1.8",
                         stroke_dasharray: "4 4",
                         marker_end: "url(#sub-arrow-purple)",
@@ -492,7 +501,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "892",
                         y: "368",
-                        fill: "#f472b6",
+                        fill: "var(--pink)",
                         font_size: "12px",
                         text_anchor: "middle",
                         "{step8_title}"
@@ -504,7 +513,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "415",
                         x2: "335",
                         y2: "415",
-                        stroke: "#34d399",
+                        stroke: "var(--green)",
                         stroke_width: "2.2",
                         stroke_dasharray: "4 4",
                         marker_end: "url(#sub-arrow-green)",
@@ -512,7 +521,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "565",
                         y: "408",
-                        fill: "#34d399",
+                        fill: "var(--green)",
                         font_weight: "bold",
                         font_size: "13px",
                         text_anchor: "middle",
@@ -525,7 +534,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                         y1: "455",
                         x2: "105",
                         y2: "455",
-                        stroke: "#38bdf8",
+                        stroke: "var(--blue)",
                         stroke_width: "1.8",
                         stroke_dasharray: "4 4",
                         marker_end: "url(#sub-arrow-blue)",
@@ -533,7 +542,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
                     text {
                         x: "217",
                         y: "448",
-                        fill: "#38bdf8",
+                        fill: "var(--blue)",
                         font_weight: "600",
                         text_anchor: "middle",
                         "{step10_title}"
@@ -542,7 +551,7 @@ pub fn SubmitSequenceDiagram(language: Language) -> Element {
             }
 
             // 説明ブロック
-            div { style: "display: grid; gap: 0.6rem; font-size: 0.86rem; color: var(--text-secondary); background: rgba(0,0,0,0.15); padding: 1.2rem; border-radius: var(--radius-sm); border-left: 3px solid var(--primary);",
+            div { style: "display: grid; gap: 0.6rem; font-size: 0.86rem; color: var(--text-secondary); background: var(--bg-inset); padding: 1.2rem; border-radius: var(--radius-sm); border-left: 3px solid var(--primary);",
                 div { style: "font-weight: 700; color: var(--text-primary); font-size: 0.95rem;",
                     {
                         language

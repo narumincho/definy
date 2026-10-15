@@ -497,3 +497,102 @@ fn test_boolean_match_type_check() {
     assert_eq!(result, ExpressionType::String);
     assert!(diagnostics.is_empty(), "{diagnostics:?}");
 }
+
+fn type_part_snapshot_map(
+    parts: Vec<(EventHashId, Expression)>,
+) -> HashMap<EventHashId, PartSnapshot> {
+    parts
+        .into_iter()
+        .map(|(hash, expression)| {
+            (
+                hash.clone(),
+                create_test_snapshot(hash, "type", Some(PartType::Type), Some(expression)),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn test_type_alias_is_unfolded_for_assignability() {
+    // env = list<{variable_id: Number}>
+    let env_hash = EventHashId::from_bytes(&[41; 32]);
+    let map = type_part_snapshot_map(vec![(
+        env_hash.clone(),
+        Expression::TypeList(TypeListExpression {
+            item_type: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![TypeLiteralItemExpression {
+                    key: "variable_id".into(),
+                    value: Box::new(Expression::TypeNumber),
+                }],
+            })),
+        }),
+    )]);
+    let structural = ExpressionType::List(Box::new(ExpressionType::Record(vec![(
+        "variable_id".to_string(),
+        ExpressionType::Number,
+    )])));
+    let alias = ExpressionType::TypePart(env_hash);
+
+    assert!(assignable::is_type_assignable(&alias, &structural, &map));
+    assert!(assignable::is_type_assignable(&structural, &alias, &map));
+    assert!(!assignable::is_type_assignable(
+        &alias,
+        &ExpressionType::List(Box::new(ExpressionType::String)),
+        &map
+    ));
+}
+
+#[test]
+fn test_self_referencing_type_aliases_terminate() {
+    // a = list<a>, b = list<b> (無限に展開しないこと)
+    let a = EventHashId::from_bytes(&[42; 32]);
+    let b = EventHashId::from_bytes(&[43; 32]);
+    let list_of = |hash: &EventHashId| {
+        Expression::TypeList(TypeListExpression {
+            item_type: Box::new(Expression::PartReference(PartReferenceExpression::new(
+                hash.clone(),
+            ))),
+        })
+    };
+    let map = type_part_snapshot_map(vec![(a.clone(), list_of(&a)), (b.clone(), list_of(&b))]);
+    // 結果は問わない. スタックオーバーフローせずに返ること
+    let _ = assignable::is_type_assignable(
+        &ExpressionType::TypePart(a),
+        &ExpressionType::TypePart(b),
+        &map,
+    );
+}
+
+#[test]
+fn test_anonymous_union_is_assignable_to_named_union_only() {
+    let union_hash = EventHashId::from_bytes(&[44; 32]);
+    let alias_hash = EventHashId::from_bytes(&[45; 32]);
+    let map = type_part_snapshot_map(vec![
+        (
+            union_hash.clone(),
+            Expression::TypeUnion(TypeUnionExpression {
+                variants: vec![TypeUnionVariant {
+                    tag: "number".into(),
+                    payload_type: None,
+                }],
+            }),
+        ),
+        (alias_hash.clone(), Expression::TypeNumber),
+    ]);
+    assert!(assignable::is_type_assignable(
+        &ExpressionType::Union,
+        &ExpressionType::TypePart(union_hash.clone()),
+        &map
+    ));
+    assert!(assignable::is_type_assignable(
+        &ExpressionType::TypePart(union_hash),
+        &ExpressionType::Union,
+        &map
+    ));
+    // union ではない型パーツ (Number の別名) には代入できない
+    assert!(!assignable::is_type_assignable(
+        &ExpressionType::Union,
+        &ExpressionType::TypePart(alias_hash),
+        &map
+    ));
+}

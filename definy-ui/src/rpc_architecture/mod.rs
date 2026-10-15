@@ -37,7 +37,7 @@ pub fn RpcArchitectureSection(context: PageContext) -> Element {
                 style: format!(
                     "padding: 0.45rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid {}; background: {}; color: {}; font-size: 0.84rem; font-weight: {}; cursor: pointer; transition: all 0.15s ease;",
                     if is_active { "var(--primary)" } else { "var(--border)" },
-                    if is_active { "rgba(59, 130, 246, 0.15)" } else { "transparent" },
+                    if is_active { "var(--blue-bg-strong)" } else { "transparent" },
                     if is_active { "var(--primary)" } else { "var(--text-secondary)" },
                     if is_active { "600" } else { "400" },
                 ),

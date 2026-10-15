@@ -55,7 +55,7 @@ pub fn ModuleListView(state: AppState, context: PageContext) -> Element {
             if let Some(message) = result_message() {
                 div {
                     class: "event-detail-card",
-                    style: "padding: 0.6rem 0.8rem; font-size: 0.82rem; color: var(--text); background: rgb(124 192 216 / 0.1); border-color: var(--primary); word-break: break-word;",
+                    style: "padding: 0.6rem 0.8rem; font-size: 0.82rem; color: var(--text); background: var(--blue-bg); border-color: var(--primary); word-break: break-word;",
                     "{message}"
                 }
             }
@@ -182,7 +182,7 @@ fn ModuleCreateForm(
             }
             button {
                 r#type: "button",
-                style: "font-size: 0.84rem; font-weight: 600; background: var(--primary); color: #0e1720; border: none; padding: 0.4rem 0.9rem; border-radius: var(--radius-sm); cursor: pointer; justify-self: start;",
+                style: "font-size: 0.84rem; font-weight: 600; background: var(--primary-solid); color: var(--primary-content); border: none; padding: 0.4rem 0.9rem; border-radius: var(--radius-sm); cursor: pointer; justify-self: start;",
                 onclick: move |_| {
                     let state_sig = use_context::<Signal<AppState>>();
                     let state_val = state_sig.read().clone();

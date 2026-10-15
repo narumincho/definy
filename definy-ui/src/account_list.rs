@@ -67,7 +67,7 @@ pub fn AccountListView(state: AppState, context: PageContext) -> Element {
                                             }
                                             span {
                                                 class: "badge",
-                                                style: "font-size: 0.72rem; color: var(--primary); background: rgb(124 192 216 / 0.1); padding: 0.1rem 0.4rem; border-radius: var(--radius-full);",
+                                                style: "font-size: 0.72rem; color: var(--primary); background: var(--blue-bg); padding: 0.1rem 0.4rem; border-radius: var(--radius-full);",
                                                 "{ev_count} events"
                                             }
                                         }

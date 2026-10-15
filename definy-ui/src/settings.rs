@@ -19,15 +19,13 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
         .count();
 
     let local_events_badge = if queued_count > 0 || failed_count > 0 {
-        let (bg, text_color, count) = if failed_count > 0 {
-            ("#f87171", "#ffffff", failed_count)
+        let (tone, count) = if failed_count > 0 {
+            ("error", failed_count)
         } else {
-            ("#fbbf24", "#0f172a", queued_count)
+            ("warning", queued_count)
         };
         Some(rsx! {
-            span { style: "font-size: 0.72rem; font-weight: 700; background: {bg}; color: {text_color}; padding: 0.1rem 0.45rem; border-radius: 9999px; line-height: 1.2;",
-                "{count}"
-            }
+            span { class: "count-badge", "data-tone": tone, "{count}" }
         })
     } else {
         None
@@ -376,7 +374,7 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
                                     button {
                                         r#type: "button",
                                         class: "btn-secondary",
-                                        style: "color: #f87171; border-color: rgba(248, 113, 113, 0.3); font-size: 0.82rem; padding: 0.38rem 0.8rem;",
+                                        style: "color: var(--red); border-color: var(--red-border); font-size: 0.82rem; padding: 0.38rem 0.8rem;",
                                         onclick: move |_| {
                                             crate::navigator_credential::credential_clear();
                                             let mut dispatch = use_context::<Signal<AppState>>();

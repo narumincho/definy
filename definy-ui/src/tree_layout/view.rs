@@ -11,6 +11,9 @@ struct RenderContext {
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
     collapsed_node_ids: Signal<HashSet<String>>,
+    /// 選択中の数値・文字列リテラルを入力欄にして直接編集するか.
+    /// キーボードで選択を移動している間は入力欄にフォーカスを奪われないよう false にする
+    inline_edit: Signal<bool>,
     diagnostics: Option<Signal<Vec<TypeDiagnostic>>>,
     expected_types: Option<Signal<HashMap<Vec<PathStep>, ExpressionType>>>,
     editable: bool,
@@ -36,6 +39,8 @@ impl RenderContext {
 
     fn select_node(mut self, id: &str, path: &[PathStep]) {
         self.selected_node_id.set(Some(id.to_string()));
+        // クリックで選んだリテラルはすぐ編集できるようにする
+        self.inline_edit.set(true);
         if let Some(cb) = self.on_select_node {
             cb.call((id.to_string(), path.to_vec()));
         }
@@ -107,6 +112,9 @@ pub fn TreeLayoutRenderer(
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
     #[props(default = None)] collapsed_node_ids: Option<Signal<HashSet<String>>>,
+    /// 選択中のリテラルを入力欄で直接編集するか. 省略時は常に編集する
+    #[props(default = None)]
+    inline_edit: Option<Signal<bool>>,
     #[props(default = None)] diagnostics: Option<Signal<Vec<TypeDiagnostic>>>,
     #[props(default = None)] expected_types: Option<Signal<HashMap<Vec<PathStep>, ExpressionType>>>,
     #[props(default = false)] editable: bool,
@@ -122,11 +130,13 @@ pub fn TreeLayoutRenderer(
 ) -> Element {
     let internal_collapsed = use_signal(HashSet::<String>::new);
     let effective_collapsed = collapsed_node_ids.unwrap_or(internal_collapsed);
+    let internal_inline_edit = use_signal(|| true);
 
     let ctx = RenderContext {
         selected_node_id,
         hovered_node_id,
         collapsed_node_ids: effective_collapsed,
+        inline_edit: inline_edit.unwrap_or(internal_inline_edit),
         diagnostics,
         expected_types,
         editable,
@@ -191,12 +201,17 @@ fn render_node_badge(
     badge_style: &str,
     tooltip: &str,
     has_error: bool,
+    state: &'static str,
     content: Element,
 ) -> Element {
     rsx! {
-        div { style: "{badge_style}", title: "{tooltip}",
+        div {
+            class: "tree-badge",
+            "data-state": state,
+            style: "{badge_style}",
+            title: "{tooltip}",
             if has_error {
-                span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
+                span { style: "color: var(--red); font-weight: bold; margin-right: 0.25rem;",
                     "⚠"
                 }
             }
@@ -216,14 +231,15 @@ fn render_leaf_node(
     let node_id = node.id.clone();
     let badge_style = format!(
         "{}{}",
-        node_badge_style(&node.kind, is_selected, is_hovered, has_error),
+        node_badge_style(&node.kind),
         ctx.anchor_style(&node.id)
     );
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
     let path_for_click = node.path.clone();
 
-    let inner_element = if ctx.editable && is_selected && node.kind == NodeKind::LiteralNumber {
+    let is_editing = ctx.editable && is_selected && *ctx.inline_edit.read();
+    let inner_element = if is_editing && node.kind == NodeKind::LiteralNumber {
         let p = node.path.clone();
         let raw_val = node.label.clone();
         rsx! {
@@ -232,6 +248,10 @@ fn render_leaf_node(
                 value: "{raw_val}",
                 style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
                 autofocus: true,
+                // autofocus は後から挿入された要素には効かないので, マウント時に明示的にフォーカスする
+                onmounted: move |evt: MountedEvent| async move {
+                    let _ = evt.set_focus(true).await;
+                },
                 onkeydown: {
                     let p = p.clone();
                     move |evt: KeyboardEvent| clear_literal_on_delete_key(&evt, ctx, &p)
@@ -245,7 +265,7 @@ fn render_leaf_node(
                 },
             }
         }
-    } else if ctx.editable && is_selected && node.kind == NodeKind::LiteralString {
+    } else if is_editing && node.kind == NodeKind::LiteralString {
         let p = node.path.clone();
         let raw_str = node.label.trim_matches('"').to_string();
         rsx! {
@@ -254,6 +274,10 @@ fn render_leaf_node(
                 value: "{raw_str}",
                 style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
                 autofocus: true,
+                // autofocus は後から挿入された要素には効かないので, マウント時に明示的にフォーカスする
+                onmounted: move |evt: MountedEvent| async move {
+                    let _ = evt.set_focus(true).await;
+                },
                 onkeydown: {
                     let p = p.clone();
                     move |evt: KeyboardEvent| clear_literal_on_delete_key(&evt, ctx, &p)
@@ -286,7 +310,15 @@ fn render_leaf_node(
             onmouseleave: move |_| {
                 ctx.set_hovered(None);
             },
-            {render_node_badge(&badge_style, tooltip, has_error, inner_element)}
+            {
+                render_node_badge(
+                    &badge_style,
+                    tooltip,
+                    has_error,
+                    node_state(is_selected, is_hovered, has_error),
+                    inner_element,
+                )
+            }
         }
     }
 }
@@ -302,10 +334,13 @@ fn render_multiline_capsule_node(
     let node_id = node.id.clone();
     let badge_style = format!(
         "{}{}",
-        node_badge_style(&node.kind, is_selected, false, has_error),
+        node_badge_style(&node.kind),
         ctx.anchor_style(&node.id)
     );
-    let container_style = capsule_container_style(true, is_selected, is_hovered, has_error);
+    let container_style = capsule_container_style(true);
+    let state = node_state(is_selected, is_hovered, has_error);
+    // 選択はカプセル全体の枠で示すので, 先頭のバッジは二重に強調しない
+    let badge_state = if has_error { "error" } else { "" };
     let is_collapsed = ctx.collapsed_node_ids.read().contains(&node.id);
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
@@ -315,7 +350,8 @@ fn render_multiline_capsule_node(
 
     rsx! {
         div {
-            class: "tree-node-capsule-multiline",
+            class: "tree-node-capsule-multiline tree-capsule",
+            "data-state": state,
             style: "{container_style}",
             "data-node-id": "{node_id}",
             onclick: move |evt: MouseEvent| {
@@ -344,7 +380,15 @@ fn render_multiline_capsule_node(
                         "▾"
                     }
                 }
-                {render_node_badge(&badge_style, tooltip, has_error, rsx! { "{node.label}" })}
+                {
+                    render_node_badge(
+                        &badge_style,
+                        tooltip,
+                        has_error,
+                        badge_state,
+                        rsx! { "{node.label}" },
+                    )
+                }
                 if is_collapsed {
                     span {
                         style: "font-size: 0.72rem; color: var(--text-secondary); opacity: 0.75; font-family: monospace; font-style: italic; cursor: pointer;",
@@ -358,7 +402,7 @@ fn render_multiline_capsule_node(
             }
             // 各引数（独立した行としてインデント展開、展開時のみ表示）
             if !is_collapsed {
-                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
+                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 1px solid var(--border-strong); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
                     for child in &node.children {
                         div { style: "width: fit-content; max-width: 100%;",
                             {render_node(child, ctx)}
@@ -379,19 +423,22 @@ fn render_inline_capsule_node(
     tooltip: &str,
 ) -> Element {
     let node_id = node.id.clone();
-    let badge_style = node_badge_style(&node.kind, is_selected, false, has_error);
+    let badge_style = node_badge_style(&node.kind);
     let container_style = format!(
         "{}{}",
-        capsule_container_style(false, is_selected, is_hovered, has_error),
+        capsule_container_style(false),
         ctx.anchor_style(&node.id)
     );
+    let state = node_state(is_selected, is_hovered, has_error);
+    let badge_state = if has_error { "error" } else { "" };
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
     let path_for_click = node.path.clone();
 
     rsx! {
         div {
-            class: "tree-node-capsule-inline",
+            class: "tree-node-capsule-inline tree-capsule",
+            "data-state": state,
             style: "{container_style}",
             "data-node-id": "{node_id}",
             onclick: move |evt: MouseEvent| {
@@ -405,7 +452,15 @@ fn render_inline_capsule_node(
             onmouseleave: move |_| {
                 ctx.set_hovered(None);
             },
-            {render_node_badge(&badge_style, tooltip, has_error, rsx! { "{node.label}" })}
+            {
+                render_node_badge(
+                    &badge_style,
+                    tooltip,
+                    has_error,
+                    badge_state,
+                    rsx! { "{node.label}" },
+                )
+            }
             for child in &node.children {
                 {render_node(child, ctx)}
             }
@@ -424,17 +479,7 @@ fn render_table_node(
     let headers = &node.table_headers;
     let col_widths = &node.columns_width;
     let table_anchor_style = ctx.anchor_style(&node.id);
-    let border_color = if has_error && is_selected {
-        "#ef4444"
-    } else if has_error {
-        "rgb(239 68 68 / 0.8)"
-    } else if is_selected {
-        "var(--primary)"
-    } else if is_hovered {
-        "var(--border-strong)"
-    } else {
-        "var(--border)"
-    };
+    let state = node_state(is_selected, is_hovered, has_error);
 
     let id_for_click = node.id.clone();
     let id_for_enter = node.id.clone();
@@ -442,8 +487,10 @@ fn render_table_node(
 
     rsx! {
         div {
-            class: "tree-node-table-wrapper",
-            style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-lg); background: rgb(0 0 0 / 0.25); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);{table_anchor_style}",
+            class: "tree-node-table-wrapper tree-table",
+            "data-node-id": "{id_for_click}",
+            "data-state": state,
+            style: "display: flex; flex-direction: column; border-radius: var(--radius-lg); background: var(--bg-inset); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);{table_anchor_style}",
             title: "{tooltip}",
             onclick: move |evt: MouseEvent| {
                 evt.stop_propagation();
@@ -459,7 +506,7 @@ fn render_table_node(
             // 横スクロール時はみ出しても背景・罫線が途切れないよう min-width: max-content を設定
             div { style: "display: flex; flex-direction: column; min-width: max-content; width: 100%;",
                 // Table Header Row
-                div { style: "display: flex; background: rgb(255 255 255 / 0.06); border-bottom: 1px solid var(--border); padding: 0.4rem 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);",
+                div { style: "display: flex; background: var(--overlay-2); border-bottom: 1px solid var(--border); padding: 0.4rem 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);",
                     div { style: "width: 2.2rem; min-width: 2.2rem; color: var(--text-secondary); text-align: center; opacity: 0.7;",
                         if has_error {
                             "⚠"
@@ -479,7 +526,7 @@ fn render_table_node(
                 for (row_idx, row) in node.children.iter().enumerate() {
                     div {
                         key: "row-{row_idx}",
-                        style: "display: flex; align-items: center; border-bottom: 1px solid rgb(255 255 255 / 0.04); padding: 0.35rem 0.6rem; font-size: 0.85rem; transition: background 0.1s ease;",
+                        style: "display: flex; align-items: center; border-bottom: 1px solid var(--overlay-2); padding: 0.35rem 0.6rem; font-size: 0.85rem; transition: background 0.1s ease;",
                         div { style: "width: 2.2rem; min-width: 2.2rem; color: var(--text-secondary); text-align: center; font-size: 0.75rem; opacity: 0.6;",
                             "{row_idx + 1}"
                         }
@@ -497,114 +544,80 @@ fn render_table_node(
     }
 }
 
-pub fn node_badge_style(
-    kind: &NodeKind,
-    is_selected: bool,
-    is_hovered: bool,
-    has_error: bool,
-) -> String {
-    let (bg, text_color, border) = if has_error {
-        ("rgb(239 68 68 / 0.22)", "#fca5a5", "1.5px solid #ef4444")
-    } else {
-        match kind {
-            NodeKind::LiteralNumber => (
-                "rgb(180 215 255 / 0.14)",
-                "#93c5fd",
-                "1px solid rgb(147 197 253 / 0.3)",
-            ),
-            NodeKind::LiteralString => (
-                "rgb(134 239 172 / 0.14)",
-                "#86efac",
-                "1px solid rgb(134 239 172 / 0.3)",
-            ),
-            NodeKind::LiteralBoolean => (
-                "rgb(244 114 182 / 0.14)",
-                "#f472b6",
-                "1px solid rgb(244 114 182 / 0.3)",
-            ),
-            NodeKind::Identifier => (
-                "rgb(255 255 255 / 0.08)",
-                "#e2e8f0",
-                "1px solid rgb(255 255 255 / 0.2)",
-            ),
-            NodeKind::Keyword => (
-                "rgb(192 132 252 / 0.16)",
-                "#c084fc",
-                "1px solid rgb(192 132 252 / 0.38)",
-            ),
-            NodeKind::Operator => (
-                "rgb(251 191 36 / 0.16)",
-                "#fbbf24",
-                "1px solid rgb(251 191 36 / 0.38)",
-            ),
-            NodeKind::Delimiter => ("transparent", "#94a3b8", "none"),
-            NodeKind::Group => (
-                "rgb(124 192 216 / 0.1)",
-                "#7cc0d8",
-                "1px solid rgb(124 192 216 / 0.3)",
-            ),
-            NodeKind::Block => (
-                "rgb(148 163 184 / 0.14)",
-                "#cbd5e1",
-                "1px solid rgb(148 163 184 / 0.32)",
-            ),
-            NodeKind::Table => (
-                "rgb(167 139 250 / 0.14)",
-                "#c4b5fd",
-                "1px solid rgb(167 139 250 / 0.32)",
-            ),
-        }
+pub fn node_badge_style(kind: &NodeKind) -> String {
+    let (bg, text_color, border) = match kind {
+        NodeKind::LiteralNumber => (
+            "var(--blue-bg-strong)",
+            "var(--blue-text)",
+            "1px solid var(--blue-border)",
+        ),
+        NodeKind::LiteralString => (
+            "var(--green-bg-strong)",
+            "var(--green)",
+            "1px solid var(--green-border)",
+        ),
+        NodeKind::LiteralBoolean => (
+            "var(--pink-bg-strong)",
+            "var(--pink)",
+            "1px solid var(--pink-border)",
+        ),
+        NodeKind::Identifier => (
+            "var(--overlay-3)",
+            "var(--text)",
+            "1px solid var(--overlay-3)",
+        ),
+        NodeKind::Keyword => (
+            "var(--purple-bg-strong)",
+            "var(--purple)",
+            "1px solid var(--purple-border)",
+        ),
+        NodeKind::Operator => (
+            "var(--yellow-bg-strong)",
+            "var(--yellow)",
+            "1px solid var(--yellow-border)",
+        ),
+        NodeKind::Delimiter => ("transparent", "var(--text-secondary)", "none"),
+        NodeKind::Group => (
+            "var(--blue-bg)",
+            "var(--blue)",
+            "1px solid var(--blue-border)",
+        ),
+        NodeKind::Block => (
+            "var(--text-secondary)",
+            "var(--text)",
+            "1px solid var(--text-secondary)",
+        ),
+        NodeKind::Table => (
+            "var(--purple-bg-strong)",
+            "var(--purple-text)",
+            "1px solid var(--purple-border)",
+        ),
     };
 
-    let focus_style = if has_error && is_selected {
-        "box-shadow: 0 0 0 2px #ef4444, 0 2px 8px rgb(239 68 68 / 0.4); border-color: #ef4444;"
-    } else if has_error {
-        "box-shadow: 0 0 0 1px #ef4444;"
-    } else if is_selected {
-        "box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgb(124 192 216 / 0.3); border-color: var(--accent);"
-    } else if is_hovered {
-        "box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.4); border-color: #fff;"
-    } else {
-        ""
-    };
-
+    // 選択・ホバー・エラーの見た目は main.css の .tree-badge[data-state] で付ける.
+    // (状態ごとにインラインスタイルを書き換えると, 前の状態のプロパティが残ることがあるため)
     format!(
-        "display: inline-flex; align-items: center; padding: 0.12rem 0.42rem; border-radius: var(--radius-full); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: {}; color: {}; border: {}; cursor: pointer; user-select: none; transition: all 0.12s ease; white-space: nowrap; {}",
-        bg, text_color, border, focus_style
+        "display: inline-flex; align-items: center; padding: 0.12rem 0.42rem; border-radius: var(--radius-full); font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; background: {}; color: {}; border: {}; cursor: pointer; user-select: none; transition: all 0.12s ease; white-space: nowrap;",
+        bg, text_color, border
     )
 }
 
-fn capsule_container_style(
-    is_multiline: bool,
-    is_selected: bool,
-    is_hovered: bool,
-    has_error: bool,
-) -> String {
-    let (bg, border) = if has_error && is_selected {
-        ("rgb(239 68 68 / 0.16)", "2px solid #ef4444")
-    } else if has_error {
-        ("rgb(239 68 68 / 0.08)", "1.5px solid #ef4444")
-    } else if is_selected {
-        ("rgb(124 192 216 / 0.1)", "1.5px solid var(--accent)")
-    } else if is_hovered {
-        (
-            "rgb(124 192 216 / 0.05)",
-            "1.5px solid rgb(124 192 216 / 0.6)",
-        )
-    } else {
-        (
-            "rgb(255 255 255 / 0.02)",
-            "1px solid rgb(160 176 192 / 0.22)",
-        )
-    };
-
+fn capsule_container_style(is_multiline: bool) -> String {
+    // 背景・枠線は main.css の .tree-capsule[data-state] で状態ごとに付ける
     if is_multiline {
-        format!(
-            "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; background: {bg}; border: {border}; border-radius: var(--radius-lg); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;"
-        )
+        "display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; margin: 0.15rem 0; padding: 0.25rem 0.5rem 0.35rem 0.5rem; border-radius: var(--radius-lg); transition: all 0.12s ease; width: fit-content; max-width: 100%; box-sizing: border-box;".to_string()
     } else {
-        format!(
-            "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; background: {bg}; border: {border}; border-radius: var(--radius-full); transition: all 0.12s ease; white-space: nowrap;"
-        )
+        "display: inline-flex; align-items: center; gap: 0.28rem; vertical-align: middle; margin: 0.08rem 0.12rem; padding: 0.1rem 0.3rem; border-radius: var(--radius-full); transition: all 0.12s ease; white-space: nowrap;".to_string()
+    }
+}
+
+/// ノードの表示状態. main.css の `[data-state]` のセレクタと対応する
+fn node_state(is_selected: bool, is_hovered: bool, has_error: bool) -> &'static str {
+    match (is_selected, has_error, is_hovered) {
+        (true, true, _) => "error-selected",
+        (true, false, _) => "selected",
+        (false, true, _) => "error",
+        (false, false, true) => "hovered",
+        (false, false, false) => "",
     }
 }

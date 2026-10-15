@@ -172,3 +172,27 @@ definy では従来、1つの `let` 式で1つのローカル変数しか束縛�
 
 - ツリーエディタ上では、`let` ノード直下に `list` ノード（各要素が `name = value`）と `body` ノードが配置され、視覚的にローカル変数のリストと本体式を編集できます。
 - パス表現として、各バインディングの値式には `PathStep::LetBindingValue(index)`（`LBV{index}`）でアクセス・編集します。
+
+## 型の別名と union の代入可能性 (UI の型検査)
+
+`definy-ui/src/expression_editor/diagnostics/assignable.rs` の `is_type_assignable`:
+
+- **型の別名は中身で比べる**: union 以外の型式を値に持つ型パーツ (例: `core.env` = `list<{variable_id: Number, value: value}>`)
+  は別名とみなし, 中身の型に展開して比べる. `TypePart(env)` と `list<{...}>` は同じ型.
+  union を値に持つ型パーツは名前で区別するので展開しない.
+  自分自身を含む別名で無限に展開しないよう, 展開の深さに上限 (32) がある
+- **バリアントの式の型**: バリアントを作る式の型は, どの union か分からない `Union` として推論されるため,
+  union 型のパーツとは相互に代入可能とみなす (union ではない型パーツには代入できない)
+
+組み込みの seed のパーツがこの型検査でエラーにならないことを
+`definy-server/src/builtin_migration.rs` の `builtin_parts_have_no_ui_type_diagnostics` で確認している.
+seed を編集したらこのテストを通すこと.
+
+### 型検査で見つかった seed の誤り (修正済み)
+
+- `core.eval-value`: `less_than` の結果を `number` バリアントに入れていた (`number(true)` になる). `boolean` に修正
+- `core.eval-match-arms` / `core.eval-match-arms-inner`: 引数 `arms` の型が `core.expression` になっていた.
+  他の match 関連のパーツと同じ `list<{tag, variable_id, body}>` に修正
+- `core.type-check-against`: 関数の式に関数ではない型を期待したとき, `type_mismatch` の `actual` (型が入る) に
+  関数の式そのものを入れていた. `core.type-error` に `unexpected_function { expected }` を追加し, それを返すように修正
+- `sample.self-hosted-definy-server`: `core.type-env` のキー `variables` を `vars` と書いていた

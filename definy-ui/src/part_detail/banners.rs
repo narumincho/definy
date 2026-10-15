@@ -11,14 +11,14 @@ pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element 
     let path_url = build_preview_path_url(&preview.code);
     let has_validation_error = preview.validation_error.is_some();
 
-    let banner_style = if has_validation_error {
-        "background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.08)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.1);"
+    let banner_tone = if has_validation_error {
+        "error"
     } else {
-        "background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.07)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.08);"
+        "info"
     };
 
     rsx! {
-        div { class: "preview-banner-card", style: "{banner_style}",
+        div { class: "preview-banner-card", "data-tone": banner_tone,
             div { style: "display: flex; align-items: center; gap: 0.85rem;",
                 span { style: "font-size: 1.7rem;",
                     if has_validation_error {
@@ -32,17 +32,17 @@ pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element 
                         span { style: "font-weight: 700; font-size: 1.05rem; color: var(--text-primary);",
                             "{context.language.label(\"Web App Preview\", \"Web アプリ プレビュー\", \"Reteja Apo-Antaŭrigardo\")}"
                         }
-                        span { style: "background: rgba(56, 189, 248, 0.2); color: var(--primary); font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(56, 189, 248, 0.35);",
+                        span { style: "background: var(--blue-bg-strong); color: var(--primary); font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--blue-border);",
                             "code: \"{preview.code}\""
                         }
                         if let Some(ref _err) = preview.validation_error {
-                            span { style: "background: rgba(239, 68, 68, 0.2); color: #f87171; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(239, 68, 68, 0.4);",
+                            span { style: "background: var(--red-bg-strong); color: var(--red); font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--red-border);",
                                 "{context.language.label(\"⚠️ Invalid Subdomain (RFC 1123)\", \"⚠️ 不正なサブドメイン名 (RFC 1123違反)\", \"⚠️ Nevalida Subdomajno\")}"
                             }
                         }
                     }
                     if let Some(ref err) = preview.validation_error {
-                        div { style: "font-size: 0.82rem; color: #f87171; margin-top: 0.3rem; font-family: ui-monospace, monospace;",
+                        div { style: "font-size: 0.82rem; color: var(--red); margin-top: 0.3rem; font-family: ui-monospace, monospace;",
                             "Error: {err}"
                         }
                     } else {
@@ -66,7 +66,7 @@ pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element 
                     target: "_blank",
                     rel: "noopener noreferrer",
                     class: if has_validation_error { "btn-secondary" } else { "btn-primary" },
-                    style: "display: inline-flex; align-items: center; gap: 0.45rem; text-decoration: none; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);",
+                    style: "display: inline-flex; align-items: center; gap: 0.45rem; text-decoration: none; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px var(--blue-border);",
                     span {
                         {
                             context
@@ -106,20 +106,20 @@ pub fn DeployBanner(
     rsx! {
         div {
             class: "preview-banner-card",
-            style: "background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(234, 88, 12, 0.06)); border: 1px solid rgba(249, 115, 22, 0.35); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px rgba(249, 115, 22, 0.08);",
+            style: "background: linear-gradient(135deg, var(--orange-bg-strong), var(--orange-bg)); border: 1px solid var(--orange-border); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px var(--orange-bg);",
             div { style: "display: flex; align-items: center; gap: 0.85rem;",
                 span { style: "font-size: 1.7rem;", "⚡" }
                 div {
                     div { style: "display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
-                        span { style: "font-weight: 700; font-size: 1.05rem; color: #fb923c;",
+                        span { style: "font-weight: 700; font-size: 1.05rem; color: var(--orange);",
                             "{context.language.label(\"Cloudflare Workers Deployment\", \"Cloudflare Workers デプロイ\", \"Cloudflare Workers Deplojo\")}"
                         }
-                        span { style: "background: rgba(249, 115, 22, 0.2); color: #fb923c; font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid rgba(249, 115, 22, 0.35);",
+                        span { style: "background: var(--orange-bg-strong); color: var(--orange); font-size: 0.8rem; font-family: ui-monospace, monospace; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--orange-border);",
                             "Worker: \"{worker_name}\""
                         }
                         span {
                             class: "preview-badge",
-                            style: "background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); color: #fb923c; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px;",
+                            style: "background: var(--orange-bg-strong); border: 1px solid var(--orange-border); color: var(--orange); font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 999px;",
                             {
                                 context
                                     .language
@@ -149,7 +149,7 @@ pub fn DeployBanner(
                     r#type: "button",
                     class: "btn-primary",
                     disabled: is_deploying,
-                    style: "display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3); background: #f97316; border-color: #ea580c;",
+                    style: "display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.5rem 1.1rem; font-size: 0.88rem; font-weight: 600; border-radius: var(--radius-sm); box-shadow: 0 2px 10px var(--orange-border); background: var(--orange); border-color: var(--orange);",
                     onclick: move |evt| on_deploy.call(evt),
                     span {
                         if is_deploying {

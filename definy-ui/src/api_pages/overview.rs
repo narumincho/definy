@@ -21,12 +21,12 @@ pub fn ApiOverviewPageView(context: PageContext) -> Element {
                 // ヒーローカード
                 div {
                     class: "event-detail-card",
-                    style: "background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.85) 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; display: grid; gap: 1rem; position: relative; overflow: hidden;",
+                    style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2rem; display: grid; gap: 1rem; position: relative; overflow: hidden;",
                     div { style: "display: flex; align-items: center; gap: 0.6rem;",
-                        span { style: "padding: 0.25rem 0.65rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.78rem; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(56, 189, 248, 0.3);",
+                        span { style: "padding: 0.25rem 0.65rem; background: var(--blue-bg-strong); color: var(--blue); font-size: 0.78rem; font-weight: 700; border-radius: 9999px; border: 1px solid var(--blue-border);",
                             "Connect-RPC Protocol"
                         }
-                        span { style: "padding: 0.25rem 0.65rem; background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.78rem; font-weight: 700; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.3);",
+                        span { style: "padding: 0.25rem 0.65rem; background: var(--green-bg-strong); color: var(--green); font-size: 0.78rem; font-weight: 700; border-radius: 9999px; border: 1px solid var(--green-border);",
                             "RFC 8949 CBOR"
                         }
                     }
@@ -54,7 +54,7 @@ pub fn ApiOverviewPageView(context: PageContext) -> Element {
                     div { style: "display: flex; gap: 0.8rem; flex-wrap: wrap; margin-top: 0.4rem;",
                         a {
                             href: context.href_with_lang(Location::ApiArchitecture),
-                            style: "padding: 0.6rem 1.2rem; background: #8b5cf6; color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem;",
+                            style: "padding: 0.6rem 1.2rem; background: var(--purple); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem;",
                             span { "🗺️" }
                             span {
                                 {
@@ -99,10 +99,10 @@ pub fn ApiOverviewPageView(context: PageContext) -> Element {
                                         class: "event-detail-card",
                                         style: "text-decoration: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.3rem; display: grid; gap: 0.75rem; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; color: inherit;",
                                         div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                            span { style: "padding: 0.2rem 0.5rem; background: #0284c7; color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 4px;",
+                                            span { style: "padding: 0.2rem 0.5rem; background: var(--blue); color: var(--text-primary); font-size: 0.72rem; font-weight: 700; border-radius: 4px;",
                                                 "POST"
                                             }
-                                            span { style: "font-size: 0.76rem; color: #38bdf8; font-family: ui-monospace, monospace;",
+                                            span { style: "font-size: 0.76rem; color: var(--blue); font-family: ui-monospace, monospace;",
                                                 "{schema.request_name}"
                                             }
                                         }
@@ -112,7 +112,7 @@ pub fn ApiOverviewPageView(context: PageContext) -> Element {
                                         p { style: "font-size: 0.84rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
                                             "{schema.description(lang)}"
                                         }
-                                        div { style: "display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.6rem; font-size: 0.8rem; font-weight: 600; color: #60a5fa;",
+                                        div { style: "display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--blue);",
                                             span {
                                                 {
                                                     lang.label(
@@ -134,7 +134,7 @@ pub fn ApiOverviewPageView(context: PageContext) -> Element {
                 // 差分ハッシュ・ネゴシエーションの概要解説カード
                 div {
                     class: "event-detail-card",
-                    style: "background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-left: 4px solid #38bdf8; border-radius: var(--radius-md); padding: 1.4rem; display: grid; gap: 0.8rem;",
+                    style: "background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--blue); border-radius: var(--radius-md); padding: 1.4rem; display: grid; gap: 0.8rem;",
                     h3 { style: "font-size: 1.1rem; font-weight: 700; margin: 0; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;",
                         span { "🌿" }
                         span {

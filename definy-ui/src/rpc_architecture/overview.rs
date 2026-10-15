@@ -8,8 +8,8 @@ pub fn ArchitectureOverview(language: Language) -> Element {
         div { style: "display: grid; gap: 1rem; line-height: 1.6;",
             div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;",
                 // 1. 通信層: Connect-RPC
-                div { style: "padding: 1rem 1.1rem; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: #60a5fa; font-weight: 600; font-size: 0.95rem;",
+                div { style: "padding: 1rem 1.1rem; background: var(--blue-bg); border: 1px solid var(--blue-border); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 600; font-size: 0.95rem;",
                         span { "🌐" }
                         span {
                             {
@@ -32,14 +32,14 @@ pub fn ArchitectureOverview(language: Language) -> Element {
                                 )
                         }
                     }
-                    div { style: "font-family: monospace; font-size: 0.76rem; background: rgba(0, 0, 0, 0.2); padding: 0.35rem 0.5rem; border-radius: 4px; color: #93c5fd;",
+                    div { style: "font-family: monospace; font-size: 0.76rem; background: var(--bg-inset); padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--blue-text);",
                         {"POST /definy.v1.EventService/{GetEvents, GetEvent, SubmitEvent}"}
                     }
                 }
 
                 // 2. 暗号・検証層: Deterministic CBOR
-                div { style: "padding: 1rem 1.1rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: #34d399; font-weight: 600; font-size: 0.95rem;",
+                div { style: "padding: 1rem 1.1rem; background: var(--green-bg); border: 1px solid var(--green-border); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: var(--green); font-weight: 600; font-size: 0.95rem;",
                         span { "🔐" }
                         span {
                             {
@@ -62,14 +62,14 @@ pub fn ArchitectureOverview(language: Language) -> Element {
                                 )
                         }
                     }
-                    div { style: "font-family: monospace; font-size: 0.76rem; background: rgba(0, 0, 0, 0.2); padding: 0.35rem 0.5rem; border-radius: 4px; color: #6ee7b7;",
+                    div { style: "font-family: monospace; font-size: 0.76rem; background: var(--bg-inset); padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--green);",
                         {"bytes signed_event_bytes = Tag(24, CBOR_Bytes) + Ed25519_Sig"}
                     }
                 }
 
                 // 3. ゼロトラスト・オフライン
-                div { style: "padding: 1rem 1.1rem; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: #c084fc; font-weight: 600; font-size: 0.95rem;",
+                div { style: "padding: 1rem 1.1rem; background: var(--purple-bg); border: 1px solid var(--purple-border); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: var(--purple); font-weight: 600; font-size: 0.95rem;",
                         span { "⚡" }
                         span {
                             {
@@ -92,14 +92,14 @@ pub fn ArchitectureOverview(language: Language) -> Element {
                                 )
                         }
                     }
-                    div { style: "font-family: monospace; font-size: 0.76rem; background: rgba(0, 0, 0, 0.2); padding: 0.35rem 0.5rem; border-radius: 4px; color: #e9d5ff;",
+                    div { style: "font-family: monospace; font-size: 0.76rem; background: var(--bg-inset); padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--purple-text);",
                         {"verify_and_deserialize(bytes) -> Result<(Signature, Event)>"}
                     }
                 }
 
                 // 4. 差分ハッシュ・ネゴシエーション & CAS
-                div { style: "padding: 1rem 1.1rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
-                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: #fbbf24; font-weight: 600; font-size: 0.95rem;",
+                div { style: "padding: 1rem 1.1rem; background: var(--yellow-bg); border: 1px solid var(--yellow-border); border-radius: var(--radius-sm); display: grid; gap: 0.5rem;",
+                    div { style: "display: flex; align-items: center; gap: 0.5rem; color: var(--yellow); font-weight: 600; font-size: 0.95rem;",
                         span { "🌳" }
                         span {
                             {
@@ -122,7 +122,7 @@ pub fn ArchitectureOverview(language: Language) -> Element {
                                 )
                         }
                     }
-                    div { style: "font-family: monospace; font-size: 0.76rem; background: rgba(0, 0, 0, 0.2); padding: 0.35rem 0.5rem; border-radius: 4px; color: #fde68a;",
+                    div { style: "font-family: monospace; font-size: 0.76rem; background: var(--bg-inset); padding: 0.35rem 0.5rem; border-radius: 4px; color: var(--yellow);",
                         {"CheckMissingHashes -> UploadContent -> SubmitEvent"}
                     }
                 }

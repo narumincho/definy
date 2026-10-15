@@ -31,7 +31,7 @@ pub fn NotFoundView(state: AppState, context: PageContext) -> Element {
             a {
                 class: "cta-link",
                 href: context.href_with_lang(Location::Home),
-                style: "display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; color: #0e1720; background: var(--primary); padding: 0.75rem 2rem; border-radius: var(--radius-full); text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 10px rgb(124 192 216 / 0.25);",
+                style: "display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; color: var(--primary-content); background: var(--primary-solid); padding: 0.75rem 2rem; border-radius: var(--radius-full); text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 10px var(--blue-border);",
                 {context.language.label("Return to Home", "ホームに戻る", "Reen al hejmo")}
             }
         }

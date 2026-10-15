@@ -1,4 +1,5 @@
 mod banners;
+mod definition_tree;
 mod editor;
 mod history;
 

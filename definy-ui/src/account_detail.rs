@@ -51,7 +51,7 @@ pub fn AccountDetailView(
                 h2 { style: "font-size: 1.3rem; font-weight: 600; margin: 0;", "{account_name}" }
                 div {
                     class: "mono",
-                    style: "font-size: 0.76rem; word-break: break-all; border: 1px solid var(--border); padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--text-secondary); background: rgb(0 0 0 / 0.15);",
+                    style: "font-size: 0.76rem; word-break: break-all; border: 1px solid var(--border); padding: 0.3rem 0.6rem; border-radius: 4px; color: var(--text-secondary); background: var(--bg-inset);",
                     "{account_id.to_string()}"
                 }
                 div { style: "color: var(--text-secondary); font-size: 0.85rem;",
@@ -75,7 +75,7 @@ pub fn AccountDetailView(
                         div { style: "display: flex; align-items: center; gap: 0.8rem; margin-top: 0.3rem;",
                             button {
                                 r#type: "button",
-                                style: "padding: 0.5rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; justify-self: start;",
+                                style: "padding: 0.5rem 1.2rem; background: var(--primary-solid); color: var(--primary-content); border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; justify-self: start;",
                                 onclick: move |_| {
                                     let state_sig = use_context::<Signal<AppState>>();
                                     let state_val = state_sig.read().clone();
@@ -170,7 +170,7 @@ pub fn AccountDetailView(
                         if let Some(result) = submit_result() {
                             div {
                                 class: "mono",
-                                style: "font-size: 0.85rem; word-break: break-word; background: rgb(124 192 216 / 0.08); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
+                                style: "font-size: 0.85rem; word-break: break-word; background: var(--blue-bg); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.3rem;",
                                 "{result}"
                             }
                         }

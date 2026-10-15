@@ -275,3 +275,57 @@ pub async fn migrate_builtin_data(db: &Surreal<Any>) -> Result<(), anyhow::Error
 
     Ok(())
 }
+
+#[cfg(test)]
+mod ui_type_check_tests {
+    /// 組み込みの seed のパーツは UI の型検査 (エクスプローラーの赤い印やエディタの「件のエラー」) で
+    /// エラーにならないこと. seed の誤りと UI の型検査器の誤検出の両方を検出する
+    #[test]
+    fn builtin_parts_have_no_ui_type_diagnostics() {
+        let (_account, events) = super::build_builtin_events();
+        let mut state = definy_ui::AppState::default();
+        for (index, event) in events.into_iter().enumerate() {
+            let hash = definy_event::EventHashId::from_bytes(format!("seed-{index}").as_bytes());
+            let signature = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+            state.event_cache.insert(hash, Ok((signature, event)));
+        }
+        let modules = definy_ui::module_projection::collect_module_snapshots(&state);
+        let mut failures = Vec::new();
+        for part in definy_ui::part_projection::collect_part_snapshots(&state) {
+            let Some(expression) = &part.expression else {
+                continue;
+            };
+            let module_name = modules
+                .iter()
+                .find(|module| module.definition_event_hash == part.module_definition_event_hash)
+                .map(|module| module.module_name.clone())
+                .unwrap_or_default();
+            let expected_type = part
+                .part_type
+                .as_ref()
+                .map(definy_ui::expression_editor::part_type_to_expression_type);
+            for diagnostic in definy_ui::expression_editor::collect_type_diagnostics(
+                &state,
+                expression,
+                expected_type,
+            ) {
+                let path: Vec<String> = diagnostic
+                    .path
+                    .iter()
+                    .map(|step| step.to_string())
+                    .collect();
+                failures.push(format!(
+                    "{module_name}.{} @ {}: {}",
+                    part.part_name,
+                    path.join("."),
+                    diagnostic.message
+                ));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "type diagnostics in builtin seeds:\n{}",
+            failures.join("\n")
+        );
+    }
+}

@@ -46,16 +46,16 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
             }
 
             // SVG シーケンスダイアグラム
-            div { style: "background: #090d16; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.6rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
+            div { style: "background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.6rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
                     view_box: "0 0 1080 570",
                     style: "width: 100%; min-width: 880px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px;",
 
                     defs {
-                        MarkerDef { id: "flow-arrow-blue", color: "#38bdf8" }
-                        MarkerDef { id: "flow-arrow-orange", color: "#fb923c" }
-                        MarkerDef { id: "flow-arrow-purple", color: "#c084fc" }
-                        MarkerDef { id: "flow-arrow-green", color: "#34d399" }
+                        MarkerDef { id: "flow-arrow-blue", color: "var(--blue)" }
+                        MarkerDef { id: "flow-arrow-orange", color: "var(--orange)" }
+                        MarkerDef { id: "flow-arrow-purple", color: "var(--purple)" }
+                        MarkerDef { id: "flow-arrow-green", color: "var(--green)" }
                     }
 
                     // ライフライン（縦線）
@@ -70,40 +70,40 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         x: 20,
                         y: 12,
                         width: 160,
-                        color: "#38bdf8",
-                        border: "#0284c7",
+                        color: "var(--blue)",
+                        border: "var(--blue)",
                         title: actor_browser,
                     }
                     ActorBox {
                         x: 250,
                         y: 12,
                         width: 160,
-                        color: "#fb923c",
-                        border: "#ea580c",
+                        color: "var(--orange)",
+                        border: "var(--orange)",
                         title: actor_proxy,
                     }
                     ActorBox {
                         x: 490,
                         y: 12,
                         width: 160,
-                        color: "#c084fc",
-                        border: "#9333ea",
+                        color: "var(--purple)",
+                        border: "var(--purple)",
                         title: actor_server,
                     }
                     ActorBox {
                         x: 720,
                         y: 12,
                         width: 160,
-                        color: "#34d399",
-                        border: "#059669",
+                        color: "var(--green)",
+                        border: "var(--green)",
                         title: actor_db,
                     }
                     ActorBox {
                         x: 910,
                         y: 12,
                         width: 160,
-                        color: "#60a5fa",
-                        border: "#2563eb",
+                        color: "var(--blue)",
+                        border: "var(--blue)",
                         title: actor_wasm,
                     }
 
@@ -113,7 +113,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 85,
                         x2: 325,
                         y2: 85,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "flow-arrow-blue",
                         dashed: false,
                         label: "1. GET https://definy.workers.dev/",
@@ -125,9 +125,9 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y: 105,
                         width: 140,
                         height: 30,
-                        bg: "#1c1917",
-                        border: "#fb923c",
-                        text_color: "#fdba74",
+                        bg: "var(--surface)",
+                        border: "var(--orange)",
+                        text_color: "var(--orange)",
                         line1: "Starting VM (1~2s)",
                         line2: None,
                     }
@@ -138,7 +138,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 155,
                         x2: 565,
                         y2: 155,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "flow-arrow-blue",
                         dashed: false,
                         label: "2. Forward to [::]:8000",
@@ -150,7 +150,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 190,
                         x2: 105,
                         y2: 190,
-                        color: "#fb923c",
+                        color: "var(--orange)",
                         marker: "flow-arrow-orange",
                         dashed: true,
                         label: "3. 307 Redirect (location: /?lang=en)",
@@ -162,7 +162,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 230,
                         x2: 565,
                         y2: 230,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "flow-arrow-blue",
                         dashed: false,
                         label: "4. GET /?lang=en",
@@ -174,7 +174,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 265,
                         x2: 795,
                         y2: 265,
-                        color: "#c084fc",
+                        color: "var(--purple)",
                         marker: "flow-arrow-purple",
                         dashed: false,
                         label: "5. get_events(limit: 100)",
@@ -186,7 +186,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 295,
                         x2: 575,
                         y2: 295,
-                        color: "#34d399",
+                        color: "var(--green)",
                         marker: "flow-arrow-green",
                         dashed: true,
                         label: "6. events data (CBOR bytes)",
@@ -198,9 +198,9 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y: 315,
                         width: 140,
                         height: 30,
-                        bg: "#1e1b4b",
-                        border: "#c084fc",
-                        text_color: "#e9d5ff",
+                        bg: "var(--purple-bg-strong)",
+                        border: "var(--purple)",
+                        text_color: "var(--purple-text)",
                         line1: "SSR: HTML + SsrState",
                         line2: None,
                     }
@@ -211,7 +211,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 365,
                         x2: 105,
                         y2: 365,
-                        color: "#34d399",
+                        color: "var(--green)",
                         marker: "flow-arrow-green",
                         dashed: false,
                         label: "7. 200 OK (text/html; charset=utf-8, 787 KB)",
@@ -223,9 +223,9 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y: 385,
                         width: 140,
                         height: 28,
-                        bg: "#0f172a",
-                        border: "#38bdf8",
-                        text_color: "#93c5fd",
+                        bg: "var(--surface)",
+                        border: "var(--blue)",
+                        text_color: "var(--blue-text)",
                         line1: "FCP: Instant Screen Paint",
                         line2: None,
                     }
@@ -236,7 +236,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 430,
                         x2: 565,
                         y2: 430,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "flow-arrow-blue",
                         dashed: false,
                         label: "8. GET /assets/definy_client*.js & .wasm",
@@ -248,7 +248,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 460,
                         x2: 105,
                         y2: 460,
-                        color: "#34d399",
+                        color: "var(--green)",
                         marker: "flow-arrow-green",
                         dashed: false,
                         label: "9. 200 OK (JS & WASM Bytecode)",
@@ -260,7 +260,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y1: 495,
                         x2: 985,
                         y2: 495,
-                        color: "#60a5fa",
+                        color: "var(--blue)",
                         marker: "flow-arrow-blue",
                         dashed: false,
                         label: "10. Hydrate with SsrState -> Interactive SPA",
@@ -272,9 +272,9 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                         y: 510,
                         width: 140,
                         height: 28,
-                        bg: "#1e3a8a",
-                        border: "#60a5fa",
-                        text_color: "#bfdbfe",
+                        bg: "var(--blue)",
+                        border: "var(--blue)",
+                        text_color: "var(--blue-text)",
                         line1: "data-client-ready: true",
                         line2: None,
                     }
@@ -291,7 +291,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                             "エッジ Anycast & 0ms Isolate 起動",
                             "Randa 0ms Lanĉo",
                         ),
-                    color: "#fb923c",
+                    color: "var(--orange)",
                     description: language
                         .label(
                             "Cloudflare's global Anycast network routes incoming requests to the nearest PoP, executing V8 isolates and serving Static Assets with zero cold-start latency.",
@@ -307,7 +307,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                             "307 リダイレクトと言語判定",
                             "307 Alidirekto kaj Lingvo",
                         ),
-                    color: "#f59e0b",
+                    color: "var(--yellow)",
                     description: language
                         .label(
                             "Root '/' requests evaluate Accept-Language headers and query params. If unspecified, it immediately responds with a 307 Temporary Redirect to '/?lang=en'.",
@@ -323,7 +323,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                             "サーバーサイド描画 & SsrState 埋め込み",
                             "SSR kaj Enkonstruita Stato",
                         ),
-                    color: "#c084fc",
+                    color: "var(--purple)",
                     description: language
                         .label(
                             "Axum queries SurrealDB (or in-memory fallback), renders full semantic HTML via definy_ui::render_inner, and embeds deterministic CBOR into __DEFINY_INITIAL_STATE__.",
@@ -339,7 +339,7 @@ pub fn HtmlRequestSequenceDiagram(language: Language) -> Element {
                             "WASM ハイドレーション & ゼロチラつき SPA",
                             "WASM Aktivigo",
                         ),
-                    color: "#60a5fa",
+                    color: "var(--blue)",
                     description: language
                         .label(
                             "Browser renders the server HTML instantly (0ms blank page). Dioxus Web Client fetches Wasm, reads embedded SsrState, and activates reactive listeners seamlessly.",

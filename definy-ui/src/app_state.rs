@@ -151,20 +151,6 @@ impl PathStep {
     }
 }
 
-pub fn path_to_string(path: &[PathStep]) -> String {
-    path.iter()
-        .map(|step| step.to_string())
-        .collect::<Vec<String>>()
-        .join(".")
-}
-
-pub fn string_to_path(s: &str) -> Option<Vec<PathStep>> {
-    if s.is_empty() {
-        return Some(Vec::new());
-    }
-    s.split('.').map(PathStep::from_string).collect()
-}
-
 use std::{collections::HashMap, str::FromStr};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -192,7 +178,6 @@ pub struct AppState {
     pub current_key: Option<ed25519_dalek::SigningKey>,
     pub force_offline: bool,
     pub local_event_queue: LocalEventQueueState,
-    pub focused_path: Option<Vec<PathStep>>,
 }
 
 impl AppState {
@@ -216,7 +201,6 @@ impl Default for AppState {
                 has_more: false,
                 filter_event_type: None,
             },
-            focused_path: None,
             is_auth_loading: true,
             current_key: None,
             force_offline: false,
@@ -364,7 +348,6 @@ pub fn build_initial_state(
             is_loading: true,
             last_error: None,
         },
-        focused_path: None,
     }
 }
 

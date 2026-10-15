@@ -42,6 +42,11 @@ web-sys = { workspace = true, features = [
   "CredentialRequestOptions",
   "Storage",
   "Location",
+  "KeyboardEvent",
+  "DomRect",
+  "ScrollIntoViewOptions",
+  "ScrollLogicalPosition",
+  "ScrollBehavior",
 ] }
 wasm-bindgen = { workspace = true }
 rand_core = { workspace = true, features = ["getrandom"] }
