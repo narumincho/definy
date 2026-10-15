@@ -4,6 +4,7 @@ mod account_list;
 pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
+mod command_palette;
 mod deployments;
 mod deployments_flow;
 pub mod dom;

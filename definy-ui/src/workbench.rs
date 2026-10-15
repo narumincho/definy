@@ -20,6 +20,8 @@ pub struct SidebarToggle(pub Signal<bool>);
 pub fn Workbench(state: AppState, context: PageContext, children: Element) -> Element {
     let sidebar_toggled = use_signal(|| false);
     use_context_provider(|| SidebarToggle(sidebar_toggled));
+    let command_palette_open = use_signal(|| false);
+    use_context_provider(|| crate::command_palette::CommandPaletteOpen(command_palette_open));
 
     let workbench_class = if sidebar_toggled() {
         "workbench sidebar-toggled"
@@ -53,6 +55,7 @@ pub fn Workbench(state: AppState, context: PageContext, children: Element) -> El
                 div { class: "workbench-editor-scroll", {children} }
             }
             crate::header::StatusBarView { state: state.clone(), context: context.clone() }
+            crate::command_palette::CommandPalette { state: state.clone(), context: context.clone() }
         }
     }
 }

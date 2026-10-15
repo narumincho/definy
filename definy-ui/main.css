@@ -531,6 +531,27 @@ textarea {
   overflow: hidden;
 }
 
+button.header-title {
+  justify-content: flex-start;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+button.header-title:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.header-title-kbd {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 0 0.3rem;
+  flex-shrink: 0;
+}
+
 .header-title-icon {
   width: 13px;
   height: 13px;
@@ -1045,6 +1066,104 @@ textarea {
   to {
     left: 100%;
   }
+}
+
+/* --- コマンドパレット --- */
+
+.command-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 50;
+}
+
+.command-palette {
+  position: fixed;
+  top: calc(var(--titlebar-height) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-opaque);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: 51;
+}
+
+.command-palette-input {
+  position: relative;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.command-palette-search-icon {
+  position: absolute;
+  left: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.command-palette-input input {
+  padding-left: 2rem;
+  border-color: var(--border-focus);
+}
+
+.command-palette-results {
+  overflow-y: auto;
+  padding: 0.3rem 0;
+}
+
+.command-palette-empty {
+  padding: 0.8rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.command-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.32rem 0.9rem;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.command-palette-item[aria-selected='true'] {
+  background: var(--bg-selection-strong);
+  color: var(--text-primary);
+}
+
+.command-palette-item-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.command-palette-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette-item-detail {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* --- ステータスバー --- */

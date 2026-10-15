@@ -18,6 +18,12 @@ pub fn HeaderView(state: AppState, context: PageContext) -> Element {
 #[component]
 fn HeaderMain(state: AppState, context: PageContext) -> Element {
     let sidebar_toggle = try_use_context::<crate::workbench::SidebarToggle>();
+    let command_palette = try_use_context::<crate::command_palette::CommandPaletteOpen>();
+    let palette_label = context.language.label(
+        "Search parts, modules and pages",
+        "パーツ・モジュール・ページを検索",
+        "Serĉi partojn, modulojn kaj paĝojn",
+    );
     let title_text = crate::page_title::page_title_text(&state, &context);
     let current_key_opt = state.current_key.clone();
     let toggle_label = context.language.label(
@@ -50,9 +56,20 @@ fn HeaderMain(state: AppState, context: PageContext) -> Element {
                 h1 { class: "logo-text", "definy" }
             }
             div { class: "header-title-container",
-                div { class: "header-title", title: "{title_text}",
+                // コマンドパレットを開く (Cmd/Ctrl+P でも開ける)
+                button {
+                    r#type: "button",
+                    class: "header-title",
+                    title: "{palette_label} (⌘P / Ctrl+P)",
+                    "aria-label": "{palette_label}",
+                    onclick: move |_| {
+                        if let Some(crate::command_palette::CommandPaletteOpen(mut open)) = command_palette {
+                            open.set(true);
+                        }
+                    },
                     crate::icon::SearchIcon { class: "header-title-icon" }
                     span { class: "header-title-text", "{title_text}" }
+                    kbd { class: "header-title-kbd", "⌘P" }
                 }
             }
             div { class: "header-actions",
