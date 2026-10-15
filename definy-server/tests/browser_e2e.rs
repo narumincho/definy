@@ -206,13 +206,14 @@ async fn browser_unauthenticated_can_edit_and_evaluate_part_detail() -> Result<(
         .await?;
     webdriver.wait_for_client_ready().await?;
 
-    // パーツ一覧 (ページ本体) からパーツ詳細リンクをクリック.
-    // サイドバーのエクスプローラーにもパーツへのリンクがあり, 先頭は core の組み込みパーツ
-    // (値として評価できない) になるので, エディタ領域の中だけから探す
+    // パーツ一覧 (ページ本体) から, 値として評価できる seed のパーツ sample.greet の詳細リンクをクリック.
+    // 先頭のリンクを選ぶと, コンパイラ組み込みや型のパーツ (評価できない) に当たることがあるため名前で選ぶ.
+    // サイドバーのエクスプローラーにも同じリンクがあるので, エディタ領域の中だけから探す
     let first_part_script = r#"
         const links = Array.from(document.querySelectorAll('.workbench-editor-scroll a[href*="/parts/"]'));
-        if (links.length > 0) {
-            links[0].click();
+        const greet = links.find(a => a.textContent.trim() === 'greet');
+        if (greet) {
+            greet.click();
             return true;
         }
         return false;
@@ -220,7 +221,7 @@ async fn browser_unauthenticated_can_edit_and_evaluate_part_detail() -> Result<(
     let link_clicked = webdriver.execute_script(first_part_script, vec![]).await?;
     assert!(
         link_clicked.as_bool().unwrap_or(false),
-        "No part links found on /parts"
+        "Part link for sample.greet not found on /parts"
     );
     sleep(Duration::from_millis(600)).await;
 
