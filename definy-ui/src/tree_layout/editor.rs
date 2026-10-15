@@ -176,7 +176,7 @@ pub fn ExpressionTreeEditor(
                 div {
                     class: "tree-editor-status-bar",
                     style: "display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 0.5rem; font-size: 0.78rem;",
-                    span { style: "color: #fca5a5; background: rgba(239, 68, 68, 0.18); border: 1px solid #ef4444; padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;",
+                    span { style: "color: var(--red-text); background: var(--red-bg-strong); border: 1px solid var(--red); padding: 0.15rem 0.5rem; border-radius: var(--radius-full); font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem;",
                         span { "⚠" }
                         span { "{error_count} {type_errors_text}" }
                     }
@@ -261,7 +261,7 @@ pub fn ExpressionTreeEditor(
             // 3. 木構造レンダラー（インライン直接編集対応 & 型エラー可視化）
             div {
                 class: "expression-tree-container",
-                style: "width: 100%; max-width: 100%; overflow-x: auto; padding: 0.6rem 0.8rem; background: rgb(0 0 0 / 0.12); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: flex-start; box-sizing: border-box;",
+                style: "width: 100%; max-width: 100%; overflow-x: auto; padding: 0.6rem 0.8rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: flex-start; box-sizing: border-box;",
                 TreeLayoutRenderer {
                     node: layout_result.root,
                     selected_node_id,
@@ -392,7 +392,7 @@ fn render_empty_expression_editor(
     let templates = empty_expression_templates(is_type_editor);
 
     rsx! {
-        div { style: "display: grid; gap: 0.6rem; padding: 0.85rem 1rem; background: rgb(0 0 0 / 0.15); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); width: 100%; box-sizing: border-box;",
+        div { style: "display: grid; gap: 0.6rem; padding: 0.85rem 1rem; background: var(--bg-inset); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); width: 100%; box-sizing: border-box;",
             div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;",
                 div { style: "font-size: 0.82rem; color: var(--text-secondary);", "{empty_text}" }
             }
@@ -437,7 +437,7 @@ fn render_menu_header(
             }
             span {
                 class: "mono",
-                style: "background: rgb(0 0 0 / 0.3); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: #86efac; border: 1px solid rgb(255 255 255 / 0.1); max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; display: inline-block;",
+                style: "background: var(--bg-inset); padding: 0.08rem 0.45rem; border-radius: var(--radius-full); color: var(--green); border: 1px solid var(--overlay-3); max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; display: inline-block;",
                 title: "{current_kind_label}",
                 "{current_kind_label}"
             }
@@ -446,7 +446,7 @@ fn render_menu_header(
                     "{expects_label} "
                     span {
                         class: "mono",
-                        style: "color: #93c5fd; font-weight: 600; max-width: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;",
+                        style: "color: var(--blue-text); font-weight: 600; max-width: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;",
                         title: "{exp.text()}",
                         "{exp.text()}"
                     }
@@ -467,7 +467,7 @@ fn render_menu_header(
                 "✕"
             }
             if let Some(diag) = slot_diagnostic {
-                div { style: "flex-basis: 100%; color: #fca5a5; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; padding: 0.1rem 0.45rem; border-radius: var(--radius-sm);",
+                div { style: "flex-basis: 100%; color: var(--red-text); background: var(--red-bg-strong); border: 1px solid var(--red); padding: 0.1rem 0.45rem; border-radius: var(--radius-sm);",
                     "⚠ {diag.message}"
                 }
             }

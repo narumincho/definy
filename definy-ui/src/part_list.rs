@@ -112,7 +112,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                 }
             }
             if state.current_key.is_none() && !is_form_open() {
-                div { style: "padding: 0.5rem 0.6rem 0.5rem 0.9rem; font-size: 0.82rem; background: rgb(124 192 216 / 0.08); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;",
+                div { style: "padding: 0.5rem 0.6rem 0.5rem 0.9rem; font-size: 0.82rem; background: var(--blue-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;",
                     span {
                         "{context.language.label(\"Log in or sign up to create and edit parts.\", \"パーツの作成や編集を行うにはログインまたはサインアップが必要です。\", \"Ensalutu aŭ registriĝu por krei kaj redakti partojn.\")}"
                     }
@@ -136,7 +136,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
             if let Some(result) = eval_result() {
                 div {
                     class: "event-detail-card",
-                    style: "padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; background: rgb(124 192 216 / 0.1); border-color: var(--primary); word-break: break-word;",
+                    style: "padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; background: var(--blue-bg); border-color: var(--primary); word-break: break-word;",
                     "{result}"
                 }
             }
@@ -229,7 +229,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                                             target: "_blank",
                                                             rel: "noopener noreferrer", // 最終更新日時
                                                             title: "Preview Web App",
-                                                            style: "display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 999px; background: rgba(56, 189, 248, 0.12); color: var(--primary); text-decoration: none; border: 1px solid rgba(56, 189, 248, 0.3); font-weight: 500;",
+                                                            style: "display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 999px; background: var(--blue-bg-strong); color: var(--primary); text-decoration: none; border: 1px solid var(--blue-border); font-weight: 500;",
                                                             "🌐 {prev.code} ↗"
                                                         }
                                                     }
@@ -245,7 +245,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                                     rsx! {
                                                         span {
                                                             title: "Cloudflare Workers Deploy Part",
-                                                            style: "display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 999px; background: rgba(249, 115, 22, 0.12); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); font-weight: 500;",
+                                                            style: "display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.72rem; padding: 0.12rem 0.4rem; border-radius: 999px; background: var(--orange-bg-strong); color: var(--orange); border: 1px solid var(--orange-border); font-weight: 500;",
                                                             "⚡ {dep.cloudflare_worker_name}"
                                                         }
                                                     }

@@ -33,6 +33,59 @@
   --accent-glow: rgba(78, 148, 238, 0.25);
   --brand-gradient: linear-gradient(135deg, #4e94ee 0%, #a68cf0 100%);
 
+  /*
+   * 色相ごとのパレット. 図やステータスで意味を区別するときはこれを使う.
+   * 本体 / 明るい文字 / 薄い背景 / やや濃い背景 / 境界線 の 5 段
+   */
+  --blue: #4e94ee;
+  --blue-text: #8cbaf5;
+  --blue-bg: rgba(78, 148, 238, 0.08);
+  --blue-bg-strong: rgba(78, 148, 238, 0.16);
+  --blue-border: rgba(78, 148, 238, 0.4);
+
+  --green: #5cc78a;
+  --green-text: #8ad8ab;
+  --green-bg: rgba(92, 199, 138, 0.08);
+  --green-bg-strong: rgba(92, 199, 138, 0.16);
+  --green-border: rgba(92, 199, 138, 0.4);
+
+  --yellow: #e2b64f;
+  --yellow-text: #ecd08a;
+  --yellow-bg: rgba(226, 182, 79, 0.08);
+  --yellow-bg-strong: rgba(226, 182, 79, 0.16);
+  --yellow-border: rgba(226, 182, 79, 0.4);
+
+  --orange: #e0904f;
+  --orange-text: #efb689;
+  --orange-bg: rgba(224, 144, 79, 0.08);
+  --orange-bg-strong: rgba(224, 144, 79, 0.16);
+  --orange-border: rgba(224, 144, 79, 0.4);
+
+  --red: #f1707b;
+  --red-text: #f6a9b0;
+  --red-bg: rgba(241, 112, 123, 0.08);
+  --red-bg-strong: rgba(241, 112, 123, 0.16);
+  --red-border: rgba(241, 112, 123, 0.4);
+
+  --purple: #a68cf0;
+  --purple-text: #c9b8f7;
+  --purple-bg: rgba(166, 140, 240, 0.08);
+  --purple-bg-strong: rgba(166, 140, 240, 0.16);
+  --purple-border: rgba(166, 140, 240, 0.4);
+
+  --pink: #e57aa8;
+  --pink-text: #f0a9c8;
+  --pink-bg: rgba(229, 122, 168, 0.08);
+  --pink-bg-strong: rgba(229, 122, 168, 0.16);
+  --pink-border: rgba(229, 122, 168, 0.4);
+
+  /* 面の上に重ねる明るさ (ホバー・区切り) と, 一段沈んだ面 (コード・値の表示) */
+  --overlay-1: rgba(255, 255, 255, 0.025);
+  --overlay-2: rgba(255, 255, 255, 0.05);
+  --overlay-3: rgba(255, 255, 255, 0.09);
+  --bg-inset: #1a1c21;
+  --shadow-color: rgba(0, 0, 0, 0.35);
+
   --badge-type-bg: rgba(166, 140, 240, 0.14);
   --badge-type-border: rgba(166, 140, 240, 0.32);
   --badge-type-text: #c9b8f7;

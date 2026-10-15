@@ -33,14 +33,14 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
             }
 
             // SVG パイプライン図
-            div { style: "background: #090d16; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.6rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
+            div { style: "background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem 0.6rem; overflow-x: auto; width: 100%; box-sizing: border-box;",
                 svg {
                     view_box: "0 0 980 430",
                     style: "width: 100%; min-width: 780px; height: auto; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px;",
 
                     defs {
-                        MarkerDef { id: "pipe-arrow-blue", color: "#38bdf8" }
-                        MarkerDef { id: "pipe-arrow-green", color: "#34d399" }
+                        MarkerDef { id: "pipe-arrow-blue", color: "var(--blue)" }
+                        MarkerDef { id: "pipe-arrow-green", color: "var(--green)" }
                     }
 
                     // ライフライン
@@ -54,32 +54,32 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         x: 30,
                         y: 12,
                         width: 180,
-                        color: "#94a3b8",
-                        border: "#475569",
+                        color: "var(--text-secondary)",
+                        border: "var(--border-strong)",
                         title: actor_git,
                     }
                     ActorBox {
                         x: 290,
                         y: 12,
                         width: 180,
-                        color: "#38bdf8",
-                        border: "#0284c7",
+                        color: "var(--blue)",
+                        border: "var(--blue)",
                         title: actor_gha,
                     }
                     ActorBox {
                         x: 550,
                         y: 12,
                         width: 180,
-                        color: "#c084fc",
-                        border: "#9333ea",
+                        color: "var(--purple)",
+                        border: "var(--purple)",
                         title: actor_registry,
                     }
                     ActorBox {
                         x: 790,
                         y: 12,
                         width: 180,
-                        color: "#34d399",
-                        border: "#059669",
+                        color: "var(--green)",
+                        border: "var(--green)",
                         title: actor_machines,
                     }
 
@@ -89,7 +89,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y1: 85,
                         x2: 375,
                         y2: 85,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "pipe-arrow-blue",
                         dashed: false,
                         label: "1. git push / merge PR -> main",
@@ -101,9 +101,9 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y: 105,
                         width: 150,
                         height: 48,
-                        bg: "#0c4a6e",
-                        border: "#38bdf8",
-                        text_color: "#e0f2fe",
+                        bg: "var(--blue-bg-strong)",
+                        border: "var(--blue)",
+                        text_color: "var(--blue-text)",
                         line1: "dx build --release",
                         line2: Some("--export-seed-bundle"),
                     }
@@ -114,9 +114,9 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y: 168,
                         width: 150,
                         height: 30,
-                        bg: "#1e1b4b",
-                        border: "#818cf8",
-                        text_color: "#e0e7ff",
+                        bg: "var(--purple-bg-strong)",
+                        border: "var(--blue)",
+                        text_color: "var(--blue-text)",
                         line1: "scripts/build-assets.sh",
                         line2: None,
                     }
@@ -127,7 +127,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y1: 215,
                         x2: 635,
                         y2: 215,
-                        color: "#38bdf8",
+                        color: "var(--blue)",
                         marker: "pipe-arrow-blue",
                         dashed: false,
                         label: "2. wrangler deploy",
@@ -139,7 +139,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y1: 250,
                         x2: 875,
                         y2: 250,
-                        color: "#c084fc",
+                        color: "var(--purple)",
                         marker: "pipe-arrow-blue",
                         dashed: false,
                         label: "3. Upload Worker + Static Assets",
@@ -151,9 +151,9 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y: 270,
                         width: 140,
                         height: 42,
-                        bg: "#064e3b",
-                        border: "#34d399",
-                        text_color: "#a7f3d0",
+                        bg: "var(--green-bg-strong)",
+                        border: "var(--green)",
+                        text_color: "var(--green-text)",
                         line1: "Global Edge Rollout",
                         line2: Some("Health check /healthz OK"),
                     }
@@ -164,7 +164,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y1: 330,
                         x2: 385,
                         y2: 330,
-                        color: "#34d399",
+                        color: "var(--green)",
                         marker: "pipe-arrow-green",
                         dashed: true,
                         label: "4. Deployment Finished (Exit Code 0)",
@@ -176,7 +176,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                         y1: 365,
                         x2: 125,
                         y2: 365,
-                        color: "#34d399",
+                        color: "var(--green)",
                         marker: "pipe-arrow-green",
                         dashed: true,
                         label: "5. GitHub Commit Status: PASS ✓",
@@ -194,7 +194,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                             "リリースビルド自動化",
                             "Aŭtomata Eldona Konstruo",
                         ),
-                    color: "#38bdf8",
+                    color: "var(--blue)",
                     description: language
                         .label(
                             "GitHub Actions runner executes 'dx build --release' (with custom sections preserved) and exports the deterministic builtin seed bundle.",
@@ -210,7 +210,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                             "Static Assets & シードパッケージング",
                             "Statikaj Aktivaĵoj Pakado",
                         ),
-                    color: "#818cf8",
+                    color: "var(--blue)",
                     description: language
                         .label(
                             "WASM/JS assets, headers, and signed builtin seed bundle are assembled into dist-assets/ and uploaded via Wrangler.",
@@ -226,7 +226,7 @@ pub fn DeployPipelineDiagram(language: Language) -> Element {
                             "グローバルエッジ即時反映",
                             "Tutmonda Randa Aktivigo",
                         ),
-                    color: "#34d399",
+                    color: "var(--green)",
                     description: language
                         .label(
                             "Cloudflare Workers distributes the new Worker version and Static Assets across 300+ global edge locations with zero downtime.",

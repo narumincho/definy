@@ -195,14 +195,14 @@ pub fn RpcMethodDetailView(
                     style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; display: grid; gap: 0.8rem;",
                     div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;",
                         div { style: "display: flex; align-items: center; gap: 0.6rem;",
-                            span { style: "padding: 0.2rem 0.55rem; background: #0284c7; color: #fff; font-size: 0.72rem; font-weight: 700; border-radius: 4px;",
+                            span { style: "padding: 0.2rem 0.55rem; background: var(--blue); color: var(--text-primary); font-size: 0.72rem; font-weight: 700; border-radius: 4px;",
                                 "POST"
                             }
                             h1 { style: "font-size: 1.5rem; font-weight: 800; margin: 0; color: var(--text-primary);",
                                 "{schema.method.name()}"
                             }
                         }
-                        div { style: "font-family: ui-monospace, monospace; font-size: 0.8rem; color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 0.3rem 0.7rem; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.25);",
+                        div { style: "font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--blue); background: var(--blue-bg); padding: 0.3rem 0.7rem; border-radius: 4px; border: 1px solid var(--blue-border);",
                             "{schema.rpc_path()}"
                         }
                     }
@@ -212,8 +212,8 @@ pub fn RpcMethodDetailView(
                     }
 
                     // 差分ハッシュ交渉での役割
-                    div { style: "background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: grid; gap: 0.3rem;",
-                        div { style: "font-size: 0.78rem; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.4rem;",
+                    div { style: "background: var(--purple-bg); border: 1px solid var(--purple-border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: grid; gap: 0.3rem;",
+                        div { style: "font-size: 0.78rem; font-weight: 700; color: var(--purple); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.4rem;",
                             span { "🌿" }
                             span {
                                 {
@@ -245,7 +245,7 @@ pub fn RpcMethodDetailView(
                                 span { "📜" }
                                 span { "Protobuf Schema (`proto/definy/v1/event.proto`)" }
                             }
-                            pre { style: "margin: 0; padding: 0.9rem; background: #080c14; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: ui-monospace, monospace; font-size: 0.8rem; color: #7dd3fc; overflow-x: auto; line-height: 1.5;",
+                            pre { style: "margin: 0; padding: 0.9rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: ui-monospace, monospace; font-size: 0.8rem; color: var(--blue); overflow-x: auto; line-height: 1.5;",
                                 "{schema.proto_definition}"
                             }
                         }
@@ -254,7 +254,7 @@ pub fn RpcMethodDetailView(
                         div {
                             class: "event-detail-card",
                             style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem; display: grid; gap: 0.6rem;",
-                            div { style: "font-weight: 700; font-size: 0.92rem; color: #38bdf8; display: flex; align-items: center; gap: 0.4rem;",
+                            div { style: "font-weight: 700; font-size: 0.92rem; color: var(--blue); display: flex; align-items: center; gap: 0.4rem;",
                                 span { "📥" }
                                 span { "Request: {schema.request_name}" }
                             }
@@ -265,7 +265,7 @@ pub fn RpcMethodDetailView(
                         div {
                             class: "event-detail-card",
                             style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.2rem; display: grid; gap: 0.6rem;",
-                            div { style: "font-weight: 700; font-size: 0.92rem; color: #34d399; display: flex; align-items: center; gap: 0.4rem;",
+                            div { style: "font-weight: 700; font-size: 0.92rem; color: var(--green); display: flex; align-items: center; gap: 0.4rem;",
                                 span { "📤" }
                                 span { "Response: {schema.response_name}" }
                             }
@@ -293,7 +293,7 @@ pub fn RpcMethodDetailView(
                                     }
                                 }
                             }
-                            span { style: "font-size: 0.72rem; color: #10b981; font-weight: 600;",
+                            span { style: "font-size: 0.72rem; color: var(--green); font-weight: 600;",
                                 "Live Server Connected"
                             }
                         }
@@ -429,7 +429,7 @@ pub fn RpcMethodDetailView(
                         button {
                             onclick: on_run_test,
                             disabled: is_loading(),
-                            style: "padding: 0.65rem 1.2rem; background: #0284c7; color: #fff; font-weight: 600; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: opacity 0.15s ease;",
+                            style: "padding: 0.65rem 1.2rem; background: var(--blue); color: var(--text-primary); font-weight: 600; border: none; border-radius: var(--radius-sm); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: opacity 0.15s ease;",
                             if is_loading() {
                                 span {
                                     "⏳ {lang.label(\"Executing RPC...\", \"RPC実行中...\", \"Rulante...\")}"
@@ -443,7 +443,7 @@ pub fn RpcMethodDetailView(
 
                         // エラー表示
                         if let Some(err) = error_text() {
-                            div { style: "padding: 0.75rem 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); color: #fca5a5; font-size: 0.84rem;",
+                            div { style: "padding: 0.75rem 1rem; background: var(--red-bg); border: 1px solid var(--red-border); border-radius: var(--radius-sm); color: var(--red-text); font-size: 0.84rem;",
                                 "⚠️ {err}"
                             }
                         }
@@ -451,11 +451,11 @@ pub fn RpcMethodDetailView(
                         // レスポンスステータス & 生 JSON
                         if let Some(st) = response_status() {
                             div { style: "display: grid; gap: 0.5rem;",
-                                div { style: "font-size: 0.78rem; font-weight: 700; color: #34d399;",
+                                div { style: "font-size: 0.78rem; font-weight: 700; color: var(--green);",
                                     "✓ {st}"
                                 }
                                 if let Some(json_str) = response_json() {
-                                    pre { style: "margin: 0; padding: 0.8rem; background: #080c14; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: ui-monospace, monospace; font-size: 0.78rem; color: #a5f3fc; overflow-x: auto; max-height: 220px; line-height: 1.45;",
+                                    pre { style: "margin: 0; padding: 0.8rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--blue-text); overflow-x: auto; max-height: 220px; line-height: 1.45;",
                                         "{json_str}"
                                     }
                                 }
@@ -500,7 +500,7 @@ fn RenderFieldsTable(
         div { style: "overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm);",
             table { style: "width: 100%; border-collapse: collapse; font-size: 0.82rem; text-align: left;",
                 thead {
-                    tr { style: "background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid var(--border);",
+                    tr { style: "background: var(--bg-inset); border-bottom: 1px solid var(--border);",
                         th { style: "padding: 0.5rem 0.7rem; color: var(--text-secondary); width: 40px;",
                             "#"
                         }
@@ -517,14 +517,14 @@ fn RenderFieldsTable(
                 }
                 tbody {
                     for field in fields {
-                        tr { style: "border-bottom: 1px solid rgba(255, 255, 255, 0.05);",
+                        tr { style: "border-bottom: 1px solid var(--overlay-2);",
                             td { style: "padding: 0.55rem 0.7rem; color: var(--text-secondary); font-family: ui-monospace, monospace;",
                                 "{field.number}"
                             }
-                            td { style: "padding: 0.55rem 0.7rem; font-weight: 600; color: #93c5fd; font-family: ui-monospace, monospace;",
+                            td { style: "padding: 0.55rem 0.7rem; font-weight: 600; color: var(--blue-text); font-family: ui-monospace, monospace;",
                                 "{field.name}"
                             }
-                            td { style: "padding: 0.55rem 0.7rem; color: #fcd34d; font-family: ui-monospace, monospace; font-size: 0.78rem;",
+                            td { style: "padding: 0.55rem 0.7rem; color: var(--yellow); font-family: ui-monospace, monospace; font-size: 0.78rem;",
                                 "{field.field_type}"
                             }
                             td { style: "padding: 0.55rem 0.7rem; color: var(--text-secondary); line-height: 1.4;",

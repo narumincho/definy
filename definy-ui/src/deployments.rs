@@ -15,16 +15,16 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                 // ヒーローセクション
                 div {
                     class: "event-detail-card",
-                    style: "background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.2rem 1.8rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.1rem; position: relative; overflow: hidden;",
+                    style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.2rem 1.8rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.1rem; position: relative; overflow: hidden;",
 
-                    div { style: "position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(249, 115, 22, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
-                    div { style: "position: absolute; bottom: -40px; left: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
+                    div { style: "position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, var(--orange-border) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
+                    div { style: "position: absolute; bottom: -40px; left: -40px; width: 180px; height: 180px; background: radial-gradient(circle, var(--purple-bg-strong) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
 
-                    div { style: "display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.35); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); font-size: 2rem;",
+                    div { style: "display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: var(--orange-bg-strong); border: 1px solid var(--orange-border); box-shadow: 0 8px 24px var(--shadow-color); font-size: 2rem;",
                         "⚡"
                     }
 
-                    h1 { style: "font-size: 2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, #ffffff 30%, #fb923c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;",
+                    h1 { style: "font-size: 2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, var(--text-primary) 30%, var(--orange) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;",
                         {
                             lang.label(
                                 "Operational Bootstrapping (Cloudflare Workers & Edge Runtime)",
@@ -34,7 +34,7 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                         }
                     }
 
-                    p { style: "font-size: 1.05rem; font-weight: 600; color: #fb923c; margin: 0; max-width: 680px; line-height: 1.45;",
+                    p { style: "font-size: 1.05rem; font-weight: 600; color: var(--orange); margin: 0; max-width: 680px; line-height: 1.45;",
                         {
                             lang.label(
                                 "Zero OS, Zero Containers: Deploying next-generation definy instances directly onto V8 isolates via Cloudflare Workers REST API v4.",
@@ -59,7 +59,7 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                             href: "https://developers.cloudflare.com/api/resources/workers/",
                             target: "_blank",
                             rel: "noopener noreferrer",
-                            style: "padding: 0.6rem 1.4rem; background: var(--primary); color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: opacity 0.15s ease;",
+                            style: "padding: 0.6rem 1.4rem; background: var(--primary-solid); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: opacity 0.15s ease;",
                             {
                                 lang.label(
                                     "Cloudflare Workers API Docs ↗",
@@ -70,7 +70,7 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                         }
                         a {
                             href: context.href_with_lang(Location::ApiOverview),
-                            style: "padding: 0.6rem 1.4rem; background: rgba(255, 255, 255, 0.08); color: var(--text-primary); text-decoration: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: background 0.15s ease;",
+                            style: "padding: 0.6rem 1.4rem; background: var(--overlay-3); color: var(--text-primary); text-decoration: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: background 0.15s ease;",
                             {
                                 lang.label(
                                     "DeployService API Schema →",
@@ -91,7 +91,7 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                         context: context.clone(),
                         step_num: "Layer 1",
                         status_badge: lang.label("Active / V8 Isolate", "稼働中 / V8 Isolate", "Aktiva / V8 Izolito"),
-                        status_color: "#fb923c",
+                        status_color: "var(--orange)",
                         title: lang.label(
                             "Edge Bootstrapping",
                             "運用・エッジ層の自己完結",
@@ -111,7 +111,7 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                             "自己コンパイラ実証済",
                             "Kompililo Preta",
                         ),
-                        status_color: "#60a5fa",
+                        status_color: "var(--blue)",
                         title: lang.label(
                             "Compiler Bootstrapping",
                             "ビルド・コンパイル層の自己完結",
@@ -127,7 +127,7 @@ pub fn DeploymentsView(context: PageContext) -> Element {
                         context: context.clone(),
                         step_num: "Layer 3",
                         status_badge: lang.label("Specification Designed", "設計仕様策定済", "Specifo Desegnita"),
-                        status_color: "#c084fc",
+                        status_color: "var(--purple)",
                         title: lang.label(
                             "Capability I/O Runtime",
                             "サービスロジック・I/O層の自己記述",
@@ -162,12 +162,12 @@ fn DeployPartGuideCard(context: PageContext) -> Element {
     rsx! {
         div {
             class: "event-detail-card",
-            style: "background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: var(--radius-lg); padding: 1.6rem; display: flex; flex-direction: column; gap: 1.1rem;",
+            style: "background: var(--surface); border: 1px solid var(--orange-border); border-radius: var(--radius-lg); padding: 1.6rem; display: flex; flex-direction: column; gap: 1.1rem;",
 
             div { style: "display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem;",
                 div { style: "display: flex; align-items: center; gap: 0.6rem;",
                     span { style: "font-size: 1.5rem;", "⚡" }
-                    h2 { style: "font-size: 1.25rem; font-weight: 700; margin: 0; color: #fb923c;",
+                    h2 { style: "font-size: 1.25rem; font-weight: 700; margin: 0; color: var(--orange);",
                         {
                             lang.label(
                                 "Declarative Edge Deployment (definy:deploy)",
@@ -179,7 +179,7 @@ fn DeployPartGuideCard(context: PageContext) -> Element {
                 }
                 span {
                     class: "preview-badge",
-                    style: "background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); color: #fb923c; font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 999px;",
+                    style: "background: var(--orange-bg-strong); border: 1px solid var(--orange-border); color: var(--orange); font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 999px;",
                     {
                         lang.label(
                             "Executed on Server",
@@ -201,13 +201,13 @@ fn DeployPartGuideCard(context: PageContext) -> Element {
             }
 
             // コード例表示
-            div { style: "background: #090d16; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); padding: 1.1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; color: #e2e8f0; white-space: pre;",
+            div { style: "background: var(--bg-inset); border: 1px solid var(--overlay-3); border-radius: var(--radius-sm); padding: 1.1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; line-height: 1.6; color: var(--text); white-space: pre;",
                 "{code_sample}"
             }
 
             div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.85rem; margin-top: 0.2rem;",
-                div { style: "padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
-                    div { style: "font-weight: 700; color: #fb923c; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
+                div { style: "padding: 0.85rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
+                    div { style: "font-weight: 700; color: var(--orange); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
                         span { "1." }
                         {lang.label("Define Part", "パーツとして定義", "Difini Parton")}
                     }
@@ -221,8 +221,8 @@ fn DeployPartGuideCard(context: PageContext) -> Element {
                         }
                     }
                 }
-                div { style: "padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
-                    div { style: "font-weight: 700; color: #60a5fa; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
+                div { style: "padding: 0.85rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
+                    div { style: "font-weight: 700; color: var(--blue); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
                         span { "2." }
                         {
                             lang.label(
@@ -242,8 +242,8 @@ fn DeployPartGuideCard(context: PageContext) -> Element {
                         }
                     }
                 }
-                div { style: "padding: 0.85rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
-                    div { style: "font-weight: 700; color: #a855f7; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
+                div { style: "padding: 0.85rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;",
+                    div { style: "font-weight: 700; color: var(--purple); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem;",
                         span { "3." }
                         {
                             lang.label(
@@ -299,15 +299,15 @@ fn DeployCommandGuideCard(context: PageContext) -> Element {
             }
 
             // Connect-RPC DeployCloudflare cURL 例
-            div { style: "background: #090d16; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; font-family: monospace; font-size: 0.84rem; line-height: 1.5; color: #e2e8f0; white-space: pre-wrap;",
+            div { style: "background: var(--bg-inset); border: 1px solid var(--overlay-3); border-radius: var(--radius-sm); padding: 1rem; overflow-x: auto; font-family: monospace; font-size: 0.84rem; line-height: 1.5; color: var(--text); white-space: pre-wrap;",
                 {
                     "curl -X POST https://definy.workers.dev/definy.v1.DeployService/DeployCloudflare \\\n  -H 'Content-Type: application/json' \\\n  -H 'connect-protocol-version: 1' \\\n  -d '{\"apiToken\": \"$CLOUDFLARE_API_TOKEN\", \"scriptName\": \"my-definy-edge\"}'"
                 }
             }
 
             div { style: "display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-top: 0.5rem;",
-                div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
-                    div { style: "font-weight: 600; color: #fb923c; margin-bottom: 0.25rem;",
+                div { style: "padding: 0.8rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
+                    div { style: "font-weight: 600; color: var(--orange); margin-bottom: 0.25rem;",
                         "apiToken (required)"
                     }
                     div { style: "color: var(--text-secondary);",
@@ -320,8 +320,8 @@ fn DeployCommandGuideCard(context: PageContext) -> Element {
                         }
                     }
                 }
-                div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
-                    div { style: "font-weight: 600; color: #93c5fd; margin-bottom: 0.25rem;",
+                div { style: "padding: 0.8rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
+                    div { style: "font-weight: 600; color: var(--blue-text); margin-bottom: 0.25rem;",
                         "scriptName (required)"
                     }
                     div { style: "color: var(--text-secondary);",
@@ -334,8 +334,8 @@ fn DeployCommandGuideCard(context: PageContext) -> Element {
                         }
                     }
                 }
-                div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
-                    div { style: "font-weight: 600; color: #a855f7; margin-bottom: 0.25rem;",
+                div { style: "padding: 0.8rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
+                    div { style: "font-weight: 600; color: var(--purple); margin-bottom: 0.25rem;",
                         "accountId (optional)"
                     }
                     div { style: "color: var(--text-secondary);",
@@ -348,8 +348,8 @@ fn DeployCommandGuideCard(context: PageContext) -> Element {
                         }
                     }
                 }
-                div { style: "padding: 0.8rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
-                    div { style: "font-weight: 600; color: #facc15; margin-bottom: 0.25rem;",
+                div { style: "padding: 0.8rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem;",
+                    div { style: "font-weight: 600; color: var(--yellow); margin-bottom: 0.25rem;",
                         "wasmHash (optional)"
                     }
                     div { style: "color: var(--text-secondary);",
@@ -429,7 +429,7 @@ fn DeploymentsHistoryCard(context: PageContext) -> Element {
                     }
                 }
             } else if let Some(ref err) = *load_error.read() {
-                div { style: "padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; color: var(--text-secondary);",
+                div { style: "padding: 1rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.82rem; color: var(--text-secondary);",
                     span {
                         {
                             lang.label(
@@ -456,18 +456,18 @@ fn DeploymentsHistoryCard(context: PageContext) -> Element {
                     for item in deployments.read().iter() {
                         div {
                             key: "{item.machine_id}",
-                            style: "padding: 0.85rem 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem;",
+                            style: "padding: 0.85rem 1rem; background: var(--overlay-1); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem;",
 
                             div { style: "display: flex; flex-direction: column; gap: 0.2rem;",
                                 div { style: "display: flex; align-items: center; gap: 0.5rem;",
-                                    span { style: "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);",
+                                    span { style: "font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 9999px; background: var(--orange-bg-strong); color: var(--orange); border: 1px solid var(--orange-border);",
                                         "⚡ Cloudflare"
                                     }
                                     a {
                                         href: "{item.url}",
                                         target: "_blank",
                                         rel: "noopener noreferrer",
-                                        style: "font-weight: 600; font-size: 0.88rem; color: #38bdf8; text-decoration: none;",
+                                        style: "font-weight: 600; font-size: 0.88rem; color: var(--blue); text-decoration: none;",
                                         "{item.url} ↗"
                                     }
                                 }
@@ -477,7 +477,7 @@ fn DeploymentsHistoryCard(context: PageContext) -> Element {
                             }
 
                             div { style: "display: flex; align-items: center; gap: 0.6rem;",
-                                span { style: "font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(34, 197, 94, 0.15); color: #4ade80;",
+                                span { style: "font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; background: var(--green-bg-strong); color: var(--green);",
                                     "{item.status}"
                                 }
                                 span { style: "font-size: 0.75rem; color: var(--text-secondary);",
@@ -506,10 +506,10 @@ fn BootstrappingLayerCard(
             class: "event-detail-card",
             style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.3rem; display: flex; flex-direction: column; gap: 0.65rem;",
             div { style: "display: flex; justify-content: space-between; align-items: center;",
-                span { style: "font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;",
+                span { style: "font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;",
                     "{step_num}"
                 }
-                span { style: "font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(255, 255, 255, 0.06); border: 1px solid {status_color}; color: {status_color};",
+                span { style: "font-size: 0.72rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; background: var(--overlay-2); border: 1px solid {status_color}; color: {status_color};",
                     "{status_badge}"
                 }
             }

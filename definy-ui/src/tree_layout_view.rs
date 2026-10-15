@@ -94,7 +94,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
         language.label("Width bounded box", "幅制限付きコンテナ", "Larĝo-limigita");
 
     let debug_btn_bg = if show_debug() {
-        "rgb(124 192 216 / 0.2)"
+        "var(--blue-bg-strong)"
     } else {
         "transparent"
     };
@@ -113,7 +113,11 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
 
     let root_mode_str = format!("{:?}", layout_result.root.layout_mode);
     let is_root_inline = layout_result.root.layout_mode == crate::tree_layout::LayoutMode::Inline;
-    let root_mode_color = if is_root_inline { "#86efac" } else { "#fca5a5" };
+    let root_mode_color = if is_root_inline {
+        "var(--green)"
+    } else {
+        "var(--red-text)"
+    };
 
     rsx! {
         div { class: "page-shell", style: "{page_shell_style}",
@@ -142,12 +146,8 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                                 let s_id = sample.id.to_string();
                                 let is_active = custom_part_hash.read().is_none()
                                     && selected_sample_id.read().as_str() == sample.id;
-                                let btn_bg = if is_active {
-                                    "var(--primary)"
-                                } else {
-                                    "rgb(255 255 255 / 0.05)"
-                                };
-                                let btn_color = if is_active { "#0e1720" } else { "var(--text)" };
+                                let btn_bg = if is_active { "var(--primary)" } else { "var(--overlay-2)" };
+                                let btn_color = if is_active { "var(--primary-content)" } else { "var(--text)" };
                                 let title = if language == crate::language::Language::Japanese {
                                     sample.title_ja
                                 } else {
@@ -169,7 +169,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                         }
                         if !parts.is_empty() {
                             select {
-                                style: "padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: rgb(255 255 255 / 0.05); color: var(--text); font-size: 0.82rem; cursor: pointer;",
+                                style: "padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--overlay-2); color: var(--text); font-size: 0.82rem; cursor: pointer;",
                                 onchange: move |evt: FormEvent| {
                                     let val = evt.value();
                                     if val.is_empty() {
@@ -233,11 +233,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                             {
                                 {
                                     let is_curr = (container_width() - w).abs() < 5.0;
-                                    let bg = if is_curr {
-                                        "rgb(124 192 216 / 0.25)"
-                                    } else {
-                                        "rgb(255 255 255 / 0.04)"
-                                    };
+                                    let bg = if is_curr { "var(--blue-border)" } else { "var(--overlay-2)" };
                                     rsx! {
                                         button {
                                             key: "{w}",
@@ -271,7 +267,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
             if show_debug() {
                 div {
                     class: "mono",
-                    style: "font-size: 0.8rem; background: rgb(0 0 0 / 0.35); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.8rem 1rem; display: grid; gap: 0.35rem;",
+                    style: "font-size: 0.8rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.8rem 1rem; display: grid; gap: 0.35rem;",
                     div { style: "display: flex; gap: 1.5rem; flex-wrap: wrap;",
                         div { "Total Nodes: {layout_result.node_count}" }
                         div { "Max Depth: {layout_result.max_depth}" }
@@ -289,7 +285,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                         }
                     }
                     if let Some(sel_id) = selected_node_id.read().as_ref() {
-                        div { style: "color: var(--primary); margin-top: 0.2rem; border-top: 1px solid rgb(255 255 255 / 0.1); padding-top: 0.2rem;",
+                        div { style: "color: var(--primary); margin-top: 0.2rem; border-top: 1px solid var(--overlay-3); padding-top: 0.2rem;",
                             "Selected Node: {sel_id}"
                         }
                     }
@@ -299,7 +295,7 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
             // プレビュー表示エリア（新レイアウトエンジン）
             div { style: "display: grid; gap: 0.4rem;",
                 div { style: "display: flex; justify-content: space-between; align-items: center;",
-                    div { style: "font-weight: 600; font-size: 0.95rem; color: #86efac; display: flex; align-items: center; gap: 0.4rem;",
+                    div { style: "font-weight: 600; font-size: 0.95rem; color: var(--green); display: flex; align-items: center; gap: 0.4rem;",
                         span { "✨" }
                         "{new_engine_title}"
                     }

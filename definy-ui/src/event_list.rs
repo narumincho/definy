@@ -119,7 +119,7 @@ pub fn EventListView(state: AppState, context: PageContext) -> Element {
                 div { style: "display: flex; justify-content: center; padding: 0.4rem 0 0.8rem;",
                     button {
                         r#type: "button",
-                        style: "display: inline-flex; align-items: center; justify-content: center; padding: 0.45rem 1.2rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-full); color: var(--text); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sm);",
+                        style: "display: inline-flex; align-items: center; justify-content: center; padding: 0.45rem 1.2rem; background: var(--overlay-2); border: 1px solid var(--border); border-radius: var(--radius-full); color: var(--text); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; box-shadow: var(--shadow-sm);",
                         onclick: move |_| {
                             let state_sig = use_context::<Signal<AppState>>();
                             let state_val = state_sig.read().clone();
@@ -211,7 +211,7 @@ fn EventCard(
                         hash: hash.clone(),
                     }
                     // Row 3: イベントハッシュ 詳細リンク
-                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.74rem; padding-top: 0.2rem; border-top: 1px solid rgba(255, 255, 255, 0.04);",
+                    div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; font-size: 0.74rem; padding-top: 0.2rem; border-top: 1px solid var(--overlay-2);",
                         div {
                             class: "mono",
                             style: "color: var(--text-muted); font-size: 0.72rem; max-width: 65%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",

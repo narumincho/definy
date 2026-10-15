@@ -15,22 +15,22 @@ pub fn AboutView(context: PageContext) -> Element {
                 // ヒーローセクション
                 div {
                     class: "event-detail-card",
-                    style: "background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.2rem; position: relative; overflow: hidden;",
+                    style: "background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 2.5rem 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.2rem; position: relative; overflow: hidden;",
 
                     // 背景アクセントグロー
-                    div { style: "position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
-                    div { style: "position: absolute; bottom: -40px; left: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
+                    div { style: "position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, var(--blue-border) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
+                    div { style: "position: absolute; bottom: -40px; left: -40px; width: 180px; height: 180px; background: radial-gradient(circle, var(--green-bg-strong) 0%, transparent 70%); border-radius: 50%; pointer-events: none;" }
 
                     // ロゴ / アイコンバッジ
-                    div { style: "display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 20px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); font-size: 2.2rem;",
+                    div { style: "display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; border-radius: 20px; background: var(--blue-bg-strong); border: 1px solid var(--blue-border); box-shadow: 0 8px 24px var(--shadow-color); font-size: 2.2rem;",
                         "✦"
                     }
 
-                    h1 { style: "font-size: 2.2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, #ffffff 30%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;",
+                    h1 { style: "font-size: 2.2rem; font-weight: 800; margin: 0; background: linear-gradient(135deg, var(--text-primary) 30%, var(--blue-text) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;",
                         "definy"
                     }
 
-                    p { style: "font-size: 1.15rem; font-weight: 600; color: #60a5fa; margin: 0; max-width: 680px; line-height: 1.45;",
+                    p { style: "font-size: 1.15rem; font-weight: 600; color: var(--blue); margin: 0; max-width: 680px; line-height: 1.45;",
                         {
                             lang.label(
                                 "Pure functional language with content-addressed code and structured editing.",
@@ -54,7 +54,7 @@ pub fn AboutView(context: PageContext) -> Element {
                     div { style: "display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-top: 0.5rem;",
                         a {
                             href: context.href_with_lang(Location::ModuleList),
-                            style: "padding: 0.6rem 1.4rem; background: var(--primary); color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: opacity 0.15s ease;",
+                            style: "padding: 0.6rem 1.4rem; background: var(--primary-solid); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: opacity 0.15s ease;",
                             {
                                 lang.label(
                                     "Explore Modules →",
@@ -65,7 +65,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         }
                         a {
                             href: context.href_with_lang(Location::ApiOverview),
-                            style: "padding: 0.6rem 1.4rem; background: rgba(255, 255, 255, 0.08); color: var(--text-primary); text-decoration: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: background 0.15s ease;",
+                            style: "padding: 0.6rem 1.4rem; background: var(--overlay-3); color: var(--text-primary); text-decoration: none; border: 1px solid var(--border); border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; transition: background 0.15s ease;",
                             {
                                 lang.label(
                                     "Connect-RPC & API Specs →",
@@ -96,7 +96,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         // 1. 構造化編集
                         FeatureCard {
                             icon: "🧩",
-                            accent_color: "#3b82f6",
+                            accent_color: "var(--blue)",
                             title: lang.label(
                                 "1. Structured Editing (No Syntax Errors)",
                                 "1. 構文エラーのない構造化編集",
@@ -113,7 +113,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         // 2. コンテンツアドレス
                         FeatureCard {
                             icon: "🔗",
-                            accent_color: "#10b981",
+                            accent_color: "var(--green)",
                             title: lang.label(
                                 "2. Content-Addressed Immutability",
                                 "2. コンテンツアドレスによる完全な依存固定",
@@ -130,7 +130,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         // 3. イベントソーシング & 暗号署名
                         FeatureCard {
                             icon: "🛡️",
-                            accent_color: "#8b5cf6",
+                            accent_color: "var(--purple)",
                             title: lang.label(
                                 "3. Zero-Trust Cryptographic Events",
                                 "3. ゼロトラストな暗号署名とイベントソーシング",
@@ -147,7 +147,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         // 4. WebAssembly & 自己ホスティング
                         FeatureCard {
                             icon: "⚡",
-                            accent_color: "#f59e0b",
+                            accent_color: "var(--yellow)",
                             title: lang.label(
                                 "4. Self-Hosting & Native WebAssembly",
                                 "4. 高速実行と自己ホスティング性",
@@ -181,11 +181,11 @@ pub fn AboutView(context: PageContext) -> Element {
                     div { style: "overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
                         table { style: "width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left;",
                             thead {
-                                tr { style: "background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid var(--border);",
+                                tr { style: "background: var(--bg-inset); border-bottom: 1px solid var(--border);",
                                     th { style: "padding: 0.85rem 1rem; color: var(--text-secondary); font-weight: 600;",
                                         {lang.label("Dimension", "比較項目", "Dimensio")}
                                     }
-                                    th { style: "padding: 0.85rem 1rem; color: #f87171; font-weight: 600;",
+                                    th { style: "padding: 0.85rem 1rem; color: var(--red); font-weight: 600;",
                                         {
                                             lang.label(
                                                 "Traditional Ecosystems",
@@ -194,7 +194,7 @@ pub fn AboutView(context: PageContext) -> Element {
                                             )
                                         }
                                     }
-                                    th { style: "padding: 0.85rem 1rem; color: #34d399; font-weight: 600;",
+                                    th { style: "padding: 0.85rem 1rem; color: var(--green); font-weight: 600;",
                                         "definy"
                                     }
                                 }
@@ -374,7 +374,7 @@ pub fn AboutView(context: PageContext) -> Element {
                         }
                         a {
                             href: context.href_with_lang(Location::ApiArchitecture),
-                            style: "padding: 0.45rem 0.9rem; background: #8b5cf6; color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;",
+                            style: "padding: 0.45rem 0.9rem; background: var(--purple); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem;",
                             span { "🗺️" }
                             span {
                                 {
@@ -403,10 +403,10 @@ pub fn AboutView(context: PageContext) -> Element {
                                         class: "event-detail-card",
                                         style: "text-decoration: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.1rem; display: grid; gap: 0.6rem; transition: transform 0.15s ease, border-color 0.15s ease; color: inherit;",
                                         div { style: "display: flex; justify-content: space-between; align-items: center;",
-                                            span { style: "padding: 0.15rem 0.45rem; background: #0284c7; color: #fff; font-size: 0.68rem; font-weight: 700; border-radius: 4px;",
+                                            span { style: "padding: 0.15rem 0.45rem; background: var(--blue); color: var(--text-primary); font-size: 0.68rem; font-weight: 700; border-radius: 4px;",
                                                 "POST"
                                             }
-                                            span { style: "font-size: 0.74rem; color: #38bdf8; font-family: ui-monospace, monospace;",
+                                            span { style: "font-size: 0.74rem; color: var(--blue); font-family: ui-monospace, monospace;",
                                                 "{schema.request_name}"
                                             }
                                         }
@@ -416,7 +416,7 @@ pub fn AboutView(context: PageContext) -> Element {
                                         p { style: "font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
                                             "{schema.description(lang)}"
                                         }
-                                        div { style: "border-top: 1px solid var(--border); padding-top: 0.5rem; font-size: 0.78rem; font-weight: 600; color: #60a5fa; display: flex; justify-content: space-between; align-items: center;",
+                                        div { style: "border-top: 1px solid var(--border); padding-top: 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--blue); display: flex; justify-content: space-between; align-items: center;",
                                             span { {lang.label("Structure & Tester", "構造とテスター", "Strukturo & Testilo")} }
                                             span { "↗" }
                                         }
@@ -454,7 +454,7 @@ pub fn AboutView(context: PageContext) -> Element {
                     div { style: "display: flex; gap: 0.6rem; flex-wrap: wrap;",
                         a {
                             href: context.href_with_lang(Location::ModuleList),
-                            style: "padding: 0.5rem 1rem; background: var(--primary); color: #fff; text-decoration: none; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;",
+                            style: "padding: 0.5rem 1rem; background: var(--primary-solid); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;",
                             {lang.label("View Modules", "モジュール一覧", "Vidi Modulojn")}
                         }
                         a {
@@ -488,7 +488,7 @@ fn FeatureCard(
                 span { style: "font-size: 1.6rem;", "{icon}" }
                 span {
                     style: format!(
-                        "font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; background: rgba(255, 255, 255, 0.06); color: {};",
+                        "font-size: 0.72rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600; background: var(--overlay-2); color: {};",
                         accent_color,
                     ),
                     "{tag}"
@@ -515,8 +515,8 @@ fn ComparisonRow(
             td { style: "padding: 0.85rem 1rem; font-weight: 600; color: var(--text-primary);",
                 "{dimension}"
             }
-            td { style: "padding: 0.85rem 1rem; color: #fda4af;", "{traditional}" }
-            td { style: "padding: 0.85rem 1rem; color: #6ee7b7; font-weight: 600;",
+            td { style: "padding: 0.85rem 1rem; color: var(--red-text);", "{traditional}" }
+            td { style: "padding: 0.85rem 1rem; color: var(--green); font-weight: 600;",
                 "{definy_val}"
             }
         }
@@ -526,8 +526,10 @@ fn ComparisonRow(
 #[component]
 fn LangFeatureCard(title: &'static str, detail: &'static str) -> Element {
     rsx! {
-        div { style: "padding: 1rem 1.1rem; background: rgba(0, 0, 0, 0.15); border: 1px solid var(--border); border-radius: var(--radius-sm); display: grid; gap: 0.4rem;",
-            div { style: "font-weight: 600; color: #93c5fd; font-size: 0.9rem;", "{title}" }
+        div { style: "padding: 1rem 1.1rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); display: grid; gap: 0.4rem;",
+            div { style: "font-weight: 600; color: var(--blue-text); font-size: 0.9rem;",
+                "{title}"
+            }
             p { style: "font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.5;",
                 "{detail}"
             }

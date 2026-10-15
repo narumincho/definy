@@ -59,7 +59,7 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
                 div { style: "display: flex; gap: 0.5rem; flex-wrap: wrap;",
                     button {
                         r#type: "button",
-                        style: if selected_tab() == DeploymentDiagramTab::HtmlRequest { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid #c084fc; background: rgba(192, 132, 252, 0.15); color: #e9d5ff; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
+                        style: if selected_tab() == DeploymentDiagramTab::HtmlRequest { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--purple); background: var(--purple-bg-strong); color: var(--purple-text); font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
                         onclick: move |_| selected_tab.set(DeploymentDiagramTab::HtmlRequest),
                         {
                             language
@@ -72,7 +72,7 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
                     }
                     button {
                         r#type: "button",
-                        style: if selected_tab() == DeploymentDiagramTab::DeployPipeline { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid #c084fc; background: rgba(192, 132, 252, 0.15); color: #e9d5ff; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
+                        style: if selected_tab() == DeploymentDiagramTab::DeployPipeline { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--purple); background: var(--purple-bg-strong); color: var(--purple-text); font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
                         onclick: move |_| selected_tab.set(DeploymentDiagramTab::DeployPipeline),
                         {
                             language
@@ -85,7 +85,7 @@ pub fn DeploymentsFlowDiagram(language: Language) -> Element {
                     }
                     button {
                         r#type: "button",
-                        style: if selected_tab() == DeploymentDiagramTab::SelfDeploy { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid #34d399; background: rgba(52, 211, 153, 0.15); color: #a7f3d0; font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
+                        style: if selected_tab() == DeploymentDiagramTab::SelfDeploy { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--green); background: var(--green-bg-strong); color: var(--green-text); font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;" } else { "padding: 0.45rem 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 0.84rem; font-weight: 400; cursor: pointer; transition: all 0.15s ease;" },
                         onclick: move |_| selected_tab.set(DeploymentDiagramTab::SelfDeploy),
                         {
                             language

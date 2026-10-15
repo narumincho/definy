@@ -272,14 +272,14 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
                             {
                                 let is_selected = lang.to_code() == current_code;
                                 let url = PageContext::build_url(&location, lang.to_code(), event_type);
-                                let bg = if is_selected { "rgb(255 255 255 / 0.1)" } else { "transparent" };
+                                let bg = if is_selected { "var(--overlay-3)" } else { "transparent" };
                                 let color = if is_selected { "var(--primary)" } else { "var(--text)" };
 
                                 rsx! {
                                     a {
                                         key: "{lang.to_code()}",
                                         href: "{url}",
-                                        style: "display: block; width: 100%; box-sizing: border-box; padding: 0.45rem 0.65rem; text-decoration: none; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; color: {color}; font-weight: 500;",
+                                        style: "display: block; width: 100%; box-sizing: border-box; padding: 0.45rem 0.65rem; text-decoration: none; border-bottom: 1px solid var(--overlay-2); background: {bg}; color: {color}; font-weight: 500;",
                                         "{lang.native_name()}"
                                     }
                                 }
@@ -315,7 +315,7 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
             if let Some((account_id, account_name)) = account_link {
                 a {
                     href: context.href_with_lang(Location::Account(account_id)),
-                    style: "display: block; padding: 0.4rem 0.5rem; border-radius: 0.4rem; background: rgb(255 255 255 / 0.04); color: var(--text); text-decoration: none; font-size: 0.85rem; font-weight: 600;",
+                    style: "display: block; padding: 0.4rem 0.5rem; border-radius: 0.4rem; background: var(--overlay-2); color: var(--text); text-decoration: none; font-size: 0.85rem; font-weight: 600;",
                     "{account_name}"
                 }
             }
@@ -345,7 +345,7 @@ fn HeaderPopover(mut state: AppState, context: PageContext) -> Element {
                 r#type: "button",
                 "popovertarget": "header-popover",
                 "popovertargetaction": "hide",
-                style: "width: 100%; background-color: transparent; color: #fca5a5; border: none; cursor: pointer; padding: 0.4rem 0.5rem; text-align: left; display: flex; justify-content: flex-start;",
+                style: "width: 100%; background-color: transparent; color: var(--red-text); border: none; cursor: pointer; padding: 0.4rem 0.5rem; text-align: left; display: flex; justify-content: flex-start;",
                 onclick: move |_| {
                     crate::navigator_credential::credential_clear();
                     let mut dispatch = use_context::<Signal<AppState>>();

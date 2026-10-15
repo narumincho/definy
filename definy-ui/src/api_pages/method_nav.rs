@@ -26,7 +26,7 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                     span { style: "font-weight: 700; font-size: 1.05rem; color: var(--text-primary);",
                         "Connect-RPC (gRPC) Specification"
                     }
-                    span { style: "font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.3);",
+                    span { style: "font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 9999px; background: var(--blue-bg-strong); color: var(--blue); font-weight: 600; border: 1px solid var(--blue-border);",
                         "Connect 1"
                     }
                 }
@@ -50,7 +50,7 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                 // 1. 概要
                 a {
                     href: context.href_with_lang(Location::ApiOverview),
-                    style: if is_overview_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--primary); color: #fff; white-space: nowrap; flex-shrink: 0;" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
+                    style: if is_overview_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--primary-solid); color: var(--text-primary); white-space: nowrap; flex-shrink: 0;" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: var(--overlay-2); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
                     {lang.label("Overview", "API 概要", "Superrigardo")}
                 }
 
@@ -62,9 +62,9 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                         let target_loc = Location::ApiMethod(*method, None);
                         let href = context.href_with_lang(target_loc);
                         let style_str = if is_active {
-                            "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: #0284c7; color: #fff; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);"
+                            "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--blue); color: var(--text-primary); white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px var(--blue-border);"
                         } else {
-                            "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;"
+                            "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: var(--overlay-2); color: var(--text-primary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;"
                         };
                         rsx! {
                             a { key: "{name}", href: "{href}", style: "{style_str}", "{name}" }
@@ -75,7 +75,7 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                 // 3. アーキテクチャ・シーケンス図
                 a {
                     href: context.href_with_lang(Location::ApiArchitecture),
-                    style: if is_arch_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: #8b5cf6; color: #fff; white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
+                    style: if is_arch_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--purple); color: var(--text-primary); white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px var(--purple-border);" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: var(--overlay-2); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
                     {
                         lang.label(
                             "Sequence Diagrams",

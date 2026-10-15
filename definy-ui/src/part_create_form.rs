@@ -349,9 +349,9 @@ pub fn PartDefinitionFormView(
                         let is_error = result.starts_with("Error")
                             || result.starts_with("エラー");
                         let (bg, border, text_color) = if is_error {
-                            ("var(--error-bg)", "var(--error)", "#fca5a5")
+                            ("var(--error-bg)", "var(--error)", "var(--red-text)")
                         } else {
-                            ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
+                            ("var(--blue-bg-strong)", "var(--primary)", "var(--blue-text)")
                         };
                         rsx! {
                             div {

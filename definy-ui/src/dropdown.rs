@@ -565,9 +565,9 @@ fn DropdownOptionItem(
     let parts: Vec<&str> = opt_label.split('\t').collect();
     let item_id = format!("{panel_id}-opt-{idx}");
     let bg = if is_highlighted {
-        "rgb(124 192 216 / 0.18)"
+        "var(--blue-bg-strong)"
     } else if is_selected {
-        "rgb(255 255 255 / 0.08)"
+        "var(--overlay-3)"
     } else {
         "transparent"
     };
@@ -601,12 +601,12 @@ fn DropdownOptionItem(
 
     rsx! {
         if let Some(heading) = heading_before {
-            div { style: "padding: 0.3rem 0.65rem; font-size: 0.7rem; color: var(--text-secondary); background: rgb(0 0 0 / 0.18); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);",
+            div { style: "padding: 0.3rem 0.65rem; font-size: 0.7rem; color: var(--text-secondary); background: var(--bg-inset); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);",
                 "{heading}"
             }
         }
         div {
-            style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid rgb(255 255 255 / 0.04); background: {bg}; opacity: {opacity}; transition: background 0.08s ease;",
+            style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid var(--overlay-2); background: {bg}; opacity: {opacity}; transition: background 0.08s ease;",
             "data-selected": if is_selected { "true" } else { "false" },
             onmouseenter: move |_| on_highlight.call(idx),
             button {

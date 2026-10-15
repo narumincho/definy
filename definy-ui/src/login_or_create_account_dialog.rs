@@ -18,7 +18,7 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
     let is_signup = tab() == TabState::CreateAccount;
 
     let login_bg = if is_login {
-        "rgb(255 255 255 / 0.05)"
+        "var(--overlay-2)"
     } else {
         "transparent"
     };
@@ -28,13 +28,13 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
         "var(--text-secondary)"
     };
     let login_shadow = if is_login {
-        "0 2px 5px rgb(0 0 0 / 0.2)"
+        "0 2px 5px var(--bg-inset)"
     } else {
         "none"
     };
 
     let signup_bg = if is_signup {
-        "rgb(255 255 255 / 0.05)"
+        "var(--overlay-2)"
     } else {
         "transparent"
     };
@@ -44,7 +44,7 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
         "var(--text-secondary)"
     };
     let signup_shadow = if is_signup {
-        "0 2px 5px rgb(0 0 0 / 0.2)"
+        "0 2px 5px var(--bg-inset)"
     } else {
         "none"
     };
@@ -73,7 +73,7 @@ pub fn LoginOrCreateAccountDialog(context: PageContext) -> Element {
             }
             div {
                 class: "auth-tabs",
-                style: "display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: rgb(0 0 0 / 0.2); padding: 0.3rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;",
+                style: "display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; background: var(--bg-inset); padding: 0.3rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;",
                 button {
                     r#type: "button",
                     style: "background: {login_bg}; color: {login_color}; border: none; box-shadow: {login_shadow}; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); cursor: pointer;",
@@ -188,11 +188,11 @@ fn LoginView(context: PageContext) -> Element {
                 }
             }
             if let Some(msg) = error_msg() {
-                div { style: "color: #fca5a5; font-size: 0.82rem;", "{msg}" }
+                div { style: "color: var(--red-text); font-size: 0.82rem;", "{msg}" }
             }
             button {
                 r#type: "submit",
-                style: "width: 100%; padding: 0.5rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
+                style: "width: 100%; padding: 0.5rem; background: var(--primary-solid); color: var(--primary-content); border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                 "{context.language.label(\"Log In\", \"ログイン\", \"Ensaluti\")}"
             }
         }
@@ -387,7 +387,7 @@ fn CreateAccountView(context: PageContext) -> Element {
                     }
                     button {
                         r#type: "button",
-                        style: "padding: 0.4rem 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
+                        style: "padding: 0.4rem 0.75rem; background: var(--overlay-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
                         onclick: {
                             #[cfg(target_arch = "wasm32")]
                             let key_to_copy = key_val.clone();
@@ -411,7 +411,7 @@ fn CreateAccountView(context: PageContext) -> Element {
                     button {
                         r#type: "button",
                         disabled: requesting(),
-                        style: "padding: 0.4rem 0.75rem; background: rgb(255 255 255 / 0.05); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
+                        style: "padding: 0.4rem 0.75rem; background: var(--overlay-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); cursor: pointer;",
                         onclick: move |_| {
                             generated_key.set(generate_key());
                         },
@@ -433,7 +433,7 @@ fn CreateAccountView(context: PageContext) -> Element {
                 button {
                     r#type: "submit",
                     disabled: requesting(),
-                    style: "padding: 0.45rem 1.2rem; background: var(--primary); color: #0e1720; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
+                    style: "padding: 0.45rem 1.2rem; background: var(--primary-solid); color: var(--primary-content); border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;",
                     if requesting() {
                         "{context.language.label(\"Signing Up...\", \"アカウント作成中...\", \"Registriĝante...\")}"
                     } else {

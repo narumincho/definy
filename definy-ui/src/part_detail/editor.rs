@@ -355,7 +355,7 @@ pub(crate) fn PartEditorCard(
                                         target: "_blank",
                                         rel: "noopener noreferrer",
                                         class: "btn-primary",
-                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);",
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px var(--blue-border);",
                                         span {
                                             {
                                                 context
@@ -379,7 +379,7 @@ pub(crate) fn PartEditorCard(
                                         r#type: "button",
                                         class: "btn-primary",
                                         disabled: is_deploying(),
-                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px rgba(249, 115, 22, 0.25); background: #f97316; border-color: #ea580c;",
+                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px var(--orange-border); background: var(--orange); border-color: var(--orange);",
                                         onclick: on_deploy.clone(),
                                         span {
                                             if is_deploying() {
@@ -396,7 +396,7 @@ pub(crate) fn PartEditorCard(
                             r#type: "button",
                             class: "btn-secondary",
                             "aria-pressed": if show_wasm_inspector() { "true" } else { "false" },
-                            style: if show_wasm_inspector() { "background: rgba(56, 189, 248, 0.16); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);" } else { "" },
+                            style: if show_wasm_inspector() { "background: var(--blue-bg-strong); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px var(--blue-border);" } else { "" },
                             onclick: move |_| show_wasm_inspector.toggle(),
                             crate::icon::SearchIcon {}
                             span {
@@ -508,14 +508,14 @@ pub(crate) fn PartEditorCard(
                     }
                 }
                 if !is_logged_in {
-                    div { style: "font-size: 0.78rem; color: var(--text-secondary); background: rgb(255 255 255 / 0.03); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
+                    div { style: "font-size: 0.78rem; color: var(--text-secondary); background: var(--overlay-1); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
                         "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por konservi ŝanĝojn.\")}"
                     }
                 }
                 if let Some(result) = submit_result() {
                     div {
                         class: "mono",
-                        style: "font-size: 0.82rem; word-break: break-word; background: rgb(124 192 216 / 0.1); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
+                        style: "font-size: 0.82rem; word-break: break-word; background: var(--blue-bg); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
                         "{result}"
                     }
                 }
@@ -598,15 +598,15 @@ pub(crate) fn PartEditorCard(
                             let is_error = eval.starts_with("Error")
                                 || eval.starts_with("エラー");
                             let (bg, border, text_color) = if is_error {
-                                ("var(--error-bg)", "var(--error)", "#fca5a5")
+                                ("var(--error-bg)", "var(--error)", "var(--red-text)")
                             } else {
-                                ("rgba(56, 189, 248, 0.12)", "var(--primary)", "#e0f2fe")
+                                ("var(--blue-bg-strong)", "var(--primary)", "var(--blue-text)")
                             };
                             rsx! {
                                 div {
                                     class: "mono eval-result",
                                     "data-eval-result": "true",
-                                    style: "font-size: 0.86rem; word-break: break-word; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);",
+                                    style: "font-size: 0.86rem; word-break: break-word; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); box-shadow: 0 0 12px var(--blue-bg-strong);",
                                     "{eval}"
                                 }
                             }
@@ -636,7 +636,7 @@ pub(crate) fn PartEditorCard(
                                     err,
                                 );
                                 rsx! {
-                                    div { style: "padding: 0.8rem; background: rgb(239 68 68 / 0.1); border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fca5a5; font-size: 0.85rem;",
+                                    div { style: "padding: 0.8rem; background: var(--red-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--red-text); font-size: 0.85rem;",
                                         "{err_msg}"
                                     }
                                 }

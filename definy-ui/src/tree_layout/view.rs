@@ -196,7 +196,7 @@ fn render_node_badge(
     rsx! {
         div { style: "{badge_style}", title: "{tooltip}",
             if has_error {
-                span { style: "color: #ef4444; font-weight: bold; margin-right: 0.25rem;",
+                span { style: "color: var(--red); font-weight: bold; margin-right: 0.25rem;",
                     "⚠"
                 }
             }
@@ -358,7 +358,7 @@ fn render_multiline_capsule_node(
             }
             // 各引数（独立した行としてインデント展開、展開時のみ表示）
             if !is_collapsed {
-                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid rgb(124 192 216 / 0.3); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
+                div { style: "display: flex; flex-direction: column; gap: 0.3rem; padding-left: 0.8rem; border-left: 2px solid var(--blue-border); margin-left: 0.4rem; width: 100%; box-sizing: border-box;",
                     for child in &node.children {
                         div { style: "width: fit-content; max-width: 100%;",
                             {render_node(child, ctx)}
@@ -425,9 +425,9 @@ fn render_table_node(
     let col_widths = &node.columns_width;
     let table_anchor_style = ctx.anchor_style(&node.id);
     let border_color = if has_error && is_selected {
-        "#ef4444"
+        "var(--red)"
     } else if has_error {
-        "rgb(239 68 68 / 0.8)"
+        "var(--red-border)"
     } else if is_selected {
         "var(--primary)"
     } else if is_hovered {
@@ -443,7 +443,7 @@ fn render_table_node(
     rsx! {
         div {
             class: "tree-node-table-wrapper",
-            style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-lg); background: rgb(0 0 0 / 0.25); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);{table_anchor_style}",
+            style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-lg); background: var(--bg-inset); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);{table_anchor_style}",
             title: "{tooltip}",
             onclick: move |evt: MouseEvent| {
                 evt.stop_propagation();
@@ -459,7 +459,7 @@ fn render_table_node(
             // 横スクロール時はみ出しても背景・罫線が途切れないよう min-width: max-content を設定
             div { style: "display: flex; flex-direction: column; min-width: max-content; width: 100%;",
                 // Table Header Row
-                div { style: "display: flex; background: rgb(255 255 255 / 0.06); border-bottom: 1px solid var(--border); padding: 0.4rem 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);",
+                div { style: "display: flex; background: var(--overlay-2); border-bottom: 1px solid var(--border); padding: 0.4rem 0.6rem; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);",
                     div { style: "width: 2.2rem; min-width: 2.2rem; color: var(--text-secondary); text-align: center; opacity: 0.7;",
                         if has_error {
                             "⚠"
@@ -479,7 +479,7 @@ fn render_table_node(
                 for (row_idx, row) in node.children.iter().enumerate() {
                     div {
                         key: "row-{row_idx}",
-                        style: "display: flex; align-items: center; border-bottom: 1px solid rgb(255 255 255 / 0.04); padding: 0.35rem 0.6rem; font-size: 0.85rem; transition: background 0.1s ease;",
+                        style: "display: flex; align-items: center; border-bottom: 1px solid var(--overlay-2); padding: 0.35rem 0.6rem; font-size: 0.85rem; transition: background 0.1s ease;",
                         div { style: "width: 2.2rem; min-width: 2.2rem; color: var(--text-secondary); text-align: center; font-size: 0.75rem; opacity: 0.6;",
                             "{row_idx + 1}"
                         }
@@ -504,66 +504,70 @@ pub fn node_badge_style(
     has_error: bool,
 ) -> String {
     let (bg, text_color, border) = if has_error {
-        ("rgb(239 68 68 / 0.22)", "#fca5a5", "1.5px solid #ef4444")
+        (
+            "var(--red-border)",
+            "var(--red-text)",
+            "1.5px solid var(--red)",
+        )
     } else {
         match kind {
             NodeKind::LiteralNumber => (
-                "rgb(180 215 255 / 0.14)",
-                "#93c5fd",
-                "1px solid rgb(147 197 253 / 0.3)",
+                "var(--blue-bg-strong)",
+                "var(--blue-text)",
+                "1px solid var(--blue-border)",
             ),
             NodeKind::LiteralString => (
-                "rgb(134 239 172 / 0.14)",
-                "#86efac",
-                "1px solid rgb(134 239 172 / 0.3)",
+                "var(--green-bg-strong)",
+                "var(--green)",
+                "1px solid var(--green-border)",
             ),
             NodeKind::LiteralBoolean => (
-                "rgb(244 114 182 / 0.14)",
-                "#f472b6",
-                "1px solid rgb(244 114 182 / 0.3)",
+                "var(--pink-bg-strong)",
+                "var(--pink)",
+                "1px solid var(--pink-border)",
             ),
             NodeKind::Identifier => (
-                "rgb(255 255 255 / 0.08)",
-                "#e2e8f0",
-                "1px solid rgb(255 255 255 / 0.2)",
+                "var(--overlay-3)",
+                "var(--text)",
+                "1px solid var(--overlay-3)",
             ),
             NodeKind::Keyword => (
-                "rgb(192 132 252 / 0.16)",
-                "#c084fc",
-                "1px solid rgb(192 132 252 / 0.38)",
+                "var(--purple-bg-strong)",
+                "var(--purple)",
+                "1px solid var(--purple-border)",
             ),
             NodeKind::Operator => (
-                "rgb(251 191 36 / 0.16)",
-                "#fbbf24",
-                "1px solid rgb(251 191 36 / 0.38)",
+                "var(--yellow-bg-strong)",
+                "var(--yellow)",
+                "1px solid var(--yellow-border)",
             ),
-            NodeKind::Delimiter => ("transparent", "#94a3b8", "none"),
+            NodeKind::Delimiter => ("transparent", "var(--text-secondary)", "none"),
             NodeKind::Group => (
-                "rgb(124 192 216 / 0.1)",
-                "#7cc0d8",
-                "1px solid rgb(124 192 216 / 0.3)",
+                "var(--blue-bg)",
+                "var(--blue)",
+                "1px solid var(--blue-border)",
             ),
             NodeKind::Block => (
-                "rgb(148 163 184 / 0.14)",
-                "#cbd5e1",
-                "1px solid rgb(148 163 184 / 0.32)",
+                "var(--text-secondary)",
+                "var(--text)",
+                "1px solid var(--text-secondary)",
             ),
             NodeKind::Table => (
-                "rgb(167 139 250 / 0.14)",
-                "#c4b5fd",
-                "1px solid rgb(167 139 250 / 0.32)",
+                "var(--purple-bg-strong)",
+                "var(--purple-text)",
+                "1px solid var(--purple-border)",
             ),
         }
     };
 
     let focus_style = if has_error && is_selected {
-        "box-shadow: 0 0 0 2px #ef4444, 0 2px 8px rgb(239 68 68 / 0.4); border-color: #ef4444;"
+        "box-shadow: 0 0 0 2px var(--red), 0 2px 8px var(--red-border); border-color: var(--red);"
     } else if has_error {
-        "box-shadow: 0 0 0 1px #ef4444;"
+        "box-shadow: 0 0 0 1px var(--red);"
     } else if is_selected {
-        "box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgb(124 192 216 / 0.3); border-color: var(--accent);"
+        "box-shadow: 0 0 0 2px var(--accent), 0 2px 8px var(--blue-border); border-color: var(--accent);"
     } else if is_hovered {
-        "box-shadow: 0 0 0 1.5px rgb(255 255 255 / 0.4); border-color: #fff;"
+        "box-shadow: 0 0 0 1.5px var(--overlay-3); border-color: var(--text-primary);"
     } else {
         ""
     };
@@ -581,21 +585,15 @@ fn capsule_container_style(
     has_error: bool,
 ) -> String {
     let (bg, border) = if has_error && is_selected {
-        ("rgb(239 68 68 / 0.16)", "2px solid #ef4444")
+        ("var(--red-bg-strong)", "2px solid var(--red)")
     } else if has_error {
-        ("rgb(239 68 68 / 0.08)", "1.5px solid #ef4444")
+        ("var(--red-bg)", "1.5px solid var(--red)")
     } else if is_selected {
-        ("rgb(124 192 216 / 0.1)", "1.5px solid var(--accent)")
+        ("var(--blue-bg)", "1.5px solid var(--accent)")
     } else if is_hovered {
-        (
-            "rgb(124 192 216 / 0.05)",
-            "1.5px solid rgb(124 192 216 / 0.6)",
-        )
+        ("var(--blue-bg)", "1.5px solid var(--blue-border)")
     } else {
-        (
-            "rgb(255 255 255 / 0.02)",
-            "1px solid rgb(160 176 192 / 0.22)",
-        )
+        ("var(--overlay-1)", "1px solid var(--text-secondary)")
     };
 
     if is_multiline {

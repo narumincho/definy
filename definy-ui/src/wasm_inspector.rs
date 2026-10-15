@@ -278,7 +278,7 @@ pub fn WasmInspectorCard(
         Ok(ins) => ins,
         Err(err) => {
             return rsx! {
-                div { style: "padding: 0.8rem; background: rgb(239 68 68 / 0.1); border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fca5a5; font-size: 0.85rem;",
+                div { style: "padding: 0.8rem; background: var(--red-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--red-text); font-size: 0.85rem;",
                     "Failed to parse WebAssembly binary: {err}"
                 }
             };
@@ -322,16 +322,16 @@ pub fn WasmInspectorCard(
             }
 
             // View toggle (Sections / Hex Dump)
-            div { style: "display: inline-flex; background: rgba(0, 0, 0, 0.35); padding: 0.2rem; border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content;",
+            div { style: "display: inline-flex; background: var(--bg-inset); padding: 0.2rem; border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content;",
                 button {
                     r#type: "button",
-                    style: if view_mode() == 0 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: #041421; border-radius: var(--radius-xs); box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
+                    style: if view_mode() == 0 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: var(--primary-content); border-radius: var(--radius-xs); box-shadow: 0 2px 8px var(--blue-border);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
                     onclick: move |_| view_mode.set(0),
                     "{language.label(\"Sections\", \"セクション一覧\", \"Sekcioj\")}"
                 }
                 button {
                     r#type: "button",
-                    style: if view_mode() == 1 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: #041421; border-radius: var(--radius-xs); box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
+                    style: if view_mode() == 1 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: var(--primary-content); border-radius: var(--radius-xs); box-shadow: 0 2px 8px var(--blue-border);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
                     onclick: move |_| view_mode.set(1),
                     "{language.label(\"Hex Dump\", \"16進ダンプ\", \"Deksesuma rubejo\")}"
                 }
@@ -343,7 +343,7 @@ pub fn WasmInspectorCard(
                     for sec in &inspection.sections {
                         div {
                             key: "{sec.offset}",
-                            style: "display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0.8rem; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; transition: all 0.15s ease;",
+                            style: "display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0.8rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); flex-wrap: wrap; transition: all 0.15s ease;",
                             div { style: "display: flex; align-items: center; gap: 0.65rem;",
                                 span {
                                     class: "{section_badge_class(sec.id)}",
@@ -366,7 +366,7 @@ pub fn WasmInspectorCard(
                 // Hex dump view
                 pre {
                     class: "mono",
-                    style: "margin: 0; padding: 0.75rem 1rem; background: rgba(4, 8, 15, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); font-size: 0.76rem; color: #7dd3fc; overflow-x: auto; line-height: 1.55; box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);",
+                    style: "margin: 0; padding: 0.75rem 1rem; background: var(--bg-inset); border: 1px solid var(--overlay-3); border-radius: var(--radius-md); font-size: 0.76rem; color: var(--blue); overflow-x: auto; line-height: 1.55; box-shadow: inset 0 2px 6px var(--shadow-color);",
                     "{inspection.hex_dump}"
                 }
             }

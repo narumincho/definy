@@ -280,7 +280,7 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             (
                 msg,
                 rsx! {
-                    span { style: "background: rgb(239 68 68 / 0.2); border: 1px solid rgb(239 68 68 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #fca5a5;",
+                    span { style: "background: var(--red-bg-strong); border: 1px solid var(--red-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--red-text);",
                         "{badge_text}"
                     }
                 },
@@ -304,10 +304,10 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             (
                 msg,
                 rsx! {
-                    span { style: "background: rgb(34 197 94 / 0.15); border: 1px solid rgb(34 197 94 / 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #86efac; margin-right: 0.3rem;",
+                    span { style: "background: var(--green-bg-strong); border: 1px solid var(--green-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--green); margin-right: 0.3rem;",
                         "{api_ok_text}"
                     }
-                    span { style: "background: rgb(59 130 246 / 0.2); border: 1px solid rgb(59 130 246 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #93c5fd;",
+                    span { style: "background: var(--blue-bg-strong); border: 1px solid var(--blue-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--blue-text);",
                         "{db_init_text}"
                     }
                 },
@@ -331,10 +331,10 @@ fn ConnectionWarningBanner(context: PageContext, status: app_state::ConnectionSt
             (
                 msg,
                 rsx! {
-                    span { style: "background: rgb(34 197 94 / 0.15); border: 1px solid rgb(34 197 94 / 0.4); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #86efac; margin-right: 0.3rem;",
+                    span { style: "background: var(--green-bg-strong); border: 1px solid var(--green-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--green); margin-right: 0.3rem;",
                         "{api_ok_text}"
                     }
-                    span { style: "background: rgb(245 158 11 / 0.2); border: 1px solid rgb(245 158 11 / 0.5); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: #fde047;",
+                    span { style: "background: var(--yellow-bg-strong); border: 1px solid var(--yellow-border); padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.72rem; color: var(--yellow);",
                         "{db_bad_text}"
                     }
                 },
