@@ -206,9 +206,11 @@ async fn browser_unauthenticated_can_edit_and_evaluate_part_detail() -> Result<(
         .await?;
     webdriver.wait_for_client_ready().await?;
 
-    // パーツ一覧からパーツ詳細リンクをクリック
+    // パーツ一覧 (ページ本体) からパーツ詳細リンクをクリック.
+    // サイドバーのエクスプローラーにもパーツへのリンクがあり, 先頭は core の組み込みパーツ
+    // (値として評価できない) になるので, エディタ領域の中だけから探す
     let first_part_script = r#"
-        const links = Array.from(document.querySelectorAll('a[href*="/parts/"]'));
+        const links = Array.from(document.querySelectorAll('.workbench-editor-scroll a[href*="/parts/"]'));
         if (links.length > 0) {
             links[0].click();
             return true;
