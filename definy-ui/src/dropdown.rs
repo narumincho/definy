@@ -415,19 +415,8 @@ pub fn SearchableDropdownPanel(
         .cloned()
         .collect();
 
-    let effective_highlighted_index = if filtered_options.is_empty() {
-        None
-    } else {
-        match *highlighted_index.read() {
-            Some(idx) if idx < filtered_options.len() => Some(idx),
-            _ => {
-                let cur_idx = filtered_options
-                    .iter()
-                    .position(|(val, _)| val == &current_value);
-                Some(cur_idx.unwrap_or(0))
-            }
-        }
-    };
+    let highlight = resolve_highlight(*highlighted_index.read(), &filtered_options, &current_value);
+    let effective_highlighted_index = highlight.index();
 
     // 区切りの見出しは最初の secondary の選択肢の直前に出す (先頭なら区切る必要がないので出さない)
     let secondary_heading_index = filtered_options
@@ -492,16 +481,28 @@ pub fn SearchableDropdownPanel(
                             }
                             Key::Enter => {
                                 evt.prevent_default();
-                                let selected_opt = effective_highlighted_index
-                                    .and_then(|idx| filtered_options.get(idx));
-                                if let Some((opt_val, _)) = selected_opt {
-                                    // 決定した Enter を呼び出し側のキー操作として二重に処理させない
-                                    evt.stop_propagation();
-                                    let val = opt_val.clone();
-                                    search_query.set(String::new());
-                                    highlighted_index.set(None);
-                                    on_change.call(val);
-                                    dom_hide_popover(&panel_id);
+                                // 決定した Enter を呼び出し側のキー操作として二重に処理させない
+                                evt.stop_propagation();
+                                search_query.set(String::new());
+                                highlighted_index.set(None);
+                                dom_hide_popover(&panel_id);
+                                // 矢印キーや検索で選んだ選択肢だけを適用する.
+                                // 開いた直後の Enter (現在値が仮にハイライトされているだけ) で式を置き換えない
+                                match highlight {
+                                    Highlight::Chosen(idx) => {
+                                        if let Some((opt_val, _)) = filtered_options.get(idx)
+                                            && opt_val != &current_value
+                                        {
+                                            on_change.call(opt_val.clone());
+                                        } else if let Some(on_escape) = on_escape {
+                                            on_escape.call(());
+                                        }
+                                    }
+                                    Highlight::Implicit(_) | Highlight::None => {
+                                        if let Some(on_escape) = on_escape {
+                                            on_escape.call(());
+                                        }
+                                    }
                                 }
                             }
                             Key::Escape => {
@@ -542,17 +543,56 @@ pub fn SearchableDropdownPanel(
                         on_highlight: move |i| highlighted_index.set(Some(i)),
                         on_select: {
                             let panel_id = panel_id.clone();
-                            move |val| {
+                            let current_value = current_value.clone();
+                            move |val: String| {
                                 search_query.set(String::new());
                                 highlighted_index.set(None);
-                                on_change.call(val);
                                 dom_hide_popover(&panel_id);
+                                // 現在と同じ選択肢を選び直しても式を作り直さない (中身が初期値に戻ってしまうため)
+                                if val != current_value {
+                                    on_change.call(val);
+                                } else if let Some(on_escape) = on_escape {
+                                    on_escape.call(());
+                                }
                             }
                         },
                     }
                 }
             }
         }
+    }
+}
+
+/// 検索付きドロップダウンのハイライト状態
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Highlight {
+    /// 矢印キーや検索語の入力でユーザーが選んだ選択肢. Enter で適用する
+    Chosen(usize),
+    /// 開いた直後に現在値を示しているだけ. Enter では適用しない
+    Implicit(usize),
+    None,
+}
+
+impl Highlight {
+    fn index(self) -> Option<usize> {
+        match self {
+            Highlight::Chosen(idx) | Highlight::Implicit(idx) => Some(idx),
+            Highlight::None => None,
+        }
+    }
+}
+
+fn resolve_highlight(
+    highlighted_index: Option<usize>,
+    filtered_options: &[(String, String)],
+    current_value: &str,
+) -> Highlight {
+    match highlighted_index {
+        Some(idx) if idx < filtered_options.len() => Highlight::Chosen(idx),
+        _ => filtered_options
+            .iter()
+            .position(|(val, _)| val == current_value)
+            .map_or(Highlight::None, Highlight::Implicit),
     }
 }
 
@@ -705,5 +745,47 @@ fn resolve_part_detail_url(opt_val: &str, parts: &[&str]) -> Option<String> {
         Some(format!("/parts/{}{}", hash, query))
     } else {
         Some(format!("/parts/{}", hash))
+    }
+}
+
+#[cfg(test)]
+mod highlight_tests {
+    use super::*;
+
+    fn options() -> Vec<(String, String)> {
+        ["expr:let", "expr:number", "expr:string"]
+            .iter()
+            .map(|v| (v.to_string(), v.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn opening_menu_only_implies_current_value() {
+        assert_eq!(
+            resolve_highlight(None, &options(), "expr:number"),
+            Highlight::Implicit(1)
+        );
+    }
+
+    #[test]
+    fn nothing_is_highlighted_when_current_value_is_not_listed() {
+        // 以前は先頭 (index 0) をハイライトし, Enter でそれを適用して式を置き換えていた
+        assert_eq!(
+            resolve_highlight(None, &options(), "expr:other"),
+            Highlight::None
+        );
+    }
+
+    #[test]
+    fn arrow_keys_or_search_choose_an_option() {
+        assert_eq!(
+            resolve_highlight(Some(2), &options(), "expr:number"),
+            Highlight::Chosen(2)
+        );
+        // 絞り込みで範囲外になったら選び直しとみなさない
+        assert_eq!(
+            resolve_highlight(Some(5), &options(), "expr:number"),
+            Highlight::Implicit(1)
+        );
     }
 }

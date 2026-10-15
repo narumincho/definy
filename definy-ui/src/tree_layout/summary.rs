@@ -68,9 +68,7 @@ pub fn ExpressionTreeSummary(
                 ) },
 
                 // ルートノードのバッジ（外枠の骨格）
-                div { style: "{node_badge_style(&root_layout_node.kind, false, false, false)}",
-                    "{root_layout_node.label}"
-                }
+                div { style: "{node_badge_style(&root_layout_node.kind)}", "{root_layout_node.label}" }
 
                 // 直下の子要素たちのプレビューチップ（外側ノード）
                 if !is_leaf {
@@ -131,7 +129,7 @@ fn render_child_summary_chip(child: &LayoutNode) -> Element {
     let child_is_leaf = child.children.is_empty();
 
     if child_is_leaf {
-        let badge = node_badge_style(child_kind, false, false, false);
+        let badge = node_badge_style(child_kind);
         rsx! {
             div {
                 key: "{child.id}",

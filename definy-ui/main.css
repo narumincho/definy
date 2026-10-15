@@ -1336,6 +1336,81 @@ a.status-error {
   border-color: var(--border-focus) !important;
 }
 
+/*
+ * 式のツリーのノードの状態 (definy-ui/src/tree_layout/view.rs の data-state).
+ * 選択は主色の枠と淡い光, ホバーは中立色の枠だけにして, ガイド線などの装飾と見分けられるようにする
+ */
+.tree-capsule {
+  background: var(--overlay-1);
+  border: 1.5px solid var(--border-strong);
+}
+
+.tree-capsule[data-state='hovered'] {
+  background: var(--overlay-2);
+  border-color: var(--text-muted);
+}
+
+.tree-capsule[data-state='selected'] {
+  background: var(--bg-selection);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--bg-selection);
+}
+
+.tree-capsule[data-state='error'] {
+  background: var(--red-bg);
+  border-color: var(--red);
+}
+
+.tree-capsule[data-state='error-selected'] {
+  background: var(--red-bg-strong);
+  border-color: var(--red);
+  box-shadow: 0 0 0 4px var(--red-bg-strong);
+}
+
+/* バッジは種類ごとの色をインラインで持つので, 状態の指定は !important で上書きする */
+.tree-badge[data-state='hovered'] {
+  border-color: var(--text-secondary) !important;
+}
+
+.tree-badge[data-state='selected'] {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px var(--bg-selection);
+}
+
+.tree-badge[data-state='error'],
+.tree-badge[data-state='error-selected'] {
+  background: var(--red-border) !important;
+  color: var(--red-text) !important;
+  border: 1.5px solid var(--red) !important;
+}
+
+.tree-badge[data-state='error-selected'] {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}
+
+.tree-table {
+  border: 1.5px solid var(--border);
+}
+
+.tree-table[data-state='hovered'] {
+  border-color: var(--border-strong);
+}
+
+.tree-table[data-state='selected'] {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--bg-selection);
+}
+
+.tree-table[data-state='error'] {
+  border-color: var(--red-border);
+}
+
+.tree-table[data-state='error-selected'] {
+  border-color: var(--red);
+}
+
 /* スクロールバーを IDE らしく細く目立たなくする */
 * {
   scrollbar-color: #3d414a transparent;

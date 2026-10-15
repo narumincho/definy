@@ -36,3 +36,10 @@
   `--{色}` (本体), `--{色}-text` (明るい文字), `--{色}-bg`, `--{色}-bg-strong`, `--{色}-border` の 5 段がある
 - 塗りつぶしのボタンは `--primary-solid` + `--primary-content` を使う (`--primary` は文字・アイコン向けの明るい青)
 - SVG の表示属性 (`fill: "var(--blue)"`) でも `var()` は解決される
+
+### 状態に応じた見た目はクラスや data 属性で切り替える
+
+選択・ホバー・エラーなどの状態によって `style` 属性の文字列を組み替えると,
+再描画のときに前の状態のプロパティ (box-shadow など) が残ったり, `var()` を含む一括指定 (border, background) が
+反映されなかったりすることがある. 状態は `data-state` 属性やクラスで表し, 見た目は `main.css` 側で付ける.
+例: 式のツリーのノード (`.tree-capsule` / `.tree-badge` / `.tree-table` の `[data-state]`)
