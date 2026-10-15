@@ -101,7 +101,7 @@ Linux, Mac の場合
 
 ```sh
 DATABASE_URL=wss://definy-xxx.aws-aps1.surreal.cloud \
-DATABASE_USER=flyio \
+DATABASE_USER=definy \
 DATABASE_PASS=password \
 cargo run -p definy-server
 ```
@@ -111,7 +111,7 @@ PowerShell の場合
 ```ps1
 & {
     $env:DATABASE_URL = "wss://definy-xxx.aws-aps1.surreal.cloud";
-    $env:DATABASE_USER = "flyio";
+    $env:DATABASE_USER = "definy";
     $env:DATABASE_PASS = "password";
     cargo run -p definy-server
 }
