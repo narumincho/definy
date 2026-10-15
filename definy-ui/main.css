@@ -1809,6 +1809,166 @@ a.status-error {
   border-color: var(--red);
 }
 
+/*
+ * パーツ定義の木構造 (part_detail/definition_tree.rs).
+ * 式のツリーと同じく, 選択中の行を主色の枠で示す
+ */
+.part-definition-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
+.part-definition-tree:focus-visible .def-row[data-state='selected'],
+.part-definition-tree:focus .def-row[data-state='selected'] {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--bg-selection);
+}
+
+.def-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.25rem 0.45rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+
+.def-row:hover {
+  background: var(--overlay-1);
+}
+
+.def-row[data-state='selected'] {
+  background: var(--bg-selection);
+  border-color: var(--bg-selection-strong);
+}
+
+.def-head {
+  align-items: center;
+}
+
+.def-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-left: 0.85rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--border-strong);
+}
+
+.def-keyword,
+.def-label {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.def-keyword {
+  padding: 0.12rem 0.42rem;
+  border-radius: var(--radius-full);
+  background: var(--purple-bg-strong);
+  border: 1px solid var(--purple-border);
+  color: var(--purple);
+}
+
+.def-label {
+  width: 3.6rem;
+  padding-top: 0.32rem;
+  color: var(--text-muted);
+}
+
+.def-value {
+  flex: 1;
+  min-width: 0;
+}
+
+.def-row-tree .def-value .expression-tree-container {
+  padding: 0.35rem 0.5rem !important;
+}
+
+/* 枠のない入力欄. フォーカス時だけ枠を出す */
+.def-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.18rem 0.4rem;
+  color: var(--text);
+}
+
+.def-input:hover {
+  border-color: var(--border);
+}
+
+.def-input:focus {
+  background: var(--bg-input);
+  border-color: var(--border-focus);
+}
+
+.def-name-input {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.def-description-input {
+  min-height: 0;
+  resize: vertical;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  field-sizing: content;
+}
+
+.def-module {
+  max-width: 18rem;
+}
+
+.def-row-action {
+  width: 22px;
+  height: 22px;
+  padding: 0 !important;
+  margin-top: 0.15rem;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  flex-shrink: 0;
+}
+
+.def-row-action:hover {
+  background: var(--overlay-3) !important;
+  color: var(--text-primary) !important;
+}
+
+.def-save-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.def-commit-input {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .def-label {
+    width: 2.8rem;
+  }
+
+  .def-children {
+    margin-left: 0.3rem;
+    padding-left: 0.4rem;
+  }
+}
+
 /* スクロールバーを IDE らしく細く目立たなくする */
 * {
   scrollbar-color: #3d414a transparent;

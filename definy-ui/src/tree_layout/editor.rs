@@ -39,6 +39,13 @@ pub fn ExpressionTreeEditor(
     #[props(default = None)] expected_type: Option<ExpressionType>,
     #[props(default = 720.0)] max_width: f32,
     #[props(default = None)] on_change: Option<EventHandler<Expression>>,
+    /// ツリーの枠の要素 ID. 外側 (パーツ定義のツリーなど) からフォーカスを移すときに使う
+    #[props(default = None)]
+    container_id: Option<String>,
+    /// キー操作でツリーの外へ出ようとしたとき (ルートで Q, 端で上下移動, 未選択で Escape) に呼ばれる.
+    /// 指定しなければ何もしない
+    #[props(default = None)]
+    on_exit: Option<EventHandler<NavKey>>,
 ) -> Element {
     let language = context.language;
     let mut selected_node_id = use_signal(|| None::<String>);
@@ -51,7 +58,7 @@ pub fn ExpressionTreeEditor(
     let anchor_id = use_hook(|| NEXT_TREE_EDITOR_ANCHOR_ID.fetch_add(1, Ordering::Relaxed));
     let menu_panel_id = format!("tree-editor-menu-{anchor_id}");
     let menu_search_input_name = format!("tree-editor-menu-search-{anchor_id}");
-    let container_id = format!("tree-editor-{anchor_id}");
+    let container_id = container_id.unwrap_or_else(|| format!("tree-editor-{anchor_id}"));
     let mut menu_search_query = use_signal(String::new);
     let mut menu_highlighted_index = use_signal(|| None::<usize>);
 
@@ -90,6 +97,7 @@ pub fn ExpressionTreeEditor(
     // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
     let mut node_index = Vec::new();
     collect_node_index(&layout_result.root, &mut node_index);
+    let root_node = node_index.first().cloned();
 
     // 選択中のサブ式の情報を取得
     let sel_path_val = selected_path();
@@ -206,6 +214,13 @@ pub fn ExpressionTreeEditor(
         let mut clear_selected = clear_selected.clone();
         move |evt: KeyboardEvent| {
             let key = evt.key();
+            // このツリーで処理したキーは外側 (パーツ定義のツリーなど) に二重に処理させない
+            let is_handled_key =
+                matches!(key, Key::Enter | Key::Escape | Key::Delete | Key::Backspace)
+                    || NavKey::from_key(&key, evt.modifiers()).is_some();
+            if is_handled_key {
+                evt.stop_propagation();
+            }
             if active_element_is_text_input() {
                 // 入力欄を抜けたらツリーにフォーカスを戻し, 続けてキーで移動できるようにする
                 if matches!(key, Key::Escape | Key::Enter) {
@@ -230,6 +245,12 @@ pub fn ExpressionTreeEditor(
                     crate::dropdown::hide_popover(&menu_panel_id);
                     selected_node_id.set(None);
                     selected_path.set(None);
+                    // 何も選んでいないときの Escape はツリーの外へ戻る
+                    if current.is_none()
+                        && let Some(on_exit) = on_exit
+                    {
+                        on_exit.call(NavKey::Parent);
+                    }
                 }
                 Key::Delete | Key::Backspace => {
                     if let Some(path) = current {
@@ -244,6 +265,20 @@ pub fn ExpressionTreeEditor(
                     evt.prevent_default();
                     let rects = collect_node_rects(&container_id, &node_index);
                     let Some(next) = navigate(&rects, current.as_deref(), nav_key) else {
+                        // ルートより上・ツリーの端より先へは, 外側に移動を任せる
+                        let leaves_tree = match nav_key {
+                            NavKey::Up | NavKey::Down => true,
+                            NavKey::Parent | NavKey::Root => {
+                                current.as_ref().is_some_and(|path| path.is_empty())
+                            }
+                            _ => false,
+                        };
+                        if leaves_tree && let Some(on_exit) = on_exit {
+                            crate::dropdown::hide_popover(&menu_panel_id);
+                            selected_node_id.set(None);
+                            selected_path.set(None);
+                            on_exit.call(nav_key);
+                        }
                         return;
                     };
                     let Some(id) = node_id_for_path(&node_index, &next) else {
@@ -311,7 +346,8 @@ pub fn ExpressionTreeEditor(
                     {
                         let mut clear_selected = clear_selected.clone();
                         move |_| {
-                            if let Some(path) = selected_path.peek().clone() {
+                            let selected = selected_path.peek().clone();
+                            if let Some(path) = selected {
                                 clear_selected(path);
                             }
                         }
@@ -320,7 +356,8 @@ pub fn ExpressionTreeEditor(
                 on_delete_key: {
                     let mut clear_selected = clear_selected.clone();
                     move |_| {
-                        if let Some(path) = selected_path.peek().clone() {
+                        let selected = selected_path.peek().clone();
+                        if let Some(path) = selected {
                             clear_selected(path);
                         }
                     }
@@ -369,6 +406,19 @@ pub fn ExpressionTreeEditor(
                 id: "{container_id}",
                 class: "expression-tree-container",
                 tabindex: "0",
+                // キーボードでフォーカスを移してきたときは, すぐ移動できるようにルートを選んでおく
+                onfocusin: {
+                    let first = root_node.clone();
+                    move |_| {
+                        let nothing_selected = selected_path.peek().is_none();
+                        if nothing_selected && let Some((id, path)) = first.clone()
+                        {
+                            inline_edit.set(false);
+                            selected_node_id.set(Some(id));
+                            selected_path.set(Some(path));
+                        }
+                    }
+                },
                 "aria-label": "{language.label(\"Expression tree (WASD / arrows to move, Q / E for parent / child, Enter to edit)\", \"式のツリー (WASD・矢印で移動, Q / E で親 / 子, Enter で編集)\", \"Esprimarbo (WASD / sagoj por movi, Q / E por gepatro / ido, Enter por redakti)\")}",
                 style: "width: 100%; max-width: 100%; overflow-x: auto; padding: 0.6rem 0.8rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: flex-start; box-sizing: border-box;",
                 TreeLayoutRenderer {
@@ -636,20 +686,10 @@ fn active_element_is_text_input() -> bool {
     false
 }
 
-#[cfg(target_arch = "wasm32")]
+/// イベント処理の後でフォーカスする (ハンドラ内で同期的に focus すると Dioxus のイベント処理が入れ子になるため)
 fn focus_element(id: &str) {
-    use wasm_bindgen::JsCast;
-    if let Some(el) = web_sys::window()
-        .and_then(|w| w.document())
-        .and_then(|d| d.get_element_by_id(id))
-        .and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok())
-    {
-        let _ = el.focus();
-    }
+    crate::dom::focus_first(&format!("#{id}"));
 }
-
-#[cfg(not(target_arch = "wasm32"))]
-fn focus_element(_id: &str) {}
 
 /// 画面に表示されているノードの矩形を, 式のパスごとに 1 つ (表示順で最初の要素) 集める
 #[cfg(target_arch = "wasm32")]

@@ -237,12 +237,8 @@ fn dom_show_popover_and_focus(
                 }
             }
             if let Some(search_input_name) = _search_input_name {
-                let selector = format!("input[name=\"{}\"]", search_input_name);
-                if let Ok(Some(input)) = doc.query_selector(&selector) {
-                    if let Ok(html_input) = input.dyn_into::<web_sys::HtmlElement>() {
-                        let _ = html_input.focus();
-                    }
-                }
+                // ハンドラ内で同期的に focus すると Dioxus のイベント処理が入れ子になるので遅らせる
+                crate::dom::focus_first(&format!("input[name=\"{}\"]", search_input_name));
             }
         }
     }

@@ -309,15 +309,10 @@ fn item_element(position: usize) -> Option<web_sys::HtmlElement> {
         .ok()
 }
 
-#[cfg(target_arch = "wasm32")]
+/// イベント処理の後でクリックする (ハンドラ内で同期的に click すると Dioxus のイベント処理が入れ子になるため)
 fn click_item(position: usize) {
-    if let Some(element) = item_element(position) {
-        element.click();
-    }
+    crate::dom::click_first(&format!("#command-palette-item-{position}"));
 }
-
-#[cfg(not(target_arch = "wasm32"))]
-fn click_item(_position: usize) {}
 
 #[cfg(target_arch = "wasm32")]
 fn scroll_item_into_view(position: usize) {
