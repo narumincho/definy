@@ -14,12 +14,15 @@ pub fn PartDefinitionFormView(
     context: PageContext,
     mut is_form_open: Signal<bool>,
     mut eval_result: Signal<Option<String>>,
+    /// エクスプローラーのモジュールから作成を始めたときに選んでおくモジュール
+    #[props(default = None)]
+    initial_module: Option<EventHashId>,
 ) -> Element {
     let language = context.language;
     let mut part_name = use_signal(String::new);
     let mut part_description = use_signal(String::new);
     let mut part_type_expr = use_signal(|| None::<definy_event::event::Expression>);
-    let module_hash = use_signal(|| None::<EventHashId>);
+    let module_hash = use_signal(|| initial_module.clone());
     let mut composing_expression = use_signal(|| None::<definy_event::event::Expression>);
     let is_logged_in = state.current_key.is_some()
         || try_use_context::<Signal<AppState>>()

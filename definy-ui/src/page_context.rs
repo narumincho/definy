@@ -66,4 +66,18 @@ impl PageContext {
     pub fn href_with_lang(&self, location: Location) -> String {
         self.url_with_lang(&location)
     }
+
+    /// `tab` クエリ付きの URL (例: パーツ一覧で作成フォームを開く `?tab=new`)
+    pub fn href_with_tab(&self, location: Location, tab: &str) -> String {
+        let mut url = location.to_url();
+        if let Some(query) = crate::query::build_query(crate::query::QueryParams {
+            lang: Some(self.language.to_code().to_string()),
+            event_type: None,
+            tab: Some(tab.to_string()),
+        }) {
+            url.push('?');
+            url.push_str(query.as_str());
+        }
+        url
+    }
 }

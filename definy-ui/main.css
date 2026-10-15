@@ -300,29 +300,18 @@ dialog::backdrop {
   animation: backdrop-show 0.18s ease-out forwards;
 }
 
+/* 不透明度はアニメーションさせない (アニメーションが進まない環境で透明のまま残らないように) */
 @keyframes dialog-show {
   from {
-    opacity: 0;
     transform: translateY(8px);
   }
 
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
 @keyframes backdrop-show {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fade-up {
   from {
     opacity: 0;
   }
@@ -725,6 +714,90 @@ textarea {
   height: 15px;
 }
 
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sidebar-header-action {
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.sidebar-filter {
+  position: relative;
+  padding: 0 0.6rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.sidebar-filter-icon {
+  position: absolute;
+  left: 1.1rem;
+  top: 0.45rem;
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.sidebar-filter input {
+  height: 26px;
+  padding: 0 0.5rem 0 1.65rem;
+  font-size: 0.86rem;
+}
+
+/* モジュール行のホバーで出る「新しいパーツ」 */
+.tree-row-action {
+  display: none;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tree-row:hover .tree-row-action,
+.tree-row:focus-within .tree-row-action {
+  display: inline-grid;
+}
+
+.tree-row-action:hover {
+  background: var(--overlay-3);
+  color: var(--text-primary);
+}
+
+/* 型エラーのあるパーツの印 */
+.tree-error-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.tree-leaf[data-error='true'] .tree-label {
+  color: var(--red-text);
+}
+
+.tree-error-count {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--red-bg-strong);
+  color: var(--red-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .sidebar-section-title {
   display: flex;
   align-items: center;
@@ -742,7 +815,8 @@ textarea {
 
 .sidebar-tree {
   flex: 1;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-bottom: 1rem;
   scrollbar-width: thin;
 }
@@ -942,6 +1016,37 @@ textarea {
   align-content: start;
 }
 
+/* 読み込み中にエディタ上端に出す細いバー */
+.editor-loading-bar {
+  position: relative;
+  height: 2px;
+  margin-bottom: -2px;
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.editor-loading-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: var(--primary);
+  animation: loading-bar 1.1s ease-in-out infinite;
+}
+
+@keyframes loading-bar {
+  from {
+    left: -40%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
 /* --- ステータスバー --- */
 
 .status-bar {
@@ -1047,7 +1152,6 @@ a.status-error {
   max-width: var(--content-max-width);
   margin: 0;
   padding: 1.1rem 1.5rem 2rem;
-  animation: fade-up 0.15s ease-out;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;

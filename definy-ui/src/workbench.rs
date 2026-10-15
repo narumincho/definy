@@ -7,6 +7,8 @@ use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 use crate::{AppState, Location};
+use definy_event::EventHashId;
+use std::collections::HashSet;
 
 /// サイドバー (エクスプローラー) の開閉状態.
 ///
@@ -40,6 +42,14 @@ pub fn Workbench(state: AppState, context: PageContext, children: Element) -> El
             }
             main { class: "workbench-editor",
                 EditorTabBar { state: state.clone(), context: context.clone() }
+                // ページ全体を薄くせず, 上端の細いバーだけで読み込み中を示す
+                if state.event_list_state.is_loading || state.local_event_queue.is_loading {
+                    div {
+                        class: "editor-loading-bar",
+                        role: "progressbar",
+                        "aria-label": "{context.language.label(\"Loading\", \"読み込み中\", \"Ŝargante\")}",
+                    }
+                }
                 div { class: "workbench-editor-scroll", {children} }
             }
             crate::header::StatusBarView { state: state.clone(), context: context.clone() }
@@ -197,10 +207,32 @@ fn ActivityItem(context: PageContext, target: ActivityTarget, badge: usize) -> E
 /// モジュール → パーツの木構造を表示するエクスプローラー
 #[component]
 fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
+    let mut filter_query = use_signal(String::new);
+    // 型エラーのあるパーツの検査はすべてのパーツの式を見るので, 取得済みのイベントが増えたときだけやり直す
+    let mut error_cache = use_signal(|| (usize::MAX, HashSet::<EventHashId>::new()));
+    let cache_key = state.event_cache.len();
+    if error_cache.peek().0 != cache_key {
+        error_cache.set((
+            cache_key,
+            crate::expression_editor::parts_with_type_errors(&state),
+        ));
+    }
+    let error_parts = error_cache.read().1.clone();
+
     let mut modules = collect_module_snapshots(&state);
     modules.sort_by(|a, b| a.module_name.cmp(&b.module_name));
     let mut parts = collect_part_snapshots(&state);
     parts.sort_by(|a, b| a.part_name.cmp(&b.part_name));
+
+    let query = filter_query().trim().to_lowercase();
+    let is_filtering = !query.is_empty();
+    let part_matches = |module_name: &str, part_name: &str| {
+        !is_filtering
+            || part_name.to_lowercase().contains(&query)
+            || format!("{module_name}.{part_name}")
+                .to_lowercase()
+                .contains(&query)
+    };
 
     let active_part = match &context.location {
         Some(Location::Part(hash)) => Some(hash.clone()),
@@ -222,21 +254,44 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
         toggled.set(false);
     };
 
-    let tree = modules.iter().map(|module| {
+    let new_part_label = context
+        .language
+        .label("New part", "新しいパーツ", "Nova parto");
+    let error_label = context
+        .language
+        .label("Has errors", "エラーあり", "Havas erarojn");
+
+    let tree = modules.iter().filter_map(|module| {
         let module_parts: Vec<_> = parts
             .iter()
             .filter(|part| part.module_definition_event_hash == module.definition_event_hash)
+            .filter(|part| part_matches(&module.module_name, &part.part_name))
             .collect();
+        // 絞り込み中は一致するパーツがないモジュールを隠す (モジュール名自体が一致すれば残す)
+        if is_filtering
+            && module_parts.is_empty()
+            && !module.module_name.to_lowercase().contains(&query)
+        {
+            return None;
+        }
         let is_module_active = active_module.as_ref() == Some(&module.definition_event_hash)
             && active_part.is_none();
         let contains_active = active_module.as_ref() == Some(&module.definition_event_hash);
         let module_href = context.href_with_lang(Location::Module(module.definition_event_hash.clone()));
+        let new_part_href = context.href_with_tab(
+            Location::PartList,
+            &format!("new:{}", module.definition_event_hash),
+        );
         let part_count = module_parts.len();
-        rsx! {
+        let module_error_count = module_parts
+            .iter()
+            .filter(|part| error_parts.contains(&part.definition_event_hash))
+            .count();
+        Some(rsx! {
             details {
                 key: "{module.definition_event_hash}",
                 class: "tree-group",
-                open: contains_active || modules.len() <= 3,
+                open: is_filtering || contains_active || modules.len() <= 3,
                 summary { class: if is_module_active { "tree-row active" } else { "tree-row" },
                     Icon { kind: IconKind::ChevronRight, class: "tree-chevron" }
                     Icon {
@@ -249,12 +304,26 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                         onclick: close_drawer,
                         "{module.module_name}"
                     }
+                    if module_error_count > 0 {
+                        span { class: "tree-error-count", title: "{error_label}",
+                            "{module_error_count}"
+                        }
+                    }
+                    a {
+                        class: "tree-row-action",
+                        href: "{new_part_href}",
+                        title: "{new_part_label}",
+                        "aria-label": "{new_part_label}",
+                        onclick: close_drawer,
+                        "+"
+                    }
                     span { class: "tree-count", "{part_count}" }
                 }
                 div { class: "tree-children",
                     for part in module_parts {
                         {
                             let is_active = active_part.as_ref() == Some(&part.definition_event_hash);
+                            let has_error = error_parts.contains(&part.definition_event_hash);
                             let type_text = part
                                 .part_type
                                 .as_ref()
@@ -264,11 +333,15 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                                 a {
                                     key: "{part.definition_event_hash}",
                                     class: if is_active { "tree-row tree-leaf active" } else { "tree-row tree-leaf" },
+                                    "data-error": if has_error { "true" } else { "false" },
                                     href: context.href_with_lang(Location::Part(part.definition_event_hash.clone())),
-                                    title: "{module.module_name}.{part.part_name}",
+                                    title: if has_error { "{module.module_name}.{part.part_name} ({error_label})" } else { "{module.module_name}.{part.part_name}" },
                                     onclick: close_drawer,
                                     Icon { kind: IconKind::Part, class: "tree-icon tree-icon-part" }
                                     span { class: "tree-label", "{part.part_name}" }
+                                    if has_error {
+                                        span { class: "tree-error-dot", "aria-label": "{error_label}" }
+                                    }
                                     span { class: "tree-type", "{type_text}" }
                                 }
                             }
@@ -276,8 +349,9 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                     }
                 }
             }
-        }
-    });
+        })
+    }).collect::<Vec<_>>();
+    let has_results = !tree.is_empty();
 
     rsx! {
         aside { class: "workbench-sidebar",
@@ -285,12 +359,40 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                 span {
                     "{context.language.label(\"Explorer\", \"エクスプローラー\", \"Esplorilo\")}"
                 }
-                a {
-                    class: "sidebar-header-action",
-                    href: context.href_with_lang(Location::PartList),
-                    title: "{context.language.label(\"All parts\", \"パーツ一覧\", \"Ĉiuj partoj\")}",
-                    onclick: close_drawer,
-                    Icon { kind: IconKind::Parts, class: "sidebar-header-icon" }
+                div { class: "sidebar-header-actions",
+                    a {
+                        class: "sidebar-header-action",
+                        href: context.href_with_tab(Location::PartList, "new"),
+                        title: "{new_part_label}",
+                        "aria-label": "{new_part_label}",
+                        onclick: close_drawer,
+                        "+"
+                    }
+                    a {
+                        class: "sidebar-header-action",
+                        href: context.href_with_lang(Location::PartList),
+                        title: "{context.language.label(\"All parts\", \"パーツ一覧\", \"Ĉiuj partoj\")}",
+                        onclick: close_drawer,
+                        Icon {
+                            kind: IconKind::Parts,
+                            class: "sidebar-header-icon",
+                        }
+                    }
+                }
+            }
+            div { class: "sidebar-filter",
+                crate::icon::SearchIcon { class: "sidebar-filter-icon" }
+                input {
+                    r#type: "search",
+                    placeholder: "{context.language.label(\"Filter parts\", \"パーツを絞り込む\", \"Filtri partojn\")}",
+                    "aria-label": "{context.language.label(\"Filter parts\", \"パーツを絞り込む\", \"Filtri partojn\")}",
+                    value: "{filter_query}",
+                    oninput: move |evt: FormEvent| filter_query.set(evt.value()),
+                    onkeydown: move |evt: KeyboardEvent| {
+                        if evt.key() == Key::Escape {
+                            filter_query.set(String::new());
+                        }
+                    },
                 }
             }
             div { class: "sidebar-section-title",
@@ -302,8 +404,12 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                     div { class: "sidebar-empty",
                         "{context.language.label(\"No modules loaded yet\", \"モジュールはまだ読み込まれていません\", \"Neniuj moduloj ŝarĝitaj\")}"
                     }
+                } else if !has_results {
+                    div { class: "sidebar-empty",
+                        "{context.language.label(\"No matching parts\", \"一致するパーツはありません\", \"Neniuj kongruaj partoj\")}"
+                    }
                 }
-                {tree}
+                {tree.into_iter()}
             }
         }
     }

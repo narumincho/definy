@@ -37,7 +37,16 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
         });
     });
 
-    let mut is_form_open = use_signal(|| false);
+    // `?tab=new` (エクスプローラーの「新しいパーツ」) で開いたときは作成フォームを開いておく.
+    // `?tab=new:<モジュールのハッシュ>` ならそのモジュールを選んでおく
+    let new_part_request = context
+        .tab
+        .as_deref()
+        .and_then(|tab| tab.strip_prefix("new"));
+    let initial_module = new_part_request
+        .and_then(|rest| rest.strip_prefix(':'))
+        .and_then(|hash| std::str::FromStr::from_str(hash).ok());
+    let mut is_form_open = use_signal(|| new_part_request.is_some());
     let eval_result = use_signal(|| None::<String>);
     let mut search_query = use_signal(String::new);
 
@@ -131,6 +140,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                     context: context.clone(),
                     is_form_open,
                     eval_result,
+                    initial_module,
                 }
             }
             if let Some(result) = eval_result() {
