@@ -93,6 +93,52 @@ fn test_self_hosted_meta_circular_eval_value_execution() {
 }
 
 #[test]
+fn test_self_hosted_eval_value_less_than_returns_boolean() {
+    // 以前の seed は less_than の結果を number バリアントに入れていた (number(true) になっていた)
+    let (account, mod_id) = get_test_account_and_mod_id();
+    let eval_hash = derive_module_part_id(&mod_id, "eval-value");
+    let expr_type_hash = derive_module_part_id(&mod_id, "expression");
+    let events = create_test_module_events(account, all_evaluator_parts(), 127);
+
+    let less_than = |left: i64, right: i64| {
+        Expression::Variant(VariantExpression {
+            tag: "less_than".into(),
+            payload: Some(Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+                items: vec![
+                    TypeLiteralItemExpression {
+                        key: "left".into(),
+                        value: Box::new(ast_num(left, Some(expr_type_hash.clone()))),
+                    },
+                    TypeLiteralItemExpression {
+                        key: "right".into(),
+                        value: Box::new(ast_num(right, Some(expr_type_hash.clone()))),
+                    },
+                ],
+            }))),
+            type_part_definition_event_hash: Some(expr_type_hash.clone()),
+        })
+    };
+    let empty_env = || Expression::ListLiteral(ListLiteralExpression { items: vec![] });
+
+    for (left, right, expected) in [(1, 2, true), (3, 2, false)] {
+        let eval_call = call_part(
+            eval_hash.clone(),
+            &[("expr", less_than(left, right)), ("env", empty_env())],
+        );
+        let result = definy_core::evaluate_expression(&eval_call, &events)
+            .expect("Failed to evaluate less_than using core.eval-value");
+        assert_eq!(
+            result,
+            Value::Variant {
+                tag: "boolean".into(),
+                payload: Some(Box::new(Value::Bool(expected))),
+            },
+            "{left} < {right}"
+        );
+    }
+}
+
+#[test]
 fn test_self_hosted_type_checker_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
     let type_check_hash = derive_module_part_id(&mod_id, "type-check");

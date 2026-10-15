@@ -1058,7 +1058,7 @@
                                             "TypeLiteral": {
                                               "items": [
                                                 {
-                                                  "key": "vars",
+                                                  "key": "variables",
                                                   "value": {
                                                     "ListLiteral": {
                                                       "items": []

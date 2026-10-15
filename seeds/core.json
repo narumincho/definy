@@ -4814,7 +4814,7 @@
                                   "variable_name": "r_num",
                                   "body": {
                                     "Variant": {
-                                      "tag": "number",
+                                      "tag": "boolean",
                                       "payload": {
                                         "LessThan": {
                                           "left": {
@@ -7188,8 +7188,25 @@
             {
               "name": "arms",
               "type": {
-                "type_part": {
-                  "$part": "core.expression"
+                "list": {
+                  "record": [
+                    {
+                      "key": "tag",
+                      "value": "string"
+                    },
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "body",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -7315,8 +7332,25 @@
             {
               "name": "arms",
               "type": {
-                "type_part": {
-                  "$part": "core.expression"
+                "list": {
+                  "record": [
+                    {
+                      "key": "tag",
+                      "value": "string"
+                    },
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "body",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -7692,6 +7726,25 @@
                   "items": [
                     {
                       "key": "actual",
+                      "value": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-ast"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "unexpected_function",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "expected",
                       "value": {
                         "PartReference": {
                           "part_definition_event_hash": {
@@ -22963,7 +23016,7 @@
                           "tag": "error",
                           "payload": {
                             "Variant": {
-                              "tag": "type_mismatch",
+                              "tag": "unexpected_function",
                               "payload": {
                                 "TypeLiteral": {
                                   "items": [
@@ -22972,14 +23025,6 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 2
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "key": "actual",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 10
                                         }
                                       }
                                     }
