@@ -24,7 +24,8 @@ use crate::language::Language;
 use crate::page_context::PageContext;
 
 use super::engine::{compute_layout, expression_to_layout_node};
-use super::types::LayoutOptions;
+use super::keyboard::{NavKey, Rect, navigate};
+use super::types::{LayoutNode, LayoutOptions};
 use super::view::{TreeLayoutRenderer, tree_node_anchor_name};
 
 /// ページ内に複数のツリーエディタがあってもメニューのアンカー名が衝突しないようにするための連番
@@ -43,11 +44,14 @@ pub fn ExpressionTreeEditor(
     let mut selected_node_id = use_signal(|| None::<String>);
     let hovered_node_id = use_signal(|| None::<String>);
     let mut selected_path = use_signal(|| None::<Vec<PathStep>>);
+    // キーボードで選択を移動している間は false にして, リテラルの入力欄にフォーカスを奪われないようにする
+    let mut inline_edit = use_signal(|| true);
 
     // 選択ノード直下に表示するドロップダウンメニュー (popover) 用の状態
     let anchor_id = use_hook(|| NEXT_TREE_EDITOR_ANCHOR_ID.fetch_add(1, Ordering::Relaxed));
     let menu_panel_id = format!("tree-editor-menu-{anchor_id}");
     let menu_search_input_name = format!("tree-editor-menu-search-{anchor_id}");
+    let container_id = format!("tree-editor-{anchor_id}");
     let mut menu_search_query = use_signal(String::new);
     let mut menu_highlighted_index = use_signal(|| None::<usize>);
 
@@ -83,6 +87,9 @@ pub fn ExpressionTreeEditor(
     };
     let root_layout_node = expression_to_layout_node(&expr, "root");
     let layout_result = compute_layout(&root_layout_node, &layout_options);
+    // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
+    let mut node_index = Vec::new();
+    collect_node_index(&layout_result.root, &mut node_index);
 
     // 選択中のサブ式の情報を取得
     let sel_path_val = selected_path();
@@ -166,10 +173,98 @@ pub fn ExpressionTreeEditor(
         }
     };
 
+    // 選択した式のメニューを開く (クリック・Enter キー).
+    // 数値・文字列リテラルはノード上で直接編集するので検索欄にフォーカスを移さない
+    let mut open_menu = {
+        let menu_panel_id = menu_panel_id.clone();
+        let menu_search_input_name = menu_search_input_name.clone();
+        move |id: String, path: Vec<PathStep>| {
+            let mut cloned = expression.read().clone();
+            let is_inline_editable_literal = cloned
+                .as_mut()
+                .and_then(|e| get_mut_expression_at_path(e, &path))
+                .is_some_and(|sub| matches!(sub, Expression::Number(_) | Expression::String(_)));
+            let node_anchor = tree_node_anchor_name(anchor_id, &id);
+            selected_node_id.set(Some(id));
+            selected_path.set(Some(path));
+            inline_edit.set(true);
+            menu_search_query.set(String::new());
+            menu_highlighted_index.set(None);
+            crate::dropdown::show_anchored_popover(
+                &menu_panel_id,
+                &node_anchor,
+                (!is_inline_editable_literal).then_some(menu_search_input_name.as_str()),
+            );
+        }
+    };
+
+    // docs/key.md のキー操作. メニューの検索欄やリテラルの入力欄で押されたキーもここまで伝わる
+    let on_keydown = {
+        let menu_panel_id = menu_panel_id.clone();
+        let container_id = container_id.clone();
+        let mut open_menu = open_menu.clone();
+        let mut clear_selected = clear_selected.clone();
+        move |evt: KeyboardEvent| {
+            let key = evt.key();
+            if active_element_is_text_input() {
+                // 入力欄を抜けたらツリーにフォーカスを戻し, 続けてキーで移動できるようにする
+                if matches!(key, Key::Escape | Key::Enter) {
+                    inline_edit.set(false);
+                    crate::dropdown::hide_popover(&menu_panel_id);
+                    focus_element(&container_id);
+                }
+                return;
+            }
+            let current = selected_path.peek().clone();
+            match key {
+                Key::Enter => {
+                    evt.prevent_default();
+                    let target = current
+                        .and_then(|path| node_id_for_path(&node_index, &path).map(|id| (id, path)))
+                        .or_else(|| node_index.first().cloned());
+                    if let Some((id, path)) = target {
+                        open_menu(id, path);
+                    }
+                }
+                Key::Escape => {
+                    crate::dropdown::hide_popover(&menu_panel_id);
+                    selected_node_id.set(None);
+                    selected_path.set(None);
+                }
+                Key::Delete | Key::Backspace => {
+                    if let Some(path) = current {
+                        evt.prevent_default();
+                        clear_selected(path);
+                    }
+                }
+                _ => {
+                    let Some(nav_key) = NavKey::from_key(&key, evt.modifiers()) else {
+                        return;
+                    };
+                    evt.prevent_default();
+                    let rects = collect_node_rects(&container_id, &node_index);
+                    let Some(next) = navigate(&rects, current.as_deref(), nav_key) else {
+                        return;
+                    };
+                    let Some(id) = node_id_for_path(&node_index, &next) else {
+                        return;
+                    };
+                    crate::dropdown::hide_popover(&menu_panel_id);
+                    menu_search_query.set(String::new());
+                    inline_edit.set(false);
+                    scroll_node_into_view(&container_id, &id);
+                    selected_node_id.set(Some(id));
+                    selected_path.set(Some(next));
+                }
+            }
+        }
+    };
+
     rsx! {
         div {
             class: "expression-tree-editor",
             style: "display: grid; gap: 0.45rem; width: 100%; box-sizing: border-box;",
+            onkeydown: on_keydown,
 
             // 1. 型エラーがある場合の警告バー
             if error_count > 0 {
@@ -230,8 +325,17 @@ pub fn ExpressionTreeEditor(
                         }
                     }
                 },
+                // メニューを閉じたらツリーにフォーカスを戻し, 続けてキーで移動できるようにする
+                on_escape: {
+                    let container_id = container_id.clone();
+                    move |_| {
+                        inline_edit.set(false);
+                        focus_element(&container_id);
+                    }
+                },
                 on_change: {
                     let state = state.clone();
+                    let container_id = container_id.clone();
                     move |selected_value: String| {
                         let Some(target_path) = selected_path.read().clone() else {
                             return;
@@ -254,13 +358,18 @@ pub fn ExpressionTreeEditor(
                             constructor_default,
                         );
                         commit_expression_change(expression, on_change, current_opt);
+                        inline_edit.set(false);
+                        focus_element(&container_id);
                     }
                 },
             }
 
             // 3. 木構造レンダラー（インライン直接編集対応 & 型エラー可視化）
             div {
+                id: "{container_id}",
                 class: "expression-tree-container",
+                tabindex: "0",
+                "aria-label": "{language.label(\"Expression tree (WASD / arrows to move, Q / E for parent / child, Enter to edit)\", \"式のツリー (WASD・矢印で移動, Q / E で親 / 子, Enter で編集)\", \"Esprimarbo (WASD / sagoj por movi, Q / E por gepatro / ido, Enter por redakti)\")}",
                 style: "width: 100%; max-width: 100%; overflow-x: auto; padding: 0.6rem 0.8rem; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: flex-start; box-sizing: border-box;",
                 TreeLayoutRenderer {
                     node: layout_result.root,
@@ -270,31 +379,8 @@ pub fn ExpressionTreeEditor(
                     expected_types: expected_types_sig,
                     editable: true,
                     selection_anchor_id: Some(anchor_id),
-                    on_select_node: {
-                        let menu_panel_id = menu_panel_id.clone();
-                        let menu_search_input_name = menu_search_input_name.clone();
-                        move |(id, path): (String, Vec<PathStep>)| {
-                            // 数値・文字列リテラルはノード上で直接編集するので検索欄にフォーカスを移さない
-                            let mut cloned = expression.read().clone();
-                            let is_inline_editable_literal = cloned
-                                .as_mut()
-                                .and_then(|e| get_mut_expression_at_path(e, &path))
-                                .is_some_and(|sub| {
-                                    matches!(sub, Expression::Number(_) | Expression::String(_))
-                                });
-                            let node_anchor = tree_node_anchor_name(anchor_id, &id);
-                            selected_node_id.set(Some(id));
-                            selected_path.set(Some(path));
-                            menu_search_query.set(String::new());
-                            menu_highlighted_index.set(None);
-                            crate::dropdown::show_anchored_popover(
-                                &menu_panel_id,
-                                &node_anchor,
-                                (!is_inline_editable_literal)
-                                    .then_some(menu_search_input_name.as_str()),
-                            );
-                        }
-                    },
+                    inline_edit: Some(inline_edit),
+                    on_select_node: move |(id, path): (String, Vec<PathStep>)| open_menu(id, path),
                     on_change_number: move |(path, val): (Vec<PathStep>, i64)| {
                         let mut curr = expression.read().clone();
                         set_number_value(&mut curr, &path, val);
@@ -520,3 +606,122 @@ fn expression_kind_label(expr: &Expression) -> String {
         _ => "expression".to_string(),
     }
 }
+
+/// 表示順 (行きがけ順) にノード ID とパスを集める
+fn collect_node_index(node: &LayoutNode, out: &mut Vec<(String, Vec<PathStep>)>) {
+    out.push((node.id.clone(), node.path.clone()));
+    for child in &node.children {
+        collect_node_index(child, out);
+    }
+}
+
+/// そのパスの式を表す (式全体を囲む, 表示順で最初の) ノードの ID
+fn node_id_for_path(node_index: &[(String, Vec<PathStep>)], path: &[PathStep]) -> Option<String> {
+    node_index
+        .iter()
+        .find(|(_, p)| p == path)
+        .map(|(id, _)| id.clone())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn active_element_is_text_input() -> bool {
+    web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.active_element())
+        .is_some_and(|e| matches!(e.tag_name().as_str(), "INPUT" | "TEXTAREA" | "SELECT"))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn active_element_is_text_input() -> bool {
+    false
+}
+
+#[cfg(target_arch = "wasm32")]
+fn focus_element(id: &str) {
+    use wasm_bindgen::JsCast;
+    if let Some(el) = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id(id))
+        .and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok())
+    {
+        let _ = el.focus();
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn focus_element(_id: &str) {}
+
+/// 画面に表示されているノードの矩形を, 式のパスごとに 1 つ (表示順で最初の要素) 集める
+#[cfg(target_arch = "wasm32")]
+fn collect_node_rects(
+    container_id: &str,
+    node_index: &[(String, Vec<PathStep>)],
+) -> Vec<(Vec<PathStep>, Rect)> {
+    let path_by_id: std::collections::HashMap<&str, &Vec<PathStep>> = node_index
+        .iter()
+        .map(|(id, path)| (id.as_str(), path))
+        .collect();
+    let mut rects: Vec<(Vec<PathStep>, Rect)> = Vec::new();
+    for element in node_elements(container_id) {
+        let Some(id) = element.get_attribute("data-node-id") else {
+            continue;
+        };
+        let Some(path) = path_by_id.get(id.as_str()) else {
+            continue;
+        };
+        if rects.iter().any(|(p, _)| p == *path) {
+            continue;
+        }
+        let r = element.get_bounding_client_rect();
+        rects.push((
+            (*path).clone(),
+            Rect {
+                left: r.left(),
+                top: r.top(),
+                right: r.right(),
+                bottom: r.bottom(),
+            },
+        ));
+    }
+    rects
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn collect_node_rects(
+    _container_id: &str,
+    _node_index: &[(String, Vec<PathStep>)],
+) -> Vec<(Vec<PathStep>, Rect)> {
+    Vec::new()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn node_elements(container_id: &str) -> Vec<web_sys::Element> {
+    use wasm_bindgen::JsCast;
+    let Some(list) = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.get_element_by_id(container_id))
+        .and_then(|c| c.query_selector_all("[data-node-id]").ok())
+    else {
+        return Vec::new();
+    };
+    (0..list.length())
+        .filter_map(|i| list.item(i))
+        .filter_map(|node| node.dyn_into::<web_sys::Element>().ok())
+        .collect()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn scroll_node_into_view(container_id: &str, node_id: &str) {
+    if let Some(element) = node_elements(container_id)
+        .into_iter()
+        .find(|e| e.get_attribute("data-node-id").as_deref() == Some(node_id))
+    {
+        let options = web_sys::ScrollIntoViewOptions::new();
+        options.set_block(web_sys::ScrollLogicalPosition::Nearest);
+        options.set_inline(web_sys::ScrollLogicalPosition::Nearest);
+        element.scroll_into_view_with_scroll_into_view_options(&options);
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn scroll_node_into_view(_container_id: &str, _node_id: &str) {}

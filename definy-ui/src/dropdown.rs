@@ -398,6 +398,9 @@ pub fn SearchableDropdownPanel(
     /// 検索欄が空のときに Delete / Backspace キーが押されたら呼ばれる
     #[props(default = None)]
     on_delete_key: Option<EventHandler<()>>,
+    /// Escape キーでメニューを閉じたときに呼ばれる
+    #[props(default = None)]
+    on_escape: Option<EventHandler<()>>,
 ) -> Element {
     let query = search_query.read().to_lowercase();
     let filtered_options: Vec<(String, String)> = options
@@ -492,6 +495,8 @@ pub fn SearchableDropdownPanel(
                                 let selected_opt = effective_highlighted_index
                                     .and_then(|idx| filtered_options.get(idx));
                                 if let Some((opt_val, _)) = selected_opt {
+                                    // 決定した Enter を呼び出し側のキー操作として二重に処理させない
+                                    evt.stop_propagation();
                                     let val = opt_val.clone();
                                     search_query.set(String::new());
                                     highlighted_index.set(None);
@@ -500,9 +505,13 @@ pub fn SearchableDropdownPanel(
                                 }
                             }
                             Key::Escape => {
+                                evt.stop_propagation();
                                 search_query.set(String::new());
                                 highlighted_index.set(None);
                                 dom_hide_popover(&panel_id);
+                                if let Some(on_escape) = on_escape {
+                                    on_escape.call(());
+                                }
                             }
                             Key::Delete | Key::Backspace if search_query.read().is_empty() => {
                                 if let Some(on_delete_key) = on_delete_key {

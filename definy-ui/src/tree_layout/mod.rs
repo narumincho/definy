@@ -1,5 +1,6 @@
 pub mod editor;
 pub mod engine;
+pub mod keyboard;
 pub mod samples;
 pub mod summary;
 pub mod types;

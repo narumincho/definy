@@ -11,6 +11,9 @@ struct RenderContext {
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
     collapsed_node_ids: Signal<HashSet<String>>,
+    /// 選択中の数値・文字列リテラルを入力欄にして直接編集するか.
+    /// キーボードで選択を移動している間は入力欄にフォーカスを奪われないよう false にする
+    inline_edit: Signal<bool>,
     diagnostics: Option<Signal<Vec<TypeDiagnostic>>>,
     expected_types: Option<Signal<HashMap<Vec<PathStep>, ExpressionType>>>,
     editable: bool,
@@ -36,6 +39,8 @@ impl RenderContext {
 
     fn select_node(mut self, id: &str, path: &[PathStep]) {
         self.selected_node_id.set(Some(id.to_string()));
+        // クリックで選んだリテラルはすぐ編集できるようにする
+        self.inline_edit.set(true);
         if let Some(cb) = self.on_select_node {
             cb.call((id.to_string(), path.to_vec()));
         }
@@ -107,6 +112,9 @@ pub fn TreeLayoutRenderer(
     selected_node_id: Signal<Option<String>>,
     hovered_node_id: Signal<Option<String>>,
     #[props(default = None)] collapsed_node_ids: Option<Signal<HashSet<String>>>,
+    /// 選択中のリテラルを入力欄で直接編集するか. 省略時は常に編集する
+    #[props(default = None)]
+    inline_edit: Option<Signal<bool>>,
     #[props(default = None)] diagnostics: Option<Signal<Vec<TypeDiagnostic>>>,
     #[props(default = None)] expected_types: Option<Signal<HashMap<Vec<PathStep>, ExpressionType>>>,
     #[props(default = false)] editable: bool,
@@ -122,11 +130,13 @@ pub fn TreeLayoutRenderer(
 ) -> Element {
     let internal_collapsed = use_signal(HashSet::<String>::new);
     let effective_collapsed = collapsed_node_ids.unwrap_or(internal_collapsed);
+    let internal_inline_edit = use_signal(|| true);
 
     let ctx = RenderContext {
         selected_node_id,
         hovered_node_id,
         collapsed_node_ids: effective_collapsed,
+        inline_edit: inline_edit.unwrap_or(internal_inline_edit),
         diagnostics,
         expected_types,
         editable,
@@ -223,7 +233,8 @@ fn render_leaf_node(
     let id_for_enter = node.id.clone();
     let path_for_click = node.path.clone();
 
-    let inner_element = if ctx.editable && is_selected && node.kind == NodeKind::LiteralNumber {
+    let is_editing = ctx.editable && is_selected && *ctx.inline_edit.read();
+    let inner_element = if is_editing && node.kind == NodeKind::LiteralNumber {
         let p = node.path.clone();
         let raw_val = node.label.clone();
         rsx! {
@@ -232,6 +243,10 @@ fn render_leaf_node(
                 value: "{raw_val}",
                 style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
                 autofocus: true,
+                // autofocus は後から挿入された要素には効かないので, マウント時に明示的にフォーカスする
+                onmounted: move |evt: MountedEvent| async move {
+                    let _ = evt.set_focus(true).await;
+                },
                 onkeydown: {
                     let p = p.clone();
                     move |evt: KeyboardEvent| clear_literal_on_delete_key(&evt, ctx, &p)
@@ -245,7 +260,7 @@ fn render_leaf_node(
                 },
             }
         }
-    } else if ctx.editable && is_selected && node.kind == NodeKind::LiteralString {
+    } else if is_editing && node.kind == NodeKind::LiteralString {
         let p = node.path.clone();
         let raw_str = node.label.trim_matches('"').to_string();
         rsx! {
@@ -254,6 +269,10 @@ fn render_leaf_node(
                 value: "{raw_str}",
                 style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
                 autofocus: true,
+                // autofocus は後から挿入された要素には効かないので, マウント時に明示的にフォーカスする
+                onmounted: move |evt: MountedEvent| async move {
+                    let _ = evt.set_focus(true).await;
+                },
                 onkeydown: {
                     let p = p.clone();
                     move |evt: KeyboardEvent| clear_literal_on_delete_key(&evt, ctx, &p)
@@ -443,6 +462,7 @@ fn render_table_node(
     rsx! {
         div {
             class: "tree-node-table-wrapper",
+            "data-node-id": "{id_for_click}",
             style: "display: flex; flex-direction: column; border: 1.5px solid {border_color}; border-radius: var(--radius-lg); background: var(--bg-inset); overflow-x: auto; max-width: 100%; margin: 0.35rem 0; box-shadow: var(--shadow-sm);{table_anchor_style}",
             title: "{tooltip}",
             onclick: move |evt: MouseEvent| {

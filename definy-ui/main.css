@@ -1329,6 +1329,13 @@ a.status-error {
   border-color: var(--bg-selection-strong) !important;
 }
 
+/* キーボードで選択を移動する式のツリー. フォーカス中はキー操作を受け付けることを示す */
+.expression-tree-container:focus-visible,
+.expression-tree-container:focus {
+  outline: none;
+  border-color: var(--border-focus) !important;
+}
+
 /* スクロールバーを IDE らしく細く目立たなくする */
 * {
   scrollbar-color: #3d414a transparent;
