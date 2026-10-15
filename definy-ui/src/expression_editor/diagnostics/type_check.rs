@@ -741,6 +741,13 @@ fn check_expression_type_with_context(
             result_type
         }
         definy_event::event::Expression::Compiler(_) => ExpressionType::Unknown,
+        definy_event::event::Expression::Hole => {
+            ctx.diagnostics.push(TypeDiagnostic {
+                path: path.to_vec(),
+                message: "Unfilled expression.".to_string(),
+            });
+            ExpressionType::Unknown
+        }
     };
 
     if let Some(expected_type) = expected_type {

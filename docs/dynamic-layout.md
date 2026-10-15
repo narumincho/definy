@@ -72,6 +72,25 @@ data = [
   - 数値・文字列リテラル選択時はノード上で直接編集するため,
     メニューの検索欄にはフォーカスを移さない (検索 `<input>` には `autofocus`
     を付けず, リテラル以外の選択時のみ JS から明示的に `.focus()` する).
+  - 選択肢は期待型に合うものを先に並べ, 合わないもの
+    (`RankedSelectorOption::is_type_mismatch`) は
+    「その他 (型が合わない)」の区切りの下に薄く表示する
+    (`SearchableDropdownPanel` の `secondary_values` / `secondary_heading`).
+    期待型が無い位置では区切りを出さない.
+  - 型宣言のない組み込みパーツ (`plus` など) は,
+    選択肢のメタ情報に推定した型を型宣言と同じ小文字表記で表示する.
+  - メニューを開いたときは, 現在の値の選択肢 (`data-selected="true"`)
+    がリスト中央付近に来るようにリスト (`.dropdown-option-list`) をスクロールする.
+    クリックイベント内では新しい選択肢がまだ描画されていないため,
+    `requestAnimationFrame` を 2 回挟んで Dioxus の再描画後に行う.
+  - 選択中の式だけを未入力にできる. 子の式は `Expression::Hole` (`□` と表示)
+    に, ルートの式は式なし (`None`) になる (`clear_expression_at_path`).
+    - 検索欄が空のときの Delete / Backspace キー (Mac の delete キーは Backspace),
+      数値・文字列リテラルの入力欄が空のときの Delete / Backspace キー,
+      メニュー見出しの ⌫ ボタンのいずれかで行う. 文字が残っている間は通常どおり文字を消す.
+    - 未入力にした後は検索欄にフォーカスし, すぐ別の式を選べるようにする.
+    - `Hole` は型検査で `Unfilled expression.` の診断を出し,
+      Wasm へのコンパイル (評価) はエラーになる.
   - Dioxus 0.7 ではコンポーネント描画中に無条件で子コンポーネントが購読する
     `Signal::set` を呼ぶと, 常に dirty scope が残って `use_effect`
     等が実行されなくなるため, `diagnostics` / `expected_types` の `Signal`

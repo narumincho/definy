@@ -17,6 +17,7 @@ struct RenderContext {
     on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
+    on_clear: Option<EventHandler<Vec<PathStep>>>,
     selection_anchor_id: Option<u64>,
 }
 
@@ -112,6 +113,9 @@ pub fn TreeLayoutRenderer(
     #[props(default = None)] on_select_node: Option<EventHandler<(String, Vec<PathStep>)>>,
     #[props(default = None)] on_change_number: Option<EventHandler<(Vec<PathStep>, i64)>>,
     #[props(default = None)] on_change_string: Option<EventHandler<(Vec<PathStep>, String)>>,
+    /// 選択中のリテラルの入力欄が空の状態で Delete / Backspace キーが押されたら呼ばれる
+    #[props(default = None)]
+    on_clear: Option<EventHandler<Vec<PathStep>>>,
     /// 指定すると各ノードに [`tree_node_anchor_name`] の `anchor-name` を付与する
     #[props(default = None)]
     selection_anchor_id: Option<u64>,
@@ -129,9 +133,38 @@ pub fn TreeLayoutRenderer(
         on_select_node,
         on_change_number,
         on_change_string,
+        on_clear,
         selection_anchor_id,
     };
     render_node(&node, ctx)
+}
+
+/// リテラルの入力欄が空のときの Delete / Backspace でその式を未入力にする.
+/// (文字が残っている間は通常どおり文字を消す)
+fn clear_literal_on_delete_key(evt: &KeyboardEvent, ctx: RenderContext, path: &[PathStep]) {
+    if !matches!(evt.key(), Key::Delete | Key::Backspace) || !focused_input_is_empty() {
+        return;
+    }
+    if let Some(on_clear) = ctx.on_clear {
+        evt.prevent_default();
+        on_clear.call(path.to_vec());
+    }
+}
+
+fn focused_input_is_empty() -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        use wasm_bindgen::JsCast;
+        web_sys::window()
+            .and_then(|w| w.document())
+            .and_then(|d| d.active_element())
+            .and_then(|e| e.dyn_into::<web_sys::HtmlInputElement>().ok())
+            .is_some_and(|input| input.value().is_empty())
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        false
+    }
 }
 
 fn render_node(node: &LayoutNode, ctx: RenderContext) -> Element {
@@ -199,6 +232,10 @@ fn render_leaf_node(
                 value: "{raw_val}",
                 style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; width: 3.5rem; text-align: center; padding: 0; margin: 0;",
                 autofocus: true,
+                onkeydown: {
+                    let p = p.clone();
+                    move |evt: KeyboardEvent| clear_literal_on_delete_key(&evt, ctx, &p)
+                },
                 oninput: move |evt: FormEvent| {
                     if let Ok(n) = evt.value().parse::<i64>()
                         && let Some(cb) = ctx.on_change_number
@@ -217,6 +254,10 @@ fn render_leaf_node(
                 value: "{raw_str}",
                 style: "background: transparent; border: none; outline: none; box-shadow: none; border-radius: var(--radius-full); backdrop-filter: none; color: inherit; font-family: inherit; font-size: inherit; min-width: 3.5rem; max-width: 12rem; padding: 0; margin: 0;",
                 autofocus: true,
+                onkeydown: {
+                    let p = p.clone();
+                    move |evt: KeyboardEvent| clear_literal_on_delete_key(&evt, ctx, &p)
+                },
                 oninput: move |evt: FormEvent| {
                     if let Some(cb) = ctx.on_change_string {
                         cb.call((p.clone(), evt.value()));

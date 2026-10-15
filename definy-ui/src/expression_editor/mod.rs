@@ -7,21 +7,63 @@ pub use diagnostics::{
     analyze_expression_types, collect_type_diagnostics, part_type_to_expression_type,
 };
 pub use mutation::{
-    add_let_binding, add_list_item, add_record_item, apply_selection, get_mut_expression_at_path,
-    next_local_variable_id, path_to_key, remove_let_binding, remove_list_item, remove_record_item,
-    set_boolean_value, set_let_variable_name, set_number_value, set_record_item_key,
-    set_string_value, upgrade_part_reference_content_hash,
+    add_let_binding, add_list_item, add_record_item, apply_selection, clear_expression_at_path,
+    get_mut_expression_at_path, next_local_variable_id, path_to_key, remove_let_binding,
+    remove_list_item, remove_record_item, set_boolean_value, set_let_variable_name,
+    set_number_value, set_record_item_key, set_string_value, upgrade_part_reference_content_hash,
 };
-pub use selector::{current_selection_value, selector_options};
+pub use selector::{
+    RankedSelectorOption, current_selection_value, selector_options, selector_options_ranked,
+};
 pub use types::{ConstructorValueShape, ExpressionType, ScopeVariable, TypeDiagnostic};
 
 #[cfg(test)]
 mod tests {
     use super::mutation::{
-        add_let_binding, get_mut_expression_at_path, path_to_key, remove_let_binding,
-        remove_list_item, set_number_value,
+        add_let_binding, clear_expression_at_path, get_mut_expression_at_path, path_to_key,
+        remove_let_binding, remove_list_item, set_number_value,
     };
     use crate::app_state::PathStep;
+
+    fn number(value: i64) -> definy_event::event::Expression {
+        definy_event::event::Expression::Number(definy_event::event::NumberExpression { value })
+    }
+
+    #[test]
+    fn clear_only_selected_sub_expression() {
+        let mut expression = Some(definy_event::event::Expression::Add(
+            definy_event::event::AddExpression {
+                left: Box::new(number(1)),
+                right: Box::new(number(2)),
+            },
+        ));
+
+        clear_expression_at_path(&mut expression, &[PathStep::Left]);
+
+        assert_eq!(
+            expression,
+            Some(definy_event::event::Expression::Add(
+                definy_event::event::AddExpression {
+                    left: Box::new(definy_event::event::Expression::Hole),
+                    right: Box::new(number(2)),
+                },
+            ))
+        );
+        assert_eq!(
+            crate::expression_eval::expression_to_source(expression.as_ref().unwrap()),
+            "+ _ 2"
+        );
+        assert!(
+            crate::expression_eval::evaluate_expression(expression.as_ref().unwrap(), &[]).is_err()
+        );
+    }
+
+    #[test]
+    fn clear_root_expression_makes_it_none() {
+        let mut expression = Some(number(1));
+        clear_expression_at_path(&mut expression, &[]);
+        assert_eq!(expression, None);
+    }
 
     #[test]
     fn edit_nested_expression_by_ui_path() {

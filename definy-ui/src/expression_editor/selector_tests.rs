@@ -77,6 +77,47 @@ fn test_selector_options_sorted_for_type() {
 }
 
 #[test]
+fn test_selector_options_ranked_marks_type_mismatch_after_matches() {
+    let state = AppState::default();
+    let options = selector_options_ranked(
+        &state,
+        Language::English,
+        &[],
+        false,
+        Some(&ExpressionType::Number),
+        &HashMap::new(),
+    );
+
+    let is_mismatch = |value: &str| {
+        options
+            .iter()
+            .find(|option| option.value == value)
+            .map(|option| option.is_type_mismatch)
+    };
+    assert_eq!(is_mismatch("expr:number"), Some(false));
+    assert_eq!(is_mismatch("expr:string"), Some(true));
+
+    // 型の合わない選択肢は合う選択肢より後ろにまとまっている
+    let first_mismatch = options
+        .iter()
+        .position(|option| option.is_type_mismatch)
+        .expect("a type mismatched option should exist");
+    assert!(
+        options[first_mismatch..]
+            .iter()
+            .all(|option| option.is_type_mismatch)
+    );
+}
+
+#[test]
+fn test_selector_options_ranked_has_no_mismatch_without_expected_type() {
+    let state = AppState::default();
+    let options =
+        selector_options_ranked(&state, Language::English, &[], true, None, &HashMap::new());
+    assert!(options.iter().all(|option| !option.is_type_mismatch));
+}
+
+#[test]
 fn test_lambda_selector_is_only_available_for_function_expectations() {
     let state = AppState::default();
     let function_type = ExpressionType::Function {

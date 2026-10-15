@@ -61,6 +61,10 @@ pub fn expression_to_layout_node_with_path(
             NodeKind::Identifier,
         )
         .with_path(p),
+        // 未入力の式
+        Expression::Hole => {
+            LayoutNode::new(id_prefix, "□".to_string(), NodeKind::Identifier).with_path(p)
+        }
         Expression::Compiler(builtin) => LayoutNode::new(
             id_prefix,
             format!("[builtin: {:?}]", builtin),

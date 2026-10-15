@@ -836,6 +836,13 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "description": "未入力の式. エディタで式を消したときに入る. 評価・コンパイルはエラーになる",
+          "type": "string",
+          "enum": [
+            "Hole"
+          ]
         }
       ]
     },

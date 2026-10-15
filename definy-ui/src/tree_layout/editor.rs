@@ -13,11 +13,12 @@ use crate::expression_editor::diagnostics::{
     TypeAnalysis, constructor_default_value_from_type_part,
 };
 use crate::expression_editor::mutation::{
-    apply_selection, get_mut_expression_at_path, set_number_value, set_string_value,
+    apply_selection, clear_expression_at_path, get_mut_expression_at_path, set_number_value,
+    set_string_value,
 };
 use crate::expression_editor::{
     ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,
-    selector_options,
+    selector_options_ranked,
 };
 use crate::language::Language;
 use crate::page_context::PageContext;
@@ -106,13 +107,13 @@ pub fn ExpressionTreeEditor(
         .as_ref()
         .and_then(|p| analysis.diagnostics.iter().find(|d| d.path == *p));
 
-    let available_options = if let Some(target_path) = sel_path_val.as_ref() {
+    let ranked_options = if let Some(target_path) = sel_path_val.as_ref() {
         let is_root = target_path.is_empty();
         let target_expected = analysis
             .expected_types
             .get(target_path)
             .or(expected_type.as_ref());
-        selector_options(
+        selector_options_ranked(
             &state,
             language,
             &[],
@@ -123,12 +124,47 @@ pub fn ExpressionTreeEditor(
     } else {
         Vec::new()
     };
+    // 期待型に合わない選択肢は区切りの下に薄く表示する
+    let type_mismatch_values: std::collections::HashSet<String> = ranked_options
+        .iter()
+        .filter(|option| option.is_type_mismatch)
+        .map(|option| option.value.clone())
+        .collect();
+    let available_options: Vec<(String, String)> = ranked_options
+        .into_iter()
+        .map(|option| (option.value, option.label))
+        .collect();
 
     let error_count = analysis.diagnostics.len();
-    let type_errors_text = language.label("type error(s)", "件の型不一致", "tip-eraro(j)");
+    let type_errors_text = language.label("error(s)", "件のエラー", "eraro(j)");
     let active_anchor_name = selected_node_id()
         .map(|id| tree_node_anchor_name(anchor_id, &id))
         .unwrap_or_else(|| format!("--tree-node-{anchor_id}-none"));
+
+    // 選択中の式だけを未入力にする (Delete / Backspace キー, メニューのボタン)
+    let mut clear_selected = {
+        let menu_panel_id = menu_panel_id.clone();
+        let menu_search_input_name = menu_search_input_name.clone();
+        move |path: Vec<PathStep>| {
+            let mut curr = expression.read().clone();
+            clear_expression_at_path(&mut curr, &path);
+            commit_expression_change(expression, on_change, curr);
+            menu_search_query.set(String::new());
+            if path.is_empty() {
+                // ルートを消すと空の式エディタになるので選択も解除する
+                crate::dropdown::hide_popover(&menu_panel_id);
+                selected_node_id.set(None);
+                selected_path.set(None);
+            } else if let Some(id) = selected_node_id.peek().clone() {
+                // 未入力になった位置にすぐ別の式を選べるよう, 検索欄にフォーカスする
+                crate::dropdown::show_anchored_popover(
+                    &menu_panel_id,
+                    &tree_node_anchor_name(anchor_id, &id),
+                    Some(&menu_search_input_name),
+                );
+            }
+        }
+    };
 
     rsx! {
         div {
@@ -156,15 +192,44 @@ pub fn ExpressionTreeEditor(
                 options: available_options,
                 search_query: menu_search_query,
                 highlighted_index: menu_highlighted_index,
+                secondary_values: type_mismatch_values,
+                secondary_heading: language
+                    .label(
+                        "Other (type does not match)",
+                        "その他 (型が合わない)",
+                        "aliaj (tipo ne kongruas)",
+                    )
+                    .to_string(),
                 header: render_menu_header(
                     language,
                     &current_kind_label,
                     slot_expected_type,
                     slot_diagnostic,
-                    &menu_panel_id,
-                    selected_node_id,
-                    selected_path,
+                    {
+                        let menu_panel_id = menu_panel_id.clone();
+                        move |_| {
+                            crate::dropdown::hide_popover(&menu_panel_id);
+                            selected_node_id.set(None);
+                            selected_path.set(None);
+                        }
+                    },
+                    {
+                        let mut clear_selected = clear_selected.clone();
+                        move |_| {
+                            if let Some(path) = selected_path.peek().clone() {
+                                clear_selected(path);
+                            }
+                        }
+                    },
                 ),
+                on_delete_key: {
+                    let mut clear_selected = clear_selected.clone();
+                    move |_| {
+                        if let Some(path) = selected_path.peek().clone() {
+                            clear_selected(path);
+                        }
+                    }
+                },
                 on_change: {
                     let state = state.clone();
                     move |selected_value: String| {
@@ -240,6 +305,7 @@ pub fn ExpressionTreeEditor(
                         set_string_value(&mut curr, &path, &val);
                         commit_expression_change(expression, on_change, curr);
                     },
+                    on_clear: move |path: Vec<PathStep>| clear_selected(path),
                 }
             }
         }
@@ -353,15 +419,17 @@ fn render_menu_header(
     current_kind_label: &str,
     slot_expected_type: Option<&ExpressionType>,
     slot_diagnostic: Option<&TypeDiagnostic>,
-    menu_panel_id: &str,
-    mut selected_node_id: Signal<Option<String>>,
-    mut selected_path: Signal<Option<Vec<PathStep>>>,
+    on_deselect: impl FnMut(MouseEvent) + 'static,
+    on_clear: impl FnMut(MouseEvent) + 'static,
 ) -> Element {
+    let clear_label = language.label(
+        "Clear (Delete)",
+        "未入力にする (Delete)",
+        "Malplenigi (Delete)",
+    );
     let selected_label = language.label("Selected:", "選択中:", "Elektita:");
     let expects_label = language.label("Expects:", "期待:", "Atendas:");
     let deselect_label = language.label("Deselect", "選択解除", "Malelekti");
-    let menu_panel_id = menu_panel_id.to_string();
-
     rsx! {
         div { style: "display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.76rem;",
             span { style: "font-weight: 600; color: var(--accent); white-space: nowrap;",
@@ -386,13 +454,16 @@ fn render_menu_header(
             }
             button {
                 r#type: "button",
-                title: "{deselect_label}",
+                title: "{clear_label}",
                 style: "margin-left: auto; padding: 0.05rem 0.4rem; font-size: 0.72rem; border-radius: var(--radius-full); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; line-height: 1.4;",
-                onclick: move |_| {
-                    crate::dropdown::hide_popover(&menu_panel_id);
-                    selected_node_id.set(None);
-                    selected_path.set(None);
-                },
+                onclick: on_clear,
+                "⌫"
+            }
+            button {
+                r#type: "button",
+                title: "{deselect_label}",
+                style: "padding: 0.05rem 0.4rem; font-size: 0.72rem; border-radius: var(--radius-full); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; line-height: 1.4;",
+                onclick: on_deselect,
                 "✕"
             }
             if let Some(diag) = slot_diagnostic {
@@ -445,6 +516,7 @@ fn expression_kind_label(expr: &Expression) -> String {
         Expression::Variable(v) => format!("local (#{})", v.variable_id),
         Expression::PartReference(_) => "part_ref".to_string(),
         Expression::Constructor(_) => "constructor".to_string(),
+        Expression::Hole => "unfilled".to_string(),
         _ => "expression".to_string(),
     }
 }

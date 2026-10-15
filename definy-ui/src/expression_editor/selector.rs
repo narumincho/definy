@@ -18,6 +18,37 @@ pub fn selector_options(
     expected_type: Option<&ExpressionType>,
     variable_types: &HashMap<i64, ExpressionType>,
 ) -> Vec<(String, String)> {
+    selector_options_ranked(
+        state,
+        language,
+        scope_variables,
+        is_root,
+        expected_type,
+        variable_types,
+    )
+    .into_iter()
+    .map(|option| (option.value, option.label))
+    .collect()
+}
+
+/// 期待型との適合度付きの選択肢
+#[derive(Debug, Clone, PartialEq)]
+pub struct RankedSelectorOption {
+    pub value: String,
+    pub label: String,
+    /// 期待型に合わない (または合うか判断できない) 選択肢か
+    pub is_type_mismatch: bool,
+}
+
+/// [`selector_options`] と同じ順の選択肢に、期待型に合わないかどうかを付けて返す
+pub fn selector_options_ranked(
+    state: &AppState,
+    language: Language,
+    scope_variables: &[ScopeVariable],
+    is_root: bool,
+    expected_type: Option<&ExpressionType>,
+    variable_types: &HashMap<i64, ExpressionType>,
+) -> Vec<RankedSelectorOption> {
     let snapshots = collect_part_snapshots(state);
     let mut options = Vec::new();
 
@@ -229,10 +260,16 @@ pub fn selector_options(
             }
         }
 
+        // 型宣言のない組み込みパーツは推定した型を, 型宣言の表記に合わせて小文字で表示する
         let type_text = snapshot
             .part_type
             .as_ref()
             .map(ToString::to_string)
+            .or_else(|| {
+                part_type_map
+                    .get(&snapshot.definition_event_hash)
+                    .map(|expr_type| expr_type.text().to_lowercase())
+            })
             .unwrap_or_else(|| "Part".to_string());
         let is_inline_function_builtin = matches!(
             snapshot.expression.as_ref(),
@@ -310,14 +347,23 @@ pub fn selector_options(
         options.retain(|(value, _)| value != "expr:function");
     }
 
-    if let Some(expected) = expected_type {
-        options.sort_by_cached_key(|(val, _)| {
-            let opt_type = classify_option_type(val, &part_type_map, variable_types);
-            option_match_rank(val, opt_type.as_ref(), Some(expected))
-        });
-    }
-
-    options
+    let mut ranked: Vec<(u8, RankedSelectorOption)> = options
+        .into_iter()
+        .map(|(value, label)| {
+            let opt_type = classify_option_type(&value, &part_type_map, variable_types);
+            let rank = option_match_rank(&value, opt_type.as_ref(), expected_type);
+            (
+                rank,
+                RankedSelectorOption {
+                    value,
+                    label,
+                    is_type_mismatch: rank >= 2,
+                },
+            )
+        })
+        .collect();
+    ranked.sort_by_key(|(rank, _)| *rank);
+    ranked.into_iter().map(|(_, option)| option).collect()
 }
 
 fn classify_option_type(

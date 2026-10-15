@@ -59,6 +59,7 @@ pub fn expression_to_source(expression: &definy_event::event::Expression) -> Str
         scope: &[(i64, String)],
     ) -> String {
         match expression {
+            definy_event::event::Expression::Hole => "_".to_string(),
             definy_event::event::Expression::Compiler(builtin) => match builtin {
                 definy_event::event::CompilerBuiltin::Let => "[compiler let]".to_string(),
                 definy_event::event::CompilerBuiltin::Plus => "[compiler plus]".to_string(),
