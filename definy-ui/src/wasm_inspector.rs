@@ -325,13 +325,15 @@ pub fn WasmInspectorCard(
             div { style: "display: inline-flex; background: var(--bg-inset); padding: 0.2rem; border-radius: var(--radius-sm); border: 1px solid var(--border); width: fit-content;",
                 button {
                     r#type: "button",
-                    style: if view_mode() == 0 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: var(--primary-content); border-radius: var(--radius-xs); box-shadow: 0 2px 8px var(--blue-border);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
+                    class: "toggle-chip",
+                    "aria-pressed": if view_mode() == 0 { "true" } else { "false" },
                     onclick: move |_| view_mode.set(0),
                     "{language.label(\"Sections\", \"セクション一覧\", \"Sekcioj\")}"
                 }
                 button {
                     r#type: "button",
-                    style: if view_mode() == 1 { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: var(--brand-gradient); color: var(--primary-content); border-radius: var(--radius-xs); box-shadow: 0 2px 8px var(--blue-border);" } else { "padding: 0.3rem 0.75rem; font-size: 0.78rem; font-weight: 500; background: transparent; color: var(--text-secondary); border-radius: var(--radius-xs);" },
+                    class: "toggle-chip",
+                    "aria-pressed": if view_mode() == 1 { "true" } else { "false" },
                     onclick: move |_| view_mode.set(1),
                     "{language.label(\"Hex Dump\", \"16進ダンプ\", \"Deksesuma rubejo\")}"
                 }

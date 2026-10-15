@@ -19,15 +19,13 @@ pub fn SettingsView(state: AppState, context: PageContext) -> Element {
         .count();
 
     let local_events_badge = if queued_count > 0 || failed_count > 0 {
-        let (bg, text_color, count) = if failed_count > 0 {
-            ("var(--red)", "var(--text-primary)", failed_count)
+        let (tone, count) = if failed_count > 0 {
+            ("error", failed_count)
         } else {
-            ("var(--yellow)", "var(--bg-chrome)", queued_count)
+            ("warning", queued_count)
         };
         Some(rsx! {
-            span { style: "font-size: 0.72rem; font-weight: 700; background: {bg}; color: {text_color}; padding: 0.1rem 0.45rem; border-radius: 9999px; line-height: 1.2;",
-                "{count}"
-            }
+            span { class: "count-badge", "data-tone": tone, "{count}" }
         })
     } else {
         None

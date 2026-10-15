@@ -613,22 +613,14 @@ fn DropdownOptionItem(
 ) -> Element {
     let parts: Vec<&str> = opt_label.split('\t').collect();
     let item_id = format!("{panel_id}-opt-{idx}");
-    let bg = if is_highlighted {
-        "var(--blue-bg-strong)"
+    // 見た目は main.css の .dropdown-option[data-state] で付ける
+    // (状態ごとに style を組み替えると var() を含む background が反映されないため)
+    let state = if is_highlighted {
+        "highlighted"
     } else if is_selected {
-        "var(--overlay-3)"
+        "selected"
     } else {
-        "transparent"
-    };
-    let color = if is_selected || is_highlighted {
-        "var(--text)"
-    } else {
-        "var(--text-secondary)"
-    };
-    let opacity = if is_secondary && !is_selected && !is_highlighted {
-        "0.55"
-    } else {
-        "1"
+        ""
     };
 
     let part_detail_url = resolve_part_detail_url(&opt_val, &parts);
@@ -655,13 +647,15 @@ fn DropdownOptionItem(
             }
         }
         div {
-            style: "width: 100%; display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid var(--overlay-2); background: {bg}; opacity: {opacity}; transition: background 0.08s ease;",
+            class: "dropdown-option",
+            "data-state": state,
+            "data-secondary": if is_secondary { "true" } else { "false" },
             "data-selected": if is_selected { "true" } else { "false" },
             onmouseenter: move |_| on_highlight.call(idx),
             button {
                 id: "{item_id}",
                 r#type: "button",
-                style: "flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; background: transparent; cursor: pointer; color: {color}; font-family: inherit;",
+                style: "flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; text-align: left; box-sizing: border-box; padding: 0.45rem 0.65rem; border: none; background: transparent; cursor: pointer; color: inherit; font-family: inherit;",
                 "popovertarget": "{panel_id}",
                 "popovertargetaction": "hide",
                 onclick: {

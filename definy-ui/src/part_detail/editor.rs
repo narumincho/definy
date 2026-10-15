@@ -396,7 +396,6 @@ pub(crate) fn PartEditorCard(
                             r#type: "button",
                             class: "btn-secondary",
                             "aria-pressed": if show_wasm_inspector() { "true" } else { "false" },
-                            style: if show_wasm_inspector() { "background: var(--blue-bg-strong); border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px var(--blue-border);" } else { "" },
                             onclick: move |_| show_wasm_inspector.toggle(),
                             crate::icon::SearchIcon {}
                             span {
@@ -597,16 +596,12 @@ pub(crate) fn PartEditorCard(
                         .map(|eval| {
                             let is_error = eval.starts_with("Error")
                                 || eval.starts_with("エラー");
-                            let (bg, border, text_color) = if is_error {
-                                ("var(--error-bg)", "var(--error)", "var(--red-text)")
-                            } else {
-                                ("var(--blue-bg-strong)", "var(--primary)", "var(--blue-text)")
-                            };
+                            let tone = if is_error { "error" } else { "info" };
                             rsx! {
                                 div {
-                                    class: "mono eval-result",
+                                    class: "mono eval-result tone-message",
                                     "data-eval-result": "true",
-                                    style: "font-size: 0.86rem; word-break: break-word; background: {bg}; border: 1px solid {border}; color: {text_color}; padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); box-shadow: 0 0 12px var(--blue-bg-strong);",
+                                    "data-tone": tone,
                                     "{eval}"
                                 }
                             }

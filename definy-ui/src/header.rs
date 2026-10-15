@@ -272,14 +272,13 @@ fn LanguageDropdown(state: AppState, context: PageContext) -> Element {
                             {
                                 let is_selected = lang.to_code() == current_code;
                                 let url = PageContext::build_url(&location, lang.to_code(), event_type);
-                                let bg = if is_selected { "var(--overlay-3)" } else { "transparent" };
-                                let color = if is_selected { "var(--primary)" } else { "var(--text)" };
 
                                 rsx! {
                                     a {
                                         key: "{lang.to_code()}",
                                         href: "{url}",
-                                        style: "display: block; width: 100%; box-sizing: border-box; padding: 0.45rem 0.65rem; text-decoration: none; border-bottom: 1px solid var(--overlay-2); background: {bg}; color: {color}; font-weight: 500;",
+                                        class: "lang-option",
+                                        "aria-current": if is_selected { "true" } else { "false" },
                                         "{lang.native_name()}"
                                     }
                                 }

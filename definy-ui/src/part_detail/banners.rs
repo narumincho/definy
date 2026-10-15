@@ -11,14 +11,14 @@ pub fn PreviewBanner(context: PageContext, preview: DetectedPreview) -> Element 
     let path_url = build_preview_path_url(&preview.code);
     let has_validation_error = preview.validation_error.is_some();
 
-    let banner_style = if has_validation_error {
-        "background: linear-gradient(135deg, var(--red-bg-strong), var(--yellow-bg)); border: 1px solid var(--red-border); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px var(--red-bg);"
+    let banner_tone = if has_validation_error {
+        "error"
     } else {
-        "background: linear-gradient(135deg, var(--blue-bg-strong), var(--purple-bg)); border: 1px solid var(--blue-border); border-radius: var(--radius-md); padding: 1.15rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 4px 16px var(--blue-bg);"
+        "info"
     };
 
     rsx! {
-        div { class: "preview-banner-card", style: "{banner_style}",
+        div { class: "preview-banner-card", "data-tone": banner_tone,
             div { style: "display: flex; align-items: center; gap: 0.85rem;",
                 span { style: "font-size: 1.7rem;",
                     if has_validation_error {

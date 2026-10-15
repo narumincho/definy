@@ -1337,6 +1337,181 @@ a.status-error {
 }
 
 /*
+ * 状態で見た目が変わる部品. 状態は aria-* / data-* 属性で表し, 見た目はここで付ける.
+ * (状態ごとに style 属性の文字列を組み替えると, 前の状態のプロパティが残ったり var() を含む指定が反映されなかったりする)
+ */
+
+/* ドロップダウンの選択肢 */
+.dropdown-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--overlay-2);
+  color: var(--text-secondary);
+  transition: background-color 0.08s ease;
+}
+
+.dropdown-option[data-secondary='true'] {
+  opacity: 0.55;
+}
+
+.dropdown-option[data-state='selected'] {
+  background: var(--overlay-3);
+  color: var(--text);
+  opacity: 1;
+}
+
+.dropdown-option[data-state='highlighted'] {
+  background: var(--bg-selection-strong);
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+/* 言語メニューの項目 */
+.lang-option {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.65rem;
+  border-bottom: 1px solid var(--overlay-2);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.lang-option:hover {
+  background: var(--overlay-2);
+}
+
+.lang-option[aria-current='true'] {
+  background: var(--overlay-3);
+  color: var(--primary);
+}
+
+/* タブ・切り替えボタン (選択中は aria-pressed / aria-current) */
+.toggle-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.7rem !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--overlay-2) !important;
+  color: var(--text-secondary) !important;
+  font-size: 0.86rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.toggle-chip:hover {
+  background: var(--overlay-3) !important;
+  color: var(--text-primary) !important;
+}
+
+.toggle-chip[aria-pressed='true'],
+.toggle-chip[aria-current='page'] {
+  background: var(--bg-selection-strong) !important;
+  border-color: var(--primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.toggle-chip-sm {
+  padding: 0.15rem 0.5rem !important;
+  font-size: 0.78rem;
+}
+
+.btn-secondary[aria-pressed='true'] {
+  background: var(--bg-selection-strong);
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
+/* 評価結果などのメッセージ */
+.tone-message {
+  font-size: 0.88rem;
+  word-break: break-word;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--blue-border);
+  background: var(--blue-bg);
+  color: var(--blue-text);
+}
+
+.tone-message[data-tone='error'] {
+  border-color: var(--red-border);
+  background: var(--red-bg);
+  color: var(--red-text);
+}
+
+/* 件数バッジ */
+.count-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--radius-full);
+  line-height: 1.3;
+  background: var(--primary-solid);
+  color: #fff;
+}
+
+.count-badge[data-tone='warning'] {
+  background: var(--yellow);
+  color: var(--bg-chrome);
+}
+
+.count-badge[data-tone='error'] {
+  background: var(--red);
+  color: #fff;
+}
+
+/* ローカルイベントの送信状態 */
+.status-chip {
+  display: inline-flex;
+  padding: 0.08rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.status-chip[data-status='queued'] {
+  background: var(--yellow-bg-strong);
+  border-color: var(--yellow-border);
+  color: var(--yellow-text);
+}
+
+.status-chip[data-status='sent'] {
+  background: var(--green-bg-strong);
+  border-color: var(--green-border);
+  color: var(--green-text);
+}
+
+.status-chip[data-status='failed'] {
+  background: var(--red-bg-strong);
+  border-color: var(--red-border);
+  color: var(--red-text);
+}
+
+/* パーツ詳細のプレビュー告知 */
+.preview-banner-card {
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border: 1px solid var(--blue-border);
+  background: var(--blue-bg);
+}
+
+.preview-banner-card[data-tone='error'] {
+  border-color: var(--red-border);
+  background: var(--red-bg);
+}
+
+/*
  * 式のツリーのノードの状態 (definy-ui/src/tree_layout/view.rs の data-state).
  * 選択は主色の枠と淡い光, ホバーは中立色の枠だけにして, ガイド線などの装飾と見分けられるようにする
  */

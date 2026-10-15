@@ -50,7 +50,8 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                 // 1. 概要
                 a {
                     href: context.href_with_lang(Location::ApiOverview),
-                    style: if is_overview_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--primary-solid); color: var(--text-primary); white-space: nowrap; flex-shrink: 0;" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: var(--overlay-2); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
+                    class: "toggle-chip",
+                    "aria-current": if is_overview_active { "page" } else { "false" },
                     {lang.label("Overview", "API 概要", "Superrigardo")}
                 }
 
@@ -61,13 +62,14 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                         let name = method.name();
                         let target_loc = Location::ApiMethod(*method, None);
                         let href = context.href_with_lang(target_loc);
-                        let style_str = if is_active {
-                            "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--blue); color: var(--text-primary); white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px var(--blue-border);"
-                        } else {
-                            "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: var(--overlay-2); color: var(--text-primary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;"
-                        };
                         rsx! {
-                            a { key: "{name}", href: "{href}", style: "{style_str}", "{name}" }
+                            a {
+                                key: "{name}",
+                                href: "{href}",
+                                class: "toggle-chip",
+                                "aria-current": if is_active { "page" } else { "false" },
+                                "{name}"
+                            }
                         }
                     }
                 }
@@ -75,7 +77,8 @@ pub fn ApiSubNav(context: PageContext, active: ApiNavActive) -> Element {
                 // 3. アーキテクチャ・シーケンス図
                 a {
                     href: context.href_with_lang(Location::ApiArchitecture),
-                    style: if is_arch_active { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 600; text-decoration: none; background: var(--purple); color: var(--text-primary); white-space: nowrap; flex-shrink: 0; box-shadow: 0 2px 8px var(--purple-border);" } else { "padding: 0.45rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.84rem; font-weight: 500; text-decoration: none; background: var(--overlay-2); color: var(--text-secondary); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;" },
+                    class: "toggle-chip",
+                    "aria-current": if is_arch_active { "page" } else { "false" },
                     {
                         lang.label(
                             "Sequence Diagrams",

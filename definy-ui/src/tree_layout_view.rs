@@ -146,8 +146,6 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                                 let s_id = sample.id.to_string();
                                 let is_active = custom_part_hash.read().is_none()
                                     && selected_sample_id.read().as_str() == sample.id;
-                                let btn_bg = if is_active { "var(--primary)" } else { "var(--overlay-2)" };
-                                let btn_color = if is_active { "var(--primary-content)" } else { "var(--text)" };
                                 let title = if language == crate::language::Language::Japanese {
                                     sample.title_ja
                                 } else {
@@ -157,7 +155,8 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                                     button {
                                         key: "{sample.id}",
                                         r#type: "button",
-                                        style: "padding: 0.35rem 0.65rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: {btn_bg}; color: {btn_color}; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.12s ease;",
+                                        class: "toggle-chip",
+                                        "aria-pressed": if is_active { "true" } else { "false" },
                                         onclick: move |_| {
                                             custom_part_hash.set(None);
                                             selected_sample_id.set(s_id.clone());
@@ -233,12 +232,12 @@ pub fn TreeLayoutView(state: AppState, context: PageContext) -> Element {
                             {
                                 {
                                     let is_curr = (container_width() - w).abs() < 5.0;
-                                    let bg = if is_curr { "var(--blue-border)" } else { "var(--overlay-2)" };
                                     rsx! {
                                         button {
                                             key: "{w}",
                                             r#type: "button",
-                                            style: "padding: 0.2rem 0.5rem; font-size: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: {bg}; cursor: pointer;",
+                                            class: "toggle-chip toggle-chip-sm",
+                                            "aria-pressed": if is_curr { "true" } else { "false" },
                                             onclick: move |_| container_width.set(w),
                                             "{label}"
                                         }

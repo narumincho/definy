@@ -13,11 +13,12 @@ fn status_label(language: Language, status: &LocalEventStatus) -> &'static str {
     }
 }
 
-fn status_color(status: &LocalEventStatus) -> &'static str {
+/// main.css の .status-chip[data-status] と対応する
+fn status_key(status: &LocalEventStatus) -> &'static str {
     match status {
-        LocalEventStatus::Queued => "var(--yellow)",
-        LocalEventStatus::Sent => "var(--green)",
-        LocalEventStatus::Failed => "var(--red)",
+        LocalEventStatus::Queued => "queued",
+        LocalEventStatus::Sent => "sent",
+        LocalEventStatus::Failed => "failed",
     }
 }
 
@@ -191,7 +192,6 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                 }
                             };
                             let time_formatted = format_time_ms(context.language, record.updated_at_ms);
-                            let bg_color = status_color(&status);
                             let lbl = status_label(context.language, &status);
                             let err_msg = record.last_error.clone();
                             rsx! {
@@ -200,9 +200,7 @@ pub fn LocalEventQueueView(state: AppState, context: PageContext) -> Element {
                                     class: "event-card",
                                     style: "display: grid; gap: 0.4rem; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);",
                                     div { style: "display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;",
-                                        div { style: "background: {bg_color}; color: var(--primary-content); padding: 0.12rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; display: inline-flex;",
-                                            "{lbl}"
-                                        }
+                                        div { class: "status-chip", "data-status": status_key(&status), "{lbl}" }
                                         div {
                                             class: "mono",
                                             style: "color: var(--text-secondary); font-size: 0.78rem;",

@@ -348,16 +348,12 @@ pub fn PartDefinitionFormView(
                     .map(|result| {
                         let is_error = result.starts_with("Error")
                             || result.starts_with("エラー");
-                        let (bg, border, text_color) = if is_error {
-                            ("var(--error-bg)", "var(--error)", "var(--red-text)")
-                        } else {
-                            ("var(--blue-bg-strong)", "var(--primary)", "var(--blue-text)")
-                        };
+                        let tone = if is_error { "error" } else { "info" };
                         rsx! {
                             div {
-                                class: "mono eval-result",
+                                class: "mono eval-result tone-message",
                                 "data-eval-result": "true",
-                                style: "padding: 0.5rem 0.8rem; font-size: 0.84rem; background: {bg}; border: 1px solid {border}; color: {text_color}; border-radius: var(--radius-sm); word-break: break-word;",
+                                "data-tone": tone,
                                 "{result}"
                             }
                         }
