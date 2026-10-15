@@ -4,7 +4,7 @@
     {
       "name": "definy",
       "runtimeExecutable": "dx",
-      "runtimeArgs": ["serve", "--fullstack"],
+      "runtimeArgs": ["serve", "--fullstack", "--interactive", "false", "--open", "false"],
       "port": 8080
     }
   ]
