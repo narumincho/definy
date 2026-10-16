@@ -282,6 +282,8 @@ async fn fetch_missing_events_async(
         }
         Some(definy_ui::Location::PartList)
         | Some(definy_ui::Location::ModuleList)
+        | Some(definy_ui::Location::Changes)
+        | Some(definy_ui::Location::History)
         | Some(definy_ui::Location::Home) => {
             let filter = context.filter_event_type;
             match definy_ui::fetch::get_events(filter, Some(100), Some(0)).await {

@@ -66,6 +66,7 @@ enum ActivityTarget {
     Parts,
     Modules,
     Changes,
+    History,
     Accounts,
     Deploy,
     About,
@@ -79,6 +80,7 @@ impl ActivityTarget {
             Self::Parts => Location::PartList,
             Self::Modules => Location::ModuleList,
             Self::Changes => Location::Changes,
+            Self::History => Location::History,
             Self::Accounts => Location::AccountList,
             Self::Deploy => Location::Deployments,
             Self::About => Location::About,
@@ -92,6 +94,7 @@ impl ActivityTarget {
             Self::Parts => IconKind::Parts,
             Self::Modules => IconKind::Modules,
             Self::Changes => IconKind::Changes,
+            Self::History => IconKind::History,
             Self::Accounts => IconKind::Accounts,
             Self::Deploy => IconKind::Deploy,
             Self::About => IconKind::About,
@@ -105,6 +108,7 @@ impl ActivityTarget {
             Self::Parts => context.language.label("Parts", "パーツ", "Partoj"),
             Self::Modules => context.language.label("Modules", "モジュール", "Moduloj"),
             Self::Changes => context.language.label("Changes", "変更", "Ŝanĝoj"),
+            Self::History => context.language.label("History", "履歴", "Historio"),
             Self::Accounts => context.language.label("Accounts", "アカウント", "Kontoj"),
             Self::Deploy => context.language.label("Deploy", "デプロイ", "Deplojo"),
             Self::About => context.language.label("About", "About", "Pri"),
@@ -135,6 +139,7 @@ impl ActivityTarget {
                     )
                 )
                 | (Self::Changes, Some(Location::Changes))
+                | (Self::History, Some(Location::History))
                 | (Self::About, Some(Location::About))
                 | (
                     Self::Settings,
@@ -169,6 +174,7 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
                 ActivityTarget::Parts,
                 ActivityTarget::Modules,
                 ActivityTarget::Changes,
+                ActivityTarget::History,
                 ActivityTarget::Accounts,
                 ActivityTarget::Deploy,
             ]
@@ -471,6 +477,7 @@ fn EditorTabBar(state: AppState, context: PageContext) -> Element {
         ActivityTarget::Parts,
         ActivityTarget::Modules,
         ActivityTarget::Changes,
+        ActivityTarget::History,
         ActivityTarget::Accounts,
         ActivityTarget::Deploy,
         ActivityTarget::About,

@@ -54,6 +54,7 @@ pub enum IconKind {
     About,
     Settings,
     Changes,
+    History,
     Sidebar,
     ChevronRight,
     Part,
@@ -107,6 +108,14 @@ pub fn Icon(kind: IconKind, #[props(default = "btn-icon")] class: &'static str) 
             circle { cx: "18", cy: "7", r: "2" }
             path { d: "M6 7v10" }
             path { d: "M18 9a6 6 0 0 1-6 6H6" }
+        },
+        // コミットの点と枝 (履歴グラフ)
+        IconKind::History => rsx! {
+            circle { cx: "7", cy: "6", r: "2" }
+            circle { cx: "7", cy: "18", r: "2" }
+            circle { cx: "17", cy: "12", r: "2" }
+            path { d: "M7 8v8" }
+            path { d: "M7 8c0 4 10 0 10 2" }
         },
         // サイドバーの開閉
         IconKind::Sidebar => rsx! {

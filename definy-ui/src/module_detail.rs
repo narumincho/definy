@@ -79,6 +79,7 @@ pub fn ModuleDetailView(
                 ModuleHistoryCard {
                     state: state.clone(),
                     context: context.clone(),
+                    module_hash: definition_event_hash.clone(),
                     related_events,
                 }
             }
@@ -445,6 +446,7 @@ fn resolve_module_commit_info(
 fn ModuleHistoryCard(
     state: AppState,
     context: PageContext,
+    module_hash: EventHashId,
     related_events: Vec<(EventHashId, definy_event::event::Event)>,
 ) -> Element {
     let account_name_map = state.account_name_map();
@@ -461,8 +463,15 @@ fn ModuleHistoryCard(
                         "{language.label(\"Commit History\", \"コミット履歴\", \"Enmeta historio\")}"
                     }
                 }
-                span { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                    "{related_events.len()} {language.label(\"commits\", \"コミット\", \"enmetoj\")}"
+                div { style: "display: flex; align-items: center; gap: 0.8rem;",
+                    span { style: "font-size: 0.75rem; color: var(--text-secondary);",
+                        "{related_events.len()} {language.label(\"commits\", \"コミット\", \"enmetoj\")}"
+                    }
+                    a {
+                        href: context.href_with_tab(crate::Location::History, &module_hash.to_string()),
+                        style: "font-size: 0.78rem; color: var(--primary); text-decoration: none;",
+                        "{language.label(\"View as graph\", \"グラフで見る\", \"Vidi kiel grafo\")}"
+                    }
                 }
             }
             if related_events.is_empty() {

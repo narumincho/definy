@@ -5,6 +5,8 @@ pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
 mod command_palette;
+pub mod commit_graph;
+mod commit_graph_view;
 mod deployments;
 mod deployments_flow;
 pub mod dom;
@@ -170,6 +172,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::Changes) => {
             rsx! {
                 working_changes_view::WorkingChangesView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::History) => {
+            rsx! {
+                commit_graph_view::CommitGraphView { state: state.clone(), context: context.clone() }
             }
         }
         Some(Location::TreeLayout) => {
