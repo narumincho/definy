@@ -39,7 +39,7 @@ fn test_self_hosting_parts_registration() {
     let find_tag_in_arms = seed_part("find-tag-in-arms");
     let check_union_exhaustiveness = seed_part("check-union-exhaustiveness");
     let type_assignable_union_variants = seed_part("type-assignable-union-variants");
-    let type_check_match_arms_inner = seed_part("type-check-match-arms-inner");
+    let type_check_match_arms_infer = seed_part("type-check-match-arms-infer");
     let type_check_match_arms = seed_part("type-check-match-arms");
     let type_check_list_items = seed_part("type-check-list-items");
     let type_check_list = seed_part("type-check-list");
@@ -115,7 +115,7 @@ fn test_self_hosting_parts_registration() {
         find_tag_in_arms,
         check_union_exhaustiveness,
         type_assignable_union_variants,
-        type_check_match_arms_inner,
+        type_check_match_arms_infer,
         type_check_match_arms,
         type_check_list_items,
         type_check_list,

@@ -7,8 +7,6 @@ use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 use crate::{AppState, Location};
-use definy_event::EventHashId;
-use std::collections::HashSet;
 
 /// サイドバー (エクスプローラー) の開閉状態.
 ///
@@ -211,16 +209,27 @@ fn ActivityItem(context: PageContext, target: ActivityTarget, badge: usize) -> E
 #[component]
 fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let mut filter_query = use_signal(String::new);
-    // 型エラーのあるパーツの検査はすべてのパーツの式を見るので, 取得済みのイベントが増えたときだけやり直す
-    let mut error_cache = use_signal(|| (usize::MAX, HashSet::<EventHashId>::new()));
-    let cache_key = state.event_cache.len();
-    if error_cache.peek().0 != cache_key {
-        error_cache.set((
-            cache_key,
-            crate::expression_editor::parts_with_type_errors(&state),
-        ));
-    }
-    let error_parts = error_cache.read().1.clone();
+    // 型エラーの印は definy 製の型チェッカーの判定. 検査は重いので, 取得済みのイベントが
+    // 増えたときだけ裏で少しずつやり直す (式の変わらないパーツの結果は使い回す)
+    let mut checked_generation = use_signal(|| usize::MAX);
+    let mut check_task = use_signal(|| None::<dioxus::core::Task>);
+    let generation = state.event_cache.len();
+    use_effect(use_reactive!(|generation| {
+        if *checked_generation.peek() == generation {
+            return;
+        }
+        checked_generation.set(generation);
+        if let Some(task) = check_task.take() {
+            task.cancel();
+        }
+        let state_sig = use_context::<Signal<AppState>>();
+        check_task.set(Some(spawn(crate::self_hosted_type_check::check_all_parts(
+            state_sig,
+        ))));
+    }));
+    let error_parts = crate::self_hosted_type_check::PART_CHECK_RESULTS
+        .read()
+        .error_parts();
 
     let mut modules = collect_module_snapshots(&state);
     modules.sort_by(|a, b| a.module_name.cmp(&b.module_name));

@@ -39,6 +39,7 @@ pub mod part_projection;
 pub mod preview_apps;
 pub mod query;
 mod rpc_architecture;
+pub mod self_hosted_type_check;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;

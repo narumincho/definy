@@ -4,7 +4,7 @@ use definy_event::event::*;
 
 use super::{
     bytecode::*,
-    compiler::{CompileContext, count_locals, emit_expression, encode_mem_arg},
+    compiler::{CompileContext, emit_expression, encode_mem_arg},
 };
 
 #[derive(Clone)]
@@ -226,6 +226,7 @@ pub(crate) fn emit_function(
         out.push(I32_ADD);
         out.push(GLOBAL_SET);
         out.push(0);
+        emit_ensure_heap_capacity(out);
 
         for (i, var_id) in captured.iter().enumerate() {
             let local_idx = env[var_id];
@@ -270,6 +271,7 @@ pub(crate) fn emit_closure_allocation(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Store Tag 5
     out.push(LOCAL_GET);
@@ -350,6 +352,7 @@ pub(crate) fn emit_call(
         out.push(I32_ADD);
         out.push(GLOBAL_SET);
         out.push(0);
+        emit_ensure_heap_capacity(out);
 
         for (i, arg) in c.arguments.iter().enumerate() {
             emit_expression(&arg.value, out, env, next_local_idx, ctx)?;
@@ -435,7 +438,7 @@ pub(crate) fn compile_pending_function(
     ctx.temp_i64_local = prev_temp_i64;
     func_code.push(END);
 
-    let locals_count = count_locals(&pending.body) + f_local_idx + 64;
+    let locals_count = f_local_idx + 64;
     let mut func_body = Vec::new();
     func_body.push(2); // 2 local declaration groups
     encode_u32_leb128(&mut func_body, 1);

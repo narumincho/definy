@@ -99,58 +99,6 @@ pub fn analyze_expression_types(
     }
 }
 
-/// 式に型エラー (未入力を含む) があるパーツの一覧. エクスプローラーの印に使う.
-/// 型の対応表は 1 回だけ作り, すべてのパーツの式を検査する
-pub fn parts_with_type_errors(state: &AppState) -> std::collections::HashSet<EventHashId> {
-    let snapshots = collect_part_snapshots(state);
-    let part_type_map = snapshots
-        .iter()
-        .filter_map(|snapshot| {
-            snapshot.part_type.as_ref().map(|part_type| {
-                (
-                    snapshot.definition_event_hash.clone(),
-                    part_type_to_expression_type(part_type),
-                )
-            })
-        })
-        .collect::<HashMap<EventHashId, ExpressionType>>();
-    let part_snapshot_map = snapshots
-        .iter()
-        .map(|snapshot| (snapshot.definition_event_hash.clone(), snapshot.clone()))
-        .collect::<HashMap<EventHashId, PartSnapshot>>();
-
-    snapshots
-        .iter()
-        .filter(|snapshot| {
-            let Some(expression) = &snapshot.expression else {
-                return false;
-            };
-            let mut diagnostics = Vec::new();
-            let mut expected_types = HashMap::new();
-            let mut variable_types = HashMap::new();
-            let env = HashMap::new();
-            let mut ctx = TypeCheckContext::new(
-                &env,
-                &part_type_map,
-                &part_snapshot_map,
-                &mut diagnostics,
-                &mut expected_types,
-                &mut variable_types,
-            );
-            ctx.check(
-                expression,
-                &Vec::new(),
-                snapshot
-                    .part_type
-                    .as_ref()
-                    .map(part_type_to_expression_type),
-            );
-            !diagnostics.is_empty()
-        })
-        .map(|snapshot| snapshot.definition_event_hash.clone())
-        .collect()
-}
-
 pub fn collect_type_diagnostics(
     state: &AppState,
     expression: &definy_event::event::Expression,

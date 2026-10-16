@@ -105,6 +105,7 @@ pub(crate) fn emit_string_concat(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Copy left bytes
     let i_local = *next_local_idx;
@@ -376,6 +377,7 @@ pub(crate) fn emit_string_slice(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Copy slice bytes
     let i_local = *next_local_idx;
@@ -504,6 +506,7 @@ pub(crate) fn emit_string_to_bytes(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Loop through each byte in string and alloc number
     let idx_local = *next_local_idx;

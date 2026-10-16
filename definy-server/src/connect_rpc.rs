@@ -551,7 +551,7 @@ async fn validate_module_commit(
         &candidate_event.account_id,
         &hydrated_commit.module_name,
     );
-    let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
+    let module_value = definy_core::self_hosted_ast::module_commit_to_self_hosted_ast(
         &hydrated_commit,
         &module_id,
         &expression_type_hash,

@@ -250,3 +250,44 @@ pub fn read_i64_sleb128(bytes: &[u8]) -> Result<(i64, usize), &'static str> {
     }
     Err("Unexpected EOF in SLEB128")
 }
+
+pub const MEMORY_SIZE: u8 = 0x3F;
+pub const MEMORY_GROW: u8 = 0x40;
+
+/// ヒープポインタの先に常に確保しておく空き (バイト).
+/// 文字列連結などはヒープポインタを進める前に書き込むため, その分の余裕を持たせる
+const HEAP_SLACK_BYTES: i32 = 1 << 20;
+
+/// ヒープポインタ (global 0) を進めた直後に呼び, 線形メモリが足りなければ `memory.grow` で広げる.
+/// 割り当ては bump allocator なので, 新しいヒープポインタ + 余裕分までのページがあれば十分
+pub fn emit_ensure_heap_capacity(out: &mut Vec<u8>) {
+    const I32_SHR_U_OP: u8 = 0x76;
+    const I32_LE_U_OP: u8 = 0x4D;
+    const DROP_OP: u8 = 0x1A;
+    let emit_needed_pages = |out: &mut Vec<u8>| {
+        out.push(GLOBAL_GET);
+        out.push(0);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 65535 + HEAP_SLACK_BYTES);
+        out.push(I32_ADD);
+        out.push(I32_CONST);
+        encode_i32_sleb128(out, 16);
+        out.push(I32_SHR_U_OP);
+    };
+    out.push(BLOCK);
+    out.push(BLOCK_TYPE_EMPTY);
+    emit_needed_pages(out);
+    out.push(MEMORY_SIZE);
+    out.push(0);
+    out.push(I32_LE_U_OP);
+    out.push(BR_IF);
+    out.push(0);
+    emit_needed_pages(out);
+    out.push(MEMORY_SIZE);
+    out.push(0);
+    out.push(I32_SUB);
+    out.push(MEMORY_GROW);
+    out.push(0);
+    out.push(DROP_OP);
+    out.push(END);
+}

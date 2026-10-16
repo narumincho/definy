@@ -4,7 +4,7 @@ use definy_event::event::{
     VariantExpression,
 };
 
-pub(crate) fn module_commit_to_self_hosted_ast(
+pub fn module_commit_to_self_hosted_ast(
     module_commit: &ModuleCommitEvent,
     module_id: &EventHashId,
     expression_type_hash: &EventHashId,
@@ -66,7 +66,7 @@ pub(crate) fn module_commit_to_self_hosted_ast(
     ])
 }
 
-pub(crate) fn expression_to_self_hosted_ast(
+pub fn expression_to_self_hosted_ast(
     expression: &Expression,
     expression_type_hash: &EventHashId,
 ) -> Result<Expression, String> {
@@ -224,22 +224,27 @@ pub(crate) fn expression_to_self_hosted_ast(
             .map(|payload| expression_variant("variant", Some(payload), expression_type_hash))
         }
         E::Match(value) => {
-            if value.default.is_some() {
-                return Err("core.expression does not represent a default match arm".into());
-            }
+            // ペイロードを束縛しないアーム (Bool の true / false など) は
+            // 参照されない変数 ID として -1 を使う.
+            // default アームは, どのタグにも一致するワイルドカードアーム `_` として表す
             let arms = value
                 .arms
                 .iter()
                 .map(|arm| {
-                    // ペイロードを束縛しないアーム (Bool の true / false など) は
-                    // 参照されない変数 ID として -1 を使う
-                    let variable_id = arm.variable_id.unwrap_or(-1);
+                    (
+                        arm.tag.as_ref(),
+                        arm.variable_id.unwrap_or(-1),
+                        arm.body.as_ref(),
+                    )
+                })
+                .chain(value.default.iter().map(|body| ("_", -1, body.as_ref())))
+                .map(|(tag, variable_id, body)| {
                     record(vec![
-                        ("tag", E::String(string(arm.tag.as_ref()))),
+                        ("tag", E::String(string(tag))),
                         ("variable_id", E::Number(number(variable_id))),
                         (
                             "body",
-                            expression_to_self_hosted_ast(&arm.body, expression_type_hash)?,
+                            expression_to_self_hosted_ast(body, expression_type_hash)?,
                         ),
                     ])
                 })
@@ -281,22 +286,52 @@ pub(crate) fn expression_to_self_hosted_ast(
         E::BitXor(_) => Err("core.expression does not represent bit_xor".into()),
         E::ShiftLeft(_) => Err("core.expression does not represent shift_left".into()),
         E::ShiftRight(_) => Err("core.expression does not represent shift_right".into()),
-        E::LessThanOrEqual(_) => {
-            Err("core.expression does not represent less_than_or_equal".into())
-        }
-        E::GreaterThan(_) => Err("core.expression does not represent greater_than".into()),
-        E::GreaterThanOrEqual(_) => {
-            Err("core.expression does not represent greater_than_or_equal".into())
-        }
-        E::NotEqual(_) => Err("core.expression does not represent not_equal".into()),
-        E::StringConcat(_) => Err("core.expression does not represent string_concat".into()),
-        E::StringLength(_) => Err("core.expression does not represent string_length".into()),
-        E::StringSlice(_) => Err("core.expression does not represent string_slice".into()),
-        E::StringToBytes(_) => Err("core.expression does not represent string_to_bytes".into()),
-        E::ListLength(_) => Err("core.expression does not represent list_length".into()),
-        E::ListConcat(_) => Err("core.expression does not represent list_concat".into()),
-        E::ListGet(_) => Err("core.expression does not represent list_get".into()),
-        E::ListAppend(_) => Err("core.expression does not represent list_append".into()),
+        E::LessThanOrEqual(value) => binary("less_than_or_equal", &value.left, &value.right),
+        E::GreaterThan(value) => binary("greater_than", &value.left, &value.right),
+        E::GreaterThanOrEqual(value) => binary("greater_than_or_equal", &value.left, &value.right),
+        E::NotEqual(value) => binary("not_equal", &value.left, &value.right),
+        E::StringConcat(value) => binary("string_concat", &value.left, &value.right),
+        E::StringLength(value) => unary("string_length", &value.value),
+        E::StringSlice(value) => record(vec![
+            (
+                "value",
+                expression_to_self_hosted_ast(&value.value, expression_type_hash)?,
+            ),
+            (
+                "start",
+                expression_to_self_hosted_ast(&value.start, expression_type_hash)?,
+            ),
+            (
+                "end",
+                expression_to_self_hosted_ast(&value.end, expression_type_hash)?,
+            ),
+        ])
+        .map(|payload| expression_variant("string_slice", Some(payload), expression_type_hash)),
+        E::StringToBytes(value) => unary("string_to_bytes", &value.value),
+        E::ListLength(value) => unary("list_length", &value.value),
+        E::ListConcat(value) => binary("list_concat", &value.left, &value.right),
+        E::ListGet(value) => record(vec![
+            (
+                "list",
+                expression_to_self_hosted_ast(&value.list, expression_type_hash)?,
+            ),
+            (
+                "index",
+                expression_to_self_hosted_ast(&value.index, expression_type_hash)?,
+            ),
+        ])
+        .map(|payload| expression_variant("list_get", Some(payload), expression_type_hash)),
+        E::ListAppend(value) => record(vec![
+            (
+                "list",
+                expression_to_self_hosted_ast(&value.list, expression_type_hash)?,
+            ),
+            (
+                "item",
+                expression_to_self_hosted_ast(&value.item, expression_type_hash)?,
+            ),
+        ])
+        .map(|payload| expression_variant("list_append", Some(payload), expression_type_hash)),
         E::TypeNumber => Ok(expression_variant(
             "type_number",
             None,
@@ -322,7 +357,7 @@ pub(crate) fn expression_to_self_hosted_ast(
     }
 }
 
-fn type_declaration_to_self_hosted_ast(
+pub fn type_declaration_to_self_hosted_ast(
     expression: &Expression,
     expression_type_hash: &EventHashId,
 ) -> Result<Expression, String> {
@@ -422,7 +457,7 @@ fn type_declaration_to_self_hosted_ast(
     }
 }
 
-pub(crate) fn part_type_to_self_hosted_ast(
+pub fn part_type_to_self_hosted_ast(
     part_type: &PartType,
     type_ast_hash: &EventHashId,
 ) -> Result<Expression, String> {

@@ -69,7 +69,7 @@ pub fn execute_wasm(wasm_bytes: &[u8]) -> Result<Value, String> {
         let mut results = [wasmtime::Val::I32(0)];
         eval_func
             .call(&mut store, &[], &mut results)
-            .map_err(|e| e.to_string())?;
+            .map_err(format_wasmtime_call_error)?;
         let ret_ptr = match results[0] {
             wasmtime::Val::I32(ptr) => ptr as usize,
             _ => return Err("evaluate returned non-i32 pointer".into()),
@@ -405,4 +405,13 @@ pub fn execute_wasm_http_response(wasm_bytes: &[u8]) -> Result<EvaluatedHttpResp
             remaining_steps: 10_000,
         },
     })
+}
+
+/// 実行時エラーの原因 (トラップの種類) を先頭に置く. `to_string` は Wasm のバックトレースしか含まない
+#[cfg(not(target_arch = "wasm32"))]
+fn format_wasmtime_call_error(error: wasmtime::Error) -> String {
+    match error.downcast_ref::<wasmtime::Trap>() {
+        Some(trap) => format!("{trap}: {error}"),
+        None => error.to_string(),
+    }
 }

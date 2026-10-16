@@ -2,6 +2,8 @@ pub mod deploy_detector;
 pub mod expression_eval;
 pub mod http_app;
 pub mod preview_detector;
+pub mod self_hosted_ast;
+pub mod self_hosted_type_check;
 pub mod wasm_emitter;
 
 pub use deploy_detector::{DetectedDeploy, detect_deploy_in_expression};

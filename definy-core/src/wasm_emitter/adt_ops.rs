@@ -44,6 +44,7 @@ pub(crate) fn emit_variant(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Store Tag 6 at ptr + 0
     out.push(LOCAL_GET);

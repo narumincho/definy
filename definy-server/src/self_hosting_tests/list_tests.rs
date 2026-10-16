@@ -392,6 +392,7 @@ fn test_self_hosted_list_covariant_subtyping() {
         &[
             ("sub", actual_list_type.clone()),
             ("sup", expected_list_type.clone()),
+            ("env", empty_type_env()),
         ],
     );
     let is_assignable = definy_core::evaluate_expression(&assignable_call, &events)
@@ -404,6 +405,7 @@ fn test_self_hosted_list_covariant_subtyping() {
         &[
             ("sub", expected_list_type.clone()),
             ("sup", actual_list_type),
+            ("env", empty_type_env()),
         ],
     );
     let is_reverse_assignable = definy_core::evaluate_expression(&reverse_call, &events)

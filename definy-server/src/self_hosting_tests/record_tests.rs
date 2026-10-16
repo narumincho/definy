@@ -718,6 +718,7 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
         &[
             ("sub", actual_large_record_type.clone()),
             ("sup", expected_clock_record_type.clone()),
+            ("env", empty_type_env()),
         ],
     );
     let res_subtyping = definy_core::evaluate_expression(&call_subtyping, &events)
@@ -734,6 +735,7 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
         &[
             ("sub", expected_clock_record_type.clone()),
             ("sup", actual_large_record_type),
+            ("env", empty_type_env()),
         ],
     );
     let res_reverse = definy_core::evaluate_expression(&call_reverse, &events)
@@ -760,6 +762,7 @@ fn test_self_hosted_record_width_subtyping_in_call_and_against() {
         &[
             ("sub", reordered_record_type),
             ("sup", expected_clock_record_type.clone()),
+            ("env", empty_type_env()),
         ],
     );
     let res_reordered = definy_core::evaluate_expression(&call_reordered, &events)

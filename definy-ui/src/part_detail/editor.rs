@@ -446,6 +446,11 @@ pub(crate) fn PartEditorCard(
                     module_hash,
                     expected_type,
                 }
+                SelfHostedTypeCheckVerdict {
+                    context: context.clone(),
+                    expression,
+                    part_type_expr,
+                }
                 {
                     eval_result()
                         .map(|eval| {
@@ -614,5 +619,64 @@ mod tests {
         dom.rebuild_in_place();
         let result = evaluated.lock().unwrap().clone();
         assert_eq!(result, Some("結果: 42".to_string()));
+    }
+}
+
+/// 編集中の式を definy 製の型チェッカー (`core.type-check-against`) で検査した結果.
+/// 検査は重いので, 編集が止まってから実行する
+#[component]
+fn SelfHostedTypeCheckVerdict(
+    context: PageContext,
+    expression: Signal<Option<definy_event::event::Expression>>,
+    part_type_expr: Signal<Option<definy_event::event::Expression>>,
+) -> Element {
+    let language = context.language;
+    // None: 検査中 (または検査前)
+    let mut verdict = use_signal(|| None::<(bool, String)>);
+    let mut check_task = use_signal(|| None::<dioxus::core::Task>);
+    use_effect(move || {
+        let expression = expression();
+        let part_type = part_type_expr()
+            .as_ref()
+            .and_then(definy_event::event::PartType::from_expression);
+        if let Some(task) = check_task.take() {
+            task.cancel();
+        }
+        verdict.set(None);
+        let (Some(expression), Some(part_type)) = (expression, part_type) else {
+            return;
+        };
+        let state_sig = use_context::<Signal<AppState>>();
+        check_task.set(Some(spawn(async move {
+            crate::self_hosted_type_check::sleep_ms(500).await;
+            let state = state_sig.peek().clone();
+            let Some(outcome) =
+                crate::self_hosted_type_check::check_expression(&state, &expression, &part_type)
+            else {
+                return;
+            };
+            let snapshots = crate::part_projection::collect_part_snapshots(&state);
+            verdict.set(Some((
+                crate::self_hosted_type_check::is_error(&outcome),
+                crate::self_hosted_type_check::outcome_message(&outcome, &snapshots, language),
+            )));
+        })));
+    });
+
+    let label = language.label(
+        "Type check (definy):",
+        "型チェック (definy 製):",
+        "Tipkontrolo (definy):",
+    );
+    match verdict() {
+        None => rsx! {},
+        Some((is_error, message)) => rsx! {
+            div {
+                class: "mono eval-result tone-message",
+                "data-self-hosted-type-check": "true",
+                "data-tone": if is_error { "error" } else { "info" },
+                "{label} {message}"
+            }
+        },
     }
 }

@@ -64,7 +64,7 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
 
     // 式を definy の自己記述 AST 直和型 (core.expression Variant) に変換
     let self_hosted_ast =
-        crate::self_hosted_ast::expression_to_self_hosted_ast(expression, &expr_type_hash)
+        definy_core::self_hosted_ast::expression_to_self_hosted_ast(expression, &expr_type_hash)
             .map_err(SelfHostedCompileError::AstConversion)?;
 
     // 自己記述コンパイラパーツを準備

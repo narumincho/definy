@@ -304,7 +304,7 @@
             },
             {
               "tag": "none",
-              "variable_id": 0,
+              "variable_id": null,
               "variable_name": null,
               "body": {
                 "Number": {

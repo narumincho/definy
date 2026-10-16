@@ -280,7 +280,7 @@ pub fn validate_module_seed_with_type_checker(
         definy_event::event::derive_module_part_id(&core_module_id, "validate-module");
     let module_id = definy_event::event::derive_module_id(account_id, &seed.module_name);
 
-    let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
+    let module_value = definy_core::self_hosted_ast::module_commit_to_self_hosted_ast(
         &commit,
         &module_id,
         &expression_type_hash,

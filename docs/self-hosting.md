@@ -295,7 +295,8 @@ AST を手組みし、そこから JSON を生成していましたが、この�
     - `core.type-assignable-union-variants`:
       直和型の双対的幅サブタイピング（$Actual \subseteq Expected$）を再帰検証
   - パターンマッチ型検査パーツ群（`seeds/core.json`、旧 `builtin_type_checker/union_check.rs`）を新設
-    - `core.type-check-match-arms-inner`:
+    - `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` /
+      `core.type-check-match-arms-skipped` の 2 段階に置き換え。Phase 2 の 6 を参照）:
       各アームの環境拡張、本体型検査、戻り値型一致検証（初出アーム型との
       `type-assignable`）、全走査完了後の網羅性検査の呼び出し
     - `core.type-check-match-arms`: パターンマッチ型検査のエントリーポイント
@@ -441,6 +442,45 @@ type-check-against: expression -> type-env -> type-ast -> type-result
 に照らして検査します。`call` 式は環境から 関数型を得て、引数型と parameter
 の一致を確認してから return type を返します。 引数型注釈を持たない lambda
 の型は、宣言された期待関数型から決めます。
+
+#### 6. seed・UI のパーツ検査 (`definy_core::self_hosted_type_check`)
+
+UI の型エラー表示と seed の検証 (`definy-server/tests/self_hosted_type_check_tests.rs`) は
+`definy_core::self_hosted_type_check::check_parts` で `core.type-check-against` を呼びます。
+Rust の `Expression` から `core.expression` の値への変換は `definy_core::self_hosted_ast` です。
+seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外すべて型エラーなしで通ります。
+
+- **まとめて実行**: 型環境を `let env = ... in [check(a), check(b), ...]` で 1 回だけ作り, 8 パーツずつ
+  1 つの式にして Wasm にコンパイル・実行します。まとめた実行が失敗したら 1 パーツずつやり直し,
+  どのパーツで失敗したか (`CheckerFailed`) を分かるようにします。
+- **型パーツの展開**: 型パーツは `reference({ part_hash })` 型で表します。型環境には型パーツの
+  宣言した型を `{hash}#definition` のキーでも入れ, `core.type-resolve` がそれを使って中身の型に展開します。
+  `call`・`record_get`・`match` の対象, `type-check-against` の期待型は展開してから見ます。
+  `core.type-assignable` 系は `env` 引数を取り, 片方だけが `reference` のときは展開して比べます。
+  両方 `reference` ならハッシュが同じときだけ代入できます (名前的型付け)。
+- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`list_append`・`list_concat`・
+  `list_get`・`record` も期待型で検査します (`type-check-record-fields-against` など)。
+  空リストや `none` を期待型から決められるのはこのためです。
+- **match の推論は 2 段階**: `core.type-check-match-arms-infer` が推論できるアームから型を求め
+  (アームごとに広い方の型を採る), 推論できなかったアーム (空リストなど) を
+  `core.type-check-match-arms-skipped` がその型で検査します。
+  `_` アームは何も束縛せず, `find-tag-in-arms` ではすべてのタグに一致します。
+  対象の型に無いタグでペイロードを束縛しないアーム (`variable_id` が負) は到達しないアームとして許します
+  (`core.match-arm-env`)。
+- **演算子**: 比較 (`<=` など)・文字列 (`string_concat` など)・リスト (`list_length` など) の式も
+  `core.expression` のバリアントと `core.type-check-binary` で検査します。
+
+ノウハウ:
+
+- Wasm の線形メモリはバンプアロケータ (global 0) で確保します。初期 16 ページを超えると
+  `out of bounds memory access` になるため, ヒープポインタを進めるたびに
+  `emit_ensure_heap_capacity` で足りない分を `memory.grow` します。ポインタを進める前に書き込む
+  操作があるので 1MB の余裕を持たせています。
+- 関数のローカル変数の数は `next_local_idx + 64` で宣言します (以前の `count_locals` との二重計上で
+  大きな式が `too many locals` になっていた)。
+- 1 回の検査はネイティブの release で 400ms ほどで, 大半が型チェッカー本体のコンパイルです。
+  型チェッカーを 1 度だけコンパイルし, 引数の値を線形メモリに書き込んで関数として呼び出せば速くなりますが,
+  値をメモリへ書き込む処理を 3 つの実行環境 (wasmtime・ブラウザ・wasmi) に用意する必要があるため未着手です。
 
 ---
 
@@ -663,7 +703,8 @@ validate-module: module-definition -> boolean
 
 #### 2. パターンマッチ型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/union_check.rs`)
 
-- `core.type-check-match-arms-inner`:
+- `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` と
+  `core.type-check-match-arms-skipped` の 2 段階に置き換え）:
   `list<{ tag: string, variable: optional<string>, body: expression }> -> list<{ tag: string, payload: optional<type-ast> }> -> type-env -> number -> optional<type-ast> -> type-result`
   各アームを走査し、タグの存在確認、ペイロード型による環境拡張、アーム本体の型検査、全アームの戻り値型一致検証（`core.type-assignable`
   による検証）、そして全走査完了後の網羅性検査（`core.check-union-exhaustiveness`）を一貫して実行。
