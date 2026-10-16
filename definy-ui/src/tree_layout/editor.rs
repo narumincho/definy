@@ -23,7 +23,7 @@ use crate::expression_editor::{
 use crate::language::Language;
 use crate::page_context::PageContext;
 
-use super::engine::{compute_layout, expression_to_layout_node_with_call_parameter_names};
+use super::engine::{compute_layout, expression_to_layout_node_with_names};
 use super::keyboard::{NavKey, Rect, navigate};
 use super::types::{LayoutNode, LayoutOptions};
 use super::view::{TreeLayoutRenderer, tree_node_anchor_name};
@@ -92,10 +92,11 @@ pub fn ExpressionTreeEditor(
         max_width: (max_width - 16.0).max(100.0),
         ..Default::default()
     };
-    let root_layout_node = expression_to_layout_node_with_call_parameter_names(
+    let root_layout_node = expression_to_layout_node_with_names(
         &expr,
         "root",
         &analysis.call_parameter_names,
+        &analysis.part_names,
     );
     let layout_result = compute_layout(&root_layout_node, &layout_options);
     // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス

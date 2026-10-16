@@ -257,6 +257,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     modules.sort_by(|a, b| a.module_name.cmp(&b.module_name));
     let mut parts = collect_part_snapshots(&state);
     parts.sort_by(|a, b| a.part_name.cmp(&b.part_name));
+    let part_names = crate::part_projection::part_names(&parts);
 
     let query = filter_query().trim().to_lowercase();
     let is_filtering = !query.is_empty();
@@ -365,7 +366,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                             let type_text = part
                                 .part_type
                                 .as_ref()
-                                .map(|t| t.to_string())
+                                .map(|t| crate::part_projection::part_type_text(t, &part_names))
                                 .unwrap_or_default();
                             rsx! {
                                 a {

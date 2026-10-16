@@ -119,3 +119,30 @@ fn description_with_text_keeps_other_languages() {
     // eo の表示は en へのフォールバック. 変更していなければ eo の説明を足さない
     assert_eq!(description.with_text("eo", "Adds"), description);
 }
+
+#[test]
+fn test_part_type_with_type_part_names() {
+    let known = EventHashId::from_bytes(b"env");
+    let unknown = EventHashId::from_bytes(b"other");
+    let part_type = PartType::Function {
+        parameters: vec![
+            FunctionParameterType {
+                name: "env".into(),
+                r#type: Box::new(PartType::TypePart(known.clone())),
+            },
+            FunctionParameterType {
+                name: "other".into(),
+                r#type: Box::new(PartType::List(Box::new(PartType::TypePart(
+                    unknown.clone(),
+                )))),
+            },
+        ],
+        return_type: Box::new(PartType::TypePart(known.clone())),
+    };
+    let text = part_type
+        .to_string_with_type_part_names(&|hash| (hash == &known).then(|| "env".to_string()));
+    assert_eq!(
+        text,
+        format!("(env: env, other: list<type-part({unknown})>) -> env")
+    );
+}

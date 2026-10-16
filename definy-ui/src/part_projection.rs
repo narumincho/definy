@@ -25,6 +25,38 @@ impl PartSnapshot {
     }
 }
 
+/// パーツ参照を名前で表示するための, パーツ定義イベントのハッシュ → パーツ名
+pub fn part_names(snapshots: &[PartSnapshot]) -> crate::tree_layout::engine::PartNames {
+    snapshots
+        .iter()
+        .map(|snapshot| {
+            (
+                snapshot.definition_event_hash.clone(),
+                snapshot.part_name.clone(),
+            )
+        })
+        .collect()
+}
+
+/// パーツの型を表示用の文字列にする. 型パーツの参照はハッシュではなくパーツ名で書く
+pub fn part_type_text(
+    part_type: &definy_event::event::PartType,
+    part_names: &crate::tree_layout::engine::PartNames,
+) -> String {
+    part_type.to_string_with_type_part_names(&|hash| part_names.get(hash).cloned())
+}
+
+/// [`part_type_text`] の型が無いときに `none` を返す版
+pub fn optional_part_type_text(
+    part_type: &Option<definy_event::event::PartType>,
+    part_names: &crate::tree_layout::engine::PartNames,
+) -> String {
+    part_type
+        .as_ref()
+        .map(|part_type| part_type_text(part_type, part_names))
+        .unwrap_or_else(|| "none".to_string())
+}
+
 pub fn collect_part_snapshots(state: &AppState) -> Vec<PartSnapshot> {
     let mut events = state
         .event_cache

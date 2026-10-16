@@ -123,6 +123,8 @@ fn RenderDetailContent(
     event: Event,
     hash: EventHashId,
 ) -> Element {
+    let part_names =
+        crate::part_projection::part_names(&crate::part_projection::collect_part_snapshots(&state));
     match event.content {
         EventContent::CreateAccount(create_account_event) => rsx! {
             div { style: "display: grid; gap: 0.4rem;",
@@ -266,6 +268,7 @@ fn RenderDetailContent(
                                             expression: part.expression.clone(),
                                             initial_expanded: false,
                                             max_width: 500.0,
+                                            part_names: part_names.clone(),
                                         }
                                     }
                                 }

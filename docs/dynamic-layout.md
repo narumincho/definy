@@ -127,3 +127,22 @@ call f width: 1 height: 2
 無ければ同じ位置のパラメーターの名前を使う.
 呼び出し先の型が分からないときや, 型解析をしないプレビュー (`ExpressionTreeSummary`) では
 引数に保存された名前をそのまま表示する.
+
+## 変数とパーツ参照の名前表示
+
+式の AST は変数を ID (`VariableExpression::variable_id`), パーツ参照をパーツ定義イベントのハッシュで持つが,
+ツリーでは名前で表示する.
+
+- 変数は, その位置から見える束縛の名前を出す. 束縛は関数のパラメーター, `let` の束縛
+  (前から順に見え, 後の束縛の値と本体から参照できる), 値を束縛する `match` のアームの 3 つ.
+  内側の束縛は同じ ID の外側の束縛を隠す. seed にも別のスコープで同じ ID を使うパーツがある
+  (`core.eval-value` など) ので, 式全体から ID → 名前を集めるのではなくスコープを辿る
+- 値を束縛する `match` のアームは `some(value) =>` のようにタグの後ろに変数名を出す
+- 名前が空 (追加直後の let 束縛など) かスコープ外の変数は `var_{id}` と表示する
+- パーツ参照はパーツ名を出す. 名前はイベントキャッシュのパーツから引く
+  (`part_projection::part_names`. ツリーエディタは `TypeAnalysis::part_names`,
+  一覧のプレビュー `ExpressionTreeSummary` は `part_names` プロパティで受け取る).
+  見つからないときは `@part:` とハッシュの先頭 6 文字を出す
+- パーツの型の文字列 (エクスプローラー, パーツ一覧, コマンドパレット, モジュール詳細) も,
+  型パーツの参照を `type-part(ハッシュ)` ではなくパーツ名で書く
+  (`PartType::to_string_with_type_part_names`, UI では `part_projection::part_type_text`)

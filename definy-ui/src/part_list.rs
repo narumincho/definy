@@ -1,4 +1,3 @@
-use definy_event::event::PartType;
 use dioxus::prelude::*;
 
 use crate::Location;
@@ -12,6 +11,7 @@ use crate::part_projection::collect_part_snapshots;
 #[component]
 pub fn PartListView(state: AppState, context: PageContext) -> Element {
     let snapshots = collect_part_snapshots(&state);
+    let part_names = crate::part_projection::part_names(&snapshots);
     let account_name_map = state.account_name_map();
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
@@ -68,7 +68,9 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
             let part_name_lower = part.part_name.to_lowercase();
             let module_name_lower = module_name.to_lowercase();
             let full_name = format!("{}.{}", module_name_lower, part_name_lower);
-            let type_str = PartType::optional_to_string(&part.part_type).to_lowercase();
+            let type_str =
+                crate::part_projection::optional_part_type_text(&part.part_type, &part_names)
+                    .to_lowercase();
             let author_str =
                 crate::app_state::account_display_name(&account_name_map, &part.account_id)
                     .to_lowercase();
@@ -196,7 +198,10 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                 .as_ref()
                                 .map(|m| m.module_name.as_str())
                                 .unwrap_or("module");
-                            let type_str = PartType::optional_to_string(&part.part_type);
+                            let type_str = crate::part_projection::optional_part_type_text(
+                                &part.part_type,
+                                &part_names,
+                            );
                             let type_badge_cls = crate::event_list::part_type_badge_class(&type_str);
                             rsx! {
                                 div {
@@ -279,6 +284,7 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
                                             expression: part.expression.clone(),
                                             initial_expanded: false,
                                             max_width: 640.0,
+                                            part_names: part_names.clone(),
                                         }
                                         {
                                             let desc = part.description_for(context.language);
