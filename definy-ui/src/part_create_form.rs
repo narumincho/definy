@@ -29,6 +29,79 @@ pub fn PartDefinitionFormView(
             .map(|sig| sig.read().current_key.is_some())
             .unwrap_or(false);
 
+    // 作成をすぐにコミットせず, 作業中の変更に加える (他のパーツの変更とまとめてコミットする)
+    let on_stage = move |_| {
+        let Some(state_sig) = try_use_context::<Signal<AppState>>() else {
+            return;
+        };
+        let state_val = state_sig.peek().clone();
+        let name_str = part_name().trim().to_string();
+        if !definy_event::naming::is_valid_name(&name_str) {
+            eval_result.set(Some(
+                language
+                    .label(
+                        "Error: part name must be lowercase alphanumeric with hyphens (e.g. my-part)",
+                        "エラー: パーツ名はアルファベット小文字・ハイフン区切りで入力してください (例: my-part)",
+                        "Eraro: parto-nomo devas esti minusklaj literoj disigitaj per streketoj (ekz. my-part)",
+                    )
+                    .to_string(),
+            ));
+            return;
+        }
+        let modules = collect_module_snapshots(&state_val);
+        let Some(module) = module_hash()
+            .and_then(|h| {
+                modules
+                    .iter()
+                    .find(|m| m.definition_event_hash == h)
+                    .cloned()
+            })
+            .or_else(|| modules.first().cloned())
+        else {
+            eval_result.set(Some(
+                language
+                    .label(
+                        "Error: module is required",
+                        "エラー: モジュールを選択してください",
+                        "Eraro: modulo estas bezonata",
+                    )
+                    .to_string(),
+            ));
+            return;
+        };
+        let part_id =
+            definy_event::event::derive_module_part_id(&module.definition_event_hash, &name_str);
+        let is_new =
+            crate::working_changes::committed_part(&state_val, &module, &part_id).is_none();
+        let expr_val = composing_expression();
+        let change = crate::working_changes::PartChange {
+            module_definition_event_hash: module.definition_event_hash.clone(),
+            part_id,
+            is_new,
+            base_commit_hash: Some(module.latest_event_hash.clone()),
+            entry: definy_event::event::ModulePartEntry {
+                name: name_str.into(),
+                part_type: part_type_expr
+                    .read()
+                    .as_ref()
+                    .and_then(definy_event::event::PartType::from_expression),
+                description: part_description().into(),
+                content_hash: expr_val
+                    .as_ref()
+                    .and_then(|e| definy_event::ContentHash::from_expression(e).ok()),
+                expression: expr_val,
+            },
+            updated_at_ms: chrono::Utc::now().timestamp_millis(),
+        };
+        crate::working_changes::update(|changes| changes.upsert(change));
+        eval_result.set(None);
+        is_form_open.set(false);
+        part_name.set(String::new());
+        part_description.set(String::new());
+        part_type_expr.set(None);
+        composing_expression.set(None);
+    };
+
     let on_create = move |_| {
         let Some(state_sig) = try_use_context::<Signal<AppState>>() else {
             return;
@@ -381,6 +454,14 @@ pub fn PartDefinitionFormView(
                         style: "padding: 0.35rem 0.85rem; font-size: 0.84rem; font-weight: 600;",
                         onclick: on_create,
                         "{context.language.label(\"Create\", \"作成\", \"Krei\")}"
+                    }
+                    button {
+                        r#type: "button",
+                        class: "btn-secondary",
+                        style: "padding: 0.35rem 0.85rem; font-size: 0.84rem;",
+                        title: "{context.language.label(\"Keep it with your other uncommitted changes and commit them together\", \"他の未コミットの変更と一緒にまとめてコミットします\", \"Konservi kun aliaj neenmetitaj ŝanĝoj\")}",
+                        onclick: on_stage,
+                        "{context.language.label(\"Add to changes\", \"変更に追加\", \"Aldoni al ŝanĝoj\")}"
                     }
                 }
                 if !is_logged_in {

@@ -10,6 +10,7 @@ enum RouteId {
     PartList,
     ModuleList,
     LocalEventQueue,
+    Changes,
     TreeLayout,
     Settings,
     AccountDetail,
@@ -32,6 +33,7 @@ impl RouteId {
             Some(Location::PartList) => Self::PartList,
             Some(Location::ModuleList) => Self::ModuleList,
             Some(Location::LocalEventQueue) => Self::LocalEventQueue,
+            Some(Location::Changes) => Self::Changes,
             Some(Location::TreeLayout) => Self::TreeLayout,
             Some(Location::Settings) => Self::Settings,
             Some(Location::About) => Self::About,
@@ -98,6 +100,10 @@ impl RouteId {
                 .language
                 .label("Local Events", "ローカルイベント", "Lokaj eventoj")
                 .to_string(),
+            Self::Changes => context
+                .language
+                .label("Changes", "変更", "Ŝanĝoj")
+                .to_string(),
             Self::TreeLayout => context
                 .language
                 .label("Tree Layout", "木構造レイアウト", "Arba aranĝo")
@@ -122,6 +128,7 @@ pub fn page_title_text(state: &AppState, context: &PageContext) -> String {
         | Some(Location::PartList)
         | Some(Location::ModuleList)
         | Some(Location::LocalEventQueue)
+        | Some(Location::Changes)
         | Some(Location::TreeLayout)
         | Some(Location::Settings)
         | Some(Location::About)

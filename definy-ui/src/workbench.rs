@@ -20,6 +20,8 @@ pub fn Workbench(state: AppState, context: PageContext, children: Element) -> El
     use_context_provider(|| SidebarToggle(sidebar_toggled));
     let command_palette_open = use_signal(|| false);
     use_context_provider(|| crate::command_palette::CommandPaletteOpen(command_palette_open));
+    // 作業中の変更はクライアントで描画したあとに localStorage から読み込む (SSR の HTML と揃えるため)
+    use_effect(crate::working_changes::load_from_storage);
 
     let workbench_class = if sidebar_toggled() {
         "workbench sidebar-toggled"
@@ -63,6 +65,7 @@ enum ActivityTarget {
     Events,
     Parts,
     Modules,
+    Changes,
     Accounts,
     Deploy,
     About,
@@ -75,6 +78,7 @@ impl ActivityTarget {
             Self::Events => Location::Home,
             Self::Parts => Location::PartList,
             Self::Modules => Location::ModuleList,
+            Self::Changes => Location::Changes,
             Self::Accounts => Location::AccountList,
             Self::Deploy => Location::Deployments,
             Self::About => Location::About,
@@ -87,6 +91,7 @@ impl ActivityTarget {
             Self::Events => IconKind::Events,
             Self::Parts => IconKind::Parts,
             Self::Modules => IconKind::Modules,
+            Self::Changes => IconKind::Changes,
             Self::Accounts => IconKind::Accounts,
             Self::Deploy => IconKind::Deploy,
             Self::About => IconKind::About,
@@ -99,6 +104,7 @@ impl ActivityTarget {
             Self::Events => context.language.label("Events", "イベント", "Eventoj"),
             Self::Parts => context.language.label("Parts", "パーツ", "Partoj"),
             Self::Modules => context.language.label("Modules", "モジュール", "Moduloj"),
+            Self::Changes => context.language.label("Changes", "変更", "Ŝanĝoj"),
             Self::Accounts => context.language.label("Accounts", "アカウント", "Kontoj"),
             Self::Deploy => context.language.label("Deploy", "デプロイ", "Deplojo"),
             Self::About => context.language.label("About", "About", "Pri"),
@@ -128,6 +134,7 @@ impl ActivityTarget {
                             | Location::ApiMethod(_, _)
                     )
                 )
+                | (Self::Changes, Some(Location::Changes))
                 | (Self::About, Some(Location::About))
                 | (
                     Self::Settings,
@@ -151,6 +158,7 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
             )
         })
         .count();
+    let working_change_count = crate::working_changes::WORKING_CHANGES.read().len();
 
     rsx! {
         nav {
@@ -160,6 +168,7 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
                 ActivityTarget::Events,
                 ActivityTarget::Parts,
                 ActivityTarget::Modules,
+                ActivityTarget::Changes,
                 ActivityTarget::Accounts,
                 ActivityTarget::Deploy,
             ]
@@ -168,7 +177,7 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
                     key: "{target.label(&context)}",
                     context: context.clone(),
                     target,
-                    badge: 0,
+                    badge: if target == ActivityTarget::Changes { working_change_count } else { 0 },
                 }
             }
             div { class: "activity-bar-spacer" }
@@ -227,6 +236,12 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
             state_sig,
         ))));
     }));
+    let working_changes = crate::working_changes::WORKING_CHANGES.read().clone();
+    let changed_label = context.language.label(
+        "Uncommitted changes",
+        "未コミットの変更",
+        "Neenmetitaj ŝanĝoj",
+    );
     let (error_parts, type_check_pending) = {
         let results = crate::self_hosted_type_check::PART_CHECK_RESULTS.read();
         (results.error_parts(), results.pending)
@@ -340,6 +355,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                         {
                             let is_active = active_part.as_ref() == Some(&part.definition_event_hash);
                             let has_error = error_parts.contains(&part.definition_event_hash);
+                            let is_changed = working_changes.contains(&part.definition_event_hash);
                             let type_text = part
                                 .part_type
                                 .as_ref()
@@ -350,6 +366,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                                     key: "{part.definition_event_hash}",
                                     class: if is_active { "tree-row tree-leaf active" } else { "tree-row tree-leaf" },
                                     "data-error": if has_error { "true" } else { "false" },
+                                    "data-changed": if is_changed { "true" } else { "false" },
                                     href: context.href_with_lang(Location::Part(part.definition_event_hash.clone())),
                                     title: if has_error { "{module.module_name}.{part.part_name} ({error_label})" } else { "{module.module_name}.{part.part_name}" },
                                     onclick: close_drawer,
@@ -359,6 +376,9 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                                         span { class: "tree-error-dot", "aria-label": "{error_label}" }
                                     }
                                     span { class: "tree-type", "{type_text}" }
+                                    if is_changed {
+                                        span { class: "change-badge", title: "{changed_label}", "M" }
+                                    }
                                 }
                             }
                         }
@@ -450,6 +470,7 @@ fn EditorTabBar(state: AppState, context: PageContext) -> Element {
         ActivityTarget::Events,
         ActivityTarget::Parts,
         ActivityTarget::Modules,
+        ActivityTarget::Changes,
         ActivityTarget::Accounts,
         ActivityTarget::Deploy,
         ActivityTarget::About,

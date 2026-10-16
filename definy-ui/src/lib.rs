@@ -44,6 +44,8 @@ mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
 mod workbench;
+pub mod working_changes;
+mod working_changes_view;
 pub use definy_core::{expression_eval, wasm_emitter};
 pub mod wasm_inspector;
 
@@ -163,6 +165,11 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::LocalEventQueue) => {
             rsx! {
                 local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::Changes) => {
+            rsx! {
+                working_changes_view::WorkingChangesView { state: state.clone(), context: context.clone() }
             }
         }
         Some(Location::TreeLayout) => {

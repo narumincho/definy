@@ -2,6 +2,7 @@ use definy_event::EventHashId;
 use dioxus::prelude::*;
 
 use super::banners::{DeployBanner, PreviewBanner};
+use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::evaluate_expression;
@@ -16,20 +17,111 @@ pub(crate) fn PartEditorCard(
     snapshot: crate::part_projection::PartSnapshot,
 ) -> Element {
     let language = context.language;
-    let part_name = use_signal(|| snapshot.part_name.clone());
-    let part_description = use_signal(|| snapshot.description_for(language));
-    let part_type_expr = use_signal(|| {
+    let mut part_name = use_signal(|| snapshot.part_name.clone());
+    let mut part_description = use_signal(|| snapshot.description_for(language));
+    let mut part_type_expr = use_signal(|| {
         snapshot
             .part_type
             .as_ref()
             .map(definy_event::event::PartType::to_expression)
     });
-    let expression = use_signal(|| snapshot.expression.clone());
-    let module_hash = use_signal(|| Some(snapshot.module_definition_event_hash));
-    let mut commit_message = use_signal(String::new);
+    let mut expression = use_signal(|| snapshot.expression.clone());
+    let mut module_hash = use_signal(|| Some(snapshot.module_definition_event_hash.clone()));
+    // 説明は表示中の言語の分だけ編集するので, 他の言語の説明はこれから引き継ぐ
+    let mut base_description = use_signal(|| snapshot.part_description.clone());
     let mut eval_result = use_signal(|| None::<String>);
-    let mut submit_result = use_signal(|| None::<String>);
     let mut show_wasm_inspector = use_signal(|| false);
+
+    // 編集はその都度 作業中の変更 (localStorage) に記録する. コミット済みと同じ内容に戻したら記録から消す.
+    // 作業中の変更の読み込みが終わってから, 記録してある変更があればそれで編集欄を置き換える
+    let mut restored = use_signal(|| false);
+    {
+        let definition_event_hash = definition_event_hash.clone();
+        use_effect(move || {
+            if !crate::working_changes::WORKING_CHANGES_LOADED() {
+                return;
+            }
+            if !*restored.peek() {
+                restored.set(true);
+                let pending = crate::working_changes::WORKING_CHANGES
+                    .peek()
+                    .find(&definition_event_hash)
+                    .cloned();
+                if let Some(change) = pending {
+                    part_name.set(change.entry.name.to_string());
+                    part_description.set(
+                        change
+                            .entry
+                            .description
+                            .to_display_string(language.to_code()),
+                    );
+                    part_type_expr.set(
+                        change
+                            .entry
+                            .part_type
+                            .as_ref()
+                            .map(definy_event::event::PartType::to_expression),
+                    );
+                    expression.set(change.entry.expression.clone());
+                    module_hash.set(Some(change.module_definition_event_hash.clone()));
+                    base_description.set(change.entry.description.clone());
+                }
+            }
+            let name = part_name();
+            let description = base_description
+                .peek()
+                .with_text(language.to_code(), &part_description());
+            let part_type = part_type_expr
+                .read()
+                .as_ref()
+                .and_then(definy_event::event::PartType::from_expression);
+            let expr = expression();
+            let Some(module) = module_hash() else {
+                return;
+            };
+            let Some(state_sig) = try_use_context::<Signal<AppState>>() else {
+                return;
+            };
+            let state = state_sig.peek();
+            record_edit(
+                &state,
+                &definition_event_hash,
+                &module,
+                definy_event::event::ModulePartEntry {
+                    name: name.trim().into(),
+                    part_type,
+                    description,
+                    content_hash: expr
+                        .as_ref()
+                        .and_then(|e| definy_event::ContentHash::from_expression(e).ok()),
+                    expression: expr,
+                },
+            );
+        });
+    }
+    let has_change = crate::working_changes::WORKING_CHANGES
+        .read()
+        .contains(&definition_event_hash);
+    let total_change_count = crate::working_changes::WORKING_CHANGES.read().len();
+
+    let on_discard = {
+        let definition_event_hash = definition_event_hash.clone();
+        let snapshot = snapshot.clone();
+        move |_| {
+            crate::working_changes::update(|changes| changes.remove(&definition_event_hash));
+            part_name.set(snapshot.part_name.clone());
+            part_description.set(snapshot.description_for(language));
+            part_type_expr.set(
+                snapshot
+                    .part_type
+                    .as_ref()
+                    .map(definy_event::event::PartType::to_expression),
+            );
+            expression.set(snapshot.expression.clone());
+            module_hash.set(Some(snapshot.module_definition_event_hash.clone()));
+            base_description.set(snapshot.part_description.clone());
+        }
+    };
 
     let updated_at_str = snapshot.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at_label = format!(
@@ -39,161 +131,12 @@ pub(crate) fn PartEditorCard(
             .label("Updated at:", "更新日時:", "Ĝisdatigita je:"),
     );
 
-    let is_logged_in = state.current_key.is_some()
-        || try_use_context::<Signal<AppState>>()
-            .map(|sig| sig.read().current_key.is_some())
-            .unwrap_or(false);
     let expected_type = part_type_expr
         .read()
         .as_ref()
         .and_then(definy_event::event::PartType::from_expression)
         .as_ref()
         .map(part_type_to_expression_type);
-
-    let on_save = {
-        let definition_event_hash = definition_event_hash.clone();
-        let original_description = snapshot.part_description.clone();
-        move |_| {
-            let state_sig = use_context::<Signal<AppState>>();
-            let state_val = state_sig.read().clone();
-            let key = if let Some(key) = &state_val.current_key {
-                key.clone()
-            } else {
-                submit_result.set(Some(
-                    language
-                        .label(
-                            "Error: login required",
-                            "エラー: ログインが必要です",
-                            "Eraro: ensaluto necesas",
-                        )
-                        .to_string(),
-                ));
-                return;
-            };
-            let name = part_name().trim().to_string();
-            if name.is_empty() {
-                submit_result.set(Some(
-                    language
-                        .label(
-                            "Error: part name is required",
-                            "エラー: パーツ名は必須です",
-                            "Eraro: parto-nomo estas bezonata",
-                        )
-                        .to_string(),
-                ));
-                return;
-            }
-            if !definy_event::naming::is_valid_name(&name) {
-                submit_result.set(Some(
-                    language
-                        .label(
-                            "Error: part name must be lowercase alphanumeric with hyphens (e.g. my-part)",
-                            "エラー: パーツ名はアルファベット小文字・ハイフン区切りで入力してください (例: my-part)",
-                            "Eraro: parto-nomo devas esti minusklaj literoj disigitaj per streketoj (ekz. my-part)",
-                        )
-                        .to_string(),
-                ));
-                return;
-            }
-            let desc = part_description();
-            let type_val = part_type_expr
-                .read()
-                .as_ref()
-                .and_then(definy_event::event::PartType::from_expression);
-            let expr_val = expression();
-            let Some(mod_hash) = module_hash() else {
-                submit_result.set(Some(
-                    language
-                        .label(
-                            "Error: module is required",
-                            "エラー: モジュールを選択してください",
-                            "Eraro: modulo estas bezonata",
-                        )
-                        .to_string(),
-                ));
-                return;
-            };
-            let module_snapshot =
-                crate::module_projection::find_module_snapshot(&state_val, &mod_hash);
-            let Some(m) = module_snapshot else {
-                submit_result.set(Some("Module not found".to_string()));
-                return;
-            };
-
-            let target_id = definition_event_hash.clone();
-            let mut parts =
-                crate::module_projection::latest_module_parts(&state_val, &m).unwrap_or_default();
-            let content_hash = expr_val
-                .as_ref()
-                .and_then(|e| definy_event::ContentHash::from_expression(e).ok());
-            let edited_part = definy_event::event::ModulePartEntry {
-                name: name.clone().into(),
-                part_type: type_val,
-                description: original_description.with_text(language.to_code(), &desc),
-                content_hash,
-                expression: expr_val,
-            };
-            // コミットのパーツの順序を保ったまま, 編集したパーツだけを差し替える
-            match parts.iter().position(|part| {
-                definy_event::event::derive_module_part_id(&m.definition_event_hash, &part.name)
-                    == target_id
-            }) {
-                Some(index) => parts[index] = edited_part,
-                None => parts.push(edited_part),
-            }
-
-            let commit_msg = commit_message().trim().to_string();
-            let final_message = if commit_msg.is_empty() {
-                format!("Update part '{}'", name)
-            } else {
-                commit_msg
-            };
-            let force_offline = state_val.force_offline;
-            spawn(async move {
-                let record_opt = crate::event_submit::submit_event(
-                    definy_event::event::EventContent::ModuleCommit(
-                        definy_event::event::ModuleCommitEvent {
-                            module_name: m.module_name.into(),
-                            module_description: m.module_description,
-                            parent_commit_hash: Some(m.latest_event_hash),
-                            message: final_message.into(),
-                            parts,
-                        },
-                    ),
-                    key,
-                    force_offline,
-                    None,
-                    state_sig,
-                )
-                .await;
-                if let Some(record) = record_opt {
-                    submit_result.set(Some(match record.status {
-                        crate::local_event::LocalEventStatus::Sent => language
-                            .label(
-                                "Changes saved successfully",
-                                "変更を保存しました",
-                                "Ŝanĝoj konservitaj",
-                            )
-                            .to_string(),
-                        crate::local_event::LocalEventStatus::Queued => language
-                            .label(
-                                "Changes queued (offline)",
-                                "変更をキューに追加しました (オフライン)",
-                                "Ŝanĝoj envicigitaj (senkonekte)",
-                            )
-                            .to_string(),
-                        crate::local_event::LocalEventStatus::Failed => language
-                            .label(
-                                "Failed to save changes",
-                                "変更の保存に失敗しました",
-                                "Konservado de ŝanĝoj malsukcesis",
-                            )
-                            .to_string(),
-                    }));
-                }
-            });
-        }
-    };
 
     let detected_preview = expression
         .read()
@@ -398,18 +341,6 @@ pub(crate) fn PartEditorCard(
                         }
                     }
                 }
-                if !is_logged_in {
-                    div { style: "font-size: 0.78rem; color: var(--text-secondary); background: var(--overlay-1); padding: 0.35rem 0.6rem; border-radius: var(--radius-xs);",
-                        "{context.language.label(\"Login required to save changes.\", \"編集を保存するにはログインが必要です。\", \"Ensaluto necesas por konservi ŝanĝojn.\")}"
-                    }
-                }
-                if let Some(result) = submit_result() {
-                    div {
-                        class: "mono",
-                        style: "font-size: 0.82rem; word-break: break-word; background: var(--blue-bg); border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.65rem; border-radius: var(--radius-sm);",
-                        "{result}"
-                    }
-                }
             }
 
             // プレビューバナーカード (definy:preview 検出時)
@@ -462,30 +393,32 @@ pub(crate) fn PartEditorCard(
                             }
                         })
                 }
-                // 保存: コミットメッセージと保存ボタン
-                div { class: "def-save-row",
-                    input {
-                        r#type: "text",
-                        name: "part-update-commit-message",
-                        class: "def-commit-input",
-                        value: "{commit_message}",
-                        placeholder: context
-                            .language
-                            .label(
-                                "Commit message (optional)",
-                                "コミットメッセージ (省略可)",
-                                "Enmeta mesaĝo (nedeviga)",
-                            ),
-                        oninput: move |evt: FormEvent| {
-                            commit_message.set(evt.value());
-                        },
+                // 作業中の変更: 編集は自動で記録され, 変更ページでまとめてコミットする
+                div {
+                    class: "def-save-row",
+                    "data-working-change": if has_change { "true" } else { "false" },
+                    if has_change {
+                        span { class: "def-change-status",
+                            span { class: "change-badge", "M" }
+                            "{context.language.label(\"Uncommitted changes (saved locally)\", \"未コミットの変更 (ローカルに記録済み)\", \"Neenmetitaj ŝanĝoj (konservitaj loke)\")}"
+                        }
+                        button {
+                            r#type: "button",
+                            class: "btn-secondary",
+                            onclick: on_discard,
+                            "{context.language.label(\"Discard changes\", \"変更を破棄\", \"Forĵeti ŝanĝojn\")}"
+                        }
+                    } else {
+                        span { class: "def-change-status muted",
+                            "{context.language.label(\"Edits are saved locally. Commit several parts together from Changes.\", \"編集はローカルに記録されます。変更ページで複数のパーツをまとめてコミットできます。\", \"Redaktoj estas konservitaj loke. Enmetu plurajn partojn kune el Ŝanĝoj.\")}"
+                        }
                     }
-                    button {
-                        r#type: "button",
-                        class: if is_logged_in { "btn-primary" } else { "btn-secondary" },
-                        disabled: !is_logged_in,
-                        onclick: on_save,
-                        "{context.language.label(\"Save changes\", \"編集を保存\", \"Konservi ŝanĝojn\")}"
+                    if total_change_count > 0 {
+                        a {
+                            class: if has_change { "btn-primary" } else { "btn-secondary" },
+                            href: context.href_with_lang(Location::Changes),
+                            "{context.language.label(\"Commit changes\", \"変更をコミット\", \"Enmeti ŝanĝojn\")} ({total_change_count})"
+                        }
                     }
                 }
             }
@@ -529,6 +462,55 @@ pub(crate) fn PartEditorCard(
             }
         }
     }
+}
+
+/// パーツの編集を作業中の変更に記録する. コミット済みのパーツと同じ内容なら記録から消す
+fn record_edit(
+    state: &AppState,
+    part_id: &EventHashId,
+    module_definition_event_hash: &EventHashId,
+    entry: definy_event::event::ModulePartEntry,
+) {
+    let Some(module) =
+        crate::module_projection::find_module_snapshot(state, module_definition_event_hash)
+    else {
+        return;
+    };
+    let committed = crate::working_changes::committed_part(state, &module, part_id);
+    if committed
+        .as_ref()
+        .is_some_and(|committed| crate::working_changes::same_part_definition(committed, &entry))
+    {
+        if crate::working_changes::WORKING_CHANGES
+            .peek()
+            .contains(part_id)
+        {
+            crate::working_changes::update(|changes| changes.remove(part_id));
+        }
+        return;
+    }
+    let existing = crate::working_changes::WORKING_CHANGES
+        .peek()
+        .find(part_id)
+        .cloned();
+    if existing.as_ref().is_some_and(|existing| {
+        existing.entry == entry
+            && &existing.module_definition_event_hash == module_definition_event_hash
+    }) {
+        return;
+    }
+    let change = crate::working_changes::PartChange {
+        module_definition_event_hash: module_definition_event_hash.clone(),
+        part_id: part_id.clone(),
+        is_new: committed.is_none(),
+        // 最初に変更を記録したときのコミットを基準にする (あとで別のコミットが入ったことを知らせるため)
+        base_commit_hash: existing
+            .and_then(|existing| existing.base_commit_hash)
+            .or(Some(module.latest_event_hash)),
+        entry,
+        updated_at_ms: chrono::Utc::now().timestamp_millis(),
+    };
+    crate::working_changes::update(|changes| changes.upsert(change));
 }
 
 pub(crate) fn evaluate_and_set_result(
