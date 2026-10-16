@@ -251,6 +251,7 @@ fn test_self_hosted_variant_type_inference_and_subtyping() {
         &[
             ("sub", ast_union_type(vec![("some", Some(type_num()))])),
             ("sup", option_num_type.clone()),
+            ("env", empty_type_env()),
         ],
     );
     let assignable_res =

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::app_state::PathStep;
 use definy_event::event::Expression;
 
@@ -14,11 +16,33 @@ pub fn expression_to_layout_node(expr: &Expression, id_prefix: &str) -> LayoutNo
     expression_to_layout_node_with_path(expr, id_prefix, &[])
 }
 
+/// 関数呼び出しのパスごとの, 各引数に対応するパラメーター名
+/// (型解析の [`crate::expression_editor::diagnostics::TypeAnalysis::call_parameter_names`])
+pub type CallParameterNames = HashMap<Vec<PathStep>, Vec<String>>;
+
+/// 関数呼び出しの引数に, 呼び出し先関数のパラメーター名を付けて AST をレイアウトノード木に変換する
+pub fn expression_to_layout_node_with_call_parameter_names(
+    expr: &Expression,
+    id_prefix: &str,
+    call_parameter_names: &CallParameterNames,
+) -> LayoutNode {
+    build_layout_node(expr, id_prefix, &[], call_parameter_names)
+}
+
 /// パス情報を保持しながら AST (Expression) をレイアウトノード木に変換する
 pub fn expression_to_layout_node_with_path(
     expr: &Expression,
     id_prefix: &str,
     current_path: &[PathStep],
+) -> LayoutNode {
+    build_layout_node(expr, id_prefix, current_path, &HashMap::new())
+}
+
+fn build_layout_node(
+    expr: &Expression,
+    id_prefix: &str,
+    current_path: &[PathStep],
+    names: &CallParameterNames,
 ) -> LayoutNode {
     let p = current_path.to_vec();
     match expr {
@@ -71,27 +95,53 @@ pub fn expression_to_layout_node_with_path(
             NodeKind::Keyword,
         )
         .with_path(p),
-        Expression::Add(add) => {
-            create_binary_op_node(id_prefix, "plus", &add.left, &add.right, current_path)
-        }
-        Expression::Subtract(sub) => {
-            create_binary_op_node(id_prefix, "minus", &sub.left, &sub.right, current_path)
-        }
-        Expression::Multiply(mul) => {
-            create_binary_op_node(id_prefix, "multiply", &mul.left, &mul.right, current_path)
-        }
-        Expression::Divide(div) => {
-            create_binary_op_node(id_prefix, "divide", &div.left, &div.right, current_path)
-        }
-        Expression::Remainder(rem) => {
-            create_binary_op_node(id_prefix, "remainder", &rem.left, &rem.right, current_path)
-        }
+        Expression::Add(add) => create_binary_op_node(
+            id_prefix,
+            "plus",
+            &add.left,
+            &add.right,
+            current_path,
+            names,
+        ),
+        Expression::Subtract(sub) => create_binary_op_node(
+            id_prefix,
+            "minus",
+            &sub.left,
+            &sub.right,
+            current_path,
+            names,
+        ),
+        Expression::Multiply(mul) => create_binary_op_node(
+            id_prefix,
+            "multiply",
+            &mul.left,
+            &mul.right,
+            current_path,
+            names,
+        ),
+        Expression::Divide(div) => create_binary_op_node(
+            id_prefix,
+            "divide",
+            &div.left,
+            &div.right,
+            current_path,
+            names,
+        ),
+        Expression::Remainder(rem) => create_binary_op_node(
+            id_prefix,
+            "remainder",
+            &rem.left,
+            &rem.right,
+            current_path,
+            names,
+        ),
         Expression::BitAnd(bit_and) => create_binary_op_node(
             id_prefix,
             "bit-and",
             &bit_and.left,
             &bit_and.right,
             current_path,
+            names,
         ),
         Expression::BitOr(bit_or) => create_binary_op_node(
             id_prefix,
@@ -99,6 +149,7 @@ pub fn expression_to_layout_node_with_path(
             &bit_or.left,
             &bit_or.right,
             current_path,
+            names,
         ),
         Expression::BitXor(bit_xor) => create_binary_op_node(
             id_prefix,
@@ -106,48 +157,72 @@ pub fn expression_to_layout_node_with_path(
             &bit_xor.left,
             &bit_xor.right,
             current_path,
+            names,
         ),
-        Expression::ShiftLeft(shl) => {
-            create_binary_op_node(id_prefix, "shift-left", &shl.left, &shl.right, current_path)
-        }
+        Expression::ShiftLeft(shl) => create_binary_op_node(
+            id_prefix,
+            "shift-left",
+            &shl.left,
+            &shl.right,
+            current_path,
+            names,
+        ),
         Expression::ShiftRight(shr) => create_binary_op_node(
             id_prefix,
             "shift-right",
             &shr.left,
             &shr.right,
             current_path,
+            names,
         ),
         Expression::Equal(eq) => {
-            create_binary_op_node(id_prefix, "equal", &eq.left, &eq.right, current_path)
+            create_binary_op_node(id_prefix, "equal", &eq.left, &eq.right, current_path, names)
         }
-        Expression::NotEqual(ne) => {
-            create_binary_op_node(id_prefix, "not-equal", &ne.left, &ne.right, current_path)
-        }
-        Expression::LessThan(lt) => {
-            create_binary_op_node(id_prefix, "less-than", &lt.left, &lt.right, current_path)
-        }
+        Expression::NotEqual(ne) => create_binary_op_node(
+            id_prefix,
+            "not-equal",
+            &ne.left,
+            &ne.right,
+            current_path,
+            names,
+        ),
+        Expression::LessThan(lt) => create_binary_op_node(
+            id_prefix,
+            "less-than",
+            &lt.left,
+            &lt.right,
+            current_path,
+            names,
+        ),
         Expression::LessThanOrEqual(le) => create_binary_op_node(
             id_prefix,
             "less-than-or-equal",
             &le.left,
             &le.right,
             current_path,
+            names,
         ),
-        Expression::GreaterThan(gt) => {
-            create_binary_op_node(id_prefix, "greater-than", &gt.left, &gt.right, current_path)
-        }
+        Expression::GreaterThan(gt) => create_binary_op_node(
+            id_prefix,
+            "greater-than",
+            &gt.left,
+            &gt.right,
+            current_path,
+            names,
+        ),
         Expression::GreaterThanOrEqual(ge) => create_binary_op_node(
             id_prefix,
             "greater-than-or-equal",
             &ge.left,
             &ge.right,
             current_path,
+            names,
         ),
         Expression::And(and) => {
-            create_binary_op_node(id_prefix, "and", &and.left, &and.right, current_path)
+            create_binary_op_node(id_prefix, "and", &and.left, &and.right, current_path, names)
         }
         Expression::Or(or) => {
-            create_binary_op_node(id_prefix, "or", &or.left, &or.right, current_path)
+            create_binary_op_node(id_prefix, "or", &or.left, &or.right, current_path, names)
         }
         Expression::StringConcat(concat) => create_binary_op_node(
             id_prefix,
@@ -155,6 +230,7 @@ pub fn expression_to_layout_node_with_path(
             &concat.left,
             &concat.right,
             current_path,
+            names,
         ),
         Expression::ListConcat(concat) => create_binary_op_node(
             id_prefix,
@@ -162,87 +238,98 @@ pub fn expression_to_layout_node_with_path(
             &concat.left,
             &concat.right,
             current_path,
+            names,
         ),
         Expression::Not(not_expr) => {
-            let child = expression_to_layout_node_with_path(
+            let child = build_layout_node(
                 &not_expr.value,
                 &format!("{}.val", id_prefix),
                 &child_path(current_path, PathStep::Condition),
+                names,
             );
             LayoutNode::new(id_prefix, "not", NodeKind::Operator)
                 .with_path(p)
                 .with_children(vec![child])
         }
         Expression::StringLength(len_expr) => {
-            let child = expression_to_layout_node_with_path(
+            let child = build_layout_node(
                 &len_expr.value,
                 &format!("{}.val", id_prefix),
                 &child_path(current_path, PathStep::Condition),
+                names,
             );
             LayoutNode::new(id_prefix, "string_length", NodeKind::Identifier)
                 .with_path(p)
                 .with_children(vec![child])
         }
         Expression::ListLength(len_expr) => {
-            let child = expression_to_layout_node_with_path(
+            let child = build_layout_node(
                 &len_expr.value,
                 &format!("{}.val", id_prefix),
                 &child_path(current_path, PathStep::Condition),
+                names,
             );
             LayoutNode::new(id_prefix, "list_length", NodeKind::Identifier)
                 .with_path(p)
                 .with_children(vec![child])
         }
         Expression::StringSlice(slice) => {
-            let target = expression_to_layout_node_with_path(
+            let target = build_layout_node(
                 &slice.value,
                 &format!("{}.target", id_prefix),
                 &child_path(current_path, PathStep::Condition),
+                names,
             );
-            let start = expression_to_layout_node_with_path(
+            let start = build_layout_node(
                 &slice.start,
                 &format!("{}.start", id_prefix),
                 &child_path(current_path, PathStep::Start),
+                names,
             );
-            let end = expression_to_layout_node_with_path(
+            let end = build_layout_node(
                 &slice.end,
                 &format!("{}.end", id_prefix),
                 &child_path(current_path, PathStep::End),
+                names,
             );
             LayoutNode::new(id_prefix, "slice", NodeKind::Identifier)
                 .with_path(p)
                 .with_children(vec![target, start, end])
         }
         Expression::StringToBytes(stb) => {
-            let child = expression_to_layout_node_with_path(
+            let child = build_layout_node(
                 &stb.value,
                 &format!("{}.value", id_prefix),
                 &child_path(current_path, PathStep::Condition),
+                names,
             );
             LayoutNode::new(id_prefix, "string_to_bytes", NodeKind::Identifier)
                 .with_path(p)
                 .with_children(vec![child])
         }
         Expression::ListGet(get_expr) => {
-            let list = expression_to_layout_node_with_path(
+            let list = build_layout_node(
                 &get_expr.list,
                 &format!("{}.list", id_prefix),
                 &child_path(current_path, PathStep::Left),
+                names,
             );
-            let index = expression_to_layout_node_with_path(
+            let index = build_layout_node(
                 &get_expr.index,
                 &format!("{}.index", id_prefix),
                 &child_path(current_path, PathStep::Index),
+                names,
             );
             LayoutNode::new(id_prefix, "get", NodeKind::Identifier)
                 .with_path(p)
                 .with_children(vec![list, index])
         }
         Expression::RecordGet(get_expr) => {
-            let record = expression_to_layout_node_with_path(
+            let record = build_layout_node(
                 &get_expr.record,
                 &format!("{}.record", id_prefix),
                 &child_path(current_path, PathStep::Record),
+                names,
             );
             LayoutNode::new(
                 id_prefix,
@@ -253,15 +340,17 @@ pub fn expression_to_layout_node_with_path(
             .with_children(vec![record])
         }
         Expression::ListAppend(append_expr) => {
-            let list = expression_to_layout_node_with_path(
+            let list = build_layout_node(
                 &append_expr.list,
                 &format!("{}.list", id_prefix),
                 &child_path(current_path, PathStep::Left),
+                names,
             );
-            let item = expression_to_layout_node_with_path(
+            let item = build_layout_node(
                 &append_expr.item,
                 &format!("{}.item", id_prefix),
                 &child_path(current_path, PathStep::Item),
+                names,
             );
             LayoutNode::new(id_prefix, "append", NodeKind::Identifier)
                 .with_path(p)
@@ -278,10 +367,11 @@ pub fn expression_to_layout_node_with_path(
                         binding.variable_name.as_ref(),
                         NodeKind::Identifier,
                     );
-                    let val_node = expression_to_layout_node_with_path(
+                    let val_node = build_layout_node(
                         &binding.value,
                         &format!("{}.b_{}.val", id_prefix, idx),
                         &child_path(current_path, PathStep::LetBindingValue(idx)),
+                        names,
                     );
                     LayoutNode::new(format!("{}.b_{}", id_prefix, idx), "=", NodeKind::Operator)
                         .with_children(vec![name_node, val_node])
@@ -291,10 +381,11 @@ pub fn expression_to_layout_node_with_path(
                 LayoutNode::new(format!("{}.bindings", id_prefix), "list", NodeKind::Block)
                     .with_children(binding_nodes);
 
-            let body_node = expression_to_layout_node_with_path(
+            let body_node = build_layout_node(
                 &let_expr.body,
                 &format!("{}.body", id_prefix),
                 &child_path(current_path, PathStep::LetBody),
+                names,
             );
             LayoutNode::new(id_prefix, "let", NodeKind::Block)
                 .with_path(p)
@@ -313,10 +404,11 @@ pub fn expression_to_layout_node_with_path(
                     )
                 })
                 .collect();
-            let body_node = expression_to_layout_node_with_path(
+            let body_node = build_layout_node(
                 &func.body,
                 &format!("{}.body", id_prefix),
                 &child_path(current_path, PathStep::FunctionBody),
+                names,
             );
             children.push(body_node);
             LayoutNode::new(id_prefix, "fn", NodeKind::Block)
@@ -324,29 +416,47 @@ pub fn expression_to_layout_node_with_path(
                 .with_children(children)
         }
         Expression::Call(call) => {
-            let fn_node = expression_to_layout_node_with_path(
+            let fn_node = build_layout_node(
                 &call.function,
                 &format!("{}.func", id_prefix),
                 &child_path(current_path, PathStep::CallFunction),
+                names,
             );
             let mut children = vec![fn_node];
+            let parameter_names = names.get(current_path);
             for (idx, arg) in call.arguments.iter().enumerate() {
-                let arg_node = expression_to_layout_node_with_path(
+                let arg_path = child_path(current_path, PathStep::CallArgument(idx));
+                let arg_node = build_layout_node(
                     &arg.value,
                     &format!("{}.arg_{}", id_prefix, idx),
-                    &child_path(current_path, PathStep::CallArgument(idx)),
+                    &arg_path,
+                    names,
                 );
-                children.push(arg_node);
+                // 名前付きパラメーター表示: 呼び出し先関数のパラメーター名 (分からなければ引数に保存された名前) を付ける
+                let parameter_name = parameter_names
+                    .and_then(|names| names.get(idx))
+                    .map(String::as_str)
+                    .unwrap_or(arg.name.as_ref());
+                children.push(
+                    LayoutNode::new(
+                        format!("{}.arg_{}.param", id_prefix, idx),
+                        format!("{}:", parameter_name),
+                        NodeKind::Identifier,
+                    )
+                    .with_path(arg_path)
+                    .with_children(vec![arg_node]),
+                );
             }
             LayoutNode::new(id_prefix, "call", NodeKind::Group)
                 .with_path(p)
                 .with_children(children)
         }
         Expression::TypeList(type_list) => {
-            let item_type = expression_to_layout_node_with_path(
+            let item_type = build_layout_node(
                 &type_list.item_type,
                 &format!("{}.item", id_prefix),
                 &child_path(current_path, PathStep::TypeListItem),
+                names,
             );
             LayoutNode::new(id_prefix, "List", NodeKind::Keyword)
                 .with_path(p)
@@ -359,10 +469,11 @@ pub fn expression_to_layout_node_with_path(
                 .enumerate()
                 .map(|(i, item)| {
                     let key_prefix = format!("{}.item_{}", id_prefix, i);
-                    let val_node = expression_to_layout_node_with_path(
+                    let val_node = build_layout_node(
                         &item.value,
                         &key_prefix,
                         &child_path(current_path, PathStep::RecordItemValue(i)),
+                        names,
                     );
                     LayoutNode::new(&key_prefix, item.key.as_ref(), NodeKind::Identifier)
                         .with_path(child_path(current_path, PathStep::RecordItemValue(i)))
@@ -377,7 +488,7 @@ pub fn expression_to_layout_node_with_path(
             // docs/dynamic-layout.md 要件:
             // 全アイテムが同じキー構成のレコードである場合、スプレッドシート（Table）として最適化
             if let Some((headers, table_node)) =
-                try_build_table_node(list_expr, id_prefix, current_path)
+                try_build_table_node(list_expr, id_prefix, current_path, names)
             {
                 let mut node = table_node;
                 node.table_headers = headers;
@@ -388,10 +499,11 @@ pub fn expression_to_layout_node_with_path(
                     .iter()
                     .enumerate()
                     .map(|(i, item)| {
-                        expression_to_layout_node_with_path(
+                        build_layout_node(
                             item,
                             &format!("{}.item_{}", id_prefix, i),
                             &child_path(current_path, PathStep::ListItemValue(i)),
+                            names,
                         )
                     })
                     .collect();
@@ -401,10 +513,11 @@ pub fn expression_to_layout_node_with_path(
             }
         }
         Expression::Constructor(ctor) => {
-            let val_node = expression_to_layout_node_with_path(
+            let val_node = build_layout_node(
                 &ctor.value,
                 &format!("{}.val", id_prefix),
                 &child_path(current_path, PathStep::ConstructorValue),
+                names,
             );
             let type_hash = ctor.type_part_definition_event_hash.to_string();
             let label = format!("new:{}", &type_hash[..type_hash.len().min(6)]);
@@ -415,10 +528,11 @@ pub fn expression_to_layout_node_with_path(
         Expression::Variant(variant) => {
             let label = variant.tag.to_string();
             let children = if let Some(payload) = &variant.payload {
-                vec![expression_to_layout_node_with_path(
+                vec![build_layout_node(
                     payload,
                     &format!("{}.payload", id_prefix),
                     &child_path(current_path, PathStep::VariantPayload),
+                    names,
                 )]
             } else {
                 Vec::new()
@@ -433,17 +547,19 @@ pub fn expression_to_layout_node_with_path(
                 .iter()
                 .enumerate()
                 .map(|(idx, param)| {
-                    expression_to_layout_node_with_path(
+                    build_layout_node(
                         &param.r#type,
                         &format!("{}.param_{}", id_prefix, idx),
                         &child_path(current_path, PathStep::TypeFunctionParameter(idx)),
+                        names,
                     )
                 })
                 .collect();
-            let ret_node = expression_to_layout_node_with_path(
+            let ret_node = build_layout_node(
                 &type_func.return_type,
                 &format!("{}.ret", id_prefix),
                 &child_path(current_path, PathStep::TypeFunctionReturn),
+                names,
             );
             children.push(ret_node);
             LayoutNode::new(id_prefix, "type_function", NodeKind::Operator)
@@ -458,10 +574,11 @@ pub fn expression_to_layout_node_with_path(
                 .map(|(i, v)| {
                     let v_prefix = format!("{}.var_{}", id_prefix, i);
                     if let Some(payload) = &v.payload_type {
-                        let p_node = expression_to_layout_node_with_path(
+                        let p_node = build_layout_node(
                             payload,
                             &v_prefix,
                             &child_path(current_path, PathStep::TypeUnionVariant(i)),
+                            names,
                         );
                         LayoutNode::new(&v_prefix, v.tag.as_ref(), NodeKind::Identifier)
                             .with_path(child_path(current_path, PathStep::TypeUnionVariant(i)))
@@ -477,18 +594,20 @@ pub fn expression_to_layout_node_with_path(
                 .with_children(children)
         }
         Expression::Match(match_expr) => {
-            let target_node = expression_to_layout_node_with_path(
+            let target_node = build_layout_node(
                 &match_expr.target,
                 &format!("{}.target", id_prefix),
                 &child_path(current_path, PathStep::MatchTarget),
+                names,
             );
             let mut children = vec![target_node];
             for (i, arm) in match_expr.arms.iter().enumerate() {
                 let arm_prefix = format!("{}.arm_{}", id_prefix, i);
-                let body_node = expression_to_layout_node_with_path(
+                let body_node = build_layout_node(
                     &arm.body,
                     &arm_prefix,
                     &child_path(current_path, PathStep::MatchArmBody(i)),
+                    names,
                 );
                 let arm_label = format!("{} =>", arm.tag);
                 children.push(
@@ -499,10 +618,11 @@ pub fn expression_to_layout_node_with_path(
             }
             if let Some(default_body) = &match_expr.default {
                 let def_prefix = format!("{}.default", id_prefix);
-                let body_node = expression_to_layout_node_with_path(
+                let body_node = build_layout_node(
                     default_body,
                     &def_prefix,
                     &child_path(current_path, PathStep::MatchDefault),
+                    names,
                 );
                 children.push(
                     LayoutNode::new(&def_prefix, "_ =>", NodeKind::Block)
@@ -523,16 +643,19 @@ fn create_binary_op_node(
     left: &Expression,
     right: &Expression,
     current_path: &[PathStep],
+    names: &CallParameterNames,
 ) -> LayoutNode {
-    let left_node = expression_to_layout_node_with_path(
+    let left_node = build_layout_node(
         left,
         &format!("{}.left", id_prefix),
         &child_path(current_path, PathStep::Left),
+        names,
     );
-    let right_node = expression_to_layout_node_with_path(
+    let right_node = build_layout_node(
         right,
         &format!("{}.right", id_prefix),
         &child_path(current_path, PathStep::Right),
+        names,
     );
     LayoutNode::new(id_prefix, op, NodeKind::Operator)
         .with_path(current_path.to_vec())
@@ -543,6 +666,7 @@ fn try_build_table_node(
     list_expr: &definy_event::event::ListLiteralExpression,
     id_prefix: &str,
     base_path: &[PathStep],
+    names: &CallParameterNames,
 ) -> Option<(Vec<String>, LayoutNode)> {
     if list_expr.items.is_empty() {
         return None;
@@ -584,10 +708,11 @@ fn try_build_table_node(
                 let mut cell_p = base_path.to_vec();
                 cell_p.push(PathStep::ListItemValue(row_idx));
                 cell_p.push(PathStep::RecordItemValue(field_idx));
-                expression_to_layout_node_with_path(
+                build_layout_node(
                     &field.value,
                     &format!("{}.r{}.c{}", id_prefix, row_idx, col_idx),
                     &cell_p,
+                    names,
                 )
             } else {
                 LayoutNode::new(

@@ -53,6 +53,8 @@ pub enum IconKind {
     Deploy,
     About,
     Settings,
+    Changes,
+    History,
     Sidebar,
     ChevronRight,
     Part,
@@ -98,6 +100,22 @@ pub fn Icon(kind: IconKind, #[props(default = "btn-icon")] class: &'static str) 
         IconKind::Settings => rsx! {
             circle { cx: "12", cy: "12", r: "3" }
             path { d: "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" }
+        },
+        // ブランチ (作業中の変更)
+        IconKind::Changes => rsx! {
+            circle { cx: "6", cy: "5", r: "2" }
+            circle { cx: "6", cy: "19", r: "2" }
+            circle { cx: "18", cy: "7", r: "2" }
+            path { d: "M6 7v10" }
+            path { d: "M18 9a6 6 0 0 1-6 6H6" }
+        },
+        // コミットの点と枝 (履歴グラフ)
+        IconKind::History => rsx! {
+            circle { cx: "7", cy: "6", r: "2" }
+            circle { cx: "7", cy: "18", r: "2" }
+            circle { cx: "17", cy: "12", r: "2" }
+            path { d: "M7 8v8" }
+            path { d: "M7 8c0 4 10 0 10 2" }
         },
         // サイドバーの開閉
         IconKind::Sidebar => rsx! {

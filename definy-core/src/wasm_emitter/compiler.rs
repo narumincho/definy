@@ -112,7 +112,8 @@ pub fn compile_expression_to_wasm(
     }
 
     // Assemble full Wasm binary module using module_builder
-    let locals_count = count_locals(expression) + next_local_idx + 64;
+    // ローカル変数はすべて next_local_idx を進めて確保しているので, その値までで足りる
+    let locals_count = next_local_idx + 64;
     let module = super::module_builder::assemble_wasm_module(
         &code_bytes,
         locals_count,
@@ -183,6 +184,7 @@ pub(crate) fn emit_expression(
             out.push(I32_ADD);
             out.push(GLOBAL_SET);
             out.push(0);
+            emit_ensure_heap_capacity(out);
 
             // Emit items and store their pointers
             for (idx, item) in items.iter().enumerate() {
@@ -238,6 +240,7 @@ pub(crate) fn emit_expression(
             out.push(I32_ADD);
             out.push(GLOBAL_SET);
             out.push(0);
+            emit_ensure_heap_capacity(out);
 
             for (idx, item) in items.iter().enumerate() {
                 let key_ptr = ctx.alloc_static_string(&item.key);
@@ -691,6 +694,7 @@ pub(crate) fn emit_alloc_number_from_stack(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Store tag 0
     out.push(LOCAL_GET);
@@ -733,6 +737,7 @@ fn emit_alloc_bool_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Store tag 1
     out.push(LOCAL_GET);
@@ -757,84 +762,6 @@ fn emit_alloc_bool_from_stack(out: &mut Vec<u8>, next_local_idx: &mut u32) {
 pub(crate) fn encode_mem_arg(out: &mut Vec<u8>, align: u32, offset: u32) {
     encode_u32_leb128(out, align);
     encode_u32_leb128(out, offset);
-}
-
-pub(crate) fn count_locals(expr: &Expression) -> u32 {
-    match expr {
-        Expression::Let(LetExpression { bindings, body }) => {
-            bindings
-                .iter()
-                .map(|b| 8 + count_locals(&b.value))
-                .sum::<u32>()
-                + count_locals(body)
-        }
-        Expression::Add(a) => 4 + count_locals(&a.left) + count_locals(&a.right),
-        Expression::Subtract(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
-        Expression::Multiply(m) => 4 + count_locals(&m.left) + count_locals(&m.right),
-        Expression::Divide(d) => 4 + count_locals(&d.left) + count_locals(&d.right),
-        Expression::Remainder(r) => 4 + count_locals(&r.left) + count_locals(&r.right),
-        Expression::BitAnd(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
-        Expression::BitOr(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
-        Expression::BitXor(b) => 4 + count_locals(&b.left) + count_locals(&b.right),
-        Expression::ShiftLeft(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
-        Expression::ShiftRight(s) => 4 + count_locals(&s.left) + count_locals(&s.right),
-        Expression::Equal(e) => 10 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::NotEqual(e) => 10 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::LessThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::LessThanOrEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::GreaterThan(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::GreaterThanOrEqual(e) => 4 + count_locals(&e.left) + count_locals(&e.right),
-        Expression::Not(n) => 4 + count_locals(&n.value),
-        Expression::And(a) => 4 + count_locals(&a.left) + count_locals(&a.right),
-        Expression::Or(o) => 4 + count_locals(&o.left) + count_locals(&o.right),
-        Expression::StringLength(s) => 4 + count_locals(&s.value),
-        Expression::StringConcat(s) => 8 + count_locals(&s.left) + count_locals(&s.right),
-        Expression::StringSlice(s) => {
-            10 + count_locals(&s.value) + count_locals(&s.start) + count_locals(&s.end)
-        }
-        Expression::StringToBytes(s) => 8 + count_locals(&s.value),
-        Expression::ListLength(l) => 4 + count_locals(&l.value),
-        Expression::ListConcat(l) => 8 + count_locals(&l.left) + count_locals(&l.right),
-        Expression::ListGet(l) => 6 + count_locals(&l.list) + count_locals(&l.index),
-        Expression::ListAppend(l) => 8 + count_locals(&l.list) + count_locals(&l.item),
-        Expression::ListLiteral(list) => 4 + list.items.iter().map(count_locals).sum::<u32>(),
-        Expression::TypeLiteral(record) => {
-            4 + record
-                .items
-                .iter()
-                .map(|item| count_locals(item.value.as_ref()))
-                .sum::<u32>()
-        }
-        Expression::RecordGet(r) => 12 + count_locals(&r.record),
-        Expression::Constructor(c) => count_locals(c.value.as_ref()),
-        Expression::Variant(v) => {
-            4 + v
-                .payload
-                .as_ref()
-                .map(|p| count_locals(p.as_ref()))
-                .unwrap_or(0)
-        }
-        Expression::Match(m) => {
-            12 + count_locals(&m.target)
-                + m.arms
-                    .iter()
-                    .map(|arm| 4 + count_locals(&arm.body))
-                    .sum::<u32>()
-                + m.default
-                    .as_ref()
-                    .map(|d| count_locals(d.as_ref()))
-                    .unwrap_or(0)
-        }
-        Expression::Function(f) => 6 + (f.parameters.len() as u32) + count_locals(&f.body),
-        Expression::Call(c) => {
-            8 + count_locals(&c.function)
-                + c.arguments
-                    .iter()
-                    .map(|arg| count_locals(&arg.value))
-                    .sum::<u32>()
-        }
-        _ => 2,
-    }
 }
 
 pub fn resolve_part_expression<'a>(

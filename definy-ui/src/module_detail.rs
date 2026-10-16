@@ -79,6 +79,7 @@ pub fn ModuleDetailView(
                 ModuleHistoryCard {
                     state: state.clone(),
                     context: context.clone(),
+                    module_hash: definition_event_hash.clone(),
                     related_events,
                 }
             }
@@ -327,19 +328,11 @@ fn ModuleEditorCard(
                             return;
                         }
                         let force_offline = state_val.force_offline;
-                        let def_hash = definition_event_hash.clone();
-                        let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
-                        let parts: Vec<definy_event::event::ModulePartEntry> = existing_parts
-                            .into_iter()
-                            .filter(|p| p.module_definition_event_hash == def_hash)
-                            .map(|p| definy_event::event::ModulePartEntry {
-                                name: p.part_name.into(),
-                                part_type: p.part_type,
-                                description: p.part_description,
-                                content_hash: p.content_hash,
-                                expression: p.expression,
-                            })
-                            .collect();
+                        let parts = crate::module_projection::latest_module_parts(
+                                &state_val,
+                                &module_snapshot,
+                            )
+                            .unwrap_or_default();
                         let commit_msg_trimmed = commit_message().trim().to_string();
                         let final_commit_msg = if commit_msg_trimmed.is_empty() {
                             "Update module info".to_string()
@@ -347,11 +340,14 @@ fn ModuleEditorCard(
                             commit_msg_trimmed
                         };
                         let latest_commit = Some(module_snapshot.latest_event_hash.clone());
+                        let module_description = module_snapshot
+                            .module_description
+                            .with_text(language.to_code(), &desc);
                         spawn(async move {
                             let record_opt = crate::event_submit::submit_event(
                                     definy_event::event::EventContent::ModuleCommit(definy_event::event::ModuleCommitEvent {
                                         module_name: name.into(),
-                                        module_description: desc.into(),
+                                        module_description,
                                         parent_commit_hash: latest_commit,
                                         message: final_commit_msg.into(),
                                         parts,
@@ -450,6 +446,7 @@ fn resolve_module_commit_info(
 fn ModuleHistoryCard(
     state: AppState,
     context: PageContext,
+    module_hash: EventHashId,
     related_events: Vec<(EventHashId, definy_event::event::Event)>,
 ) -> Element {
     let account_name_map = state.account_name_map();
@@ -466,8 +463,15 @@ fn ModuleHistoryCard(
                         "{language.label(\"Commit History\", \"コミット履歴\", \"Enmeta historio\")}"
                     }
                 }
-                span { style: "font-size: 0.75rem; color: var(--text-secondary);",
-                    "{related_events.len()} {language.label(\"commits\", \"コミット\", \"enmetoj\")}"
+                div { style: "display: flex; align-items: center; gap: 0.8rem;",
+                    span { style: "font-size: 0.75rem; color: var(--text-secondary);",
+                        "{related_events.len()} {language.label(\"commits\", \"コミット\", \"enmetoj\")}"
+                    }
+                    a {
+                        href: context.href_with_tab(crate::Location::History, &module_hash.to_string()),
+                        style: "font-size: 0.78rem; color: var(--primary); text-decoration: none;",
+                        "{language.label(\"View as graph\", \"グラフで見る\", \"Vidi kiel grafo\")}"
+                    }
                 }
             }
             if related_events.is_empty() {

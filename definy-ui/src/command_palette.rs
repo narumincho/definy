@@ -106,6 +106,16 @@ fn collect_items(state: &AppState, context: &PageContext) -> Vec<PaletteItem> {
             IconKind::Deploy,
         ),
         (
+            language.label("Changes", "変更", "Ŝanĝoj"),
+            Location::Changes,
+            IconKind::Changes,
+        ),
+        (
+            language.label("History", "履歴", "Historio"),
+            Location::History,
+            IconKind::History,
+        ),
+        (
             language.label("Local events", "ローカルイベント", "Lokaj eventoj"),
             Location::LocalEventQueue,
             IconKind::Events,

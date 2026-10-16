@@ -716,6 +716,15 @@ button.header-title:hover {
   flex-shrink: 0;
 }
 
+.sidebar-header-status {
+  margin-left: auto;
+  margin-right: 0.4rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
 .sidebar-header-action {
   display: inline-grid;
   place-items: center;
@@ -1665,6 +1674,287 @@ a.status-error {
   border-color: var(--red-border);
   background: var(--red-bg);
   color: var(--red-text);
+}
+
+.tone-message[data-tone='warning'] {
+  border-color: var(--yellow-border);
+  background: var(--yellow-bg);
+  color: var(--yellow-text);
+}
+
+/* 履歴グラフ (Git Graph 風) */
+.commit-graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.commit-graph-filter {
+  width: auto;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--overlay-2);
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.commit-graph {
+  padding: 0.3rem 0;
+  overflow-x: auto;
+}
+
+.commit-graph-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 9rem) 8.5rem 4.5rem;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 0.8rem;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.commit-graph-row:hover,
+.commit-graph-entry[data-expanded='true'] > .commit-graph-row {
+  background: var(--overlay-1);
+}
+
+.commit-graph-svg {
+  display: block;
+  overflow: visible;
+}
+
+.commit-graph-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-size: 0.86rem;
+}
+
+.commit-graph-message-text,
+.commit-graph-working-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-graph-working-label {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.commit-graph-module {
+  flex-shrink: 0;
+  padding: 0 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.commit-graph-author,
+.commit-graph-date,
+.commit-graph-hash {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-graph-details {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0 0.8rem;
+  background: var(--bg-inset);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.commit-graph-continuation {
+  flex-shrink: 0;
+  height: auto;
+  align-self: stretch;
+}
+
+.commit-graph-details-body {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  min-width: 0;
+}
+
+.commit-graph-details-meta {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.commit-graph-details-meta a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.commit-graph-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.change-badge[data-kind='removed'] {
+  color: var(--red-text);
+}
+
+@media (max-width: 760px) {
+  .commit-graph-row {
+    grid-template-columns: auto minmax(0, 1fr) 4.5rem;
+  }
+
+  .commit-graph-author,
+  .commit-graph-date {
+    display: none;
+  }
+}
+
+/* 作業中の変更 (M: 変更, A: 新しいパーツ) */
+.change-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--yellow-text);
+  flex-shrink: 0;
+}
+
+.change-badge[data-kind='added'] {
+  color: var(--green-text);
+}
+
+.tree-leaf[data-changed='true'] .tree-label {
+  color: var(--yellow-text);
+}
+
+.def-change-status {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.def-change-status.muted {
+  color: var(--text-muted);
+}
+
+.changes-commit {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+}
+
+.changes-commit-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.changes-commit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.changes-commit-note {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.changes-empty {
+  padding: 1.2rem 1rem;
+  color: var(--text-secondary);
+}
+
+.changes-module {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+}
+
+.changes-module-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+
+.changes-module-header a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.changes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.changes-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.3rem;
+  border-radius: var(--radius-xs);
+}
+
+.changes-item input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: auto;
+  margin: 0;
+}
+
+.changes-item:hover {
+  background: var(--overlay-1);
+}
+
+.changes-item-name {
+  font-family: var(--font-mono);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.changes-item-fields {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.changes-item-discard {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.76rem;
 }
 
 /* 件数バッジ */

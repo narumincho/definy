@@ -265,66 +265,45 @@ pub fn find_stale_seed_files(base_dir: &Path) -> Result<Vec<PathBuf>, anyhow::Er
     Ok(stale)
 }
 
-/// 自己ホスト型チェッカー (`core.validate-module`) を用いて、
+/// 自己ホスト型チェッカー (`core.type-check-against`) を用いて、
 /// 指定された ModuleSeed のすべてのパーツ・式の型妥当性を検証します。
+///
+/// サーバーがモジュールのコミットを受け付けるときと同じ
+/// [`definy_core::self_hosted_type_check::check_module_commit`] を使います。
+/// 型環境には、検証するモジュール以外のビルトインモジュールの seed も入れます
 pub fn validate_module_seed_with_type_checker(
     seed: &ModuleSeed,
     account_id: &AccountId,
 ) -> Result<(), String> {
-    let commit = seed.to_module_commit_event();
-    let core_module_id = definy_event::event::derive_module_id(account_id, "core");
-    let expression_type_hash =
-        definy_event::event::derive_module_part_id(&core_module_id, "expression");
-    let type_ast_hash = definy_event::event::derive_module_part_id(&core_module_id, "type-ast");
-    let validate_module_hash =
-        definy_event::event::derive_module_part_id(&core_module_id, "validate-module");
+    let core = definy_core::self_hosted_type_check::SelfHostedCoreParts::from_core_module_id(
+        &definy_event::event::derive_module_id(account_id, "core"),
+    );
     let module_id = definy_event::event::derive_module_id(account_id, &seed.module_name);
-
-    let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
-        &commit,
+    // 評価器は署名を検証しないため、ダミー署名で評価用イベントを作る（秘密鍵を必要としない）
+    let dummy_signature = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    let events = get_builtin_module_seeds()
+        .iter()
+        .filter(|other| other.module_name != seed.module_name)
+        .map(|other| {
+            let event = definy_event::event::Event {
+                account_id: account_id.clone(),
+                time: chrono::DateTime::from_timestamp(1548909361, 0).unwrap(),
+                content: definy_event::event::EventContent::ModuleCommit(
+                    other.to_module_commit_event(),
+                ),
+            };
+            let hash = definy_event::EventHashId::from_bytes(
+                format!("definy:seed-validation:{}", other.module_name).as_bytes(),
+            );
+            (hash, Ok((dummy_signature, event)))
+        })
+        .collect::<Vec<definy_core::EventWithHash>>();
+    definy_core::self_hosted_type_check::check_module_commit(
+        &seed.to_module_commit_event(),
         &module_id,
-        &expression_type_hash,
-        &type_ast_hash,
-    )?;
-
-    let seeds = get_builtin_module_seeds();
-    let mut events = Vec::new();
-
-    // core モジュールのイベントを準備（型チェッカー自体の定義を含む）
-    if let Some(core_seed) = seeds.iter().find(|s| &*s.module_name == "core") {
-        let core_event = definy_event::event::Event {
-            account_id: account_id.clone(),
-            time: chrono::DateTime::from_timestamp(1548909361, 0).unwrap(),
-            content: definy_event::event::EventContent::ModuleCommit(
-                core_seed.to_module_commit_event(),
-            ),
-        };
-        // 評価器は署名を検証しないため、ダミー署名で評価用イベントを作る（秘密鍵を必要としない）
-        let dummy_signature = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
-        let core_hash = definy_event::EventHashId::from_bytes(b"definy:seed-validation:core");
-        events.push((core_hash, Ok((dummy_signature, core_event))));
-    }
-
-    let validation_call =
-        definy_event::event::Expression::Call(definy_event::event::CallExpression {
-            function: Box::new(definy_event::event::Expression::PartReference(
-                definy_event::event::PartReferenceExpression::new(validate_module_hash),
-            )),
-            arguments: vec![definy_event::event::CallArgument {
-                name: "module".into(),
-                value: Box::new(module_value),
-            }],
-        });
-
-    match definy_core::evaluate_expression(&validation_call, &events) {
-        Ok(definy_core::Value::Bool(true)) => Ok(()),
-        Ok(definy_core::Value::Bool(false)) => Err(format!(
-            "self-hosted type checker rejected module '{}'",
-            seed.module_name
-        )),
-        Ok(value) => Err(format!(
-            "self-hosted validator returned unexpected value: {value}"
-        )),
-        Err(error) => Err(format!("self-hosted module validation failed: {error}")),
-    }
+        &events,
+        &core,
+        true,
+    )
+    .map_err(|error| format!("module '{}': {error}", seed.module_name))
 }

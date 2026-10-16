@@ -36,4 +36,5 @@
 
 # 結論
 
-fly.io
+fly.io（当初の結論）。その後 fly.io は廃止し、現在は Cloudflare Workers で
+UI 配信と API を処理しています（[cloudflare-workers-assets.md](cloudflare-workers-assets.md)）。

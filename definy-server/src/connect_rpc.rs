@@ -312,9 +312,7 @@ pub async fn handle_submit_event(
             return encode_response_or_error(codec, &response);
         }
 
-        if let Err(error) =
-            validate_module_commit(&db, module_commit, &data, &signature, &event_hash).await
-        {
+        if let Err(error) = validate_module_commit(&db, module_commit, &data, &event_hash).await {
             return error_to_response(ConnectError::invalid_argument(error));
         }
 
@@ -521,15 +519,15 @@ async fn validate_module_commit(
     db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
     module_commit: &definy_event::event::ModuleCommitEvent,
     candidate_event: &definy_event::event::Event,
-    candidate_signature: &ed25519_dalek::Signature,
     candidate_hash: &EventHashId,
 ) -> Result<(), String> {
     let mut hydrated_commit = module_commit.clone();
     for part in &mut hydrated_commit.parts {
         if part.expression.is_none() {
-            let content_hash = part
-                .resolve_content_hash()
-                .ok_or_else(|| format!("part '{}' has no expression", part.name))?;
+            // 式も content hash も無いパーツはコンパイラ組み込み. 受け入れるかは型検査で決める
+            let Some(content_hash) = part.resolve_content_hash() else {
+                continue;
+            };
             let content = crate::db::get_content(db, &content_hash.to_string())
                 .await
                 .map_err(|error| format!("failed to load part '{}': {error}", part.name))?
@@ -541,59 +539,35 @@ async fn validate_module_commit(
     }
 
     let system_account = crate::system_account::system_account_id();
-    let core_module_id = definy_event::event::derive_module_id(&system_account, "core");
-    let expression_type_hash =
-        definy_event::event::derive_module_part_id(&core_module_id, "expression");
-    let type_ast_hash = definy_event::event::derive_module_part_id(&core_module_id, "type-ast");
-    let validate_module_hash =
-        definy_event::event::derive_module_part_id(&core_module_id, "validate-module");
+    let core = definy_core::self_hosted_type_check::SelfHostedCoreParts::from_core_module_id(
+        &definy_event::event::derive_module_id(&system_account, "core"),
+    );
     let module_id = definy_event::event::derive_module_id(
         &candidate_event.account_id,
         &hydrated_commit.module_name,
     );
-    let module_value = crate::self_hosted_ast::module_commit_to_self_hosted_ast(
-        &hydrated_commit,
-        &module_id,
-        &expression_type_hash,
-        &type_ast_hash,
-    )?;
 
     let event_binaries = crate::db::get_events(db, None, None, None)
         .await
         .map_err(|error| format!("failed to load events for type checking: {error}"))?;
-    let mut events: Vec<definy_core::EventWithHash> = event_binaries
+    let events: Vec<definy_core::EventWithHash> = event_binaries
         .into_vec()
         .into_iter()
         .map(|binary| {
             let hash = EventHashId::from_bytes(&binary);
             (hash, definy_event::verify_and_deserialize(&binary))
         })
+        .filter(|(hash, _)| hash != candidate_hash)
         .collect();
-    events.push((
-        candidate_hash.clone(),
-        Ok((*candidate_signature, candidate_event.clone())),
-    ));
 
-    let validation_call =
-        definy_event::event::Expression::Call(definy_event::event::CallExpression {
-            function: Box::new(definy_event::event::Expression::PartReference(
-                definy_event::event::PartReferenceExpression::new(validate_module_hash),
-            )),
-            arguments: vec![definy_event::event::CallArgument {
-                name: "mod_def".into(),
-                value: Box::new(module_value),
-            }],
-        });
-    match definy_core::evaluate_expression(&validation_call, &events) {
-        Ok(definy_core::Value::Bool(true)) => Ok(()),
-        Ok(definy_core::Value::Bool(false)) => {
-            Err("self-hosted type checker rejected the module".into())
-        }
-        Ok(value) => Err(format!(
-            "self-hosted validator returned unexpected value: {value}"
-        )),
-        Err(error) => Err(format!("self-hosted module validation failed: {error}")),
-    }
+    // コンパイラ組み込みのパーツ (式を持たない `core.number` など) はシステムアカウントだけが持てる
+    definy_core::self_hosted_type_check::check_module_commit(
+        &hydrated_commit,
+        &module_id,
+        &events,
+        &core,
+        candidate_event.account_id == system_account,
+    )
 }
 
 #[cfg(test)]

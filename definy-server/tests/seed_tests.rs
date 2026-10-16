@@ -138,36 +138,8 @@ fn test_self_hosted_type_checking_of_seed_files() {
     // Load sample module seed from disk and run self-hosted type checker
     let sample_content =
         std::fs::read_to_string(seeds_dir.join("sample.json")).expect("Read sample.json");
-    let mut sample_seed: ModuleSeed =
+    let sample_seed: ModuleSeed =
         load_module_seed_from_str(&sample_content, &account_id).expect("Parse sample.json");
-
-    // Filter out parts with expressions not yet represented in self-hosted core.expression (e.g. string_concat)
-    // or external cross-module references (e.g. sample-ast-calc), or match requiring module-id for Variant type tag
-    sample_seed.parts.retain(|p| {
-        &*p.name != "greet"
-            && &*p.name != "sample-ast-calc"
-            && &*p.name != "match-option-sample"
-            && &*p.name != "self-hosted-definy-server"
-    });
-
-    for part in &sample_seed.parts {
-        let single_part_seed = ModuleSeed::new(
-            "sample",
-            sample_seed.module_description.clone(),
-            "test commit",
-            vec![part.clone()],
-        );
-        let part_result = definy_server::seed::validate_module_seed_with_type_checker(
-            &single_part_seed,
-            &account_id,
-        );
-        assert!(
-            part_result.is_ok(),
-            "Part '{}' must pass self-hosted type check: {:?}",
-            part.name,
-            part_result
-        );
-    }
 
     let result =
         definy_server::seed::validate_module_seed_with_type_checker(&sample_seed, &account_id);

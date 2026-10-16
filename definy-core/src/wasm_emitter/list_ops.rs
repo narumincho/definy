@@ -108,6 +108,7 @@ pub(crate) fn emit_list_concat(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Copy left items
     let i_local = *next_local_idx;
@@ -393,6 +394,7 @@ pub(crate) fn emit_list_append(
     out.push(I32_ADD);
     out.push(GLOBAL_SET);
     out.push(0);
+    emit_ensure_heap_capacity(out);
 
     // Copy old items: i = 0; while (i < old_count) { ... }
     let i_local = *next_local_idx;

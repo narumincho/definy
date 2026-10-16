@@ -93,6 +93,30 @@ impl Description {
         self.get(lang_code).unwrap_or("").to_string()
     }
 
+    /// `lang_code` の言語の説明を `text` にした説明を返す. 他の言語の説明は残す.
+    ///
+    /// UI は表示中の言語の説明だけを編集するため, 保存のときに他の言語の説明を消さないよう
+    /// これを使う. `text` が今表示している説明と同じなら (表示が別の言語へのフォールバックでも) 何も変えない
+    pub fn with_text(&self, lang_code: &str, text: &str) -> Description {
+        if self.to_display_string(lang_code) == text {
+            return self.clone();
+        }
+        match self {
+            Description::Plain(_) => Description::Plain(text.into()),
+            Description::Localized(list) => {
+                let mut list = list.clone();
+                match list
+                    .iter_mut()
+                    .find(|item| item.language.as_ref() == lang_code)
+                {
+                    Some(item) => item.text = text.into(),
+                    None => list.push(LocalizedText::new(lang_code, text)),
+                }
+                Description::Localized(list)
+            }
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         match self {
             Description::Plain(text) => text.trim().is_empty(),

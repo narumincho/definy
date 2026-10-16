@@ -7,8 +7,6 @@ use crate::module_projection::collect_module_snapshots;
 use crate::page_context::PageContext;
 use crate::part_projection::collect_part_snapshots;
 use crate::{AppState, Location};
-use definy_event::EventHashId;
-use std::collections::HashSet;
 
 /// サイドバー (エクスプローラー) の開閉状態.
 ///
@@ -22,6 +20,8 @@ pub fn Workbench(state: AppState, context: PageContext, children: Element) -> El
     use_context_provider(|| SidebarToggle(sidebar_toggled));
     let command_palette_open = use_signal(|| false);
     use_context_provider(|| crate::command_palette::CommandPaletteOpen(command_palette_open));
+    // 作業中の変更はクライアントで描画したあとに localStorage から読み込む (SSR の HTML と揃えるため)
+    use_effect(crate::working_changes::load_from_storage);
 
     let workbench_class = if sidebar_toggled() {
         "workbench sidebar-toggled"
@@ -65,6 +65,8 @@ enum ActivityTarget {
     Events,
     Parts,
     Modules,
+    Changes,
+    History,
     Accounts,
     Deploy,
     About,
@@ -77,6 +79,8 @@ impl ActivityTarget {
             Self::Events => Location::Home,
             Self::Parts => Location::PartList,
             Self::Modules => Location::ModuleList,
+            Self::Changes => Location::Changes,
+            Self::History => Location::History,
             Self::Accounts => Location::AccountList,
             Self::Deploy => Location::Deployments,
             Self::About => Location::About,
@@ -89,6 +93,8 @@ impl ActivityTarget {
             Self::Events => IconKind::Events,
             Self::Parts => IconKind::Parts,
             Self::Modules => IconKind::Modules,
+            Self::Changes => IconKind::Changes,
+            Self::History => IconKind::History,
             Self::Accounts => IconKind::Accounts,
             Self::Deploy => IconKind::Deploy,
             Self::About => IconKind::About,
@@ -101,6 +107,8 @@ impl ActivityTarget {
             Self::Events => context.language.label("Events", "イベント", "Eventoj"),
             Self::Parts => context.language.label("Parts", "パーツ", "Partoj"),
             Self::Modules => context.language.label("Modules", "モジュール", "Moduloj"),
+            Self::Changes => context.language.label("Changes", "変更", "Ŝanĝoj"),
+            Self::History => context.language.label("History", "履歴", "Historio"),
             Self::Accounts => context.language.label("Accounts", "アカウント", "Kontoj"),
             Self::Deploy => context.language.label("Deploy", "デプロイ", "Deplojo"),
             Self::About => context.language.label("About", "About", "Pri"),
@@ -130,6 +138,8 @@ impl ActivityTarget {
                             | Location::ApiMethod(_, _)
                     )
                 )
+                | (Self::Changes, Some(Location::Changes))
+                | (Self::History, Some(Location::History))
                 | (Self::About, Some(Location::About))
                 | (
                     Self::Settings,
@@ -153,6 +163,7 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
             )
         })
         .count();
+    let working_change_count = crate::working_changes::WORKING_CHANGES.read().len();
 
     rsx! {
         nav {
@@ -162,6 +173,8 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
                 ActivityTarget::Events,
                 ActivityTarget::Parts,
                 ActivityTarget::Modules,
+                ActivityTarget::Changes,
+                ActivityTarget::History,
                 ActivityTarget::Accounts,
                 ActivityTarget::Deploy,
             ]
@@ -170,7 +183,7 @@ fn ActivityBar(state: AppState, context: PageContext) -> Element {
                     key: "{target.label(&context)}",
                     context: context.clone(),
                     target,
-                    badge: 0,
+                    badge: if target == ActivityTarget::Changes { working_change_count } else { 0 },
                 }
             }
             div { class: "activity-bar-spacer" }
@@ -211,16 +224,34 @@ fn ActivityItem(context: PageContext, target: ActivityTarget, badge: usize) -> E
 #[component]
 fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let mut filter_query = use_signal(String::new);
-    // 型エラーのあるパーツの検査はすべてのパーツの式を見るので, 取得済みのイベントが増えたときだけやり直す
-    let mut error_cache = use_signal(|| (usize::MAX, HashSet::<EventHashId>::new()));
-    let cache_key = state.event_cache.len();
-    if error_cache.peek().0 != cache_key {
-        error_cache.set((
-            cache_key,
-            crate::expression_editor::parts_with_type_errors(&state),
-        ));
-    }
-    let error_parts = error_cache.read().1.clone();
+    // 型エラーの印は definy 製の型チェッカーの判定. 検査は重いので, 取得済みのイベントが
+    // 増えたときだけ裏で少しずつやり直す (式の変わらないパーツの結果は使い回す)
+    let mut checked_generation = use_signal(|| usize::MAX);
+    let mut check_task = use_signal(|| None::<dioxus::core::Task>);
+    let generation = state.event_cache.len();
+    use_effect(use_reactive!(|generation| {
+        if *checked_generation.peek() == generation {
+            return;
+        }
+        checked_generation.set(generation);
+        if let Some(task) = check_task.take() {
+            task.cancel();
+        }
+        let state_sig = use_context::<Signal<AppState>>();
+        check_task.set(Some(spawn(crate::self_hosted_type_check::check_all_parts(
+            state_sig,
+        ))));
+    }));
+    let working_changes = crate::working_changes::WORKING_CHANGES.read().clone();
+    let changed_label = context.language.label(
+        "Uncommitted changes",
+        "未コミットの変更",
+        "Neenmetitaj ŝanĝoj",
+    );
+    let (error_parts, type_check_pending) = {
+        let results = crate::self_hosted_type_check::PART_CHECK_RESULTS.read();
+        (results.error_parts(), results.pending)
+    };
 
     let mut modules = collect_module_snapshots(&state);
     modules.sort_by(|a, b| a.module_name.cmp(&b.module_name));
@@ -260,6 +291,9 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let new_part_label = context
         .language
         .label("New part", "新しいパーツ", "Nova parto");
+    let type_checking_label = context
+        .language
+        .label("Type checking", "型検査中", "Tipkontrolado");
     let error_label = context
         .language
         .label("Has errors", "エラーあり", "Havas erarojn");
@@ -327,6 +361,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                         {
                             let is_active = active_part.as_ref() == Some(&part.definition_event_hash);
                             let has_error = error_parts.contains(&part.definition_event_hash);
+                            let is_changed = working_changes.contains(&part.definition_event_hash);
                             let type_text = part
                                 .part_type
                                 .as_ref()
@@ -337,6 +372,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                                     key: "{part.definition_event_hash}",
                                     class: if is_active { "tree-row tree-leaf active" } else { "tree-row tree-leaf" },
                                     "data-error": if has_error { "true" } else { "false" },
+                                    "data-changed": if is_changed { "true" } else { "false" },
                                     href: context.href_with_lang(Location::Part(part.definition_event_hash.clone())),
                                     title: if has_error { "{module.module_name}.{part.part_name} ({error_label})" } else { "{module.module_name}.{part.part_name}" },
                                     onclick: close_drawer,
@@ -346,6 +382,9 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                                         span { class: "tree-error-dot", "aria-label": "{error_label}" }
                                     }
                                     span { class: "tree-type", "{type_text}" }
+                                    if is_changed {
+                                        span { class: "change-badge", title: "{changed_label}", "M" }
+                                    }
                                 }
                             }
                         }
@@ -357,10 +396,19 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let has_results = !tree.is_empty();
 
     rsx! {
-        aside { class: "workbench-sidebar",
+        aside {
+            class: "workbench-sidebar",
+            "data-type-check-pending": "{type_check_pending}",
             div { class: "sidebar-header",
                 span {
                     "{context.language.label(\"Explorer\", \"エクスプローラー\", \"Esplorilo\")}"
+                }
+                if type_check_pending > 0 {
+                    span {
+                        class: "sidebar-header-status",
+                        title: "{type_checking_label}",
+                        "{type_checking_label} {type_check_pending}"
+                    }
                 }
                 div { class: "sidebar-header-actions",
                     a {
@@ -428,6 +476,8 @@ fn EditorTabBar(state: AppState, context: PageContext) -> Element {
         ActivityTarget::Events,
         ActivityTarget::Parts,
         ActivityTarget::Modules,
+        ActivityTarget::Changes,
+        ActivityTarget::History,
         ActivityTarget::Accounts,
         ActivityTarget::Deploy,
         ActivityTarget::About,

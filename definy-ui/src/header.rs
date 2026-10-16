@@ -138,6 +138,7 @@ pub fn StatusBarView(state: AppState, context: PageContext) -> Element {
 
 #[component]
 fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
+    let working_change_count = crate::working_changes::WORKING_CHANGES.read().len();
     let queued_count = state
         .local_event_queue
         .items
@@ -252,6 +253,15 @@ fn ConnectionStatusIndicator(state: AppState, context: PageContext) -> Element {
                         "↑ {chip_text}"
                     }
                 }
+            }
+        }
+        // 作業中の (コミットしていない) 変更がある場合の表示
+        if working_change_count > 0 {
+            a {
+                class: "status-bar-item status-bar-button",
+                href: context.href_with_lang(Location::Changes),
+                title: "{context.language.label(\"View uncommitted changes\", \"未コミットの変更を確認\", \"Vidi neenmetitajn ŝanĝojn\")}",
+                "● {context.language.label(\"Uncommitted\", \"未コミット\", \"Neenmetitaj\")}: {working_change_count}"
             }
         }
     }

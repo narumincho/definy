@@ -117,8 +117,8 @@ UI、コンパイラ）を配備したとき、それが結果として「definy
 
 ### 2.5 自己記述コンパイラ (`core.compile-to-wasm`) の線形メモリ・文字列・レコード対応拡張
 
-- `definy-server/src/builtin_wasm_compiler.rs`, `builtin_wasm_data_section.rs`,
-  `self_hosted_wasm_compiler.rs`:
+- `seeds/core.json`（`core.compile-to-wasm` などのパーツ。旧 `builtin_wasm_compiler.rs`,
+  `builtin_wasm_data_section.rs`）, `definy-server/src/self_hosted_wasm_compiler.rs`:
   - **`StringToBytes` 式の追加**: definy 言語コア式として文字列から UTF-8
     バイト列（`list<number>`）を取得する式を追加。
   - **Data Section (Section 11) の自己記述生成**:

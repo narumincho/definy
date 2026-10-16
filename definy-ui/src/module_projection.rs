@@ -110,3 +110,22 @@ pub fn collect_related_module_events(
     related.reverse();
     related
 }
+
+/// モジュールの最新のコミットのパーツを, コミットに書かれた順に返す.
+///
+/// パーツを編集して保存するときは, これを基にして編集したパーツだけを差し替える.
+/// 名前順などに並べ替えると, seed に書き出したときに順序だけの差分が出るため
+pub fn latest_module_parts(
+    state: &AppState,
+    module: &ModuleSnapshot,
+) -> Option<Vec<definy_event::event::ModulePartEntry>> {
+    let (_, event) = state
+        .event_cache
+        .get(&module.latest_event_hash)?
+        .as_ref()
+        .ok()?;
+    match &event.content {
+        EventContent::ModuleCommit(commit) => Some(commit.parts.clone()),
+        _ => None,
+    }
+}

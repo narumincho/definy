@@ -1,6 +1,6 @@
 # Cloudflare Workers REST API v4 による運用ブートストラップ (Edge Bootstrapping)
 
-definy では、従来の VM / Docker コンテナ基盤（Fly.io 等）に加えて、**Cloudflare
+definy では、以前使っていた VM / Docker コンテナ基盤（Fly.io、現在は廃止）に代えて、**Cloudflare
 Workers REST API v4** (`https://api.cloudflare.com/client/v4`)
 を直接呼び出すことで、OS やコンテナのオーバーヘッドを排したグローバルエッジ V8
 Isolate 環境への自己デプロイ（運用ブートストラップ）をサポートしています。
@@ -145,8 +145,7 @@ sequenceDiagram
 6. 「🚀 Deploy to Cloudflare
    Workers」をクリックすると、数秒以内にデプロイが完了し、即座にアクセス可能な
    URL (`https://<script>.<subdomain>.workers.dev`) が表示されます。
-7. 過去のデプロイ履歴は下部の「デプロイ履歴一覧」カードに自動的に表示され、プロバイダ（Cloudflare
-   Workers / fly.io 等）ごとに確認できます。
+7. 過去のデプロイ履歴は下部の「デプロイ履歴一覧」カードに自動的に表示され、プロバイダごとに確認できます。
 
 ---
 
@@ -154,7 +153,7 @@ sequenceDiagram
 
 ```bash
 # Connect-RPC 経由でのデプロイ
-curl -X POST https://definy.fly.dev/definy.v1.DeployService/DeployCloudflare \
+curl -X POST https://definy.narumincho.com/definy.v1.DeployService/DeployCloudflare \
   -H "Content-Type: application/json" \
   -H "connect-protocol-version: 1" \
   -d '{

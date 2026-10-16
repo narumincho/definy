@@ -5,6 +5,8 @@ pub mod api_pages;
 pub mod app_state;
 pub mod cbor_card;
 mod command_palette;
+pub mod commit_graph;
+mod commit_graph_view;
 mod deployments;
 mod deployments_flow;
 pub mod dom;
@@ -39,10 +41,13 @@ pub mod part_projection;
 pub mod preview_apps;
 pub mod query;
 mod rpc_architecture;
+pub mod self_hosted_type_check;
 mod settings;
 pub mod tree_layout;
 mod tree_layout_view;
 mod workbench;
+pub mod working_changes;
+mod working_changes_view;
 pub use definy_core::{expression_eval, wasm_emitter};
 pub mod wasm_inspector;
 
@@ -162,6 +167,16 @@ fn render_inner(state: &AppState, context: &PageContext) -> Element {
         Some(Location::LocalEventQueue) => {
             rsx! {
                 local_event_queue::LocalEventQueueView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::Changes) => {
+            rsx! {
+                working_changes_view::WorkingChangesView { state: state.clone(), context: context.clone() }
+            }
+        }
+        Some(Location::History) => {
+            rsx! {
+                commit_graph_view::CommitGraphView { state: state.clone(), context: context.clone() }
             }
         }
         Some(Location::TreeLayout) => {

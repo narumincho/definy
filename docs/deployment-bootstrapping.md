@@ -1,4 +1,12 @@
-# definy のデプロイ・ブートストラップ構想 (Deployment Bootstrapping via fly.io)
+# definy のデプロイ・ブートストラップ構想 (Deployment Bootstrapping)
+
+> **注意**: この文書は fly.io を前提に書かれた当初の構想です。fly.io 関連のコード
+> （`fly_machines.rs`, `runner/`, `fly.toml` など）は
+> 28ea9c95「Remove Fly.io completely and make Cloudflare Worker self-contained」で削除され、
+> 現在のデプロイ先は Cloudflare Workers です（[cloudflare-workers.md](cloudflare-workers.md),
+> [cloudflare-workers-assets.md](cloudflare-workers-assets.md) を参照）。
+> 「definy が自分自身の次の世代をデプロイする」という目標は Cloudflare Workers 上で引き継いでいます。
+> 下記の fly.io 固有の手順・チェックリストは履歴として残しています。
 
 definy サーバー自身が [fly.io](https://fly.io/)
 に対してデプロイリクエスト（Machines API 呼び出し）を発行し、
@@ -231,7 +239,7 @@ graph TD
 
 | 階層                          | 現在の実装 (Rust / Axum / Dioxus)               | ブートストラップ完成時の姿 (definy 言語)                     |
 | :---------------------------- | :---------------------------------------------- | :----------------------------------------------------------- |
-| **運用層 (Layer 1)**          | `fly_machines.rs` (reqwest による REST 呼出)    | definy の純粋パーツ式（Machines API 呼出パーツ）             |
+| **運用層 (Layer 1)**          | `cloudflare_workers.rs` (Cloudflare REST API v4) | definy の純粋パーツ式（Machines API 呼出パーツ）             |
 | **ビルド層 (Layer 2)**        | `cargo build`, `dx build` (Rust ツールチェイン) | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
 | **I/O・サーバー層 (Layer 3)** | `axum`, `tokio` (Rust 非同期ランタイム)         | `wasi:http/outgoing-handler` Capability 注入パーツ           |
 | **UI・エディタ層**            | Rust Dioxus コンポーネント (`definy-ui`)        | definy の UI 表現パーツ・ツリーレイアウト                    |
@@ -277,7 +285,7 @@ definy 自身で作成したパーツを独立したオリジン（サブドメ�
 
 ### 5.2 `sample.self-hosted-definy-server` の仕組み
 
-`definy-server/src/builtin_self_hosted_server.rs` で定義される
+`seeds/sample.json` で定義される
 `sample.self-hosted-definy-server` は、以下の関数型を持つ純粋な definy
 パーツです：
 

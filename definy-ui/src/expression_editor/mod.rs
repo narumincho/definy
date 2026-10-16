@@ -5,7 +5,6 @@ pub mod types;
 
 pub use diagnostics::{
     analyze_expression_types, collect_type_diagnostics, part_type_to_expression_type,
-    parts_with_type_errors,
 };
 pub use mutation::{
     add_let_binding, add_list_item, add_record_item, apply_selection, clear_expression_at_path,

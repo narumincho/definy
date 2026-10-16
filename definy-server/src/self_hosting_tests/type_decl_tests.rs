@@ -17,7 +17,7 @@ use super::helpers::{
     empty_type_env, get_test_account_and_mod_id, type_env_with_parts,
 };
 use super::type_helpers::type_type;
-use crate::self_hosted_ast::module_commit_to_self_hosted_ast;
+use definy_core::self_hosted_ast::module_commit_to_self_hosted_ast;
 
 fn ast_type_num() -> Expression {
     Expression::Variant(VariantExpression {

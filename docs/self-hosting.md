@@ -23,7 +23,7 @@ definy
 4. **自己ホスト WebAssembly 生成とエッジ配備**: definy 式から WebAssembly
    バイナリを直接生成でき、外部コンパイラなしでネイティブ/ブラウザおよび
    Cloudflare Workers エッジ上で即時実行可能（詳細は
-   [自己記述コンパイラと Cloudflare Workers エッジ直結パイプライン](file:///Users/narumi/Documents/GitHub/definy/docs/self-hosting-compiler-cloudflare-workers.md)
+   [自己記述コンパイラと Cloudflare Workers エッジ直結パイプライン](self-hosting-compiler-cloudflare-workers.md)
    を参照）。
 
 ### 実サービスとの接続状況
@@ -62,11 +62,16 @@ definy
     において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
     を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
-- Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition`
-  値へ変換し、各パーツ定義に `part_definition_event_hash` を付与したうえで
-  `core.validate-module`
-  で一括検証してから保存します。式や型の変換に失敗した場合、または
-  型チェッカーが拒否した場合は `400` を返します。
+- Connect-RPC の `SubmitEvent` は、`definy_core::self_hosted_type_check::check_module_commit`
+  でコミットのパーツを `core.type-check-against` で検査してから保存します (UI の型エラー表示・
+  seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに
+  コミットのパーツを重ねたものなので, 他のモジュールのパーツ参照も解決できます。
+  パーツの型が変わらなければ式の変わったパーツだけを検査し (core の 1 パーツの編集なら 1 回の評価),
+  型が変わればモジュールの全パーツを検査します。式の無いパーツ・`core.expression` で表せないパーツ
+  (コンパイラ組み込み) はシステムアカウントのコミットでだけ受け入れます。
+  型チェッカーが拒否した場合は `400` を返し, メッセージにパーツ名と型エラーを入れます。
+  (以前は `core.validate-module` で全パーツを一括検証していましたが, 型パーツの展開ができず
+  core のように大きなモジュールでは重すぎたため置き換えました)
 - `core.validate-module` は、モジュール内のパーツリスト（`parts`）から
   `core.collect-part-type-env`
   によりモジュール型環境（`part-type-env`）を自動構築し、
@@ -98,29 +103,28 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 
 ### 今後の実装方針
 
-以下の順で、通常の module 投稿を自己ホスト検証の対象へ広げます。
+以下の順で、通常の module 投稿を自己ホスト検証の対象へ広げます。各項目の先頭に到達状況を記します。
 
-1. **型宣言の意味検査**: record field 名と union tag の重複、空 variant
-   集合、再帰参照の規則を決め、 converter と self-host validator
-   のテストを追加します。現状は別 part reference を含む型宣言を拒否します。
-2. **module type environment**: `ModuleCommitEvent` の全 part 名/hash
-   と宣言型から環境を作り、
-   `PartReference`・構築子・相互参照を解決します。循環参照は明示的に検出し、無制限再帰を避けます。
-3. **式検査の拡張**: list/record の構築と field access、union constructor、match
-   の網羅性を `core.type-check` に追加します。self-host checker と UI
-   diagnostics の共有ケースを conformance test します。
-4. **bootstrap の固定**: Rust migration が生成する core definitions を versioned
-   seed として固定し、 空 DB から同じ hash の core が再構築できることを CI
-   で検証します。
+1. **[済] 型宣言の意味検査**: record field 名と union tag の重複、空 variant
+   集合を `invalid_type_declaration` として拒否し、型パーツ同士の相互参照も解決します（Phase 9〜10）。
+   型定義パーツ自体の再帰参照（循環）の規則は未決定です。
+2. **[済] module type environment**: `core.collect-part-type-env` が
+   `ModuleCommitEvent` の全パーツの hash と宣言型から環境を作り、
+   `PartReference`・構築子・相互参照を解決します。外部モジュールのパーツ参照は未対応です。
+3. **[済] 式検査の拡張**: list/record の構築と field access、union constructor、match
+   の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
+   （[ui.md](ui.md) の「型エラー表示」を参照）。
+4. **[済] bootstrap の固定**: core definitions を `seeds/*.json` として固定し、
+   コミット済み seed が正規化済みであることを `seed_tests.rs` で検証します。
 5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
    compiler stage1 を作り、 stage1 が同一 compiler と test suite
    を再生成できるか比較します。
 6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
-   [wasi-capability-io.md](file:///Users/narumi/Documents/GitHub/definy/docs/wasi-capability-io.md)
-   を参照）。fly.io を活用したサービス自身のデプロイ・運用ブートストラップ構想は
-   [deployment-bootstrapping.md](file:///Users/narumi/Documents/GitHub/definy/docs/deployment-bootstrapping.md)
+   [wasi-capability-io.md](wasi-capability-io.md)
+   を参照）。サービス自身のデプロイ・運用ブートストラップ構想（現在は Cloudflare Workers が対象）は
+   [deployment-bootstrapping.md](deployment-bootstrapping.md)
    を参照。IO を持つサービス全体の移行は言語 runtime の拡張後です。
 
 ### セルフホスティング全体アーキテクチャ
@@ -285,7 +289,7 @@ AST を手組みし、そこから JSON を生成していましたが、この�
       網羅性検証 (Self-Hosted Union Variants & Pattern Match Type Checking)**
   - 型エラー型 `core.type-error` に `not_a_union`, `variant_not_found`,
     `non_exhaustive_match` を追加
-  - 直和型探索・検証パーツ群（`builtin_type_checker/union_lookup.rs`）を新設
+  - 直和型探索・検証パーツ群（`seeds/core.json`、旧 `builtin_type_checker/union_lookup.rs`）を新設
     - `core.union-variant-type-lookup`:
       直和型から指定タグのペイロード型を線形探索（引数なし variant は `{}`
       レコード型として統一）
@@ -295,8 +299,9 @@ AST を手組みし、そこから JSON を生成していましたが、この�
       `non_exhaustive_match` を返却
     - `core.type-assignable-union-variants`:
       直和型の双対的幅サブタイピング（$Actual \subseteq Expected$）を再帰検証
-  - パターンマッチ型検査パーツ群（`builtin_type_checker/union_check.rs`）を新設
-    - `core.type-check-match-arms-inner`:
+  - パターンマッチ型検査パーツ群（`seeds/core.json`、旧 `builtin_type_checker/union_check.rs`）を新設
+    - `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` /
+      `core.type-check-match-arms-skipped` の 2 段階に置き換え。Phase 2 の 6 を参照）:
       各アームの環境拡張、本体型検査、戻り値型一致検証（初出アーム型との
       `type-assignable`）、全走査完了後の網羅性検査の呼び出し
     - `core.type-check-match-arms`: パターンマッチ型検査のエントリーポイント
@@ -310,7 +315,7 @@ AST を手組みし、そこから JSON を生成していましたが、この�
       共変サブタイピング (Self-Hosted List Type Checking & Covariant
       Subtyping)**
   - 型エラー型 `core.type-error` に `cannot_infer_empty_list` を追加
-  - リスト型検査パーツ群（`builtin_type_checker/list_ops.rs`）を新設
+  - リスト型検査パーツ群（`seeds/core.json`、旧 `builtin_type_checker/list_ops.rs`）を新設
     - `core.type-check-list-items`:
       リストリテラルの各要素を期待される要素型に対して再帰検査し、全要素適合時に
       `ok(list({ item_type }))` を返却
@@ -442,6 +447,45 @@ type-check-against: expression -> type-env -> type-ast -> type-result
 に照らして検査します。`call` 式は環境から 関数型を得て、引数型と parameter
 の一致を確認してから return type を返します。 引数型注釈を持たない lambda
 の型は、宣言された期待関数型から決めます。
+
+#### 6. seed・UI のパーツ検査 (`definy_core::self_hosted_type_check`)
+
+UI の型エラー表示と seed の検証 (`definy-server/tests/self_hosted_type_check_tests.rs`) は
+`definy_core::self_hosted_type_check::check_parts` で `core.type-check-against` を呼びます。
+Rust の `Expression` から `core.expression` の値への変換は `definy_core::self_hosted_ast` です。
+seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外すべて型エラーなしで通ります。
+
+- **まとめて実行**: 型環境を `let env = ... in [check(a), check(b), ...]` で 1 回だけ作り, 8 パーツずつ
+  1 つの式にして Wasm にコンパイル・実行します。まとめた実行が失敗したら 1 パーツずつやり直し,
+  どのパーツで失敗したか (`CheckerFailed`) を分かるようにします。
+- **型パーツの展開**: 型パーツは `reference({ part_hash })` 型で表します。型環境には型パーツの
+  宣言した型を `{hash}#definition` のキーでも入れ, `core.type-resolve` がそれを使って中身の型に展開します。
+  `call`・`record_get`・`match` の対象, `type-check-against` の期待型は展開してから見ます。
+  `core.type-assignable` 系は `env` 引数を取り, 片方だけが `reference` のときは展開して比べます。
+  両方 `reference` ならハッシュが同じときだけ代入できます (名前的型付け)。
+- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`list_append`・`list_concat`・
+  `list_get`・`record` も期待型で検査します (`type-check-record-fields-against` など)。
+  空リストや `none` を期待型から決められるのはこのためです。
+- **match の推論は 2 段階**: `core.type-check-match-arms-infer` が推論できるアームから型を求め
+  (アームごとに広い方の型を採る), 推論できなかったアーム (空リストなど) を
+  `core.type-check-match-arms-skipped` がその型で検査します。
+  `_` アームは何も束縛せず, `find-tag-in-arms` ではすべてのタグに一致します。
+  対象の型に無いタグでペイロードを束縛しないアーム (`variable_id` が負) は到達しないアームとして許します
+  (`core.match-arm-env`)。
+- **演算子**: 比較 (`<=` など)・文字列 (`string_concat` など)・リスト (`list_length` など) の式も
+  `core.expression` のバリアントと `core.type-check-binary` で検査します。
+
+ノウハウ:
+
+- Wasm の線形メモリはバンプアロケータ (global 0) で確保します。初期 16 ページを超えると
+  `out of bounds memory access` になるため, ヒープポインタを進めるたびに
+  `emit_ensure_heap_capacity` で足りない分を `memory.grow` します。ポインタを進める前に書き込む
+  操作があるので 1MB の余裕を持たせています。
+- 関数のローカル変数の数は `next_local_idx + 64` で宣言します (以前の `count_locals` との二重計上で
+  大きな式が `too many locals` になっていた)。
+- 1 回の検査はネイティブの release で 400ms ほどで, 大半が型チェッカー本体のコンパイルです。
+  型チェッカーを 1 度だけコンパイルし, 引数の値を線形メモリに書き込んで関数として呼び出せば速くなりますが,
+  値をメモリへ書き込む処理を 3 つの実行環境 (wasmtime・ブラウザ・wasmi) に用意する必要があるため未着手です。
 
 ---
 
@@ -612,7 +656,7 @@ validate-module: module-definition -> boolean
 
 ### Phase 8: レコード構築・フィールドアクセスと動的等価判定
 
-#### 1. レコード型検査パーツ群 (`builtin_type_checker/record_ops.rs`)
+#### 1. レコード型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/record_ops.rs`)
 
 - `core.record-field-type-lookup`:
   `list<{ key: string, value: type-ast }> -> string -> number -> optional<type-ast>`
@@ -622,7 +666,7 @@ validate-module: module-definition -> boolean
   レコードリテラルを走査し、各フィールド式を `core.type-check`
   で検査して成功時に型アスト `record(list<{ key, value }>)` を構築。
 
-#### 2. レコード動的評価パーツ群 (`builtin_evaluator/record_eval.rs`)
+#### 2. レコード動的評価パーツ群 (`seeds/core.json`、旧 `builtin_evaluator/record_eval.rs`)
 
 - `core.record-field-lookup`:
   `list<{ key: string, value: value }> -> string -> number -> value`
@@ -632,7 +676,7 @@ validate-module: module-definition -> boolean
   レコードリテラルの全フィールド式を `core.eval-value`
   で動的評価して動的レコード `core.value::record` を構築。
 
-#### 3. レコード動的等価判定パーツ (`builtin_value_type.rs`)
+#### 3. レコード動的等価判定パーツ (`seeds/core.json`、旧 `builtin_value_type.rs`)
 
 - `core.value-equals-record-fields`:
   `list<{ key: string, value: value }> -> list<{ key: string, value: value }> -> number -> boolean`
@@ -643,7 +687,7 @@ validate-module: module-definition -> boolean
 
 ### Phase 9: 直和型（Union）・パターンマッチ（Match）の自己ホスト型検査 & 網羅性検証
 
-#### 1. 直和型探索・検証パーツ群 (`builtin_type_checker/union_lookup.rs`)
+#### 1. 直和型探索・検証パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/union_lookup.rs`)
 
 - `core.union-variant-type-lookup`:
   `list<{ tag: string, payload: optional<type-ast> }> -> string -> number -> result<type-ast, type-error>`
@@ -662,9 +706,10 @@ validate-module: module-definition -> boolean
   実際の直和型の全バリアントが期待される直和型に含まれ、ペイロード型が代入適合しているか（直和型の双対的幅サブタイピング:
   $Actual \subseteq Expected$）を再帰検証。
 
-#### 2. パターンマッチ型検査パーツ群 (`builtin_type_checker/union_check.rs`)
+#### 2. パターンマッチ型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/union_check.rs`)
 
-- `core.type-check-match-arms-inner`:
+- `core.type-check-match-arms-inner`（現在は `core.type-check-match-arms-infer` と
+  `core.type-check-match-arms-skipped` の 2 段階に置き換え）:
   `list<{ tag: string, variable: optional<string>, body: expression }> -> list<{ tag: string, payload: optional<type-ast> }> -> type-env -> number -> optional<type-ast> -> type-result`
   各アームを走査し、タグの存在確認、ペイロード型による環境拡張、アーム本体の型検査、全アームの戻り値型一致検証（`core.type-assignable`
   による検証）、そして全走査完了後の網羅性検査（`core.check-union-exhaustiveness`）を一貫して実行。
@@ -677,7 +722,7 @@ validate-module: module-definition -> boolean
 
 ### Phase 10: リスト式（List Literal）の自己ホスト型検査 & 共変サブタイピング
 
-#### 1. リスト型検査パーツ群 (`builtin_type_checker/list_ops.rs`)
+#### 1. リスト型検査パーツ群 (`seeds/core.json`、旧 `builtin_type_checker/list_ops.rs`)
 
 - `core.type-check-list-items`:
   `list<expression> -> type-env -> number -> type-ast -> type-result`
@@ -689,13 +734,13 @@ validate-module: module-definition -> boolean
   を返却し、1個以上の場合は先頭要素から型を推論して残りの要素を
   `core.type-check-list-items` で検証。
 
-#### 2. リスト型の共変サブタイピング (`builtin_type_checker/assignable.rs`)
+#### 2. リスト型の共変サブタイピング (`seeds/core.json`、旧 `builtin_type_checker/assignable.rs`)
 
 - リスト型は要素型に関して共変（Covariant）です：
   $ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$
   要素型がレコードの幅サブタイピング（$Expected \subseteq Actual$）を満たす場合、リスト全体も自動的に代入適合となります。
 
-#### 3. リスト式の自己ホスト動的評価 & 等価比較 (`builtin_evaluator/list_eval.rs`, `builtin_value_type.rs`)
+#### 3. リスト式の自己ホスト動的評価 & 等価比較 (`seeds/core.json`、旧 `builtin_evaluator/list_eval.rs`, `builtin_value_type.rs`)
 
 - `core.eval-list-items`:
   `list<expression> -> env -> number -> list<value> -> list<value>`
@@ -708,35 +753,6 @@ validate-module: module-definition -> boolean
   2つのリスト値の長さおよび全要素を `core.value-equals` で再帰比較。
 - `core.value-equals`: `list` アームにおいて `core.value-equals-list-items`
   を呼び出し、リスト値同士の同一性を検証。
-
----
-
-### Phase 11: 自己記述型チェッカーのモジュール化 & アーム分割アーキテクチャ
-
-自己記述型チェッカー（`builtin_type_checker`）は、言語機能の拡充（レコード・直和型・リスト）に伴いコードサイズが増加したため、評価器（`builtin_evaluator`）と完全に対称なアーム分割構成へリファクタリングされました（各ファイル
-100〜500 行程度）：
-
-- **`helpers.rs`**: AST 構築用の共通ヘルパー（`ok_type`, `error_mismatch`,
-  `error_not_a_function`, `error_unknown`, `type_num`, `type_str`, `type_bool`,
-  `call_part`, `record_get`,
-  `check_sub`）を集約し、各モジュール間での重複を排除。
-- **`basic_arms.rs`**: リテラル型（`number`, `string`,
-  `boolean`）、算術演算型（`add`, `subtract`, `multiply`, `divide`,
-  `remainder`）、比較演算型（`equal`, `less_than`）、論理演算型（`and`, `or`,
-  `not`）のマッチアーム生成。
-- **`control_arms.rs`**:
-  制御・関数適用（`call`）、変数参照（`variable`）、let
-  束縛（`let`）のマッチアーム生成。
-- **`record_ops.rs`**:
-  レコード構築（`record`）およびフィールドアクセス（`record_get`）の型検査。
-- **`union_check.rs` & `union_lookup.rs`**:
-  バリアント構築（`variant`）および網羅的パターンマッチ（`match`）の型検査。
-- **`list_ops.rs`**: リストリテラル（`list`）の型検査および要素走査。
-- **`check.rs`**: 各アーム生成関数を合成してディスパッチする約 100
-  行のスリムなメインエントリポイント。
-- **`check_against.rs`**:
-  期待型主導の型検査（`type-check-against`）を行い、`helpers.rs`
-  を活用して簡潔化。
 
 ---
 
@@ -788,24 +804,10 @@ end-to-end メタ循環実行がすべて実証されています。 テスト�
 
 ## 実装アーキテクチャとノウハウ
 
-### 1. 型チェッカーにおける同種二項演算の共通化 (`binary_typed_op`)
+ビルトインパーツの AST を Rust で手組みしていた時期のファイル分割・コード共通化に関するノウハウは、
+seed JSON を正本にした際に対象コードごと削除したため省略しています（必要なら git 履歴を参照）。
 
-自己記述型チェッカー（`core.type-check`）では、算術演算（`add`, `subtract`,
-`multiply`, `divide`, `remainder`）と論理結合（`and`,
-`or`）が「左辺と右辺が同じ期待型であることを要求し、同じ型を返す」という共通の検査パターンを持ちます。
-内部で高階ファクトリクロージャ `binary_typed_op`
-を導入することで、型規則の直交性を保ちながらコード重複（DRY）を解消しています：
-
-```rust
-let binary_num_op = |tag, check_hash, var_id| {
-    binary_typed_op(tag, check_hash, var_id, type_num)
-};
-let binary_bool_op = |tag, check_hash, var_id| {
-    binary_typed_op(tag, check_hash, var_id, type_bool)
-};
-```
-
-### 2. テストスイートのモジュール分割と DRY 化
+### 1. テストスイートのモジュール分割と DRY 化
 
 セルフホスティングのテストが 1000
 行近くに達した際、以下の設計方針で分割・整理を行いました：
@@ -823,30 +825,7 @@ let binary_bool_op = |tag, check_hash, var_id| {
 - **`execution_tests.rs`**: 実際にパーツを definy
   実行系に登録し、メタ循環評価を実行して期待通りの値が返ることを実証。
 
-### 3. 自己評価器（`builtin_evaluator`）の責任分割サブモジュール化
-
-動的値評価器 `core.eval-value` は、多数の構文式に対する評価分岐（Match
-Arms）を持つため、単一ファイル（約 950 行）から以下の 5
-つのサブモジュールへ責任を分割しました：
-
-- **`mod.rs`**: エントリポイント `create_eval_value_part`。各アームを集約して
-  `core.eval-value` パーツを構成。
-- **`helpers.rs`**: AST 再帰評価 `eval_sub` や、動的値生成関数群（`val_num`,
-  `val_str`, `val_bool`, `val_variant`, `val_unit`）を定義。
-- **`arith_arms.rs`**: 算術演算・比較演算（`add`, `subtract`, `multiply`,
-  `divide`, `remainder`, `equal`, `less_than`）の評価分岐。
-- **`logical_arms.rs`**: 論理演算（`not`, `and`,
-  `or`）の短絡評価を含む評価分岐。
-- **`control_arms.rs`**: 制御構文・バリアント・マッチ（`variable`,
-  `function`, `call`, `let`, `variant`, `match`）の評価分岐。
-
-### 4. 動的値等価判定器（`builtin_value_type`）の二重 Match 共通化
-
-プリミティブ値（数値、文字列、真偽値）の等価判定では、2 つの `core.value`
-を連続マッチして同種バリアントであることを確認する構造が反復するため、`primitive_eq_arm`
-クロージャを導入してパターンを共通化し、コード行数を約 80 行削減しました。
-
-### 5. Wasm コンパイラにおけるワイルドカード（`_`）パターンの無条件マッチ処理
+### 2. Wasm コンパイラにおけるワイルドカード（`_`）パターンの無条件マッチ処理
 
 パターンマッチ（`MatchExpression`）の Wasm
 生成処理（`adt_ops::emit_match_arms`）では、通常各アームの `tag`
@@ -858,14 +837,7 @@ Arms）を持つため、単一ファイル（約 950 行）から以下の 5
 の場合はタグ比較を行わずに無条件でアーム本体を展開するよう改善し、Rust の
 `_ => ...` と同等の挙動と実行速度を実現しました。
 
-### 6. レコード関連ロジックの責任分割（`record_ops.rs`, `record_eval.rs`）
-
-definy
-のコードベース品質規則（「ファイルが1000行を超えたら適切に分割する」）を遵守するため、レコードのフィールド型探索・型検査ループを
-`record_ops.rs`、レコードのフィールド値探索・動的評価ループを `record_eval.rs`
-として独立したサブモジュールに分離しました。これにより、各モジュールの責務が明確化され、保守性とテスト容易性が向上しました。
-
-### 7. 直積型（Record）と直和型（Union）のサブタイピングの双対性（Duality）
+### 3. 直積型（Record）と直和型（Union）のサブタイピングの双対性（Duality）
 
 definy
 の自己記述型チェッカー（`core.type-assignable`）における構造的部分型（Structural
@@ -880,23 +852,7 @@ Subtyping）は、直積型と直和型で完全な圏論的双対性（Duality�
 `union([ some(number) ])`
 が、`Option<number>`（`union([ none, some(number) ])`）の期待型スロットへアノテーションなしで透過的に代入・適合可能となります。
 
-### 8. パターンマッチ網羅性と 1000 行制限の遵守（`union_lookup.rs`, `union_check.rs`）
-
-パターンマッチの型検査では、「アームの走査」「各アームの戻り値型一致検証」「網羅性検証（全バリアントのカバー）」「直和型同士の部分型適合性判定」など多岐にわたる
-AST 構築が必要です。 単一ファイルにまとめると 1200
-行を超過するため、ユーザー規則（1000行制限）に従い、以下の 2
-ファイルに責任を分離しました：
-
-1. `union_lookup.rs`:
-   バリアント探索（`union-variant-type-lookup`）、アーム存在判定（`find-tag-in-arms`）、網羅性検証（`check-union-exhaustiveness`）、直和型サブタイピング（`type-assignable-union-variants`）。
-2. `union_check.rs`:
-   アーム再帰走査（`type-check-match-arms-inner`）、マッチ式エントリーポイント（`type-check-match-arms`）、`check.rs`
-   向けのアーム生成ビルダー（`create_union_check_arms`）。
-
-各モジュールを 500〜600
-行前後に抑えることで、可読性とメンテナンス性を大幅に高めています。
-
-### 9. リストの双方向型推論（Bidirectional Type Checking）と共変性
+### 4. リストの双方向型推論（Bidirectional Type Checking）と共変性
 
 リスト式（`list` リテラル）の型付けでは、空リスト `[]`
 の曖昧性を双方向型推論によりエレガントに解決しています：
@@ -911,20 +867,6 @@ AST 構築が必要です。 単一ファイルにまとめると 1200
 - **共変サブタイピング（`core.type-assignable`）**: Definy
   の不変リストは要素型に関して完全に共変（$ActualItem \le ExpectedItem \implies list<ActualItem> \le list<ExpectedItem>$）です。これにより、余剰フィールドを持つレコードのリスト
   `list<{x, y}>` を `list<{x}>` として透過的に関数引数等へ渡すことができます。
-
-### 10. Rust 側でのビルトイン AST 構築と `rustfmt` の指数時間爆発回避
-
-ビルトインパーツの AST を Rust コード上で直接構築する際、`Expression::Let` や
-`Expression::ListConcat` の構造体リテラルを 10 段以上深くネストさせると、1 行が
-100 カラムを超えた箇所で `rustfmt`
-の改行探索アルゴリズムが指数時間（バックトラッキング爆発）を起こし、`cargo fmt`
-に数分かかる原因になります。 連続する `Let`
-束縛やリスト連結は、中間式をローカル変数に切り出すか配列の
-`.into_iter().rfold(...)` を用いてフラットに記述してください（生成される AST
-とコンテンツハッシュは完全に同一のまま、`cargo fmt` が 0.5
-秒未満で完了します）。
-
----
 
 ## 既存の型定義・AST・標準ライブラリ
 
