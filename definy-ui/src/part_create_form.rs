@@ -66,21 +66,12 @@ pub fn PartDefinitionFormView(
 
         let (module_name, module_desc, parent_commit, mut parts) = if let Some(m) = selected_module
         {
-            let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
-            let parts_list: Vec<definy_event::event::ModulePartEntry> = existing_parts
-                .into_iter()
-                .filter(|p| {
-                    p.module_definition_event_hash == m.definition_event_hash
-                        && p.part_name != name_str
-                })
-                .map(|p| definy_event::event::ModulePartEntry {
-                    name: p.part_name.into(),
-                    part_type: p.part_type,
-                    description: p.part_description,
-                    content_hash: p.content_hash,
-                    expression: p.expression,
-                })
-                .collect();
+            let parts_list: Vec<definy_event::event::ModulePartEntry> =
+                crate::module_projection::latest_module_parts(&state_val, &m)
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|part| *part.name != *name_str)
+                    .collect();
             (
                 m.module_name,
                 m.module_description,

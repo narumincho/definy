@@ -227,9 +227,10 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
             state_sig,
         ))));
     }));
-    let error_parts = crate::self_hosted_type_check::PART_CHECK_RESULTS
-        .read()
-        .error_parts();
+    let (error_parts, type_check_pending) = {
+        let results = crate::self_hosted_type_check::PART_CHECK_RESULTS.read();
+        (results.error_parts(), results.pending)
+    };
 
     let mut modules = collect_module_snapshots(&state);
     modules.sort_by(|a, b| a.module_name.cmp(&b.module_name));
@@ -269,6 +270,9 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let new_part_label = context
         .language
         .label("New part", "新しいパーツ", "Nova parto");
+    let type_checking_label = context
+        .language
+        .label("Type checking", "型検査中", "Tipkontrolado");
     let error_label = context
         .language
         .label("Has errors", "エラーあり", "Havas erarojn");
@@ -366,10 +370,19 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let has_results = !tree.is_empty();
 
     rsx! {
-        aside { class: "workbench-sidebar",
+        aside {
+            class: "workbench-sidebar",
+            "data-type-check-pending": "{type_check_pending}",
             div { class: "sidebar-header",
                 span {
                     "{context.language.label(\"Explorer\", \"エクスプローラー\", \"Esplorilo\")}"
+                }
+                if type_check_pending > 0 {
+                    span {
+                        class: "sidebar-header-status",
+                        title: "{type_checking_label}",
+                        "{type_checking_label} {type_check_pending}"
+                    }
                 }
                 div { class: "sidebar-header-actions",
                     a {

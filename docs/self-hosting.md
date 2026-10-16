@@ -62,11 +62,16 @@ definy
     において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
     を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
-- Connect-RPC の `SubmitEvent` は、`ModuleCommitEvent` を `module-definition`
-  値へ変換し、各パーツ定義に `part_definition_event_hash` を付与したうえで
-  `core.validate-module`
-  で一括検証してから保存します。式や型の変換に失敗した場合、または
-  型チェッカーが拒否した場合は `400` を返します。
+- Connect-RPC の `SubmitEvent` は、`definy_core::self_hosted_type_check::check_module_commit`
+  でコミットのパーツを `core.type-check-against` で検査してから保存します (UI の型エラー表示・
+  seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに
+  コミットのパーツを重ねたものなので, 他のモジュールのパーツ参照も解決できます。
+  パーツの型が変わらなければ式の変わったパーツだけを検査し (core の 1 パーツの編集なら 1 回の評価),
+  型が変わればモジュールの全パーツを検査します。式の無いパーツ・`core.expression` で表せないパーツ
+  (コンパイラ組み込み) はシステムアカウントのコミットでだけ受け入れます。
+  型チェッカーが拒否した場合は `400` を返し, メッセージにパーツ名と型エラーを入れます。
+  (以前は `core.validate-module` で全パーツを一括検証していましたが, 型パーツの展開ができず
+  core のように大きなモジュールでは重すぎたため置き換えました)
 - `core.validate-module` は、モジュール内のパーツリスト（`parts`）から
   `core.collect-part-type-env`
   によりモジュール型環境（`part-type-env`）を自動構築し、

@@ -104,3 +104,18 @@ fn test_part_type_expression_roundtrip() {
         assert_eq!(pt, recovered);
     }
 }
+
+#[test]
+fn description_with_text_keeps_other_languages() {
+    let description = Description::localized(vec![("en", "Adds"), ("ja", "足す")]);
+    assert_eq!(
+        description.with_text("ja", "2 つの数を足す"),
+        Description::localized(vec![("en", "Adds"), ("ja", "2 つの数を足す")])
+    );
+    assert_eq!(
+        description.with_text("eo", "Adicias"),
+        Description::localized(vec![("en", "Adds"), ("ja", "足す"), ("eo", "Adicias")])
+    );
+    // eo の表示は en へのフォールバック. 変更していなければ eo の説明を足さない
+    assert_eq!(description.with_text("eo", "Adds"), description);
+}

@@ -52,6 +52,7 @@ pub(crate) fn PartEditorCard(
 
     let on_save = {
         let definition_event_hash = definition_event_hash.clone();
+        let original_description = snapshot.part_description.clone();
         move |_| {
             let state_sig = use_context::<Signal<AppState>>();
             let state_val = state_sig.read().clone();
@@ -119,33 +120,27 @@ pub(crate) fn PartEditorCard(
                 return;
             };
 
-            let existing_parts = crate::part_projection::collect_part_snapshots(&state_val);
             let target_id = definition_event_hash.clone();
-            let mut parts: Vec<definy_event::event::ModulePartEntry> = existing_parts
-                .into_iter()
-                .filter(|p| {
-                    p.module_definition_event_hash == m.definition_event_hash
-                        && p.definition_event_hash != target_id
-                })
-                .map(|p| definy_event::event::ModulePartEntry {
-                    name: p.part_name.into(),
-                    part_type: p.part_type,
-                    description: p.part_description,
-                    content_hash: p.content_hash,
-                    expression: p.expression,
-                })
-                .collect();
-
+            let mut parts =
+                crate::module_projection::latest_module_parts(&state_val, &m).unwrap_or_default();
             let content_hash = expr_val
                 .as_ref()
                 .and_then(|e| definy_event::ContentHash::from_expression(e).ok());
-            parts.push(definy_event::event::ModulePartEntry {
+            let edited_part = definy_event::event::ModulePartEntry {
                 name: name.clone().into(),
                 part_type: type_val,
-                description: desc.into(),
+                description: original_description.with_text(language.to_code(), &desc),
                 content_hash,
                 expression: expr_val,
-            });
+            };
+            // コミットのパーツの順序を保ったまま, 編集したパーツだけを差し替える
+            match parts.iter().position(|part| {
+                definy_event::event::derive_module_part_id(&m.definition_event_hash, &part.name)
+                    == target_id
+            }) {
+                Some(index) => parts[index] = edited_part,
+                None => parts.push(edited_part),
+            }
 
             let commit_msg = commit_message().trim().to_string();
             let final_message = if commit_msg.is_empty() {

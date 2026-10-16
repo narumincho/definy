@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "Initial commit for core module",
+  "message": "record-literal-has-key の説明を詳しくする",
   "parts": [
     {
       "name": "let",
@@ -18741,7 +18741,7 @@
         },
         {
           "language": "ja",
-          "text": "レコードリテラルに指定したキーのフィールドがあるか判定する関数"
+          "text": "レコードリテラル (record 式) のフィールドに指定したキーがあるか, 先頭から順に探して判定する関数"
         }
       ],
       "expression": {

@@ -156,3 +156,58 @@ fn print_self_hosted_type_check_durations() {
         );
     }
 }
+
+/// サーバーがモジュールのコミットを受け付けるときの検査 (`check_module_commit`).
+/// 変わったパーツだけを検査し, 型エラーのあるコミットを拒否する
+#[test]
+fn module_commit_check_rejects_type_errors_in_changed_parts() {
+    use definy_event::event::{
+        Expression, ModulePartEntry, NumberExpression, PartType, StringExpression,
+    };
+    let account_id = builtin_system_account_id();
+    let core = SelfHostedCoreParts::from_core_module_id(&definy_event::event::derive_module_id(
+        &account_id,
+        "core",
+    ));
+    let events = seed_events();
+    let sample = get_builtin_module_seeds()
+        .iter()
+        .find(|seed| &*seed.module_name == "sample")
+        .expect("sample seed")
+        .to_module_commit_event();
+    let module_id = definy_event::event::derive_module_id(&account_id, "sample");
+
+    let with_part = |expression: Expression| {
+        let mut commit = sample.clone();
+        commit.parts.push(ModulePartEntry {
+            name: "answer".into(),
+            part_type: Some(PartType::Number),
+            description: Default::default(),
+            content_hash: None,
+            expression: Some(expression),
+        });
+        commit
+    };
+
+    definy_core::self_hosted_type_check::check_module_commit(
+        &with_part(Expression::Number(NumberExpression { value: 42 })),
+        &module_id,
+        &events,
+        &core,
+        false,
+    )
+    .expect("a number part must pass");
+
+    let error = definy_core::self_hosted_type_check::check_module_commit(
+        &with_part(Expression::String(StringExpression { value: "42".into() })),
+        &module_id,
+        &events,
+        &core,
+        false,
+    )
+    .expect_err("a string in a number part must be rejected");
+    assert!(
+        error.contains("answer") && error.contains("type_mismatch"),
+        "{error}"
+    );
+}

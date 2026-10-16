@@ -87,6 +87,8 @@ pub struct PartCheckResults {
     /// 検査したときの全パーツの型. 変わったら全パーツを検査し直す
     env_part_types: Vec<(EventHashId, Option<PartType>)>,
     results: HashMap<EventHashId, (Option<ContentHash>, SelfHostedTypeCheckOutcome)>,
+    /// まだ検査していないパーツの数 (検査中の表示と E2E の待ち合わせに使う)
+    pub pending: usize,
 }
 
 impl PartCheckResults {
@@ -131,6 +133,7 @@ pub async fn check_all_parts(state_sig: Signal<AppState>) {
             *results = PartCheckResults {
                 env_part_types,
                 results: HashMap::new(),
+                pending: 0,
             };
         }
         let existing = snapshots
@@ -153,6 +156,7 @@ pub async fn check_all_parts(state_sig: Signal<AppState>) {
             })
             .collect::<Vec<_>>()
     };
+    PART_CHECK_RESULTS.write().pending = to_check.len();
     if to_check.is_empty() {
         return;
     }
@@ -172,6 +176,7 @@ pub async fn check_all_parts(state_sig: Signal<AppState>) {
             .collect::<Vec<_>>();
         let outcomes = check_parts(&parts, &env, &core, &events);
         let mut results = PART_CHECK_RESULTS.write();
+        results.pending = results.pending.saturating_sub(chunk.len());
         for (snapshot, outcome) in chunk.iter().zip(outcomes) {
             results.results.insert(
                 snapshot.definition_event_hash.clone(),

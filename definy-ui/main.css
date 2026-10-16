@@ -716,6 +716,15 @@ button.header-title:hover {
   flex-shrink: 0;
 }
 
+.sidebar-header-status {
+  margin-left: auto;
+  margin-right: 0.4rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-muted);
+}
+
 .sidebar-header-action {
   display: inline-grid;
   place-items: center;

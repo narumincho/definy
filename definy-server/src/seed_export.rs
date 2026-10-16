@@ -105,6 +105,9 @@ async fn hydrate_commit_expressions(
 ) -> Result<(), anyhow::Error> {
     for part in &mut commit.parts {
         if part.expression.is_some() {
+            // seed は式をそのまま持つので, 式から求まる content hash は書かない
+            // (UI から投稿したコミットは式と content hash の両方を持つ)
+            part.content_hash = None;
             continue;
         }
         let Some(content_hash) = &part.content_hash else {

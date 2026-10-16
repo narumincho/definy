@@ -49,6 +49,7 @@ pub struct PartTypeEntry<'a> {
 pub const TYPE_DEFINITION_KEY_SUFFIX: &str = "#definition";
 
 /// 検査するパーツ
+#[derive(Clone, Copy)]
 pub struct PartToCheck<'a> {
     pub expression: &'a Expression,
     pub part_type: &'a PartType,
@@ -336,5 +337,184 @@ pub fn type_declaration_to_part_type(expression: &Expression) -> Option<PartType
             reference.part_definition_event_hash.clone(),
         )),
         _ => None,
+    }
+}
+
+/// イベント列から求めた, あるパーツの最新の定義
+#[derive(Debug, Clone)]
+pub struct LatestPart {
+    pub module_id: EventHashId,
+    pub name: String,
+    pub part_type: Option<PartType>,
+    pub expression: Option<Expression>,
+}
+
+/// イベント列から, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
+/// 式を content hash だけで持つパーツは, 他のイベントに埋め込まれた同じ式を探して埋める
+pub fn latest_parts(
+    events: &[crate::EventWithHash],
+) -> std::collections::HashMap<EventHashId, LatestPart> {
+    let mut commits = events
+        .iter()
+        .filter_map(|(_, event)| {
+            let (_, event) = event.as_ref().ok()?;
+            match &event.content {
+                definy_event::event::EventContent::ModuleCommit(commit) => Some((event, commit)),
+                _ => None,
+            }
+        })
+        .collect::<Vec<_>>();
+    commits.sort_by_key(|(event, _)| event.time);
+    let mut module_parts =
+        std::collections::HashMap::<EventHashId, Vec<(EventHashId, LatestPart)>>::new();
+    for (event, commit) in commits {
+        let module_id =
+            definy_event::event::derive_module_id(&event.account_id, &commit.module_name);
+        let parts = commit
+            .parts
+            .iter()
+            .map(|part| {
+                let part_id = definy_event::event::derive_module_part_id(&module_id, &part.name);
+                let expression = part.expression.clone().or_else(|| {
+                    let content_hash = part.resolve_content_hash()?;
+                    crate::wasm_emitter::compiler::resolve_part_expression(
+                        events,
+                        &part_id,
+                        Some(&content_hash),
+                    )
+                    .cloned()
+                });
+                (
+                    part_id,
+                    LatestPart {
+                        module_id: module_id.clone(),
+                        name: part.name.to_string(),
+                        part_type: part.part_type.clone(),
+                        expression,
+                    },
+                )
+            })
+            .collect();
+        module_parts.insert(module_id, parts);
+    }
+    module_parts.into_values().flatten().collect()
+}
+
+/// モジュールのコミットを自己ホスト型チェッカーで検査する.
+///
+/// - 型環境は `previous_events` から求めた全モジュールの最新のパーツに, このコミットのパーツを重ねたもの
+/// - パーツの型が 1 つも変わっていなければ, 式が変わったパーツ (と新しいパーツ) だけを検査する.
+///   型が変わったら, それを参照するパーツに影響するのでモジュールの全パーツを検査する
+/// - `allow_builtin_parts` が真なら, 式の無いパーツや `core.expression` で表せないパーツ
+///   (コンパイラ組み込み) を検査せずに受け入れる. システムアカウントのビルトインモジュール用
+///
+/// `commit` のパーツの式は content hash から埋めておくこと
+pub fn check_module_commit(
+    commit: &definy_event::event::ModuleCommitEvent,
+    module_id: &EventHashId,
+    previous_events: &[crate::EventWithHash],
+    core: &SelfHostedCoreParts,
+    allow_builtin_parts: bool,
+) -> Result<(), String> {
+    let mut parts = latest_parts(previous_events);
+    let previous = parts
+        .iter()
+        .filter(|(_, part)| &part.module_id == module_id)
+        .map(|(part_id, part)| (part_id.clone(), part.clone()))
+        .collect::<std::collections::HashMap<_, _>>();
+    parts.retain(|_, part| &part.module_id != module_id);
+    let committed = commit
+        .parts
+        .iter()
+        .map(|part| {
+            (
+                definy_event::event::derive_module_part_id(module_id, &part.name),
+                part,
+            )
+        })
+        .collect::<Vec<_>>();
+    for (part_id, part) in &committed {
+        parts.insert(
+            part_id.clone(),
+            LatestPart {
+                module_id: module_id.clone(),
+                name: part.name.to_string(),
+                part_type: part.part_type.clone(),
+                expression: part.expression.clone(),
+            },
+        );
+    }
+
+    let types_changed = previous.len() != committed.len()
+        || committed.iter().any(|(part_id, part)| {
+            previous
+                .get(part_id)
+                .is_none_or(|previous| previous.part_type != part.part_type)
+        });
+    let mut to_check = Vec::new();
+    for (part_id, part) in &committed {
+        let unchanged = previous
+            .get(part_id)
+            .is_some_and(|previous| previous.expression == part.expression);
+        if !types_changed && unchanged {
+            continue;
+        }
+        match (&part.expression, &part.part_type) {
+            (Some(expression), Some(part_type)) => to_check.push((
+                part.name.to_string(),
+                PartToCheck {
+                    expression,
+                    part_type,
+                },
+            )),
+            _ if allow_builtin_parts => {}
+            _ => return Err(format!("part '{}' has no expression or type", part.name)),
+        }
+    }
+    if to_check.is_empty() {
+        return Ok(());
+    }
+
+    let env = parts
+        .iter()
+        .filter_map(|(part_id, part)| {
+            let part_type = part.part_type.as_ref()?;
+            Some(PartTypeEntry {
+                part_definition_event_hash: part_id,
+                part_type,
+                type_declaration: (part_type == &PartType::Type)
+                    .then_some(part.expression.as_ref())
+                    .flatten(),
+            })
+        })
+        .collect::<Vec<_>>();
+    let outcomes = check_parts(
+        &to_check.iter().map(|(_, part)| *part).collect::<Vec<_>>(),
+        &env,
+        core,
+        previous_events,
+    );
+    let errors = to_check
+        .iter()
+        .zip(outcomes)
+        .filter_map(|((name, _), outcome)| match outcome {
+            SelfHostedTypeCheckOutcome::Ok => None,
+            SelfHostedTypeCheckOutcome::Unsupported(_) if allow_builtin_parts => None,
+            SelfHostedTypeCheckOutcome::TypeError(error) => {
+                Some(format!("part '{name}': type error: {error}"))
+            }
+            SelfHostedTypeCheckOutcome::Unsupported(message) => {
+                Some(format!("part '{name}': not supported: {message}"))
+            }
+            SelfHostedTypeCheckOutcome::CheckerFailed(message) => Some(format!(
+                "part '{name}': type checker failed: {}",
+                message.lines().next().unwrap_or_default()
+            )),
+        })
+        .collect::<Vec<_>>();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("\n"))
     }
 }
