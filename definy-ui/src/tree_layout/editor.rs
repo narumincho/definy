@@ -13,8 +13,8 @@ use crate::expression_editor::diagnostics::{
     TypeAnalysis, constructor_default_value_from_type_part,
 };
 use crate::expression_editor::mutation::{
-    apply_selection, clear_expression_at_path, get_mut_expression_at_path, set_number_value,
-    set_string_value,
+    apply_selection, clear_expression_at_path, get_mut_expression_at_path, scope_variables_at_path,
+    set_number_value, set_string_value,
 };
 use crate::expression_editor::{
     ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,
@@ -133,10 +133,12 @@ pub fn ExpressionTreeEditor(
             .expected_types
             .get(target_path)
             .or(expected_type.as_ref());
+        // その位置から参照できる変数 (関数のパラメーター・let・match の束縛) も選択肢に出す
+        let scope_variables = scope_variables_at_path(&expr, target_path);
         selector_options_ranked(
             &state,
             language,
-            &[],
+            &scope_variables,
             is_root,
             target_expected,
             &analysis.variable_types,

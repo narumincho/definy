@@ -1,3 +1,5 @@
+use crate::app_state::PathStep;
+
 pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
     fn max_local_variable_id(expression: &definy_event::event::Expression) -> i64 {
         match expression {
@@ -203,4 +205,63 @@ pub fn next_local_variable_id(expression: &definy_event::event::Expression) -> i
         }
     }
     max_local_variable_id(expression).saturating_add(1).max(1)
+}
+
+/// `path` の位置から参照できる変数 (関数のパラメーター, let の束縛, match のアームの束縛).
+/// 外側から順に並べ, 内側の束縛が同じ ID の外側の束縛を隠す.
+/// 名前が空の束縛 (追加直後の let など) は `var_{id}` という名前にする
+pub fn scope_variables_at_path(
+    root: &definy_event::event::Expression,
+    path: &[PathStep],
+) -> Vec<crate::expression_editor::ScopeVariable> {
+    use definy_event::event::Expression;
+
+    let mut variables: Vec<(i64, String)> = Vec::new();
+    let mut bind = |id: i64, name: &str| {
+        variables.retain(|(existing, _)| *existing != id);
+        let name = if name.is_empty() {
+            format!("var_{id}")
+        } else {
+            name.to_string()
+        };
+        variables.push((id, name));
+    };
+    let mut root = root.clone();
+    for depth in 0..path.len() {
+        let Some(current) = super::get_mut_expression_at_path(&mut root, &path[..depth]) else {
+            break;
+        };
+        match (&*current, &path[depth]) {
+            (Expression::Function(func), PathStep::FunctionBody) => {
+                for param in &func.parameters {
+                    bind(param.parameter_id, &param.parameter_name);
+                }
+            }
+            (Expression::Let(let_expr), PathStep::LetBindingValue(index)) => {
+                for binding in let_expr.bindings.iter().take(*index) {
+                    bind(binding.variable_id, &binding.variable_name);
+                }
+            }
+            (Expression::Let(let_expr), PathStep::LetBody) => {
+                for binding in &let_expr.bindings {
+                    bind(binding.variable_id, &binding.variable_name);
+                }
+            }
+            (Expression::Match(match_expr), PathStep::MatchArmBody(index)) => {
+                if let Some(arm) = match_expr.arms.get(*index)
+                    && let Some(variable_id) = arm.variable_id
+                {
+                    bind(
+                        variable_id,
+                        arm.variable_name.as_deref().unwrap_or_default(),
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+    variables
+        .into_iter()
+        .map(|(id, name)| crate::expression_editor::ScopeVariable::new(id, name))
+        .collect()
 }

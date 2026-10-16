@@ -297,3 +297,14 @@ fn test_part_reference_is_labeled_with_part_name() {
     );
     assert_eq!(node.label, "type-check");
 }
+
+#[test]
+fn test_empty_list_is_labeled_differently_from_list_variable() {
+    let expr = Expression::ListLength(ListLengthExpression {
+        value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+            items: vec![],
+        })),
+    });
+    let node = expression_to_layout_node(&expr, "root");
+    assert_eq!(node.children[0].label, "[]");
+}

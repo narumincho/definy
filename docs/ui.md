@@ -92,6 +92,18 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 - localStorage は SSR の HTML と揃えるため, 初期化のときではなく `Workbench` の `use_effect` で読み込む.
   読み込みが終わる (`WORKING_CHANGES_LOADED`) までパーツ詳細は記録しない (空の編集で保存済みの変更を消さないため)
 - 未コミットの変更があるパーツはエクスプローラーに `M` を出し, アクティビティバーの「変更」とステータスバーに件数を出す
+- コミットがサーバーに拒否されたら, 理由 (`invalid_argument: part '...': type error: ...` など) を
+  「変更のコミットに失敗しました」の後ろに出す (`LocalEventRecord::last_error`)
+
+### ツリーエディタの選択肢
+
+ノードを選ぶと出るメニュー (`SearchableDropdownPanel`) の選択肢と並び順.
+
+- その位置から参照できる変数 (関数のパラメーター, let の束縛, match のアームの束縛) を先頭に出す
+  (`expression_editor::scope_variables_at_path`)
+- 検索語を打つと, 名前が一致するもの, 名前が検索語で始まるもの, 名前に含むもの, ラベルのどこかに含むものの順に並べる.
+  `index` と打てば変数 `index` がパーツ `string-index-of` より先に来て, Enter でそれが入る
+- `less-than` を `less-than-or-equal` にするなど, 二項演算を別の二項演算に差し替えるときは左右の式を引き継ぐ
 
 ### 履歴グラフ
 

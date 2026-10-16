@@ -559,6 +559,9 @@ fn build_layout_node(
                 let mut node = table_node;
                 node.table_headers = headers;
                 node
+            } else if list_expr.items.is_empty() {
+                // 空のリストは, 同じ "list" という名前の変数と見分けられるよう `[]` と表示する
+                LayoutNode::new(id_prefix, "[]", NodeKind::Group).with_path(p)
             } else {
                 let children = list_expr
                     .items

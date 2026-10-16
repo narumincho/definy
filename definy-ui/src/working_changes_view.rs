@@ -160,11 +160,12 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
                     state_sig,
                 )
                 .await;
-                match record.map(|record| record.status) {
-                    Some(
+                match record.map(|record| (record.status, record.last_error)) {
+                    Some((
                         status @ (crate::local_event::LocalEventStatus::Sent
                         | crate::local_event::LocalEventStatus::Queued),
-                    ) => {
+                        _,
+                    )) => {
                         queued |= status == crate::local_event::LocalEventStatus::Queued;
                         committed_modules += 1;
                         crate::working_changes::update(|changes| {
@@ -173,16 +174,17 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
                             }
                         });
                     }
-                    _ => {
-                        failure = Some(
-                            language
-                                .label(
-                                    "Failed to commit changes",
-                                    "変更のコミットに失敗しました",
-                                    "Enmetado de ŝanĝoj malsukcesis",
-                                )
-                                .to_string(),
+                    other => {
+                        let label = language.label(
+                            "Failed to commit changes",
+                            "変更のコミットに失敗しました",
+                            "Enmetado de ŝanĝoj malsukcesis",
                         );
+                        // サーバーが拒否した理由 (型エラーなど) があれば併せて出す
+                        failure = Some(match other.and_then(|(_, last_error)| last_error) {
+                            Some(error) => format!("{label}: {error}"),
+                            None => label.to_string(),
+                        });
                         break;
                     }
                 }

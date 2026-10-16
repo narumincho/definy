@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "record-literal-has-key の説明を詳しくする",
+  "message": "list-contains-string を前から走査する形にし, 呼び出し元を 0 から始めるように揃える",
   "parts": [
     {
       "name": "let",
@@ -25571,11 +25571,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Checks if a string list contains a target string searching backward from index"
+          "text": "Checks if a string list contains a target string searching forward from index"
         },
         {
           "language": "ja",
-          "text": "文字列リストに指定文字列が含まれるかインデックスから後方に走査して判定"
+          "text": "文字列リストに指定文字列が含まれるかインデックスから前方に走査して判定"
         }
       ],
       "expression": {
@@ -25597,15 +25597,19 @@
           "body": {
             "Match": {
               "target": {
-                "LessThan": {
+                "LessThanOrEqual": {
                   "left": {
-                    "Variable": {
-                      "variable_id": 2
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
                     }
                   },
                   "right": {
-                    "Number": {
-                      "value": 0
+                    "Variable": {
+                      "variable_id": 2
                     }
                   }
                 }
@@ -25694,7 +25698,7 @@
                                 {
                                   "name": "index",
                                   "value": {
-                                    "Subtract": {
+                                    "Add": {
                                       "left": {
                                         "Variable": {
                                           "variable_id": 2
@@ -25894,21 +25898,8 @@
                             {
                               "name": "index",
                               "value": {
-                                "Subtract": {
-                                  "left": {
-                                    "ListLength": {
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 3
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 1
-                                    }
-                                  }
+                                "Number": {
+                                  "value": 0
                                 }
                               }
                             }
@@ -26315,21 +26306,8 @@
                             {
                               "name": "index",
                               "value": {
-                                "Subtract": {
-                                  "left": {
-                                    "ListLength": {
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 3
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 1
-                                    }
-                                  }
+                                "Number": {
+                                  "value": 0
                                 }
                               }
                             }
@@ -26836,21 +26814,8 @@
                             {
                               "name": "index",
                               "value": {
-                                "Subtract": {
-                                  "left": {
-                                    "ListLength": {
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 3
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 1
-                                    }
-                                  }
+                                "Number": {
+                                  "value": 0
                                 }
                               }
                             }
