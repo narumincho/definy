@@ -156,3 +156,40 @@ fn test_record_get_layout_node() {
     assert_eq!(node.children.len(), 1);
     assert_eq!(node.children[0].path, vec![PathStep::Record]);
 }
+
+#[test]
+fn test_call_arguments_are_labeled_with_parameter_names() {
+    let expr = Expression::Call(CallExpression {
+        function: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+        arguments: vec![
+            CallArgument {
+                name: "x".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 1 })),
+            },
+            CallArgument {
+                name: "y".into(),
+                value: Box::new(Expression::Number(NumberExpression { value: 2 })),
+            },
+        ],
+    });
+
+    // 型情報が無いときは引数に保存された名前を表示する
+    let node = expression_to_layout_node(&expr, "root");
+    let labels: Vec<&str> = node.children[1..]
+        .iter()
+        .map(|c| c.label.as_str())
+        .collect();
+    assert_eq!(labels, vec!["x:", "y:"]);
+    assert_eq!(node.children[1].path, vec![PathStep::CallArgument(0)]);
+    assert_eq!(node.children[1].children[0].label, "1");
+
+    // 型解析で分かった呼び出し先のパラメーター名を優先する
+    let names =
+        CallParameterNames::from([(Vec::new(), vec!["width".to_string(), "height".to_string()])]);
+    let node = expression_to_layout_node_with_call_parameter_names(&expr, "root", &names);
+    let labels: Vec<&str> = node.children[1..]
+        .iter()
+        .map(|c| c.label.as_str())
+        .collect();
+    assert_eq!(labels, vec!["width:", "height:"]);
+}

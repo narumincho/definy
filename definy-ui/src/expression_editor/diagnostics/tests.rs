@@ -596,3 +596,56 @@ fn test_anonymous_union_is_assignable_to_named_union_only() {
         &map
     ));
 }
+
+#[test]
+fn test_call_parameter_names_resolved_from_function_type() {
+    let state = crate::app_state::AppState::default();
+    let expected_type = ExpressionType::Function {
+        parameters: vec![FunctionParameterTypeInfo {
+            name: "f".to_string(),
+            r#type: ExpressionType::Function {
+                parameters: vec![
+                    FunctionParameterTypeInfo {
+                        name: "width".to_string(),
+                        r#type: ExpressionType::Number,
+                    },
+                    FunctionParameterTypeInfo {
+                        name: "height".to_string(),
+                        r#type: ExpressionType::Number,
+                    },
+                ],
+                return_type: Box::new(ExpressionType::Number),
+            },
+        }],
+        return_type: Box::new(ExpressionType::Number),
+    };
+    // 引数に保存された名前が古くても (x), 位置から呼び出し先のパラメーター名を引く
+    let expression = Expression::Function(FunctionExpression {
+        parameters: vec![FunctionParameter {
+            parameter_id: 1,
+            parameter_name: "f".into(),
+        }],
+        body: Box::new(Expression::Call(CallExpression {
+            function: Box::new(Expression::Variable(VariableExpression { variable_id: 1 })),
+            arguments: vec![
+                CallArgument {
+                    name: "x".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 1 })),
+                },
+                CallArgument {
+                    name: "y".into(),
+                    value: Box::new(Expression::Number(NumberExpression { value: 2 })),
+                },
+            ],
+        })),
+    });
+
+    let analysis = analyze_expression_types(&state, &expression, Some(expected_type));
+
+    assert_eq!(
+        analysis
+            .call_parameter_names
+            .get(&vec![crate::app_state::PathStep::FunctionBody]),
+        Some(&vec!["width".to_string(), "height".to_string()])
+    );
+}

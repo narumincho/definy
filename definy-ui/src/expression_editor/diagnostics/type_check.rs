@@ -26,6 +26,8 @@ pub(crate) struct TypeCheckContext<'a> {
     pub diagnostics: &'a mut Vec<TypeDiagnostic>,
     pub expected_types: &'a mut HashMap<Vec<PathStep>, ExpressionType>,
     pub variable_types: &'a mut HashMap<i64, ExpressionType>,
+    /// 関数呼び出しのパスごとの, 各引数に対応するパラメーター名. 指定されたときだけ記録する
+    pub call_parameter_names: Option<&'a mut HashMap<Vec<PathStep>, Vec<String>>>,
 }
 
 impl<'a> TypeCheckContext<'a> {
@@ -44,7 +46,16 @@ impl<'a> TypeCheckContext<'a> {
             diagnostics,
             expected_types,
             variable_types,
+            call_parameter_names: None,
         }
+    }
+
+    pub fn with_call_parameter_names(
+        mut self,
+        call_parameter_names: &'a mut HashMap<Vec<PathStep>, Vec<String>>,
+    ) -> Self {
+        self.call_parameter_names = Some(call_parameter_names);
+        self
     }
 
     pub fn push_mismatch(
@@ -429,6 +440,7 @@ fn check_expression_type_with_context(
                     diagnostics: ctx.diagnostics,
                     expected_types: ctx.expected_types,
                     variable_types: ctx.variable_types,
+                    call_parameter_names: ctx.call_parameter_names.as_deref_mut(),
                 };
                 let value_type = child_ctx.check(binding.value.as_ref(), &value_path, None);
                 body_env.insert(binding.variable_id, value_type.clone());
@@ -445,6 +457,7 @@ fn check_expression_type_with_context(
                 diagnostics: ctx.diagnostics,
                 expected_types: ctx.expected_types,
                 variable_types: ctx.variable_types,
+                call_parameter_names: ctx.call_parameter_names.as_deref_mut(),
             };
             child_ctx.check(
                 let_expression.body.as_ref(),
@@ -503,6 +516,7 @@ fn check_expression_type_with_context(
                             diagnostics: &mut dummy_diag,
                             expected_types: &mut dummy_expected,
                             variable_types: &mut dummy_vars,
+                            call_parameter_names: None,
                         };
                         sub_ctx.check(constructor_expression.value.as_ref(), &value_path, None)
                     };
@@ -558,6 +572,7 @@ fn check_expression_type_with_context(
                     diagnostics: ctx.diagnostics,
                     expected_types: ctx.expected_types,
                     variable_types: ctx.variable_types,
+                    call_parameter_names: ctx.call_parameter_names.as_deref_mut(),
                 };
                 child_ctx.check(
                     func_expression.body.as_ref(),
@@ -592,17 +607,26 @@ fn check_expression_type_with_context(
                     parameters,
                     return_type,
                 } => {
+                    let mut parameter_names = Vec::new();
                     for (i, arg) in call_expression.arguments.iter().enumerate() {
                         let mut arg_path = path.to_vec();
                         arg_path.push(PathStep::CallArgument(i));
 
-                        let expected_arg_type = parameters
+                        let parameter = parameters
                             .iter()
                             .find(|p| p.name == arg.name.as_ref())
-                            .or_else(|| parameters.get(i))
-                            .map(|p| p.r#type.clone());
+                            .or_else(|| parameters.get(i));
+                        parameter_names.push(
+                            parameter
+                                .map(|p| p.name.clone())
+                                .unwrap_or_else(|| arg.name.to_string()),
+                        );
+                        let expected_arg_type = parameter.map(|p| p.r#type.clone());
 
                         ctx.check(arg.value.as_ref(), &arg_path, expected_arg_type);
+                    }
+                    if let Some(call_parameter_names) = ctx.call_parameter_names.as_deref_mut() {
+                        call_parameter_names.insert(path.to_vec(), parameter_names);
                     }
                     *return_type
                 }
@@ -722,6 +746,7 @@ fn check_expression_type_with_context(
                         diagnostics: ctx.diagnostics,
                         expected_types: ctx.expected_types,
                         variable_types: ctx.variable_types,
+                        call_parameter_names: ctx.call_parameter_names.as_deref_mut(),
                     };
                     child_ctx.check(arm.body.as_ref(), &arm_path, expected_type.clone())
                 };

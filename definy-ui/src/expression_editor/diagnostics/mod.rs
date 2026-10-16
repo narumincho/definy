@@ -55,6 +55,8 @@ pub struct TypeAnalysis {
     pub diagnostics: Vec<TypeDiagnostic>,
     pub expected_types: HashMap<Vec<crate::app_state::PathStep>, ExpressionType>,
     pub variable_types: HashMap<i64, ExpressionType>,
+    /// 関数呼び出しのパスごとの, 各引数に対応する (呼び出し先関数の) パラメーター名
+    pub call_parameter_names: HashMap<Vec<crate::app_state::PathStep>, Vec<String>>,
 }
 
 pub fn analyze_expression_types(
@@ -82,6 +84,7 @@ pub fn analyze_expression_types(
     let mut diagnostics = Vec::new();
     let mut expected_types = HashMap::new();
     let mut variable_types = HashMap::new();
+    let mut call_parameter_names = HashMap::new();
     let env = HashMap::new();
     let mut ctx = TypeCheckContext::new(
         &env,
@@ -90,12 +93,14 @@ pub fn analyze_expression_types(
         &mut diagnostics,
         &mut expected_types,
         &mut variable_types,
-    );
+    )
+    .with_call_parameter_names(&mut call_parameter_names);
     ctx.check(expression, &Vec::new(), expected_type);
     TypeAnalysis {
         diagnostics,
         expected_types,
         variable_types,
+        call_parameter_names,
     }
 }
 
