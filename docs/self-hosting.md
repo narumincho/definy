@@ -124,7 +124,7 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    コミット済み seed が正規化済みであることを `seed_tests.rs` で検証します。
 5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
    compiler stage1 を作り、 stage1 が同一 compiler と test suite
-   を再生成できるか比較します。
+   を再生成できるか比較します。現在の対応範囲は下の「definy 製コンパイラの対応状況」を参照。
 6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
@@ -217,6 +217,79 @@ AST を手組みし、そこから JSON を生成していましたが、この�
 - 編集方法（段階移行）: 今後は definy の UI / MCP でパーツを編集し、その結果を `seeds/*.json` に
   書き出してコミットする流れを目指します。手で JSON を編集した場合は
   `cargo run -p definy-server -- --export-seeds seeds` で整形とスキーマ更新を行ってください。
+
+## definy 製コンパイラの対応状況 (2026-10-17 時点)
+
+definy 製の Wasm コンパイラ (`core.compile-to-wasm` / `core.compile-expr-instructions`) が, Rust 製コンパイラ
+(`definy-core/src/wasm_emitter`, stage0) と比べてどこまでコンパイルできるかを
+`definy-server/tests/self_hosted_compiler_coverage.rs` で測っています。
+
+```sh
+cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
+```
+
+- `self_hosted_compiler_conformance`: 評価器の適合テスト (`conformance/eval_cases.json`) の各ケースを
+  `self_hosted_wasm_compiler::compile_with_self_hosted_compiler` (Rust 製コンパイラへのフォールバックなし) で
+  コンパイル・実行し, 期待値と比べます。通過数が `MIN_PASSING_CASES` を下回ると失敗するので,
+  対応範囲を広げたらこの値を上げてください
+- `self_hosted_compiler_self_compile_gaps`: definy 製コンパイラ自身のパーツが使う式の種類のうち,
+  コンパイラが扱えないものを一覧します
+
+### 適合テストの結果: 58 ケース中 25 ケースが期待値どおり
+
+2026-10-17 の修正前は 15 ケース (うち 2 つは偶然の一致) でした。修正内容は下の「値の表現」を参照。
+
+| 式の種類 | 状況 |
+| --- | --- |
+| 数値リテラル | 通る (`core.signed-leb128` で符号付き LEB128 にする) |
+| 四則演算・剰余 | 通る |
+| `let` / 変数 | 通る |
+| 真偽値・比較 (`equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal`)・論理演算 (`not` `and` `or`) | 数値どうしなら通る。文字列の `equal` は未対応 (Wasm の検証で type mismatch) |
+| Bool の `match` | アームが数値・真偽値なら通る。アームが文字列などだと type mismatch |
+| 文字列・レコード・バリアントのリテラル | 式全体がそれ 1 つのときだけ通る (データセグメントに置く) |
+| バリアントの `match` (ペイロードの束縛を含む) | 未対応 (`unreachable`) |
+| リスト (`list` と `list_*`), `record_get`, 文字列操作 (`string_*`) | 未対応 (`unreachable`) |
+| 関数 (`function`), 呼び出し (`call`), パーツ参照 (`part_reference`) | 未対応 (`unreachable`)。標準ライブラリやサンプルのパーツを呼ぶケースはすべて失敗 |
+
+未対応の式は `unreachable` (Wasm の 0x00) を出すので, 実行するとトラップになります
+(以前は `i64.const 0` を出していて, 0 が期待値のケースが偶然通っていた)。
+Bool 以外を対象にした `match` も, 誤ったコードではなく `unreachable` にします (`core.is-bool-match-arms` で判定)。
+
+### 値の表現
+
+- 数値は i64, 真偽値も i64 の 0 / 1 で表します。ローカル変数はすべて i64 (64 個) で, `let` の束縛や
+  Bool の `match` のアームの型をそろえるためです。比較命令 (`i64.eq` など) の結果は i32 なので `i64.extend_i32_u`
+  で i64 にし, `not` は `i64.eqz` + `i64.extend_i32_u`, `and` / `or` は `i64.and` / `i64.or`,
+  Bool の `match` は `if` の前に `i32.wrap_i64` で i32 にします
+- 式全体が真偽値のとき (`core.is-boolean-expression` が形から判定) は線形メモリを使います。1024 番地に Bool のタグ (1)
+  をデータセグメントで置き, 実行時に `i64.store8 offset=8` で値を 1032 番地に書いて, `evaluate` が 1024 を返します
+  (`definy_core::wasm_emitter::read_value_from_memory` の形式)。形から判定するので, `let x = 1 < 2 in x` のように
+  変数で返す真偽値は数値 (0 / 1) として返ります
+- 関数本体とコードセクションの長さは `core.unsigned-leb128` で出します (以前は 1 バイト固定で, 128 バイト以上の本体を壊していた。適合テストにはまだ 128 バイトを超えるケースが無い)
+- コンパイラを構成するパーツは `self_hosted_wasm_compiler::self_hosted_compiler_parts` が
+  `core.compile-to-wasm` からパーツ参照をたどって集めます。補助パーツを足しても呼び出し側を直す必要はありません
+
+### 自分自身をコンパイルするのに足りないもの
+
+definy 製コンパイラは `core.compile-to-wasm`, `core.compile-expr-instructions`, `core.match-arm-body`,
+`core.is-bool-match-arms`, `core.is-boolean-expression`, `core.signed-leb128`, `core.unsigned-leb128`
+の 7 パーツでできています。これらが使っていて, コンパイラ自身が扱えない式の種類:
+
+- 関数・呼び出し・パーツ参照 (`function` `call` `part_reference`): 全パーツ。再帰呼び出しも含む
+- バリアントの `match` (ペイロードの束縛): `core.expression` のタグでの分岐に使う
+- レコードのフィールド取得 (`record_get`)
+- リスト (`list` `list_concat` `list_append` `list_get` `list_length`): Wasm のバイト列を `list<number>` で組み立てる
+- `string_to_bytes`
+
+これらはすべて実行時にヒープ (線形メモリ上のリスト・レコード・クロージャ) を必要とするので,
+Rust 製コンパイラのメモリ表現 (`wasm_emitter`) に合わせたランタイムを definy 側に用意するのが次の大きな山です。
+
+### 次に進める順番の案
+
+1. ヒープを使う式 (リスト・`record_get`・文字列操作)。値をすべて線形メモリ上のタグ付きの値にするか, 型情報を使って
+   i64 とポインタを使い分けるかを決める (今は形から判定しているので, 型チェッカーの結果を渡せると確実)
+2. 関数・呼び出し・パーツ参照 (複数の Wasm 関数を出す) と, バリアントの `match`
+3. 7 パーツを自分自身でコンパイルし, Rust 製コンパイラでコンパイルしたものと出力を比べる (stage1 / stage2)
 
 ## セルフホストのロードマップと到達状況
 

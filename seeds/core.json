@@ -13145,6 +13145,970 @@
       }
     },
     {
+      "name": "is-bool-match-arms",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "arms",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "tag",
+                      "value": "string"
+                    },
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "body",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": "number"
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether every match arm from index on has the tag true, false or `_` (a match on Bool)"
+        },
+        {
+          "language": "ja",
+          "text": "index 以降のパターンマッチのアームのタグがすべて true / false / `_` か (Bool に対する match か)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "arms"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThanOrEqual": {
+                  "left": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  },
+                  "right": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 2,
+                          "variable_name": "tag",
+                          "value": {
+                            "RecordGet": {
+                              "record": {
+                                "ListGet": {
+                                  "list": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  },
+                                  "index": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                }
+                              },
+                              "key": "tag"
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Match": {
+                          "target": {
+                            "Or": {
+                              "left": {
+                                "Or": {
+                                  "left": {
+                                    "Equal": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      },
+                                      "right": {
+                                        "String": {
+                                          "value": "true"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "Equal": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      },
+                                      "right": {
+                                        "String": {
+                                          "value": "false"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "Equal": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  },
+                                  "right": {
+                                    "String": {
+                                      "value": "_"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.is-bool-match-arms"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "arms",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "Add": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Boolean": {
+                                  "value": false
+                                }
+                              }
+                            }
+                          ],
+                          "default": null
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "is-boolean-expression",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "expr",
+              "type": {
+                "type_part": {
+                  "$part": "core.expression"
+                }
+              }
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether the expression evaluates to a boolean, judged from its shape (a variable is treated as non-boolean)"
+        },
+        {
+          "language": "ja",
+          "text": "式の形から, 評価結果が真偽値になるかを判定する (変数は真偽値でないとみなす)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "expr"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "boolean",
+                  "variable_id": 10,
+                  "variable_name": "_boolean",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "equal",
+                  "variable_id": 11,
+                  "variable_name": "_equal",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "not_equal",
+                  "variable_id": 12,
+                  "variable_name": "_not_equal",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "less_than",
+                  "variable_id": 13,
+                  "variable_name": "_less_than",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "less_than_or_equal",
+                  "variable_id": 14,
+                  "variable_name": "_less_than_or_equal",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "greater_than",
+                  "variable_id": 15,
+                  "variable_name": "_greater_than",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "greater_than_or_equal",
+                  "variable_id": 16,
+                  "variable_name": "_greater_than_or_equal",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "not",
+                  "variable_id": 17,
+                  "variable_name": "_not",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "and",
+                  "variable_id": 18,
+                  "variable_name": "_and",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "or",
+                  "variable_id": 19,
+                  "variable_name": "_or",
+                  "body": {
+                    "Boolean": {
+                      "value": true
+                    }
+                  }
+                },
+                {
+                  "tag": "let",
+                  "variable_id": 30,
+                  "variable_name": "let_e",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.is-boolean-expression"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 30
+                                }
+                              },
+                              "key": "body"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "match",
+                  "variable_id": 31,
+                  "variable_name": "match_e",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.is-boolean-expression"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.match-arm-body"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "arms",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 31
+                                        }
+                                      },
+                                      "key": "arms"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "target_tag",
+                                  "value": {
+                                    "String": {
+                                      "value": "true"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "_",
+                  "variable_id": 32,
+                  "variable_name": "_",
+                  "body": {
+                    "Boolean": {
+                      "value": false
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "signed-leb128",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "n",
+              "type": "number"
+            }
+          ],
+          "return_type": {
+            "list": "number"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Encode an integer as signed LEB128 bytes (for i64.const immediates)"
+        },
+        {
+          "language": "ja",
+          "text": "整数を符号付き LEB128 のバイト列にする (i64.const の即値用)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "n"
+            }
+          ],
+          "body": {
+            "Let": {
+              "bindings": [
+                {
+                  "variable_id": 1,
+                  "variable_name": "q0",
+                  "value": {
+                    "Divide": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 128
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "variable_id": 2,
+                  "variable_name": "r0",
+                  "value": {
+                    "Remainder": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 128
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "variable_id": 3,
+                  "variable_name": "negative",
+                  "value": {
+                    "LessThan": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      },
+                      "right": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "variable_id": 4,
+                  "variable_name": "r",
+                  "value": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Add": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 128
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "variable_id": 5,
+                  "variable_name": "q",
+                  "value": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Subtract": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 1
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                }
+              ],
+              "body": {
+                "Match": {
+                  "target": {
+                    "Or": {
+                      "left": {
+                        "And": {
+                          "left": {
+                            "Equal": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 5
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 0
+                                }
+                              }
+                            }
+                          },
+                          "right": {
+                            "LessThan": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 64
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "right": {
+                        "And": {
+                          "left": {
+                            "Equal": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 5
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": -1
+                                }
+                              }
+                            }
+                          },
+                          "right": {
+                            "LessThan": {
+                              "left": {
+                                "Number": {
+                                  "value": 63
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "arms": [
+                    {
+                      "tag": "true",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "ListLiteral": {
+                          "items": [
+                            {
+                              "Variable": {
+                                "variable_id": 4
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "tag": "false",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "ListConcat": {
+                          "left": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Add": {
+                                    "left": {
+                                      "Variable": {
+                                        "variable_id": 4
+                                      }
+                                    },
+                                    "right": {
+                                      "Number": {
+                                        "value": 128
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.signed-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 5
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "default": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "unsigned-leb128",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "n",
+              "type": "number"
+            }
+          ],
+          "return_type": {
+            "list": "number"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Encode a non-negative integer as unsigned LEB128 bytes (for Wasm section and body sizes)"
+        },
+        {
+          "language": "ja",
+          "text": "0 以上の整数を符号なし LEB128 のバイト列にする (Wasm のセクションや関数本体の長さ用)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "n"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 0
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 128
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "ListLiteral": {
+                      "items": [
+                        {
+                          "Variable": {
+                            "variable_id": 0
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "ListConcat": {
+                      "left": {
+                        "ListLiteral": {
+                          "items": [
+                            {
+                              "Add": {
+                                "left": {
+                                  "Remainder": {
+                                    "left": {
+                                      "Variable": {
+                                        "variable_id": 0
+                                      }
+                                    },
+                                    "right": {
+                                      "Number": {
+                                        "value": 128
+                                      }
+                                    }
+                                  }
+                                },
+                                "right": {
+                                  "Number": {
+                                    "value": 128
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.unsigned-leb128"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "n",
+                              "value": {
+                                "Divide": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 128
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
       "name": "check-union-exhaustiveness",
       "part_type": {
         "function": {
@@ -32059,118 +33023,39 @@
                   "variable_id": 10,
                   "variable_name": "n",
                   "body": {
-                    "Match": {
-                      "target": {
-                        "LessThan": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 10
+                    "ListConcat": {
+                      "left": {
+                        "ListLiteral": {
+                          "items": [
+                            {
+                              "Number": {
+                                "value": 66
+                              }
                             }
-                          },
-                          "right": {
-                            "Number": {
-                              "value": 64
-                            }
-                          }
+                          ]
                         }
                       },
-                      "arms": [
-                        {
-                          "tag": "true",
-                          "variable_id": null,
-                          "variable_name": null,
-                          "body": {
-                            "Match": {
-                              "target": {
-                                "LessThan": {
-                                  "left": {
-                                    "Number": {
-                                      "value": -1
-                                    }
-                                  },
-                                  "right": {
-                                    "Variable": {
-                                      "variable_id": 10
-                                    }
-                                  }
-                                }
-                              },
-                              "arms": [
-                                {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
-                                  "body": {
-                                    "ListLiteral": {
-                                      "items": [
-                                        {
-                                          "Number": {
-                                            "value": 66
-                                          }
-                                        },
-                                        {
-                                          "Variable": {
-                                            "variable_id": 10
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                },
-                                {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
-                                  "body": {
-                                    "ListLiteral": {
-                                      "items": [
-                                        {
-                                          "Number": {
-                                            "value": 66
-                                          }
-                                        },
-                                        {
-                                          "Number": {
-                                            "value": 127
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ],
-                              "default": null
+                      "right": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.signed-leb128"
+                              }
                             }
-                          }
-                        },
-                        {
-                          "tag": "false",
-                          "variable_id": null,
-                          "variable_name": null,
-                          "body": {
-                            "ListLiteral": {
-                              "items": [
-                                {
-                                  "Number": {
-                                    "value": 66
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 128
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 1
-                                  }
+                          },
+                          "arguments": [
+                            {
+                              "name": "n",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 10
                                 }
-                              ]
+                              }
                             }
-                          }
+                          ]
                         }
-                      ],
-                      "default": null
+                      }
                     }
                   }
                 },
@@ -32698,34 +33583,34 @@
                   "body": {
                     "ListConcat": {
                       "left": {
-                        "ListConcat": {
-                          "left": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.compile-expr-instructions"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 17
-                                        }
-                                      },
-                                      "key": "left"
-                                    }
-                                  }
-                                }
-                              ]
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
                             }
                           },
-                          "right": {
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 17
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
                             "Call": {
                               "function": {
                                 "PartReference": {
@@ -32750,18 +33635,23 @@
                                 }
                               ]
                             }
-                          }
-                        }
-                      },
-                      "right": {
-                        "ListLiteral": {
-                          "items": [
-                            {
-                              "Number": {
-                                "value": 81
-                              }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 81
+                                  }
+                                },
+                                {
+                                  "Number": {
+                                    "value": 173
+                                  }
+                                }
+                              ]
                             }
-                          ]
+                          }
                         }
                       }
                     }
@@ -32771,82 +33661,6 @@
                   "tag": "less_than",
                   "variable_id": 18,
                   "variable_name": "bin",
-                  "body": {
-                    "ListConcat": {
-                      "left": {
-                        "ListConcat": {
-                          "left": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.compile-expr-instructions"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 18
-                                        }
-                                      },
-                                      "key": "left"
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          },
-                          "right": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.compile-expr-instructions"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 18
-                                        }
-                                      },
-                                      "key": "right"
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        }
-                      },
-                      "right": {
-                        "ListLiteral": {
-                          "items": [
-                            {
-                              "Number": {
-                                "value": 83
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                },
-                {
-                  "tag": "match",
-                  "variable_id": 19,
-                  "variable_name": "match_e",
                   "body": {
                     "ListConcat": {
                       "left": {
@@ -32865,10 +33679,10 @@
                                 "RecordGet": {
                                   "record": {
                                     "Variable": {
-                                      "variable_id": 19
+                                      "variable_id": 18
                                     }
                                   },
-                                  "key": "target"
+                                  "key": "left"
                                 }
                               }
                             }
@@ -32878,22 +33692,98 @@
                       "right": {
                         "ListConcat": {
                           "left": {
-                            "ListLiteral": {
-                              "items": [
-                                {
-                                  "Number": {
-                                    "value": 4
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-expr-instructions"
                                   }
-                                },
+                                }
+                              },
+                              "arguments": [
                                 {
-                                  "Number": {
-                                    "value": 126
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 18
+                                        }
+                                      },
+                                      "key": "right"
+                                    }
                                   }
                                 }
                               ]
                             }
                           },
                           "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 83
+                                  }
+                                },
+                                {
+                                  "Number": {
+                                    "value": 173
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "match",
+                  "variable_id": 19,
+                  "variable_name": "match_e",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.is-bool-match-arms"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "arms",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 19
+                                    }
+                                  },
+                                  "key": "arms"
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "Number": {
+                                  "value": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
                             "ListConcat": {
                               "left": {
                                 "Call": {
@@ -32908,45 +33798,13 @@
                                     {
                                       "name": "expr",
                                       "value": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.match-arm-body"
-                                              }
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 19
                                             }
                                           },
-                                          "arguments": [
-                                            {
-                                              "name": "arms",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 19
-                                                    }
-                                                  },
-                                                  "key": "arms"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "target_tag",
-                                              "value": {
-                                                "String": {
-                                                  "value": "true"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "index",
-                                              "value": {
-                                                "Number": {
-                                                  "value": 0
-                                                }
-                                              }
-                                            }
-                                          ]
+                                          "key": "target"
                                         }
                                       }
                                     }
@@ -32960,7 +33818,17 @@
                                       "items": [
                                         {
                                           "Number": {
-                                            "value": 5
+                                            "value": 167
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 4
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 126
                                           }
                                         }
                                       ]
@@ -33007,7 +33875,7 @@
                                                       "name": "target_tag",
                                                       "value": {
                                                         "String": {
-                                                          "value": "false"
+                                                          "value": "true"
                                                         }
                                                       }
                                                     },
@@ -33027,14 +33895,91 @@
                                         }
                                       },
                                       "right": {
-                                        "ListLiteral": {
-                                          "items": [
-                                            {
-                                              "Number": {
-                                                "value": 11
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 5
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.compile-expr-instructions"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "expr",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.match-arm-body"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "arms",
+                                                              "value": {
+                                                                "RecordGet": {
+                                                                  "record": {
+                                                                    "Variable": {
+                                                                      "variable_id": 19
+                                                                    }
+                                                                  },
+                                                                  "key": "arms"
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "target_tag",
+                                                              "value": {
+                                                                "String": {
+                                                                  "value": "false"
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "index",
+                                                              "value": {
+                                                                "Number": {
+                                                                  "value": 0
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "right": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "Number": {
+                                                        "value": 11
+                                                      }
+                                                    }
+                                                  ]
+                                                }
                                               }
                                             }
-                                          ]
+                                          }
                                         }
                                       }
                                     }
@@ -33043,8 +33988,25 @@
                               }
                             }
                           }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 0
+                                  }
+                                }
+                              ]
+                            }
+                          }
                         }
-                      }
+                      ],
+                      "default": null
                     }
                   }
                 },
@@ -33055,34 +34017,34 @@
                   "body": {
                     "ListConcat": {
                       "left": {
-                        "ListConcat": {
-                          "left": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.compile-expr-instructions"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 20
-                                        }
-                                      },
-                                      "key": "left"
-                                    }
-                                  }
-                                }
-                              ]
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
                             }
                           },
-                          "right": {
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 20
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
                             "Call": {
                               "function": {
                                 "PartReference": {
@@ -33107,18 +34069,18 @@
                                 }
                               ]
                             }
-                          }
-                        }
-                      },
-                      "right": {
-                        "ListLiteral": {
-                          "items": [
-                            {
-                              "Number": {
-                                "value": 113
-                              }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 131
+                                  }
+                                }
+                              ]
                             }
-                          ]
+                          }
                         }
                       }
                     }
@@ -33131,34 +34093,34 @@
                   "body": {
                     "ListConcat": {
                       "left": {
-                        "ListConcat": {
-                          "left": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.compile-expr-instructions"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 21
-                                        }
-                                      },
-                                      "key": "left"
-                                    }
-                                  }
-                                }
-                              ]
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
                             }
                           },
-                          "right": {
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 21
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
                             "Call": {
                               "function": {
                                 "PartReference": {
@@ -33183,18 +34145,18 @@
                                 }
                               ]
                             }
-                          }
-                        }
-                      },
-                      "right": {
-                        "ListLiteral": {
-                          "items": [
-                            {
-                              "Number": {
-                                "value": 114
-                              }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 132
+                                  }
+                                }
+                              ]
                             }
-                          ]
+                          }
                         }
                       }
                     }
@@ -33237,17 +34199,12 @@
                           "items": [
                             {
                               "Number": {
-                                "value": 66
+                                "value": 80
                               }
                             },
                             {
                               "Number": {
-                                "value": 0
-                              }
-                            },
-                            {
-                              "Number": {
-                                "value": 81
+                                "value": 173
                               }
                             }
                           ]
@@ -33369,17 +34326,336 @@
                   }
                 },
                 {
+                  "tag": "not_equal",
+                  "variable_id": 40,
+                  "variable_name": "bin",
+                  "body": {
+                    "ListConcat": {
+                      "left": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 40
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-expr-instructions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 40
+                                        }
+                                      },
+                                      "key": "right"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 82
+                                  }
+                                },
+                                {
+                                  "Number": {
+                                    "value": 173
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "less_than_or_equal",
+                  "variable_id": 41,
+                  "variable_name": "bin",
+                  "body": {
+                    "ListConcat": {
+                      "left": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 41
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-expr-instructions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 41
+                                        }
+                                      },
+                                      "key": "right"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 87
+                                  }
+                                },
+                                {
+                                  "Number": {
+                                    "value": 173
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "greater_than",
+                  "variable_id": 42,
+                  "variable_name": "bin",
+                  "body": {
+                    "ListConcat": {
+                      "left": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 42
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-expr-instructions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 42
+                                        }
+                                      },
+                                      "key": "right"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 85
+                                  }
+                                },
+                                {
+                                  "Number": {
+                                    "value": 173
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "greater_than_or_equal",
+                  "variable_id": 43,
+                  "variable_name": "bin",
+                  "body": {
+                    "ListConcat": {
+                      "left": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 43
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-expr-instructions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 43
+                                        }
+                                      },
+                                      "key": "right"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 89
+                                  }
+                                },
+                                {
+                                  "Number": {
+                                    "value": 173
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
                   "tag": "_",
                   "variable_id": 99,
                   "variable_name": "_",
                   "body": {
                     "ListLiteral": {
                       "items": [
-                        {
-                          "Number": {
-                            "value": 66
-                          }
-                        },
                         {
                           "Number": {
                             "value": 0
@@ -33436,6 +34712,31 @@
           "body": {
             "Let": {
               "bindings": [
+                {
+                  "variable_id": 900,
+                  "variable_name": "is_bool",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.is-boolean-expression"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
                 {
                   "variable_id": 6,
                   "variable_name": "type_section",
@@ -33590,44 +34891,107 @@
                           "variable_id": 21,
                           "variable_name": "_",
                           "body": {
-                            "ListLiteral": {
-                              "items": [
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              },
+                              "arms": [
                                 {
-                                  "Number": {
-                                    "value": 1
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 5
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 96
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 127
+                                          }
+                                        }
+                                      ]
+                                    }
                                   }
                                 },
                                 {
-                                  "Number": {
-                                    "value": 5
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 1
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 96
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 0
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 1
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 126
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 5
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 96
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 126
+                                          }
+                                        }
+                                      ]
+                                    }
                                   }
                                 }
-                              ]
+                              ],
+                              "default": null
                             }
                           }
                         }
@@ -33760,8 +35124,61 @@
                           "variable_id": 23,
                           "variable_name": "_",
                           "body": {
-                            "ListLiteral": {
-                              "items": []
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 5
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 3
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 2
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": []
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
                             }
                           }
                         }
@@ -34269,59 +35686,237 @@
                           "variable_id": 25,
                           "variable_name": "_",
                           "body": {
-                            "ListLiteral": {
-                              "items": [
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              },
+                              "arms": [
                                 {
-                                  "Number": {
-                                    "value": 7
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 7
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 28
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 3
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 101
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 118
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 97
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 108
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 117
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 97
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 116
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 101
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 6
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 109
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 101
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 109
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 111
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 114
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 121
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 2
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 4
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 109
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 97
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 105
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 110
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        }
+                                      ]
+                                    }
                                   }
                                 },
                                 {
-                                  "Number": {
-                                    "value": 8
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 1
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 4
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 109
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 97
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 105
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 110
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 0
-                                  }
-                                },
-                                {
-                                  "Number": {
-                                    "value": 0
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 7
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 4
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 109
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 97
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 105
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 110
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        }
+                                      ]
+                                    }
                                   }
                                 }
-                              ]
+                              ],
+                              "default": null
                             }
                           }
                         }
@@ -45941,8 +47536,121 @@
                           "variable_id": 99,
                           "variable_name": "_",
                           "body": {
-                            "ListLiteral": {
-                              "items": []
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 11
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 15
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 65
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 128
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 11
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 1
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": []
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
                             }
                           }
                         }
@@ -45955,76 +47663,157 @@
                   "variable_id": 1,
                   "variable_name": "full_instr",
                   "value": {
-                    "ListAppend": {
-                      "list": {
-                        "Call": {
-                          "function": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.compile-expr-instructions"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "expr",
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 0
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 900
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "ListConcat": {
+                              "left": {
+                                "ListLiteral": {
+                                  "items": [
+                                    {
+                                      "Number": {
+                                        "value": 65
+                                      }
+                                    },
+                                    {
+                                      "Number": {
+                                        "value": 128
+                                      }
+                                    },
+                                    {
+                                      "Number": {
+                                        "value": 8
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "right": {
+                                "ListConcat": {
+                                  "left": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.compile-expr-instructions"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "right": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 60
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 0
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 65
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 128
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 11
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
                                 }
                               }
                             }
-                          ]
-                        }
-                      },
-                      "item": {
-                        "Number": {
-                          "value": 11
-                        }
-                      }
-                    }
-                  }
-                },
-                {
-                  "variable_id": 2,
-                  "variable_name": "body_len",
-                  "value": {
-                    "Add": {
-                      "left": {
-                        "ListLength": {
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "ListAppend": {
+                              "list": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.compile-expr-instructions"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "item": {
+                                "Number": {
+                                  "value": 11
+                                }
+                              }
                             }
                           }
                         }
-                      },
-                      "right": {
-                        "Number": {
-                          "value": 3
-                        }
-                      }
+                      ],
+                      "default": null
                     }
                   }
                 },
                 {
-                  "variable_id": 3,
-                  "variable_name": "code_payload",
+                  "variable_id": 901,
+                  "variable_name": "body",
                   "value": {
                     "ListConcat": {
                       "left": {
                         "ListLiteral": {
                           "items": [
-                            {
-                              "Number": {
-                                "value": 1
-                              }
-                            },
-                            {
-                              "Variable": {
-                                "variable_id": 2
-                              }
-                            },
                             {
                               "Number": {
                                 "value": 1
@@ -46052,6 +47841,68 @@
                   }
                 },
                 {
+                  "variable_id": 2,
+                  "variable_name": "body_len",
+                  "value": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 901
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "variable_id": 3,
+                  "variable_name": "code_payload",
+                  "value": {
+                    "ListConcat": {
+                      "left": {
+                        "ListLiteral": {
+                          "items": [
+                            {
+                              "Number": {
+                                "value": 1
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.unsigned-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "Variable": {
+                              "variable_id": 901
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
                   "variable_id": 4,
                   "variable_name": "code_section",
                   "value": {
@@ -46063,22 +47914,42 @@
                               "Number": {
                                 "value": 10
                               }
-                            },
-                            {
-                              "ListLength": {
-                                "value": {
-                                  "Variable": {
-                                    "variable_id": 3
-                                  }
-                                }
-                              }
                             }
                           ]
                         }
                       },
                       "right": {
-                        "Variable": {
-                          "variable_id": 3
+                        "ListConcat": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.unsigned-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "ListLength": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          }
                         }
                       }
                     }

@@ -53,8 +53,66 @@ pub type VerifiedCommitEvent = (
     Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
 );
 
+/// definy 製コンパイラを構成する core のパーツ. `core.compile-to-wasm` からパーツ参照をたどって集める
+pub fn self_hosted_compiler_parts() -> Vec<definy_event::event::ModulePartEntry> {
+    let account = crate::seed::builtin_system_account_id();
+    let core_module_id = derive_module_id(&account, "core");
+    let core_parts = crate::seed::get_builtin_module_seeds()
+        .iter()
+        .find(|seed| &*seed.module_name == "core")
+        .map(|seed| seed.parts.as_slice())
+        .unwrap_or_default();
+    let mut collected = Vec::<definy_event::event::ModulePartEntry>::new();
+    let mut queue = vec![derive_module_part_id(&core_module_id, "compile-to-wasm")];
+    while let Some(part_id) = queue.pop() {
+        let Some(part) = core_parts
+            .iter()
+            .find(|part| derive_module_part_id(&core_module_id, &part.name) == part_id)
+        else {
+            continue;
+        };
+        if collected.iter().any(|existing| existing.name == part.name) {
+            continue;
+        }
+        if let Some(expression) = &part.expression {
+            collect_part_references(expression, &mut queue);
+        }
+        collected.push(part.clone());
+    }
+    collected
+}
+
+fn collect_part_references(expression: &Expression, out: &mut Vec<EventHashId>) {
+    // 式の種類が多いので serde の表現をたどる
+    fn walk(value: &serde_json::Value, out: &mut Vec<EventHashId>) {
+        match value {
+            serde_json::Value::Object(fields) => {
+                if let Some(reference) = fields.get("PartReference")
+                    && let Ok(hash) = serde_json::from_value::<EventHashId>(
+                        reference["part_definition_event_hash"].clone(),
+                    )
+                {
+                    out.push(hash);
+                }
+                fields.values().for_each(|value| walk(value, out));
+            }
+            serde_json::Value::Array(items) => items.iter().for_each(|item| walk(item, out)),
+            _ => {}
+        }
+    }
+    if let Ok(value) = serde_json::to_value(expression) {
+        walk(&value, out);
+    }
+}
+
 /// 自己記述コンパイラパーツ (`core.compile-to-wasm`) によるメタ循環コンパイルを試行します。
-fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfHostedCompileError> {
+///
+/// Rust 製コンパイラへのフォールバックはしません. definy 製コンパイラが対応していない式も
+/// エラーにならず誤った Wasm になることがあるので, 結果は実行して確かめてください
+/// (`tests/self_hosted_compiler_coverage.rs`)
+pub fn compile_with_self_hosted_compiler(
+    expression: &Expression,
+) -> Result<Vec<u8>, SelfHostedCompileError> {
     // seed JSON 内のパーツ参照ハッシュはビルトインシステムアカウントの core モジュールを前提とする
     let dummy_account = crate::seed::builtin_system_account_id();
     let core_module_id = derive_module_id(&dummy_account, "core");
@@ -67,24 +125,7 @@ fn try_compile_via_self_hosted(expression: &Expression) -> Result<Vec<u8>, SelfH
         definy_core::self_hosted_ast::expression_to_self_hosted_ast(expression, &expr_type_hash)
             .map_err(SelfHostedCompileError::AstConversion)?;
 
-    // 自己記述コンパイラパーツを準備
-    let compile_instr_part = crate::seed::find_builtin_part("compile-expr-instructions")
-        .expect("builtin part compile-expr-instructions")
-        .clone();
-    let compile_to_wasm_part = crate::seed::find_builtin_part("compile-to-wasm")
-        .expect("builtin part compile-to-wasm")
-        .clone();
-
-    // Bool の match のアーム本体を取り出すために compile-expr-instructions が使う
-    let match_arm_body_part = crate::seed::find_builtin_part("match-arm-body")
-        .expect("builtin part match-arm-body")
-        .clone();
-
-    let parts = vec![
-        compile_instr_part,
-        compile_to_wasm_part,
-        match_arm_body_part,
-    ];
+    let parts = self_hosted_compiler_parts();
 
     // 評価器で直接参照可能なコミットイベント列を構築
     let dummy_commit_hash = EventHashId::from_bytes(&[200u8; 32]);
@@ -225,7 +266,7 @@ pub fn compile_expression_to_wasm(
 ) -> Result<Vec<u8>, SelfHostedCompileError> {
     // 1. 自己記述コンパイラ (core.compile-to-wasm) が対応している構文群であればメタ循環コンパイルを実行
     if is_supported_by_self_hosted_compiler(expression)
-        && let Ok(bytes) = try_compile_via_self_hosted(expression)
+        && let Ok(bytes) = compile_with_self_hosted_compiler(expression)
     {
         return Ok(bytes);
     }
