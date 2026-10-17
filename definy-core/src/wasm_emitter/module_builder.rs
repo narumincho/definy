@@ -36,14 +36,21 @@ pub(crate) fn assemble_wasm_module(
     encode_u32_leb128(&mut table_section, num_funcs.max(1) as u32);
     emit_section(&mut module, TABLE_SECTION, &table_section);
 
-    // 4. Memory Section: 1 memory, min 16 pages (1MB)
-    let memory_section = vec![1, 0x00, 16];
+    // 静的データ (1024 番地から) が HEAP_START_OFFSET を超えるときは, その後ろからヒープを始める.
+    // 以前は常に HEAP_START_OFFSET から始めていたため, 大きなリテラル (definy 製コンパイラに渡す
+    // コンパイラ自身の式など) を含むとヒープの確保で静的データを上書きしていた
+    let heap_start = HEAP_START_OFFSET.max((1024 + static_data.len() as u32).next_multiple_of(8));
+
+    // 4. Memory Section: 1 memory, min 16 pages (1MB) or enough for the static data
+    let min_pages = 16.max(heap_start.div_ceil(65536) + 1);
+    let mut memory_section = vec![1, 0x00];
+    encode_u32_leb128(&mut memory_section, min_pages);
     emit_section(&mut module, MEMORY_SECTION, &memory_section);
 
     // 5. Global Section:
-    // Global 0: mut i32 = HEAP_START_OFFSET (bump heap pointer)
+    // Global 0: mut i32 = heap_start (bump heap pointer)
     let mut global_section = vec![1, I32, 1, I32_CONST];
-    encode_i32_sleb128(&mut global_section, HEAP_START_OFFSET as i32);
+    encode_i32_sleb128(&mut global_section, heap_start as i32);
     global_section.push(END);
     emit_section(&mut module, GLOBAL_SECTION, &global_section);
 
