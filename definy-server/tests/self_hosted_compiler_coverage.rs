@@ -21,7 +21,7 @@ use serde_json::{Value as Json, json};
 const CASES_JSON: &str = include_str!("../../conformance/eval_cases.json");
 
 /// 期待値どおりの結果になったケースの数の下限. 対応範囲を広げたら上げる
-const MIN_PASSING_CASES: usize = 26;
+const MIN_PASSING_CASES: usize = 28;
 
 /// 評価器の値を, テストケースの期待値と同じ正規化表現へ変換する (`eval_conformance.rs` と同じ)
 fn normalize(value: &Value) -> Json {

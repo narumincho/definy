@@ -235,7 +235,7 @@ cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
 - `self_hosted_compiler_self_compile_gaps`: definy 製コンパイラ自身のパーツが使う式の種類のうち,
   コンパイラが扱えないものを一覧します
 
-### 適合テストの結果: 59 ケース中 26 ケースが期待値どおり
+### 適合テストの結果: 65 ケース中 28 ケースが期待値どおり
 
 2026-10-17 の修正前は 15 ケース (うち 2 つは偶然の一致) でした。修正内容は下の「値の表現」を参照。
 
@@ -246,7 +246,7 @@ cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
 | `let` / 変数 | 通る |
 | 真偽値・比較 (`equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal`)・論理演算 (`not` `and` `or`) | 数値どうしなら通る。文字列の `equal` は未対応 (Wasm の検証で type mismatch) |
 | Bool の `match` | アームが数値・真偽値なら通る。アームが文字列などだと type mismatch |
-| 文字列・レコード・バリアントのリテラル | 式全体がそれ 1 つのときだけ通る (データセグメントに置く) |
+| 文字列・レコード・バリアントのリテラル | 式全体がそれ 1 つで, レコードのフィールドが 1 つか 2 つ, 値 (バリアントのペイロード) が数値・文字列・真偽値のリテラルのときだけ通る (コンパイル時にデータセグメントに書く。`core.is-data-literal`)。それ以外 (計算した値・入れ子・フィールド 3 つ以上) は `unreachable`。以前は黙って誤った値 (`{a: 1 + 2}` が `{a: 0}` など) を返していた。数値は `core.i64-le-bytes` で 8 バイトの 2 の補数で書く |
 | バリアントの `match` (ペイロードの束縛を含む) | 未対応 (`unreachable`) |
 | リスト (`list` と `list_*`), `record_get`, 文字列操作 (`string_*`) | 未対応 (`unreachable`) |
 | 関数 (`function`), 呼び出し (`call`), パーツ参照 (`part_reference`) | 未対応 (`unreachable`)。標準ライブラリやサンプルのパーツを呼ぶケースはすべて失敗 |
