@@ -229,6 +229,8 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let mut checked_generation = use_signal(|| usize::MAX);
     let mut check_task = use_signal(|| None::<dioxus::core::Task>);
     let generation = state.event_cache.len();
+    // フックなので use_effect の中ではなく, ここで取る
+    let state_sig = use_context::<Signal<AppState>>();
     use_effect(use_reactive!(|generation| {
         if *checked_generation.peek() == generation {
             return;
@@ -237,7 +239,6 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
         if let Some(task) = check_task.take() {
             task.cancel();
         }
-        let state_sig = use_context::<Signal<AppState>>();
         check_task.set(Some(spawn(crate::self_hosted_type_check::check_all_parts(
             state_sig,
         ))));

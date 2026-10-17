@@ -186,6 +186,66 @@ pub async fn check_all_parts(state_sig: Signal<AppState>) {
     }
 }
 
+/// 変更ページのコミット前の検査で見つかった, 1 つのパーツの問題
+#[derive(Debug, Clone, PartialEq)]
+pub struct CommitProblem {
+    pub part_name: String,
+    pub message: String,
+}
+
+/// 作業中の変更をモジュールのコミットにしたときに, サーバーがコミットを受け付けるかを
+/// サーバーと同じ検査 ([`definy_core::self_hosted_type_check::check_module_commit_parts`]) で調べる.
+/// 型チェッカーのパーツやモジュールが見つからなければ `None`.
+///
+/// 複数のモジュールにまたがるときは, 各モジュールを今の取得済みのイベントに対して検査する
+/// (先にコミットする他のモジュールの変更は型環境に入らない)
+pub fn check_module_changes(
+    state: &AppState,
+    module_definition_event_hash: &EventHashId,
+    changes: &[&crate::working_changes::PartChange],
+    language: Language,
+) -> Option<Vec<CommitProblem>> {
+    let snapshots = collect_part_snapshots(state);
+    let core = find_core_parts(&snapshots)?;
+    let core_owner = snapshots
+        .iter()
+        .find(|snapshot| snapshot.definition_event_hash == core.type_check_against)?
+        .account_id
+        .clone();
+    let committer = state
+        .current_key
+        .as_ref()
+        .map(|key| definy_event::event::AccountId(key.verifying_key()));
+    let definy_event::event::EventContent::ModuleCommit(commit) =
+        crate::working_changes::build_module_commit(
+            state,
+            module_definition_event_hash,
+            changes,
+            "",
+        )?
+    else {
+        return None;
+    };
+    let events = state.events_with_hash();
+    let outcomes = definy_core::self_hosted_type_check::check_module_commit_parts(
+        &commit,
+        module_definition_event_hash,
+        &events,
+        &core,
+        committer.as_ref() == Some(&core_owner),
+    );
+    Some(
+        outcomes
+            .into_iter()
+            .filter(|(_, outcome)| outcome != &SelfHostedTypeCheckOutcome::Ok)
+            .map(|(part_name, outcome)| CommitProblem {
+                message: outcome_message(&outcome, &snapshots, language),
+                part_name,
+            })
+            .collect(),
+    )
+}
+
 /// ブラウザのイベントループに一度処理を返す (`setTimeout(0)`)
 pub async fn yield_to_browser() {
     sleep_ms(0).await;

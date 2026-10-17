@@ -35,6 +35,8 @@ pub(crate) fn PartEditorCard(
     // 編集はその都度 作業中の変更 (localStorage) に記録する. コミット済みと同じ内容に戻したら記録から消す.
     // 作業中の変更の読み込みが終わってから, 記録してある変更があればそれで編集欄を置き換える
     let mut restored = use_signal(|| false);
+    // フックなので use_effect の中ではなく, ここで取る
+    let state_sig_for_record = try_use_context::<Signal<AppState>>();
     {
         let definition_event_hash = definition_event_hash.clone();
         use_effect(move || {
@@ -79,7 +81,7 @@ pub(crate) fn PartEditorCard(
             let Some(module) = module_hash() else {
                 return;
             };
-            let Some(state_sig) = try_use_context::<Signal<AppState>>() else {
+            let Some(state_sig) = state_sig_for_record else {
                 return;
             };
             let state = state_sig.peek();
@@ -611,6 +613,8 @@ fn SelfHostedTypeCheckVerdict(
     // None: 検査中 (または検査前)
     let mut verdict = use_signal(|| None::<(bool, String)>);
     let mut check_task = use_signal(|| None::<dioxus::core::Task>);
+    // フックなので use_effect の中ではなく, ここで取る
+    let state_sig = use_context::<Signal<AppState>>();
     use_effect(move || {
         let expression = expression();
         let part_type = part_type_expr()
@@ -623,7 +627,6 @@ fn SelfHostedTypeCheckVerdict(
         let (Some(expression), Some(part_type)) = (expression, part_type) else {
             return;
         };
-        let state_sig = use_context::<Signal<AppState>>();
         check_task.set(Some(spawn(async move {
             crate::self_hosted_type_check::sleep_ms(500).await;
             let state = state_sig.peek().clone();

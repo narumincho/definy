@@ -92,6 +92,22 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 - localStorage は SSR の HTML と揃えるため, 初期化のときではなく `Workbench` の `use_effect` で読み込む.
   読み込みが終わる (`WORKING_CHANGES_LOADED`) までパーツ詳細は記録しない (空の編集で保存済みの変更を消さないため)
 - 未コミットの変更があるパーツはエクスプローラーに `M` を出し, アクティビティバーの「変更」とステータスバーに件数を出す
+- 変更ページはコミットする前に, サーバーと同じ検査をする (`self_hosted_type_check::check_module_changes`).
+  コミットに含める変更をモジュールごとの `ModuleCommitEvent` にし (`build_module_commit`),
+  サーバーが受け付けるときと同じ `definy_core::self_hosted_type_check::check_module_commit_parts` に渡す.
+  型エラーがあればモジュールの下にパーツ名と理由を出し, コミットボタンを押せなくする
+  - パーツ詳細の「型チェック (definy 製)」はコミット済みの型環境で編集中のパーツだけを検査するので,
+    パーツの型を変えたときに, それを参照する別のパーツ (式は変えていない) が壊れることは分からない.
+    変更ページの検査は型が変わればモジュールの全パーツを検査するので, これも見つかる
+  - 複数のモジュールにまたがるときは, 各モジュールを今の取得済みのイベントに対して検査する
+    (先にコミットする別のモジュールの変更は型環境に入らない)
+  - 変更・選択・取得済みのイベントの数・ログイン中のアカウントが変わったら 300ms 待ってから検査し直す.
+    ログイン中のアカウントが core の所有者 (システムアカウント) なら, サーバーと同じく式の無い組み込みパーツを受け入れる
+- 動作確認のノウハウ (2026-10 に変更ページのコミット前の検査を確かめたとき)
+  - 作業中の変更は localStorage の `definy_working_changes` に `working_changes::encode` の結果を入れれば再現できる.
+    `PartChange` を組み立てて `encode` を表示する使い捨ての example を `cargo run -p definy-ui --example ...` で動かし,
+    その文字列をブラウザの `localStorage.setItem` で入れて `/changes` を開く
+  - wasm の panic のバックトレースに関数名を出すには `dx serve` に `--keep-names` を付ける
 - コミットがサーバーに拒否されたら, 理由 (`invalid_argument: part '...': type error: ...` など) を
   「変更のコミットに失敗しました」の後ろに出す (`LocalEventRecord::last_error`)
 

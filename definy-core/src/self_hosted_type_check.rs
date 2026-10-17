@@ -401,14 +401,8 @@ pub fn latest_parts(
 }
 
 /// モジュールのコミットを自己ホスト型チェッカーで検査する.
-///
-/// - 型環境は `previous_events` から求めた全モジュールの最新のパーツに, このコミットのパーツを重ねたもの
-/// - パーツの型が 1 つも変わっていなければ, 式が変わったパーツ (と新しいパーツ) だけを検査する.
-///   型が変わったら, それを参照するパーツに影響するのでモジュールの全パーツを検査する
-/// - `allow_builtin_parts` が真なら, 式の無いパーツや `core.expression` で表せないパーツ
-///   (コンパイラ組み込み) を検査せずに受け入れる. システムアカウントのビルトインモジュール用
-///
-/// `commit` のパーツの式は content hash から埋めておくこと
+/// 型エラーがあれば, パーツごとの理由を改行でつないで返す.
+/// 検査の内容は [`check_module_commit_parts`] を参照
 pub fn check_module_commit(
     commit: &definy_event::event::ModuleCommitEvent,
     module_id: &EventHashId,
@@ -416,6 +410,56 @@ pub fn check_module_commit(
     core: &SelfHostedCoreParts,
     allow_builtin_parts: bool,
 ) -> Result<(), String> {
+    let errors = check_module_commit_parts(
+        commit,
+        module_id,
+        previous_events,
+        core,
+        allow_builtin_parts,
+    )
+    .into_iter()
+    .filter_map(|(name, outcome)| commit_error_message(&name, &outcome))
+    .collect::<Vec<_>>();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("\n"))
+    }
+}
+
+/// [`check_module_commit_parts`] の結果を, コミットを拒否する理由の 1 行にする. 問題なければ `None`
+pub fn commit_error_message(name: &str, outcome: &SelfHostedTypeCheckOutcome) -> Option<String> {
+    match outcome {
+        SelfHostedTypeCheckOutcome::Ok => None,
+        SelfHostedTypeCheckOutcome::TypeError(error) => {
+            Some(format!("part '{name}': type error: {error}"))
+        }
+        SelfHostedTypeCheckOutcome::Unsupported(message) => {
+            Some(format!("part '{name}': not supported: {message}"))
+        }
+        SelfHostedTypeCheckOutcome::CheckerFailed(message) => Some(format!(
+            "part '{name}': type checker failed: {}",
+            message.lines().next().unwrap_or_default()
+        )),
+    }
+}
+
+/// モジュールのコミットを自己ホスト型チェッカーで検査し, 検査したパーツの名前と結果を返す.
+/// サーバーがコミットを受け付けるかの判定と, UI の変更ページのコミット前の検査が同じ関数を使う.
+///
+/// - 型環境は `previous_events` から求めた全モジュールの最新のパーツに, このコミットのパーツを重ねたもの
+/// - パーツの型が 1 つも変わっていなければ, 式が変わったパーツ (と新しいパーツ) だけを検査する.
+///   型が変わったら, それを参照するパーツに影響するのでモジュールの全パーツを検査する
+/// - `allow_builtin_parts` が真なら, 式の無いパーツや `core.expression` で表せないパーツ
+///   (コンパイラ組み込み) を検査せずに受け入れる (結果に含めない). システムアカウントのビルトインモジュール用
+/// - `commit` のパーツの式が無く content hash だけのときは, `previous_events` に埋め込まれた同じ式で埋める
+pub fn check_module_commit_parts(
+    commit: &definy_event::event::ModuleCommitEvent,
+    module_id: &EventHashId,
+    previous_events: &[crate::EventWithHash],
+    core: &SelfHostedCoreParts,
+    allow_builtin_parts: bool,
+) -> Vec<(String, SelfHostedTypeCheckOutcome)> {
     let mut parts = latest_parts(previous_events);
     let previous = parts
         .iter()
@@ -427,22 +471,29 @@ pub fn check_module_commit(
         .parts
         .iter()
         .map(|part| {
+            let part_id = definy_event::event::derive_module_part_id(module_id, &part.name);
+            let expression = part.expression.clone().or_else(|| {
+                let content_hash = part.resolve_content_hash()?;
+                crate::wasm_emitter::compiler::resolve_part_expression(
+                    previous_events,
+                    &part_id,
+                    Some(&content_hash),
+                )
+                .cloned()
+            });
             (
-                definy_event::event::derive_module_part_id(module_id, &part.name),
-                part,
+                part_id,
+                LatestPart {
+                    module_id: module_id.clone(),
+                    name: part.name.to_string(),
+                    part_type: part.part_type.clone(),
+                    expression,
+                },
             )
         })
         .collect::<Vec<_>>();
     for (part_id, part) in &committed {
-        parts.insert(
-            part_id.clone(),
-            LatestPart {
-                module_id: module_id.clone(),
-                name: part.name.to_string(),
-                part_type: part.part_type.clone(),
-                expression: part.expression.clone(),
-            },
-        );
+        parts.insert(part_id.clone(), part.clone());
     }
 
     let types_changed = previous.len() != committed.len()
@@ -451,6 +502,7 @@ pub fn check_module_commit(
                 .get(part_id)
                 .is_none_or(|previous| previous.part_type != part.part_type)
         });
+    let mut results = Vec::new();
     let mut to_check = Vec::new();
     for (part_id, part) in &committed {
         let unchanged = previous
@@ -461,18 +513,21 @@ pub fn check_module_commit(
         }
         match (&part.expression, &part.part_type) {
             (Some(expression), Some(part_type)) => to_check.push((
-                part.name.to_string(),
+                part.name.clone(),
                 PartToCheck {
                     expression,
                     part_type,
                 },
             )),
             _ if allow_builtin_parts => {}
-            _ => return Err(format!("part '{}' has no expression or type", part.name)),
+            _ => results.push((
+                part.name.clone(),
+                SelfHostedTypeCheckOutcome::Unsupported("part has no expression or type".into()),
+            )),
         }
     }
     if to_check.is_empty() {
-        return Ok(());
+        return results;
     }
 
     let env = parts
@@ -494,27 +549,15 @@ pub fn check_module_commit(
         core,
         previous_events,
     );
-    let errors = to_check
-        .iter()
-        .zip(outcomes)
-        .filter_map(|((name, _), outcome)| match outcome {
-            SelfHostedTypeCheckOutcome::Ok => None,
-            SelfHostedTypeCheckOutcome::Unsupported(_) if allow_builtin_parts => None,
-            SelfHostedTypeCheckOutcome::TypeError(error) => {
-                Some(format!("part '{name}': type error: {error}"))
-            }
-            SelfHostedTypeCheckOutcome::Unsupported(message) => {
-                Some(format!("part '{name}': not supported: {message}"))
-            }
-            SelfHostedTypeCheckOutcome::CheckerFailed(message) => Some(format!(
-                "part '{name}': type checker failed: {}",
-                message.lines().next().unwrap_or_default()
-            )),
-        })
-        .collect::<Vec<_>>();
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(errors.join("\n"))
-    }
+    results.extend(
+        to_check
+            .into_iter()
+            .zip(outcomes)
+            .filter(|(_, outcome)| {
+                !(allow_builtin_parts
+                    && matches!(outcome, SelfHostedTypeCheckOutcome::Unsupported(_)))
+            })
+            .map(|((name, _), outcome)| (name, outcome)),
+    );
+    results
 }

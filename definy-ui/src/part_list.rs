@@ -15,10 +15,12 @@ pub fn PartListView(state: AppState, context: PageContext) -> Element {
     let account_name_map = state.account_name_map();
     let page_shell_style = crate::layout::page_shell_style("0.8rem");
 
+    // フックなので use_effect の中ではなく, ここで取る
+    #[cfg_attr(not(target_arch = "wasm32"), allow(unused_variables, unused_mut))]
+    let mut state_sig = use_context::<Signal<AppState>>();
     use_effect(move || {
         #[cfg(target_arch = "wasm32")]
         spawn(async move {
-            let mut state_sig = use_context::<Signal<AppState>>();
             if collect_module_snapshots(&state_sig.read()).is_empty() {
                 if let Ok(events) = crate::fetch::get_events(
                     Some(definy_event::event::EventType::ModuleCommit),

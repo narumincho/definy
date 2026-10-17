@@ -83,7 +83,8 @@ definy
 モジュール内パーツ参照の解決と、リスト・直和型構築・レコード・パターンマッチを含む式検査は
 自己記述型チェッカー（`core.type-check` /
 `core.type-check-against`）において検証・実証されています。
-外部モジュールへのパーツ参照解決や、型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
+外部モジュールへのパーツ参照は, Rust 側で作る型環境 (全モジュールの最新のパーツ) を通じて解決しています。
+`core.validate-module` 自体での外部モジュール参照解決や、型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
 
 Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash
 衝突や既存 bytes と異なる内容は拒否します。ModuleCommit
@@ -110,7 +111,12 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    型定義パーツ自体の再帰参照（循環）の規則は未決定です。
 2. **[済] module type environment**: `core.collect-part-type-env` が
    `ModuleCommitEvent` の全パーツの hash と宣言型から環境を作り、
-   `PartReference`・構築子・相互参照を解決します。外部モジュールのパーツ参照は未対応です。
+   `PartReference`・構築子・相互参照を解決します。
+   サーバー・UI・seed の検証で使う型環境 (`definy_core::self_hosted_type_check::check_module_commit_parts`)
+   は全モジュールの最新のパーツから作るので, 他のモジュールのパーツ参照 (ユーザーのモジュールから
+   `core.list-contains-string` を呼ぶなど) も引数の型まで検査します (`commit_check_tests.rs` で確認)。
+   definy 製の `core.validate-module` はモジュール内のパーツだけで環境を作るため外部モジュールを参照できませんが,
+   こちらはテストでだけ使っています。型環境を作る部分を definy に移すのは今後の課題です。
 3. **[済] 式検査の拡張**: list/record の構築と field access、union constructor、match
    の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
    （[ui.md](ui.md) の「型エラー表示」を参照）。
