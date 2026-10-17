@@ -185,7 +185,6 @@ pub fn build_http_request_record_expression(
 
 /// HTTP リクエストを受け取るパーツ（またはハンドラ式）にリクエストを適用する式を、Wasm にコンパイルします。
 ///
-/// 関数でない式は一度評価し、関数値なら `req` 引数で呼び出します（関数以外はそのまま）。
 /// 実行は wasmtime（`execute_wasm_http_response`）でも wasmi（Cloudflare Workers 向け）でもできます。
 pub fn compile_http_request_to_wasm(
     expression: &Expression,
@@ -195,6 +194,22 @@ pub fn compile_http_request_to_wasm(
     headers: &[(String, String)],
     body_bytes: &[u8],
 ) -> Result<Vec<u8>, String> {
+    let target_expr =
+        build_http_request_target_expression(expression, events, method, url, headers, body_bytes)?;
+    crate::wasm_emitter::compile_expression_to_wasm(&target_expr, events)
+}
+
+/// HTTP リクエストを受け取るパーツ（またはハンドラ式）にリクエストを適用する式を作ります。
+///
+/// 関数でない式は一度評価し、関数値なら `req` 引数で呼び出します（関数以外はそのまま）。
+pub fn build_http_request_target_expression(
+    expression: &Expression,
+    events: &[EventWithHash],
+    method: &str,
+    url: &str,
+    headers: &[(String, String)],
+    body_bytes: &[u8],
+) -> Result<Expression, String> {
     let req_expr = build_http_request_record_expression(method, url, headers, body_bytes);
     let call_with = |param_name: &str| {
         Expression::Call(CallExpression {
@@ -205,7 +220,7 @@ pub fn compile_http_request_to_wasm(
             }],
         })
     };
-    let target_expr = if let Expression::Function(ref fn_expr) = *expression {
+    Ok(if let Expression::Function(ref fn_expr) = *expression {
         call_with(
             fn_expr
                 .parameters
@@ -219,6 +234,5 @@ pub fn compile_http_request_to_wasm(
         call_with("req")
     } else {
         expression.clone()
-    };
-    crate::wasm_emitter::compile_expression_to_wasm(&target_expr, events)
+    })
 }

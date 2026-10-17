@@ -295,15 +295,54 @@ stage0 (Rust 製の評価器で definy 製コンパイラを毎回コンパイ�
   (実行時に作った Wasm ではないので制限に当たらない)。ただし stage1 の **出力** は実行時に作った Wasm なので,
   今と同じく wasmi か Dynamic Workers で動かす必要がある
 
-**置き換える前に必要なこと**:
-1. `core.expression` で表せない式 (`BitAnd` などのビット演算, `Constructor`, 型の式) は definy 製コンパイラに渡せない。
-   言語側で `core.expression` に足すか, 当面は Rust 製コンパイラにフォールバックする
-2. HTTP アプリ (`http_app::compile_http_request_to_wasm` と `execute_wasm_http_response`) は, クロージャの形と `table` の
-   エクスポートが Rust 製と同じなので動く見込みだが未確認
-3. 文字列リテラルを 1 バイトずつ書く命令にしているので, 長い HTML などを含むと出力が大きい。データセグメントにまとめたい
-4. 入口を `self_hosted_wasm_compiler::compile_expression_to_wasm` (今は古い対応範囲の判定 `is_supported_by_self_hosted_compiler`
-   で stage0 を使っている) に寄せ, stage1 を使うように切り替える。結果が Rust 製と同じかを適合テストで比べながら進める
+**置き換えの状況** (2026-10-18):
+1. `core.expression` で表せない式 (`BitAnd` などのビット演算, `Constructor`, 型の式) は definy 製コンパイラに渡せないので,
+   Rust 製コンパイラにフォールバックしている (下の「サーバーの本番のコンパイルで stage1 を使う」)。言語側で `core.expression` に足せば外せる
+2. HTTP アプリは stage1 の出力でも動くことを確かめた (下の「HTTP アプリとプレビュー」)
+3. 文字列リテラルを 1 バイトずつ書く命令にしている。データセグメントにまとめたい (未着手)
+4. 入口 `self_hosted_wasm_compiler::compile_expression_to_wasm` は stage1 を使うように切り替えた
 
+### サーバーの本番のコンパイルで stage1 を使う
+
+`definy-server/src/self_hosted_wasm_compiler.rs` に入っています。
+
+- **キャッシュのキー**: `self_hosted_compiler_cache_key()` = `self-hosted-compiler-stage1:` + definy 製コンパイラのパーツ
+  (`self_hosted_compiler_parts()`, `core.compile-to-wasm` から参照をたどった core のパーツ) の CBOR の `ContentHash`。
+  seed の core を変えるとキーが変わる
+- **プロセス内のキャッシュ**: `static STAGE1: OnceLock` に stage1 の Wasm と `CompilerModule` を 1 つだけ持つ。
+  `self_hosted_compiler()` は無ければ作って待つ (debug で十数秒), `ready_self_hosted_compiler()` は待たずにできていれば返す
+- **サーバーの起動時**: `start_server` の DB 初期化のタスクの後で `prepare_self_hosted_compiler(db)` を呼ぶ。
+  DB の `contents` テーブルにキーで保存した stage1 があれば読み込み, 無ければ `spawn_blocking` で作って保存する
+  (`contents` の他のレコードはバイト列の content hash がキーだが, このレコードだけは入力 (コンパイラのパーツ) の hash がキーのメモ)。
+  読み込んだ stage1 は `15 + 27` を正しくコンパイルできるか確かめてから使い, 壊れていれば作り直す
+- **入口** `compile_expression_to_wasm(expression, events)`: stage1 ができていれば使い, まだなら Rust 製コンパイラを使う
+  (起動直後のリクエストを待たせない)。stage1 ができていても, 次の式は Rust 製コンパイラにフォールバックする
+  (`checked_self_hosted_compiler_input`):
+  - 式か, 式がたどって参照するパーツが `core.expression` で表せない
+  - 参照するパーツが見つからないか式を持たない (definy 製コンパイラは unreachable にする)
+  - `core.compile-expr-instructions` が個別に扱わないタグ (`type_number` など) を含む (`_` アームで unreachable になる)。
+    扱うタグは seed の `core.compile-expr-instructions` の `match` から読むので, コンパイラに対応を足すと自動で広がる
+- どちらを使ったかは `compile_expression_to_wasm_with(compiler, expression, events)` が `UsedCompiler` で返す
+- 使っているのは `deploy_rpc` の `DeployCloudflare` (パーツをデプロイするとき)。DB のイベントも渡すので, パーツ参照を含む式もコンパイルできる
+- テスト: `definy-server/tests/self_hosted_compiler_entry.rs` で, 適合テストの全 65 ケースが stage1 でコンパイルされ,
+  実行結果が Rust 製コンパイラと期待値の両方に一致することを確かめている。フォールバックと DB への保存のテストもある
+
+### HTTP アプリとプレビュー
+
+`self_hosted_compiler_entry.rs` の `stage1_compiles_http_app` で, サンプルの `self-hosted-definy-server` のプレビューのハンドラ
+(`/`, `/api/self-host`, `/healthz`, `/not-found`) を stage1 でコンパイルし, `execute_wasm_http_response` (wasmtime) と
+wasmi のどちらでも Rust 製と同じステータス・ヘッダー・ボディになることを確かめた。クロージャの形 (`(env, args) -> i32`),
+`table` のエクスポートが Rust 製と同じで, データを 1024 番地から置くので, ストリームの呼び出しが引数の置き場に使う 512 番地ともぶつからない。
+出力は stage1 が約 278KB, Rust 製が約 529KB で stage1 の方が小さい (参照された関数だけを出すため)。
+
+プレビューを stage1 に切り替える道筋 (今回は切り替えていない):
+1. `definy_core::http_app::build_http_request_target_expression` でリクエストを適用した式を作る (切り出し済み)
+2. `self_hosted_wasm_compiler::compile_http_request_to_wasm` で `definy_core::http_app::compile_http_request_to_wasm` の代わりに
+   その式を `compile_expression_to_wasm(&target, events)` に渡す。フォールバックは入口と同じ
+3. ハンドラが関数でない式のときに `evaluate_expression` (Rust 製コンパイラで 1 回コンパイルして実行) で関数かどうかを
+   調べているので, ここも stage1 にするなら型 (`core.type-check`) で判定するか, stage1 でコンパイルして実行する
+4. プレビューはリクエストのたびにコンパイルするので, リクエストを引数にした関数としてハンドラを 1 回だけコンパイルし,
+   `CompilerModule` と同じようにメモリに書いたリクエストで呼ぶ形にすると, コンパイルと wasmtime のコンパイルをキャッシュできる
 
 ### 値の表現 (Rust 製コンパイラと同じ線形メモリの形)
 
@@ -367,7 +406,7 @@ Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024
 
 ### 次に進める順番の案
 
-1. stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う (上の「本番で stage1 の Wasm を使い回す道筋」)
+1. ~~stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う~~ (済み: 上の「サーバーの本番のコンパイルで stage1 を使う」)。次はプレビュー (上の「HTTP アプリとプレビュー」)
 2. definy 製型チェッカーの実行 (サーバー・UI) を stage1 でコンパイルするように切り替え, Rust 製コンパイラの出番を減らす
 3. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
 

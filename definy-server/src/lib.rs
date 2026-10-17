@@ -114,10 +114,12 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
         println!("Initializing database connection and schema in background...");
         match db::init_db().await {
             Ok(db) => {
-                *state_for_db.db.write().await = Some(db);
+                *state_for_db.db.write().await = Some(db.clone());
                 *state_for_db.db_init_status.write().await = DbInitStatus::Ready;
                 *state_for_db.last_db_failure.write().await = None;
                 println!("Database initialized successfully on startup.");
+                // definy 製コンパイラ (stage1) を DB から読むか作る. 終わるまでは Rust 製コンパイラを使う
+                self_hosted_wasm_compiler::prepare_self_hosted_compiler(Some(db)).await;
             }
             Err(err) => {
                 *state_for_db.db_init_status.write().await = DbInitStatus::Failed;
@@ -126,6 +128,7 @@ pub async fn start_server() -> Result<(), anyhow::Error> {
                     "WARNING: Failed to initialize database on startup ({:?}). Will retry on demand.",
                     err
                 );
+                self_hosted_wasm_compiler::prepare_self_hosted_compiler(None).await;
             }
         }
     });
