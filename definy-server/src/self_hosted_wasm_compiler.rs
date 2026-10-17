@@ -53,6 +53,47 @@ pub type VerifiedCommitEvent = (
     Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
 );
 
+/// `core.compile-to-wasm` に渡す引数 (式の `core.expression` と, 参照するパーツのリスト) をリテラルの式として作る
+pub fn self_hosted_compiler_input(
+    expression: &Expression,
+    events: &[VerifiedCommitEvent],
+) -> Result<(Expression, Expression), SelfHostedCompileError> {
+    let core_module_id = derive_module_id(&crate::seed::builtin_system_account_id(), "core");
+    let expr_type_hash = derive_module_part_id(&core_module_id, "expression");
+    let self_hosted_ast =
+        definy_core::self_hosted_ast::expression_to_self_hosted_ast(expression, &expr_type_hash)
+            .map_err(SelfHostedCompileError::AstConversion)?;
+    let parts = referenced_parts_expression(expression, events, &expr_type_hash);
+    Ok((self_hosted_ast, parts))
+}
+
+/// definy 製コンパイラを definy 製コンパイラ自身 (stage0: Rust 製の評価器の上で動かす) で Wasm にする.
+/// できたモジュールは `definy_core::self_hosted_compiler_module::CompilerModule` で動かせる
+pub fn build_self_hosted_compiler_wasm(
+    events: &[VerifiedCommitEvent],
+) -> Result<Vec<u8>, SelfHostedCompileError> {
+    let core_module_id = derive_module_id(&crate::seed::builtin_system_account_id(), "core");
+    compile_with_self_hosted_compiler(
+        &Expression::PartReference(PartReferenceExpression::new(derive_module_part_id(
+            &core_module_id,
+            "compile-to-wasm",
+        ))),
+        events,
+    )
+}
+
+/// Wasm にした definy 製コンパイラで式をコンパイルする. 入力は `compile_with_self_hosted_compiler` と同じ
+pub fn compile_with_compiler_module(
+    compiler: &definy_core::self_hosted_compiler_module::CompilerModule,
+    expression: &Expression,
+    events: &[VerifiedCommitEvent],
+) -> Result<Vec<u8>, SelfHostedCompileError> {
+    let (self_hosted_ast, parts) = self_hosted_compiler_input(expression, events)?;
+    compiler
+        .compile(&self_hosted_ast, &parts)
+        .map_err(SelfHostedCompileError::WasmExecution)
+}
+
 /// 式が (たどって) 参照するパーツを `events` から集め, `core.compile-to-wasm` に渡す
 /// `list<{ id: string, expression: core.expression }>` の式にする.
 /// 式を持たないパーツ (コンパイラ組み込み) や `core.expression` で表せないパーツは入れない
@@ -172,15 +213,9 @@ pub fn compile_with_self_hosted_compiler(
     let dummy_account = crate::seed::builtin_system_account_id();
     let core_module_id = derive_module_id(&dummy_account, "core");
 
-    let expr_type_hash = derive_module_part_id(&core_module_id, "expression");
     let compile_to_wasm_hash = derive_module_part_id(&core_module_id, "compile-to-wasm");
 
-    // 式を definy の自己記述 AST 直和型 (core.expression Variant) に変換
-    let self_hosted_ast =
-        definy_core::self_hosted_ast::expression_to_self_hosted_ast(expression, &expr_type_hash)
-            .map_err(SelfHostedCompileError::AstConversion)?;
-
-    let referenced_parts = referenced_parts_expression(expression, events, &expr_type_hash);
+    let (self_hosted_ast, referenced_parts) = self_hosted_compiler_input(expression, events)?;
     let parts = self_hosted_compiler_parts();
 
     // 評価器で直接参照可能なコミットイベント列を構築

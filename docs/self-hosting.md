@@ -125,7 +125,7 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 5. **[stage1 済] compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
    compiler stage1 を作り、 stage1 が同一 compiler と test suite
    を再生成できるか比較します。definy 製コンパイラは評価器の適合テストを全て通り, 自分自身をコンパイルした stage1 の出力が
-   stage0 と一致します。stage2 は未確認。下の「definy 製コンパイラの対応状況」を参照。
+   stage0 と一致し, stage2 で不動点に達しています。下の「definy 製コンパイラの対応状況」を参照。
 6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
@@ -254,7 +254,56 @@ definy 製コンパイラは, Rust 製コンパイラ (stage0) と同じく評�
    コンパイルする。参照をたどってコンパイラ自身のパーツ (38 個) がすべて入り, 約 74KB の Wasm になる
 3. その Wasm を実行して得たバイト列が 1 の出力と **1 バイトも違わず**, 実行すると同じ値になる
 
-stage2 (stage1 のコンパイラで stage1 のコンパイラを作る) はまだ試していません。
+### stage2: 不動点に達している
+
+`self_hosted_compiler_stage2` で確かめています。
+
+1. stage1 = stage0 で `core.compile-to-wasm` への参照をコンパイルしたモジュール (`self_hosted_wasm_compiler::build_self_hosted_compiler_wasm`)。
+   `evaluate` がコンパイラのクロージャを返す, 単独で動くコンパイラ (68,452 バイト)
+2. stage1 を wasmtime で直接動かす (`definy_core::self_hosted_compiler_module::CompilerModule`)。入力の `core.expression` と
+   `parts` を値の箱としてモジュールのメモリに書き (`alloc` をエクスポートしている), 関数表 (`table` をエクスポート) から
+   クロージャを呼ぶと, 出力のバイト列 (`list<number>` の箱) が返る
+3. stage1 でコンパイラ自身をコンパイルした stage2 が stage1 と **1 バイトも違わない** (不動点)
+4. 適合テストの 65 個の式を stage0 と stage1 でコンパイルした結果も, すべて 1 バイトも違わない
+
+所要時間 (debug ビルド, Apple Silicon): stage1 を作る (stage0) 約 13 秒, stage1 の読み込み (wasmtime のコンパイル) 0.6 秒,
+stage1 でコンパイラ自身をコンパイル 0.16 秒, 適合テストの 65 個の式のコンパイルは stage0 で 125 秒, stage1 で 0.045 秒。
+
+### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
+
+**速さ**: definy 製型チェッカーの呼び出し `core.type-check(1 + 2, 空の環境)` を例に測った (release ビルド, 結果はどちらも `ok(number)`)。
+
+| | コンパイル | 実行 (wasmtime が出力をコンパイルする時間を含む) | 出力の大きさ |
+| --- | --- | --- | --- |
+| Rust 製コンパイラ | 7 ms | 175 ms | 208 KB |
+| definy 製コンパイラ (stage1) | 48 ms | 100 ms | 124 KB |
+
+stage1 はコンパイル自体は Rust 製より遅いが, 出力が小さい (参照された関数だけを出す) ので wasmtime のコンパイルが速く, 合計では同等以上。
+stage0 (Rust 製の評価器で definy 製コンパイラを毎回コンパイルする今の `compile_with_self_hosted_compiler`) は 1 回数秒かかるので,
+本番では使えない。どちらの場合も実行時間の大半は wasmtime による出力のコンパイルなので, 出力を content hash で
+キャッシュする効果が大きい。
+
+**使い回し方**:
+- stage1 の Wasm は definy 製コンパイラのパーツ (seed の core) だけで決まる。パーツの content hash をキーにして
+  1 回だけ作り, 保存して使い回す (サーバーの起動時に作る / CAS に置く / seed と一緒にビルド時に作る)。
+  作り直したときは stage2 == stage1 (不動点) をテストで確かめる
+- サーバー (wasmtime): `CompilerModule` を 1 つ持ち, コンパイルのたびにインスタンスを作る (メモリは解放しないので毎回新しく)
+- ブラウザ (UI, wasm32): stage1 はブラウザの `WebAssembly` でそのまま動く。今の UI は definy 製型チェッカーを Rust 製コンパイラ
+  (UI の Wasm に含まれる) でコンパイルしているので, stage1 に置き換えれば UI の Wasm から Rust 製コンパイラを外せる可能性がある。
+  ただし `CompilerModule` は wasmtime 用なので, `js_sys::WebAssembly` 版が要る
+- Cloudflare Workers: stage1 は静的な Wasm なので, デプロイ時にバンドルすれば Workers でもネイティブ (V8) に動かせる
+  (実行時に作った Wasm ではないので制限に当たらない)。ただし stage1 の **出力** は実行時に作った Wasm なので,
+  今と同じく wasmi か Dynamic Workers で動かす必要がある
+
+**置き換える前に必要なこと**:
+1. `core.expression` で表せない式 (`BitAnd` などのビット演算, `Constructor`, 型の式) は definy 製コンパイラに渡せない。
+   言語側で `core.expression` に足すか, 当面は Rust 製コンパイラにフォールバックする
+2. HTTP アプリ (`http_app::compile_http_request_to_wasm` と `execute_wasm_http_response`) は, クロージャの形と `table` の
+   エクスポートが Rust 製と同じなので動く見込みだが未確認
+3. 文字列リテラルを 1 バイトずつ書く命令にしているので, 長い HTML などを含むと出力が大きい。データセグメントにまとめたい
+4. 入口を `self_hosted_wasm_compiler::compile_expression_to_wasm` (今は古い対応範囲の判定 `is_supported_by_self_hosted_compiler`
+   で stage0 を使っている) に寄せ, stage1 を使うように切り替える。結果が Rust 製と同じかを適合テストで比べながら進める
+
 
 ### 値の表現 (Rust 製コンパイラと同じ線形メモリの形)
 
@@ -273,7 +322,7 @@ stage2 (stage1 のコンパイラで stage1 のコンパイラを作る) はま�
 
 - メモリは確保するだけで解放しません (1 回の評価は短いので)。ヒープの先頭はグローバル変数 0 で, 確保は 8 バイト境界に揃え,
   足りなければ `memory.grow` します。確保したばかりのメモリは 0 なので, 数値の箱はタグを書かずに済みます
-- 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す) と `memory` をエクスポートします (`cloudflare_workers.rs` が生成する JS のために, 同じ関数を `main` としてもエクスポート)。
+- 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す), `memory`, 関数表 `table`, メモリを確保する `alloc` をエクスポートします (`cloudflare_workers.rs` が生成する JS のために, `evaluate` を `main` としてもエクスポート)。`table` と `alloc` は, 外から値を書いて関数を呼ぶため (`CompilerModule`)。
   `match` で真偽値のタグとして使う文字列 `"true"` `"false"` だけはデータセグメント (1024 番地) に置きます
 - ランタイム関数 (メモリの確保, 数値・真偽値の箱詰め, 文字列の比較, 値の比較, `record_get`, リストと文字列の操作,
   `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
@@ -318,11 +367,8 @@ Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024
 
 ### 次に進める順番の案
 
-1. stage2: stage1 のコンパイラ (Wasm) でコンパイラ自身をコンパイルし, stage1 と同じバイト列になるか確かめる。
-   そのためには stage1 のコンパイラを Rust 製の評価器を通さずに直接呼べるようにする (入力の式を値としてメモリに書く方法が要る)
-2. 本番の `compile_expression_to_wasm` で, Rust 製コンパイラの代わりに definy 製コンパイラを使う範囲を広げる
-   (今は `is_supported_by_self_hosted_compiler` の古い対応範囲のまま)。definy 製コンパイラは遅い (Rust 製の評価器の上で動かすため,
-   1 回のコンパイルに数秒) ので, stage1 の Wasm を使い回すなどの工夫が要る
+1. stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う (上の「本番で stage1 の Wasm を使い回す道筋」)
+2. definy 製型チェッカーの実行 (サーバー・UI) を stage1 でコンパイルするように切り替え, Rust 製コンパイラの出番を減らす
 3. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
 
 ## セルフホストのロードマップと到達状況

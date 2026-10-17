@@ -12,7 +12,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use definy_core::Value;
-use definy_event::event::{Expression, derive_module_id, derive_module_part_id};
+use definy_event::event::{
+    Expression, PartReferenceExpression, derive_module_id, derive_module_part_id,
+};
 use definy_server::self_hosted_wasm_compiler::{
     compile_with_self_hosted_compiler, evaluate_compiled_wasm,
 };
@@ -400,4 +402,67 @@ fn self_hosted_compiler_stage1() {
         normalize(&evaluate_compiled_wasm(&stage1).expect("run stage1 output")),
         expected
     );
+}
+
+/// stage2: Wasm にした definy 製コンパイラ (stage1) を Rust 製の評価器を通さずに直接動かし, コンパイラ自身をコンパイルする.
+/// 出力 (stage2) が stage1 と 1 バイトも違わない (不動点) ことと, stage1 で他の式も stage0 と同じにコンパイルできることを確かめる
+#[test]
+fn self_hosted_compiler_stage2() {
+    use definy_core::self_hosted_compiler_module::CompilerModule;
+    use definy_server::self_hosted_wasm_compiler::{
+        build_self_hosted_compiler_wasm, compile_with_compiler_module,
+    };
+    let events = definy_server::builtin_migration::build_builtin_verified_events();
+    let core_module_id =
+        derive_module_id(&definy_server::seed::builtin_system_account_id(), "core");
+
+    let started = std::time::Instant::now();
+    let stage1 = build_self_hosted_compiler_wasm(&events).expect("stage1 (by stage0)");
+    println!(
+        "stage1 (stage0 でコンパイラをコンパイル): {} バイト, {:?}",
+        stage1.len(),
+        started.elapsed()
+    );
+
+    let started = std::time::Instant::now();
+    let compiler = CompilerModule::new(&stage1).expect("load stage1");
+    println!("stage1 の読み込み: {:?}", started.elapsed());
+
+    let compile_to_wasm = Expression::PartReference(PartReferenceExpression::new(
+        derive_module_part_id(&core_module_id, "compile-to-wasm"),
+    ));
+    let started = std::time::Instant::now();
+    let stage2 = compile_with_compiler_module(&compiler, &compile_to_wasm, &events)
+        .expect("stage2 (by stage1)");
+    println!(
+        "stage2 (stage1 でコンパイラをコンパイル): {} バイト, {:?}",
+        stage2.len(),
+        started.elapsed()
+    );
+    assert!(stage2 == stage1, "stage2 と stage1 が一致する");
+
+    // 適合テストの式を stage1 でもコンパイルし, stage0 と同じバイト列になることを確かめる
+    let cases: Json = serde_json::from_str(CASES_JSON).expect("parse eval_cases.json");
+    let account_id = definy_server::seed::builtin_system_account_id();
+    let (mut stage0_time, mut stage1_time) = (std::time::Duration::ZERO, std::time::Duration::ZERO);
+    for case in cases["cases"].as_array().expect("cases array") {
+        let mut expression_json = case["expression"].clone();
+        definy_server::seed::resolve_part_references(&mut expression_json, &account_id)
+            .expect("resolve part references");
+        let expression: Expression =
+            serde_json::from_value(expression_json).expect("valid expression");
+        let started = std::time::Instant::now();
+        let by_stage0 = compile_with_self_hosted_compiler(&expression, &events).expect("stage0");
+        stage0_time += started.elapsed();
+        let started = std::time::Instant::now();
+        let by_stage1 =
+            compile_with_compiler_module(&compiler, &expression, &events).expect("stage1");
+        stage1_time += started.elapsed();
+        assert!(
+            by_stage1 == by_stage0,
+            "{}: stage1 と stage0 の出力が一致する",
+            case["name"]
+        );
+    }
+    println!("適合テストの式のコンパイル: stage0 {stage0_time:?}, stage1 {stage1_time:?}");
 }
