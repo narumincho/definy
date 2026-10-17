@@ -489,7 +489,18 @@ fn test_self_hosted_compile_to_wasm_execution() {
         expr_type_opt,
     );
 
-    let call_compile = call_part(compile_to_wasm_hash, &[("expr", expr_to_compile)]);
+    let call_compile = call_part(
+        compile_to_wasm_hash,
+        &[
+            ("expr", expr_to_compile),
+            (
+                "parts",
+                Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                    items: Vec::new(),
+                }),
+            ),
+        ],
+    );
 
     // Execute self-hosted compiler to generate Wasm bytecode!
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
@@ -554,7 +565,18 @@ fn test_self_hosted_optimize_expression_execution() {
 
     // Now compile the folded AST: number(42) directly to Wasm
     let folded_ast = ast_num(42, expr_type_opt);
-    let call_compile = call_part(compile_to_wasm_hash, &[("expr", folded_ast)]);
+    let call_compile = call_part(
+        compile_to_wasm_hash,
+        &[
+            ("expr", folded_ast),
+            (
+                "parts",
+                Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                    items: Vec::new(),
+                }),
+            ),
+        ],
+    );
 
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
         .expect("Failed to compile optimized AST to Wasm");

@@ -21,7 +21,7 @@ use serde_json::{Value as Json, json};
 const CASES_JSON: &str = include_str!("../../conformance/eval_cases.json");
 
 /// 期待値どおりの結果になったケースの数の下限. 対応範囲を広げたら上げる
-const MIN_PASSING_CASES: usize = 53;
+const MIN_PASSING_CASES: usize = 65;
 
 /// 評価器の値を, テストケースの期待値と同じ正規化表現へ変換する (`eval_conformance.rs` と同じ)
 fn normalize(value: &Value) -> Json {
@@ -149,6 +149,7 @@ enum Outcome {
 fn self_hosted_compiler_conformance() {
     let cases: Json = serde_json::from_str(CASES_JSON).expect("parse eval_cases.json");
     let account_id = definy_server::seed::builtin_system_account_id();
+    let events = definy_server::builtin_migration::build_builtin_verified_events();
     let cases = cases["cases"].as_array().expect("cases array");
 
     let mut results = Vec::new();
@@ -161,7 +162,7 @@ fn self_hosted_compiler_conformance() {
         expression_kinds(&expression_json, &mut kinds);
         let expression: Expression =
             serde_json::from_value(expression_json).expect("valid expression");
-        let outcome = match compile_with_self_hosted_compiler(&expression) {
+        let outcome = match compile_with_self_hosted_compiler(&expression, &events) {
             Err(error) => Outcome::CompileFailed(error.to_string()),
             Ok(wasm) => match evaluate_compiled_wasm(&wasm) {
                 Err(error) => Outcome::RunFailed(error.to_string()),
@@ -290,6 +291,11 @@ fn self_hosted_compiler_self_compile_gaps() {
         );
     }
     assert!(!kinds_by_part.is_empty());
+    assert!(
+        gaps.is_empty(),
+        "definy 製コンパイラが自分自身の式をコンパイルできない: {:?}",
+        gaps.keys().collect::<Vec<_>>()
+    );
 }
 
 fn collect_references(
@@ -325,4 +331,73 @@ fn first_line(text: &str) -> String {
         .chars()
         .take(200)
         .collect()
+}
+
+/// stage1: definy 製コンパイラを definy 製コンパイラ自身でコンパイルし, できた Wasm で式をコンパイルする.
+/// stage0 (Rust 製コンパイラで動かした definy 製コンパイラ) と同じバイト列になり, 実行すると同じ値になることを確かめる
+#[test]
+fn self_hosted_compiler_stage1() {
+    let events = definy_server::builtin_migration::build_builtin_verified_events();
+    let core_module_id =
+        derive_module_id(&definy_server::seed::builtin_system_account_id(), "core");
+    // 関数・クロージャ・呼び出し・レコード・文字列・match を含む式
+    // let base = 20 in let add = fn(a) => a + base in { answer: add(22), name: "definy", even: match add(2) == 22 { true => "yes", false => "no" } }
+    let sample: Expression = serde_json::from_value(json!({"Let": {"bindings": [
+        {"variable_id": 1, "variable_name": "base", "value": {"Number": {"value": 20}}},
+        {"variable_id": 2, "variable_name": "add", "value": {"Function": {
+            "parameters": [{"parameter_id": 3, "parameter_name": "a"}],
+            "body": {"Add": {"left": {"Variable": {"variable_id": 3}}, "right": {"Variable": {"variable_id": 1}}}}}}}],
+        "body": {"TypeLiteral": {"items": [
+            {"key": "answer", "value": {"Call": {"function": {"Variable": {"variable_id": 2}},
+                "arguments": [{"name": "a", "value": {"Number": {"value": 22}}}]}}},
+            {"key": "name", "value": {"String": {"value": "definy"}}},
+            {"key": "even", "value": {"Match": {
+                "target": {"Equal": {
+                    "left": {"Call": {"function": {"Variable": {"variable_id": 2}},
+                        "arguments": [{"name": "a", "value": {"Number": {"value": 2}}}]}},
+                    "right": {"Number": {"value": 22}}}},
+                "arms": [
+                    {"tag": "true", "variable_id": null, "variable_name": null, "body": {"String": {"value": "yes"}}},
+                    {"tag": "false", "variable_id": null, "variable_name": null, "body": {"String": {"value": "no"}}}],
+                "default": null}}}]}}}}))
+    .expect("sample expression");
+    let expected = json!({"$record": [["answer", 42], ["name", "definy"], ["even", "yes"]]});
+
+    let stage0 = compile_with_self_hosted_compiler(&sample, &events).expect("stage0 compile");
+    assert_eq!(
+        normalize(&evaluate_compiled_wasm(&stage0).expect("run stage0 output")),
+        expected
+    );
+
+    // core.compile-to-wasm(expr = sample の core.expression, parts = []) を definy 製コンパイラでコンパイルする
+    let sample_ast = definy_core::self_hosted_ast::expression_to_self_hosted_ast(
+        &sample,
+        &derive_module_part_id(&core_module_id, "expression"),
+    )
+    .expect("sample to core.expression");
+    let compile_call: Expression = serde_json::from_value(json!({"Call": {
+        "function": {"PartReference": {"part_definition_event_hash":
+            derive_module_part_id(&core_module_id, "compile-to-wasm")}},
+        "arguments": [
+            {"name": "expr", "value": sample_ast},
+            {"name": "parts", "value": {"ListLiteral": {"items": []}}}]}}))
+    .expect("compile call expression");
+    let compiler_wasm =
+        compile_with_self_hosted_compiler(&compile_call, &events).expect("compile the compiler");
+    println!("stage1 のコンパイラ: {} バイト", compiler_wasm.len());
+    let stage1 = match evaluate_compiled_wasm(&compiler_wasm).expect("run stage1 compiler") {
+        Value::List(items) => items
+            .into_iter()
+            .map(|item| match item {
+                Value::Number(n) => u8::try_from(n).expect("byte"),
+                other => panic!("expected byte, got {other:?}"),
+            })
+            .collect::<Vec<_>>(),
+        other => panic!("expected list of bytes, got {other:?}"),
+    };
+    assert_eq!(stage1, stage0, "stage1 と stage0 の出力が一致する");
+    assert_eq!(
+        normalize(&evaluate_compiled_wasm(&stage1).expect("run stage1 output")),
+        expected
+    );
 }

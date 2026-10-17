@@ -53,6 +53,58 @@ pub type VerifiedCommitEvent = (
     Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
 );
 
+/// 式が (たどって) 参照するパーツを `events` から集め, `core.compile-to-wasm` に渡す
+/// `list<{ id: string, expression: core.expression }>` の式にする.
+/// 式を持たないパーツ (コンパイラ組み込み) や `core.expression` で表せないパーツは入れない
+/// (definy 製コンパイラはそのパーツへの参照を unreachable にする)
+fn referenced_parts_expression(
+    expression: &Expression,
+    events: &[VerifiedCommitEvent],
+    expr_type_hash: &EventHashId,
+) -> Expression {
+    let mut queue = Vec::new();
+    collect_part_references(expression, &mut queue);
+    let mut seen = Vec::<EventHashId>::new();
+    let mut items = Vec::new();
+    while let Some(part_id) = queue.pop() {
+        if seen.contains(&part_id) {
+            continue;
+        }
+        seen.push(part_id.clone());
+        let Some(part_expression) =
+            definy_core::wasm_emitter::compiler::resolve_part_expression(events, &part_id, None)
+        else {
+            continue;
+        };
+        collect_part_references(part_expression, &mut queue);
+        let Ok(ast) = definy_core::self_hosted_ast::expression_to_self_hosted_ast(
+            part_expression,
+            expr_type_hash,
+        ) else {
+            continue;
+        };
+        items.push(Expression::TypeLiteral(
+            definy_event::event::TypeLiteralExpression {
+                items: vec![
+                    definy_event::event::TypeLiteralItemExpression {
+                        key: "id".into(),
+                        value: Box::new(Expression::String(
+                            definy_event::event::StringExpression {
+                                value: part_id.to_string().into(),
+                            },
+                        )),
+                    },
+                    definy_event::event::TypeLiteralItemExpression {
+                        key: "expression".into(),
+                        value: Box::new(ast),
+                    },
+                ],
+            },
+        ));
+    }
+    Expression::ListLiteral(definy_event::event::ListLiteralExpression { items })
+}
+
 /// definy 製コンパイラを構成する core のパーツ. `core.compile-to-wasm` からパーツ参照をたどって集める
 pub fn self_hosted_compiler_parts() -> Vec<definy_event::event::ModulePartEntry> {
     let account = crate::seed::builtin_system_account_id();
@@ -110,8 +162,11 @@ fn collect_part_references(expression: &Expression, out: &mut Vec<EventHashId>) 
 /// Rust 製コンパイラへのフォールバックはしません. definy 製コンパイラが対応していない式も
 /// エラーにならず誤った Wasm になることがあるので, 結果は実行して確かめてください
 /// (`tests/self_hosted_compiler_coverage.rs`)
+///
+/// `events` は式が参照するパーツを探すのに使う. 参照をたどって集めたパーツを `core.compile-to-wasm` に渡す
 pub fn compile_with_self_hosted_compiler(
     expression: &Expression,
+    events: &[VerifiedCommitEvent],
 ) -> Result<Vec<u8>, SelfHostedCompileError> {
     // seed JSON 内のパーツ参照ハッシュはビルトインシステムアカウントの core モジュールを前提とする
     let dummy_account = crate::seed::builtin_system_account_id();
@@ -125,12 +180,13 @@ pub fn compile_with_self_hosted_compiler(
         definy_core::self_hosted_ast::expression_to_self_hosted_ast(expression, &expr_type_hash)
             .map_err(SelfHostedCompileError::AstConversion)?;
 
+    let referenced_parts = referenced_parts_expression(expression, events, &expr_type_hash);
     let parts = self_hosted_compiler_parts();
 
     // 評価器で直接参照可能なコミットイベント列を構築
     let dummy_commit_hash = EventHashId::from_bytes(&[200u8; 32]);
     let dummy_sig = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
-    let events: Vec<VerifiedCommitEvent> = vec![(
+    let compiler_events: Vec<VerifiedCommitEvent> = vec![(
         dummy_commit_hash,
         Ok((
             dummy_sig,
@@ -153,14 +209,20 @@ pub fn compile_with_self_hosted_compiler(
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             compile_to_wasm_hash,
         ))),
-        arguments: vec![CallArgument {
-            name: "expr".into(),
-            value: Box::new(self_hosted_ast),
-        }],
+        arguments: vec![
+            CallArgument {
+                name: "expr".into(),
+                value: Box::new(self_hosted_ast),
+            },
+            CallArgument {
+                name: "parts".into(),
+                value: Box::new(referenced_parts),
+            },
+        ],
     });
 
     // definy 実行系上で自己記述コンパイラを実行
-    let evaluated_val = definy_core::evaluate_expression(&call_expr, &events)
+    let evaluated_val = definy_core::evaluate_expression(&call_expr, &compiler_events)
         .map_err(|e| SelfHostedCompileError::Evaluation(format!("{e:?}")))?;
 
     // 戻り値 list<number> をバイト列 Vec<u8> に変換
@@ -266,7 +328,7 @@ pub fn compile_expression_to_wasm(
 ) -> Result<Vec<u8>, SelfHostedCompileError> {
     // 1. 自己記述コンパイラ (core.compile-to-wasm) が対応している構文群であればメタ循環コンパイルを実行
     if is_supported_by_self_hosted_compiler(expression)
-        && let Ok(bytes) = compile_with_self_hosted_compiler(expression)
+        && let Ok(bytes) = compile_with_self_hosted_compiler(expression, &[])
     {
         return Ok(bytes);
     }

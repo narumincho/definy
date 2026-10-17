@@ -1147,6 +1147,14 @@
                                               "variable_id": 10
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "ListLiteral": {
+                                              "items": []
+                                            }
+                                          }
                                         }
                                       ]
                                     }
