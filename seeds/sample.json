@@ -1147,6 +1147,31 @@
                                               "variable_id": 10
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "TypeLiteral": {
+                                              "items": [
+                                                {
+                                                  "key": "variables",
+                                                  "value": {
+                                                    "ListLiteral": {
+                                                      "items": []
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "key": "parts",
+                                                  "value": {
+                                                    "ListLiteral": {
+                                                      "items": []
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
                                         }
                                       ]
                                     }

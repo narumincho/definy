@@ -235,7 +235,7 @@ cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
 - `self_hosted_compiler_self_compile_gaps`: definy 製コンパイラ自身のパーツが使う式の種類のうち,
   コンパイラが扱えないものを一覧します
 
-### 適合テストの結果: 58 ケース中 25 ケースが期待値どおり
+### 適合テストの結果: 59 ケース中 26 ケースが期待値どおり
 
 2026-10-17 の修正前は 15 ケース (うち 2 つは偶然の一致) でした。修正内容は下の「値の表現」を参照。
 
@@ -261,10 +261,14 @@ Bool 以外を対象にした `match` も, 誤ったコードではなく `unrea
   Bool の `match` のアームの型をそろえるためです。比較命令 (`i64.eq` など) の結果は i32 なので `i64.extend_i32_u`
   で i64 にし, `not` は `i64.eqz` + `i64.extend_i32_u`, `and` / `or` は `i64.and` / `i64.or`,
   Bool の `match` は `if` の前に `i32.wrap_i64` で i32 にします
-- 式全体が真偽値のとき (`core.is-boolean-expression` が形から判定) は線形メモリを使います。1024 番地に Bool のタグ (1)
+- 式全体が真偽値のときは線形メモリを使います。1024 番地に Bool のタグ (1)
   をデータセグメントで置き, 実行時に `i64.store8 offset=8` で値を 1032 番地に書いて, `evaluate` が 1024 を返します
-  (`definy_core::wasm_emitter::read_value_from_memory` の形式)。形から判定するので, `let x = 1 < 2 in x` のように
-  変数で返す真偽値は数値 (0 / 1) として返ります
+  (`definy_core::wasm_emitter::read_value_from_memory` の形式)
+- 式全体の型は definy 製型チェッカー (`core.type-check`) で求めます。そのため `core.compile-to-wasm` は
+  `expr` と型環境 `env` (`core.type-env`) を受け取ります。`let x = 1 < 2 in x` のように変数で返す真偽値も Bool になります。
+  Rust から呼ぶときは `self_hosted_wasm_compiler::empty_type_env_expression` で空の型環境を渡します
+  (パーツ参照はまだコンパイルできないので, パーツの型は入れていない)。
+  以前は式の形だけで判定する `core.is-boolean-expression` を使っていましたが, 変数の型を追えないので削除しました
 - 関数本体とコードセクションの長さは `core.unsigned-leb128` で出します (以前は 1 バイト固定で, 128 バイト以上の本体を壊していた。適合テストにはまだ 128 バイトを超えるケースが無い)
 - コンパイラを構成するパーツは `self_hosted_wasm_compiler::self_hosted_compiler_parts` が
   `core.compile-to-wasm` からパーツ参照をたどって集めます。補助パーツを足しても呼び出し側を直す必要はありません
@@ -272,8 +276,8 @@ Bool 以外を対象にした `match` も, 誤ったコードではなく `unrea
 ### 自分自身をコンパイルするのに足りないもの
 
 definy 製コンパイラは `core.compile-to-wasm`, `core.compile-expr-instructions`, `core.match-arm-body`,
-`core.is-bool-match-arms`, `core.is-boolean-expression`, `core.signed-leb128`, `core.unsigned-leb128`
-の 7 パーツでできています。これらが使っていて, コンパイラ自身が扱えない式の種類:
+`core.is-bool-match-arms`, `core.signed-leb128`, `core.unsigned-leb128` と, 型を求めるための definy 製型チェッカー
+(`core.type-check` とそこから参照するパーツ) の計 45 パーツでできています。これらが使っていて, コンパイラ自身が扱えない式の種類:
 
 - 関数・呼び出し・パーツ参照 (`function` `call` `part_reference`): 全パーツ。再帰呼び出しも含む
 - バリアントの `match` (ペイロードの束縛): `core.expression` のタグでの分岐に使う
@@ -287,9 +291,9 @@ Rust 製コンパイラのメモリ表現 (`wasm_emitter`) に合わせたラン
 ### 次に進める順番の案
 
 1. ヒープを使う式 (リスト・`record_get`・文字列操作)。値をすべて線形メモリ上のタグ付きの値にするか, 型情報を使って
-   i64 とポインタを使い分けるかを決める (今は形から判定しているので, 型チェッカーの結果を渡せると確実)
+   i64 とポインタを使い分けるかを決める (型は definy 製型チェッカーで求められる)
 2. 関数・呼び出し・パーツ参照 (複数の Wasm 関数を出す) と, バリアントの `match`
-3. 7 パーツを自分自身でコンパイルし, Rust 製コンパイラでコンパイルしたものと出力を比べる (stage1 / stage2)
+3. コンパイラのパーツを自分自身でコンパイルし, Rust 製コンパイラでコンパイルしたものと出力を比べる (stage1 / stage2)
 
 ## セルフホストのロードマップと到達状況
 

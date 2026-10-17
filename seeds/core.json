@@ -13387,260 +13387,6 @@
       }
     },
     {
-      "name": "is-boolean-expression",
-      "part_type": {
-        "function": {
-          "parameters": [
-            {
-              "name": "expr",
-              "type": {
-                "type_part": {
-                  "$part": "core.expression"
-                }
-              }
-            }
-          ],
-          "return_type": "boolean"
-        }
-      },
-      "description": [
-        {
-          "language": "en",
-          "text": "Whether the expression evaluates to a boolean, judged from its shape (a variable is treated as non-boolean)"
-        },
-        {
-          "language": "ja",
-          "text": "式の形から, 評価結果が真偽値になるかを判定する (変数は真偽値でないとみなす)"
-        }
-      ],
-      "expression": {
-        "Function": {
-          "parameters": [
-            {
-              "parameter_id": 0,
-              "parameter_name": "expr"
-            }
-          ],
-          "body": {
-            "Match": {
-              "target": {
-                "Variable": {
-                  "variable_id": 0
-                }
-              },
-              "arms": [
-                {
-                  "tag": "boolean",
-                  "variable_id": 10,
-                  "variable_name": "_boolean",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "equal",
-                  "variable_id": 11,
-                  "variable_name": "_equal",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "not_equal",
-                  "variable_id": 12,
-                  "variable_name": "_not_equal",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "less_than",
-                  "variable_id": 13,
-                  "variable_name": "_less_than",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "less_than_or_equal",
-                  "variable_id": 14,
-                  "variable_name": "_less_than_or_equal",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "greater_than",
-                  "variable_id": 15,
-                  "variable_name": "_greater_than",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "greater_than_or_equal",
-                  "variable_id": 16,
-                  "variable_name": "_greater_than_or_equal",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "not",
-                  "variable_id": 17,
-                  "variable_name": "_not",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "and",
-                  "variable_id": 18,
-                  "variable_name": "_and",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "or",
-                  "variable_id": 19,
-                  "variable_name": "_or",
-                  "body": {
-                    "Boolean": {
-                      "value": true
-                    }
-                  }
-                },
-                {
-                  "tag": "let",
-                  "variable_id": 30,
-                  "variable_name": "let_e",
-                  "body": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.is-boolean-expression"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "expr",
-                          "value": {
-                            "RecordGet": {
-                              "record": {
-                                "Variable": {
-                                  "variable_id": 30
-                                }
-                              },
-                              "key": "body"
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "tag": "match",
-                  "variable_id": 31,
-                  "variable_name": "match_e",
-                  "body": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.is-boolean-expression"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "expr",
-                          "value": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.match-arm-body"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "arms",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 31
-                                        }
-                                      },
-                                      "key": "arms"
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "target_tag",
-                                  "value": {
-                                    "String": {
-                                      "value": "true"
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "index",
-                                  "value": {
-                                    "Number": {
-                                      "value": 0
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "tag": "_",
-                  "variable_id": 32,
-                  "variable_name": "_",
-                  "body": {
-                    "Boolean": {
-                      "value": false
-                    }
-                  }
-                }
-              ],
-              "default": null
-            }
-          }
-        }
-      }
-    },
-    {
       "name": "signed-leb128",
       "part_type": {
         "function": {
@@ -34684,6 +34430,14 @@
                   "$part": "core.expression"
                 }
               }
+            },
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
             }
           ],
           "return_type": {
@@ -34707,6 +34461,10 @@
             {
               "parameter_id": 0,
               "parameter_name": "expr"
+            },
+            {
+              "parameter_id": 902,
+              "parameter_name": "env"
             }
           ],
           "body": {
@@ -34716,24 +34474,86 @@
                   "variable_id": 900,
                   "variable_name": "is_bool",
                   "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.is-boolean-expression"
-                          }
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-check"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 902
+                                }
+                              }
+                            }
+                          ]
                         }
                       },
-                      "arguments": [
+                      "arms": [
                         {
-                          "name": "expr",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 0
+                          "tag": "ok",
+                          "variable_id": 903,
+                          "variable_name": "result_type",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 903
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "boolean",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "Boolean": {
+                                      "value": true
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 904,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Boolean": {
+                                      "value": false
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 905,
+                          "variable_name": "_",
+                          "body": {
+                            "Boolean": {
+                              "value": false
                             }
                           }
                         }
-                      ]
+                      ],
+                      "default": null
                     }
                   }
                 },

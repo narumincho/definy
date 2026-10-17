@@ -331,12 +331,14 @@ fn test_phase3_wasm_compiler_ast_structure() {
         .expression
         .expect("compile-to-wasm must have expression");
 
-    // The expression should be a function([expr] -> Let*(ListConcat(...)))
+    // The expression should be a function([expr, env] -> Let*(ListConcat(...)))
+    // env は式の型を definy 製型チェッカーで求めるための型環境
     match to_wasm_expr {
         Expression::Function(f) => {
-            assert_eq!(f.parameters.len(), 1);
+            assert_eq!(f.parameters.len(), 2);
             assert_eq!(f.parameters[0].parameter_id, 0);
             assert_eq!(&*f.parameters[0].parameter_name, "expr");
+            assert_eq!(&*f.parameters[1].parameter_name, "env");
             let mut current = &*f.body;
             while let Expression::Let(let_expr) = current {
                 current = &*let_expr.body;
