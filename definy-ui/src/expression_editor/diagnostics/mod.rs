@@ -57,6 +57,8 @@ pub struct TypeAnalysis {
     pub variable_types: HashMap<i64, ExpressionType>,
     /// 関数呼び出しのパスごとの, 各引数に対応する (呼び出し先関数の) パラメーター名
     pub call_parameter_names: HashMap<Vec<crate::app_state::PathStep>, Vec<String>>,
+    /// パーツ参照を名前で表示するための, パーツ定義イベントのハッシュ → パーツ名
+    pub part_names: HashMap<EventHashId, String>,
 }
 
 pub fn analyze_expression_types(
@@ -76,6 +78,7 @@ pub fn analyze_expression_types(
             })
         })
         .collect::<HashMap<EventHashId, ExpressionType>>();
+    let part_names = crate::part_projection::part_names(&snapshots);
     let part_snapshot_map = snapshots
         .into_iter()
         .map(|snapshot| (snapshot.definition_event_hash.clone(), snapshot))
@@ -101,6 +104,7 @@ pub fn analyze_expression_types(
         expected_types,
         variable_types,
         call_parameter_names,
+        part_names,
     }
 }
 

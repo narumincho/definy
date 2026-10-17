@@ -83,7 +83,8 @@ definy
 モジュール内パーツ参照の解決と、リスト・直和型構築・レコード・パターンマッチを含む式検査は
 自己記述型チェッカー（`core.type-check` /
 `core.type-check-against`）において検証・実証されています。
-外部モジュールへのパーツ参照解決や、型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
+外部モジュールへのパーツ参照は, Rust 側で作る型環境 (全モジュールの最新のパーツ) を通じて解決しています。
+`core.validate-module` 自体での外部モジュール参照解決や、型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
 
 Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash
 衝突や既存 bytes と異なる内容は拒否します。ModuleCommit
@@ -110,15 +111,21 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    型定義パーツ自体の再帰参照（循環）の規則は未決定です。
 2. **[済] module type environment**: `core.collect-part-type-env` が
    `ModuleCommitEvent` の全パーツの hash と宣言型から環境を作り、
-   `PartReference`・構築子・相互参照を解決します。外部モジュールのパーツ参照は未対応です。
+   `PartReference`・構築子・相互参照を解決します。
+   サーバー・UI・seed の検証で使う型環境 (`definy_core::self_hosted_type_check::check_module_commit_parts`)
+   は全モジュールの最新のパーツから作るので, 他のモジュールのパーツ参照 (ユーザーのモジュールから
+   `core.list-contains-string` を呼ぶなど) も引数の型まで検査します (`commit_check_tests.rs` で確認)。
+   definy 製の `core.validate-module` はモジュール内のパーツだけで環境を作るため外部モジュールを参照できませんが,
+   こちらはテストでだけ使っています。型環境を作る部分を definy に移すのは今後の課題です。
 3. **[済] 式検査の拡張**: list/record の構築と field access、union constructor、match
    の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
    （[ui.md](ui.md) の「型エラー表示」を参照）。
 4. **[済] bootstrap の固定**: core definitions を `seeds/*.json` として固定し、
    コミット済み seed が正規化済みであることを `seed_tests.rs` で検証します。
-5. **compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
+5. **[stage1 済] compiler bootstrap**: 対象言語を段階的に広げ、Rust stage0 から Definy
    compiler stage1 を作り、 stage1 が同一 compiler と test suite
-   を再生成できるか比較します。
+   を再生成できるか比較します。definy 製コンパイラは評価器の適合テストを全て通り, 自分自身をコンパイルした stage1 の出力が
+   stage0 と一致し, stage2 で不動点に達しています。下の「definy 製コンパイラの対応状況」を参照。
 6. **service host 境界**: 最後に HTTP、database、署名、永続 event log を
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
@@ -211,6 +218,197 @@ AST を手組みし、そこから JSON を生成していましたが、この�
 - 編集方法（段階移行）: 今後は definy の UI / MCP でパーツを編集し、その結果を `seeds/*.json` に
   書き出してコミットする流れを目指します。手で JSON を編集した場合は
   `cargo run -p definy-server -- --export-seeds seeds` で整形とスキーマ更新を行ってください。
+
+## definy 製コンパイラの対応状況 (2026-10-18 時点)
+
+definy 製の Wasm コンパイラ (`core.compile-to-wasm` / `core.compile-expr-instructions`) が, Rust 製コンパイラ
+(`definy-core/src/wasm_emitter`, stage0) と比べてどこまでコンパイルできるかを
+`definy-server/tests/self_hosted_compiler_coverage.rs` で測っています。
+
+```sh
+cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
+```
+
+- `self_hosted_compiler_conformance`: 評価器の適合テスト (`conformance/eval_cases.json`) の各ケースを
+  `self_hosted_wasm_compiler::compile_with_self_hosted_compiler` (Rust 製コンパイラへのフォールバックなし) で
+  コンパイル・実行し, 期待値と比べます。通過数が `MIN_PASSING_CASES` を下回ると失敗するので,
+  対応範囲を広げたらこの値を上げてください
+- `self_hosted_compiler_self_compile_gaps`: definy 製コンパイラ自身のパーツが使う式の種類のうち,
+  コンパイラが扱えないものを一覧します
+
+### 適合テストの結果: 65 ケースすべてが期待値どおり
+
+definy 製コンパイラは, Rust 製コンパイラ (stage0) と同じく評価器の適合テストの全ケースを通ります。
+
+経過 (2026-10-17〜18): 測定開始時は 58 ケース中 15 (うち 2 つは偶然の一致), 真偽値・負の数を直して 25,
+レコード・バリアントの誤った値を明示的な失敗にして 65 ケース中 28, 値の表現を下の形に作り直して 53,
+関数・呼び出し・パーツ参照を入れて 65。
+
+### stage1: definy 製コンパイラが自分自身をコンパイルできる
+
+`self_hosted_compiler_stage1` (`definy-server/tests/self_hosted_compiler_coverage.rs`) で確かめています。
+
+1. stage0: Rust 製コンパイラで動かした definy 製コンパイラで, 関数・クロージャ・呼び出し・レコード・文字列・
+   `match` を含む式をコンパイルする
+2. `core.compile-to-wasm(expr = その式の core.expression, parts = [])` という呼び出しを, definy 製コンパイラで
+   コンパイルする。参照をたどってコンパイラ自身のパーツ (38 個) がすべて入り, 約 74KB の Wasm になる
+3. その Wasm を実行して得たバイト列が 1 の出力と **1 バイトも違わず**, 実行すると同じ値になる
+
+### stage2: 不動点に達している
+
+`self_hosted_compiler_stage2` で確かめています。
+
+1. stage1 = stage0 で `core.compile-to-wasm` への参照をコンパイルしたモジュール (`self_hosted_wasm_compiler::build_self_hosted_compiler_wasm`)。
+   `evaluate` がコンパイラのクロージャを返す, 単独で動くコンパイラ (68,452 バイト)
+2. stage1 を wasmtime で直接動かす (`definy_core::self_hosted_compiler_module::CompilerModule`)。入力の `core.expression` と
+   `parts` を値の箱としてモジュールのメモリに書き (`alloc` をエクスポートしている), 関数表 (`table` をエクスポート) から
+   クロージャを呼ぶと, 出力のバイト列 (`list<number>` の箱) が返る
+3. stage1 でコンパイラ自身をコンパイルした stage2 が stage1 と **1 バイトも違わない** (不動点)
+4. 適合テストの 65 個の式を stage0 と stage1 でコンパイルした結果も, すべて 1 バイトも違わない
+
+所要時間 (debug ビルド, Apple Silicon): stage1 を作る (stage0) 約 13 秒, stage1 の読み込み (wasmtime のコンパイル) 0.6 秒,
+stage1 でコンパイラ自身をコンパイル 0.16 秒, 適合テストの 65 個の式のコンパイルは stage0 で 125 秒, stage1 で 0.045 秒。
+
+### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
+
+**速さ**: definy 製型チェッカーの呼び出し `core.type-check(1 + 2, 空の環境)` を例に測った (release ビルド, 結果はどちらも `ok(number)`)。
+
+| | コンパイル | 実行 (wasmtime が出力をコンパイルする時間を含む) | 出力の大きさ |
+| --- | --- | --- | --- |
+| Rust 製コンパイラ | 7 ms | 175 ms | 208 KB |
+| definy 製コンパイラ (stage1) | 48 ms | 100 ms | 124 KB |
+
+stage1 はコンパイル自体は Rust 製より遅いが, 出力が小さい (参照された関数だけを出す) ので wasmtime のコンパイルが速く, 合計では同等以上。
+stage0 (Rust 製の評価器で definy 製コンパイラを毎回コンパイルする今の `compile_with_self_hosted_compiler`) は 1 回数秒かかるので,
+本番では使えない。どちらの場合も実行時間の大半は wasmtime による出力のコンパイルなので, 出力を content hash で
+キャッシュする効果が大きい。
+
+**使い回し方**:
+- stage1 の Wasm は definy 製コンパイラのパーツ (seed の core) だけで決まる。パーツの content hash をキーにして
+  1 回だけ作り, 保存して使い回す (サーバーの起動時に作る / CAS に置く / seed と一緒にビルド時に作る)。
+  作り直したときは stage2 == stage1 (不動点) をテストで確かめる
+- サーバー (wasmtime): `CompilerModule` を 1 つ持ち, コンパイルのたびにインスタンスを作る (メモリは解放しないので毎回新しく)
+- ブラウザ (UI, wasm32): stage1 はブラウザの `WebAssembly` でそのまま動く。今の UI は definy 製型チェッカーを Rust 製コンパイラ
+  (UI の Wasm に含まれる) でコンパイルしているので, stage1 に置き換えれば UI の Wasm から Rust 製コンパイラを外せる可能性がある。
+  ただし `CompilerModule` は wasmtime 用なので, `js_sys::WebAssembly` 版が要る
+- Cloudflare Workers: stage1 は静的な Wasm なので, デプロイ時にバンドルすれば Workers でもネイティブ (V8) に動かせる
+  (実行時に作った Wasm ではないので制限に当たらない)。ただし stage1 の **出力** は実行時に作った Wasm なので,
+  今と同じく wasmi か Dynamic Workers で動かす必要がある
+
+**置き換えの状況** (2026-10-18):
+1. `core.expression` で表せない式 (`BitAnd` などのビット演算, `Constructor`, 型の式) は definy 製コンパイラに渡せないので,
+   Rust 製コンパイラにフォールバックしている (下の「サーバーの本番のコンパイルで stage1 を使う」)。言語側で `core.expression` に足せば外せる
+2. HTTP アプリは stage1 の出力でも動くことを確かめた (下の「HTTP アプリとプレビュー」)
+3. 文字列リテラルを 1 バイトずつ書く命令にしている。データセグメントにまとめたい (未着手)
+4. 入口 `self_hosted_wasm_compiler::compile_expression_to_wasm` は stage1 を使うように切り替えた
+
+### サーバーの本番のコンパイルで stage1 を使う
+
+`definy-server/src/self_hosted_wasm_compiler.rs` に入っています。
+
+- **キャッシュのキー**: `self_hosted_compiler_cache_key()` = `self-hosted-compiler-stage1:` + definy 製コンパイラのパーツ
+  (`self_hosted_compiler_parts()`, `core.compile-to-wasm` から参照をたどった core のパーツ) の CBOR の `ContentHash`。
+  seed の core を変えるとキーが変わる
+- **プロセス内のキャッシュ**: `static STAGE1: OnceLock` に stage1 の Wasm と `CompilerModule` を 1 つだけ持つ。
+  `self_hosted_compiler()` は無ければ作って待つ (debug で十数秒), `ready_self_hosted_compiler()` は待たずにできていれば返す
+- **サーバーの起動時**: `start_server` の DB 初期化のタスクの後で `prepare_self_hosted_compiler(db)` を呼ぶ。
+  DB の `contents` テーブルにキーで保存した stage1 があれば読み込み, 無ければ `spawn_blocking` で作って保存する
+  (`contents` の他のレコードはバイト列の content hash がキーだが, このレコードだけは入力 (コンパイラのパーツ) の hash がキーのメモ)。
+  読み込んだ stage1 は `15 + 27` を正しくコンパイルできるか確かめてから使い, 壊れていれば作り直す
+- **入口** `compile_expression_to_wasm(expression, events)`: stage1 ができていれば使い, まだなら Rust 製コンパイラを使う
+  (起動直後のリクエストを待たせない)。stage1 ができていても, 次の式は Rust 製コンパイラにフォールバックする
+  (`checked_self_hosted_compiler_input`):
+  - 式か, 式がたどって参照するパーツが `core.expression` で表せない
+  - 参照するパーツが見つからないか式を持たない (definy 製コンパイラは unreachable にする)
+  - `core.compile-expr-instructions` が個別に扱わないタグ (`type_number` など) を含む (`_` アームで unreachable になる)。
+    扱うタグは seed の `core.compile-expr-instructions` の `match` から読むので, コンパイラに対応を足すと自動で広がる
+- どちらを使ったかは `compile_expression_to_wasm_with(compiler, expression, events)` が `UsedCompiler` で返す
+- 使っているのは `deploy_rpc` の `DeployCloudflare` (パーツをデプロイするとき)。DB のイベントも渡すので, パーツ参照を含む式もコンパイルできる
+- テスト: `definy-server/tests/self_hosted_compiler_entry.rs` で, 適合テストの全 65 ケースが stage1 でコンパイルされ,
+  実行結果が Rust 製コンパイラと期待値の両方に一致することを確かめている。フォールバックと DB への保存のテストもある
+
+### HTTP アプリとプレビュー
+
+`self_hosted_compiler_entry.rs` の `stage1_compiles_http_app` で, サンプルの `self-hosted-definy-server` のプレビューのハンドラ
+(`/`, `/api/self-host`, `/healthz`, `/not-found`) を stage1 でコンパイルし, `execute_wasm_http_response` (wasmtime) と
+wasmi のどちらでも Rust 製と同じステータス・ヘッダー・ボディになることを確かめた。クロージャの形 (`(env, args) -> i32`),
+`table` のエクスポートが Rust 製と同じで, データを 1024 番地から置くので, ストリームの呼び出しが引数の置き場に使う 512 番地ともぶつからない。
+出力は stage1 が約 278KB, Rust 製が約 529KB で stage1 の方が小さい (参照された関数だけを出すため)。
+
+プレビューを stage1 に切り替える道筋 (今回は切り替えていない):
+1. `definy_core::http_app::build_http_request_target_expression` でリクエストを適用した式を作る (切り出し済み)
+2. `self_hosted_wasm_compiler::compile_http_request_to_wasm` で `definy_core::http_app::compile_http_request_to_wasm` の代わりに
+   その式を `compile_expression_to_wasm(&target, events)` に渡す。フォールバックは入口と同じ
+3. ハンドラが関数でない式のときに `evaluate_expression` (Rust 製コンパイラで 1 回コンパイルして実行) で関数かどうかを
+   調べているので, ここも stage1 にするなら型 (`core.type-check`) で判定するか, stage1 でコンパイルして実行する
+4. プレビューはリクエストのたびにコンパイルするので, リクエストを引数にした関数としてハンドラを 1 回だけコンパイルし,
+   `CompilerModule` と同じようにメモリに書いたリクエストで呼ぶ形にすると, コンパイルと wasmtime のコンパイルをキャッシュできる
+
+### 値の表現 (Rust 製コンパイラと同じ線形メモリの形)
+
+すべての値を「線形メモリ上のタグ付きの箱」へのポインタ (i32) で表します。箱の形は Rust 製コンパイラ
+(`definy-core/src/wasm_emitter/compiler.rs`) と実行結果の読み取り (`wasm_emitter::read_value_from_memory`) と同じです。
+
+| タグ | 値 | 形 |
+| --- | --- | --- |
+| 0 | 数値 | +8 に i64 |
+| 1 | 真偽値 | +8 に 1 バイト |
+| 2 | 文字列 | +4 に長さ (バイト数), +8 から UTF-8 のバイト列 |
+| 3 | リスト | +4 に要素数, +8 から要素の箱へのポインタ |
+| 4 | レコード | +4 にフィールド数, +8 から (キーの文字列の箱, 値の箱) のポインタの組 |
+| 5 | 関数 (クロージャ) | +4 に関数表の番号, +8 に捕捉した変数の配列 (無ければ 0) |
+| 6 | バリアント | +4 にタグの文字列の箱, +8 にペイロードの箱 (無ければ 0) |
+
+- メモリは確保するだけで解放しません (1 回の評価は短いので)。ヒープの先頭はグローバル変数 0 で, 確保は 8 バイト境界に揃え,
+  足りなければ `memory.grow` します。確保したばかりのメモリは 0 なので, 数値の箱はタグを書かずに済みます
+- 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す), `memory`, 関数表 `table`, メモリを確保する `alloc` をエクスポートします (`cloudflare_workers.rs` が生成する JS のために, `evaluate` を `main` としてもエクスポート)。`table` と `alloc` は, 外から値を書いて関数を呼ぶため (`CompilerModule`)。
+  `match` で真偽値のタグとして使う文字列 `"true"` `"false"` だけはデータセグメント (1024 番地) に置きます
+- ランタイム関数 (メモリの確保, 数値・真偽値の箱詰め, 文字列の比較, 値の比較, `record_get`, リストと文字列の操作,
+  `match` のタグとペイロードの取り出し) は Wasm の関数 1〜14 として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
+  に固定のバイト列として入っています。組み立てるスクリプトは `scripts/wasm_runtime_functions.py`
+  (`python3 scripts/wasm_runtime_functions.py seeds/core.json` で seed のこのパーツだけを書き換える)
+- 文字列のリテラル・レコードのキー・バリアントのタグは, 実行時に箱を確保して 1 バイトずつ書きます。
+  データセグメントにまとめれば命令列を小さくできますが, コンパイラ全体に「どこに何を置いたか」の状態を引き回す必要があるので後回し
+- ローカル変数は i32 を 512 個宣言し, 式の深さ (`depth`) ごとに 1 つずつ一時領域として使います。`let` と `match` のアームで
+  束縛した変数もその深さのローカル変数に置き, 変数 ID からローカル変数への対応 (`env`) を `core.compile-expr-instructions` に渡します。
+  兄弟の式は同じ深さを使い回せます (先に評価した値はスタックに積まれていて, ローカル変数には残っていないため)
+- 値がすべて箱に入っていて実行時にタグで種類が分かるので, 式全体の型をコンパイル時に求める必要はありません
+- 未対応の式と, どのアームにも一致しない `match` は `unreachable` にします
+
+### 関数・呼び出し・パーツ参照
+
+Rust 製コンパイラ (`wasm_emitter/function_ops.rs`) と同じ形です。
+
+- 関数は Wasm の関数 (型 `(env_ptr, args_ptr) -> i32`) にし, 関数表 (table 0) に並べます。Wasm の関数番号は
+  15 (ランタイム関数の後ろ) から, 関数表の番号は 0 から
+- 関数の値はクロージャの箱 (タグ 5)。関数の式を評価すると, 本体の自由変数 (`core.free-variables`) を環境の配列に詰めて箱を作る。
+  関数の本体は, 引数の配列 (第 2 引数) からパラメーターを, 環境の配列 (第 1 引数) から捕捉した変数をローカル変数に読み込んでから始まる
+- 呼び出しは, 関数の値と引数の配列 (引数は書いた順) を作って `call_indirect`
+- **関数の番号の付け方**: definy には状態が無いので, コンパイルしながら関数を集めて番号を振ることができない。そこで
+  - `core.collect-functions` で式の中の関数の式を前順 (自身が先, 次に子を `core.expression-children` の順) に並べ, その位置を番号にする
+  - `core.compile-expr-instructions` は引数 `fn_base` (その式の中で最初の関数の番号) を受け取り, 子をコンパイルするときは
+    前の兄弟に含まれる関数の数 (`core.count-functions`) を足して渡す。こうすると集めたときと同じ番号になる
+- **パーツ参照**: Rust 側 (`self_hosted_wasm_compiler::compile_with_self_hosted_compiler`) が, 式から参照をたどって集めたパーツを
+  `parts: list<{ id, expression }>` として `core.compile-to-wasm` に渡す。関数表には, 式の中の関数の後ろに各パーツの式の中の関数を続ける
+  (`core.compile-assign-part-bases` で各パーツの最初の番号を求める)。
+  関数のパーツへの参照は, その番号のクロージャ (環境なし) になる。関数でないパーツへの参照は, 参照した場所でパーツの式をコンパイルする
+  (パーツの中の関数の番号はパーツの最初の番号から数えるので, どこでコンパイルしても同じ)。インライン化中のパーツを再び参照したら `unreachable`
+- 式を持たないパーツ (コンパイラ組み込み) や `core.expression` で表せないパーツは渡さないので, 参照すると `unreachable`
+- 引数は名前ではなく書いた順に渡す (Rust 製と同じ)
+
+### Rust 製コンパイラの修正: 静的データが 64KB を超えるとヒープが上書きしていた
+
+Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024 番地からの静的データに置き, ヒープを常に 65536 番地から始めていました。
+静的データが 64KB を超えると, ヒープの確保が静的データを上書きし, 定数が別の値に化けていました
+(definy 製コンパイラにコンパイラ自身の式を渡したときに `unsigned-leb128` の結果がおかしくなって見つかった)。
+`module_builder::assemble_wasm_module` でヒープを静的データの後ろから始め, メモリの初期ページ数も足りるようにしました
+(`test_large_static_data_is_not_overwritten_by_heap`)。
+
+### 次に進める順番の案
+
+1. ~~stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う~~ (済み: 上の「サーバーの本番のコンパイルで stage1 を使う」)。次はプレビュー (上の「HTTP アプリとプレビュー」)
+2. definy 製型チェッカーの実行 (サーバー・UI) を stage1 でコンパイルするように切り替え, Rust 製コンパイラの出番を減らす
+3. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
 
 ## セルフホストのロードマップと到達状況
 

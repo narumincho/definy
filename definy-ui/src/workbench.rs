@@ -229,6 +229,8 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     let mut checked_generation = use_signal(|| usize::MAX);
     let mut check_task = use_signal(|| None::<dioxus::core::Task>);
     let generation = state.event_cache.len();
+    // フックなので use_effect の中ではなく, ここで取る
+    let state_sig = use_context::<Signal<AppState>>();
     use_effect(use_reactive!(|generation| {
         if *checked_generation.peek() == generation {
             return;
@@ -237,7 +239,6 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
         if let Some(task) = check_task.take() {
             task.cancel();
         }
-        let state_sig = use_context::<Signal<AppState>>();
         check_task.set(Some(spawn(crate::self_hosted_type_check::check_all_parts(
             state_sig,
         ))));
@@ -257,6 +258,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
     modules.sort_by(|a, b| a.module_name.cmp(&b.module_name));
     let mut parts = collect_part_snapshots(&state);
     parts.sort_by(|a, b| a.part_name.cmp(&b.part_name));
+    let part_names = crate::part_projection::part_names(&parts);
 
     let query = filter_query().trim().to_lowercase();
     let is_filtering = !query.is_empty();
@@ -365,7 +367,7 @@ fn ExplorerSidebar(state: AppState, context: PageContext) -> Element {
                             let type_text = part
                                 .part_type
                                 .as_ref()
-                                .map(|t| t.to_string())
+                                .map(|t| crate::part_projection::part_type_text(t, &part_names))
                                 .unwrap_or_default();
                             rsx! {
                                 a {

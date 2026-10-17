@@ -6,6 +6,7 @@
 //!   パーツ定義は正本の `seeds/*.json` から `seed_part` で取得します。
 
 mod ast_structure_tests;
+mod commit_check_tests;
 mod execution_tests;
 mod helpers;
 mod list_tests;

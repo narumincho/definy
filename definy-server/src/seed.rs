@@ -265,6 +265,33 @@ pub fn find_stale_seed_files(base_dir: &Path) -> Result<Vec<PathBuf>, anyhow::Er
     Ok(stale)
 }
 
+/// ビルトインモジュールの seed を, 型検査や評価に使うイベント列にする.
+/// `exclude_module` の seed は入れない (検証するモジュール自身を型環境から外すため).
+/// 評価器は署名を検証しないため、ダミー署名で作る（秘密鍵を必要としない）
+pub fn builtin_seed_events(
+    account_id: &AccountId,
+    exclude_module: Option<&str>,
+) -> Vec<definy_core::EventWithHash> {
+    let dummy_signature = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
+    get_builtin_module_seeds()
+        .iter()
+        .filter(|other| Some(&*other.module_name) != exclude_module)
+        .map(|other| {
+            let event = definy_event::event::Event {
+                account_id: account_id.clone(),
+                time: chrono::DateTime::from_timestamp(1548909361, 0).unwrap(),
+                content: definy_event::event::EventContent::ModuleCommit(
+                    other.to_module_commit_event(),
+                ),
+            };
+            let hash = definy_event::EventHashId::from_bytes(
+                format!("definy:seed-validation:{}", other.module_name).as_bytes(),
+            );
+            (hash, Ok((dummy_signature, event)))
+        })
+        .collect()
+}
+
 /// 自己ホスト型チェッカー (`core.type-check-against`) を用いて、
 /// 指定された ModuleSeed のすべてのパーツ・式の型妥当性を検証します。
 ///
@@ -279,25 +306,7 @@ pub fn validate_module_seed_with_type_checker(
         &definy_event::event::derive_module_id(account_id, "core"),
     );
     let module_id = definy_event::event::derive_module_id(account_id, &seed.module_name);
-    // 評価器は署名を検証しないため、ダミー署名で評価用イベントを作る（秘密鍵を必要としない）
-    let dummy_signature = ed25519_dalek::Signature::from_bytes(&[0u8; 64]);
-    let events = get_builtin_module_seeds()
-        .iter()
-        .filter(|other| other.module_name != seed.module_name)
-        .map(|other| {
-            let event = definy_event::event::Event {
-                account_id: account_id.clone(),
-                time: chrono::DateTime::from_timestamp(1548909361, 0).unwrap(),
-                content: definy_event::event::EventContent::ModuleCommit(
-                    other.to_module_commit_event(),
-                ),
-            };
-            let hash = definy_event::EventHashId::from_bytes(
-                format!("definy:seed-validation:{}", other.module_name).as_bytes(),
-            );
-            (hash, Ok((dummy_signature, event)))
-        })
-        .collect::<Vec<definy_core::EventWithHash>>();
+    let events = builtin_seed_events(account_id, Some(&seed.module_name));
     definy_core::self_hosted_type_check::check_module_commit(
         &seed.to_module_commit_event(),
         &module_id,

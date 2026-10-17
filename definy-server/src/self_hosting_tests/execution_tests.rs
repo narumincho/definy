@@ -472,16 +472,12 @@ fn test_self_hosted_type_checker_execution() {
 fn test_self_hosted_compile_to_wasm_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
-    let compile_instr = seed_part("compile-expr-instructions");
-    let compile_to_wasm = seed_part("compile-to-wasm");
-
     let compile_to_wasm_hash = derive_module_part_id(&mod_id, "compile-to-wasm");
     let expr_type_hash = derive_module_part_id(&mod_id, "expression");
 
-    let match_arm_body = seed_part("match-arm-body");
     let events = create_test_module_events(
         account,
-        vec![compile_instr, compile_to_wasm, match_arm_body],
+        crate::self_hosted_wasm_compiler::self_hosted_compiler_parts(),
         128,
     );
 
@@ -493,7 +489,18 @@ fn test_self_hosted_compile_to_wasm_execution() {
         expr_type_opt,
     );
 
-    let call_compile = call_part(compile_to_wasm_hash, &[("expr", expr_to_compile)]);
+    let call_compile = call_part(
+        compile_to_wasm_hash,
+        &[
+            ("expr", expr_to_compile),
+            (
+                "parts",
+                Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                    items: Vec::new(),
+                }),
+            ),
+        ],
+    );
 
     // Execute self-hosted compiler to generate Wasm bytecode!
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
@@ -515,8 +522,6 @@ fn test_self_hosted_optimize_expression_execution() {
     let (account, mod_id) = get_test_account_and_mod_id();
 
     let optimize_part = seed_part("optimize-expression");
-    let compile_instr = seed_part("compile-expr-instructions");
-    let compile_to_wasm = seed_part("compile-to-wasm");
 
     let optimize_hash = derive_module_part_id(&mod_id, "optimize-expression");
     let compile_to_wasm_hash = derive_module_part_id(&mod_id, "compile-to-wasm");
@@ -524,12 +529,10 @@ fn test_self_hosted_optimize_expression_execution() {
 
     let events = create_test_module_events(
         account,
-        vec![
-            optimize_part,
-            compile_instr,
-            compile_to_wasm,
-            seed_part("match-arm-body"),
-        ],
+        [optimize_part, seed_part("match-arm-body")]
+            .into_iter()
+            .chain(crate::self_hosted_wasm_compiler::self_hosted_compiler_parts())
+            .collect(),
         129,
     );
 
@@ -562,7 +565,18 @@ fn test_self_hosted_optimize_expression_execution() {
 
     // Now compile the folded AST: number(42) directly to Wasm
     let folded_ast = ast_num(42, expr_type_opt);
-    let call_compile = call_part(compile_to_wasm_hash, &[("expr", folded_ast)]);
+    let call_compile = call_part(
+        compile_to_wasm_hash,
+        &[
+            ("expr", folded_ast),
+            (
+                "parts",
+                Expression::ListLiteral(definy_event::event::ListLiteralExpression {
+                    items: Vec::new(),
+                }),
+            ),
+        ],
+    );
 
     let generated_wasm_list = definy_core::evaluate_expression(&call_compile, &events)
         .expect("Failed to compile optimized AST to Wasm");

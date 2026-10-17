@@ -3,6 +3,8 @@ pub mod expression_eval;
 pub mod http_app;
 pub mod preview_detector;
 pub mod self_hosted_ast;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod self_hosted_compiler_module;
 pub mod self_hosted_type_check;
 pub mod wasm_emitter;
 

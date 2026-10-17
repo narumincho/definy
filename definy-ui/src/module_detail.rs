@@ -17,7 +17,9 @@ pub fn ModuleDetailView(
     let page_shell_style = crate::layout::page_shell_style("1.2rem");
 
     if let Some(module_snapshot) = module_snapshot {
-        let parts_in_module = collect_part_snapshots(&state)
+        let all_parts = collect_part_snapshots(&state);
+        let part_names = crate::part_projection::part_names(&all_parts);
+        let parts_in_module = all_parts
             .into_iter()
             .filter(|snapshot| snapshot.module_definition_event_hash == definition_event_hash)
             .collect::<Vec<_>>();
@@ -71,6 +73,7 @@ pub fn ModuleDetailView(
                                 key: "{part.definition_event_hash}",
                                 account_name: crate::app_state::account_display_name(&account_name_map, &part.account_id),
                                 part,
+                                part_names: part_names.clone(),
                                 context: context.clone(),
                             }
                         }
@@ -102,12 +105,13 @@ pub fn ModuleDetailView(
 #[component]
 fn ModulePartItem(
     part: crate::part_projection::PartSnapshot,
+    part_names: crate::tree_layout::engine::PartNames,
     account_name: String,
     context: PageContext,
 ) -> Element {
     let def_hash = part.definition_event_hash.clone();
     let time_str = part.updated_at.format("%Y-%m-%d %H:%M:%S").to_string();
-    let type_str = definy_event::event::PartType::optional_to_string(&part.part_type);
+    let type_str = crate::part_projection::optional_part_type_text(&part.part_type, &part_names);
     let type_badge_cls = crate::event_list::part_type_badge_class(&type_str);
 
     let (ch_str, short_ch) = if let Some(ch) = &part.content_hash {

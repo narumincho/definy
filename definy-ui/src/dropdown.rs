@@ -399,17 +399,7 @@ pub fn SearchableDropdownPanel(
     on_escape: Option<EventHandler<()>>,
 ) -> Element {
     let query = search_query.read().to_lowercase();
-    let filtered_options: Vec<(String, String)> = options
-        .iter()
-        .filter(|(_, label)| {
-            if query.is_empty() {
-                true
-            } else {
-                label.to_lowercase().contains(&query)
-            }
-        })
-        .cloned()
-        .collect();
+    let filtered_options = filter_and_rank_options(&options, &query, &secondary_values);
 
     let highlight = resolve_highlight(*highlighted_index.read(), &filtered_options, &current_value);
     let effective_highlighted_index = highlight.index();
@@ -578,6 +568,44 @@ impl Highlight {
     }
 }
 
+/// 検索語で選択肢を絞り込む. 検索語があれば, 名前 (ラベルのタブより前) が検索語と一致するもの,
+/// 検索語で始まるもの, 名前に含むもの, ラベルのどこかに含むものの順に並べる.
+/// 例えば `index` と打ったとき, 変数 `index` をパーツ `string-index-of` より先に出す.
+/// secondary の選択肢は従来どおり後ろにまとめ, 同じ順位の中では元の順序を保つ
+fn filter_and_rank_options(
+    options: &[(String, String)],
+    query: &str,
+    secondary_values: &HashSet<String>,
+) -> Vec<(String, String)> {
+    if query.is_empty() {
+        return options.to_vec();
+    }
+    let mut ranked: Vec<(bool, u8, &(String, String))> = options
+        .iter()
+        .filter_map(|option| {
+            let label = option.1.to_lowercase();
+            let name = label.split('\t').next().unwrap_or_default();
+            let rank = if name == query {
+                0
+            } else if name.starts_with(query) {
+                1
+            } else if name.contains(query) {
+                2
+            } else if label.contains(query) {
+                3
+            } else {
+                return None;
+            };
+            Some((secondary_values.contains(&option.0), rank, option))
+        })
+        .collect();
+    ranked.sort_by_key(|(is_secondary, rank, _)| (*is_secondary, *rank));
+    ranked
+        .into_iter()
+        .map(|(_, _, option)| option.clone())
+        .collect()
+}
+
 fn resolve_highlight(
     highlighted_index: Option<usize>,
     filtered_options: &[(String, String)],
@@ -741,6 +769,44 @@ fn resolve_part_detail_url(opt_val: &str, parts: &[&str]) -> Option<String> {
 #[cfg(test)]
 mod highlight_tests {
     use super::*;
+
+    #[test]
+    fn search_puts_exact_and_prefix_name_matches_first() {
+        let options: Vec<(String, String)> = [
+            ("ref:global:a", "string-index-of\tstring\t"),
+            ("ref:global:b", "list\ttype\t"),
+            ("ref:local:2", "index\tLocal\t#2"),
+            ("ref:global:c", "index-of-x\tnumber\t"),
+            ("ref:global:d", "other\tnumber\tindex"),
+        ]
+        .iter()
+        .map(|(v, l)| (v.to_string(), l.to_string()))
+        .collect();
+        let values: Vec<String> = filter_and_rank_options(&options, "index", &HashSet::new())
+            .into_iter()
+            .map(|(v, _)| v)
+            .collect();
+        assert_eq!(
+            values,
+            vec![
+                "ref:local:2",
+                "ref:global:c",
+                "ref:global:a",
+                "ref:global:d"
+            ]
+        );
+
+        // secondary の選択肢は一致度に関わらず後ろにまとめる
+        let secondary = HashSet::from(["ref:local:2".to_string()]);
+        let values: Vec<String> = filter_and_rank_options(&options, "index", &secondary)
+            .into_iter()
+            .map(|(v, _)| v)
+            .collect();
+        assert_eq!(values.last().map(String::as_str), Some("ref:local:2"));
+
+        // 検索語が空なら元の順序のまま
+        assert_eq!(filter_and_rank_options(&options, "", &secondary), options);
+    }
 
     fn options() -> Vec<(String, String)> {
         ["expr:let", "expr:number", "expr:string"]

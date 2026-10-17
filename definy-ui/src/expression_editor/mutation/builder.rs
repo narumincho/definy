@@ -173,6 +173,62 @@ pub(crate) fn default_expression_for_compiler_builtin(
     }
 }
 
+/// 組み込みの式を作る. 二項演算 (`plus` など) を別の二項演算に差し替えるときは,
+/// 既定値の 0 で上書きせず元の左右の式を引き継ぐ (例: `index < 0` → `index <= 0`)
+fn builtin_expression_keeping_operands(
+    builtin: CompilerBuiltin,
+    next_variable_id: i64,
+    current_expr: &Expression,
+) -> Expression {
+    let mut expression = default_expression_for_compiler_builtin(builtin, next_variable_id);
+    if let Some((current_left, current_right)) = binary_operands(current_expr)
+        && let Some((left, right)) = binary_operands_mut(&mut expression)
+    {
+        **left = current_left.clone();
+        **right = current_right.clone();
+    }
+    expression
+}
+
+macro_rules! binary_operand_variants {
+    ($expr:expr, $e:ident => $body:expr) => {
+        match $expr {
+            Expression::Add($e) => Some($body),
+            Expression::Subtract($e) => Some($body),
+            Expression::Multiply($e) => Some($body),
+            Expression::Divide($e) => Some($body),
+            Expression::Remainder($e) => Some($body),
+            Expression::BitAnd($e) => Some($body),
+            Expression::BitOr($e) => Some($body),
+            Expression::BitXor($e) => Some($body),
+            Expression::ShiftLeft($e) => Some($body),
+            Expression::ShiftRight($e) => Some($body),
+            Expression::LessThan($e) => Some($body),
+            Expression::LessThanOrEqual($e) => Some($body),
+            Expression::GreaterThan($e) => Some($body),
+            Expression::GreaterThanOrEqual($e) => Some($body),
+            Expression::Equal($e) => Some($body),
+            Expression::NotEqual($e) => Some($body),
+            Expression::And($e) => Some($body),
+            Expression::Or($e) => Some($body),
+            Expression::StringConcat($e) => Some($body),
+            Expression::ListConcat($e) => Some($body),
+            _ => None,
+        }
+    };
+}
+
+/// 左右 2 つの式を取る演算なら, その左右の式
+fn binary_operands(expr: &Expression) -> Option<(&Expression, &Expression)> {
+    binary_operand_variants!(expr, e => (e.left.as_ref(), e.right.as_ref()))
+}
+
+fn binary_operands_mut(
+    expr: &mut Expression,
+) -> Option<(&mut Box<Expression>, &mut Box<Expression>)> {
+    binary_operand_variants!(expr, e => (&mut e.left, &mut e.right))
+}
+
 pub(crate) fn build_expression_from_selection(
     state: &AppState,
     selected_value: &str,
@@ -216,7 +272,7 @@ pub(crate) fn build_expression_from_selection(
     };
 
     if let Some(builtin) = builtin_opt {
-        return default_expression_for_compiler_builtin(builtin, next_variable_id);
+        return builtin_expression_keeping_operands(builtin, next_variable_id, current_expr);
     }
 
     match selected_value {
@@ -297,9 +353,10 @@ pub(crate) fn build_expression_from_selection(
                     let snapshot_opt = crate::part_projection::find_part_snapshot(state, &hash);
                     if let Some(snapshot) = snapshot_opt.as_ref() {
                         if let Some(Expression::Compiler(builtin)) = snapshot.expression.as_ref() {
-                            return default_expression_for_compiler_builtin(
+                            return builtin_expression_keeping_operands(
                                 *builtin,
                                 next_variable_id,
+                                current_expr,
                             );
                         }
                         if snapshot.part_type == Some(definy_event::event::PartType::Type) {

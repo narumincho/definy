@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::app_state::PathStep;
+use definy_event::EventHashId;
 use definy_event::event::Expression;
 
 use super::types::{LayoutMode, LayoutNode, LayoutOptions, LayoutResult, NodeKind};
@@ -20,29 +21,90 @@ pub fn expression_to_layout_node(expr: &Expression, id_prefix: &str) -> LayoutNo
 /// (型解析の [`crate::expression_editor::diagnostics::TypeAnalysis::call_parameter_names`])
 pub type CallParameterNames = HashMap<Vec<PathStep>, Vec<String>>;
 
-/// 関数呼び出しの引数に, 呼び出し先関数のパラメーター名を付けて AST をレイアウトノード木に変換する
-pub fn expression_to_layout_node_with_call_parameter_names(
+/// パーツ参照の表示名 (パーツ定義イベントのハッシュ → パーツ名)
+/// (型解析の [`crate::expression_editor::diagnostics::TypeAnalysis::part_names`])
+pub type PartNames = HashMap<EventHashId, String>;
+
+/// 呼び出し先のパラメーター名とパーツ名を使って AST をレイアウトノード木に変換する.
+/// 変数は束縛している関数のパラメーター・let・match の名前で表示する
+pub fn expression_to_layout_node_with_names(
     expr: &Expression,
     id_prefix: &str,
     call_parameter_names: &CallParameterNames,
+    part_names: &PartNames,
 ) -> LayoutNode {
-    build_layout_node(expr, id_prefix, &[], call_parameter_names)
+    let scope = NameScope::new(call_parameter_names, part_names);
+    build_layout_node(expr, id_prefix, &[], &scope)
 }
 
-/// パス情報を保持しながら AST (Expression) をレイアウトノード木に変換する
+/// 指定したパスにある部分木を, そのパスを持つレイアウトノード木に変換する
 pub fn expression_to_layout_node_with_path(
     expr: &Expression,
     id_prefix: &str,
     current_path: &[PathStep],
 ) -> LayoutNode {
-    build_layout_node(expr, id_prefix, current_path, &HashMap::new())
+    let call_parameter_names = CallParameterNames::new();
+    let part_names = PartNames::new();
+    let scope = NameScope::new(&call_parameter_names, &part_names);
+    build_layout_node(expr, id_prefix, current_path, &scope)
+}
+
+/// レイアウトで ID の代わりに名前を表示するための情報.
+/// `variables` はその位置から見える変数 ID → 変数名 (内側の束縛が外側を隠す)
+struct NameScope<'a> {
+    call_parameter_names: &'a CallParameterNames,
+    part_names: &'a PartNames,
+    variables: HashMap<i64, Box<str>>,
+}
+
+impl<'a> NameScope<'a> {
+    fn new(call_parameter_names: &'a CallParameterNames, part_names: &'a PartNames) -> Self {
+        Self {
+            call_parameter_names,
+            part_names,
+            variables: HashMap::new(),
+        }
+    }
+
+    fn get(&self, path: &[PathStep]) -> Option<&Vec<String>> {
+        self.call_parameter_names.get(path)
+    }
+
+    /// 変数を束縛した内側のスコープを作る
+    fn with_variables<'b>(&self, bindings: impl IntoIterator<Item = (i64, &'b str)>) -> Self {
+        let mut variables = self.variables.clone();
+        for (id, name) in bindings {
+            variables.insert(id, name.into());
+        }
+        Self {
+            call_parameter_names: self.call_parameter_names,
+            part_names: self.part_names,
+            variables,
+        }
+    }
+
+    /// 変数の表示名. 名前が無い (空文字) かスコープ外なら `var_{id}`
+    fn variable_label(&self, variable_id: i64) -> String {
+        match self.variables.get(&variable_id) {
+            Some(name) if !name.is_empty() => name.to_string(),
+            _ => format!("var_{}", variable_id),
+        }
+    }
+
+    /// パーツ参照の表示名. パーツが見つからなければハッシュの先頭を出す
+    fn part_label(&self, hash: &EventHashId) -> String {
+        match self.part_names.get(hash) {
+            Some(name) => name.clone(),
+            None => format!("@part:{}", &hash.to_string()[..6]),
+        }
+    }
 }
 
 fn build_layout_node(
     expr: &Expression,
     id_prefix: &str,
     current_path: &[PathStep],
-    names: &CallParameterNames,
+    names: &NameScope,
 ) -> LayoutNode {
     let p = current_path.to_vec();
     match expr {
@@ -72,16 +134,13 @@ fn build_layout_node(
         }
         Expression::Variable(var) => LayoutNode::new(
             id_prefix,
-            format!("var_{}", var.variable_id),
+            names.variable_label(var.variable_id),
             NodeKind::Identifier,
         )
         .with_path(p),
         Expression::PartReference(part) => LayoutNode::new(
             id_prefix,
-            format!(
-                "@part:{}",
-                &part.part_definition_event_hash.to_string()[..6]
-            ),
+            names.part_label(&part.part_definition_event_hash),
             NodeKind::Identifier,
         )
         .with_path(p),
@@ -357,26 +416,28 @@ fn build_layout_node(
                 .with_children(vec![list, item])
         }
         Expression::Let(let_expr) => {
-            let binding_nodes: Vec<LayoutNode> = let_expr
-                .bindings
-                .iter()
-                .enumerate()
-                .map(|(idx, binding)| {
-                    let name_node = LayoutNode::new(
-                        format!("{}.b_{}.var", id_prefix, idx),
-                        binding.variable_name.as_ref(),
-                        NodeKind::Identifier,
-                    );
-                    let val_node = build_layout_node(
-                        &binding.value,
-                        &format!("{}.b_{}.val", id_prefix, idx),
-                        &child_path(current_path, PathStep::LetBindingValue(idx)),
-                        names,
-                    );
+            // let の束縛は前から順に見える (後の束縛の値と本体から, それより前の束縛を参照できる)
+            let mut scope = names.with_variables([]);
+            let mut binding_nodes: Vec<LayoutNode> = Vec::new();
+            for (idx, binding) in let_expr.bindings.iter().enumerate() {
+                let name_node = LayoutNode::new(
+                    format!("{}.b_{}.var", id_prefix, idx),
+                    binding.variable_name.as_ref(),
+                    NodeKind::Identifier,
+                );
+                let val_node = build_layout_node(
+                    &binding.value,
+                    &format!("{}.b_{}.val", id_prefix, idx),
+                    &child_path(current_path, PathStep::LetBindingValue(idx)),
+                    &scope,
+                );
+                binding_nodes.push(
                     LayoutNode::new(format!("{}.b_{}", id_prefix, idx), "=", NodeKind::Operator)
-                        .with_children(vec![name_node, val_node])
-                })
-                .collect();
+                        .with_children(vec![name_node, val_node]),
+                );
+                scope =
+                    scope.with_variables([(binding.variable_id, binding.variable_name.as_ref())]);
+            }
             let bindings_list_node =
                 LayoutNode::new(format!("{}.bindings", id_prefix), "list", NodeKind::Block)
                     .with_children(binding_nodes);
@@ -385,7 +446,7 @@ fn build_layout_node(
                 &let_expr.body,
                 &format!("{}.body", id_prefix),
                 &child_path(current_path, PathStep::LetBody),
-                names,
+                &scope,
             );
             LayoutNode::new(id_prefix, "let", NodeKind::Block)
                 .with_path(p)
@@ -404,11 +465,16 @@ fn build_layout_node(
                     )
                 })
                 .collect();
+            let body_scope = names.with_variables(
+                func.parameters
+                    .iter()
+                    .map(|param| (param.parameter_id, param.parameter_name.as_ref())),
+            );
             let body_node = build_layout_node(
                 &func.body,
                 &format!("{}.body", id_prefix),
                 &child_path(current_path, PathStep::FunctionBody),
-                names,
+                &body_scope,
             );
             children.push(body_node);
             LayoutNode::new(id_prefix, "fn", NodeKind::Block)
@@ -493,6 +559,9 @@ fn build_layout_node(
                 let mut node = table_node;
                 node.table_headers = headers;
                 node
+            } else if list_expr.items.is_empty() {
+                // 空のリストは, 同じ "list" という名前の変数と見分けられるよう `[]` と表示する
+                LayoutNode::new(id_prefix, "[]", NodeKind::Group).with_path(p)
             } else {
                 let children = list_expr
                     .items
@@ -603,13 +672,26 @@ fn build_layout_node(
             let mut children = vec![target_node];
             for (i, arm) in match_expr.arms.iter().enumerate() {
                 let arm_prefix = format!("{}.arm_{}", id_prefix, i);
+                // アームが値を束縛していれば, 本体からその名前で見えるようにする
+                let arm_variable = arm.variable_id.map(|variable_id| {
+                    (
+                        variable_id,
+                        arm.variable_name.as_deref().unwrap_or_default(),
+                    )
+                });
+                let arm_scope = names.with_variables(arm_variable);
                 let body_node = build_layout_node(
                     &arm.body,
                     &arm_prefix,
                     &child_path(current_path, PathStep::MatchArmBody(i)),
-                    names,
+                    &arm_scope,
                 );
-                let arm_label = format!("{} =>", arm.tag);
+                let arm_label = match arm_variable {
+                    Some((variable_id, _)) => {
+                        format!("{}({}) =>", arm.tag, arm_scope.variable_label(variable_id))
+                    }
+                    None => format!("{} =>", arm.tag),
+                };
                 children.push(
                     LayoutNode::new(&arm_prefix, arm_label, NodeKind::Block)
                         .with_path(child_path(current_path, PathStep::MatchArmBody(i)))
@@ -643,7 +725,7 @@ fn create_binary_op_node(
     left: &Expression,
     right: &Expression,
     current_path: &[PathStep],
-    names: &CallParameterNames,
+    names: &NameScope,
 ) -> LayoutNode {
     let left_node = build_layout_node(
         left,
@@ -666,7 +748,7 @@ fn try_build_table_node(
     list_expr: &definy_event::event::ListLiteralExpression,
     id_prefix: &str,
     base_path: &[PathStep],
-    names: &CallParameterNames,
+    names: &NameScope,
 ) -> Option<(Vec<String>, LayoutNode)> {
     if list_expr.items.is_empty() {
         return None;

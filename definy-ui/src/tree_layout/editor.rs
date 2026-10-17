@@ -13,8 +13,8 @@ use crate::expression_editor::diagnostics::{
     TypeAnalysis, constructor_default_value_from_type_part,
 };
 use crate::expression_editor::mutation::{
-    apply_selection, clear_expression_at_path, get_mut_expression_at_path, set_number_value,
-    set_string_value,
+    apply_selection, clear_expression_at_path, get_mut_expression_at_path, scope_variables_at_path,
+    set_number_value, set_string_value,
 };
 use crate::expression_editor::{
     ExpressionType, TypeDiagnostic, analyze_expression_types, current_selection_value,
@@ -23,7 +23,7 @@ use crate::expression_editor::{
 use crate::language::Language;
 use crate::page_context::PageContext;
 
-use super::engine::{compute_layout, expression_to_layout_node_with_call_parameter_names};
+use super::engine::{compute_layout, expression_to_layout_node_with_names};
 use super::keyboard::{NavKey, Rect, navigate};
 use super::types::{LayoutNode, LayoutOptions};
 use super::view::{TreeLayoutRenderer, tree_node_anchor_name};
@@ -92,10 +92,11 @@ pub fn ExpressionTreeEditor(
         max_width: (max_width - 16.0).max(100.0),
         ..Default::default()
     };
-    let root_layout_node = expression_to_layout_node_with_call_parameter_names(
+    let root_layout_node = expression_to_layout_node_with_names(
         &expr,
         "root",
         &analysis.call_parameter_names,
+        &analysis.part_names,
     );
     let layout_result = compute_layout(&root_layout_node, &layout_options);
     // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
@@ -132,10 +133,12 @@ pub fn ExpressionTreeEditor(
             .expected_types
             .get(target_path)
             .or(expected_type.as_ref());
+        // その位置から参照できる変数 (関数のパラメーター・let・match の束縛) も選択肢に出す
+        let scope_variables = scope_variables_at_path(&expr, target_path);
         selector_options_ranked(
             &state,
             language,
-            &[],
+            &scope_variables,
             is_root,
             target_expected,
             &analysis.variable_types,

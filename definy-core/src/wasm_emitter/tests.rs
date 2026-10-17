@@ -16,6 +16,64 @@ fn test_compile_and_execute_arithmetic() {
     assert_eq!(val, Value::Number(22));
 }
 
+/// 静的データが 64KB を超えても, ヒープの確保で静的データを上書きしない
+#[test]
+fn test_large_static_data_is_not_overwritten_by_heap() {
+    // 60KB の文字列の後ろに 1000 個の数値リテラル (16 バイトずつ) を置き, 静的データを 64KB より大きくする.
+    // 先に文字列を連結して (ヒープに 60KB 確保して) から, 64KB より後ろにある数値を読む
+    let long_text = "x".repeat(60_000);
+    let numbers = (0..1000)
+        .map(|value| Expression::Number(NumberExpression { value }))
+        .collect::<Vec<_>>();
+    let variable = |variable_id| Box::new(Expression::Variable(VariableExpression { variable_id }));
+    let expr = Expression::Let(LetExpression {
+        bindings: vec![
+            LetBinding {
+                variable_id: 1,
+                variable_name: "text".into(),
+                value: Box::new(Expression::String(StringExpression {
+                    value: long_text.into(),
+                })),
+            },
+            LetBinding {
+                variable_id: 2,
+                variable_name: "numbers".into(),
+                value: Box::new(Expression::ListLiteral(ListLiteralExpression {
+                    items: numbers,
+                })),
+            },
+        ],
+        body: Box::new(Expression::TypeLiteral(TypeLiteralExpression {
+            items: vec![
+                TypeLiteralItemExpression {
+                    key: "length".into(),
+                    value: Box::new(Expression::StringLength(StringLengthExpression {
+                        value: Box::new(Expression::StringConcat(StringConcatExpression {
+                            left: variable(1),
+                            right: variable(1),
+                        })),
+                    })),
+                },
+                TypeLiteralItemExpression {
+                    key: "last".into(),
+                    value: Box::new(Expression::ListGet(ListGetExpression {
+                        list: variable(2),
+                        index: Box::new(Expression::Number(NumberExpression { value: 999 })),
+                    })),
+                },
+            ],
+        })),
+    });
+    let wasm = compile_expression_to_wasm(&expr, &[]).unwrap();
+    assert_eq!(
+        execute_wasm(&wasm).unwrap(),
+        Value::Record(vec![
+            ("length".to_string(), Value::Number(120_000)),
+            ("last".to_string(), Value::Number(999)),
+        ])
+    );
+}
+
 #[test]
 fn test_compile_and_execute_bitwise_operations() {
     // 13 & 11 = 9

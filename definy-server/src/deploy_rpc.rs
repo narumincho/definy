@@ -105,6 +105,8 @@ pub async fn handle_deploy_cloudflare(
     // part_id が指定されている場合、あらかじめ式を探索して definy:deploy 設定を解決
     let mut resolved_part_expr = None;
     let mut detected_deploy = None;
+    // パーツの式が参照するパーツをコンパイラが探すためのイベント (古い順)
+    let mut part_events = Vec::new();
     if let Some(ref part_id) = req.part_id {
         let db = crate::ensure_db(&state).await;
         let event_binaries = if let Some(db) = db {
@@ -114,6 +116,16 @@ pub async fn handle_deploy_cloudflare(
         } else {
             Box::new([])
         };
+        part_events = event_binaries
+            .iter()
+            .rev()
+            .map(|bytes| {
+                (
+                    definy_event::EventHashId::from_bytes(bytes),
+                    definy_event::verify_and_deserialize(bytes),
+                )
+            })
+            .collect::<Vec<_>>();
 
         if let Ok(expr) = crate::self_hosted_wasm_compiler::find_part_expression_in_signed_events(
             part_id,
@@ -156,7 +168,10 @@ pub async fn handle_deploy_cloudflare(
             Err(err) => return error_to_response(err),
         };
 
-        match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(&target_expr) {
+        match crate::self_hosted_wasm_compiler::compile_expression_to_wasm(
+            &target_expr,
+            &part_events,
+        ) {
             Ok(bytes) => {
                 let eval_val = crate::self_hosted_wasm_compiler::evaluate_compiled_wasm(&bytes)
                     .ok()

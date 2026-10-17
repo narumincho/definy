@@ -313,48 +313,61 @@ pub struct UnionVariantType {
 
 impl std::fmt::Display for PartType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string_with_type_part_names(&|_| None))
+    }
+}
+
+impl PartType {
+    /// 型を文字列にする. 型パーツの参照は `type_part_name` が名前を返せばその名前,
+    /// 返さなければ `type-part(ハッシュ)` と書く
+    #[must_use]
+    pub fn to_string_with_type_part_names(
+        &self,
+        type_part_name: &dyn Fn(&EventHashId) -> Option<String>,
+    ) -> String {
+        let text = |t: &PartType| t.to_string_with_type_part_names(type_part_name);
         match self {
-            PartType::Number => write!(f, "number"),
-            PartType::String => write!(f, "string"),
-            PartType::Boolean => write!(f, "boolean"),
-            PartType::Type => write!(f, "type"),
-            PartType::TypePart(hash) => write!(f, "type-part({hash})"),
-            PartType::List(item) => write!(f, "list<{item}>"),
+            PartType::Number => "number".to_string(),
+            PartType::String => "string".to_string(),
+            PartType::Boolean => "boolean".to_string(),
+            PartType::Type => "type".to_string(),
+            PartType::TypePart(hash) => {
+                type_part_name(hash).unwrap_or_else(|| format!("type-part({hash})"))
+            }
+            PartType::List(item) => format!("list<{}>", text(item)),
             PartType::Function {
                 parameters,
                 return_type,
             } => {
                 let params_text = parameters
                     .iter()
-                    .map(|p| format!("{}: {}", p.name, p.r#type))
+                    .map(|p| format!("{}: {}", p.name, text(&p.r#type)))
                     .collect::<Vec<_>>()
                     .join(", ");
-                write!(f, "({params_text}) -> {return_type}")
+                format!("({params_text}) -> {}", text(return_type))
             }
             PartType::Record(fields) => {
                 let field_texts = fields
                     .iter()
-                    .map(|f| format!("{}: {}", f.key, f.value))
+                    .map(|f| format!("{}: {}", f.key, text(&f.value)))
                     .collect::<Vec<_>>()
                     .join(", ");
-                write!(f, "{{{field_texts}}}")
+                format!("{{{field_texts}}}")
             }
             PartType::Union(variants) => {
                 let var_texts = variants
                     .iter()
                     .map(|v| match &v.payload {
-                        Some(p) => format!("{}({p})", v.tag),
+                        Some(p) => format!("{}({})", v.tag, text(p)),
                         None => v.tag.to_string(),
                     })
                     .collect::<Vec<_>>()
                     .join(" | ");
-                write!(f, "union<{var_texts}>")
+                format!("union<{var_texts}>")
             }
         }
     }
-}
 
-impl PartType {
     #[must_use]
     pub fn optional_to_string(opt: &Option<Self>) -> String {
         opt.as_ref()

@@ -1,6 +1,6 @@
 //! 変更ページ (`/changes`). 作業中の変更を一覧し, 選んだ変更をまとめてコミットする
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use definy_event::EventHashId;
 use dioxus::prelude::*;
@@ -46,6 +46,7 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
     let mut excluded = use_signal(HashSet::<EventHashId>::new);
     let mut result_message = use_signal(|| None::<(bool, String)>);
     let mut is_committing = use_signal(|| false);
+    let precheck = use_precommit_check(language, excluded);
 
     let working_changes = WORKING_CHANGES.read().clone();
     let is_logged_in = state.current_key.is_some();
@@ -160,11 +161,12 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
                     state_sig,
                 )
                 .await;
-                match record.map(|record| record.status) {
-                    Some(
+                match record.map(|record| (record.status, record.last_error)) {
+                    Some((
                         status @ (crate::local_event::LocalEventStatus::Sent
                         | crate::local_event::LocalEventStatus::Queued),
-                    ) => {
+                        _,
+                    )) => {
                         queued |= status == crate::local_event::LocalEventStatus::Queued;
                         committed_modules += 1;
                         crate::working_changes::update(|changes| {
@@ -173,16 +175,17 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
                             }
                         });
                     }
-                    _ => {
-                        failure = Some(
-                            language
-                                .label(
-                                    "Failed to commit changes",
-                                    "変更のコミットに失敗しました",
-                                    "Enmetado de ŝanĝoj malsukcesis",
-                                )
-                                .to_string(),
+                    other => {
+                        let label = language.label(
+                            "Failed to commit changes",
+                            "変更のコミットに失敗しました",
+                            "Enmetado de ŝanĝoj malsukcesis",
                         );
+                        // サーバーが拒否した理由 (型エラーなど) があれば併せて出す
+                        failure = Some(match other.and_then(|(_, last_error)| last_error) {
+                            Some(error) => format!("{label}: {error}"),
+                            None => label.to_string(),
+                        });
                         break;
                     }
                 }
@@ -219,6 +222,10 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
             .cloned()
             .collect::<Vec<_>>();
         let outdated = changes.iter().any(|change| is_outdated(&state, change));
+        let problems = match &*precheck.read() {
+            PrecommitCheck::Done(problems) => problems.get(&module_hash).cloned().unwrap_or_default(),
+            _ => Vec::new(),
+        };
         rsx! {
             section {
                 key: "{module_hash}",
@@ -236,6 +243,20 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
                 if outdated {
                     div { class: "tone-message", "data-tone": "warning",
                         "{language.label(\"This module has new commits since you started editing. Committing applies your changes on top of the latest commit.\", \"変更を記録したあとにこのモジュールへ新しいコミットが入りました。コミットすると最新のコミットに変更を重ねます。\", \"Ĉi tiu modulo havas novajn enmetojn. Enmeto aplikas viajn ŝanĝojn super la plej nova.\")}"
+                    }
+                }
+                if !problems.is_empty() {
+                    ul {
+                        class: "changes-problems",
+                        "data-precommit-problems": "true",
+                        for problem in problems {
+                            li {
+                                class: "mono tone-message",
+                                "data-tone": "error",
+                                span { class: "changes-problem-part", "{problem.part_name}" }
+                                " {problem.message}"
+                            }
+                        }
                     }
                 }
                 ul { class: "changes-list",
@@ -325,12 +346,33 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
                         button {
                             r#type: "button",
                             class: "btn-primary",
-                            disabled: !is_logged_in || selected_count == 0 || is_committing(),
+                            disabled: !is_logged_in || selected_count == 0 || is_committing()
+                                || precheck.read().has_problems(),
                             onclick: on_commit,
                             "{language.label(\"Commit\", \"コミット\", \"Enmeti\")} ({selected_count})"
                         }
                         if module_count > 1 {
                             span { class: "changes-commit-note", "{per_module_note} {module_count}" }
+                        }
+                        match &*precheck.read() {
+                            PrecommitCheck::Checking => rsx! {
+                                span { class: "changes-commit-note", "data-precommit-check": "checking",
+                                    "{language.label(\"Type checking…\", \"型検査中…\", \"Tipkontrolado…\")}"
+                                }
+                            },
+                            PrecommitCheck::Done(problems) if problems.values().all(Vec::is_empty) => {
+                                rsx! {
+                                    span { class: "changes-commit-note", "data-precommit-check": "ok",
+                                        "{language.label(\"No type errors\", \"型エラーなし\", \"Neniu tiperaro\")}"
+                                    }
+                                }
+                            }
+                            PrecommitCheck::Done(_) => rsx! {
+                                span { class: "changes-commit-note", "data-precommit-check": "error",
+                                    "{language.label(\"Fix the type errors below to commit.\", \"下の型エラーを直すとコミットできます。\", \"Riparu la tiperarojn sube por enmeti.\")}"
+                                }
+                            },
+                            PrecommitCheck::NotReady => rsx! {},
                         }
                         if !is_logged_in {
                             span { class: "changes-commit-note",
@@ -357,4 +399,90 @@ pub fn WorkingChangesView(state: AppState, context: PageContext) -> Element {
             }
         }
     }
+}
+
+/// コミット前の検査 (サーバーと同じ型検査) の状態
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum PrecommitCheck {
+    /// 型チェッカーのパーツが読み込まれていないなど, 検査できない
+    #[default]
+    NotReady,
+    Checking,
+    /// モジュールごとの問題. 問題が無いモジュールは空
+    Done(HashMap<EventHashId, Vec<crate::self_hosted_type_check::CommitProblem>>),
+}
+
+impl PrecommitCheck {
+    pub fn has_problems(&self) -> bool {
+        matches!(self, PrecommitCheck::Done(problems) if problems.values().any(|problems| !problems.is_empty()))
+    }
+}
+
+/// コミットに含める変更をモジュールごとのコミットにして, サーバーと同じ型検査をする.
+/// 変更・選択・取得済みのイベント・ログイン中のアカウントが変わったら検査し直す.
+/// 検査は重いので, 少し待ってからモジュールごとにブラウザへ処理を返しながら行う
+fn use_precommit_check(
+    language: crate::language::Language,
+    excluded: Signal<HashSet<EventHashId>>,
+) -> Signal<PrecommitCheck> {
+    let state_sig = use_context::<Signal<AppState>>();
+    let mut result = use_signal(PrecommitCheck::default);
+    let mut task = use_signal(|| None::<dioxus::core::Task>);
+    // AppState 全体を購読すると無関係な更新でも検査し直すので, 検査に影響する部分だけを見る
+    let state_key = use_memo(move || {
+        let state = state_sig.read();
+        (
+            state.event_cache.len(),
+            state
+                .current_key
+                .as_ref()
+                .map(|key| key.verifying_key().to_bytes()),
+        )
+    });
+    use_effect(move || {
+        let _ = state_key();
+        let changes = WORKING_CHANGES.read().clone();
+        let excluded = excluded.read().clone();
+        if let Some(task) = task.take() {
+            task.cancel();
+        }
+        let selected = changes
+            .changes
+            .iter()
+            .filter(|change| !excluded.contains(&change.part_id))
+            .cloned()
+            .collect::<Vec<_>>();
+        if selected.is_empty() {
+            result.set(PrecommitCheck::NotReady);
+            return;
+        }
+        result.set(PrecommitCheck::Checking);
+        task.set(Some(spawn(async move {
+            crate::self_hosted_type_check::sleep_ms(300).await;
+            let mut problems = HashMap::new();
+            for module in changes.modules() {
+                let module_changes = selected
+                    .iter()
+                    .filter(|change| change.module_definition_event_hash == module)
+                    .collect::<Vec<_>>();
+                if module_changes.is_empty() {
+                    continue;
+                }
+                crate::self_hosted_type_check::yield_to_browser().await;
+                let state = state_sig.peek().clone();
+                let Some(module_problems) = crate::self_hosted_type_check::check_module_changes(
+                    &state,
+                    &module,
+                    &module_changes,
+                    language,
+                ) else {
+                    result.set(PrecommitCheck::NotReady);
+                    return;
+                };
+                problems.insert(module, module_problems);
+            }
+            result.set(PrecommitCheck::Done(problems));
+        })));
+    });
+    result
 }

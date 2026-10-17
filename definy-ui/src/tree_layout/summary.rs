@@ -1,7 +1,9 @@
 use definy_event::event::Expression;
 use dioxus::prelude::*;
 
-use super::engine::{compute_layout, expression_to_layout_node};
+use super::engine::{
+    CallParameterNames, PartNames, compute_layout, expression_to_layout_node_with_names,
+};
 use super::types::{LayoutNode, LayoutOptions};
 use super::view::{TreeLayoutRenderer, node_badge_style};
 
@@ -14,6 +16,10 @@ pub fn ExpressionTreeSummary(
     #[props(default = false)] initial_expanded: bool,
     #[props(default = 700.0)] max_width: f32,
     #[props(default = true)] show_expand_button: bool,
+    /// パーツ参照を名前で表示するためのパーツ名 ([`crate::part_projection::part_names`]).
+    /// 空ならハッシュの先頭を表示する
+    #[props(default)]
+    part_names: PartNames,
 ) -> Element {
     let mut is_expanded = use_signal(|| initial_expanded);
     let selected_node_id = use_signal(|| None::<String>);
@@ -36,7 +42,12 @@ pub fn ExpressionTreeSummary(
         max_width: (max_width - 24.0).max(120.0),
         ..Default::default()
     };
-    let root_layout_node = expression_to_layout_node(&expr, "root");
+    let root_layout_node = expression_to_layout_node_with_names(
+        &expr,
+        "root",
+        &CallParameterNames::new(),
+        &part_names,
+    );
     let layout_result = compute_layout(&root_layout_node, &layout_options);
 
     let is_leaf = root_layout_node.children.is_empty();

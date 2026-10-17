@@ -27,6 +27,8 @@ definy の式は「Wasm にコンパイルして実行」で評価します。�
   （失敗したケースをまとめて 1 つのメッセージで報告します）
 - wasmi（ネイティブ）: `cargo test -p definy-server --test wasmi_backend`
 - Worker ランタイム: `deno test --allow-read worker/eval_conformance_test.ts`（事前のビルドは [worker-runtime.md](worker-runtime.md)）
+- definy 製コンパイラ（`core.compile-to-wasm`）: `cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture`
+  （全ケースの通過は求めず, 対応状況を表示する。[self-hosting.md](self-hosting.md) の「definy 製コンパイラの対応状況」を参照）
 
 いずれも CI（`pull_request.yaml`）で実行されます。
 

@@ -1910,6 +1910,24 @@ a.status-error {
   text-decoration: none;
 }
 
+/* コミット前の検査で見つかった型エラー */
+.changes-problems {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.changes-problems li {
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.changes-problem-part {
+  font-weight: 600;
+}
+
 .changes-list {
   list-style: none;
   margin: 0;

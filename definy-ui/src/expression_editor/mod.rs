@@ -9,8 +9,9 @@ pub use diagnostics::{
 pub use mutation::{
     add_let_binding, add_list_item, add_record_item, apply_selection, clear_expression_at_path,
     get_mut_expression_at_path, next_local_variable_id, path_to_key, remove_let_binding,
-    remove_list_item, remove_record_item, set_boolean_value, set_let_variable_name,
-    set_number_value, set_record_item_key, set_string_value, upgrade_part_reference_content_hash,
+    remove_list_item, remove_record_item, scope_variables_at_path, set_boolean_value,
+    set_let_variable_name, set_number_value, set_record_item_key, set_string_value,
+    upgrade_part_reference_content_hash,
 };
 pub use selector::{
     RankedSelectorOption, current_selection_value, selector_options, selector_options_ranked,
@@ -55,6 +56,108 @@ mod tests {
         );
         assert!(
             crate::expression_eval::evaluate_expression(expression.as_ref().unwrap(), &[]).is_err()
+        );
+    }
+
+    #[test]
+    fn scope_variables_follow_bindings_on_the_path() {
+        use definy_event::event::{
+            Expression, FunctionExpression, FunctionParameter, LetBinding, LetExpression,
+        };
+        // fn(list, index) => let a = 1; b = 2 in index
+        let expression = Expression::Function(FunctionExpression {
+            parameters: vec![
+                FunctionParameter {
+                    parameter_id: 0,
+                    parameter_name: "list".into(),
+                },
+                FunctionParameter {
+                    parameter_id: 1,
+                    parameter_name: "index".into(),
+                },
+            ],
+            body: Box::new(Expression::Let(LetExpression {
+                bindings: vec![
+                    LetBinding {
+                        variable_id: 2,
+                        variable_name: "a".into(),
+                        value: Box::new(number(1)),
+                    },
+                    LetBinding {
+                        variable_id: 3,
+                        variable_name: "".into(),
+                        value: Box::new(number(2)),
+                    },
+                ],
+                body: Box::new(number(0)),
+            })),
+        });
+        let names = |path: &[PathStep]| {
+            super::scope_variables_at_path(&expression, path)
+                .into_iter()
+                .map(|v| v.name)
+                .collect::<Vec<_>>()
+        };
+        assert!(names(&[]).is_empty());
+        // 2 番目の束縛の値からは 1 番目の束縛までが見える
+        assert_eq!(
+            names(&[PathStep::FunctionBody, PathStep::LetBindingValue(1)]),
+            vec!["list", "index", "a"]
+        );
+        assert_eq!(
+            names(&[PathStep::FunctionBody, PathStep::LetBody]),
+            vec!["list", "index", "a", "var_3"]
+        );
+    }
+
+    #[test]
+    fn switching_binary_operator_keeps_operands() {
+        let variable =
+            definy_event::event::Expression::Variable(definy_event::event::VariableExpression {
+                variable_id: 2,
+            });
+        let mut expression = Some(definy_event::event::Expression::LessThan(
+            definy_event::event::LessThanExpression {
+                left: Box::new(variable.clone()),
+                right: Box::new(number(0)),
+            },
+        ));
+
+        super::apply_selection(
+            &crate::app_state::AppState::default(),
+            &mut expression,
+            &[],
+            "expr:less_than_or_equal",
+            None,
+        );
+
+        assert_eq!(
+            expression,
+            Some(definy_event::event::Expression::LessThanOrEqual(
+                definy_event::event::LessThanOrEqualExpression {
+                    left: Box::new(variable),
+                    right: Box::new(number(0)),
+                },
+            ))
+        );
+
+        // 二項演算でない式から選んだときは既定値の式になる
+        let mut expression = Some(number(5));
+        super::apply_selection(
+            &crate::app_state::AppState::default(),
+            &mut expression,
+            &[],
+            "expr:add",
+            None,
+        );
+        assert_eq!(
+            expression,
+            Some(definy_event::event::Expression::Add(
+                definy_event::event::AddExpression {
+                    left: Box::new(number(0)),
+                    right: Box::new(number(0)),
+                },
+            ))
         );
     }
 

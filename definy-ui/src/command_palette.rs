@@ -168,6 +168,7 @@ fn collect_items(state: &AppState, context: &PageContext) -> Vec<PaletteItem> {
         .collect();
     let mut parts = collect_part_snapshots(state);
     parts.sort_by(|a, b| a.part_name.cmp(&b.part_name));
+    let part_names = crate::part_projection::part_names(&parts);
     items.extend(parts.iter().map(|part| {
         let module_name = module_names
             .get(&part.module_definition_event_hash)
@@ -178,7 +179,7 @@ fn collect_items(state: &AppState, context: &PageContext) -> Vec<PaletteItem> {
             detail: part
                 .part_type
                 .as_ref()
-                .map(|t| t.to_string())
+                .map(|t| crate::part_projection::part_type_text(t, &part_names))
                 .unwrap_or_default(),
             href: context.href_with_lang(Location::Part(part.definition_event_hash.clone())),
             icon: IconKind::Part,

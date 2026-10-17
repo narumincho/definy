@@ -591,6 +591,39 @@
       "expected": 15
     },
     {
+      "name": "let binds a comparison result",
+      "expression": {
+        "Let": {
+          "bindings": [
+            {
+              "variable_id": 1,
+              "variable_name": "x",
+              "value": {
+                "LessThan": {
+                  "left": {
+                    "Number": {
+                      "value": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
+                }
+              }
+            }
+          ],
+          "body": {
+            "Variable": {
+              "variable_id": 1
+            }
+          }
+        }
+      },
+      "expected": true
+    },
+    {
       "name": "list literal",
       "expression": {
         "ListLiteral": {
@@ -850,6 +883,206 @@
       "expected": {
         "$variant": "some",
         "payload": 5
+      }
+    },
+    {
+      "name": "record with computed field",
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "a",
+              "value": {
+                "Add": {
+                  "left": {
+                    "Number": {
+                      "value": 1
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "$record": [
+          [
+            "a",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "name": "record with large number",
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "a",
+              "value": {
+                "Number": {
+                  "value": 70000
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "$record": [
+          [
+            "a",
+            70000
+          ]
+        ]
+      }
+    },
+    {
+      "name": "record with negative number",
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "a",
+              "value": {
+                "Number": {
+                  "value": -1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "$record": [
+          [
+            "a",
+            -1
+          ]
+        ]
+      }
+    },
+    {
+      "name": "record with three fields",
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "a",
+              "value": {
+                "Number": {
+                  "value": 1
+                }
+              }
+            },
+            {
+              "key": "b",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
+            },
+            {
+              "key": "c",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "$record": [
+          [
+            "a",
+            1
+          ],
+          [
+            "b",
+            2
+          ],
+          [
+            "c",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "name": "nested record",
+      "expression": {
+        "TypeLiteral": {
+          "items": [
+            {
+              "key": "a",
+              "value": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "b",
+                      "value": {
+                        "Number": {
+                          "value": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "expected": {
+        "$record": [
+          [
+            "a",
+            {
+              "$record": [
+                [
+                  "b",
+                  1
+                ]
+              ]
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "name": "variant with computed payload",
+      "expression": {
+        "Variant": {
+          "tag": "some",
+          "payload": {
+            "Add": {
+              "left": {
+                "Number": {
+                  "value": 1
+                }
+              },
+              "right": {
+                "Number": {
+                  "value": 2
+                }
+              }
+            }
+          }
+        }
+      },
+      "expected": {
+        "$variant": "some",
+        "payload": 3
       }
     },
     {
