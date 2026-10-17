@@ -207,7 +207,7 @@ fn part_check_call(
 /// `core.type-env` の値 `{ variables: [], parts: [{ part_definition_event_hash, part_type }] }`.
 /// 型パーツは, 宣言した型を `{hash}#definition` のキーでも入れる.
 /// `core.type-ast` で表せない型のパーツは環境に入れない (参照すると `part_not_found` になる)
-pub fn type_env_expression(env: &[PartTypeEntry<'_>], core: &SelfHostedCoreParts) -> Expression {
+fn type_env_expression(env: &[PartTypeEntry<'_>], core: &SelfHostedCoreParts) -> Expression {
     let entry_record = |key: String, part_type: &PartType| {
         let part_type = part_type_to_self_hosted_ast(part_type, &core.type_ast).ok()?;
         Some(record(vec![

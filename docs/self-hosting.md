@@ -235,65 +235,66 @@ cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
 - `self_hosted_compiler_self_compile_gaps`: definy 製コンパイラ自身のパーツが使う式の種類のうち,
   コンパイラが扱えないものを一覧します
 
-### 適合テストの結果: 65 ケース中 28 ケースが期待値どおり
+### 適合テストの結果: 65 ケース中 53 ケースが期待値どおり
 
-2026-10-17 の修正前は 15 ケース (うち 2 つは偶然の一致) でした。修正内容は下の「値の表現」を参照。
+通らない 12 ケースはすべてパーツ参照と関数呼び出し (標準ライブラリ・サンプルのパーツ) で, `unreachable` で明示的に失敗します。
 
 | 式の種類 | 状況 |
 | --- | --- |
-| 数値リテラル | 通る (`core.signed-leb128` で符号付き LEB128 にする) |
-| 四則演算・剰余 | 通る |
-| `let` / 変数 | 通る |
-| 真偽値・比較 (`equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal`)・論理演算 (`not` `and` `or`) | 数値どうしなら通る。文字列の `equal` は未対応 (Wasm の検証で type mismatch) |
-| Bool の `match` | アームが数値・真偽値なら通る。アームが文字列などだと type mismatch |
-| 文字列・レコード・バリアントのリテラル | 式全体がそれ 1 つで, レコードのフィールドが 1 つか 2 つ, 値 (バリアントのペイロード) が数値・文字列・真偽値のリテラルのときだけ通る (コンパイル時にデータセグメントに書く。`core.is-data-literal`)。それ以外 (計算した値・入れ子・フィールド 3 つ以上) は `unreachable`。以前は黙って誤った値 (`{a: 1 + 2}` が `{a: 0}` など) を返していた。数値は `core.i64-le-bytes` で 8 バイトの 2 の補数で書く |
-| バリアントの `match` (ペイロードの束縛を含む) | 未対応 (`unreachable`) |
-| リスト (`list` と `list_*`), `record_get`, 文字列操作 (`string_*`) | 未対応 (`unreachable`) |
-| 関数 (`function`), 呼び出し (`call`), パーツ参照 (`part_reference`) | 未対応 (`unreachable`)。標準ライブラリやサンプルのパーツを呼ぶケースはすべて失敗 |
+| 数値・真偽値・文字列のリテラル, 四則演算・剰余, 比較, `not` `and` `or` | 通る |
+| `let` / 変数, Bool とバリアントの `match` (ペイロードの束縛を含む) | 通る |
+| レコード (`record`, `record_get`), バリアント | 通る (計算した値・入れ子・フィールドの数の制限なし) |
+| リスト (`list` `list_length` `list_get` `list_concat` `list_append`) | 通る |
+| 文字列操作 (`string_concat` `string_length` `string_slice` `string_to_bytes`) | 通る |
+| 関数 (`function`), 呼び出し (`call`), パーツ参照 (`part_reference`) | 未対応 (`unreachable`) |
 
-未対応の式は `unreachable` (Wasm の 0x00) を出すので, 実行するとトラップになります
-(以前は `i64.const 0` を出していて, 0 が期待値のケースが偶然通っていた)。
-Bool 以外を対象にした `match` も, 誤ったコードではなく `unreachable` にします (`core.is-bool-match-arms` で判定)。
+経過: 2026-10-17 の測定開始時は 58 ケース中 15 (うち 2 つは偶然の一致), 真偽値・負の数を直して 25,
+レコード・バリアントの誤った値を明示的な失敗にして 65 ケース中 28, 値の表現を下の形に作り直して 53。
 
-### 値の表現
+### 値の表現 (Rust 製コンパイラと同じ線形メモリの形)
 
-- 数値は i64, 真偽値も i64 の 0 / 1 で表します。ローカル変数はすべて i64 (64 個) で, `let` の束縛や
-  Bool の `match` のアームの型をそろえるためです。比較命令 (`i64.eq` など) の結果は i32 なので `i64.extend_i32_u`
-  で i64 にし, `not` は `i64.eqz` + `i64.extend_i32_u`, `and` / `or` は `i64.and` / `i64.or`,
-  Bool の `match` は `if` の前に `i32.wrap_i64` で i32 にします
-- 式全体が真偽値のときは線形メモリを使います。1024 番地に Bool のタグ (1)
-  をデータセグメントで置き, 実行時に `i64.store8 offset=8` で値を 1032 番地に書いて, `evaluate` が 1024 を返します
-  (`definy_core::wasm_emitter::read_value_from_memory` の形式)
-- 式全体の型は definy 製型チェッカー (`core.type-check`) で求めます。そのため `core.compile-to-wasm` は
-  `expr` と型環境 `env` (`core.type-env`) を受け取ります。`let x = 1 < 2 in x` のように変数で返す真偽値も Bool になります。
-  Rust から呼ぶときは `self_hosted_wasm_compiler::empty_type_env_expression` で空の型環境を渡します
-  (パーツ参照はまだコンパイルできないので, パーツの型は入れていない)。
-  以前は式の形だけで判定する `core.is-boolean-expression` を使っていましたが, 変数の型を追えないので削除しました
-- 関数本体とコードセクションの長さは `core.unsigned-leb128` で出します (以前は 1 バイト固定で, 128 バイト以上の本体を壊していた。適合テストにはまだ 128 バイトを超えるケースが無い)
-- コンパイラを構成するパーツは `self_hosted_wasm_compiler::self_hosted_compiler_parts` が
-  `core.compile-to-wasm` からパーツ参照をたどって集めます。補助パーツを足しても呼び出し側を直す必要はありません
+すべての値を「線形メモリ上のタグ付きの箱」へのポインタ (i32) で表します。箱の形は Rust 製コンパイラ
+(`definy-core/src/wasm_emitter/compiler.rs`) と実行結果の読み取り (`wasm_emitter::read_value_from_memory`) と同じです。
+
+| タグ | 値 | 形 |
+| --- | --- | --- |
+| 0 | 数値 | +8 に i64 |
+| 1 | 真偽値 | +8 に 1 バイト |
+| 2 | 文字列 | +4 に長さ (バイト数), +8 から UTF-8 のバイト列 |
+| 3 | リスト | +4 に要素数, +8 から要素の箱へのポインタ |
+| 4 | レコード | +4 にフィールド数, +8 から (キーの文字列の箱, 値の箱) のポインタの組 |
+| 6 | バリアント | +4 にタグの文字列の箱, +8 にペイロードの箱 (無ければ 0) |
+
+- メモリは確保するだけで解放しません (1 回の評価は短いので)。ヒープの先頭はグローバル変数 0 で, 確保は 8 バイト境界に揃え,
+  足りなければ `memory.grow` します。確保したばかりのメモリは 0 なので, 数値の箱はタグを書かずに済みます
+- 出力するモジュールは `evaluate` 関数 (結果の箱のポインタを返す) と `memory` をエクスポートします (`cloudflare_workers.rs` が生成する JS のために, 同じ関数を `main` としてもエクスポート)。
+  `match` で真偽値のタグとして使う文字列 `"true"` `"false"` だけはデータセグメント (1024 番地) に置きます
+- ランタイム関数 (メモリの確保, 数値・真偽値の箱詰め, 文字列の比較, 値の比較, `record_get`, リストと文字列の操作,
+  `match` のタグとペイロードの取り出し) は Wasm の関数として毎回モジュールに含めます。本体は `core.wasm-runtime-functions`
+  に固定のバイト列として入っています。組み立てるスクリプトは `scripts/wasm_runtime_functions.py`
+  (`python3 scripts/wasm_runtime_functions.py seeds/core.json` で seed のこのパーツだけを書き換える)
+- 文字列のリテラル・レコードのキー・バリアントのタグは, 実行時に箱を確保して 1 バイトずつ書きます。
+  データセグメントにまとめれば命令列を小さくできますが, コンパイラ全体に「どこに何を置いたか」の状態を引き回す必要があるので後回し
+- ローカル変数は i32 を 512 個宣言し, 式の深さ (`depth`) ごとに 1 つずつ一時領域として使います。`let` と `match` のアームで
+  束縛した変数もその深さのローカル変数に置き, 変数 ID からローカル変数への対応 (`env`) を `core.compile-expr-instructions` に渡します。
+  兄弟の式は同じ深さを使い回せます (先に評価した値はスタックに積まれていて, ローカル変数には残っていないため)
+- 値がすべて箱に入っていて実行時にタグで種類が分かるので, 式全体の型をコンパイル時に求める必要はなくなりました
+  (一時的に `core.type-check` で式全体の型を求めていましたが, この形にしたので外しました)
+- 未対応の式と, どのアームにも一致しない `match` は `unreachable` にします
 
 ### 自分自身をコンパイルするのに足りないもの
 
-definy 製コンパイラは `core.compile-to-wasm`, `core.compile-expr-instructions`, `core.match-arm-body`,
-`core.is-bool-match-arms`, `core.signed-leb128`, `core.unsigned-leb128` と, 型を求めるための definy 製型チェッカー
-(`core.type-check` とそこから参照するパーツ) の計 45 パーツでできています。これらが使っていて, コンパイラ自身が扱えない式の種類:
-
-- 関数・呼び出し・パーツ参照 (`function` `call` `part_reference`): 全パーツ。再帰呼び出しも含む
-- バリアントの `match` (ペイロードの束縛): `core.expression` のタグでの分岐に使う
-- レコードのフィールド取得 (`record_get`)
-- リスト (`list` `list_concat` `list_append` `list_get` `list_length`): Wasm のバイト列を `list<number>` で組み立てる
-- `string_to_bytes`
-
-これらはすべて実行時にヒープ (線形メモリ上のリスト・レコード・クロージャ) を必要とするので,
-Rust 製コンパイラのメモリ表現 (`wasm_emitter`) に合わせたランタイムを definy 側に用意するのが次の大きな山です。
+definy 製コンパイラは `core.compile-to-wasm`, `core.compile-expr-instructions`, `core.compile-*` の補助パーツ,
+`core.wasm-runtime-functions`, `core.signed-leb128`, `core.unsigned-leb128` の 11 パーツでできています。
+これらが使っていて, コンパイラ自身が扱えない式は **関数・呼び出し・パーツ参照** (`function` `call` `part_reference`) だけになりました。
 
 ### 次に進める順番の案
 
-1. ヒープを使う式 (リスト・`record_get`・文字列操作)。値をすべて線形メモリ上のタグ付きの値にするか, 型情報を使って
-   i64 とポインタを使い分けるかを決める (型は definy 製型チェッカーで求められる)
-2. 関数・呼び出し・パーツ参照 (複数の Wasm 関数を出す) と, バリアントの `match`
-3. コンパイラのパーツを自分自身でコンパイルし, Rust 製コンパイラでコンパイルしたものと出力を比べる (stage1 / stage2)
+1. パーツ参照と関数呼び出し: パーツごとに Wasm の関数を出し, 呼び出しを `call` にする。
+   コンパイラに参照先のパーツの式を渡す方法 (コンパイル前に Rust 側で集めて渡す / definy でイベントからたどる) を決める。
+   関数を値として扱う (クロージャ, 高階関数) には Rust 製と同じく関数テーブルと環境の箱 (タグ 5) を使う
+2. コンパイラのパーツを自分自身でコンパイルし, Rust 製コンパイラでコンパイルしたものと動作を比べる (stage1 / stage2)
+3. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
 
 ## セルフホストのロードマップと到達状況
 

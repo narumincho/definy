@@ -293,10 +293,18 @@ fn test_phase3_wasm_compiler_ast_structure() {
         .expression
         .expect("compile-expr-instructions must have expression");
 
-    // Structure: Function(expr -> Match(expr))
+    // Structure: Function((expr, env, depth) -> Match(depth < limit) { true => Match(expr) })
     let match_arms = match expr {
         Expression::Function(f) => match *f.body {
-            Expression::Match(m) => m.arms,
+            Expression::Match(depth_check) => match depth_check
+                .arms
+                .into_iter()
+                .find(|arm| arm.tag.as_ref() == "true")
+                .map(|arm| *arm.body)
+            {
+                Some(Expression::Match(m)) => m.arms,
+                other => panic!("Expected Match on expr, got: {:?}", other),
+            },
             other => panic!("Expected Match in body, got: {:?}", other),
         },
         other => panic!("Expected Function, got: {:?}", other),
@@ -331,14 +339,12 @@ fn test_phase3_wasm_compiler_ast_structure() {
         .expression
         .expect("compile-to-wasm must have expression");
 
-    // The expression should be a function([expr, env] -> Let*(ListConcat(...)))
-    // env は式の型を definy 製型チェッカーで求めるための型環境
+    // The expression should be a function([expr] -> Let*(ListConcat(...)))
     match to_wasm_expr {
         Expression::Function(f) => {
-            assert_eq!(f.parameters.len(), 2);
+            assert_eq!(f.parameters.len(), 1);
             assert_eq!(f.parameters[0].parameter_id, 0);
             assert_eq!(&*f.parameters[0].parameter_name, "expr");
-            assert_eq!(&*f.parameters[1].parameter_name, "env");
             let mut current = &*f.body;
             while let Expression::Let(let_expr) = current {
                 current = &*let_expr.body;

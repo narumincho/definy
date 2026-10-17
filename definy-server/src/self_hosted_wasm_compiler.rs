@@ -53,19 +53,6 @@ pub type VerifiedCommitEvent = (
     Result<(ed25519_dalek::Signature, Event), VerifyAndDeserializeError>,
 );
 
-/// `core.compile-to-wasm` に渡す空の型環境 (`core.type-env`).
-/// 式の型は definy 製型チェッカー (`core.type-check`) で求める. パーツ参照はまだコンパイルできないので,
-/// パーツの型は入れない
-pub fn empty_type_env_expression() -> Expression {
-    let core_module_id = derive_module_id(&crate::seed::builtin_system_account_id(), "core");
-    definy_core::self_hosted_type_check::type_env_expression(
-        &[],
-        &definy_core::self_hosted_type_check::SelfHostedCoreParts::from_core_module_id(
-            &core_module_id,
-        ),
-    )
-}
-
 /// definy 製コンパイラを構成する core のパーツ. `core.compile-to-wasm` からパーツ参照をたどって集める
 pub fn self_hosted_compiler_parts() -> Vec<definy_event::event::ModulePartEntry> {
     let account = crate::seed::builtin_system_account_id();
@@ -166,16 +153,10 @@ pub fn compile_with_self_hosted_compiler(
         function: Box::new(Expression::PartReference(PartReferenceExpression::new(
             compile_to_wasm_hash,
         ))),
-        arguments: vec![
-            CallArgument {
-                name: "expr".into(),
-                value: Box::new(self_hosted_ast),
-            },
-            CallArgument {
-                name: "env".into(),
-                value: Box::new(empty_type_env_expression()),
-            },
-        ],
+        arguments: vec![CallArgument {
+            name: "expr".into(),
+            value: Box::new(self_hosted_ast),
+        }],
     });
 
     // definy 実行系上で自己記述コンパイラを実行
