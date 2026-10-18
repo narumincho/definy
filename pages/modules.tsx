@@ -35,7 +35,7 @@ export default function ModulesPage(): JSX.Element {
               className="card module-card"
             >
               <div className="module-card-header">
-                <Icon kind="modules" className="module-card-icon" />
+                <Icon kind="modules" size={18} className="module-card-icon" />
                 <h3 className="module-card-title">{mod.name}</h3>
                 <span className="badge badge-neutral">
                   {mod.parts.length} parts

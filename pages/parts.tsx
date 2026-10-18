@@ -82,7 +82,7 @@ export default function PartsPage(): JSX.Element {
                   <p className="part-card-desc">{part.description}</p>
                 )}
                 <div className="part-card-footer">
-                  <Icon kind="play" className="part-card-play-icon" />
+                  <Icon kind="play" size={14} className="part-card-play-icon" />
                   <span className="part-card-link-text">
                     {label(
                       language,

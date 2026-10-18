@@ -10,3 +10,5 @@
 /.wrangler/
 node_modules/
 .void/
+test-results/
+playwright-report/

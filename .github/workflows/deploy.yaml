@@ -8,16 +8,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-      - name: Install Dioxus CLI
-        run: curl -sSL https://dioxus.dev/install.sh | bash
-      - run: rustup target add wasm32-unknown-unknown
-      - run: dx build --package definy-client --release
-      - name: Package Static Assets and Seed Bundle
-        env:
-          # 未設定の場合は公開されている開発用のシステムアカウント鍵で署名される
-          DEFINY_SYSTEM_ACCOUNT_SECRET_KEY: ${{ secrets.DEFINY_SYSTEM_ACCOUNT_SECRET_KEY }}
-        run: bash scripts/build-assets.sh --skip-build
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - name: Install npm dependencies
+        run: npm ci
+      - name: Package Assets with Void (Vite 8)
+        run: bash scripts/build-assets.sh
       - name: Provision Cloudflare D1 Binding
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

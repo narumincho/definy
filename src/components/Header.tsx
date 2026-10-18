@@ -36,7 +36,7 @@ export function Header(): JSX.Element {
         aria-label={toggleLabel}
         onClick={toggleSidebar}
       >
-        <Icon kind="sidebar" className="titlebar-icon" />
+        <Icon kind="sidebar" size={17} className="titlebar-icon" />
       </button>
 
       <Link href="/" className="app-logo">
@@ -53,7 +53,7 @@ export function Header(): JSX.Element {
             setCommandPaletteOpen(true);
           }}
         >
-          <Icon kind="search" className="header-title-icon" />
+          <Icon kind="search" size={13} className="header-title-icon" />
           <span className="header-title-text">{paletteLabel}</span>
           <kbd className="header-title-kbd">⌘P</kbd>
         </button>

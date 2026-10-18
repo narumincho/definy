@@ -4,13 +4,29 @@
     {
       "name": "definy",
       "runtimeExecutable": "dx",
-      "runtimeArgs": ["serve", "--fullstack", "--interactive", "false", "--open", "false"],
+      "runtimeArgs": [
+        "serve",
+        "--fullstack",
+        "--interactive",
+        "false",
+        "--open",
+        "false"
+      ],
       "port": 8080
     },
     {
       "name": "definy-lan",
       "runtimeExecutable": "dx",
-      "runtimeArgs": ["serve", "--fullstack", "--interactive", "false", "--open", "false", "--addr", "0.0.0.0"],
+      "runtimeArgs": [
+        "serve",
+        "--fullstack",
+        "--interactive",
+        "false",
+        "--open",
+        "false",
+        "--addr",
+        "0.0.0.0"
+      ],
       "port": 8080
     }
   ]

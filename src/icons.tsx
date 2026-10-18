@@ -19,14 +19,25 @@ export type IconKind =
 export function Icon({
   kind,
   className = "btn-icon",
+  size = 16,
+  width,
+  height,
 }: {
   readonly kind: IconKind;
   readonly className?: string;
+  readonly size?: number | string;
+  readonly width?: number | string;
+  readonly height?: number | string;
 }): JSX.Element {
+  const w = width ?? size;
+  const h = height ?? size;
+
   if (kind === "search") {
     return (
       <svg
         className={className}
+        width={w}
+        height={h}
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -45,6 +56,8 @@ export function Icon({
     return (
       <svg
         className={className}
+        width={w}
+        height={h}
         viewBox="0 0 24 24"
         fill="currentColor"
         aria-hidden="true"
@@ -57,6 +70,8 @@ export function Icon({
   return (
     <svg
       className={className}
+      width={w}
+      height={h}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

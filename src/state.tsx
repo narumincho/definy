@@ -13,11 +13,13 @@ import type {
   ConnectionStatus,
   EventRecord,
   LanguageCode,
+  ModulePartSnapshot,
   ModuleSnapshot,
   PartChange,
   PartSnapshot,
   WorkingChanges,
 } from "./types.ts";
+import { extractModuleCommit } from "./cbor.ts";
 import {
   createStage1Compiler,
   evaluateCompiledWasm,
@@ -88,7 +90,6 @@ function initialLanguage(): LanguageCode {
   if (q === "en" || q === "ja" || q === "eo") return q;
   const stored = localStorage.getItem(STORAGE_KEY_LANG);
   if (stored === "en" || stored === "ja" || stored === "eo") return stored;
-  if (navigator.language.startsWith("ja")) return "ja";
   return "en";
 }
 
@@ -113,6 +114,17 @@ export function DefinyProvider({
   readonly children: ReactNode;
 }): JSX.Element {
   const [language, setLanguageState] = useState<LanguageCode>(initialLanguage);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(STORAGE_KEY_LANG);
+      if (stored === "en" || stored === "ja" || stored === "eo") {
+        setLanguageState(stored);
+      } else if (navigator.language.startsWith("ja")) {
+        setLanguageState("ja");
+      }
+    }
+  }, []);
   const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
   const [workingChanges, setWorkingChanges] =
     useState<WorkingChanges>(loadStoredChanges);
@@ -210,7 +222,44 @@ export function DefinyProvider({
 
     for (const ev of sorted) {
       if (ev.eventType === "module_commit") {
-        // Module commit logic can project parts
+        const commit = extractModuleCommit(ev.signedEventBytes);
+        if (!commit) continue;
+
+        const moduleParts: ModulePartSnapshot[] = [];
+        for (const p of commit.parts) {
+          const partId = `${commit.moduleName}.${p.name}`;
+          const partSnapshot: PartSnapshot = {
+            partId,
+            moduleId: commit.moduleName,
+            moduleName: commit.moduleName,
+            name: p.name,
+            description: p.description,
+            partType: p.partType,
+            contentHash: p.contentHash,
+            expression: p.expression,
+            updatedAtMs: ev.timeMs,
+          };
+          partMap.set(partId, partSnapshot);
+          moduleParts.push({
+            partId,
+            name: p.name,
+            description: p.description,
+            partType: p.partType,
+            contentHash: p.contentHash,
+            expression: p.expression,
+          });
+        }
+
+        moduleMap.set(commit.moduleName, {
+          moduleId: commit.moduleName,
+          name: commit.moduleName,
+          description: commit.moduleDescription,
+          latestEventHash: ev.eventHash,
+          parentCommitHash: commit.parentCommitHash,
+          message: commit.message,
+          parts: moduleParts,
+          updatedAtMs: ev.timeMs,
+        });
       }
     }
 

@@ -215,3 +215,33 @@ export default defineConfig({
 - **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate)、Deno、Bun など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
 - **メモリ管理**: コンパイラ自身が持つ `alloc(size: number) -> number` 関数により、線形メモリ内の 8 バイト境界アラインメントでバンプアロケーションを行い、AST を書き込むだけで安全にコンパイラクロージャ（Tag 5）を呼び出せます。
 - **自己ホストの検証サイクル**: これにより、フロントエンドの UI 画面上でユーザーが式を変更した際、バックエンド通信や重いビルドツールを介さずに、ブラウザローカルで即座に Wasm バイナリを出力し、V8 ネイティブで評価結果を確認できるようになりました。
+
+### ④ シードデータの自動初期化とブラウザ側 CBOR 射影
+
+- **D1 自動スキーマ適用とシード同期 ([worker/store.ts](file:///Users/narumi/Documents/GitHub/definy/worker/store.ts))**:
+  - `npm run dev`（ローカル環境）では新規の SQLite データベースが空の状態で割り当てられます。`store.ensureSeeded` において、`events` テーブルの存在を検知して未作成時は DDL（[migrations/0001_initial_schema.sql](file:///Users/narumi/Documents/GitHub/definy/migrations/0001_initial_schema.sql)）を自動適用し、イベント件数が 0 の場合は静的シードバンドル（`/__definy_seed_bundle.json` または `seeds/seed_bundle.json`）をロードして自動同期します。
+  - すでにイベントが存在する本番環境やテスト環境では再シードを自動スキップし、安全かつ無駄なクエリを発生させません。
+- **純粋なブラウザ対応 CBOR デコーダー ([src/cbor.ts](file:///Users/narumi/Documents/GitHub/definy/src/cbor.ts))**:
+  - `node:crypto` に依存しない標準 Web API（`atob`, `Uint8Array`, `TextDecoder`）のみで CBOR デコードおよび `ModuleCommit` 抽出を行い、署名済みイベントバイト列からモジュールメタデータ（`module_name`, `parts`, `expression`, `content_hash` 等）を React 状態（[src/state.tsx](file:///Users/narumi/Documents/GitHub/definy/src/state.tsx)）へ動的に射影します。
+
+---
+
+## 5. Playwright による E2E テスト基盤
+
+UI が正常にイベントを取得し、モジュール・パーツの表示や式評価が機能することを保証するため、Playwright による E2E テスト基盤（[playwright.config.ts](file:///Users/narumi/Documents/GitHub/definy/playwright.config.ts) / [e2e/ui.test.ts](file:///Users/narumi/Documents/GitHub/definy/e2e/ui.test.ts)）を導入しています。
+
+```bash
+# E2E テストの実行（開発サーバーの起動とブラウザ自動テスト）
+npm run test:e2e
+```
+
+### 検証項目
+
+1. **タイムライン画面 (`/`)**:
+   - バックエンドの Connect-RPC (`/definy.v1.EventService/GetEvents`) からイベント一覧が取得され、`.event-card` が正常にレンダリングされること。
+   - イベント種別（`module_commit`, `create_account`）のフィルターチップ（「アカウント作成」「すべて」）の切り替えが正しく機能すること。
+2. **モジュール一覧画面 (`/modules`)**:
+   - `core`, `sample` 等の組み込みモジュールがカード形式で一覧表示されること。
+3. **パーツ一覧・詳細画面 (`/parts`, `/part/:id`)**:
+   - パーツの検索絞り込み（`triangle` で `triangle-area` がヒット）とカードクリックによる詳細画面への遷移。
+   - パーツ詳細画面での「式を評価」ボタン押下により、Wasm 評価器が実行され `.eval-result-card` に結果が出力されること。

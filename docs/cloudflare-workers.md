@@ -77,6 +77,7 @@ sequenceDiagram
 ### デプロイ直後の健全性確認 (Edge Health Check Ping)
 
 デプロイ完了時、バックエンドは Cloudflare REST API v4 から返却された公開 URL に対して自動的に HTTP GET リクエスト（Health Check Ping）を発行します。
+
 - **即時稼働検証**: V8 Isolate のプロビジョニング完了とルーティングの反映をサーバー側で検証します。
 - **レイテンシ測定**: 初回コールドスタートを含む初期レスポンス時間（ミリ秒）を計測し、UI のバナーおよび Cloudflare D1 のデプロイ履歴に `succeeded (Health: 200 OK (85ms))` として記録します。
 - **テスト・自動化対応**: テスト環境や外部接続を行わない場合には、リクエストに `skipHealthCheck: true` を指定することでヘルスチェックをスキップできます。

@@ -56,6 +56,7 @@ export interface EventItem {
   readonly accountId: string;
   readonly eventType: string;
   readonly createdAtRfc3339: string;
+  readonly timeMs?: number;
 }
 
 /**

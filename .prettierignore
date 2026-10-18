@@ -5,9 +5,10 @@ dist-assets
 target
 worker/generated
 .void
+test-results
+playwright-report
 
-# Rust crates & test seeds
-crates
+# Static assets & test seeds
+public
 seeds
 conformance
-deno.lock
