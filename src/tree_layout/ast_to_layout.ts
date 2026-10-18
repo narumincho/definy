@@ -1,4 +1,5 @@
 import type { LayoutMode, LayoutNode, NodeKind, PathStep } from "./types.ts";
+import { bytesToUrlSafeBase64NoPad, toUint8Array } from "../cbor.ts";
 
 export interface ScopeContext {
   readonly partNames?: ReadonlyMap<string, string>;
@@ -121,9 +122,21 @@ function buildLayoutNode(
   if ("PartReference" in node) {
     const raw = (node.PartReference as { part_definition_event_hash?: unknown })
       ?.part_definition_event_hash;
-    const hashStr = String(raw ?? "");
-    const partName = context.partNames?.get(hashStr);
-    const label = partName ?? `@part:${hashStr.slice(0, 6)}`;
+    let label: string;
+    if (typeof raw === "object" && raw !== null && "$part" in raw) {
+      label = String((raw as { $part: unknown }).$part);
+    } else {
+      const bytes = toUint8Array(raw);
+      const b64 = bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
+      const commaStr = bytes ? String(Array.from(bytes)) : String(raw ?? "");
+      const partName =
+        (b64 ? context.partNames?.get(b64) : undefined) ??
+        context.partNames?.get(commaStr) ??
+        (typeof raw === "string" ? context.partNames?.get(raw) : undefined);
+      label =
+        partName ??
+        (b64 ? `@part:${b64.slice(0, 6)}` : `@part:${commaStr.slice(0, 6)}`);
+    }
     return {
       id: idPrefix,
       path: currentPath,

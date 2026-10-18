@@ -21,6 +21,7 @@ import type {
   WorkingChanges,
 } from "./types.ts";
 import {
+  base64ToBytes,
   extractCreateAccount,
   extractModuleCommit,
   type DecodedPart,
@@ -51,6 +52,7 @@ export interface DefinyContextValue {
   readonly refreshEvents: () => Promise<void>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   readonly parts: ReadonlyArray<PartSnapshot>;
+  readonly partNames: ReadonlyMap<string, string>;
   readonly accountNames: ReadonlyMap<string, string>;
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
@@ -319,9 +321,10 @@ export function DefinyProvider({
   }, [setCurrentAccount]);
 
   // Derive module and part snapshots from events and working changes
-  const { modules, parts } = useMemo(() => {
+  const { modules, parts, partNames } = useMemo(() => {
     const moduleMap = new Map<string, ModuleSnapshot>();
     const partMap = new Map<string, PartSnapshot>();
+    const nameMap = new Map<string, string>();
 
     // Sort events ascending by time
     const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
@@ -342,16 +345,40 @@ export function DefinyProvider({
               description: p.description,
               partType: p.partType,
               contentHash: p.contentHash,
+              partIdHash: p.partIdHash,
               expression: p.expression,
               updatedAtMs: ev.timeMs,
             };
             partMap.set(partId, partSnapshot);
+
+            nameMap.set(partId, partId);
+            nameMap.set(p.name, partId);
+            if (p.partIdHash) {
+              nameMap.set(p.partIdHash, partId);
+              try {
+                const bytes = base64ToBytes(p.partIdHash);
+                nameMap.set(String(Array.from(bytes)), partId);
+              } catch {
+                // ignore
+              }
+            }
+            if (p.contentHash) {
+              nameMap.set(p.contentHash, partId);
+              try {
+                const bytes = base64ToBytes(p.contentHash);
+                nameMap.set(String(Array.from(bytes)), partId);
+              } catch {
+                // ignore
+              }
+            }
+
             return {
               partId,
               name: p.name,
               description: p.description,
               partType: p.partType,
               contentHash: p.contentHash,
+              partIdHash: p.partIdHash,
               expression: p.expression,
             };
           },
@@ -373,6 +400,7 @@ export function DefinyProvider({
     return {
       modules: Array.from(moduleMap.values()),
       parts: Array.from(partMap.values()),
+      partNames: nameMap,
     };
   }, [events]);
 
@@ -487,6 +515,7 @@ export function DefinyProvider({
       refreshEvents: loadEvents,
       modules,
       parts,
+      partNames,
       accountNames,
       workingChanges,
       updateWorkingPart,
@@ -515,6 +544,7 @@ export function DefinyProvider({
       loadEvents,
       modules,
       parts,
+      partNames,
       accountNames,
       workingChanges,
       updateWorkingPart,

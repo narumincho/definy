@@ -488,12 +488,29 @@ function LeafNodeRenderer({
   );
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
-    if (
-      (e.key === "Delete" || e.key === "Backspace") &&
-      e.currentTarget.value.length === 0
-    ) {
+    if (e.key === "Delete") {
       e.preventDefault();
       onClear?.(node.path);
+      return;
+    }
+    if (e.key === "Backspace") {
+      const val = e.currentTarget.value;
+      let isAllSelected = false;
+      try {
+        isAllSelected =
+          e.currentTarget.selectionStart === 0 &&
+          e.currentTarget.selectionEnd === val.length;
+      } catch {
+        // ignore
+      }
+      if (val.length === 0 || isAllSelected || val === node.label) {
+        e.preventDefault();
+        onClear?.(node.path);
+        return;
+      }
+    }
+    if (e.key === "Escape") {
+      e.currentTarget.blur();
     }
   }
 
@@ -504,7 +521,9 @@ function LeafNodeRenderer({
       <input
         type="number"
         value={localNumber}
-        autoFocus
+        onFocus={(e) => {
+          e.currentTarget.select();
+        }}
         style={{
           background: "transparent",
           border: "none",
@@ -537,7 +556,9 @@ function LeafNodeRenderer({
       <input
         type="text"
         value={localString}
-        autoFocus
+        onFocus={(e) => {
+          e.currentTarget.select();
+        }}
         style={{
           background: "transparent",
           border: "none",
