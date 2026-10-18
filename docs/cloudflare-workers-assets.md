@@ -1,5 +1,9 @@
 # Cloudflare Workers Static Assets 構成とデプロイ仕様
 
+> [!NOTE]
+> 従来の Dioxus クライアント（`scripts/build-assets.sh`）から、**Void (Vite 8) + React 19** を用いたフルスタック統合構成への移行が行われました。
+> Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括で約 1.8 秒でビルドされます。詳細は [docs/typescript-react-void-architecture.md](file:///Users/narumi/Documents/GitHub/definy/docs/typescript-react-void-architecture.md) を参照してください。
+
 definy のフロントエンド（`definy-ui` / `definy-client`）を **Cloudflare Workers
 Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS
 コンテンツ配信、プレビュー実行、Cloudflare 自己デプロイ等のバックエンド API

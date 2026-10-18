@@ -168,3 +168,50 @@ npm run build
 # Cloudflare へのデプロイ
 npm run deploy
 ```
+
+---
+
+## 6. 移行における重要な知見・トラブルシューティング
+
+### ① Void CLI と Vite のコマンド役割分担
+
+Void (`void`) は Vite 8 プラグインと連携して Cloudflare Workers フルスタックアプリを構築するフレームワークですが、CLI の動作について以下の点に注意が必要です：
+
+- **`void dev` は存在しない**:
+  - `npx void dev` を実行すると `■ cli: Unknown command 'dev'` となりエラーになります。ローカル開発サーバーの起動は標準の `vite`（`npm run dev`）を使用します。
+- **`void build` の挙動と注意点**:
+  - `npx void build` はローカルのビルドコマンドではなく、Void プラットフォームのリモートビルド管理やログ閲覧（`void build logs [build]` 等）を目的とした対話型コマンドです。
+  - TTY 環境以外やスクリプトから `void build` を呼ぶと、対話プロンプト待ちでプロセスがハング・停止したように見える現象が発生します。
+  - **ローカルでのプロダクションビルドには `vite build` (`npm run build`) を使用すること**が正しく、これにより `dist/ssr/` (Worker バックエンド) と `dist/client/` (クライアント静的アセット) が約 1.8 秒で高速生成されます。
+
+### ② Vitest と Void プラグインの分離設定
+
+`vite.config.ts` で `voidPlugin()` や `voidReact()` を有効化した状態で Vitest を実行すると、Vitest のテストワーカー内部で Void の SSR プラグインが干渉し、以下のエラーが発生することがあります：
+
+```text
+ReferenceError: module is not defined in runner-worker
+```
+
+**解決策**:
+テスト設定を [vitest.config.ts](file:///Users/narumi/Documents/GitHub/definy/vitest.config.ts) として独立させ、Void の SSR プラグインをバイパスして純粋なユニットテスト環境を提供します：
+
+```ts
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    include: ["src/**/*.test.{ts,tsx}", "worker/**/*.test.ts"],
+    environment: "node",
+  },
+});
+```
+
+これにより、Wasm 実行テスト（[src/stage1_compiler.test.ts](file:///Users/narumi/Documents/GitHub/definy/src/stage1_compiler.test.ts)）などが Node.js / V8 の標準 `WebAssembly` 環境で約 20ms の超高速で実行可能になります。
+
+### ③ 自己記述 Wasm バイナリ (`stage1.wasm`) の完全自己完結性
+
+`definy` の自己記述コンパイラ [wasm/stage1.wasm](file:///Users/narumi/Documents/GitHub/definy/wasm/stage1.wasm) は、外部環境からの import が一切ありません (`Imports: []`)。
+
+- **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate)、Deno、Bun など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
+- **メモリ管理**: コンパイラ自身が持つ `alloc(size: number) -> number` 関数により、線形メモリ内の 8 バイト境界アラインメントでバンプアロケーションを行い、AST を書き込むだけで安全にコンパイラクロージャ（Tag 5）を呼び出せます。
+- **自己ホストの検証サイクル**: これにより、フロントエンドの UI 画面上でユーザーが式を変更した際、バックエンド通信や重いビルドツールを介さずに、ブラウザローカルで即座に Wasm バイナリを出力し、V8 ネイティブで評価結果を確認できるようになりました。
