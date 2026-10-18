@@ -1,7 +1,5 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import {
-  buildPreviewUrl,
-  extractSubdomainFromHost,
   handleWorkerRequest,
   isAdminAccount,
   isWorkerFirstPath,
@@ -18,7 +16,7 @@ import type {
   SeedBundle,
 } from "./types.ts";
 
-// プレビューアプリの実行に使う Rust 製ランタイム（ビルド済みのもの）を全テストで設定する
+// パーツのコンパイル・実行に使う Rust 製ランタイム（ビルド済みのもの）を全テストで設定する
 await setupTestRuntime();
 
 function createSqliteD1Database(): D1Database {
@@ -129,11 +127,6 @@ Deno.test("isWorkerFirstPath matches Connect-RPC and dynamic endpoints", () => {
     isWorkerFirstPath("/definy.v1.DeployService/DeployCloudflare"),
     true,
   );
-  assertEquals(
-    isWorkerFirstPath("/definy.v1.PreviewService/RegisterPreviewApp"),
-    true,
-  );
-  assertEquals(isWorkerFirstPath("/preview/my-app"), true);
   assertEquals(isWorkerFirstPath("/virtual/wasm/abc123.wasm"), true);
   assertEquals(isWorkerFirstPath("/healthz"), true);
 
@@ -150,65 +143,6 @@ Deno.test("isAdminAccount checks DEFINY_ADMIN_ACCOUNT_ID case-insensitively", ()
   assertEquals(isAdminAccount("unknown_user", env), false);
   assertEquals(isAdminAccount("", env), false);
   assertEquals(isAdminAccount(undefined, {}), false);
-});
-
-Deno.test("extractSubdomainFromHost and buildPreviewUrl support {sub}-definy.narumincho.com and {sub}.definy.workers.dev", () => {
-  assertEquals(
-    extractSubdomainFromHost(
-      "my-app-definy.narumincho.com",
-      "definy.narumincho.com",
-    ),
-    "my-app",
-  );
-  assertEquals(
-    extractSubdomainFromHost(
-      "counter-app-definy.narumincho.com:443",
-      "definy.narumincho.com",
-    ),
-    "counter-app",
-  );
-  assertEquals(
-    extractSubdomainFromHost(
-      "definy.narumincho.com",
-      "definy.narumincho.com",
-    ),
-    undefined,
-  );
-  assertEquals(
-    extractSubdomainFromHost(
-      "blog.narumincho.com",
-      "definy.narumincho.com",
-    ),
-    undefined,
-  );
-  assertEquals(
-    extractSubdomainFromHost("my-app.definy.workers.dev", "definy.workers.dev"),
-    "my-app",
-  );
-  assertEquals(
-    extractSubdomainFromHost(
-      "my-app.definy.workers.dev:443",
-      "definy.workers.dev",
-    ),
-    "my-app",
-  );
-  assertEquals(
-    extractSubdomainFromHost("definy.workers.dev", "definy.workers.dev"),
-    undefined,
-  );
-
-  assertEquals(
-    buildPreviewUrl("my-app", "definy.narumincho.com"),
-    "https://my-app-definy.narumincho.com",
-  );
-  assertEquals(
-    buildPreviewUrl("my-app", "definy.workers.dev"),
-    "https://my-app.definy.workers.dev",
-  );
-  assertEquals(
-    buildPreviewUrl("my-app", "localhost:8000"),
-    "http://my-app.localhost:8000",
-  );
 });
 
 Deno.test("handleWorkerRequest loads seed bundle and serves EventService RPCs", async () => {
@@ -458,66 +392,8 @@ Deno.test("handleWorkerRequest handles DeployCloudflare and ListDeployments dire
   assertEquals(listJson.deployments[0].provider, "cloudflare_workers");
 });
 
-Deno.test("handleWorkerRequest enforces admin check on PreviewService and serves preview apps", async () => {
-  const store = new WorkerStore();
-  const adminAccount =
-    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-  const env: Env = {
-    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
-    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
-  };
-
-  // Unauthorized user -> 403 permission_denied
-  const unauthRes = await handleWorkerRequest(
-    new Request(
-      "https://definy.workers.dev/definy.v1.PreviewService/RegisterPreviewApp",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          appId: "demo",
-          accountId: "non_admin",
-        }),
-      },
-    ),
-    env,
-    store,
-  );
-  assertEquals(unauthRes.status, 403);
-
-  // Admin user -> 200 OK
-  const regRes = await handleWorkerRequest(
-    new Request(
-      "https://definy.workers.dev/definy.v1.PreviewService/RegisterPreviewApp",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          appId: "demo",
-          displayName: "Demo App",
-          partId: "part-1",
-          accountId: adminAccount,
-        }),
-      },
-    ),
-    env,
-    store,
-  );
-  assertEquals(regRes.status, 200);
-  const regJson = await regRes.json();
-  assertEquals(regJson.previewUrl, "https://demo.definy.workers.dev");
-
-  // Access via /preview/demo
-  const previewRes = await handleWorkerRequest(
-    new Request("https://definy.workers.dev/preview/demo"),
-    env,
-    store,
-  );
-  assertEquals(previewRes.status, 200);
-  assertEquals(previewRes.headers.get("X-Definy-Preview-App"), "demo");
-});
-
 Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", async () => {
   const d1 = createSqliteD1Database();
-  const adminAccount = "admin_account_123";
   const sampleSeed: SeedBundle = {
     events: [
       {
@@ -539,7 +415,6 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
 
   const envWithD1: Env = {
     DB: d1,
-    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
     DEFINY_ROOT_DOMAIN: "definy.workers.dev",
     ASSETS: {
       fetch(input: Request | URL | string): Promise<Response> {
@@ -558,7 +433,7 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
     },
   };
 
-  // Isolate 1: seed, submit a new event, upload CAS content, register preview app
+  // Isolate 1: seed, submit a new event, upload CAS content
   const store1 = new WorkerStore();
 
   const healthRes = await handleWorkerRequest(
@@ -607,28 +482,10 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
     store1,
   );
 
-  await handleWorkerRequest(
-    new Request(
-      "https://definy.workers.dev/definy.v1.PreviewService/RegisterPreviewApp",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          appId: "persisted-app",
-          displayName: "Persisted App",
-          partId: "part-persisted",
-          accountId: adminAccount,
-        }),
-      },
-    ),
-    envWithD1,
-    store1,
-  );
-
   // Isolate 2: completely fresh WorkerStore (simulating cold start), WITHOUT ASSETS seed
   const store2 = new WorkerStore();
   const envColdStart: Env = {
     DB: d1,
-    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
     DEFINY_ROOT_DOMAIN: "definy.workers.dev",
   };
 
@@ -660,34 +517,15 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
   );
   const contentJson = await contentRes.json();
   assertEquals(contentJson.item.contentHash, "d1_cas_hash_1");
-
-  // Verify PreviewApp is persisted in D1
-  const listAppsRes = await handleWorkerRequest(
-    new Request(
-      "https://definy.workers.dev/definy.v1.PreviewService/ListPreviewApps",
-      {
-        method: "POST",
-        body: JSON.stringify({}),
-      },
-    ),
-    envColdStart,
-    store2,
-  );
-  const listAppsJson = await listAppsRes.json();
-  assertEquals(listAppsJson.apps.length, 1);
-  assertEquals(listAppsJson.apps[0].appId, "persisted-app");
 });
 
-Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as an HTTP server", async () => {
-  // Rust が生成した本物の seed バンドル（開発用システムアカウントで署名）を使う
+Deno.test("DeployCloudflare compiles definy:deploy part to Wasm and uploads app.wasm multipart module", async () => {
   const bundle = await loadTestSeedBundle();
-
   const d1 = createSqliteD1Database();
-  const adminAccount = "admin_narumincho";
   const env: Env = {
     DB: d1,
-    DEFINY_ADMIN_ACCOUNT_ID: adminAccount,
-    DEFINY_ROOT_DOMAIN: "definy.narumincho.com",
+    CLOUDFLARE_API_TOKEN: "cf-test-token",
+    CLOUDFLARE_ACCOUNT_ID: "cf-acc-123",
     ASSETS: {
       fetch(input: Request | URL | string): Promise<Response> {
         const url = typeof input === "string"
@@ -706,61 +544,77 @@ Deno.test("Subdomain https://{sub}-definy.narumincho.com executes definy part as
   };
   const store = new WorkerStore();
 
-  // セルフホスト HTTP サーバーのサンプルパーツをプレビューアプリとして登録
-  const regRes = await handleWorkerRequest(
+  let uploadedWorkerJs = "";
+  let uploadedWasmBytes: Uint8Array | null = null;
+
+  const mockFetch: typeof fetch = async (
+    input: Request | URL | string,
+    init?: RequestInit,
+  ) => {
+    const url = typeof input === "string"
+      ? input
+      : input instanceof URL
+      ? input.toString()
+      : input.url;
+
+    if (
+      url.includes("/workers/scripts/") &&
+      !url.endsWith("/subdomain") &&
+      init?.method === "PUT" &&
+      init?.body instanceof FormData
+    ) {
+      const workerFile = init.body.get("worker.js");
+      if (workerFile instanceof Blob) {
+        uploadedWorkerJs = await workerFile.text();
+      }
+      const wasmFile = init.body.get("app.wasm");
+      if (wasmFile instanceof Blob) {
+        uploadedWasmBytes = new Uint8Array(await wasmFile.arrayBuffer());
+      }
+    }
+
+    if (url.endsWith("/subdomain") && !url.includes("/scripts/")) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          result: { subdomain: "narumincho" },
+        }),
+        { status: 200 },
+      );
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  };
+
+  const deployRes = await handleWorkerRequest(
     new Request(
-      "https://definy.narumincho.com/definy.v1.PreviewService/RegisterPreviewApp",
+      "https://definy.narumincho.com/definy.v1.DeployService/DeployCloudflare",
       {
         method: "POST",
         body: JSON.stringify({
-          appId: "hello",
-          displayName: "Hello HTTP Server",
           partId: "sample.self-hosted-definy-server",
-          accountId: adminAccount,
         }),
       },
     ),
     env,
     store,
+    mockFetch,
   );
-  assertEquals(regRes.status, 200);
-  const regJson = await regRes.json();
-  assertEquals(regJson.previewUrl, "https://hello-definy.narumincho.com");
-
-  // https://hello-definy.narumincho.com/healthz でパーツが HTTP サーバーとして動く
-  const subRes = await handleWorkerRequest(
-    new Request("https://hello-definy.narumincho.com/healthz"),
-    env,
-    store,
-  );
-  assertEquals(subRes.status, 200);
-  assertEquals(subRes.headers.get("X-Definy-Preview-App"), "hello");
-  assertEquals(subRes.headers.get("Content-Security-Policy"), null);
-  const health = await subRes.json();
-  assertEquals(health.status, "ok");
-  assertEquals(health.service, "self-hosted-definy-server");
-
-  // 本文は複数チャンクのストリームとして返る（自己記述コンパイラのパイプラインを実行するページ）
-  const homeRes = await handleWorkerRequest(
-    new Request("https://hello-definy.narumincho.com/"),
-    env,
-    store,
-  );
-  assertEquals(homeRes.status, 200);
-  const homeHtml = await homeRes.text();
-  assertEquals(homeHtml.includes("Self-Hosted definy Studio"), true);
-  assertEquals(homeHtml.includes("42 (verified: true)"), true);
-
-  // 同一オリジンのパスフォールバック (/preview/hello/...) では CSP sandbox を付けて IndexedDB を保護する
-  const pathRes = await handleWorkerRequest(
-    new Request("https://definy.narumincho.com/preview/hello/healthz"),
-    env,
-    store,
-  );
-  assertEquals(pathRes.status, 200);
+  assertEquals(deployRes.status, 200);
+  const deployJson = await deployRes.json();
+  // sample.self-hosted-definy-server specifies cloudflareWorkerName: "self-definy"
+  assertEquals(deployJson.scriptName, "self-definy");
+  assertEquals(deployJson.url, "https://self-definy.narumincho.workers.dev");
   assertEquals(
-    pathRes.headers.get("Content-Security-Policy"),
-    "sandbox allow-scripts allow-forms",
+    uploadedWorkerJs.includes('import wasmModule from "./app.wasm";'),
+    true,
   );
-  await pathRes.body?.cancel();
+  assertEquals(uploadedWasmBytes !== null, true);
+  if (uploadedWasmBytes) {
+    const magic = Array.from((uploadedWasmBytes as Uint8Array).slice(0, 4));
+    assertEquals(
+      JSON.stringify(magic),
+      JSON.stringify([0x00, 0x61, 0x73, 0x6d]),
+    );
+  }
 });

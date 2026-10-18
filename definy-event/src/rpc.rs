@@ -1,8 +1,6 @@
 use prost::Message;
 use serde::{Deserialize, Serialize};
 
-pub use crate::preview_rpc::*;
-
 pub const CONNECT_PROTOCOL_VERSION: &str = "1";
 pub const CONNECT_HEADER_PROTOCOL_VERSION: &str = "connect-protocol-version";
 

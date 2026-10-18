@@ -136,9 +136,9 @@ fn stage1_compiles_http_app() {
     let part =
         definy_server::seed::find_builtin_part("self-hosted-definy-server").expect("sample part");
     let expression = part.expression.as_ref().expect("sample expression");
-    let handler = definy_core::detect_preview_in_expression(expression)
+    let handler = definy_core::detect_deploy_in_expression(expression)
         .and_then(|detected| detected.handler_expression)
-        .expect("preview handler");
+        .expect("deploy handler");
 
     for path in ["/", "/api/self-host", "/healthz", "/not-found"] {
         let url = format!("http://self-definy.localhost:8000{path}");

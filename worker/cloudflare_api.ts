@@ -1,4 +1,3 @@
-import { bytesToBase64 } from "./store.ts";
 import type {
   CloudflareWorkerItem,
   DeployCloudflareRequest,
@@ -37,36 +36,385 @@ interface CloudflareWorkerSummary {
 }
 
 /**
- * デプロイ先の Cloudflare Worker で動作するエッジ ES Module スクリプトを生成する
+ * デプロイ先の Cloudflare Worker で動作するエッジ ES Module スクリプトを生成する。
+ * `wasmBytes` がある場合は multipart の `app.wasm` (`application/wasm`) を ES Module として import し、
+ * V8 のネイティブ WebAssembly ランタイムで実行する。
  */
 export function buildDefaultWorkerScript(
   wasmBytes?: Uint8Array,
 ): string {
-  const wasmBase64 = wasmBytes ? bytesToBase64(wasmBytes) : "";
   const hasWasm = Boolean(wasmBytes && wasmBytes.byteLength > 0);
-
-  return `const HAS_WASM = ${hasWasm ? "true" : "false"};
-const WASM_BASE64 = "${wasmBase64}";
-
-export default {
+  if (!hasWasm) {
+    return `export default {
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname === "/healthz") {
-      return new Response(JSON.stringify({ status: "ok", runtime: "cloudflare-workers", has_wasm: HAS_WASM }), {
+      return new Response(JSON.stringify({ status: "ok", runtime: "cloudflare-workers", has_wasm: false }), {
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });
     }
     return new Response(
       JSON.stringify({
-        service: "definy-edge-worker",
-        path: url.pathname,
-        has_wasm: HAS_WASM,
-        wasm_base64_length: WASM_BASE64.length,
+        service: "definy-cloudflare-workers",
+        message: "Hello from Definy on Cloudflare Workers!",
+        evaluatedResult: null,
+        pathname: url.pathname,
+        has_wasm: false,
       }),
       {
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+        },
       },
     );
+  },
+};
+`;
+  }
+
+  return `import wasmModule from "./app.wasm";
+
+function readDefinyValue(mem, ptr) {
+  if (ptr < 0 || ptr >= mem.length) return null;
+  const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+  const tag = mem[ptr];
+  if (tag === 0) {
+    return Number(view.getBigInt64(ptr + 8, true));
+  }
+  if (tag === 1) {
+    return mem[ptr + 8] !== 0;
+  }
+  if (tag === 2) {
+    const len = view.getUint32(ptr + 4, true);
+    return new TextDecoder().decode(mem.subarray(ptr + 8, ptr + 8 + len));
+  }
+  if (tag === 3) {
+    const count = view.getUint32(ptr + 4, true);
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
+      items.push(readDefinyValue(mem, elemPtr));
+    }
+    return items;
+  }
+  if (tag === 4) {
+    const count = view.getUint32(ptr + 4, true);
+    const obj = { __ptr: ptr };
+    for (let i = 0; i < count; i++) {
+      const itemBase = ptr + 8 + i * 8;
+      const keyPtr = view.getUint32(itemBase, true);
+      const valPtr = view.getUint32(itemBase + 4, true);
+      const keyStr = readDefinyValue(mem, keyPtr);
+      if (typeof keyStr === "string") {
+        obj[keyStr] = readDefinyValue(mem, valPtr);
+      }
+    }
+    return obj;
+  }
+  if (tag === 5) {
+    return {
+      __closure: true,
+      tableIdx: view.getUint32(ptr + 4, true),
+      envPtr: view.getInt32(ptr + 8, true),
+    };
+  }
+  if (tag === 6) {
+    const tagPtr = view.getUint32(ptr + 4, true);
+    const payloadPtr = view.getUint32(ptr + 8, true);
+    const tagName = readDefinyValue(mem, tagPtr);
+    const payloadVal = payloadPtr !== 0 ? readDefinyValue(mem, payloadPtr) : null;
+    return { tag: tagName, payload: payloadVal };
+  }
+  return null;
+}
+
+function readRecordFieldPtr(mem, recordPtr, targetKey) {
+  if (recordPtr < 0 || recordPtr >= mem.length || mem[recordPtr] !== 4) return null;
+  const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+  const count = view.getUint32(recordPtr + 4, true);
+  for (let i = 0; i < count; i++) {
+    const itemBase = recordPtr + 8 + i * 8;
+    const keyPtr = view.getUint32(itemBase, true);
+    const valPtr = view.getUint32(itemBase + 4, true);
+    if (readDefinyValue(mem, keyPtr) === targetKey) {
+      return valPtr;
+    }
+  }
+  return null;
+}
+
+function createMemoryAllocator(exports) {
+  if (typeof exports.alloc === "function") {
+    return (size) => exports.alloc((size + 7) & ~7);
+  }
+  const basePage = exports.memory.grow(16);
+  let bump = (basePage + 15) * 65536;
+  return (size) => {
+    const aligned = (size + 7) & ~7;
+    const ptr = bump;
+    bump += aligned;
+    return ptr;
+  };
+}
+
+function writeHttpRequestToMemory(exports, alloc, request) {
+  const writeNumber = (n) => {
+    const ptr = alloc(16);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 0;
+    view.setBigInt64(ptr + 8, BigInt(n), true);
+    return ptr;
+  };
+  const writeString = (s) => {
+    const bytes = new TextEncoder().encode(s);
+    const ptr = alloc(8 + bytes.length);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 2;
+    view.setUint32(ptr + 4, bytes.length, true);
+    mem.set(bytes, ptr + 8);
+    return ptr;
+  };
+  const writeList = (ptrs) => {
+    const ptr = alloc(8 + ptrs.length * 4);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 3;
+    view.setUint32(ptr + 4, ptrs.length, true);
+    for (let i = 0; i < ptrs.length; i++) {
+      view.setUint32(ptr + 8 + i * 4, ptrs[i], true);
+    }
+    return ptr;
+  };
+  const writeRecord = (entries) => {
+    const ptr = alloc(8 + entries.length * 8);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 4;
+    view.setUint32(ptr + 4, entries.length, true);
+    for (let i = 0; i < entries.length; i++) {
+      view.setUint32(ptr + 8 + i * 8, entries[i][0], true);
+      view.setUint32(ptr + 8 + i * 8 + 4, entries[i][1], true);
+    }
+    return ptr;
+  };
+
+  const headerPtrs = [];
+  request.headers.forEach((value, name) => {
+    headerPtrs.push(
+      writeRecord([
+        [writeString("name"), writeString(name)],
+        [writeString("value"), writeString(value)],
+      ])
+    );
+  });
+
+  const bodyRecordPtr = writeRecord([
+    [writeString("initialState"), writeNumber(0)],
+  ]);
+
+  return writeRecord([
+    [writeString("method"), writeString(request.method)],
+    [writeString("url"), writeString(request.url)],
+    [writeString("headers"), writeList(headerPtrs)],
+    [writeString("body"), bodyRecordPtr],
+  ]);
+}
+
+function pullByteStream(exports, alloc, bodyRecordPtr, nextClosure) {
+  let statePtr = readRecordFieldPtr(
+    new Uint8Array(exports.memory.buffer),
+    bodyRecordPtr,
+    "initialState"
+  );
+  if (statePtr === null) return new Uint8Array(0);
+  const argsPtr = alloc(8);
+  const nextFn = exports.table.get(nextClosure.tableIdx);
+  const chunks = [];
+  let totalLen = 0;
+
+  for (let step = 0; step < 10000; step++) {
+    {
+      const mem = new Uint8Array(exports.memory.buffer);
+      const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+      view.setUint32(argsPtr, statePtr, true);
+    }
+    const stepPtr = nextFn(nextClosure.envPtr, argsPtr);
+    const mem = new Uint8Array(exports.memory.buffer);
+    if (stepPtr < 0 || stepPtr >= mem.length || mem[stepPtr] !== 6) break;
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    const tagPtr = view.getUint32(stepPtr + 4, true);
+    const payloadPtr = view.getUint32(stepPtr + 8, true);
+    const tag = readDefinyValue(mem, tagPtr);
+    if (tag === "done" || payloadPtr === 0) break;
+    if (tag === "yield") {
+      const chunkPtr = readRecordFieldPtr(mem, payloadPtr, "chunk");
+      const nextStatePtr = readRecordFieldPtr(mem, payloadPtr, "nextState");
+      if (chunkPtr !== null) {
+        const listVal = readDefinyValue(mem, chunkPtr);
+        if (Array.isArray(listVal) && listVal.length > 0) {
+          const bytes = new Uint8Array(listVal.map((n) => Number(n) & 0xff));
+          chunks.push(bytes);
+          totalLen += bytes.length;
+        }
+      }
+      if (nextStatePtr === null) break;
+      statePtr = nextStatePtr;
+    } else {
+      break;
+    }
+  }
+
+  const out = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.length;
+  }
+  return out;
+}
+
+function stripInternalFields(val) {
+  if (!val || typeof val !== "object") return val;
+  if (Array.isArray(val)) return val.map(stripInternalFields);
+  const copy = {};
+  for (const [k, v] of Object.entries(val)) {
+    if (k !== "__ptr") copy[k] = stripInternalFields(v);
+  }
+  return copy;
+}
+
+async function evaluateWasmRequest(request) {
+  const instantiated = await WebAssembly.instantiate(wasmModule, {
+    env: {
+      print: (v) => console.log("wasm log:", v),
+    },
+  });
+  const instance = instantiated.instance ?? instantiated;
+  const exports = instance.exports;
+  const entry =
+    typeof exports.evaluate === "function"
+      ? exports.evaluate
+      : typeof exports.main === "function"
+      ? exports.main
+      : null;
+  if (!entry) {
+    return { evalResult: null, httpResponse: null };
+  }
+
+  let rawPtr = entry();
+  if (!exports.memory) {
+    return { evalResult: Number(rawPtr), httpResponse: null };
+  }
+
+  const alloc = createMemoryAllocator(exports);
+  let mem = new Uint8Array(exports.memory.buffer);
+  if (rawPtr >= 0 && rawPtr < mem.length && mem[rawPtr] === 5 && exports.table) {
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    const tableIdx = view.getUint32(rawPtr + 4, true);
+    const envPtr = view.getInt32(rawPtr + 8, true);
+    const reqPtr = writeHttpRequestToMemory(exports, alloc, request);
+    const argsPtr = alloc(8);
+    mem = new Uint8Array(exports.memory.buffer);
+    new DataView(mem.buffer, mem.byteOffset, mem.byteLength).setUint32(
+      argsPtr,
+      reqPtr,
+      true
+    );
+    const fn = exports.table.get(tableIdx);
+    rawPtr = fn(envPtr, argsPtr);
+  }
+
+  mem = new Uint8Array(exports.memory.buffer);
+  const rawVal = readDefinyValue(mem, rawPtr) ?? rawPtr;
+
+  if (
+    rawVal &&
+    typeof rawVal === "object" &&
+    !Array.isArray(rawVal) &&
+    typeof rawVal.status === "number" &&
+    "body" in rawVal
+  ) {
+    const headers = new Headers({ "access-control-allow-origin": "*" });
+    if (Array.isArray(rawVal.headers)) {
+      for (const h of rawVal.headers) {
+        if (h && typeof h.name === "string" && typeof h.value === "string") {
+          headers.set(h.name, h.value);
+        }
+      }
+    }
+    let bodyPayload = "";
+    if (typeof rawVal.body === "string") {
+      bodyPayload = rawVal.body;
+    } else if (
+      rawVal.body &&
+      typeof rawVal.body === "object" &&
+      rawVal.body.next &&
+      rawVal.body.next.__closure &&
+      exports.table
+    ) {
+      const bodyRecordPtr = rawVal.body.__ptr;
+      bodyPayload = pullByteStream(
+        exports,
+        alloc,
+        bodyRecordPtr,
+        rawVal.body.next
+      );
+    }
+    return {
+      evalResult: stripInternalFields(rawVal),
+      httpResponse: new Response(bodyPayload, {
+        status: rawVal.status,
+        headers,
+      }),
+    };
+  }
+
+  return { evalResult: stripInternalFields(rawVal), httpResponse: null };
+}
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    try {
+      const { evalResult, httpResponse } = await evaluateWasmRequest(request);
+      if (httpResponse) {
+        return httpResponse;
+      }
+      if (url.pathname === "/healthz") {
+        return new Response(JSON.stringify({ status: "ok", runtime: "cloudflare-workers", has_wasm: true }), {
+          headers: { "Content-Type": "application/json; charset=utf-8" },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          service: "definy-cloudflare-workers",
+          message: "Hello from Definy on Cloudflare Workers!",
+          evaluatedResult: evalResult,
+          pathname: url.pathname,
+          has_wasm: true,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: String(e) }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+          },
+        },
+      );
+    }
   },
 };
 `;
@@ -180,6 +528,13 @@ export async function deployWorkerToCloudflare(
     new Blob([scriptContent], { type: "application/javascript+module" }),
     "worker.js",
   );
+  if (wasmBytes && wasmBytes.byteLength > 0) {
+    form.append(
+      "app.wasm",
+      new Blob([new Uint8Array(wasmBytes)], { type: "application/wasm" }),
+      "app.wasm",
+    );
+  }
 
   const putRes = await fetchFn(
     `${apiBaseUrl}/accounts/${accountId}/workers/scripts/${scriptName}`,
@@ -277,7 +632,7 @@ export async function listWorkersFromCloudflare(
   >;
   const summaries = parsed.result ?? [];
 
-  const workers: CloudflareWorkerItem[] = summaries.map((w) => ({
+  const workers: ReadonlyArray<CloudflareWorkerItem> = summaries.map((w) => ({
     id: w.id,
     createdOn: w.created_on,
     modifiedOn: w.modified_on,

@@ -1,4 +1,4 @@
-import { runPartAsHttpServer } from "./http_stream.ts";
+import { compilePartToWasm } from "./http_stream.ts";
 import {
   deployWorkerToCloudflare,
   listWorkersFromCloudflare,
@@ -13,10 +13,6 @@ import type {
   GetEventsRequest,
   ListCloudflareWorkersRequest,
   ListDeploymentsRequest,
-  ListPreviewAppsRequest,
-  PreviewAppItem,
-  RegisterPreviewAppRequest,
-  StopPreviewAppRequest,
   SubmitEventRequest,
   UploadContentRequest,
 } from "./types.ts";
@@ -26,7 +22,6 @@ export { defaultStore, WorkerStore } from "./store.ts";
 
 const WORKER_ROUTE_PREFIXES: ReadonlyArray<string> = [
   "/definy.v1.",
-  "/preview/",
   "/virtual/",
   "/mcp",
   "/healthz",
@@ -92,61 +87,6 @@ export function getRootDomain(env: Env, requestUrl: URL): string {
   return requestUrl.host || "definy.narumincho.com";
 }
 
-/**
- * Host ヘッダーからプレビュー用サブドメインを抽出する。
- * `https://{sub}-definy.narumincho.com` のようなハイフン連結形式（1階層ワイルドカード SSL 用）と
- * `https://{sub}.definy.workers.dev` / `http://{sub}.localhost:8000` のドット区切り形式の両方に対応する。
- */
-export function extractSubdomainFromHost(
-  host: string,
-  rootDomain: string,
-): string | undefined {
-  const cleanHost = host.split(":")[0].trim().toLowerCase();
-  const cleanRoot = rootDomain.split(":")[0].trim().toLowerCase();
-  if (!cleanHost || !cleanRoot || cleanHost === cleanRoot) {
-    return undefined;
-  }
-
-  // 1. {sub}-{rootDomain} 形式 (例: my-app-definy.narumincho.com)
-  const hyphenSuffix = `-${cleanRoot}`;
-  if (cleanHost.endsWith(hyphenSuffix)) {
-    const sub = cleanHost.slice(0, cleanHost.length - hyphenSuffix.length);
-    if (sub.length > 0 && !sub.includes(".")) {
-      return sub;
-    }
-  }
-
-  // 2. {sub}.{rootDomain} 形式 (例: my-app.definy.workers.dev, my-app.localhost)
-  const dotSuffix = `.${cleanRoot}`;
-  if (cleanHost.endsWith(dotSuffix)) {
-    const sub = cleanHost.slice(0, cleanHost.length - dotSuffix.length);
-    if (sub.length > 0 && !sub.includes(".")) {
-      return sub;
-    }
-  }
-
-  return undefined;
-}
-
-/**
- * プレビューアプリのサブドメイン URL を構築する。
- * `definy.narumincho.com` のようなカスタムサブドメイン（2つ以上のドットを含み `.workers.dev` でない）では、
- * Cloudflare Universal SSL の1階層ワイルドカード（`*.narumincho.com`）でカバーできるよう
- * `https://{appId}-{rootDomain}`（例: `https://my-app-definy.narumincho.com`）を返す。
- */
-export function buildPreviewUrl(appId: string, rootDomain: string): string {
-  const protocol = rootDomain.startsWith("localhost") ||
-      rootDomain.includes("127.0.0.1")
-    ? "http"
-    : "https";
-  const cleanRoot = rootDomain.split(":")[0].trim().toLowerCase();
-  const useHyphenSubdomain = !cleanRoot.endsWith(".workers.dev") &&
-    cleanRoot.split(".").length >= 3;
-  return useHyphenSubdomain
-    ? `${protocol}://${appId}-${rootDomain}`
-    : `${protocol}://${appId}.${rootDomain}`;
-}
-
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -173,132 +113,6 @@ async function parseJsonRequest<T>(request: Request): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-async function renderPreviewResponse(
-  app: PreviewAppItem,
-  request: Request,
-  subpath: string,
-  store: WorkerStore,
-  env: Env,
-  isSameOriginPathFallback = false,
-): Promise<Response> {
-  const extraSecurityHeaders: Record<string, string> = isSameOriginPathFallback
-    ? { "Content-Security-Policy": "sandbox allow-scripts allow-forms" }
-    : {};
-
-  if (app.partId && app.partId.trim().length > 0) {
-    try {
-      const effectiveUrl = new URL(request.url);
-      effectiveUrl.pathname = subpath;
-      const response = await runPartAsHttpServer(
-        app.partId.trim(),
-        request,
-        store,
-        env,
-        {
-          overrideUrl: effectiveUrl.toString(),
-          appId: app.appId,
-          extraHeaders: { ...CORS_HEADERS, ...extraSecurityHeaders },
-        },
-      );
-      if (response !== undefined) {
-        return response;
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return new Response(
-        `Error evaluating part '${app.partId}' for app '${app.appId}': ${msg}`,
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "X-Definy-Preview-App": app.appId,
-            ...CORS_HEADERS,
-            ...extraSecurityHeaders,
-          },
-        },
-      );
-    }
-  }
-
-  const accept = request.headers.get("accept") ?? "";
-  if (accept.includes("application/json")) {
-    return new Response(
-      JSON.stringify({
-        appId: app.appId,
-        displayName: app.displayName,
-        partId: app.partId,
-        status: app.status,
-        path: subpath,
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "X-Definy-Preview-App": app.appId,
-          ...CORS_HEADERS,
-          ...extraSecurityHeaders,
-        },
-      },
-    );
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>${app.displayName} - definy preview</title>
-</head>
-<body>
-  <main data-preview-app="${app.appId}">
-    <h1>${app.displayName}</h1>
-    <p>App ID: ${app.appId}</p>
-    <p>Part ID: ${app.partId}</p>
-    <p>Path: ${subpath}</p>
-  </main>
-</body>
-</html>`;
-
-  return new Response(html, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "X-Definy-Preview-App": app.appId,
-      ...CORS_HEADERS,
-      ...extraSecurityHeaders,
-    },
-  });
-}
-
-async function resolvePreviewAppOrDefault(
-  appId: string,
-  rootDomain: string,
-  store: WorkerStore,
-  env: Env,
-): Promise<PreviewAppItem | undefined> {
-  const existing = await store.getPreviewApp(appId, env);
-  if (existing) {
-    return existing;
-  }
-  if (appId === "self-definy") {
-    const protocol = rootDomain.startsWith("localhost") ||
-        rootDomain.includes("127.0.0.1")
-      ? "http"
-      : "https";
-    return {
-      appId: "self-definy",
-      displayName: "Self-Hosted definy Studio (definy in definy)",
-      partId: "sample.self-hosted-definy-server",
-      ownerAccountId: "system",
-      previewUrl: buildPreviewUrl("self-definy", rootDomain),
-      pathUrl: `${protocol}://${rootDomain}/preview/self-definy/`,
-      status: "running",
-      createdAtRfc3339: "2026-01-01T00:00:00Z",
-      subdomain: "self-definy",
-    };
-  }
-  return undefined;
-}
-
 /**
  * Worker リクエストハンドラー（テスト用にカスタム Store と Fetch 関数を注入可能）
  */
@@ -316,26 +130,6 @@ export async function handleWorkerRequest(
   await store.ensureSeeded(env, url.origin);
 
   const { pathname } = url;
-
-  // Subdomain preview routing
-  const rootDomain = getRootDomain(env, url);
-  const hostHeader = request.headers.get("host") ?? url.host;
-  const subdomain = extractSubdomainFromHost(hostHeader, rootDomain);
-  if (subdomain && !pathname.startsWith("/definy.v1.")) {
-    const app = await resolvePreviewAppOrDefault(
-      subdomain,
-      rootDomain,
-      store,
-      env,
-    );
-    if (!app) {
-      return new Response(`Preview app '${subdomain}' is not running`, {
-        status: 404,
-        headers: CORS_HEADERS,
-      });
-    }
-    return renderPreviewResponse(app, request, pathname, store, env, false);
-  }
 
   // Health check
   if (pathname === "/healthz") {
@@ -369,22 +163,6 @@ export async function handleWorkerRequest(
         ...CORS_HEADERS,
       },
     });
-  }
-
-  // Path-based preview endpoint: /preview/:app_id or /preview/:app_id/*
-  if (pathname.startsWith("/preview/")) {
-    const rest = pathname.slice("/preview/".length);
-    const slashIdx = rest.indexOf("/");
-    const appId = (slashIdx === -1 ? rest : rest.slice(0, slashIdx)).trim();
-    const subpath = slashIdx === -1 ? "/" : rest.slice(slashIdx);
-    const app = await resolvePreviewAppOrDefault(appId, rootDomain, store, env);
-    if (!app) {
-      return new Response(`Preview app '${appId}' is not running`, {
-        status: 404,
-        headers: CORS_HEADERS,
-      });
-    }
-    return renderPreviewResponse(app, request, subpath, store, env, true);
   }
 
   // Connect-RPC: EventService
@@ -477,7 +255,11 @@ export async function handleWorkerRequest(
     try {
       const req = await parseJsonRequest<DeployCloudflareRequest>(request);
       const wasmHash = req.wasmHash ?? req.wasm_hash;
+      const partId = req.partId ?? req.part_id;
       let wasmBytes: Uint8Array | undefined;
+      let effectiveReq: DeployCloudflareRequest = req;
+      let evaluatedResult: string | null = null;
+
       if (wasmHash && wasmHash.trim().length > 0) {
         wasmBytes = await store.getRawContentBytes(wasmHash.trim(), env);
         if (!wasmBytes) {
@@ -487,29 +269,52 @@ export async function handleWorkerRequest(
             404,
           );
         }
+      } else if (partId && partId.trim().length > 0) {
+        const compiled = await compilePartToWasm(partId.trim(), store, env);
+        wasmBytes = compiled.wasmBytes;
+        evaluatedResult = compiled.evaluatedResult ?? null;
+        const hasScriptName = Boolean(
+          (req.scriptName ?? req.script_name ?? req.worker_name ?? "").trim(),
+        );
+        const hasApiToken = Boolean(
+          (req.apiToken ?? req.api_token ?? "").trim(),
+        );
+        effectiveReq = {
+          ...req,
+          scriptName: hasScriptName
+            ? req.scriptName
+            : (compiled.cloudflareWorkerName ?? req.scriptName),
+          apiToken: hasApiToken
+            ? req.apiToken
+            : (compiled.cloudflareToken ?? req.apiToken),
+        };
       }
+
       const res = await deployWorkerToCloudflare(
-        req,
+        effectiveReq,
         wasmBytes,
         env,
         fetchFn,
       );
+      const finalRes = evaluatedResult && !res.evaluatedResult
+        ? { ...res, evaluatedResult }
+        : res;
       const nowIso = new Date().toISOString();
       await store.recordDeployment(
         {
-          machineId: `cf-${res.scriptName}`,
-          status: res.status,
-          url: res.url,
-          appUrl: res.url,
+          machineId: `cf-${finalRes.scriptName}`,
+          status: finalRes.status,
+          url: finalRes.url,
+          appUrl: finalRes.url,
           region: "cloudflare-edge",
           createdAtRfc3339: nowIso,
           commitHash: req.commitHash ?? req.commit_hash ?? null,
-          wasmHash: wasmHash ?? null,
+          wasmHash: wasmHash ?? partId ?? null,
           provider: "cloudflare_workers",
         },
         env,
       );
-      return jsonResponse(res);
+      return jsonResponse(finalRes);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return connectErrorResponse("internal", message, 500);
@@ -531,86 +336,6 @@ export async function handleWorkerRequest(
       const message = err instanceof Error ? err.message : String(err);
       return connectErrorResponse("internal", message, 500);
     }
-  }
-
-  // Connect-RPC: PreviewService
-  if (pathname === "/definy.v1.PreviewService/RegisterPreviewApp") {
-    const req = await parseJsonRequest<RegisterPreviewAppRequest>(request);
-    const accountId = req.accountId ?? req.account_id;
-    if (!isAdminAccount(accountId, env)) {
-      return connectErrorResponse(
-        "permission_denied",
-        "Only administrator accounts configured in DEFINY_ADMIN_ACCOUNT_ID are allowed to register preview apps",
-        403,
-      );
-    }
-    const appId = (req.appId ?? req.app_id ?? "").trim().toLowerCase();
-    if (!appId) {
-      return connectErrorResponse(
-        "invalid_argument",
-        "appId is required",
-        400,
-      );
-    }
-    const protocol = rootDomain.startsWith("localhost") ||
-        rootDomain.includes("127.0.0.1")
-      ? "http"
-      : "https";
-    const previewUrl = buildPreviewUrl(appId, rootDomain);
-    const pathUrl = `${protocol}://${rootDomain}/preview/${appId}/`;
-    const createdAtRfc3339 = new Date().toISOString();
-    const resolvedPartId =
-      (req.partId ?? req.part_id ?? req.wasmHash ?? req.wasm_hash ?? "").trim();
-
-    const item: PreviewAppItem = {
-      appId,
-      displayName: req.displayName ?? req.display_name ?? appId,
-      partId: resolvedPartId,
-      ownerAccountId: accountId ?? "",
-      previewUrl,
-      pathUrl,
-      status: "running",
-      createdAtRfc3339,
-      subdomain: appId,
-    };
-    await store.registerPreviewApp(item, env);
-
-    return jsonResponse({
-      appId: item.appId,
-      previewUrl: item.previewUrl,
-      pathUrl: item.pathUrl,
-      status: item.status,
-      subdomain: item.subdomain,
-    });
-  }
-
-  if (pathname === "/definy.v1.PreviewService/ListPreviewApps") {
-    const req = await parseJsonRequest<ListPreviewAppsRequest>(request);
-    const apps = await store.listPreviewApps(
-      req.accountId ?? req.account_id,
-      env,
-    );
-    return jsonResponse({ apps });
-  }
-
-  if (pathname === "/definy.v1.PreviewService/StopPreviewApp") {
-    const req = await parseJsonRequest<StopPreviewAppRequest>(request);
-    const accountId = req.accountId ?? req.account_id;
-    if (!isAdminAccount(accountId, env)) {
-      return connectErrorResponse(
-        "permission_denied",
-        "Only administrator accounts configured in DEFINY_ADMIN_ACCOUNT_ID are allowed to stop preview apps",
-        403,
-      );
-    }
-    const appId = (req.appId ?? req.app_id ?? "").trim().toLowerCase();
-    const success = await store.stopPreviewApp(appId, env);
-    return jsonResponse({
-      success,
-      message: success
-        ? `Preview app '${appId}' stopped`
-        : `Preview app '${appId}' not found`,
-    });
   }
 
   if (isWorkerFirstPath(pathname)) {

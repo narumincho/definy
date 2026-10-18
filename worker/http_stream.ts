@@ -154,4 +154,51 @@ export async function runPartAsHttpServer(
   });
 }
 
+export interface CompiledPartArtifact {
+  readonly wasmBytes: Uint8Array;
+  readonly cloudflareWorkerName?: string | null;
+  readonly cloudflareToken?: string | null;
+  readonly evaluatedResult?: string | null;
+}
+
+/**
+ * 指定された `partId`（パーツ ID / `module.part` / パーツ名 / CAS のハッシュ）を
+ * Cloudflare Workers にアップロードする `.wasm` バイナリにコンパイルする。
+ */
+export async function compilePartToWasm(
+  partId: string,
+  store: PartStoreReader,
+  env?: Env,
+): Promise<CompiledPartArtifact> {
+  const trimmed = partId.trim();
+  if (!trimmed) {
+    throw new Error("partId is empty");
+  }
+  const directBytes = await store.getRawContentBytes(trimmed, env);
+  if (directBytes && isWasmBinary(directBytes)) {
+    return { wasmBytes: directBytes };
+  }
+  const runtime = await getDefinyRuntime();
+  await loadStoreIntoRuntime(runtime, store, env);
+  if (directBytes) {
+    runtime.call({
+      op: "loadContents",
+      contents: { [trimmed]: bytesToBase64(directBytes) },
+    });
+  }
+  const res = runtime.callOrThrow({
+    op: "compilePart",
+    partId: trimmed,
+  });
+  if (res.type !== "compiledPart") {
+    throw new Error(`unexpected runtime response: ${res.type}`);
+  }
+  return {
+    wasmBytes: base64ToBytes(res.wasm),
+    cloudflareWorkerName: res.cloudflareWorkerName,
+    cloudflareToken: res.cloudflareToken,
+    evaluatedResult: res.evaluatedResult,
+  };
+}
+
 export { base64ToBytes };

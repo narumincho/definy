@@ -56,6 +56,9 @@ pub enum Request {
     /// パーツを評価して値を返す（JSON 表現）。
     #[serde(rename_all = "camelCase")]
     Evaluate { part_id: String },
+    /// パーツ（またはその `definy.deploy` ハンドラ）を Wasm バイナリにコンパイルして base64 で返す。
+    #[serde(rename_all = "camelCase")]
+    CompilePart { part_id: String },
     /// 式（`Expression` の JSON 表現）を評価して値を返す。読み込んだイベントのパーツを参照できる。
     EvaluateExpression { expression: Box<Expression> },
 }
@@ -79,6 +82,13 @@ pub enum Response {
     },
     Value {
         value: serde_json::Value,
+    },
+    #[serde(rename_all = "camelCase")]
+    CompiledPart {
+        wasm: String,
+        cloudflare_worker_name: Option<String>,
+        cloudflare_token: Option<String>,
+        evaluated_result: Option<String>,
     },
     Error {
         message: String,
@@ -200,6 +210,30 @@ impl Runtime {
                 let value = definy_core::wasm_emitter::wasmi_backend::execute_wasm(&wasm)?;
                 Ok(Response::Value {
                     value: value_to_json(&value),
+                })
+            }
+            Request::CompilePart { part_id } => {
+                let raw_expression = self.find_expression(&part_id)?;
+                let detected = definy_core::detect_deploy_in_expression(&raw_expression);
+                let target_expression = definy_core::http_app::resolve_http_handler(raw_expression);
+                let wasm = definy_core::wasm_emitter::compile_expression_to_wasm(
+                    &target_expression,
+                    &self.events,
+                )?;
+                let evaluated_result =
+                    definy_core::wasm_emitter::wasmi_backend::execute_wasm(&wasm)
+                        .ok()
+                        .map(|val| match val {
+                            definy_core::Value::String(s) => s,
+                            other => other.to_string(),
+                        });
+                Ok(Response::CompiledPart {
+                    wasm: b64_encode(&wasm),
+                    cloudflare_worker_name: detected
+                        .as_ref()
+                        .map(|d| d.cloudflare_worker_name.clone()),
+                    cloudflare_token: detected.and_then(|d| d.cloudflare_token),
+                    evaluated_result,
                 })
             }
             Request::EvaluateExpression { expression } => {

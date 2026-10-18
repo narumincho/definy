@@ -15,12 +15,12 @@ Isolate 環境への自己デプロイ（運用ブートストラップ）をサ
 
 ## 1. Cloudflare Workers 採用の背景と優位性
 
-| 観点                   | Fly.io (Docker / Linux VM)                        | Cloudflare Workers (V8 Isolate)                                                                 |
-| :--------------------- | :------------------------------------------------ | :---------------------------------------------------------------------------------------------- |
-| **実行環境**           | 軽量 Linux VM (Firecracker microVM)               | V8 Isolate (Web 標準エッジランタイム)                                                           |
-| **起動オーバーヘッド** | 起動に数秒〜数十秒                                | サブミリ秒〜数ミリ秒 (OS レイヤー完全撤廃)                                                      |
-| **成果物の配布方式**   | Docker イメージビルドまたは Wasm ファイル直接注入 | ES Modules (`worker.js`) + Wasm インライン埋め込みを REST API の multipart/form-data で直接送信 |
-| **依存技術の少なさ**   | OS, Linux カーネル, Dockerfile, 仮想化層に依存    | **最小の依存** (V8 Isolate と Web 標準 API のみ)                                                |
+| 観点                   | Fly.io (Docker / Linux VM)                        | Cloudflare Workers (V8 Isolate)                                                                      |
+| :--------------------- | :------------------------------------------------ | :--------------------------------------------------------------------------------------------------- |
+| **実行環境**           | 軽量 Linux VM (Firecracker microVM)               | V8 Isolate (Web 標準エッジランタイム)                                                                |
+| **起動オーバーヘッド** | 起動に数秒〜数十秒                                | サブミリ秒〜数ミリ秒 (OS レイヤー完全撤廃)                                                           |
+| **成果物の配布方式**   | Docker イメージビルドまたは Wasm ファイル直接注入 | ES Modules (`worker.js`) + `app.wasm` (`application/wasm`) を REST API の multipart/form-data で送信 |
+| **依存技術の少なさ**   | OS, Linux カーネル, Dockerfile, 仮想化層に依存    | **最小の依存** (V8 Isolate と Web 標準 API のみ)                                                     |
 
 definy は「純粋な式と能力 (Capability)
 による自律的システム」を目指しており、重厚な OS レイヤーが存在しない Cloudflare
@@ -41,11 +41,11 @@ definy.deploy({
 ```
 
 - **唯一サーバーで実行される特殊なパーツ**:
-  通常のパーツはクライアント（ブラウザ内 Wasm / 評価器）で評価されますが、`deploy` パーツは唯一バックエンドサーバー（`definy-server`）上で実行されます。
-- **オンデマンドプレビュー (`definy:preview`) との違い**:
-  プレビューはパーツを定義・コミットした瞬間からローカル/サブドメインでルーティングされますが、デプロイはパーツ詳細画面で「デプロイを実行」または「評価」をクリックしたタイミングで Cloudflare Workers REST API v4 が呼び出され、エッジ環境に配備されます。
+  通常のパーツはクライアント（ブラウザ内 Wasm / 評価器）で評価されますが、`deploy` パーツは唯一バックエンドサーバー（`definy-server` または Cloudflare Worker）上で実行されます。
+- **開発時の動作確認も本番デプロイも Cloudflare Workers 個別配備に一本化**:
+  以前はサーバー内プレビュー (`definy:preview`) とエッジデプロイ (`definy:deploy`) に分かれていましたが、Cloudflare Workers REST API v4 による個別 Worker 配備が約2秒で完了し、かつ `app.wasm` (`application/wasm`) モジュールを V8 でネイティブ実行できるため、開発時の動作確認も本番デプロイも `definy:deploy` に一本化されました。
 - **`/deployments` ページの役割**:
-  実行系の手動入力フォームは廃止され、`definy:deploy` パーツの使い方・説明と、過去のデプロイ履歴一覧（SurrealDB に永続化）を確認するためのダッシュボードとして機能します。
+  実行系の手動入力フォームは廃止され、`definy:deploy` パーツの使い方・説明と、過去のデプロイ履歴一覧（SurrealDB / Cloudflare D1 に永続化）を確認するためのダッシュボードとして機能します。
 
 ```mermaid
 sequenceDiagram
@@ -166,10 +166,9 @@ curl -X POST https://definy.narumincho.com/definy.v1.DeployService/DeployCloudfl
 
 ## 6. Cloudflare Workers REST API v4 運用の技術知見
 
-1. **multipart/form-data によるスクリプト送信**:
-   - `PUT /accounts/{account_id}/workers/scripts/{script_name}` では、`metadata`
-     パート（`{"main_module": "worker.js"}`）と `worker.js`（ES Modules
-     形式）を含むマルチパート形式でアップロードします。
+1. **multipart/form-data による `worker.js` + `app.wasm` (`application/wasm`) モジュール送信**:
+   - Cloudflare Workers の V8 ランタイムは、実行時に動的なバイト列 (`Uint8Array`) から `WebAssembly.instantiate` することをセキュリティポリシー上禁止しています (`CompileError: WebAssembly.instantiate(): Wasm code generation disallowed by embedder`)。
+   - 一方で、`PUT /accounts/{account_id}/workers/scripts/{script_name}` の `multipart/form-data` に `app.wasm` (`Content-Type: application/wasm`) を別パートとして添付し、`worker.js` から `import wasmModule from "./app.wasm"; WebAssembly.instantiate(wasmModule, ...)` としてインポートすることで、Cloudflare 側で事前コンパイルされた `WebAssembly.Module` を V8 ネイティブ速度（Wasm GC 等の最新機能も含む）で実行できます。
 2. **Account ID の自動解決**:
    - Cloudflare API はほとんどのエンドポイントで `account_id`
      を要求しますが、`GET /accounts` を叩くことで API トークンに紐づくアカウント

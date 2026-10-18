@@ -1,4 +1,4 @@
-//! HTTP サーバーとして動くパーツ（プレビューアプリなど）を実行するための共通処理。
+//! HTTP サーバーとして動くパーツ（`definy.deploy` のハンドラなど）を実行するための共通処理。
 //!
 //! Rust サーバー（wasmtime）と Cloudflare Workers 用の Wasm モジュール（wasmi）の両方から使う。
 
@@ -35,11 +35,11 @@ pub fn find_part_expression(part_id: &str, events: &[EventWithHash]) -> Result<E
     Err(format!("Part not found: {trimmed}"))
 }
 
-/// パーツの式が `definy.preview({ code, handler })` などのプレビュー設定なら、そのハンドラ式を返します。
-/// そうでなければ式をそのまま返します。
+/// パーツの式が `definy.deploy({ cloudflareToken, cloudflareWorkerName, handler })` などのデプロイ設定なら、
+/// そのハンドラ式を返します。そうでなければ式をそのまま返します。
 #[must_use]
 pub fn resolve_http_handler(expression: Expression) -> Expression {
-    match crate::detect_preview_in_expression(&expression).and_then(|d| d.handler_expression) {
+    match crate::detect_deploy_in_expression(&expression).and_then(|d| d.handler_expression) {
         Some(handler) => handler,
         None => expression,
     }

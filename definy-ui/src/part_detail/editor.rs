@@ -1,13 +1,12 @@
 use definy_event::EventHashId;
 use dioxus::prelude::*;
 
-use super::banners::{DeployBanner, PreviewBanner};
+use super::banners::DeployBanner;
 use crate::Location;
 use crate::app_state::AppState;
 use crate::expression_editor::part_type_to_expression_type;
 use crate::expression_eval::evaluate_expression;
 use crate::page_context::PageContext;
-use crate::preview_apps::build_preview_subdomain_url;
 
 #[component]
 pub(crate) fn PartEditorCard(
@@ -140,11 +139,6 @@ pub(crate) fn PartEditorCard(
         .as_ref()
         .map(part_type_to_expression_type);
 
-    let detected_preview = expression
-        .read()
-        .as_ref()
-        .and_then(definy_core::detect_preview_in_expression);
-
     let detected_deploy = expression
         .read()
         .as_ref()
@@ -262,32 +256,6 @@ pub(crate) fn PartEditorCard(
                         }
                     }
                     div { style: "display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;",
-                        if let Some(ref prev) = detected_preview {
-                            {
-                                let sub_url = build_preview_subdomain_url(&prev.code);
-                                rsx! {
-                                    a {
-                                        href: "{sub_url}",
-                                        target: "_blank",
-                                        rel: "noopener noreferrer",
-                                        class: "btn-primary",
-                                        style: "display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 0 10px var(--blue-border);",
-                                        span {
-                                            {
-                                                context
-                                                    .language
-                                                    .label(
-                                                        "🚀 Preview Web App",
-                                                        "🚀 プレビューを開く",
-                                                        "🚀 Antaŭrigardo",
-                                                    )
-                                            }
-                                        }
-                                        span { style: "font-size: 0.72rem;", "↗" }
-                                    }
-                                }
-                            }
-                        }
                         if let Some(ref _dep) = detected_deploy {
                             {
                                 rsx! {
@@ -343,11 +311,6 @@ pub(crate) fn PartEditorCard(
                         }
                     }
                 }
-            }
-
-            // プレビューバナーカード (definy:preview 検出時)
-            if let Some(ref prev) = detected_preview {
-                PreviewBanner { context: context.clone(), preview: prev.clone() }
             }
 
             // デプロイバナーカード (definy:deploy 検出時)

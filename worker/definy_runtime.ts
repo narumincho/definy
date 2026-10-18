@@ -29,6 +29,7 @@ export type RuntimeRequest =
   | { readonly op: "httpPull"; readonly handle: number }
   | { readonly op: "httpDrop"; readonly handle: number }
   | { readonly op: "evaluate"; readonly partId: string }
+  | { readonly op: "compilePart"; readonly partId: string }
   | { readonly op: "evaluateExpression"; readonly expression: unknown };
 
 /** Rust 側 `definy_worker_runtime::Response` に対応する応答 */
@@ -43,6 +44,13 @@ export type RuntimeResponse =
   }
   | { readonly type: "httpChunk"; readonly chunk: string | null }
   | { readonly type: "value"; readonly value: unknown }
+  | {
+    readonly type: "compiledPart";
+    readonly wasm: string;
+    readonly cloudflareWorkerName?: string | null;
+    readonly cloudflareToken?: string | null;
+    readonly evaluatedResult?: string | null;
+  }
   | { readonly type: "error"; readonly message: string };
 
 interface RuntimeExports {

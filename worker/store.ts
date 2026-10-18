@@ -7,7 +7,6 @@ import type {
   Env,
   EventItem,
   GetEventsRequest,
-  PreviewAppItem,
   SeedBundle,
   SeedEventEntry,
   SubmitEventResponse,
@@ -42,18 +41,6 @@ const D1_SCHEMA_STATEMENTS: ReadonlyArray<string> = [
     provider TEXT
   )`,
   `CREATE INDEX IF NOT EXISTS idx_deployments_id ON deployments(id DESC)`,
-  `CREATE TABLE IF NOT EXISTS preview_apps (
-    app_id TEXT PRIMARY KEY,
-    display_name TEXT NOT NULL,
-    part_id TEXT NOT NULL,
-    preview_url TEXT NOT NULL,
-    path_url TEXT NOT NULL,
-    owner_account_id TEXT NOT NULL,
-    created_at_rfc3339 TEXT NOT NULL,
-    status TEXT NOT NULL,
-    subdomain TEXT NOT NULL
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_preview_apps_owner ON preview_apps(owner_account_id)`,
 ];
 
 const D1_BATCH_CHUNK_SIZE = 50;
@@ -98,20 +85,8 @@ interface D1DeploymentRow {
   readonly provider: string | null;
 }
 
-interface D1PreviewAppRow {
-  readonly app_id: string;
-  readonly display_name: string;
-  readonly part_id: string;
-  readonly preview_url: string;
-  readonly path_url: string;
-  readonly owner_account_id: string;
-  readonly created_at_rfc3339: string;
-  readonly status: string;
-  readonly subdomain: string;
-}
-
 /**
- * Cloudflare Worker 内でイベント・CAS コンテンツ・デプロイ履歴・プレビューアプリを管理するストア。
+ * Cloudflare Worker 内でイベント・CAS コンテンツ・デプロイ履歴を管理するストア。
  * `env.DB` (Cloudflare D1) がバインドされている場合は D1 (SQLite) に永続化し、
  * 未バインド時はインメモリストアとして動作する。
  */
@@ -123,10 +98,6 @@ export class WorkerStore {
   private eventHashes: ReadonlySet<string> = new Set<string>();
   private contents: ReadonlyMap<string, string> = new Map<string, string>();
   private deployments: ReadonlyArray<DeploymentHistoryItem> = [];
-  private previewApps: ReadonlyMap<string, PreviewAppItem> = new Map<
-    string,
-    PreviewAppItem
-  >();
 
   /**
    * D1 テーブルとインデックスを冪等に初期化する
@@ -663,144 +634,6 @@ export class WorkerStore {
       }));
     }
     return this.deployments.slice(0, max);
-  }
-
-  /**
-   * プレビューアプリを登録または更新する
-   */
-  async registerPreviewApp(app: PreviewAppItem, env?: Env): Promise<void> {
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-      await env.DB.prepare(
-        `INSERT OR REPLACE INTO preview_apps (app_id, display_name, part_id, preview_url, path_url, owner_account_id, created_at_rfc3339, status, subdomain)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-        .bind(
-          app.appId,
-          app.displayName,
-          app.partId,
-          app.previewUrl,
-          app.pathUrl,
-          app.ownerAccountId,
-          app.createdAtRfc3339,
-          app.status,
-          app.subdomain,
-        )
-        .run();
-    }
-    const next = new Map<string, PreviewAppItem>(this.previewApps);
-    next.set(app.appId, app);
-    this.previewApps = next;
-  }
-
-  /**
-   * プレビューアプリを取得する
-   */
-  async getPreviewApp(
-    appId: string,
-    env?: Env,
-  ): Promise<PreviewAppItem | undefined> {
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-      const row = await env.DB.prepare(
-        `SELECT app_id, display_name, part_id, preview_url, path_url, owner_account_id, created_at_rfc3339, status, subdomain
-         FROM preview_apps
-         WHERE app_id = ?`,
-      )
-        .bind(appId)
-        .first<D1PreviewAppRow>();
-      if (!row) {
-        return undefined;
-      }
-      return {
-        appId: row.app_id,
-        displayName: row.display_name,
-        partId: row.part_id,
-        previewUrl: row.preview_url,
-        pathUrl: row.path_url,
-        ownerAccountId: row.owner_account_id,
-        createdAtRfc3339: row.created_at_rfc3339,
-        status: row.status,
-        subdomain: row.subdomain,
-      };
-    }
-    return this.previewApps.get(appId);
-  }
-
-  /**
-   * プレビューアプリ一覧を取得する
-   */
-  async listPreviewApps(
-    accountId?: string | null,
-    env?: Env,
-  ): Promise<ReadonlyArray<PreviewAppItem>> {
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-      let stmt: D1PreparedStatement;
-      if (accountId && accountId.trim().length > 0) {
-        stmt = env.DB.prepare(
-          `SELECT app_id, display_name, part_id, preview_url, path_url, owner_account_id, created_at_rfc3339, status, subdomain
-           FROM preview_apps
-           WHERE LOWER(owner_account_id) = ?
-           ORDER BY created_at_rfc3339 DESC`,
-        ).bind(accountId.trim().toLowerCase());
-      } else {
-        stmt = env.DB.prepare(
-          `SELECT app_id, display_name, part_id, preview_url, path_url, owner_account_id, created_at_rfc3339, status, subdomain
-           FROM preview_apps
-           ORDER BY created_at_rfc3339 DESC`,
-        );
-      }
-      const res = await stmt.all<D1PreviewAppRow>();
-      return res.results.map((row) => ({
-        appId: row.app_id,
-        displayName: row.display_name,
-        partId: row.part_id,
-        previewUrl: row.preview_url,
-        pathUrl: row.path_url,
-        ownerAccountId: row.owner_account_id,
-        createdAtRfc3339: row.created_at_rfc3339,
-        status: row.status,
-        subdomain: row.subdomain,
-      }));
-    }
-
-    const all = Array.from(this.previewApps.values());
-    if (accountId && accountId.trim().length > 0) {
-      const normalized = accountId.trim().toLowerCase();
-      return all.filter(
-        (a) => a.ownerAccountId.toLowerCase() === normalized,
-      );
-    }
-    return all;
-  }
-
-  /**
-   * プレビューアプリを停止・削除する
-   */
-  async stopPreviewApp(appId: string, env?: Env): Promise<boolean> {
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-      const existing = await this.getPreviewApp(appId, env);
-      if (!existing) {
-        return false;
-      }
-      await env.DB.prepare(`DELETE FROM preview_apps WHERE app_id = ?`)
-        .bind(appId)
-        .run();
-      const next = new Map<string, PreviewAppItem>(this.previewApps);
-      next.delete(appId);
-      this.previewApps = next;
-      return true;
-    }
-
-    if (!this.previewApps.has(appId)) {
-      return false;
-    }
-    const next = new Map<string, PreviewAppItem>(this.previewApps);
-    next.delete(appId);
-    this.previewApps = next;
-    return true;
   }
 }
 
