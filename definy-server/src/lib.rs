@@ -29,8 +29,6 @@ use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::{IntoResponse, Redirect, Response};
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 use tower_http::cors::CorsLayer;
@@ -44,7 +42,7 @@ pub enum DbInitStatus {
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: Arc<RwLock<Option<Surreal<Any>>>>,
+    pub db: Arc<RwLock<Option<db::DbStore>>>,
     pub virtual_file_store: Arc<RwLock<virtual_file::VirtualFileStore>>,
     pub last_db_failure: Arc<RwLock<Option<std::time::Instant>>>,
     pub db_init_status: Arc<RwLock<DbInitStatus>>,
@@ -52,7 +50,7 @@ pub struct AppState {
 
 impl AppState {
     #[must_use]
-    pub fn new(db: Option<Surreal<Any>>) -> Self {
+    pub fn new(db: Option<db::DbStore>) -> Self {
         let db_init_status = if db.is_some() {
             DbInitStatus::Ready
         } else {
@@ -189,7 +187,7 @@ pub async fn create_test_router_with_db() -> Result<axum::Router, anyhow::Error>
     Ok(create_router(state, mcp_session_manager))
 }
 
-pub async fn ensure_db(state: &AppState) -> Option<Surreal<Any>> {
+pub async fn ensure_db(state: &AppState) -> Option<db::DbStore> {
     if let Some(db) = state.db.read().await.clone() {
         return Some(db);
     }
@@ -422,7 +420,7 @@ pub(crate) async fn handle_html_request(
 
 async fn handle_html(
     uri: &Uri,
-    db: Option<&Surreal<Any>>,
+    db: Option<&db::DbStore>,
     language: definy_ui::language::Language,
     is_db_initializing: bool,
 ) -> Response {

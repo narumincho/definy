@@ -4,7 +4,8 @@
     "jsr:@std/assert@*": "1.0.19",
     "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
-    "npm:wrangler@*": "4.133.0"
+    "npm:wrangler@*": "4.133.0",
+    "npm:wrangler@4": "4.133.0"
   },
   "jsr": {
     "@std/assert@1.0.19": {

@@ -45,15 +45,15 @@ definy.deploy({
 - **開発時の動作確認も本番デプロイも Cloudflare Workers 個別配備に一本化**:
   以前はサーバー内プレビュー (`definy:preview`) とエッジデプロイ (`definy:deploy`) に分かれていましたが、Cloudflare Workers REST API v4 による個別 Worker 配備が約2秒で完了し、かつ `app.wasm` (`application/wasm`) モジュールを V8 でネイティブ実行できるため、開発時の動作確認も本番デプロイも `definy:deploy` に一本化されました。
 - **`/deployments` ページの役割**:
-  実行系の手動入力フォームは廃止され、`definy:deploy` パーツの使い方・説明と、過去のデプロイ履歴一覧（SurrealDB / Cloudflare D1 に永続化）を確認するためのダッシュボードとして機能します。
+  実行系の手動入力フォームは廃止され、`definy:deploy` パーツの使い方・説明と、過去のデプロイ履歴一覧（Cloudflare D1 に永続化）を確認するためのダッシュボードとして機能します。
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as 開発者 / ユーザー
     participant UI as definy Web UI (パーツ詳細画面)
-    participant Server as definy-server (バックエンド)
-    participant DB as SurrealDB (deployments)
+    participant Server as definy (Worker / Server)
+    participant DB as Cloudflare D1 (deployments)
     participant CFAPI as Cloudflare REST API v4 (api.cloudflare.com)
     participant Edge as Cloudflare Workers Edge Network
 
@@ -76,9 +76,9 @@ sequenceDiagram
 
 ### デプロイ直後の健全性確認 (Edge Health Check Ping)
 
-デプロイ完了時、`definy-server` は Cloudflare REST API v4 から返却された公開 URL に対して自動的に HTTP GET リクエスト（Health Check Ping）を発行します。
+デプロイ完了時、バックエンドは Cloudflare REST API v4 から返却された公開 URL に対して自動的に HTTP GET リクエスト（Health Check Ping）を発行します。
 - **即時稼働検証**: V8 Isolate のプロビジョニング完了とルーティングの反映をサーバー側で検証します。
-- **レイテンシ測定**: 初回コールドスタートを含む初期レスポンス時間（ミリ秒）を計測し、UI のバナーおよび SurrealDB のデプロイ履歴に `succeeded (Health: 200 OK (85ms))` として記録します。
+- **レイテンシ測定**: 初回コールドスタートを含む初期レスポンス時間（ミリ秒）を計測し、UI のバナーおよび Cloudflare D1 のデプロイ履歴に `succeeded (Health: 200 OK (85ms))` として記録します。
 - **テスト・自動化対応**: テスト環境や外部接続を行わない場合には、リクエストに `skipHealthCheck: true` を指定することでヘルスチェックをスキップできます。
 
 ---

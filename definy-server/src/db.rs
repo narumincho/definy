@@ -1,9 +1,10 @@
-use sha2::Digest;
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
-use surrealdb::types::SurrealValue;
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
+use sha2::Digest;
+use tokio::sync::RwLock;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EventRecord {
     pub event_binary_hash: Vec<u8>,
     pub signature: Vec<u8>,
@@ -15,162 +16,53 @@ pub struct EventRecord {
     pub event_type: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DbConfig {
-    pub endpoint: String,
-    pub namespace: String,
-    pub database: String,
-    pub auth: Option<AuthCredentials>,
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ContentRecord {
+    pub content_hash: String,
+    pub content_bytes: Vec<u8>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AuthCredentials {
-    Root {
-        username: String,
-        password: String,
-    },
-    Namespace {
-        namespace: String,
-        username: String,
-        password: String,
-    },
-    Database {
-        namespace: String,
-        database: String,
-        username: String,
-        password: String,
-    },
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct DeploymentRecord {
+    pub machine_id: String,
+    pub commit_hash: Option<String>,
+    pub status: String,
+    pub url: String,
+    pub app_url: String,
+    pub region: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub wasm_hash: Option<String>,
+    #[serde(default)]
+    pub provider: Option<String>,
 }
 
-pub fn load_db_config_from_env() -> Option<DbConfig> {
-    let raw_url = std::env::var("DATABASE_URL").ok()?;
-    let mut endpoint = raw_url.trim().to_string();
+#[derive(Default)]
+struct DbInner {
+    events: HashMap<String, EventRecord>,
+    contents: HashMap<String, ContentRecord>,
+    deployments: HashMap<String, DeploymentRecord>,
+}
 
-    if endpoint.starts_with("http://")
-        || endpoint.starts_with("https://")
-        || endpoint.starts_with("ws://")
-        || endpoint.starts_with("wss://")
-    {
-        endpoint = endpoint
-            .trim_end_matches('/')
-            .trim_end_matches("/rpc")
-            .trim_end_matches('/')
-            .to_string();
+/// `definy-server` 用のインメモリストア（テスト・MCP・シード生成用）。
+/// 本番およびローカルの Cloudflare Workers 環境では Cloudflare D1 (`wrangler d1`) を使用する。
+#[derive(Clone, Default)]
+pub struct DbStore {
+    inner: Arc<RwLock<DbInner>>,
+}
+
+impl DbStore {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
     }
-
-    let namespace = std::env::var("DATABASE_NS").unwrap_or_else(|_| "definy".to_string());
-    let database = std::env::var("DATABASE_DB").unwrap_or_else(|_| "definy".to_string());
-
-    let username = std::env::var("DATABASE_USER").ok();
-    let password = std::env::var("DATABASE_PASS").ok();
-    let auth_level = std::env::var("DATABASE_AUTH_LEVEL").ok();
-
-    let auth = match (username, password) {
-        (Some(username), Some(password)) => {
-            match auth_level.as_deref().map(|s| s.to_lowercase()).as_deref() {
-                Some("root") => Some(AuthCredentials::Root { username, password }),
-                Some("namespace") | Some("ns") => Some(AuthCredentials::Namespace {
-                    namespace: namespace.clone(),
-                    username,
-                    password,
-                }),
-                _ => Some(AuthCredentials::Database {
-                    namespace: namespace.clone(),
-                    database: database.clone(),
-                    username,
-                    password,
-                }),
-            }
-        }
-        _ => None,
-    };
-
-    Some(DbConfig {
-        endpoint,
-        namespace,
-        database,
-        auth,
-    })
 }
-
-const SCHEMA_SQL: &str = include_str!("../schema.surql");
 
 pub use crate::builtin_migration::migrate_builtin_data;
 
-pub async fn init_db() -> Result<Surreal<Any>, anyhow::Error> {
-    init_db_with_config(load_db_config_from_env()).await
-}
-
-pub async fn init_db_with_config(config: Option<DbConfig>) -> Result<Surreal<Any>, anyhow::Error> {
-    let db = match config {
-        Some(config) => tokio::time::timeout(std::time::Duration::from_secs(10), async {
-            println!("Connecting to SurrealDB at {}...", config.endpoint);
-            let db = surrealdb::engine::any::connect(&config.endpoint).await?;
-            println!("Connected to SurrealDB via {}.", config.endpoint);
-
-            db.use_ns(&config.namespace)
-                .use_db(&config.database)
-                .await?;
-
-            if let Some(auth) = config.auth {
-                println!("Signing in to SurrealDB...");
-                match auth {
-                    AuthCredentials::Root { username, password } => {
-                        db.signin(surrealdb::opt::auth::Root { username, password })
-                            .await?;
-                    }
-                    AuthCredentials::Namespace {
-                        namespace,
-                        username,
-                        password,
-                    } => {
-                        db.signin(surrealdb::opt::auth::Namespace {
-                            namespace,
-                            username,
-                            password,
-                        })
-                        .await?;
-                    }
-                    AuthCredentials::Database {
-                        namespace,
-                        database,
-                        username,
-                        password,
-                    } => {
-                        db.signin(surrealdb::opt::auth::Database {
-                            namespace,
-                            database,
-                            username,
-                            password,
-                        })
-                        .await?;
-                    }
-                }
-                println!("Signed in successfully.");
-            }
-            Ok::<_, anyhow::Error>(db)
-        })
-        .await
-        .map_err(|_| anyhow::anyhow!("Timed out connecting to SurrealDB (10s timeout)"))??,
-        None => {
-            eprintln!(
-                "WARNING: DATABASE_URL environment variable is not set. Using in-memory SurrealDB (mem://). Data will NOT be persisted across server restarts."
-            );
-            let db = surrealdb::engine::any::connect("mem://").await?;
-            println!("Initialized in-memory SurrealDB.");
-            db.use_ns("definy").use_db("definy").await?;
-            db
-        }
-    };
-
-    println!("Migrating database schema...");
-    db.query(SCHEMA_SQL).await?.check()?;
-    println!("Migrating database schema... done");
-
-    println!("Migrating builtin data...");
+pub async fn init_db() -> Result<DbStore, anyhow::Error> {
+    let db = DbStore::new();
     migrate_builtin_data(&db).await?;
-    println!("Migrating builtin data... done");
-
     Ok(db)
 }
 
@@ -179,7 +71,7 @@ pub async fn save_event(
     signature: &ed25519_dalek::Signature,
     event_binary: &[u8],
     address: std::net::SocketAddr,
-    db: &Surreal<Any>,
+    db: &DbStore,
 ) -> Result<(), anyhow::Error> {
     let mut hasher = sha2::Sha256::new();
     hasher.update(event_binary);
@@ -199,172 +91,149 @@ pub async fn save_event(
         event_type: event_type.to_string(),
     };
 
-    let _: Option<EventRecord> = db
-        .create(("events", event_binary_hash_hex.as_str()))
-        .content(record)
-        .await?;
-
+    let mut guard = db.inner.write().await;
+    guard.events.insert(event_binary_hash_hex, record);
     Ok(())
 }
 
-#[derive(serde::Deserialize, SurrealValue)]
-struct EventBinaryRow {
-    event_binary: Vec<u8>,
-}
-
 pub async fn get_events(
-    db: &Surreal<Any>,
+    db: &DbStore,
     event_type: Option<definy_event::event::EventType>,
     limit: Option<usize>,
     offset: Option<usize>,
 ) -> Result<Box<[Vec<u8>]>, anyhow::Error> {
-    let mut query_str = "SELECT event_binary, time FROM events".to_string();
+    let guard = db.inner.read().await;
+    let event_type_str = event_type.map(|et| et.to_string());
 
-    if event_type.is_some() {
-        query_str.push_str(" WHERE event_type = $event_type");
-    }
+    let mut records: Vec<&EventRecord> = guard
+        .events
+        .values()
+        .filter(|r| {
+            event_type_str
+                .as_ref()
+                .is_none_or(|expected| &r.event_type == expected)
+        })
+        .collect();
 
-    query_str.push_str(" ORDER BY time DESC");
+    records.sort_by_key(|a| std::cmp::Reverse(a.time));
 
-    if limit.is_some() {
-        query_str.push_str(" LIMIT $limit");
-    }
-
-    if offset.is_some() {
-        query_str.push_str(" START $offset");
-    }
-
-    let mut query = db.query(&query_str);
-
-    if let Some(event_type) = event_type {
-        query = query.bind(("event_type", event_type.to_string()));
-    }
-
-    if let Some(limit) = limit {
-        let limit_value = std::cmp::min(limit, i64::MAX as usize) as i64;
-        query = query.bind(("limit", limit_value));
-    }
-
-    if let Some(offset) = offset {
-        let offset_value = std::cmp::min(offset, i64::MAX as usize) as i64;
-        query = query.bind(("offset", offset_value));
-    }
-
-    let mut response = query.await?.check()?;
-    let rows: Vec<EventBinaryRow> = response.take(0)?;
-    let events: Vec<Vec<u8>> = rows.into_iter().map(|r| r.event_binary).collect();
+    let offset = offset.unwrap_or(0);
+    let iter = records.into_iter().skip(offset);
+    let events: Vec<Vec<u8>> = match limit {
+        Some(limit) => iter.take(limit).map(|r| r.event_binary.clone()).collect(),
+        None => iter.map(|r| r.event_binary.clone()).collect(),
+    };
 
     Ok(events.into_boxed_slice())
 }
 
 pub async fn get_event(
-    db: &Surreal<Any>,
+    db: &DbStore,
     event_binary_hash: &[u8],
 ) -> Result<Option<Vec<u8>>, anyhow::Error> {
     let event_binary_hash_hex = hex::encode(event_binary_hash);
-    let record: Option<EventRecord> = db
-        .select(("events", event_binary_hash_hex.as_str()))
-        .await?;
-
-    Ok(record.map(|r| r.event_binary))
+    let guard = db.inner.read().await;
+    Ok(guard
+        .events
+        .get(&event_binary_hash_hex)
+        .map(|r| r.event_binary.clone()))
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
-pub struct ContentRecord {
-    pub content_hash: String,
-    pub content_bytes: Vec<u8>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
+pub async fn cleanup_outdated_bootstrap_events(
+    db: &DbStore,
+    account_id_bytes: &[u8],
+    valid_hashes: &HashSet<String>,
+) -> Result<(), anyhow::Error> {
+    let mut guard = db.inner.write().await;
+    guard.events.retain(|hex_hash, row| {
+        if row.account_id == account_id_bytes
+            && crate::builtin_migration::is_bootstrap_time(row.time)
+            && !valid_hashes.contains(hex_hash)
+        {
+            println!(
+                "Cleaning up outdated or unexpected builtin event: {}",
+                hex_hash
+            );
+            false
+        } else {
+            true
+        }
+    });
+    Ok(())
 }
 
 pub async fn save_content(
-    db: &Surreal<Any>,
+    db: &DbStore,
     content_hash: &str,
     content_bytes: &[u8],
 ) -> Result<(), anyhow::Error> {
-    let record = ContentRecord {
-        content_hash: content_hash.to_string(),
-        content_bytes: content_bytes.to_vec(),
-        created_at: chrono::Utc::now(),
-    };
-    let result: Result<Option<ContentRecord>, surrealdb::Error> =
-        db.create(("contents", content_hash)).content(record).await;
-    match result {
-        Ok(_) => Ok(()),
-        Err(create_error) => match get_content(db, content_hash).await? {
-            Some(existing_bytes) if existing_bytes == content_bytes => Ok(()),
-            _ => Err(create_error.into()),
-        },
+    let mut guard = db.inner.write().await;
+    if let Some(existing) = guard.contents.get(content_hash) {
+        if existing.content_bytes == content_bytes {
+            return Ok(());
+        }
+        anyhow::bail!("Content hash collision with different bytes for '{content_hash}'");
     }
+    guard.contents.insert(
+        content_hash.to_string(),
+        ContentRecord {
+            content_hash: content_hash.to_string(),
+            content_bytes: content_bytes.to_vec(),
+            created_at: chrono::Utc::now(),
+        },
+    );
+    Ok(())
 }
 
 pub async fn get_content(
-    db: &Surreal<Any>,
+    db: &DbStore,
     content_hash: &str,
 ) -> Result<Option<Vec<u8>>, anyhow::Error> {
-    let record: Option<ContentRecord> = db.select(("contents", content_hash)).await?;
-    Ok(record.map(|r| r.content_bytes))
+    let guard = db.inner.read().await;
+    Ok(guard
+        .contents
+        .get(content_hash)
+        .map(|r| r.content_bytes.clone()))
 }
 
 pub async fn filter_missing_content_hashes(
-    db: &Surreal<Any>,
+    db: &DbStore,
     hashes: &[String],
 ) -> Result<Vec<String>, anyhow::Error> {
-    let mut missing = Vec::new();
-    for hash in hashes {
-        let record: Option<ContentRecord> = db.select(("contents", hash.as_str())).await?;
-        if record.is_none() {
-            missing.push(hash.clone());
-        }
-    }
+    let guard = db.inner.read().await;
+    let missing = hashes
+        .iter()
+        .filter(|hash| !guard.contents.contains_key(hash.as_str()))
+        .cloned()
+        .collect();
     Ok(missing)
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, SurrealValue)]
-pub struct DeploymentRecord {
-    pub machine_id: String,
-    pub commit_hash: Option<String>,
-    pub status: String,
-    pub url: String,
-    pub app_url: String,
-    pub region: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub wasm_hash: Option<String>,
-    #[serde(default)]
-    pub provider: Option<String>,
-}
-
-pub async fn save_deployment(
-    db: &Surreal<Any>,
-    record: DeploymentRecord,
-) -> Result<(), anyhow::Error> {
-    let machine_id = record.machine_id.clone();
-    let _: Option<DeploymentRecord> = db
-        .upsert(("deployments", machine_id.as_str()))
-        .content(record)
-        .await?;
+pub async fn save_deployment(db: &DbStore, record: DeploymentRecord) -> Result<(), anyhow::Error> {
+    let mut guard = db.inner.write().await;
+    guard.deployments.insert(record.machine_id.clone(), record);
     Ok(())
 }
 
 pub async fn get_deployments(
-    db: &Surreal<Any>,
+    db: &DbStore,
     limit: Option<usize>,
 ) -> Result<Vec<DeploymentRecord>, anyhow::Error> {
     let limit = limit.unwrap_or(20);
-    let mut response = db
-        .query("SELECT * FROM deployments ORDER BY created_at DESC LIMIT $limit")
-        .bind(("limit", limit))
-        .await?;
-    let records: Vec<DeploymentRecord> = response.take(0)?;
+    let guard = db.inner.read().await;
+    let mut records: Vec<DeploymentRecord> = guard.deployments.values().cloned().collect();
+    records.sort_by_key(|a| std::cmp::Reverse(a.created_at));
+    records.truncate(limit);
     Ok(records)
 }
 
 #[cfg(test)]
 pub async fn get_deployment(
-    db: &Surreal<Any>,
+    db: &DbStore,
     machine_id: &str,
 ) -> Result<Option<DeploymentRecord>, anyhow::Error> {
-    let record: Option<DeploymentRecord> = db.select(("deployments", machine_id)).await?;
-    Ok(record)
+    let guard = db.inner.read().await;
+    Ok(guard.deployments.get(machine_id).cloned())
 }
 
 #[cfg(test)]
@@ -649,33 +518,5 @@ mod tests {
         let list = get_deployments(&db, Some(10)).await.unwrap();
         assert_eq!(list.len(), 1);
         assert_eq!(list[0].machine_id, "m_test_deploy_1");
-    }
-
-    #[tokio::test]
-    async fn test_surreal_connect_invalid() {
-        let res = surrealdb::engine::any::connect("ws://127.0.0.1:59999").await;
-        println!("connect ws result: {:?}", res.is_err());
-        assert!(res.is_err());
-
-        let res_http = surrealdb::engine::any::connect("http://127.0.0.1:59999").await;
-        println!("connect http result: {:?}", res_http.is_err());
-
-        let res_pg =
-            surrealdb::engine::any::connect("postgres://user:pass@localhost:5432/db").await;
-        println!("connect pg result: {:?}", res_pg);
-        assert!(res_pg.is_err());
-    }
-
-    #[tokio::test]
-    async fn test_init_db_with_invalid_config() {
-        let config = DbConfig {
-            endpoint: "ws://127.0.0.1:59999".to_string(),
-            namespace: "test".to_string(),
-            database: "test".to_string(),
-            auth: None,
-        };
-        let res = init_db_with_config(Some(config)).await;
-        println!("init_db invalid result: {:?}", res.is_err());
-        assert!(res.is_err());
     }
 }

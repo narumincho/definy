@@ -16,6 +16,8 @@ https://github.com/narumincho/definy/tree/prev2023
 
 - `.github/workflows/pull_request.yaml`: Pull Request
   したときに実行されるテストの処理が書かれている
+- `.github/workflows/deploy.yaml`: `main` ブランチへのプッシュ時に Cloudflare D1
+  シード投入と Cloudflare Workers へのデプロイを行うワークフロー
 - `.vscode`: VSCode 向けの設定
 - `assets`: スタティックなファイルが置かれている
 - `definy-event`:
@@ -24,97 +26,53 @@ https://github.com/narumincho/definy/tree/prev2023
   コンパイラ & 実行 VM
 - `definy-ui`: ブラウザとサーバーでレンダリングする共通の UI コンポーネント、AST
   式エディタ
-- `definy-server`: サーバーで動かすコード (Axum, SurrealDB, MCP サーバー, SSR &
-  アセット配信, セルフホスト用ビルトインパーツ)
+- `definy-server`: サーバー・CLI ツール (シード SQL / JSON
+  生成、MCP サーバー、SSR & セルフホスト用ビルトインパーツ)
 - `definy-client`: ブラウザで動かす Dioxus / Wasm エントリポイント
+- `definy-worker-runtime`: Cloudflare Workers 内でパーツ評価・Wasm
+  コンパイルを行う Rust 製 Wasm ランタイム
+- `worker`: Cloudflare Workers エッジランタイム (`worker/index.ts`, Cloudflare
+  D1 永続化ストア, Cloudflare REST API v4 デプロイ連携)
 - `docs`: ドキュメント ([セルフホスト構想](docs/self-hosting.md),
   [クレート構成](docs/crates.md), [パーツ型システム](docs/part-type.md),
-  [Connect-RPC 仕様](docs/connect-rpc.md) など)
+  [Connect-RPC 仕様](docs/connect-rpc.md),
+  [データベース構成](docs/database.md) など)
 
 ## 事前にインストールが必要
 
 - [Rust(rustup)](https://rust-lang.org/ja/tools/install/)
+- [Deno](https://deno.com/) (または Node.js / Wrangler CLI)
+- [Dioxus CLI (`dx`)](https://dioxuslabs.com/learn/0.7/getting_started/#install-the-dioxus-cli)
 
-- [Docker](https://www.docker.com/get-started/)
+## ローカル開発・起動コマンド
 
-## DB 起動コマンド (任意)
+### 1. Cloudflare Workers + ローカル D1 (Wrangler CLI) で起動する場合 (推奨)
 
-デフォルトでは `DATABASE_URL` を指定しない場合、インメモリの SurrealDB
-(`mem://`) で動作します (サーバー再起動時にデータは保持されません)。
-
-永続化のために SurrealDB サーバーを Docker で起動する場合:
-
-```sh
-docker run -d --name definy-dev-db -p 8000:8000 surrealdb/surrealdb:latest start --user root --pass root
-```
-
-## 本体サーバー起動コマンド
-
-### 1. インメモリDBで手軽に起動する場合 (DATABASE_URL 不要)
+Cloudflare の `wrangler` CLI を使用して、ローカルの Cloudflare D1 (SQLite:
+`.wrangler/state/v3/d1`) にスキーマと組み込みシードデータを投入し、本番と同一の
+Worker 構成で起動できます。
 
 ```sh
-cargo run -p definy-server
+# 1. クライアント・Worker ランタイムのビルドとシード SQL 生成
+bash scripts/build-assets.sh
+
+# 2. ローカルの Cloudflare D1 (definy-db) にスキーマとシードデータを投入
+bash scripts/ensure-d1.sh --local
+
+# 3. Cloudflare Workers ローカル開発サーバーを起動
+deno run -A npm:wrangler@4 dev
 ```
 
-※ クライアントの最新 Wasm をビルドする場合は `dx build --package definy-client`
-を実行します（`definy-server` はディスク上の最新 Wasm/JS/CSS
-を自動検出して配信するため、サーバーの再起動なしでブラウザのリロードだけで反映されます）。
-
-### 2. Dioxus Fullstack で開発する場合 (推奨)
-
-Dioxus CLI (`dx`) を使用して、バックエンドサーバー (API / SurrealDB / SSR) と
-Web クライアント (WASM)
-を**単一コマンドで同時に起動・ホットリロード開発**できます。
-
-事前準備 (初回のみ):
-https://dioxuslabs.com/learn/0.7/getting_started/#install-the-dioxus-cli
-
-```sh
-cargo install dioxus-cli
-```
-
-起動コマンド:
+### 2. Dioxus Fullstack / Rust サーバーで手軽に起動する場合
 
 ```sh
 dx serve --fullstack
 ```
 
-※ `dx serve --fullstack` を実行すると、バックエンドサーバー (Axum + SurrealDB +
-MCP + SSR) とフロントエンド (Wasm) の双方が自動起動し、`http://localhost:8080`
-でアクセスできます。コードを変更すると自動的に再ビルド・ホットリロードされます（`default-members`
-設定により `--package definy-client` の指定は不要です）。
-
-### 3. SurrealDB サーバー / Surreal Cloud に接続して起動する場合
-
-環境変数を指定して起動します：
-
-- `DATABASE_URL`: SurrealDB のエンドポイント（例: `ws://localhost:8000` または
-  `wss://definy-xxx.aws-aps1.surreal.cloud`）
-- `DATABASE_USER`: ユーザー名（任意）
-- `DATABASE_PASS`: パスワード（任意）
-- `DATABASE_NS`: 名前空間（任意、デフォルト: `definy`）
-- `DATABASE_DB`: データベース名（任意、デフォルト: `definy`）
-- `DATABASE_AUTH_LEVEL`: 認証レベル（任意、`Database` (デフォルト), `Namespace`,
-  `Root`）
-
-Linux, Mac の場合
+または
 
 ```sh
-DATABASE_URL=wss://definy-xxx.aws-aps1.surreal.cloud \
-DATABASE_USER=definy \
-DATABASE_PASS=password \
 cargo run -p definy-server
-```
-
-PowerShell の場合
-
-```ps1
-& {
-    $env:DATABASE_URL = "wss://definy-xxx.aws-aps1.surreal.cloud";
-    $env:DATABASE_USER = "definy";
-    $env:DATABASE_PASS = "password";
-    cargo run -p definy-server
-}
 ```
 
 ## テストとコード品質の検証
@@ -123,10 +81,14 @@ PowerShell の場合
 # ワークスペース全体の単体テスト実行
 cargo test --workspace
 
+# Cloudflare Worker ランタイム & D1 永続化テスト実行
+deno test --allow-read worker/
+
 # 静的解析・Clippy チェック (警告 0 件ルール)
 cargo clippy --workspace --all-targets -- -D warnings
 
 # コードフォーマット
 cargo fmt
 dx fmt
+deno fmt
 ```

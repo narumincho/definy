@@ -465,9 +465,7 @@ pub fn install_self_hosted_compiler_wasm(wasm: Vec<u8>) -> Result<(), String> {
 /// サーバーの起動時に呼ぶ. stage1 を DB (`contents` の `self_hosted_compiler_cache_key`) から読むか,
 /// 無ければ作って DB に保存する. 2 回目以降の呼び出しは何もしない.
 /// 用意できるまでの `compile_expression_to_wasm` は Rust 製コンパイラを使う
-pub async fn prepare_self_hosted_compiler(
-    db: Option<surrealdb::Surreal<surrealdb::engine::any::Any>>,
-) {
+pub async fn prepare_self_hosted_compiler(db: Option<crate::db::DbStore>) {
     if STAGE1_PREPARATION_STARTED.swap(true, std::sync::atomic::Ordering::SeqCst) {
         return;
     }
@@ -936,9 +934,7 @@ mod tests {
     /// サーバーの起動時の準備で stage1 が DB に保存され, 保存したものを読み込める
     #[tokio::test]
     async fn test_prepare_self_hosted_compiler_saves_stage1_to_database() {
-        let db = crate::db::init_db_with_config(None)
-            .await
-            .expect("in-memory db");
+        let db = crate::db::init_db().await.expect("in-memory db");
         prepare_self_hosted_compiler(Some(db.clone())).await;
         assert!(ready_self_hosted_compiler().is_some());
 

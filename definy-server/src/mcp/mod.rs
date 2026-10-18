@@ -17,13 +17,12 @@ use axum::routing::{get, post};
 use rand::Rng;
 use serde::Deserialize;
 use serde_json::{Value, json};
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
 use tokio::sync::{RwLock, mpsc};
 use tokio_stream::StreamExt;
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::AppState;
+use crate::db::DbStore;
 use crate::ensure_db;
 use protocol::*;
 
@@ -121,7 +120,7 @@ pub fn router(session_manager: McpSessionManager) -> axum::Router<AppState> {
 
 pub async fn dispatch_request(
     request: JsonRpcRequest,
-    db: Option<&Surreal<Any>>,
+    db: Option<&DbStore>,
 ) -> Option<JsonRpcResponse> {
     let id = request.id;
     let method = request.method.as_str();
@@ -450,13 +449,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mcp_with_database() {
-        let db = surrealdb::engine::any::connect("mem://").await.unwrap();
-        db.use_ns("test").use_db("test").await.unwrap();
-        let schema = include_str!("../../schema.surql");
-        db.query(schema).await.unwrap();
-        crate::builtin_migration::migrate_builtin_data(&db)
-            .await
-            .unwrap();
+        let db = crate::db::init_db().await.unwrap();
 
         // 1. list_modules
         let list_modules_req = JsonRpcRequest {

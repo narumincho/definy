@@ -262,6 +262,9 @@ export async function handleWorkerRequest(
   if (pathname === "/definy.v1.DeployService/DeployCloudflare") {
     try {
       const req = await parseJsonRequest<DeployCloudflareRequest>(request);
+      if ((req.seedD1 ?? req.seed_d1) && env.DB) {
+        await store.seedD1(env.DB);
+      }
       const wasmHash = req.wasmHash ?? req.wasm_hash;
       const partId = req.partId ?? req.part_id;
       let wasmBytes: Uint8Array | undefined;
