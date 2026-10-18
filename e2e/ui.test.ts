@@ -299,14 +299,14 @@ test.describe("definy UI E2E", () => {
             moduleDefinitionEventHash: "sample",
             partDefinitionEventHash: "sample.e2e-part",
             name: "e2e-part",
-            description: "Part created in E2E test",
+            description: [{ language: "en", text: "Part created in E2E test" }],
             partType: "number",
             expression: { Number: { value: 999 } },
           },
         },
       };
       localStorage.setItem(
-        "definy.working_changes.v1",
+        "definy.working_changes.v2",
         JSON.stringify(changes),
       );
     });

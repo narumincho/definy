@@ -184,37 +184,10 @@ export class DefinyRuntime {
     }
 
     if (request.op === "evaluateExpression") {
-      try {
-        const resolver = (partHash: string): Promise<unknown | undefined> => {
-          const direct = this.#parts.get(partHash);
-          if (direct !== undefined) {
-            return Promise.resolve(direct);
-          }
-          const content = this.#contents.get(partHash);
-          if (content) {
-            try {
-              const [decoded] = decodeCborItem(content);
-              return Promise.resolve(decoded);
-            } catch {
-              return Promise.resolve(undefined);
-            }
-          }
-          return Promise.resolve(undefined);
-        };
-
-        const evalPromise = evaluateCborExpression(
-          request.expression,
-          new Map(),
-          resolver,
-        );
-
-        return {
-          type: "value",
-          value: evalPromise,
-        };
-      } catch (e) {
-        return { type: "error", message: String(e) };
-      }
+      return {
+        type: "error",
+        message: "evaluateExpression is asynchronous; use callAsync",
+      };
     }
 
     if (request.op === "compilePart") {

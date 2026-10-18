@@ -9,6 +9,7 @@ import {
   encodeCborItem,
   sha256EventHashId,
   type DecodedPart,
+  type LocalizedText,
 } from "./cbor.ts";
 
 export interface AccountCredentials {
@@ -31,7 +32,7 @@ export interface SubmitEventResult {
 export interface CreateModuleCommitParams {
   readonly credentials: AccountCredentials;
   readonly moduleName: string;
-  readonly moduleDescription: string;
+  readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash?: string | null;
   readonly parts: ReadonlyArray<DecodedPart>;
@@ -124,47 +125,48 @@ export async function importAccountCredentials(
 }
 
 /**
+ * イベントの `content` に `account_id` と `time` を付けて CBOR 化し、Ed25519 で署名した SignedEvent を作る
+ */
+async function signEvent(
+  credentials: AccountCredentials,
+  content: Readonly<Record<string, unknown>>,
+  timeSeconds: number,
+): Promise<SignedEventResult> {
+  const key = await importPrivateKeyFromSecretKey(credentials.secretKeyBase64);
+  const innerBytes = encodeCborItem({
+    account_id: base64ToBytes(credentials.accountId),
+    time: { __tag: 1, value: timeSeconds },
+    content,
+  });
+  const signature = new Uint8Array(
+    await crypto.subtle.sign(
+      { name: "Ed25519" },
+      key,
+      toBufferSource(innerBytes),
+    ),
+  );
+  const signedBytes = encodeCborItem({
+    signature,
+    event_binary: { __tag: 24, value: innerBytes },
+  });
+  return {
+    signedEventBytes: bytesToBase64(signedBytes),
+    eventHash: await sha256EventHashId(signedBytes),
+  };
+}
+
+/**
  * AccountCredentials から CreateAccount イベントを作成・Ed25519 署名する
  */
 export async function createSignedAccountEvent(
   credentials: AccountCredentials,
-  timeSeconds?: number,
+  timeSeconds: number = Math.floor(Date.now() / 1000),
 ): Promise<SignedEventResult> {
-  const key = await importPrivateKeyFromSecretKey(credentials.secretKeyBase64);
-  const pubBytes = base64ToBytes(credentials.accountId);
-  const nowSec = timeSeconds ?? Math.floor(Date.now() / 1000);
-
-  const innerEvent = {
-    account_id: pubBytes,
-    time: { __tag: 1, value: nowSec },
-    content: {
-      CreateAccount: {
-        account_name: credentials.accountName,
-      },
-    },
-  };
-
-  const innerBytes = encodeCborItem(innerEvent);
-  const sigBuffer = await crypto.subtle.sign(
-    { name: "Ed25519" },
-    key,
-    toBufferSource(innerBytes),
+  return await signEvent(
+    credentials,
+    { CreateAccount: { account_name: credentials.accountName } },
+    timeSeconds,
   );
-  const signature = new Uint8Array(sigBuffer);
-
-  const signedEvent = {
-    signature,
-    event_binary: { __tag: 24, value: innerBytes },
-  };
-
-  const signedBytes = encodeCborItem(signedEvent);
-  const signedEventBytes = bytesToBase64(signedBytes);
-  const eventHash = await sha256EventHashId(signedBytes);
-
-  return {
-    signedEventBytes,
-    eventHash,
-  };
 }
 
 /**
@@ -172,64 +174,27 @@ export async function createSignedAccountEvent(
  */
 export async function createSignedModuleCommitEvent(
   params: CreateModuleCommitParams,
-  timeSeconds?: number,
+  timeSeconds: number = Math.floor(Date.now() / 1000),
 ): Promise<SignedEventResult> {
-  const key = await importPrivateKeyFromSecretKey(
-    params.credentials.secretKeyBase64,
-  );
-  const pubBytes = base64ToBytes(params.credentials.accountId);
-  const nowSec = timeSeconds ?? Math.floor(Date.now() / 1000);
-
-  const innerEvent = {
-    account_id: pubBytes,
-    time: { __tag: 1, value: nowSec },
-    content: {
+  return await signEvent(
+    params.credentials,
+    {
       ModuleCommit: {
         module_name: params.moduleName,
-        module_description: [
-          { language: "en", text: params.moduleDescription },
-          { language: "ja", text: params.moduleDescription },
-        ],
+        module_description: params.moduleDescription,
         message: params.message,
         parent_commit_hash: params.parentCommitHash ?? null,
-        parts: params.parts.map((p) => {
-          const rawHash = p.contentHash ? base64ToBytes(p.contentHash) : null;
-          return {
-            name: p.name,
-            description: [
-              { language: "en", text: p.description },
-              { language: "ja", text: p.description },
-            ],
-            part_type: p.partType,
-            expression: p.expression ?? null,
-            content_hash: rawHash,
-          };
-        }),
+        parts: params.parts.map((p) => ({
+          name: p.name,
+          description: p.description,
+          part_type: p.partType,
+          expression: p.expression ?? null,
+          content_hash: p.contentHash ? base64ToBytes(p.contentHash) : null,
+        })),
       },
     },
-  };
-
-  const innerBytes = encodeCborItem(innerEvent);
-  const sigBuffer = await crypto.subtle.sign(
-    { name: "Ed25519" },
-    key,
-    toBufferSource(innerBytes),
+    timeSeconds,
   );
-  const signature = new Uint8Array(sigBuffer);
-
-  const signedEvent = {
-    signature,
-    event_binary: { __tag: 24, value: innerBytes },
-  };
-
-  const signedBytes = encodeCborItem(signedEvent);
-  const signedEventBytes = bytesToBase64(signedBytes);
-  const eventHash = await sha256EventHashId(signedBytes);
-
-  return {
-    signedEventBytes,
-    eventHash,
-  };
 }
 
 /**

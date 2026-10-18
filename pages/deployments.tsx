@@ -40,7 +40,7 @@ export default function DeploymentsPage(): JSX.Element {
         body: JSON.stringify({
           apiToken,
           accountId,
-          workerScriptName: scriptName,
+          scriptName,
         }),
       });
       const data = (await res.json()) as {

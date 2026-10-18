@@ -428,3 +428,27 @@ export async function evaluateCompiledWasm(
   const mem = new Uint8Array(exports.memory.buffer);
   return readDefinyValue(mem, valPtr);
 }
+
+let stage1CompilerPromise: Promise<Stage1CompilerInstance> | null = null;
+
+/**
+ * ブラウザから `/virtual/wasm/stage1.wasm` を取得して stage1 コンパイラを作る。
+ * 取得・コンパイルは 1 度だけ行い、失敗した場合は次回呼び出し時に再試行する。
+ */
+export function loadStage1Compiler(): Promise<Stage1CompilerInstance> {
+  stage1CompilerPromise ??= (async () => {
+    const res = await fetch("/virtual/wasm/stage1.wasm");
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch stage1.wasm: ${res.status} ${res.statusText}`,
+      );
+    }
+    return createStage1Compiler(
+      await WebAssembly.compile(await res.arrayBuffer()),
+    );
+  })().catch((e: unknown) => {
+    stage1CompilerPromise = null;
+    throw e;
+  });
+  return stage1CompilerPromise;
+}

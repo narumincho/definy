@@ -13,7 +13,7 @@ import {
   extractModuleCommit,
   toUint8Array,
 } from "./cbor.ts";
-import { parseSignedEventMetadata } from "../worker/cbor.ts";
+import { verifySignedEvent } from "../worker/cbor.ts";
 
 describe("auth and signed event pipeline", () => {
   it("generates and re-imports Ed25519 credentials", async () => {
@@ -46,8 +46,8 @@ describe("auth and signed event pipeline", () => {
     expect(extracted?.accountId).toBe(creds.accountId);
     expect(extracted?.accountName).toBe("bob");
 
-    // Verify with worker's parseSignedEventMetadata
-    const meta = parseSignedEventMetadata(base64ToBytes(signedEventBytes));
+    // Verify signature and metadata with worker's verifySignedEvent
+    const meta = await verifySignedEvent(base64ToBytes(signedEventBytes));
     expect(meta.accountId).toBe(creds.accountId);
     expect(meta.eventType).toBe("create_account");
     expect(meta.timeMs).toBe(1700000000000);
@@ -80,13 +80,16 @@ describe("auth and signed event pipeline", () => {
       {
         credentials: creds,
         moduleName: "math",
-        moduleDescription: "Math functions",
+        moduleDescription: [{ language: "en", text: "Math functions" }],
         message: "Add multiply part",
         parentCommitHash: "parent-hash-123",
         parts: [
           {
             name: "multiply",
-            description: "Multiplies two numbers",
+            description: [
+              { language: "en", text: "Multiplies two numbers" },
+              { language: "ja", text: "2 つの数を掛ける" },
+            ],
             partType: "function",
             expression: { Number: { value: 42 } },
           },
@@ -105,9 +108,17 @@ describe("auth and signed event pipeline", () => {
     expect(commit?.parentCommitHash).toBe("parent-hash-123");
     expect(commit?.parts.length).toBe(1);
     expect(commit?.parts[0]?.name).toBe("multiply");
+    // 言語ごとの説明文は連結されずそのまま往復する
+    expect(commit?.moduleDescription).toEqual([
+      { language: "en", text: "Math functions" },
+    ]);
+    expect(commit?.parts[0]?.description).toEqual([
+      { language: "en", text: "Multiplies two numbers" },
+      { language: "ja", text: "2 つの数を掛ける" },
+    ]);
 
-    // Verify with worker's parseSignedEventMetadata
-    const meta = parseSignedEventMetadata(base64ToBytes(signedEventBytes));
+    // Verify signature and metadata with worker's verifySignedEvent
+    const meta = await verifySignedEvent(base64ToBytes(signedEventBytes));
     expect(meta.accountId).toBe(creds.accountId);
     expect(meta.eventType).toBe("module_commit");
     expect(meta.timeMs).toBe(1700000005000);

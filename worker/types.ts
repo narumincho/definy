@@ -40,7 +40,7 @@ export interface D1Database {
 export interface Env {
   readonly ASSETS?: Fetcher;
   readonly DB?: D1Database;
-  readonly DEFINY_ADMIN_ACCOUNT_ID?: string;
+  /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
   readonly DEFINY_ROOT_DOMAIN?: string;
   readonly CLOUDFLARE_API_TOKEN?: string;
@@ -48,7 +48,7 @@ export interface Env {
 }
 
 /**
- * Connect-RPC EventItem (`definy-event/src/rpc.rs` 準拠 camelCase)
+ * Connect-RPC EventItem (`proto/definy/v1/event.proto` の JSON マッピング)
  */
 export interface EventItem {
   readonly eventHash: string;
@@ -77,11 +77,10 @@ export interface SeedBundle {
 }
 
 /**
- * Connect-RPC: EventService メッセージ型 (camelCase & snake_case 双方の入力を受理)
+ * Connect-RPC: EventService メッセージ型 (Protobuf JSON マッピングに合わせ camelCase のみ受理)
  */
 export interface GetEventsRequest {
   readonly eventType?: string | null;
-  readonly event_type?: string | null;
   readonly limit?: number | null;
   readonly offset?: number | null;
 }
@@ -92,7 +91,6 @@ export interface GetEventsResponse {
 
 export interface GetEventRequest {
   readonly eventHash?: string;
-  readonly event_hash?: string;
 }
 
 export interface GetEventResponse {
@@ -101,33 +99,20 @@ export interface GetEventResponse {
 
 export interface SubmitEventRequest {
   readonly signedEventBytes?: string;
-  readonly signed_event_bytes?: string;
-  readonly event_binary?: string;
 }
 
 export interface SubmitEventResponse {
   readonly eventHash: string;
-  readonly status: string;
+  readonly status: "accepted" | "missing_content";
   readonly missingContentHashes: ReadonlyArray<string>;
 }
 
 export interface CheckMissingHashesRequest {
   readonly contentHashes?: ReadonlyArray<string>;
-  readonly content_hashes?: ReadonlyArray<string>;
-  readonly hashes?: ReadonlyArray<string>;
 }
 
 export interface CheckMissingHashesResponse {
   readonly missingContentHashes: ReadonlyArray<string>;
-}
-
-export interface ContentItemInput {
-  readonly contentHash?: string;
-  readonly content_hash?: string;
-  readonly hash?: string;
-  readonly contentBytes?: string;
-  readonly content_bytes?: string;
-  readonly content?: string;
 }
 
 export interface ContentItem {
@@ -136,7 +121,7 @@ export interface ContentItem {
 }
 
 export interface UploadContentRequest {
-  readonly items?: ReadonlyArray<ContentItemInput>;
+  readonly items?: ReadonlyArray<ContentItem>;
 }
 
 export interface UploadContentResponse {
@@ -145,8 +130,7 @@ export interface UploadContentResponse {
 
 export interface GetContentRequest {
   readonly contentHash?: string;
-  readonly content_hash?: string;
-  readonly hashes?: ReadonlyArray<string>;
+  readonly contentHashes?: ReadonlyArray<string>;
 }
 
 export interface GetContentResponse {
@@ -158,23 +142,16 @@ export interface GetContentResponse {
  * Connect-RPC: DeployService メッセージ型
  */
 export interface DeployCloudflareRequest {
+  /** 省略時はサーバーの `CLOUDFLARE_API_TOKEN` を使う（管理者のみ） */
   readonly apiToken?: string | null;
-  readonly api_token?: string | null;
   readonly accountId?: string | null;
-  readonly account_id?: string | null;
   readonly scriptName?: string | null;
-  readonly script_name?: string | null;
-  readonly worker_name?: string | null;
   readonly wasmHash?: string | null;
-  readonly wasm_hash?: string | null;
   readonly partId?: string | null;
-  readonly part_id?: string | null;
   readonly customScript?: string | null;
-  readonly custom_script?: string | null;
   readonly commitHash?: string | null;
-  readonly commit_hash?: string | null;
+  /** D1 にシードを再投入する（管理者のみ） */
   readonly seedD1?: boolean | null;
-  readonly seed_d1?: boolean | null;
 }
 
 export interface DeployCloudflareResponse {
@@ -205,10 +182,9 @@ export interface ListDeploymentsResponse {
 }
 
 export interface ListCloudflareWorkersRequest {
+  /** 省略時はサーバーの `CLOUDFLARE_API_TOKEN` を使う（管理者のみ） */
   readonly apiToken?: string | null;
-  readonly api_token?: string | null;
   readonly accountId?: string | null;
-  readonly account_id?: string | null;
 }
 
 export interface CloudflareWorkerItem {

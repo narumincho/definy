@@ -1,7 +1,7 @@
 import { useState, type JSX } from "react";
 import { Link } from "@void/react";
 import { Icon } from "../src/icons.tsx";
-import { label } from "../src/language.ts";
+import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
 export default function PartsPage(): JSX.Element {
@@ -15,7 +15,7 @@ export default function PartsPage(): JSX.Element {
           p.name.toLowerCase().includes(q) ||
           p.moduleName.toLowerCase().includes(q) ||
           `${p.moduleName}.${p.name}`.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q),
+          p.description.some((t) => t.text.toLowerCase().includes(q)),
       )
     : parts;
 
@@ -78,8 +78,10 @@ export default function PartsPage(): JSX.Element {
                     </span>
                   )}
                 </div>
-                {part.description && (
-                  <p className="part-card-desc">{part.description}</p>
+                {part.description.length > 0 && (
+                  <p className="part-card-desc">
+                    {localizedText(part.description, language)}
+                  </p>
                 )}
                 <div className="part-card-footer">
                   <Icon kind="play" size={14} className="part-card-play-icon" />

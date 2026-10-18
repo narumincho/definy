@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { useParams, Link } from "@void/react";
-import { label } from "../../src/language.ts";
+import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 
 export default function ModuleDetailPage(): JSX.Element {
@@ -10,7 +10,7 @@ export default function ModuleDetailPage(): JSX.Element {
   const mod = modules.find((m) => m.moduleId === id) ?? {
     moduleId: id ?? "unknown",
     name: id ?? "unknown",
-    description: "Module details",
+    description: [],
     latestEventHash: "",
     message: "",
     parts: [],
@@ -23,7 +23,11 @@ export default function ModuleDetailPage(): JSX.Element {
     <div className="module-detail-view">
       <div className="card module-header">
         <h2 className="module-title">{mod.name}</h2>
-        {mod.description && <p className="module-desc">{mod.description}</p>}
+        {mod.description.length > 0 && (
+          <p className="module-desc">
+            {localizedText(mod.description, language)}
+          </p>
+        )}
       </div>
 
       <div className="module-parts-section">
@@ -53,7 +57,9 @@ export default function ModuleDetailPage(): JSX.Element {
                 className="card part-card"
               >
                 <strong>{part.name}</strong>
-                {part.description && <p>{part.description}</p>}
+                {part.description.length > 0 && (
+                  <p>{localizedText(part.description, language)}</p>
+                )}
               </Link>
             ))
           )}
