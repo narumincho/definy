@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "void dev",
+    "dev": "vite",
     "build": "vite build",
     "deploy": "void deploy --platform cloudflare",
     "check": "tsc --noEmit",
