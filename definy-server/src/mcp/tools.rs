@@ -14,11 +14,9 @@ use definy_ui::module_projection::collect_module_snapshots;
 use definy_ui::part_projection::{PartSnapshot, collect_part_snapshots};
 use ed25519_dalek::SigningKey;
 use serde_json::{Value, json};
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
 
 use super::protocol::ToolCallResult;
-use crate::db::{get_event, get_events, save_event};
+use crate::db::{DbStore, get_event, get_events, save_event};
 
 pub const AI_AGENT_KEY_SEED: [u8; 32] = *b"definy-mcp-ai-agent-key-2026\0\0\0\0";
 
@@ -28,7 +26,7 @@ fn get_signing_key_and_account() -> (SigningKey, AccountId) {
     (signing_key, account_id)
 }
 
-pub async fn build_ui_app_state(db: &Surreal<Any>) -> Result<UiAppState, String> {
+pub async fn build_ui_app_state(db: &DbStore) -> Result<UiAppState, String> {
     let event_binaries = get_events(db, None, Some(1000), Some(0))
         .await
         .map_err(|e| format!("Failed to get events: {:?}", e))?;
@@ -51,7 +49,7 @@ pub use super::tool_definitions::all_tools;
 pub async fn handle_tool_call(
     name: &str,
     arguments: Option<Value>,
-    db: &Surreal<Any>,
+    db: &DbStore,
 ) -> ToolCallResult {
     let args = arguments.unwrap_or_else(|| json!({}));
 
@@ -70,7 +68,7 @@ pub async fn handle_tool_call(
     }
 }
 
-async fn tool_list_modules(db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_list_modules(db: &DbStore) -> ToolCallResult {
     let state = match build_ui_app_state(db).await {
         Ok(s) => s,
         Err(e) => return ToolCallResult::error(e),
@@ -91,7 +89,7 @@ async fn tool_list_modules(db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&result).unwrap())
 }
 
-async fn tool_list_parts(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_list_parts(args: Value, db: &DbStore) -> ToolCallResult {
     let state = match build_ui_app_state(db).await {
         Ok(s) => s,
         Err(e) => return ToolCallResult::error(e),
@@ -194,7 +192,7 @@ fn find_part(state: &UiAppState, identifier: &str) -> Option<PartSnapshot> {
     })
 }
 
-async fn tool_get_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_get_part(args: Value, db: &DbStore) -> ToolCallResult {
     let ident = match args.get("identifier").and_then(|v| v.as_str()) {
         Some(s) => s,
         None => return ToolCallResult::error("Missing 'identifier' argument"),
@@ -240,7 +238,7 @@ async fn tool_get_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
-async fn tool_eval_expression(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_eval_expression(args: Value, db: &DbStore) -> ToolCallResult {
     let expr_val = match args.get("expression") {
         Some(v) => v.clone(),
         None => return ToolCallResult::error("Missing 'expression' argument"),
@@ -269,7 +267,7 @@ async fn tool_eval_expression(args: Value, db: &Surreal<Any>) -> ToolCallResult 
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
-async fn tool_eval_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_eval_part(args: Value, db: &DbStore) -> ToolCallResult {
     let ident = match args.get("identifier").and_then(|v| v.as_str()) {
         Some(s) => s,
         None => return ToolCallResult::error("Missing 'identifier' argument"),
@@ -308,7 +306,7 @@ async fn tool_eval_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
 
 async fn sign_and_save_ai_event(
     content: EventContent,
-    db: &Surreal<Any>,
+    db: &DbStore,
 ) -> Result<EventHashId, String> {
     let (signing_key, account_id) = get_signing_key_and_account();
     let event = Event {
@@ -341,7 +339,7 @@ async fn sign_and_save_ai_event(
     Ok(hash)
 }
 
-async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_create_module(args: Value, db: &DbStore) -> ToolCallResult {
     let name = match args.get("name").and_then(|v| v.as_str()) {
         Some(s) => s.to_string(),
         None => return ToolCallResult::error("Missing 'name' argument"),
@@ -382,7 +380,7 @@ async fn tool_create_module(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
-async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_create_part(args: Value, db: &DbStore) -> ToolCallResult {
     let module_ident = match args.get("module").and_then(|v| v.as_str()) {
         Some(s) => s,
         None => return ToolCallResult::error("Missing 'module' argument"),
@@ -475,7 +473,7 @@ async fn tool_create_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
-async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_update_part(args: Value, db: &DbStore) -> ToolCallResult {
     let part_ident = match args.get("part_identifier").and_then(|v| v.as_str()) {
         Some(s) => s,
         None => return ToolCallResult::error("Missing 'part_identifier' argument"),
@@ -588,7 +586,7 @@ async fn tool_update_part(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&res).unwrap())
 }
 
-async fn tool_list_events(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_list_events(args: Value, db: &DbStore) -> ToolCallResult {
     let limit = args
         .get("limit")
         .and_then(|v| v.as_u64())
@@ -623,7 +621,7 @@ async fn tool_list_events(args: Value, db: &Surreal<Any>) -> ToolCallResult {
     ToolCallResult::text(serde_json::to_string_pretty(&list).unwrap())
 }
 
-async fn tool_get_event(args: Value, db: &Surreal<Any>) -> ToolCallResult {
+async fn tool_get_event(args: Value, db: &DbStore) -> ToolCallResult {
     let hash_str = match args.get("hash").and_then(|v| v.as_str()) {
         Some(s) => s,
         None => return ToolCallResult::error("Missing 'hash' argument"),

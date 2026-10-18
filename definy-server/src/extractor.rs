@@ -1,13 +1,12 @@
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
 
 use crate::AppState;
+use crate::db::DbStore;
 use crate::error::ApiError;
 
 #[derive(Clone)]
-pub struct Database(pub Surreal<Any>);
+pub struct Database(pub DbStore);
 
 impl FromRequestParts<AppState> for Database {
     type Rejection = ApiError;

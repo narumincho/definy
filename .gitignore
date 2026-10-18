@@ -7,3 +7,4 @@
 /narumincho-vdom-build/data.json
 /narumincho-vdom-build/cache/
 /worker/generated/
+/.wrangler/

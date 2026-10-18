@@ -17,3 +17,8 @@ run_worker_first = [
   "/swagger-ui*",
   "/api-docs/*",
 ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "definy-db"
+database_id = "00000000-0000-0000-0000-000000000000"

@@ -433,8 +433,9 @@ Deno.test("Cloudflare D1 persistence survives WorkerStore isolate restart", asyn
     },
   };
 
-  // Isolate 1: seed, submit a new event, upload CAS content
+  // Isolate 1: deploy-time D1 seed, submit a new event, upload CAS content
   const store1 = new WorkerStore();
+  await store1.seedD1(d1, sampleSeed);
 
   const healthRes = await handleWorkerRequest(
     new Request("https://definy.workers.dev/healthz"),
@@ -526,23 +527,9 @@ Deno.test("DeployCloudflare compiles definy:deploy part to Wasm and uploads app.
     DB: d1,
     CLOUDFLARE_API_TOKEN: "cf-test-token",
     CLOUDFLARE_ACCOUNT_ID: "cf-acc-123",
-    ASSETS: {
-      fetch(input: Request | URL | string): Promise<Response> {
-        const url = typeof input === "string"
-          ? input
-          : input instanceof URL
-          ? input.toString()
-          : input.url;
-        if (url.endsWith("/__definy_seed_bundle.json")) {
-          return Promise.resolve(
-            new Response(JSON.stringify(bundle), { status: 200 }),
-          );
-        }
-        return Promise.resolve(new Response("SPA", { status: 200 }));
-      },
-    },
   };
   const store = new WorkerStore();
+  await store.seedD1(d1, bundle);
 
   let uploadedWorkerJs = "";
   let uploadedWasmBytes: Uint8Array | null = null;
@@ -721,6 +708,7 @@ Deno.test("D1 seeding does not re-run when env.DB is a new wrapper per request o
   });
 
   const store = new WorkerStore();
+  store.loadSeedBundle(sampleSeed);
 
   // 1. /healthz と静的アセット取得では D1 スキーマ初期化もシード書き込みも一切行われない
   await handleWorkerRequest(
@@ -742,7 +730,7 @@ Deno.test("D1 seeding does not re-run when env.DB is a new wrapper per request o
   assertEquals(writeStatementsCount, 0);
   assertEquals(seedBundleFetchCount, 0);
 
-  // 2. 初回 API リクエスト（並行 2 リクエスト）で 1 回だけシードされる
+  // 2. 初回 API リクエスト（並行 2 リクエスト）で 1 回だけ D1 に同期され、ASSETS フェッチは行われない
   await Promise.all([
     handleWorkerRequest(
       new Request(
@@ -770,11 +758,11 @@ Deno.test("D1 seeding does not re-run when env.DB is a new wrapper per request o
 
   const initialSchemaCount = schemaStatementsCount;
   const initialWriteCount = writeStatementsCount;
-  assertEquals(seedBundleFetchCount, 1);
+  assertEquals(seedBundleFetchCount, 0);
   assertEquals(initialSchemaCount > 0, true);
   assertEquals(initialWriteCount, 3); // 1 DELETE + 1 event INSERT + 1 cas INSERT
 
-  // 3. 2 回目以降の API リクエスト（毎回新しい env.DB ラッパーを渡す）では再シードが一切走らない
+  // 3. 2 回目以降の API リクエスト（毎回新しい env.DB ラッパーを渡す）では再シードも DDL 実行も一切走らない
   await handleWorkerRequest(
     new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
       method: "POST",
@@ -785,11 +773,11 @@ Deno.test("D1 seeding does not re-run when env.DB is a new wrapper per request o
   );
   assertEquals(schemaStatementsCount, initialSchemaCount);
   assertEquals(writeStatementsCount, initialWriteCount);
-  assertEquals(seedBundleFetchCount, 1);
+  assertEquals(seedBundleFetchCount, 0);
 
-  // 4. 別 Isolate のコールドスタート時、D1 に既にシードが存在する場合は DELETE / INSERT バッチをスキップする
+  // 4. 別 Isolate のコールドスタート時（new WorkerStore()）、D1 バインド時は ASSETS フェッチも DDL 実行も再シードも一切走らない
   const coldStartStore = new WorkerStore();
-  await handleWorkerRequest(
+  const coldRes = await handleWorkerRequest(
     new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
       method: "POST",
       body: JSON.stringify({ limit: 10 }),
@@ -797,6 +785,10 @@ Deno.test("D1 seeding does not re-run when env.DB is a new wrapper per request o
     makeEnv(),
     coldStartStore,
   );
-  // DELETE / INSERT 書き込みクエリは 1 件も増えないこと
+  const coldJson = await coldRes.json();
+  assertEquals(coldJson.events.length, 1);
+  assertEquals(coldJson.events[0].eventHash, "seed_ev_once_1");
+  assertEquals(schemaStatementsCount, initialSchemaCount);
   assertEquals(writeStatementsCount, initialWriteCount);
+  assertEquals(seedBundleFetchCount, 0);
 });

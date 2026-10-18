@@ -125,19 +125,43 @@ export class WorkerStore {
   }
 
   /**
-   * Static Assets バインディングから `__definy_seed_bundle.json` をロードし、
-   * D1（バインドされている場合）およびインメモリストアに初期データを投入する
+   * デプロイ処理（またはテスト初期化）の一環として D1 スキーマ初期化とシードデータ投入を実行する
+   */
+  async seedD1(db: D1Database, bundle?: SeedBundle): Promise<void> {
+    if (bundle) {
+      this.loadSeedBundle(bundle);
+    }
+    await this.persistSeedToD1(db);
+    this.d1Seeded = true;
+  }
+
+  /**
+   * インメモリストア利用時（`env.DB` 未バインド時）に Static Assets からシードバンドルをロードする。
+   * `env.DB` (Cloudflare D1) バインド時は GitHub Actions デプロイ時 (`wrangler d1 execute`) または
+   * セルフホストデプロイ処理 (`seedD1`) でシード済みのため、リクエスト時のフェッチ・D1 照合は行わない
+   * （単体テスト等で事前に `loadSeedBundle` が呼ばれている場合のみ D1 へ同期する）。
    */
   async ensureSeeded(env: Env, requestOrigin?: string): Promise<void> {
-    if (this.seeded && (!env.DB || this.d1Seeded)) {
+    if (env.DB) {
+      if (this.seeded && !this.d1Seeded) {
+        if (!this.seedPromise) {
+          this.seedPromise = (async () => {
+            await this.persistSeedToD1(env.DB!);
+            this.d1Seeded = true;
+          })().finally(() => {
+            this.seedPromise = null;
+          });
+        }
+        await this.seedPromise;
+      }
+      return;
+    }
+
+    if (this.seeded) {
       return;
     }
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
-        if (env.DB) {
-          await this.ensureD1Schema(env.DB);
-        }
-
         if (!this.seeded && env.ASSETS) {
           const origin = requestOrigin ||
             "https://definy.narumincho.workers.dev";
@@ -152,11 +176,6 @@ export class WorkerStore {
           } catch {
             // Static Assets 取得失敗時は無視して継続
           }
-        }
-
-        if (env.DB && !this.d1Seeded && this.seeded) {
-          await this.persistSeedToD1(env.DB);
-          this.d1Seeded = true;
         }
       })().finally(() => {
         this.seedPromise = null;
@@ -334,7 +353,6 @@ export class WorkerStore {
     const limit = Math.min(500, Math.max(1, req.limit ?? 50));
 
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       let stmt: D1PreparedStatement;
       if (requestedType) {
         const normalized = requestedType.toLowerCase().replace(/_/g, "");
@@ -387,7 +405,6 @@ export class WorkerStore {
     env?: Env,
   ): Promise<EventItem | undefined> {
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       const row = await env.DB.prepare(
         `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339
          FROM events
@@ -449,7 +466,6 @@ export class WorkerStore {
     const normalizedB64 = bytesToBase64(bytes);
 
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       await env.DB.prepare(
         `INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -515,7 +531,6 @@ export class WorkerStore {
     }
 
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       const existing = new Set<string>();
       for (let i = 0; i < hashes.length; i += D1_BATCH_CHUNK_SIZE) {
         const chunk = hashes.slice(i, i + D1_BATCH_CHUNK_SIZE);
@@ -545,10 +560,6 @@ export class WorkerStore {
     const nextContents = new Map<string, string>(this.contents);
     const stored: string[] = [];
     const d1Statements: D1PreparedStatement[] = [];
-
-    if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
-    }
 
     for (const item of items) {
       const hash = item.contentHash ?? item.content_hash ?? item.hash ?? "";
@@ -587,7 +598,6 @@ export class WorkerStore {
     env?: Env,
   ): Promise<ContentItem | undefined> {
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       const row = await env.DB.prepare(
         `SELECT content_hash, content_bytes FROM cas_contents WHERE content_hash = ?`,
       )
@@ -621,7 +631,6 @@ export class WorkerStore {
     }
 
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       const byHash = new Map<string, string>();
       for (let i = 0; i < hashes.length; i += D1_BATCH_CHUNK_SIZE) {
         const chunk = hashes.slice(i, i + D1_BATCH_CHUNK_SIZE);
@@ -677,7 +686,6 @@ export class WorkerStore {
     env?: Env,
   ): Promise<void> {
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       await env.DB.prepare(
         `INSERT INTO deployments (machine_id, commit_hash, status, url, app_url, region, created_at_rfc3339, wasm_hash, provider)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -707,7 +715,6 @@ export class WorkerStore {
   ): Promise<ReadonlyArray<DeploymentHistoryItem>> {
     const max = Math.min(100, Math.max(1, limit ?? 20));
     if (env?.DB) {
-      await this.ensureD1Schema(env.DB);
       const res = await env.DB.prepare(
         `SELECT machine_id, commit_hash, status, url, app_url, region, created_at_rfc3339, wasm_hash, provider
          FROM deployments

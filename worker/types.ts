@@ -172,6 +172,8 @@ export interface DeployCloudflareRequest {
   readonly custom_script?: string | null;
   readonly commitHash?: string | null;
   readonly commit_hash?: string | null;
+  readonly seedD1?: boolean | null;
+  readonly seed_d1?: boolean | null;
 }
 
 export interface DeployCloudflareResponse {

@@ -504,7 +504,7 @@ pub fn router() -> axum::Router<AppState> {
 }
 
 async fn validate_module_commit(
-    db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
+    db: &crate::db::DbStore,
     module_commit: &definy_event::event::ModuleCommitEvent,
     candidate_event: &definy_event::event::Event,
     candidate_hash: &EventHashId,

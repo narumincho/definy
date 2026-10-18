@@ -27,9 +27,10 @@ fi
 # Worker でパーツを実行する Rust 製ランタイム (worker/generated/definy_worker_runtime.wasm)
 bash "${ROOT_DIR}/scripts/build-worker-runtime.sh"
 
-# 組み込みシードイベントと CAS コンテンツバンドルを出力
-echo "=== Exporting builtin seed bundle into ${OUTPUT_DIR}/__definy_seed_bundle.json ==="
+# デプロイ時 / ローカル D1 初期化用のシード SQL を出力（dist-assets には含めない）
+SEED_SQL_PATH="${ROOT_DIR}/target/definy_seed.sql"
+echo "=== Exporting builtin D1 seed SQL into ${SEED_SQL_PATH} ==="
 cd "${ROOT_DIR}"
-cargo run -p definy-server --release -- --export-seed-bundle "${OUTPUT_DIR}/__definy_seed_bundle.json"
+cargo run -p definy-server --release -- --export-seed-sql "${SEED_SQL_PATH}"
 
-echo "=== Build complete! Static assets and seed bundle ready in ${OUTPUT_DIR} ==="
+echo "=== Build complete! Static assets ready in ${OUTPUT_DIR}, D1 seed SQL ready in ${SEED_SQL_PATH} ==="

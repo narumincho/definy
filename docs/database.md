@@ -1,57 +1,15 @@
-# データベース SaaS どれにしようか問題
+# データベース構成（Cloudflare D1）
 
-## 1. SurrealDB Cloud
+本番環境およびローカルの Cloudflare Workers 環境における永続化ストレージには
+**Cloudflare D1（エッジマネージド SQLite）** を採用しています（以前使用していた
+SurrealDB は廃止し、D1 / SQLite に一本化しました）。
 
-### 利点
-
-- スキーマで入れ子のUnion型をサポートしている
-- 環境依存が少なめ
-
-### 欠点
-
-- 資料が少ない
-
-## 2. Xata
-
-### 利点
-
-- 素のPostgreSQLをそのまま使える
-- データを含めてブランチを作ることができる
-- 環境依存が少ない
-
-### 欠点
-
-- 資料が少ない
-
-## 3. Supabase
-
-### 利点
-
-- よく使われている
-- 東京リージョンがある
-- 管理画面のUIが使いやすい
-- 環境依存が少ない
-
-### 4. Deno KV
-
-### 利点
-
-- Deno から扱いやすい
-- スケールしやすい
-- シンプルな仕組みなため, 他への移植が簡単
-
-### 欠点
-
-- 自分で検索用のインデックスを保存する処理をする必要がある
-- いろんなパターンのクエリをうまく高速化するのは難しい
-- ベータ版で公式もやる気があるのかどうか分からない
-
-# 結論（現在：Cloudflare D1 による永続化）
-
-Cloudflare Workers への統合に伴い、本番環境の永続化ストレージは **Cloudflare
-D1（エッジマネージド SQLite）** を採用しています（ローカル開発・テスト用の
-`definy-server` ではインメモリ `SurrealDB`、Worker
-単体テストではインメモリフォールバックおよび `node:sqlite` アダプターを併用）。
+- **本番環境**: Cloudflare D1 (`definy-db`)
+- **ローカル開発**: Wrangler CLI (`wrangler d1 execute definy-db --local` /
+  `wrangler dev`) によるローカル D1 (`.wrangler/state/v3/d1`)
+- **単体テスト**: `worker/worker_test.ts` では `node:sqlite` (`:memory:`)
+  による D1 互換アダプター、`definy-server` では軽量インメモリストア (`DbStore`)
+  を使用
 
 ## Cloudflare D1 スキーマ (`migrations/0001_initial_schema.sql`)
 
@@ -66,15 +24,24 @@ definy のデータ本体は決定論的 CBOR バイナリと SHA-256 ハッシ�
   `status`, `url`, `app_url`, `region`, `created_at_rfc3339`, `wasm_hash`,
   `provider`)
 
-## 自動プロビジョニングと初期化
+## デプロイ時のスキーマ初期化とシードデータ投入
 
-1. GitHub Actions デプロイ時（`.github/workflows/deploy.yaml`）に
-   `scripts/ensure-d1.sh` が Cloudflare API 経由で `definy-db` D1
-   データベースを検索（未作成なら自動作成）し、`wrangler.toml` に
-   `[[d1_databases]]` (`binding = "DB"`) を設定します。
-2. Worker 起動時（`WorkerStore.ensureSeeded`）に `CREATE TABLE IF NOT EXISTS` /
-   `CREATE INDEX IF NOT EXISTS` を冪等に実行し、`/__definy_seed_bundle.json`
-   の初期ビルトインイベント・CAS コンテンツを `INSERT OR IGNORE` で D1
-   にシードします。
-3. `GET /healthz` エンドポイントの `storage` フィールド（`"cloudflare-d1"`
-   または `"in-memory"`）で現在の永続化バックエンドを確認できます。
+Worker のコールドスタートを高速に保つため、D1
+のスキーマ初期化と組み込みシードデータ（`std`, `wasi`, `core`, `definy`,
+`sample`）の投入は**リクエスト時ではなくデプロイ時**に実行します。
+
+1. **シード SQL の生成**:
+   `cargo run -p definy-server --release -- --export-seed-sql target/definy_seed.sql`
+   により、`migrations/0001_initial_schema.sql` の DDL、古いシステムシードの削除、および
+   `events` / `cas_contents` への冪等な `INSERT OR IGNORE` SQL（D1 の 100KB
+   ステートメント制限に対応したチャンク分割済み）を生成します。
+2. **GitHub Actions デプロイ時 (`.github/workflows/deploy.yaml`)**:
+   `scripts/ensure-d1.sh` が Cloudflare API で `definy-db` を確認（未作成なら自動作成）して
+   `wrangler.toml` にバインドし、`wrangler d1 execute definy-db --remote --file=target/definy_seed.sql`
+   でリモート D1 に反映します。
+3. **ローカル開発時**:
+   `bash scripts/ensure-d1.sh --local` でローカル D1 にシード SQL を反映し、
+   `wrangler dev` でそのままローカル D1 をバインドして起動できます。
+4. **セルフホストデプロイ時 (`DeployService/DeployCloudflare`)**:
+   definy 上のデプロイ処理の一部として `seedD1: true` を指定すると、バインドされた
+   D1 データベースに対して `store.seedD1(env.DB)` が実行されます。

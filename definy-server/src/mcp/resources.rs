@@ -1,13 +1,13 @@
 use definy_ui::module_projection::collect_module_snapshots;
 use definy_ui::part_projection::collect_part_snapshots;
 use serde_json::json;
-use surrealdb::Surreal;
-use surrealdb::engine::any::Any;
+
+use crate::db::DbStore;
 
 use super::protocol::{Resource, ResourceContent};
 use super::tools::build_ui_app_state;
 
-pub async fn list_resources(db: &Surreal<Any>) -> Vec<Resource> {
+pub async fn list_resources(db: &DbStore) -> Vec<Resource> {
     let mut resources = vec![
         Resource {
             uri: "definy://modules".to_string(),
@@ -38,7 +38,7 @@ pub async fn list_resources(db: &Surreal<Any>) -> Vec<Resource> {
     resources
 }
 
-pub async fn read_resource(uri: &str, db: &Surreal<Any>) -> Result<ResourceContent, String> {
+pub async fn read_resource(uri: &str, db: &DbStore) -> Result<ResourceContent, String> {
     let state = build_ui_app_state(db).await?;
 
     if uri == "definy://modules" {
