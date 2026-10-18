@@ -1,9 +1,19 @@
 /**
- * Pure browser-safe CBOR decoder & module commit extractor for definy frontend.
+ * Pure browser- and worker-safe CBOR decoder, encoder & module commit extractor for definy.
  * Free of node:crypto and other Node.js specific APIs.
  */
 
+/**
+ * Base64 文字列（標準 / URL-safe / パディング省略すべて対応）を Uint8Array にデコードする
+ */
 export function base64ToBytes(base64: string): Uint8Array {
+  if (typeof Uint8Array.fromBase64 === "function") {
+    const isUrlSafe = base64.includes("-") || base64.includes("_");
+    return Uint8Array.fromBase64(base64, {
+      alphabet: isUrlSafe ? "base64url" : "base64",
+      lastChunkHandling: "loose",
+    });
+  }
   const normalized = base64.replace(/-/g, "+").replace(/_/g, "/");
   const padLen = (4 - (normalized.length % 4)) % 4;
   const padded = normalized + "=".repeat(padLen);
@@ -15,7 +25,13 @@ export function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
+/**
+ * Uint8Array を標準 Base64 文字列にエンコードする
+ */
 export function bytesToBase64(bytes: Uint8Array): string {
+  if (typeof bytes.toBase64 === "function") {
+    return bytes.toBase64();
+  }
   let binString = "";
   for (let i = 0; i < bytes.length; i++) {
     const byte = bytes[i];
@@ -26,7 +42,13 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binString);
 }
 
+/**
+ * Uint8Array を URL-safe Base64 (パディングなし) にエンコードする
+ */
 export function bytesToUrlSafeBase64NoPad(bytes: Uint8Array): string {
+  if (typeof bytes.toBase64 === "function") {
+    return bytes.toBase64({ alphabet: "base64url", omitPadding: true });
+  }
   return bytesToBase64(bytes)
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -99,7 +121,7 @@ export function decodeCborItem(
         offset + val,
       ];
     case 4: {
-      const arr: unknown[] = [];
+      const arr: Array<unknown> = [];
       for (let i = 0; i < val; i++) {
         const [elem, next] = decodeCborItem(bytes, offset);
         arr.push(elem);
@@ -138,6 +160,99 @@ export function decodeCborItem(
     default:
       return [null, offset];
   }
+}
+
+function encodeCborHeader(major: number, length: number): Uint8Array {
+  const prefix = major << 5;
+  if (length < 24) {
+    return new Uint8Array([prefix | length]);
+  }
+  if (length < 256) {
+    return new Uint8Array([prefix | 24, length]);
+  }
+  if (length < 65536) {
+    return new Uint8Array([prefix | 25, (length >> 8) & 0xff, length & 0xff]);
+  }
+  const buf = new Uint8Array(5);
+  buf[0] = prefix | 26;
+  new DataView(buf.buffer).setUint32(1, length);
+  return buf;
+}
+
+function concatBytes(chunks: ReadonlyArray<Uint8Array>): Uint8Array {
+  const total = chunks.reduce((acc, c) => acc + c.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.length;
+  }
+  return out;
+}
+
+/**
+ * 任意の JS 値を CBOR バイト列にエンコードする
+ */
+export function encodeCborItem(value: unknown): Uint8Array {
+  if (value === null || value === undefined) {
+    return new Uint8Array([0xf6]);
+  }
+  if (typeof value === "boolean") {
+    return new Uint8Array([value ? 0xf5 : 0xf4]);
+  }
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) {
+      if (value >= 0) {
+        return encodeCborHeader(0, value);
+      }
+      return encodeCborHeader(1, -1 - value);
+    }
+    const buf = new Uint8Array(9);
+    buf[0] = 0xfb;
+    new DataView(buf.buffer).setFloat64(1, value);
+    return buf;
+  }
+  if (typeof value === "string") {
+    const strBytes = new TextEncoder().encode(value);
+    return concatBytes([encodeCborHeader(3, strBytes.length), strBytes]);
+  }
+  if (value instanceof Uint8Array) {
+    return concatBytes([encodeCborHeader(2, value.length), value]);
+  }
+  if (Array.isArray(value)) {
+    const chunks: Array<Uint8Array> = [encodeCborHeader(4, value.length)];
+    for (const item of value) {
+      chunks.push(encodeCborItem(item));
+    }
+    return concatBytes(chunks);
+  }
+  if (typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    const chunks: Array<Uint8Array> = [encodeCborHeader(5, entries.length)];
+    for (const [k, v] of entries) {
+      chunks.push(encodeCborItem(k));
+      chunks.push(encodeCborItem(v));
+    }
+    return concatBytes(chunks);
+  }
+  return new Uint8Array([0xf6]);
+}
+
+/**
+ * Uint8Array の SHA-256 ダイジェストを Uint8Array として計算する (標準 Web Crypto 使用)
+ */
+export async function sha256Bytes(bytes: Uint8Array): Promise<Uint8Array> {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
+  return new Uint8Array(digest);
+}
+
+/**
+ * Uint8Array の SHA-256 ダイジェストを計算し、URL-safe Base64 (`EventHashId` 形式) を返す
+ */
+export async function sha256EventHashId(bytes: Uint8Array): Promise<string> {
+  return bytesToUrlSafeBase64NoPad(await sha256Bytes(bytes));
 }
 
 export interface DecodedPart {
