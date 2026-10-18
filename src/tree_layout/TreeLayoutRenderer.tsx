@@ -84,9 +84,9 @@ export function nodeBadgeColors(kind: NodeKind): {
       };
     case "block":
       return {
-        bg: "var(--text-secondary)",
-        color: "var(--text)",
-        border: "1px solid var(--text-secondary)",
+        bg: "var(--surface-elevated)",
+        color: "var(--text-primary)",
+        border: "1px solid var(--border-strong)",
       };
     case "table":
       return {
