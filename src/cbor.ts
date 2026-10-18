@@ -329,6 +329,11 @@ export function sha256BytesSync(bytes: Uint8Array): Uint8Array {
   return out;
 }
 
+const TEXT_ENCODER = new TextEncoder();
+const MODULE_PREFIX_BYTES = TEXT_ENCODER.encode("definy:module:");
+const COLON_SEP_BYTES = TEXT_ENCODER.encode(":");
+const PART_SEP_BYTES = TEXT_ENCODER.encode(":part:");
+
 /**
  * definy-event の `derive_module_id` と同一のアルゴリズムで Module ID を同期的に導出する
  */
@@ -336,16 +341,20 @@ export function deriveModuleIdBytesSync(
   accountBytes: Uint8Array,
   moduleName: string,
 ): Uint8Array {
-  const prefix = new TextEncoder().encode("definy:module:");
-  const sep = new TextEncoder().encode(":");
-  const nameBytes = new TextEncoder().encode(moduleName);
+  const nameBytes = TEXT_ENCODER.encode(moduleName);
   const buf = new Uint8Array(
-    prefix.length + accountBytes.length + sep.length + nameBytes.length,
+    MODULE_PREFIX_BYTES.length +
+      accountBytes.length +
+      COLON_SEP_BYTES.length +
+      nameBytes.length,
   );
-  buf.set(prefix, 0);
-  buf.set(accountBytes, prefix.length);
-  buf.set(sep, prefix.length + accountBytes.length);
-  buf.set(nameBytes, prefix.length + accountBytes.length + sep.length);
+  buf.set(MODULE_PREFIX_BYTES, 0);
+  buf.set(accountBytes, MODULE_PREFIX_BYTES.length);
+  buf.set(COLON_SEP_BYTES, MODULE_PREFIX_BYTES.length + accountBytes.length);
+  buf.set(
+    nameBytes,
+    MODULE_PREFIX_BYTES.length + accountBytes.length + COLON_SEP_BYTES.length,
+  );
   return sha256BytesSync(sha256BytesSync(buf));
 }
 
@@ -356,14 +365,13 @@ export function deriveModulePartIdSync(
   moduleIdBytes: Uint8Array,
   partName: string,
 ): string {
-  const sep = new TextEncoder().encode(":part:");
-  const nameBytes = new TextEncoder().encode(partName);
+  const nameBytes = TEXT_ENCODER.encode(partName);
   const buf = new Uint8Array(
-    moduleIdBytes.length + sep.length + nameBytes.length,
+    moduleIdBytes.length + PART_SEP_BYTES.length + nameBytes.length,
   );
   buf.set(moduleIdBytes, 0);
-  buf.set(sep, moduleIdBytes.length);
-  buf.set(nameBytes, moduleIdBytes.length + sep.length);
+  buf.set(PART_SEP_BYTES, moduleIdBytes.length);
+  buf.set(nameBytes, moduleIdBytes.length + PART_SEP_BYTES.length);
   return bytesToUrlSafeBase64NoPad(sha256BytesSync(sha256BytesSync(buf)));
 }
 

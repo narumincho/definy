@@ -429,7 +429,7 @@ export function DefinyProvider({
         }
       }
 
-      const committedPartIds: Array<string> = [];
+      const committedPartIds = new Set<string>();
       for (const [partId, change] of workingChanges.parts.entries()) {
         const dotIndex = partId.indexOf(".");
         const partModule =
@@ -445,7 +445,7 @@ export function DefinyProvider({
             expression: change.expression,
             contentHash: null,
           });
-          committedPartIds.push(partId);
+          committedPartIds.add(partId);
         }
       }
 

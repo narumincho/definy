@@ -32,7 +32,9 @@ export function inferExpressionType(node: unknown): ExpectedType {
     "Equal" in obj ||
     "NotEqual" in obj ||
     "LessThan" in obj ||
+    "LessThanOrEqual" in obj ||
     "GreaterThan" in obj ||
+    "GreaterThanOrEqual" in obj ||
     "And" in obj ||
     "Or" in obj ||
     "Not" in obj
@@ -40,7 +42,18 @@ export function inferExpressionType(node: unknown): ExpectedType {
     return "boolean";
   }
 
+  if (
+    "BitAnd" in obj ||
+    "BitOr" in obj ||
+    "BitXor" in obj ||
+    "ShiftLeft" in obj ||
+    "ShiftRight" in obj
+  ) {
+    return "number";
+  }
+
   if ("StringConcat" in obj) return "string";
+  if ("ListConcat" in obj) return "list";
 
   return "any";
 }
@@ -95,7 +108,14 @@ export function inferExpectedType(
       "Divide" in parent ||
       "Remainder" in parent ||
       "LessThan" in parent ||
-      "GreaterThan" in parent
+      "LessThanOrEqual" in parent ||
+      "GreaterThan" in parent ||
+      "GreaterThanOrEqual" in parent ||
+      "BitAnd" in parent ||
+      "BitOr" in parent ||
+      "BitXor" in parent ||
+      "ShiftLeft" in parent ||
+      "ShiftRight" in parent
     ) {
       return "number";
     }
@@ -106,6 +126,10 @@ export function inferExpectedType(
 
     if ("StringConcat" in parent) {
       return "string";
+    }
+
+    if ("ListConcat" in parent) {
+      return "list";
     }
 
     if ("Equal" in parent || "NotEqual" in parent) {
@@ -183,11 +207,19 @@ export function getOptionValueForExpression(
   if ("Equal" in obj) return "expr:equal";
   if ("NotEqual" in obj) return "expr:not_equal";
   if ("LessThan" in obj) return "expr:less_than";
+  if ("LessThanOrEqual" in obj) return "expr:less_than_or_equal";
   if ("GreaterThan" in obj) return "expr:greater_than";
+  if ("GreaterThanOrEqual" in obj) return "expr:greater_than_or_equal";
+  if ("BitAnd" in obj) return "expr:bit_and";
+  if ("BitOr" in obj) return "expr:bit_or";
+  if ("BitXor" in obj) return "expr:bit_xor";
+  if ("ShiftLeft" in obj) return "expr:shift_left";
+  if ("ShiftRight" in obj) return "expr:shift_right";
   if ("And" in obj) return "expr:and";
   if ("Or" in obj) return "expr:or";
   if ("Not" in obj) return "expr:not";
   if ("StringConcat" in obj) return "expr:string_concat";
+  if ("ListConcat" in obj) return "expr:list_concat";
   if ("If" in obj) return "expr:if";
   if ("Hole" in obj) return "expr:hole";
 

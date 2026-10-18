@@ -1,4 +1,4 @@
-import { useState, type JSX, type KeyboardEvent } from "react";
+import { useState, useEffect, type JSX, type KeyboardEvent } from "react";
 import {
   isSamePath,
   type LayoutNode,
@@ -486,6 +486,11 @@ function LeafNodeRenderer({
   const [localString, setLocalString] = useState(() =>
     node.label.replace(/^"|"$/g, ""),
   );
+
+  useEffect(() => {
+    setLocalNumber(node.label);
+    setLocalString(node.label.replace(/^"|"$/g, ""));
+  }, [node.label]);
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
     if (e.key === "Delete") {

@@ -369,15 +369,12 @@ export function ExpressionTreeEditor({
     }
 
     // 期待型に合う候補を先に並べる
-    const primary: Array<SelectorOption> = [];
-    const secondary: Array<SelectorOption> = [];
-    for (const opt of matched) {
-      if (opt.returnType === expectedType || opt.returnType === "any") {
-        primary.push(opt);
-      } else {
-        secondary.push(opt);
-      }
-    }
+    const primary = matched.filter(
+      (opt) => opt.returnType === expectedType || opt.returnType === "any",
+    );
+    const secondary = matched.filter(
+      (opt) => opt.returnType !== expectedType && opt.returnType !== "any",
+    );
     return [...primary, ...secondary];
   }, [selectorOptions, searchQuery, expectedType]);
 

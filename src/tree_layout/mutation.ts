@@ -285,6 +285,17 @@ export function updateExpressionAtPath(
     };
   }
 
+  if (head === "letValue" && "Let" in node) {
+    const letInner = node.Let as { value?: unknown };
+    return {
+      ...node,
+      Let: {
+        ...letInner,
+        value: updateExpressionAtPath(letInner.value, tail, updater),
+      },
+    };
+  }
+
   if (
     typeof head === "object" &&
     head.kind === "letBindingValue" &&
@@ -411,6 +422,28 @@ export function updateExpressionAtPath(
         },
       };
     }
+  }
+
+  if (head === "record" && "RecordGet" in node) {
+    const rgInner = node.RecordGet as { record?: unknown };
+    return {
+      ...node,
+      RecordGet: {
+        ...rgInner,
+        record: updateExpressionAtPath(rgInner.record, tail, updater),
+      },
+    };
+  }
+
+  if (head === "variantPayload" && "Variant" in node) {
+    const vInner = node.Variant as { payload?: unknown };
+    return {
+      ...node,
+      Variant: {
+        ...vInner,
+        payload: updateExpressionAtPath(vInner.payload, tail, updater),
+      },
+    };
   }
 
   if (head === "constructorValue" && "Constructor" in node) {
