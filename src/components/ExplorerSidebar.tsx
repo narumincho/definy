@@ -1,4 +1,4 @@
-import { useState, useCallback, type JSX } from "react";
+import { useState, useCallback, useEffect, type JSX } from "react";
 import { Link } from "@void/react";
 import { Icon } from "../icons.tsx";
 import { label } from "../language.ts";
@@ -11,11 +11,12 @@ export function ExplorerSidebar(): JSX.Element {
   const [collapsedModules, setCollapsedModules] = useState<ReadonlySet<string>>(
     new Set(),
   );
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window === "undefined") return 260;
+  // 初回レンダーは SSR と同じ既定値にし、保存値はマウント後に反映する
+  const [sidebarWidth, setSidebarWidth] = useState(260);
+  useEffect(() => {
     const stored = localStorage.getItem("definy.sidebar.width");
-    return stored ? Number(stored) || 260 : 260;
-  });
+    if (stored) setSidebarWidth(Number(stored) || 260);
+  }, []);
 
   const query = filterQuery.trim().toLowerCase();
 

@@ -148,3 +148,27 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 - `if let Some(x) = *signal.peek() && ... { signal.set(..) }` のように, let チェーンの条件で `peek()` / `read()` すると
   借用が if の本体まで続き, 本体の `set` で `AlreadyBorrowed` の panic になる (wasm 全体が止まる).
   先に `let current = *signal.peek();` と取り出してから条件に使う
+
+## SSR とハイドレーション (React 19 + Void 実装)
+
+Void はページを SSR してからクライアントでハイドレーションするので, 初回レンダーの結果が SSR とクライアントで食い違うと
+ハイドレーション不一致になる. そのため以下を守る.
+
+- `localStorage` / `navigator` / `window.location` を `useState` の初期化やレンダー中に読まない.
+  初回は SSR と同じ既定値でレンダーし, マウント後の `useEffect` で保存値を反映する
+  (`src/state.tsx` の言語・作業中の変更, `pages/deployments.tsx` の Cloudflare 設定, `ExplorerSidebar` の幅)
+- URL は SSR でも `useRouter()` (`@void/react`) で読める. SSR では `createSsrRouter(リクエストの URL)` が使われ,
+  `path` や `query` はクエリ文字列も含めてクライアントと一致する. 現在のパスは `window.location.pathname` ではなく
+  `useRouter().path` を使う (`ActivityBar`)
+- 作業中の変更 (`definy.working_changes.v2`) はマウント後に読み込むが, 保存するのはユーザー操作による
+  `updateWorkingPart` などのときだけなので, 読み込み前の空の状態で保存済みの変更を消すことはない
+
+### 表示言語の決め方
+
+優先順位は URL クエリ `?lang=` > `localStorage` の `definy.language` > `navigator.language` (`ja` / `eo` で始まるか) > `en`.
+
+- `?lang=` は `useRouter().query` から読んで `useState` の初期値にする. SSR も同じ言語で HTML を出すので, ちらつきも不一致も起きない
+- `?lang=` が無いときは SSR では `en` で出し, マウント後に `localStorage` / `navigator.language` から決めた言語に切り替える
+- 言語を切り替えると `localStorage` に保存し, `history.replaceState` で URL の `?lang=` も書き換える
+- 動作確認は `localStorage.setItem("definy.language", "ja")` を入れてから `/parts?lang=en` を開き,
+  英語で表示されコンソールに `Hydration` の警告が出ないことを見る

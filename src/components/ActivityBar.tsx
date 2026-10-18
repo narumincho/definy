@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Link } from "@void/react";
+import { Link, useRouter } from "@void/react";
 import { Icon, type IconKind } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
@@ -66,8 +66,8 @@ const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
 
 export function ActivityBar(): JSX.Element {
   const { language, workingChanges } = useDefiny();
-  const currentPath =
-    typeof window !== "undefined" ? window.location.pathname : "/";
+  // window.location は SSR で読めずハイドレーション不一致になるため Void Router から取る
+  const currentPath = useRouter().path;
   const changesCount = workingChanges.parts.size;
 
   return (

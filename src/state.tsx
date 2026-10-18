@@ -8,6 +8,7 @@ import {
   type JSX,
   type ReactNode,
 } from "react";
+import { useRouter } from "@void/react";
 import type {
   AccountState,
   ConnectionStatus,
@@ -87,9 +88,6 @@ const STORAGE_KEY_LANG = "definy.language";
 const STORAGE_KEY_ACCOUNT = "definy.account.v1";
 
 function loadStoredChanges(): WorkingChanges {
-  if (typeof window === "undefined") {
-    return { parts: new Map<string, PartChange>() };
-  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CHANGES);
     if (!raw) return { parts: new Map<string, PartChange>() };
@@ -117,13 +115,20 @@ function saveStoredChanges(changes: WorkingChanges): void {
   localStorage.setItem(STORAGE_KEY_CHANGES, JSON.stringify({ parts: obj }));
 }
 
-function initialLanguage(): LanguageCode {
-  if (typeof window === "undefined") return "en";
-  const params = new URLSearchParams(window.location.search);
-  const q = params.get("lang");
-  if (q === "en" || q === "ja" || q === "eo") return q;
+function isLanguageCode(value: string | null): value is LanguageCode {
+  return value === "en" || value === "ja" || value === "eo";
+}
+
+/**
+ * URL クエリ (?lang=) が無いときにブラウザ側の情報から言語を決める。
+ * 優先順位は localStorage > navigator.language > en。
+ * SSR とのハイドレーション不一致を避けるため、マウント後の useEffect からのみ呼ぶ。
+ */
+function resolveBrowserLanguage(): LanguageCode {
   const stored = localStorage.getItem(STORAGE_KEY_LANG);
-  if (stored === "en" || stored === "ja" || stored === "eo") return stored;
+  if (isLanguageCode(stored)) return stored;
+  if (navigator.language.startsWith("ja")) return "ja";
+  if (navigator.language.startsWith("eo")) return "eo";
   return "en";
 }
 
@@ -132,21 +137,25 @@ export function DefinyProvider({
 }: {
   readonly children: ReactNode;
 }): JSX.Element {
-  const [language, setLanguageState] = useState<LanguageCode>(initialLanguage);
+  // ?lang= は SSR でも Void Router 経由で読めるので初期値に使う。
+  // localStorage など SSR で読めない値はマウント後に反映し、初回レンダーを SSR と揃える。
+  const queryLang = useRouter().query.get("lang");
+  const queryLanguage = isLanguageCode(queryLang) ? queryLang : null;
+  const [language, setLanguageState] = useState<LanguageCode>(
+    queryLanguage ?? "en",
+  );
+  const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
+  const [workingChanges, setWorkingChanges] = useState<WorkingChanges>(() => ({
+    parts: new Map<string, PartChange>(),
+  }));
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(STORAGE_KEY_LANG);
-      if (stored === "en" || stored === "ja" || stored === "eo") {
-        setLanguageState(stored);
-      } else if (navigator.language.startsWith("ja")) {
-        setLanguageState("ja");
-      }
+    if (queryLanguage === null) {
+      setLanguageState(resolveBrowserLanguage());
     }
+    setWorkingChanges(loadStoredChanges());
+    // マウント時に 1 度だけ反映する
   }, []);
-  const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
-  const [workingChanges, setWorkingChanges] =
-    useState<WorkingChanges>(loadStoredChanges);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
   const [currentAccount, setCurrentAccountState] =
