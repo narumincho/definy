@@ -225,30 +225,31 @@ export function DefinyProvider({
         const commit = extractModuleCommit(ev.signedEventBytes);
         if (!commit) continue;
 
-        const moduleParts: ModulePartSnapshot[] = [];
-        for (const p of commit.parts) {
-          const partId = `${commit.moduleName}.${p.name}`;
-          const partSnapshot: PartSnapshot = {
-            partId,
-            moduleId: commit.moduleName,
-            moduleName: commit.moduleName,
-            name: p.name,
-            description: p.description,
-            partType: p.partType,
-            contentHash: p.contentHash,
-            expression: p.expression,
-            updatedAtMs: ev.timeMs,
-          };
-          partMap.set(partId, partSnapshot);
-          moduleParts.push({
-            partId,
-            name: p.name,
-            description: p.description,
-            partType: p.partType,
-            contentHash: p.contentHash,
-            expression: p.expression,
-          });
-        }
+        const moduleParts: ReadonlyArray<ModulePartSnapshot> = commit.parts.map(
+          (p) => {
+            const partId = `${commit.moduleName}.${p.name}`;
+            const partSnapshot: PartSnapshot = {
+              partId,
+              moduleId: commit.moduleName,
+              moduleName: commit.moduleName,
+              name: p.name,
+              description: p.description,
+              partType: p.partType,
+              contentHash: p.contentHash,
+              expression: p.expression,
+              updatedAtMs: ev.timeMs,
+            };
+            partMap.set(partId, partSnapshot);
+            return {
+              partId,
+              name: p.name,
+              description: p.description,
+              partType: p.partType,
+              contentHash: p.contentHash,
+              expression: p.expression,
+            };
+          },
+        );
 
         moduleMap.set(commit.moduleName, {
           moduleId: commit.moduleName,

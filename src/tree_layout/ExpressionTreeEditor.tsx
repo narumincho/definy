@@ -125,7 +125,7 @@ export function ExpressionTreeEditor({
   );
 
   const selectorOptions = useMemo<ReadonlyArray<SelectorOption>>(() => {
-    const list: SelectorOption[] = [
+    const baseOptions: ReadonlyArray<SelectorOption> = [
       { value: "expr:number", label: "0 (Number)", category: "Literals" },
       { value: "expr:string", label: '"" (String)', category: "Literals" },
       {
@@ -176,15 +176,13 @@ export function ExpressionTreeEditor({
       { value: "expr:hole", label: "□ (Hole / Clear)", category: "Control" },
     ];
 
-    for (const p of parts) {
-      list.push({
-        value: `ref:part:${p.partId}`,
-        label: `${p.moduleName}.${p.name}`,
-        category: "Parts",
-      });
-    }
+    const partOptions: ReadonlyArray<SelectorOption> = parts.map((p) => ({
+      value: `ref:part:${p.partId}`,
+      label: `${p.moduleName}.${p.name}`,
+      category: "Parts",
+    }));
 
-    return list;
+    return [...baseOptions, ...partOptions];
   }, [parts]);
 
   const filteredOptions = useMemo(() => {

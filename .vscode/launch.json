@@ -1,27 +1,21 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "start server",
+      "name": "dev server (npm run dev)",
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}",
-      "runtimeExecutable": "deno",
-      "runtimeArgs": [
-        "run",
-        // "--watch", // ファイルの変更を監視して自動で再起動したかったが, なぜか動かない
-        "--inspect",
-        "--check",
-        "--unstable-kv",
-        "--allow-net=:8000",
-        "--allow-read=local.sqlite*",
-        "--allow-write=local.sqlite*"
-      ],
-      "program": "${workspaceFolder}/script/startInLocal.ts",
-      "attachSimplePort": 9229
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"]
+    },
+    {
+      "name": "run vitest tests",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["test"]
     }
   ]
 }

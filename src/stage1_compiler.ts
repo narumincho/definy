@@ -33,7 +33,7 @@ interface WasmExports {
 
 function writeLiteral(exports: WasmExports, node: unknown): number {
   function push(
-    buffer: number[],
+    buffer: Array<number>,
     base: number,
     bytes: ReadonlyArray<number>,
   ): number {
@@ -45,10 +45,14 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
     return ptr;
   }
 
-  function writeString(buffer: number[], base: number, val: string): number {
+  function writeString(
+    buffer: Array<number>,
+    base: number,
+    val: string,
+  ): number {
     const encoder = new TextEncoder();
     const strBytes = encoder.encode(val);
-    const bytes: number[] = [2, 0, 0, 0];
+    const bytes: Array<number> = [2, 0, 0, 0];
     const lenView = new DataView(new ArrayBuffer(4));
     lenView.setUint32(0, strBytes.length, true);
     bytes.push(...new Uint8Array(lenView.buffer));
@@ -56,7 +60,7 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
     return push(buffer, base, bytes);
   }
 
-  function layout(n: unknown, base: number, buffer: number[]): number {
+  function layout(n: unknown, base: number, buffer: Array<number>): number {
     if (!n || typeof n !== "object") {
       throw new Error(`Invalid AST node for layout: ${JSON.stringify(n)}`);
     }
@@ -135,11 +139,11 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
     throw new Error(`Unsupported literal node in layout: ${JSON.stringify(n)}`);
   }
 
-  const sizingBuffer: number[] = [];
+  const sizingBuffer: Array<number> = [];
   layout(node, 0, sizingBuffer);
 
   const base = exports.alloc(sizingBuffer.length);
-  const actualBuffer: number[] = [];
+  const actualBuffer: Array<number> = [];
   const ptr = layout(node, base, actualBuffer);
 
   const mem = new Uint8Array(exports.memory.buffer);
@@ -163,7 +167,7 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   }
   if (tag === 3) {
     const count = view.getUint32(ptr + 4, true);
-    const items: DefinyValue[] = [];
+    const items: Array<DefinyValue> = [];
     for (let i = 0; i < count; i++) {
       const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
       items.push(readDefinyValue(mem, elemPtr));

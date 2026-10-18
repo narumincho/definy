@@ -31,7 +31,8 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
 
 ## 事前に必要な環境
 
-- [Node.js](https://nodejs.org/) (v22 以上推奨)
+- [Node.js](https://nodejs.org/) (v26.12.0 推奨, `.node-version` 準拠)
+- [fnm](https://github.com/Schniz/fnm) (推奨: `.node-version` により自動で Node.js 26.12.0 が選択されます)
 - npm
 
 ## 開発コマンド

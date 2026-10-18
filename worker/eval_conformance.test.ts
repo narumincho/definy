@@ -8,7 +8,11 @@
  */
 import { describe, expect, it } from "vitest";
 import cases from "../conformance/eval_cases.json" with { type: "json" };
-import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
+import {
+  base64ToBytes,
+  deriveModuleIdBytes,
+  deriveModulePartId,
+} from "./cbor.ts";
 import { getDefinyRuntime } from "./definy_runtime.ts";
 import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
 
@@ -16,12 +20,6 @@ import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
 const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
   "definy-compiler-system-key-2026\0",
 );
-
-function base64UrlToBytes(text: string): Uint8Array {
-  const b64 = text.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
-  return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));
-}
 
 /** Ed25519 秘密鍵シードから開発用システムアカウントの公開鍵を導出する */
 async function devSystemAccountBytes(): Promise<Uint8Array> {
@@ -38,7 +36,7 @@ async function devSystemAccountBytes(): Promise<Uint8Array> {
     ["sign"],
   );
   const jwk = await crypto.subtle.exportKey("jwk", key);
-  return base64UrlToBytes(jwk.x ?? "");
+  return base64ToBytes(jwk.x ?? "");
 }
 
 /** `{"$part": "module.name"}` をパーツ ID（バイト列）に置き換える（seed と同じ形式） */
@@ -63,7 +61,7 @@ async function resolvePartPlaceholders(
         moduleId,
         obj.$part.slice(dot + 1),
       );
-      return Array.from(base64UrlToBytes(partId));
+      return Array.from(base64ToBytes(partId));
     }
     const entries = await Promise.all(
       Object.entries(obj).map(async ([key, value]) => [

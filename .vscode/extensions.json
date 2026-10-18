@@ -2,6 +2,7 @@
   "recommendations": [
     "mhutchie.git-graph",
     "github.vscode-github-actions",
-    "rust-lang.rust-analyzer"
+    "esbenp.prettier-vscode",
+    "oxc.oxc-vscode"
   ]
 }
