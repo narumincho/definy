@@ -1,11 +1,11 @@
 import type { LayoutMode, LayoutNode, NodeKind, PathStep } from "./types.ts";
 import { bytesToUrlSafeBase64NoPad, toUint8Array } from "../cbor.ts";
 
-export interface ScopeContext {
+export type ScopeContext = {
   readonly partNames?: ReadonlyMap<string, string>;
   readonly scopeVariables?: ReadonlyMap<number, string>;
   readonly callParameterNames?: ReadonlyMap<string, ReadonlyArray<string>>;
-}
+};
 
 function childPath(
   base: ReadonlyArray<PathStep>,
@@ -273,15 +273,15 @@ function buildLayoutNode(
 
   if ("Let" in node) {
     const letNode = node.Let as {
-      bindings?: ReadonlyArray<{
-        variable_id?: unknown;
-        variable_name?: unknown;
-        value?: unknown;
+      readonly bindings?: ReadonlyArray<{
+        readonly variable_id?: unknown;
+        readonly variable_name?: unknown;
+        readonly value?: unknown;
       }>;
-      variable_id?: unknown;
-      variable_name?: unknown;
-      value?: unknown;
-      body?: unknown;
+      readonly variable_id?: unknown;
+      readonly variable_name?: unknown;
+      readonly value?: unknown;
+      readonly body?: unknown;
     };
 
     let nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
@@ -388,13 +388,13 @@ function buildLayoutNode(
 
   if ("Function" in node) {
     const fnNode = node.Function as {
-      parameters?: ReadonlyArray<{
-        parameter_id?: unknown;
-        parameter_name?: unknown;
-        name?: unknown;
-        variable_id?: unknown;
+      readonly parameters?: ReadonlyArray<{
+        readonly parameter_id?: unknown;
+        readonly parameter_name?: unknown;
+        readonly name?: unknown;
+        readonly variable_id?: unknown;
       }>;
-      body?: unknown;
+      readonly body?: unknown;
     };
     const params = fnNode.parameters ?? [];
     let nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
@@ -654,14 +654,14 @@ function buildLayoutNode(
 
   if ("Match" in node) {
     const matchNode = node.Match as {
-      target?: unknown;
-      arms?: ReadonlyArray<{
-        tag?: unknown;
-        variable_id?: unknown;
-        variable_name?: unknown;
-        body?: unknown;
+      readonly target?: unknown;
+      readonly arms?: ReadonlyArray<{
+        readonly tag?: unknown;
+        readonly variable_id?: unknown;
+        readonly variable_name?: unknown;
+        readonly body?: unknown;
       }>;
-      default?: unknown;
+      readonly default?: unknown;
     };
     const targetChild = buildLayoutNode(
       matchNode.target,

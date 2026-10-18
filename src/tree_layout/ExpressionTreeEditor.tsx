@@ -26,20 +26,20 @@ import {
   type ExpectedType,
 } from "./type_inference.ts";
 
-export interface ExpressionTreeEditorProps {
+export type ExpressionTreeEditorProps = {
   readonly expression: unknown;
   readonly partType?: unknown;
   readonly onChange?: (newExpression: unknown) => void;
   readonly editable?: boolean;
   readonly maxWidth?: number;
-}
+};
 
-interface SelectorOption {
+type SelectorOption = {
   readonly value: string;
   readonly label: string;
   readonly category: string;
   readonly returnType: ExpectedType;
-}
+};
 
 /**
  * 置換メニューを選択中のノードの直下に出すのに必要な

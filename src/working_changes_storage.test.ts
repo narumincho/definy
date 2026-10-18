@@ -53,12 +53,12 @@ describe("working_changes_storage", () => {
     expect(restoredPart).toBeDefined();
 
     const restoredExpr = restoredPart?.expression as {
-      If?: {
-        then_expr?: {
-          Add?: {
-            right?: {
-              PartReference?: {
-                part_definition_event_hash?: unknown;
+      readonly If?: {
+        readonly then_expr?: {
+          readonly Add?: {
+            readonly right?: {
+              readonly PartReference?: {
+                readonly part_definition_event_hash?: unknown;
               };
             };
           };
@@ -128,8 +128,8 @@ describe("working_changes_storage", () => {
     expect(decodedCommit?.parts.length).toBe(1);
 
     const decodedExpr = decodedCommit?.parts[0]?.expression as {
-      PartReference?: {
-        part_definition_event_hash?: unknown;
+      readonly PartReference?: {
+        readonly part_definition_event_hash?: unknown;
       };
     };
     expect(decodedExpr.PartReference).toBeDefined();

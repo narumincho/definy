@@ -303,10 +303,10 @@ export function updateExpressionAtPath(
     "Let" in node
   ) {
     const letInner = node.Let as {
-      bindings?: ReadonlyArray<{
-        variable_id?: unknown;
-        variable_name?: unknown;
-        value?: unknown;
+      readonly bindings?: ReadonlyArray<{
+        readonly variable_id?: unknown;
+        readonly variable_name?: unknown;
+        readonly value?: unknown;
       }>;
     };
     if (Array.isArray(letInner.bindings)) {
@@ -475,9 +475,9 @@ export function updateExpressionAtPath(
     "Match" in node
   ) {
     const mInner = node.Match as {
-      arms?: ReadonlyArray<{
-        pattern?: unknown;
-        body?: unknown;
+      readonly arms?: ReadonlyArray<{
+        readonly pattern?: unknown;
+        readonly body?: unknown;
       }>;
     };
     if (Array.isArray(mInner.arms)) {

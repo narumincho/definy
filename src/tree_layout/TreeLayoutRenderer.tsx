@@ -6,7 +6,7 @@ import {
   type PathStep,
 } from "./types.ts";
 
-export interface TreeLayoutRendererProps {
+export type TreeLayoutRendererProps = {
   readonly node: LayoutNode;
   readonly selectedPath?: ReadonlyArray<PathStep> | null;
   readonly hoveredId?: string | null;
@@ -27,7 +27,7 @@ export interface TreeLayoutRendererProps {
   readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
   /** 選択中のノードに付ける CSS の anchor-name (`--` で始まる) */
   readonly selectionAnchorName?: string;
-}
+};
 
 export function nodeBadgeColors(kind: NodeKind): {
   readonly bg: string;

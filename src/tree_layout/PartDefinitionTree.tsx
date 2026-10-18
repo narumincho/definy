@@ -3,7 +3,7 @@ import { ExpressionTreeEditor } from "./ExpressionTreeEditor.tsx";
 import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
 
-export interface PartDefinitionTreeProps {
+export type PartDefinitionTreeProps = {
   readonly name: string;
   readonly moduleName: string;
   readonly description: string;
@@ -13,7 +13,7 @@ export interface PartDefinitionTreeProps {
   readonly onNameChange?: (name: string) => void;
   readonly onDescriptionChange?: (desc: string) => void;
   readonly onExpressionChange?: (expr: unknown) => void;
-}
+};
 
 export function PartDefinitionTree({
   name,

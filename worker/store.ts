@@ -63,21 +63,21 @@ export class InvalidContentError extends Error {
   override readonly name = "InvalidContentError";
 }
 
-interface D1EventRow {
+type D1EventRow = {
   readonly event_hash: string;
   readonly signed_event_bytes: string;
   readonly account_id: string;
   readonly event_type: string;
   readonly created_at_rfc3339: string;
   readonly time_ms?: number;
-}
+};
 
-interface D1ContentRow {
+type D1ContentRow = {
   readonly content_hash: string;
   readonly content_bytes: string;
-}
+};
 
-interface D1DeploymentRow {
+type D1DeploymentRow = {
   readonly machine_id: string;
   readonly commit_hash: string | null;
   readonly status: string;
@@ -87,7 +87,7 @@ interface D1DeploymentRow {
   readonly created_at_rfc3339: string;
   readonly wasm_hash: string | null;
   readonly provider: string | null;
-}
+};
 
 async function fetchSeedBundle(
   env: Env,

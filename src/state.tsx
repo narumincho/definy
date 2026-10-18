@@ -43,12 +43,12 @@ import {
   serializeWorkingChanges,
 } from "./working_changes_storage.ts";
 
-export interface CommitWorkingChangesParams {
+export type CommitWorkingChangesParams = {
   readonly moduleName: string;
   readonly message: string;
-}
+};
 
-export interface DefinyContextValue {
+export type DefinyContextValue = {
   readonly language: LanguageCode;
   readonly setLanguage: (lang: LanguageCode) => void;
   readonly events: ReadonlyArray<EventRecord>;
@@ -72,7 +72,7 @@ export interface DefinyContextValue {
   ) => Promise<void>;
   readonly createAccountAndLogin: (
     accountName: string,
-  ) => Promise<{ secretKeyBase64: string }>;
+  ) => Promise<{ readonly secretKeyBase64: string }>;
   readonly logout: () => void;
   readonly commitWorkingChanges: (
     params: CommitWorkingChangesParams,
@@ -83,7 +83,7 @@ export interface DefinyContextValue {
   readonly commandPaletteOpen: boolean;
   readonly setCommandPaletteOpen: (open: boolean) => void;
   readonly evaluatePart: (part: PartSnapshot) => Promise<DefinyValue>;
-}
+};
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
 

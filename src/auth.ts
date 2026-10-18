@@ -12,31 +12,31 @@ import {
   type LocalizedText,
 } from "./cbor.ts";
 
-export interface AccountCredentials {
+export type AccountCredentials = {
   readonly accountId: string;
   readonly accountName: string;
   readonly secretKeyBase64: string;
-}
+};
 
-export interface SignedEventResult {
+export type SignedEventResult = {
   readonly signedEventBytes: string;
   readonly eventHash: string;
-}
+};
 
-export interface SubmitEventResult {
+export type SubmitEventResult = {
   readonly eventHash: string;
   readonly status: string;
   readonly missingContentHashes?: ReadonlyArray<string>;
-}
+};
 
-export interface CreateModuleCommitParams {
+export type CreateModuleCommitParams = {
   readonly credentials: AccountCredentials;
   readonly moduleName: string;
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash?: string | null;
   readonly parts: ReadonlyArray<DecodedPart>;
-}
+};
 
 const ED25519_PKCS8_HEADER: ReadonlyArray<number> = [
   0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04,

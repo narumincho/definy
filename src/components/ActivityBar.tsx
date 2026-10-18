@@ -4,13 +4,13 @@ import { Icon, type IconKind } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
-interface ActivityTarget {
+type ActivityTarget = {
   readonly path: string;
   readonly icon: IconKind;
   readonly en: string;
   readonly ja: string;
   readonly eo: string;
-}
+};
 
 const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
   {

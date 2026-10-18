@@ -17,19 +17,19 @@ export type DefinyValue =
     }
   | null;
 
-export interface Stage1CompilerInstance {
+export type Stage1CompilerInstance = {
   readonly compile: (
     expressionAst: unknown,
     referencedPartsAst?: unknown,
   ) => Uint8Array;
-}
+};
 
-interface WasmExports {
+type WasmExports = {
   readonly evaluate: () => number;
   readonly table: WebAssembly.Table;
   readonly memory: WebAssembly.Memory;
   readonly alloc: (size: number) => number;
-}
+};
 
 function writeLiteral(exports: WasmExports, node: unknown): number {
   function push(

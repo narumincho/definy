@@ -69,13 +69,13 @@ export async function deriveModulePartId(
   return bytesToUrlSafeBase64NoPad(second);
 }
 
-export interface ParsedSignedEventMeta {
+export type ParsedSignedEventMeta = {
   readonly accountId: string;
   readonly eventType: EventType;
   readonly createdAtRfc3339: string;
   readonly timeMs: number;
   readonly referencedContentHashes: ReadonlyArray<string>;
-}
+};
 
 export type EventType = "create_account" | "change_profile" | "module_commit";
 
@@ -89,12 +89,12 @@ const ED25519_SIGNATURE_LENGTH = 64;
 /** 署名時刻として許容する未来方向のずれ */
 const MAX_FUTURE_SKEW_MS = 10 * 60 * 1000;
 
-interface DecodedSignedEvent {
+type DecodedSignedEvent = {
   readonly signature: Uint8Array;
   readonly innerBytes: Uint8Array;
   readonly accountIdBytes: Uint8Array;
   readonly meta: ParsedSignedEventMeta;
-}
+};
 
 function eventTypeOf(content: Record<string, unknown>): EventType {
   if ("CreateAccount" in content) return "create_account";

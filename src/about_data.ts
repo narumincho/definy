@@ -1,4 +1,4 @@
-export interface PillarItem {
+export type PillarItem = {
   readonly icon: string;
   readonly color: string;
   readonly tag: string;
@@ -12,9 +12,9 @@ export interface PillarItem {
     readonly ja: string;
     readonly eo: string;
   };
-}
+};
 
-export interface ComparisonItem {
+export type ComparisonItem = {
   readonly dimension: {
     readonly en: string;
     readonly ja: string;
@@ -30,9 +30,9 @@ export interface ComparisonItem {
     readonly ja: string;
     readonly eo: string;
   };
-}
+};
 
-export interface BuiltinModuleItem {
+export type BuiltinModuleItem = {
   readonly id: string;
   readonly name: string;
   readonly icon: string;
@@ -46,9 +46,9 @@ export interface BuiltinModuleItem {
     readonly ja: string;
     readonly eo: string;
   };
-}
+};
 
-export interface RpcMethodItem {
+export type RpcMethodItem = {
   readonly name: string;
   readonly service: string;
   readonly request: string;
@@ -57,7 +57,7 @@ export interface RpcMethodItem {
     readonly ja: string;
     readonly eo: string;
   };
-}
+};
 
 export const PILLARS: ReadonlyArray<PillarItem> = [
   {

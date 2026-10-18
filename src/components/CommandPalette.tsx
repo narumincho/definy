@@ -4,13 +4,13 @@ import { Icon, type IconKind } from "../icons.tsx";
 import { label, localizedText } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
-export interface PaletteItem {
+export type PaletteItem = {
   readonly id: string;
   readonly label: string;
   readonly detail: string;
   readonly href: string;
   readonly icon: IconKind;
-}
+};
 
 const MAX_RESULTS = 60;
 
