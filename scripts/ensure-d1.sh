@@ -95,6 +95,23 @@ fi
 
 echo "Successfully configured D1 binding in ${WRANGLER_TOML}."
 
+if [[ -f "dist/ssr/wrangler.json" ]]; then
+  echo "Updating D1 database UUID in dist/ssr/wrangler.json..."
+  python3 -c '
+import sys, json
+path, uuid = sys.argv[1], sys.argv[2]
+with open(path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+if "d1_databases" in data:
+    for db in data["d1_databases"]:
+        if db.get("binding") == "DB":
+            db["database_id"] = uuid
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+' "dist/ssr/wrangler.json" "$DB_UUID"
+  echo "Successfully updated dist/ssr/wrangler.json."
+fi
+
 if [[ -f "$SEED_SQL_PATH" ]]; then
   echo "Applying schema and builtin seeds to remote D1 database '${DB_NAME}' (${DB_UUID})..."
   run_wrangler d1 execute "${DB_NAME}" --remote --file="${SEED_SQL_PATH}"
