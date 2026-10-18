@@ -329,6 +329,13 @@ export function sha256BytesSync(bytes: Uint8Array): Uint8Array {
   return out;
 }
 
+/**
+ * Uint8Array の SHA-256 ダイジェストを同期的に計算し、URL-safe Base64 (`EventHashId` 形式) を返す
+ */
+export function sha256EventHashIdSync(bytes: Uint8Array): string {
+  return bytesToUrlSafeBase64NoPad(sha256BytesSync(bytes));
+}
+
 const TEXT_ENCODER = new TextEncoder();
 const MODULE_PREFIX_BYTES = TEXT_ENCODER.encode("definy:module:");
 const COLON_SEP_BYTES = TEXT_ENCODER.encode(":");

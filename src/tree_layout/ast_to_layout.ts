@@ -128,14 +128,10 @@ function buildLayoutNode(
     } else {
       const bytes = toUint8Array(raw);
       const b64 = bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
-      const commaStr = bytes ? String(Array.from(bytes)) : String(raw ?? "");
       const partName =
         (b64 ? context.partNames?.get(b64) : undefined) ??
-        context.partNames?.get(commaStr) ??
         (typeof raw === "string" ? context.partNames?.get(raw) : undefined);
-      label =
-        partName ??
-        (b64 ? `@part:${b64.slice(0, 6)}` : `@part:${commaStr.slice(0, 6)}`);
+      label = partName ?? `@part:${(b64 ?? String(raw ?? "")).slice(0, 6)}`;
     }
     return {
       id: idPrefix,

@@ -21,7 +21,6 @@ import type {
   WorkingChanges,
 } from "./types.ts";
 import {
-  base64ToBytes,
   extractCreateAccount,
   extractModuleCommit,
   type DecodedPart,
@@ -358,25 +357,13 @@ export function DefinyProvider({
             };
             partMap.set(partId, partSnapshot);
 
+            // パーツ参照 (PartReference) の表示名解決用: ID の Base64URL / `module.name` → `module.name`
             nameMap.set(partId, partId);
-            nameMap.set(p.name, partId);
             if (p.partIdHash) {
               nameMap.set(p.partIdHash, partId);
-              try {
-                const bytes = base64ToBytes(p.partIdHash);
-                nameMap.set(String(Array.from(bytes)), partId);
-              } catch {
-                // ignore
-              }
             }
             if (p.contentHash) {
               nameMap.set(p.contentHash, partId);
-              try {
-                const bytes = base64ToBytes(p.contentHash);
-                nameMap.set(String(Array.from(bytes)), partId);
-              } catch {
-                // ignore
-              }
             }
 
             return {

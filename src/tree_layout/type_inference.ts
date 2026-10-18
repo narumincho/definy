@@ -231,10 +231,8 @@ export function getOptionValueForExpression(
     }
     const bytes = toUint8Array(raw);
     const b64 = bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
-    const commaStr = bytes ? String(Array.from(bytes)) : String(raw ?? "");
     const partName =
       (b64 ? partNames?.get(b64) : undefined) ??
-      partNames?.get(commaStr) ??
       (typeof raw === "string" ? partNames?.get(raw) : undefined);
     if (partName) {
       return `ref:part:${partName}`;

@@ -20,7 +20,6 @@ import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { isSamePath, type PathStep } from "./types.ts";
 import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
-import { base64ToBytes } from "../cbor.ts";
 import {
   inferExpectedType,
   getOptionValueForExpression,
@@ -74,7 +73,7 @@ export function ExpressionTreeEditor({
   editable = true,
   maxWidth = 720,
 }: ExpressionTreeEditorProps): JSX.Element {
-  const { language, parts, partNames: contextPartNames } = useDefiny();
+  const { language, parts, partNames } = useDefiny();
   const [selectedPath, setSelectedPath] =
     useState<ReadonlyArray<PathStep> | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -91,34 +90,6 @@ export function ExpressionTreeEditor({
 
   // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
   const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-
-  const partNames = useMemo<ReadonlyMap<string, string>>(() => {
-    const map = new Map<string, string>(contextPartNames);
-    for (const p of parts) {
-      const fullName = `${p.moduleName}.${p.name}`;
-      map.set(p.partId, fullName);
-      map.set(p.name, fullName);
-      if (p.contentHash) {
-        map.set(p.contentHash, fullName);
-        try {
-          const bytes = base64ToBytes(p.contentHash);
-          map.set(String(Array.from(bytes)), fullName);
-        } catch {
-          // ignore
-        }
-      }
-      if (p.partIdHash) {
-        map.set(p.partIdHash, fullName);
-        try {
-          const bytes = base64ToBytes(p.partIdHash);
-          map.set(String(Array.from(bytes)), fullName);
-        } catch {
-          // ignore
-        }
-      }
-    }
-    return map;
-  }, [parts, contextPartNames]);
 
   const layoutRoot = useMemo(() => {
     const rawTree = expressionToLayoutNode(expression, "root", { partNames });
