@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: false,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:5173",
     trace: "on-first-retry",
     headless: true,
     channel: process.env.CI ? "chrome" : undefined,
@@ -19,10 +19,12 @@ export default defineConfig({
         }
       : undefined,
   },
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173/healthz",
-    reuseExistingServer: true,
-    timeout: 30000,
-  },
+  webServer: process.env.PLAYWRIGHT_BASE_URL
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: "http://localhost:5173/healthz",
+        reuseExistingServer: true,
+        timeout: 30000,
+      },
 });
