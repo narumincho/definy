@@ -7,15 +7,16 @@
 
 ## ワークベンチ (IDE 風レイアウト)
 
-画面全体は `definy-ui/src/workbench.rs` の `Workbench` で, VS Code のような IDE 風の構成にしている.
+画面全体は `definy-ui/src/workbench.rs` および React 19 実装の [src/components/Workbench.tsx](file:///Users/narumi/Documents/GitHub/definy/src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている.
+詳細なアーキテクチャは [docs/typescript-react-void-architecture.md](file:///Users/narumi/Documents/GitHub/definy/docs/typescript-react-void-architecture.md) を参照.
 
-| 領域 | 内容 | 実装 |
-| --- | --- | --- |
-| タイトルバー | サイドバー開閉ボタン・ロゴ・現在のページ名・言語・アカウント | `header.rs` の `HeaderView` |
-| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え | `workbench.rs` の `ActivityBar` |
-| エクスプローラー | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示 | `workbench.rs` の `ExplorerSidebar` |
-| エディタ領域 | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする | `workbench.rs` の `EditorTabBar` |
-| ステータスバー | 接続状態 (クリックで強制オフライン切替)・未送信ローカルイベント数・ページ名・言語 | `header.rs` の `StatusBarView` |
+| 領域               | 内容                                                                               | Rust 実装                           | React 19 実装                        |
+| ------------------ | ---------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
+| タイトルバー       | サイドバー開閉ボタン・ロゴ・現在のページ名・言語・アカウント                       | `header.rs` の `HeaderView`         | `src/components/Header.tsx`          |
+| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え | `workbench.rs` の `ActivityBar`     | `src/components/ActivityBar.tsx`     |
+| エクスプローラー   | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示                | `workbench.rs` の `ExplorerSidebar` | `src/components/ExplorerSidebar.tsx` |
+| エディタ領域       | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする | `workbench.rs` の `EditorTabBar`    | `pages/` 各ページコンポーネント      |
+| ステータスバー     | 接続状態・未送信ローカルイベント数・言語                                           | `header.rs` の `StatusBarView`      | `src/components/StatusBar.tsx`       |
 
 - `body` はスクロールさせず, エディタ領域 (`.workbench-editor-scroll`) が独立してスクロールする.
   ページ側で `window` のスクロール位置に依存する処理は書かないこと
