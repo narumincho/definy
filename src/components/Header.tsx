@@ -12,6 +12,7 @@ export function Header(): JSX.Element {
     toggleSidebar,
     setCommandPaletteOpen,
     currentAccount,
+    setAccountModalOpen,
   } = useDefiny();
 
   const toggleLabel = label(
@@ -76,18 +77,36 @@ export function Header(): JSX.Element {
         </div>
 
         {currentAccount ? (
-          <div className="header-control account-badge">
+          <button
+            type="button"
+            className="header-control account-badge"
+            onClick={() => {
+              setAccountModalOpen(true);
+            }}
+            title={label(
+              language,
+              "Account details",
+              "アカウント情報",
+              "Konto-detaloj",
+            )}
+            style={{
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+              padding: 0,
+            }}
+          >
             <span className="account-avatar">
               {currentAccount.accountName.slice(0, 1).toUpperCase()}
             </span>
             <span className="account-name">{currentAccount.accountName}</span>
-          </div>
+          </button>
         ) : (
           <button
             type="button"
             className="btn btn-primary btn-sm"
             onClick={() => {
-              // Open login modal
+              setAccountModalOpen(true);
             }}
           >
             {label(language, "Log In", "ログイン", "Ensaluti")}

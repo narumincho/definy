@@ -1,0 +1,138 @@
+import { describe, expect, it, vi } from "vitest";
+import {
+  generateAccountCredentials,
+  importAccountCredentials,
+  createSignedAccountEvent,
+  createSignedModuleCommitEvent,
+  submitSignedEvent,
+} from "./auth.ts";
+import {
+  base64ToBytes,
+  decodeCborItem,
+  extractCreateAccount,
+  extractModuleCommit,
+  toUint8Array,
+} from "./cbor.ts";
+import { parseSignedEventMetadata } from "../worker/cbor.ts";
+
+describe("auth and signed event pipeline", () => {
+  it("generates and re-imports Ed25519 credentials", async () => {
+    const creds = await generateAccountCredentials("alice");
+    expect(creds.accountName).toBe("alice");
+    expect(creds.accountId.length).toBeGreaterThan(30);
+    expect(creds.secretKeyBase64.length).toBeGreaterThan(30);
+
+    const reimported = await importAccountCredentials(
+      creds.secretKeyBase64,
+      "alice",
+    );
+    expect(reimported.accountId).toBe(creds.accountId);
+    expect(reimported.accountName).toBe("alice");
+  });
+
+  it("creates, signs, and decodes CreateAccount events", async () => {
+    const creds = await generateAccountCredentials("bob");
+    const { signedEventBytes, eventHash } = await createSignedAccountEvent(
+      creds,
+      1700000000,
+    );
+
+    expect(typeof eventHash).toBe("string");
+    expect(eventHash.length).toBeGreaterThan(20);
+
+    // Verify with extractCreateAccount
+    const extracted = extractCreateAccount(signedEventBytes);
+    expect(extracted).not.toBeNull();
+    expect(extracted?.accountId).toBe(creds.accountId);
+    expect(extracted?.accountName).toBe("bob");
+
+    // Verify with worker's parseSignedEventMetadata
+    const meta = parseSignedEventMetadata(base64ToBytes(signedEventBytes));
+    expect(meta.accountId).toBe(creds.accountId);
+    expect(meta.eventType).toBe("create_account");
+    expect(meta.timeMs).toBe(1700000000000);
+
+    // Verify Ed25519 signature cryptographically
+    const [signedRaw] = decodeCborItem(base64ToBytes(signedEventBytes));
+    const signedObj = signedRaw as {
+      signature: Uint8Array;
+      event_binary: { value: Uint8Array };
+    };
+    const pubKey = await crypto.subtle.importKey(
+      "raw",
+      base64ToBytes(creds.accountId) as unknown as BufferSource,
+      { name: "Ed25519" },
+      true,
+      ["verify"],
+    );
+    const valid = await crypto.subtle.verify(
+      { name: "Ed25519" },
+      pubKey,
+      signedObj.signature as unknown as BufferSource,
+      toUint8Array(signedObj.event_binary.value)! as unknown as BufferSource,
+    );
+    expect(valid).toBe(true);
+  });
+
+  it("creates, signs, and decodes ModuleCommit events", async () => {
+    const creds = await generateAccountCredentials("carol");
+    const { signedEventBytes, eventHash } = await createSignedModuleCommitEvent(
+      {
+        credentials: creds,
+        moduleName: "math",
+        moduleDescription: "Math functions",
+        message: "Add multiply part",
+        parentCommitHash: "parent-hash-123",
+        parts: [
+          {
+            name: "multiply",
+            description: "Multiplies two numbers",
+            partType: "function",
+            expression: { Number: { value: 42 } },
+          },
+        ],
+      },
+      1700000005,
+    );
+
+    expect(typeof eventHash).toBe("string");
+
+    // Verify with extractModuleCommit
+    const commit = extractModuleCommit(signedEventBytes);
+    expect(commit).not.toBeNull();
+    expect(commit?.moduleName).toBe("math");
+    expect(commit?.message).toBe("Add multiply part");
+    expect(commit?.parentCommitHash).toBe("parent-hash-123");
+    expect(commit?.parts.length).toBe(1);
+    expect(commit?.parts[0]?.name).toBe("multiply");
+
+    // Verify with worker's parseSignedEventMetadata
+    const meta = parseSignedEventMetadata(base64ToBytes(signedEventBytes));
+    expect(meta.accountId).toBe(creds.accountId);
+    expect(meta.eventType).toBe("module_commit");
+    expect(meta.timeMs).toBe(1700000005000);
+  });
+
+  it("submits signed event via fetch and parses response", async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        eventHash: "mock-hash-xyz",
+        status: "accepted",
+      }),
+    });
+
+    const res = await submitSignedEvent(
+      "dummy-base64",
+      mockFetch as unknown as typeof fetch,
+    );
+    expect(res.status).toBe("accepted");
+    expect(res.eventHash).toBe("mock-hash-xyz");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/definy.v1.EventService/SubmitEvent",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+});
