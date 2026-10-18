@@ -548,6 +548,9 @@ async function getSubdomain(
   return parsed.result?.subdomain || "workers.dev";
 }
 
+/** Cloudflare Workers のスクリプト名として許可する形式 */
+const WORKER_SCRIPT_NAME_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
 /**
  * Cloudflare REST API v4 を呼び出して Worker スクリプトをデプロイする
  */
@@ -558,12 +561,7 @@ export async function deployWorkerToCloudflare(
   fetchFn: typeof fetch = fetch,
   apiBaseUrl: string = DEFAULT_API_BASE_URL,
 ): Promise<DeployCloudflareResponse> {
-  const apiToken = (
-    req.apiToken ||
-    req.api_token ||
-    env.CLOUDFLARE_API_TOKEN ||
-    ""
-  ).trim();
+  const apiToken = (req.apiToken || env.CLOUDFLARE_API_TOKEN || "").trim();
   if (!apiToken) {
     throw new Error(
       "CLOUDFLARE_API_TOKEN is not configured and apiToken was not provided",
@@ -572,7 +570,7 @@ export async function deployWorkerToCloudflare(
 
   const accountId = await resolveAccountId(
     apiToken,
-    req.accountId || req.account_id || env.CLOUDFLARE_ACCOUNT_ID,
+    req.accountId || env.CLOUDFLARE_ACCOUNT_ID,
     apiBaseUrl,
     fetchFn,
   );
@@ -580,13 +578,16 @@ export async function deployWorkerToCloudflare(
   const randomSuffix = Math.floor(Math.random() * 0xffffffff)
     .toString(16)
     .padStart(8, "0");
-  const rawName = req.scriptName || req.script_name || req.worker_name;
+  const rawName = req.scriptName?.trim();
   const scriptName =
-    rawName && rawName.trim().length > 0
-      ? rawName.trim()
-      : `definy-worker-${randomSuffix}`;
+    rawName && rawName.length > 0 ? rawName : `definy-worker-${randomSuffix}`;
+  if (!WORKER_SCRIPT_NAME_PATTERN.test(scriptName)) {
+    throw new Error(
+      `Invalid scriptName '${scriptName}': use 1-63 lowercase letters, digits and hyphens`,
+    );
+  }
 
-  const customScript = req.customScript || req.custom_script;
+  const customScript = req.customScript;
   const scriptContent =
     customScript && customScript.trim().length > 0
       ? customScript
@@ -671,19 +672,14 @@ export async function listWorkersFromCloudflare(
   fetchFn: typeof fetch = fetch,
   apiBaseUrl: string = DEFAULT_API_BASE_URL,
 ): Promise<ListCloudflareWorkersResponse> {
-  const apiToken = (
-    req.apiToken ||
-    req.api_token ||
-    env.CLOUDFLARE_API_TOKEN ||
-    ""
-  ).trim();
+  const apiToken = (req.apiToken || env.CLOUDFLARE_API_TOKEN || "").trim();
   if (!apiToken) {
     return { workers: [] };
   }
 
   const accountId = await resolveAccountId(
     apiToken,
-    req.accountId || req.account_id || env.CLOUDFLARE_ACCOUNT_ID,
+    req.accountId || env.CLOUDFLARE_ACCOUNT_ID,
     apiBaseUrl,
     fetchFn,
   );

@@ -19,8 +19,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: bash scripts/ensure-d1.sh
-      - name: Package Assets with Void (Vite 8)
-        run: bash scripts/build-assets.sh
+      - name: Build with Void (Vite 8)
+        run: npm run build
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

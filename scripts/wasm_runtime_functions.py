@@ -6,7 +6,7 @@ core.compile-to-wasm は evaluate 関数の後ろに, ここで組み立てた�
 値の箱の形は docs/self-hosting.md の「definy 製コンパイラの対応状況」を参照.
 
     python3 scripts/wasm_runtime_functions.py seeds/core.json
-    cargo run -p definy-server -- --export-seeds seeds
+    # 旧 Rust 版では次に cargo run -p definy-server -- --export-seeds seeds で export していたが、現在は未対応
 """
 import json
 import sys

@@ -33,8 +33,8 @@ import {
 } from "./auth.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import {
-  createStage1Compiler,
   evaluateCompiledWasm,
+  loadStage1Compiler,
   type DefinyValue,
 } from "./stage1_compiler.ts";
 
@@ -81,7 +81,8 @@ export interface DefinyContextValue {
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
 
-const STORAGE_KEY_CHANGES = "definy.working_changes.v1";
+// v2: description を LocalizedText (言語ごとの配列) に変更
+const STORAGE_KEY_CHANGES = "definy.working_changes.v2";
 const STORAGE_KEY_LANG = "definy.language";
 const STORAGE_KEY_ACCOUNT = "definy.account.v1";
 
@@ -124,21 +125,6 @@ function initialLanguage(): LanguageCode {
   const stored = localStorage.getItem(STORAGE_KEY_LANG);
   if (stored === "en" || stored === "ja" || stored === "eo") return stored;
   return "en";
-}
-
-let cachedCompilerModule: WebAssembly.Module | null = null;
-
-async function getCompilerModule(): Promise<WebAssembly.Module> {
-  if (cachedCompilerModule) return cachedCompilerModule;
-  const res = await fetch("/virtual/wasm/stage1.wasm");
-  if (!res.ok) {
-    throw new Error(
-      `Failed to fetch stage1.wasm: ${res.status} ${res.statusText}`,
-    );
-  }
-  const bytes = await res.arrayBuffer();
-  cachedCompilerModule = await WebAssembly.compile(bytes);
-  return cachedCompilerModule;
 }
 
 export function DefinyProvider({
@@ -442,8 +428,7 @@ export function DefinyProvider({
             secretKeyBase64: currentAccount.secretKeyBase64,
           },
           moduleName,
-          moduleDescription:
-            existingModule?.description ?? `${moduleName} module`,
+          moduleDescription: existingModule?.description ?? [],
           message,
           parentCommitHash,
           parts: partsList,
@@ -472,8 +457,7 @@ export function DefinyProvider({
 
   const evaluatePart = useCallback(
     async (part: PartSnapshot): Promise<DefinyValue> => {
-      const stage1Module = await getCompilerModule();
-      const compiler = createStage1Compiler(stage1Module);
+      const compiler = await loadStage1Compiler();
       const expr = part.expression ?? {
         Variant: {
           tag: "number",

@@ -6,8 +6,14 @@ import {
   isWorkerFirstPath,
   WorkerStore,
 } from "./index.ts";
-import { bytesToBase64 } from "./store.ts";
-import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
+import { bytesToBase64, sha256EventHashId } from "./store.ts";
+import { loadTestSeedBundle } from "./test_runtime.ts";
+import {
+  type AccountCredentials,
+  createSignedAccountEvent,
+  generateAccountCredentials,
+} from "../src/auth.ts";
+import { createRpcAuthorization } from "../src/rpc_auth.ts";
 import type {
   D1Database,
   D1ExecResult,
@@ -21,8 +27,44 @@ const Deno = {
   test: (name: string, fn: () => void | Promise<void>) => it(name, fn),
 };
 
-// パーツのコンパイル・実行に使う Rust 製ランタイム（ビルド済みのもの）を全テストで設定する
-await setupTestRuntime();
+const adminCredentials = await generateAccountCredentials("admin");
+
+/** 指定アカウントの Ed25519 署名付き Authorization ヘッダーを付けた POST リクエストを作る */
+async function signedPost(
+  url: string,
+  body: unknown,
+  credentials: AccountCredentials = adminCredentials,
+): Promise<Request> {
+  const text = JSON.stringify(body);
+  return new Request(url, {
+    method: "POST",
+    headers: {
+      Authorization: await createRpcAuthorization(
+        credentials,
+        "POST",
+        new URL(url).pathname,
+        text,
+      ),
+    },
+    body: text,
+  });
+}
+
+/** CAS にアップロードできる（ハッシュが中身と一致する）コンテンツ */
+async function casItem(
+  bytes: Uint8Array,
+): Promise<{ readonly contentHash: string; readonly contentBytes: string }> {
+  return {
+    contentHash: await sha256EventHashId(bytes),
+    contentBytes: bytesToBase64(bytes),
+  };
+}
+
+/** 新しいアカウントの署名済み CreateAccount イベント */
+async function newSignedAccountEvent(): Promise<string> {
+  const creds = await generateAccountCredentials("tester");
+  return (await createSignedAccountEvent(creds)).signedEventBytes;
+}
 
 function createSqliteD1Database(): D1Database {
   const sqlite = new DatabaseSync(":memory:");
@@ -133,13 +175,14 @@ Deno.test("isWorkerFirstPath matches Connect-RPC and dynamic endpoints", () => {
 });
 
 Deno.test(
-  "isAdminAccount checks DEFINY_ADMIN_ACCOUNT_ID case-insensitively",
+  "isAdminAccount checks DEFINY_ADMIN_ACCOUNT_IDS case-sensitively",
   () => {
     const env: Env = {
-      DEFINY_ADMIN_ACCOUNT_ID: "0123456789abcdef, FEEDBEEFCAFEBABE",
+      DEFINY_ADMIN_ACCOUNT_IDS: "0123456789abcdef, FEEDBEEF-cafe_babe",
     };
     assertEquals(isAdminAccount("0123456789abcdef", env), true);
-    assertEquals(isAdminAccount("feedbeefcafebabe", env), true);
+    assertEquals(isAdminAccount("FEEDBEEF-cafe_babe", env), true);
+    assertEquals(isAdminAccount("feedbeef-cafe_babe", env), false);
     assertEquals(isAdminAccount("unknown_user", env), false);
     assertEquals(isAdminAccount("", env), false);
     assertEquals(isAdminAccount(undefined, {}), false);
@@ -231,8 +274,40 @@ Deno.test(
     const getEventJson = await getEventRes.json();
     assertEquals(getEventJson.event.eventHash, "ev_hash_1");
 
-    // 2. SubmitEvent adds a new event and returns its URL-safe base64 EventHashId
-    const newEventB64 = bytesToBase64(new Uint8Array([7, 8, 9]));
+    // 2. SubmitEvent rejects unsigned / tampered events
+    const garbageRes = await handleWorkerRequest(
+      new Request(
+        "https://definy.workers.dev/definy.v1.EventService/SubmitEvent",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            signedEventBytes: bytesToBase64(new Uint8Array([7, 8, 9])),
+          }),
+        },
+      ),
+      env,
+      store,
+    );
+    assertEquals(garbageRes.status, 400);
+
+    const newEventB64 = await newSignedAccountEvent();
+    const tampered = Uint8Array.fromBase64(newEventB64);
+    tampered[tampered.length - 1] = (tampered[tampered.length - 1] ?? 0) ^ 1;
+    const tamperedRes = await handleWorkerRequest(
+      new Request(
+        "https://definy.workers.dev/definy.v1.EventService/SubmitEvent",
+        {
+          method: "POST",
+          body: JSON.stringify({ signedEventBytes: bytesToBase64(tampered) }),
+        },
+      ),
+      env,
+      store,
+    );
+    assertEquals(tamperedRes.status, 400);
+    assertEquals((await tamperedRes.json()).code, "invalid_argument");
+
+    // 2b. SubmitEvent accepts a correctly signed event and returns its URL-safe base64 EventHashId
     const submitRes = await handleWorkerRequest(
       new Request(
         "https://definy.workers.dev/definy.v1.EventService/SubmitEvent",
@@ -250,13 +325,14 @@ Deno.test(
     assertEquals(submitJson.status, "accepted");
 
     // 3. CheckMissingHashes & UploadContent & GetContent
+    const wasmItem = await casItem(new Uint8Array([0x00, 0x61, 0x73, 0x6d]));
     const checkRes = await handleWorkerRequest(
       new Request(
         "https://definy.workers.dev/definy.v1.EventService/CheckMissingHashes",
         {
           method: "POST",
           body: JSON.stringify({
-            contentHashes: ["hash_builtin_1", "hash_missing_2"],
+            contentHashes: ["hash_builtin_1", wasmItem.contentHash],
           }),
         },
       ),
@@ -265,9 +341,10 @@ Deno.test(
     );
     const checkJson = await checkRes.json();
     assertEquals(checkJson.missingContentHashes.length, 1);
-    assertEquals(checkJson.missingContentHashes[0], "hash_missing_2");
+    assertEquals(checkJson.missingContentHashes[0], wasmItem.contentHash);
 
-    const uploadRes = await handleWorkerRequest(
+    // ハッシュが中身と一致しないアップロードは拒否する
+    const forgedRes = await handleWorkerRequest(
       new Request(
         "https://definy.workers.dev/definy.v1.EventService/UploadContent",
         {
@@ -275,10 +352,8 @@ Deno.test(
           body: JSON.stringify({
             items: [
               {
-                contentHash: "hash_missing_2",
-                contentBytes: bytesToBase64(
-                  new Uint8Array([0x00, 0x61, 0x73, 0x6d]),
-                ),
+                contentHash: "hash_builtin_1",
+                contentBytes: wasmItem.contentBytes,
               },
             ],
           }),
@@ -287,34 +362,53 @@ Deno.test(
       env,
       store,
     );
+    assertEquals(forgedRes.status, 400);
+
+    const uploadRes = await handleWorkerRequest(
+      new Request(
+        "https://definy.workers.dev/definy.v1.EventService/UploadContent",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            items: [wasmItem],
+          }),
+        },
+      ),
+      env,
+      store,
+    );
     const uploadJson = await uploadRes.json();
     assertEquals(uploadJson.storedContentHashes.length, 1);
-    assertEquals(uploadJson.storedContentHashes[0], "hash_missing_2");
+    assertEquals(uploadJson.storedContentHashes[0], wasmItem.contentHash);
 
     const getContentRes = await handleWorkerRequest(
       new Request(
         "https://definy.workers.dev/definy.v1.EventService/GetContent",
         {
           method: "POST",
-          body: JSON.stringify({ contentHash: "hash_missing_2" }),
+          body: JSON.stringify({ contentHash: wasmItem.contentHash }),
         },
       ),
       env,
       store,
     );
     const getContentJson = await getContentRes.json();
-    assertEquals(getContentJson.item.contentHash, "hash_missing_2");
+    assertEquals(getContentJson.item.contentHash, wasmItem.contentHash);
 
     // 4. Virtual Wasm endpoint serves uploaded Wasm binary
     const wasmRes = await handleWorkerRequest(
       new Request(
-        "https://definy.workers.dev/virtual/wasm/hash_missing_2.wasm",
+        `https://definy.workers.dev/virtual/wasm/${wasmItem.contentHash}.wasm`,
       ),
       env,
       store,
     );
     assertEquals(wasmRes.status, 200);
     assertEquals(wasmRes.headers.get("Content-Type"), "application/wasm");
+    assertEquals(
+      wasmRes.headers.get("Cache-Control"),
+      "public, max-age=31536000, immutable",
+    );
     const wasmBytes = new Uint8Array(await wasmRes.arrayBuffer());
     assertEquals(wasmBytes.length, 4);
     assertEquals(wasmBytes[1], 0x61);
@@ -328,6 +422,7 @@ Deno.test(
     const env: Env = {
       CLOUDFLARE_API_TOKEN: "cf-test-token",
       CLOUDFLARE_ACCOUNT_ID: "cf-acc-123",
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
     };
 
     const mockFetch: typeof fetch = (input: Request | URL | string) => {
@@ -371,14 +466,65 @@ Deno.test(
       );
     };
 
-    const deployRes = await handleWorkerRequest(
-      new Request(
-        "https://definy.workers.dev/definy.v1.DeployService/DeployCloudflare",
-        {
-          method: "POST",
-          body: JSON.stringify({ scriptName: "definy-edge-1" }),
-        },
+    const deployUrl =
+      "https://definy.workers.dev/definy.v1.DeployService/DeployCloudflare";
+
+    // サーバーのトークンを使うデプロイは管理者の署名が必要
+    const anonymousRes = await handleWorkerRequest(
+      new Request(deployUrl, {
+        method: "POST",
+        body: JSON.stringify({ scriptName: "definy-edge-1" }),
+      }),
+      env,
+      store,
+      mockFetch,
+    );
+    assertEquals(anonymousRes.status, 401);
+
+    const nonAdminRes = await handleWorkerRequest(
+      await signedPost(
+        deployUrl,
+        { scriptName: "definy-edge-1" },
+        await generateAccountCredentials("someone"),
       ),
+      env,
+      store,
+      mockFetch,
+    );
+    assertEquals(nonAdminRes.status, 403);
+
+    // 署名後にボディを書き換えたリクエストは拒否する
+    const signed = await signedPost(deployUrl, { scriptName: "definy-edge-1" });
+    const replayedRes = await handleWorkerRequest(
+      new Request(deployUrl, {
+        method: "POST",
+        headers: signed.headers,
+        body: JSON.stringify({ scriptName: "other-script" }),
+      }),
+      env,
+      store,
+      mockFetch,
+    );
+    assertEquals(replayedRes.status, 401);
+
+    // 自分のトークンを渡すデプロイは認証不要
+    const ownTokenRes = await handleWorkerRequest(
+      new Request(deployUrl, {
+        method: "POST",
+        body: JSON.stringify({
+          scriptName: "own-script",
+          apiToken: "user-token",
+          accountId: "user-acc",
+        }),
+      }),
+      env,
+      store,
+      mockFetch,
+    );
+    assertEquals(ownTokenRes.status, 200);
+
+    const deployRes = await handleWorkerRequest(
+      await signedPost(deployUrl, { scriptName: "definy-edge-1" }),
       env,
       store,
       mockFetch,
@@ -406,7 +552,7 @@ Deno.test(
       mockFetch,
     );
     const listJson = await listRes.json();
-    assertEquals(listJson.deployments.length, 1);
+    assertEquals(listJson.deployments.length, 2);
     assertEquals(listJson.deployments[0].provider, "cloudflare_workers");
   },
 );
@@ -473,7 +619,7 @@ Deno.test(
         {
           method: "POST",
           body: JSON.stringify({
-            signedEventBytes: bytesToBase64(new Uint8Array([99, 100, 101])),
+            signedEventBytes: await newSignedAccountEvent(),
           }),
         },
       ),
@@ -484,21 +630,13 @@ Deno.test(
     assertEquals(submitJson.status, "accepted");
     const submittedHash: string = submitJson.eventHash;
 
+    const d1Item = await casItem(new Uint8Array([0x00, 0x61, 0x73, 0x6d]));
     await handleWorkerRequest(
       new Request(
         "https://definy.workers.dev/definy.v1.EventService/UploadContent",
         {
           method: "POST",
-          body: JSON.stringify({
-            items: [
-              {
-                contentHash: "d1_cas_hash_1",
-                contentBytes: bytesToBase64(
-                  new Uint8Array([0x00, 0x61, 0x73, 0x6d]),
-                ),
-              },
-            ],
-          }),
+          body: JSON.stringify({ items: [d1Item] }),
         },
       ),
       envWithD1,
@@ -535,14 +673,14 @@ Deno.test(
         "https://definy.workers.dev/definy.v1.EventService/GetContent",
         {
           method: "POST",
-          body: JSON.stringify({ contentHash: "d1_cas_hash_1" }),
+          body: JSON.stringify({ contentHash: d1Item.contentHash }),
         },
       ),
       envColdStart,
       store2,
     );
     const contentJson = await contentRes.json();
-    assertEquals(contentJson.item.contentHash, "d1_cas_hash_1");
+    assertEquals(contentJson.item.contentHash, d1Item.contentHash);
   },
 );
 
@@ -555,6 +693,7 @@ Deno.test(
       DB: d1,
       CLOUDFLARE_API_TOKEN: "cf-test-token",
       CLOUDFLARE_ACCOUNT_ID: "cf-acc-123",
+      DEFINY_ADMIN_ACCOUNT_IDS: adminCredentials.accountId,
     };
     const store = new WorkerStore();
     await store.seedD1(d1, bundle);
@@ -603,14 +742,9 @@ Deno.test(
     };
 
     const deployRes = await handleWorkerRequest(
-      new Request(
+      await signedPost(
         "https://definy.narumincho.com/definy.v1.DeployService/DeployCloudflare",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            partId: "sample.self-hosted-definy-server",
-          }),
-        },
+        { partId: "sample.self-hosted-definy-server" },
       ),
       env,
       store,

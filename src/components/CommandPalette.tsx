@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, type JSX } from "react";
 import { useRouter } from "@void/react";
 import { Icon, type IconKind } from "../icons.tsx";
-import { label } from "../language.ts";
+import { label, localizedText } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
 export interface PaletteItem {
@@ -236,7 +236,7 @@ export function CommandPalette(): JSX.Element | null {
     ...parts.map((p) => ({
       id: `part-${p.partId}`,
       label: `${p.moduleName}.${p.name}`,
-      detail: p.description?.slice(0, 36) || "Part",
+      detail: localizedText(p.description, language).slice(0, 36) || "Part",
       href: `/part/${p.partId}`,
       icon: "part" as const,
     })),

@@ -1,9 +1,11 @@
+import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { compilePartToWasm } from "./http_stream.ts";
 import {
   deployWorkerToCloudflare,
   listWorkersFromCloudflare,
 } from "./cloudflare_api.ts";
-import { defaultStore, WorkerStore } from "./store.ts";
+import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
+import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
 import type {
   CheckMissingHashesRequest,
   DeployCloudflareRequest,
@@ -23,15 +25,12 @@ export { defaultStore, WorkerStore } from "./store.ts";
 const WORKER_ROUTE_PREFIXES: ReadonlyArray<string> = [
   "/definy.v1.",
   "/virtual/",
-  "/mcp",
   "/healthz",
-  "/swagger-ui",
-  "/api-docs/",
 ];
 
 const CORS_HEADERS: Readonly<Record<string, string>> = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Connect-Protocol-Version, Connect-Timeout-Ms, Authorization",
 };
@@ -46,27 +45,21 @@ export function isWorkerFirstPath(pathname: string): boolean {
 }
 
 /**
- * 環境変数 `DEFINY_ADMIN_ACCOUNT_ID`（または `DEFINY_ADMIN_ACCOUNT_IDS`）と照合し、
- * 要求元アカウントが管理者権限を持つか判定する。未設定時は全員拒否する。
+ * 環境変数 `DEFINY_ADMIN_ACCOUNT_IDS`（カンマ・空白区切り）と照合し、
+ * アカウントが管理者権限を持つか判定する。アカウント ID は Base64URL なので大文字小文字を区別する。
+ * 未設定時は全員拒否する。
  */
 export function isAdminAccount(
   accountId: string | undefined | null,
   env: Env,
 ): boolean {
-  if (!accountId) {
-    return false;
-  }
-  const normalized = accountId.trim().toLowerCase();
+  const normalized = accountId?.trim() ?? "";
   if (normalized.length === 0) {
     return false;
   }
-  const adminEnv =
-    env.DEFINY_ADMIN_ACCOUNT_ID ?? env.DEFINY_ADMIN_ACCOUNT_IDS ?? "";
-  const admins = adminEnv
+  return (env.DEFINY_ADMIN_ACCOUNT_IDS ?? "")
     .split(/[,;\s]+/)
-    .map((s) => s.trim().toLowerCase())
-    .filter((s) => s.length > 0);
-  return admins.includes(normalized);
+    .some((s) => s.length > 0 && s === normalized);
 }
 
 /**
@@ -97,20 +90,95 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function connectErrorResponse(
-  code: string,
-  message: string,
-  status = 400,
-): Response {
-  return jsonResponse({ code, message }, status);
+type ConnectErrorCode =
+  | "invalid_argument"
+  | "not_found"
+  | "unauthenticated"
+  | "permission_denied"
+  | "unimplemented"
+  | "internal";
+
+const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
+  invalid_argument: 400,
+  unauthenticated: 401,
+  permission_denied: 403,
+  not_found: 404,
+  unimplemented: 404,
+  internal: 500,
+};
+
+/** Connect-RPC のエラーとしてクライアントに返す例外 */
+class ConnectError extends Error {
+  constructor(
+    readonly code: ConnectErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
 }
 
-async function parseJsonRequest<T>(request: Request): Promise<T> {
-  const text = await request.text();
-  if (!text || text.trim().length === 0) {
+function connectErrorResponse(error: ConnectError): Response {
+  return jsonResponse(
+    { code: error.code, message: error.message },
+    CONNECT_ERROR_STATUS[error.code],
+  );
+}
+
+function parseJsonBody<T>(text: string): T {
+  if (text.trim().length === 0) {
     return {} as T;
   }
-  return JSON.parse(text) as T;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new ConnectError("invalid_argument", "request body must be JSON");
+  }
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new ConnectError(
+      "invalid_argument",
+      "request body must be an object",
+    );
+  }
+  return parsed as T;
+}
+
+/**
+ * `Authorization` ヘッダーの署名を検証し、管理者アカウントでなければ例外を投げる
+ */
+async function requireAdmin(
+  request: Request,
+  pathname: string,
+  body: string,
+  env: Env,
+  reason: string,
+): Promise<void> {
+  let accountId: string | null;
+  try {
+    accountId = await verifyRpcAuthorization(
+      request.headers.get("Authorization"),
+      request.method,
+      pathname,
+      body,
+    );
+  } catch (e) {
+    throw new ConnectError(
+      "unauthenticated",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+  if (accountId === null) {
+    throw new ConnectError(
+      "unauthenticated",
+      `${reason} requires an admin Authorization header`,
+    );
+  }
+  if (!isAdminAccount(accountId, env)) {
+    throw new ConnectError(
+      "permission_denied",
+      `${reason} is allowed only for admin accounts`,
+    );
+  }
 }
 
 /**
@@ -150,221 +218,250 @@ export async function handleWorkerRequest(
 
   // Virtual Wasm CAS endpoint: /virtual/wasm/:hash
   if (pathname.startsWith("/virtual/wasm/")) {
-    const rawHash = pathname
-      .slice("/virtual/wasm/".length)
-      .replace(/\.wasm$/, "");
-    let bytes = await store.getRawContentBytes(rawHash, env);
-    if (!bytes && rawHash === "stage1") {
-      bytes = await store.getStage1WasmBytes(env, url.origin);
+    return serveVirtualWasm(pathname, env, store, url.origin);
+  }
+
+  try {
+    const body = await request.text();
+    return await handleRpc(request, pathname, body, env, store, fetchFn);
+  } catch (e) {
+    if (e instanceof ConnectError) {
+      return connectErrorResponse(e);
     }
-    if (!bytes) {
-      return new Response("Wasm binary not found in CAS", {
-        status: 404,
-        headers: CORS_HEADERS,
-      });
+    if (
+      e instanceof InvalidSignedEventError ||
+      e instanceof InvalidContentError
+    ) {
+      return connectErrorResponse(
+        new ConnectError("invalid_argument", e.message),
+      );
     }
-    const copy = new Uint8Array(bytes.byteLength);
-    copy.set(bytes);
-    return new Response(copy.buffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/wasm",
-        "Cache-Control": "public, max-age=31536000, immutable",
-        ...CORS_HEADERS,
-      },
+    return connectErrorResponse(
+      new ConnectError("internal", e instanceof Error ? e.message : String(e)),
+    );
+  }
+}
+
+async function serveVirtualWasm(
+  pathname: string,
+  env: Env,
+  store: WorkerStore,
+  origin: string,
+): Promise<Response> {
+  const rawHash = pathname
+    .slice("/virtual/wasm/".length)
+    .replace(/\.wasm$/, "");
+  let bytes = await store.getRawContentBytes(rawHash, env);
+  if (!bytes && rawHash === "stage1") {
+    bytes = await store.getStage1WasmBytes(env, origin);
+  }
+  if (!bytes) {
+    return new Response("Wasm binary not found in CAS", {
+      status: 404,
+      headers: CORS_HEADERS,
     });
   }
+  // コンテンツハッシュで指定されたものだけ永続キャッシュする (`stage1` のような名前付きは更新されうる)
+  const isContentAddressed = (await sha256EventHashId(bytes)) === rawHash;
+  return new Response(new Uint8Array(bytes), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/wasm",
+      "Cache-Control": isContentAddressed
+        ? "public, max-age=31536000, immutable"
+        : "public, max-age=0, must-revalidate",
+      ...CORS_HEADERS,
+    },
+  });
+}
 
-  // Connect-RPC: EventService
-  if (pathname === "/definy.v1.EventService/GetEvents") {
-    const req = await parseJsonRequest<GetEventsRequest>(request);
-    const events = await store.getEvents(req, env);
-    return jsonResponse({ events });
-  }
-
-  if (pathname === "/definy.v1.EventService/GetEvent") {
-    const req = await parseJsonRequest<GetEventRequest>(request);
-    const hash = (req.eventHash ?? req.event_hash ?? "").trim();
-    if (!hash) {
-      return connectErrorResponse(
-        "invalid_argument",
-        "eventHash is required",
-        400,
-      );
+async function handleRpc(
+  request: Request,
+  pathname: string,
+  body: string,
+  env: Env,
+  store: WorkerStore,
+  fetchFn: typeof fetch,
+): Promise<Response> {
+  switch (pathname) {
+    case "/definy.v1.EventService/GetEvents": {
+      const req = parseJsonBody<GetEventsRequest>(body);
+      return jsonResponse({ events: await store.getEvents(req, env) });
     }
-    const event = await store.getEvent(hash, env);
-    if (!event) {
-      return connectErrorResponse(
-        "not_found",
-        `Event '${hash}' not found`,
-        404,
-      );
+
+    case "/definy.v1.EventService/GetEvent": {
+      const req = parseJsonBody<GetEventRequest>(body);
+      const hash = req.eventHash?.trim() ?? "";
+      if (!hash) {
+        throw new ConnectError("invalid_argument", "eventHash is required");
+      }
+      const event = await store.getEvent(hash, env);
+      if (!event) {
+        throw new ConnectError("not_found", `Event '${hash}' not found`);
+      }
+      return jsonResponse({ event });
     }
-    return jsonResponse({ event });
-  }
 
-  if (pathname === "/definy.v1.EventService/SubmitEvent") {
-    const req = await parseJsonRequest<SubmitEventRequest>(request);
-    const rawEvent =
-      req.signedEventBytes ?? req.signed_event_bytes ?? req.event_binary;
-    if (!rawEvent || rawEvent.trim().length === 0) {
-      return connectErrorResponse(
-        "invalid_argument",
-        "signedEventBytes is required",
-        400,
-      );
-    }
-    const res = await store.submitEventWithStatus(
-      rawEvent,
-      "module_commit",
-      env,
-    );
-    return jsonResponse(res);
-  }
-
-  if (pathname === "/definy.v1.EventService/CheckMissingHashes") {
-    const req = await parseJsonRequest<CheckMissingHashesRequest>(request);
-    const hashes = req.contentHashes ?? req.content_hashes ?? req.hashes ?? [];
-    const missing = await store.checkMissingHashes(hashes, env);
-    return jsonResponse({ missingContentHashes: missing });
-  }
-
-  if (pathname === "/definy.v1.EventService/UploadContent") {
-    const req = await parseJsonRequest<UploadContentRequest>(request);
-    const stored = await store.uploadContent(req.items ?? [], env);
-    return jsonResponse({ storedContentHashes: stored });
-  }
-
-  if (pathname === "/definy.v1.EventService/GetContent") {
-    const req = await parseJsonRequest<GetContentRequest>(request);
-    const singleHash = req.contentHash ?? req.content_hash;
-    if (singleHash) {
-      const item = await store.getContentItem(singleHash.trim(), env);
-      if (!item) {
-        return connectErrorResponse(
-          "not_found",
-          `Content '${singleHash}' not found`,
-          404,
+    case "/definy.v1.EventService/SubmitEvent": {
+      const req = parseJsonBody<SubmitEventRequest>(body);
+      const rawEvent = req.signedEventBytes?.trim() ?? "";
+      if (!rawEvent) {
+        throw new ConnectError(
+          "invalid_argument",
+          "signedEventBytes is required",
         );
       }
-      return jsonResponse({ item });
+      return jsonResponse(await store.submitEvent(rawEvent, env));
     }
-    if (req.hashes) {
-      const items = await store.getContentItems(req.hashes, env);
-      return jsonResponse({ item: items[0], items });
+
+    case "/definy.v1.EventService/CheckMissingHashes": {
+      const req = parseJsonBody<CheckMissingHashesRequest>(body);
+      const missing = await store.checkMissingHashes(
+        req.contentHashes ?? [],
+        env,
+      );
+      return jsonResponse({ missingContentHashes: missing });
     }
-    return connectErrorResponse(
-      "invalid_argument",
-      "contentHash is required",
-      400,
-    );
-  }
 
-  // Connect-RPC: DeployService
-  if (pathname === "/definy.v1.DeployService/DeployCloudflare") {
-    try {
-      const req = await parseJsonRequest<DeployCloudflareRequest>(request);
-      if ((req.seedD1 ?? req.seed_d1) && env.DB) {
-        await store.seedD1(env.DB);
-      }
-      const wasmHash = req.wasmHash ?? req.wasm_hash;
-      const partId = req.partId ?? req.part_id;
-      let wasmBytes: Uint8Array | undefined;
-      let effectiveReq: DeployCloudflareRequest = req;
-      let evaluatedResult: string | null = null;
+    case "/definy.v1.EventService/UploadContent": {
+      const req = parseJsonBody<UploadContentRequest>(body);
+      const stored = await store.uploadContent(req.items ?? [], env);
+      return jsonResponse({ storedContentHashes: stored });
+    }
 
-      if (wasmHash && wasmHash.trim().length > 0) {
-        wasmBytes = await store.getRawContentBytes(wasmHash.trim(), env);
-        if (!wasmBytes) {
-          return connectErrorResponse(
+    case "/definy.v1.EventService/GetContent": {
+      const req = parseJsonBody<GetContentRequest>(body);
+      const singleHash = req.contentHash?.trim();
+      if (singleHash) {
+        const item = await store.getContentItem(singleHash, env);
+        if (!item) {
+          throw new ConnectError(
             "not_found",
-            `Wasm content hash '${wasmHash}' not found in CAS`,
-            404,
+            `Content '${singleHash}' not found`,
           );
         }
-      } else if (partId && partId.trim().length > 0) {
-        const compiled = await compilePartToWasm(partId.trim(), store, env);
-        wasmBytes = compiled.wasmBytes;
-        evaluatedResult = compiled.evaluatedResult ?? null;
-        const hasScriptName = Boolean(
-          (req.scriptName ?? req.script_name ?? req.worker_name ?? "").trim(),
-        );
-        const hasApiToken = Boolean(
-          (req.apiToken ?? req.api_token ?? "").trim(),
-        );
-        effectiveReq = {
-          ...req,
-          scriptName: hasScriptName
-            ? req.scriptName
-            : (compiled.cloudflareWorkerName ?? req.scriptName),
-          apiToken: hasApiToken
-            ? req.apiToken
-            : (compiled.cloudflareToken ?? req.apiToken),
-        };
+        return jsonResponse({ item });
       }
-
-      const res = await deployWorkerToCloudflare(
-        effectiveReq,
-        wasmBytes,
-        env,
-        fetchFn,
+      if (req.contentHashes) {
+        const items = await store.getContentItems(req.contentHashes, env);
+        return jsonResponse({ items });
+      }
+      throw new ConnectError(
+        "invalid_argument",
+        "contentHash or contentHashes is required",
       );
-      const finalRes =
-        evaluatedResult && !res.evaluatedResult
-          ? { ...res, evaluatedResult }
-          : res;
-      const nowIso = new Date().toISOString();
-      await store.recordDeployment(
-        {
-          machineId: `cf-${finalRes.scriptName}`,
-          status: finalRes.status,
-          url: finalRes.url,
-          appUrl: finalRes.url,
-          region: "cloudflare-edge",
-          createdAtRfc3339: nowIso,
-          commitHash: req.commitHash ?? req.commit_hash ?? null,
-          wasmHash: wasmHash ?? partId ?? null,
-          provider: "cloudflare_workers",
-        },
-        env,
+    }
+
+    case "/definy.v1.DeployService/DeployCloudflare": {
+      const req = parseJsonBody<DeployCloudflareRequest>(body);
+      const usesServerToken = !req.apiToken?.trim();
+      if (usesServerToken || req.seedD1) {
+        await requireAdmin(
+          request,
+          pathname,
+          body,
+          env,
+          usesServerToken ? "Deploying with the server token" : "seedD1",
+        );
+      }
+      return jsonResponse(
+        await deployCloudflare(req, usesServerToken, env, store, fetchFn),
       );
-      return jsonResponse(finalRes);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return connectErrorResponse("internal", message, 500);
     }
-  }
 
-  if (pathname === "/definy.v1.DeployService/ListDeployments") {
-    const req = await parseJsonRequest<ListDeploymentsRequest>(request);
-    const deployments = await store.listDeployments(req.limit, env);
-    return jsonResponse({ deployments });
-  }
-
-  if (pathname === "/definy.v1.DeployService/ListCloudflareWorkers") {
-    try {
-      const req = await parseJsonRequest<ListCloudflareWorkersRequest>(request);
-      const res = await listWorkersFromCloudflare(req, env, fetchFn);
-      return jsonResponse(res);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return connectErrorResponse("internal", message, 500);
+    case "/definy.v1.DeployService/ListDeployments": {
+      const req = parseJsonBody<ListDeploymentsRequest>(body);
+      return jsonResponse({
+        deployments: await store.listDeployments(req.limit, env),
+      });
     }
+
+    case "/definy.v1.DeployService/ListCloudflareWorkers": {
+      const req = parseJsonBody<ListCloudflareWorkersRequest>(body);
+      if (!req.apiToken?.trim()) {
+        await requireAdmin(
+          request,
+          pathname,
+          body,
+          env,
+          "Listing workers with the server token",
+        );
+      }
+      return jsonResponse(await listWorkersFromCloudflare(req, env, fetchFn));
+    }
+
+    default:
+      throw new ConnectError(
+        "unimplemented",
+        `Endpoint ${pathname} is not implemented`,
+      );
+  }
+}
+
+async function deployCloudflare(
+  req: DeployCloudflareRequest,
+  usesServerToken: boolean,
+  env: Env,
+  store: WorkerStore,
+  fetchFn: typeof fetch,
+) {
+  if (req.seedD1 && env.DB) {
+    await store.seedD1(env.DB);
+  }
+  const wasmHash = req.wasmHash?.trim();
+  const partId = req.partId?.trim();
+  let wasmBytes: Uint8Array | undefined;
+  let effectiveReq: DeployCloudflareRequest = req;
+  let evaluatedResult: string | null = null;
+
+  if (wasmHash) {
+    wasmBytes = await store.getRawContentBytes(wasmHash, env);
+    if (!wasmBytes) {
+      throw new ConnectError(
+        "not_found",
+        `Wasm content hash '${wasmHash}' not found in CAS`,
+      );
+    }
+  } else if (partId) {
+    const compiled = await compilePartToWasm(partId, store, env);
+    wasmBytes = compiled.wasmBytes;
+    evaluatedResult = compiled.evaluatedResult ?? null;
+    effectiveReq = {
+      ...req,
+      scriptName: req.scriptName?.trim()
+        ? req.scriptName
+        : (compiled.cloudflareWorkerName ?? req.scriptName),
+      // パーツが指定したトークンはサーバーのトークンを使える管理者のリクエストでのみ使う
+      apiToken:
+        usesServerToken && compiled.cloudflareToken
+          ? compiled.cloudflareToken
+          : req.apiToken,
+    };
   }
 
-  if (isWorkerFirstPath(pathname)) {
-    return connectErrorResponse(
-      "unimplemented",
-      `Endpoint ${pathname} is not implemented on Cloudflare Workers`,
-      404,
-    );
-  }
-
-  if (env.ASSETS) {
-    return env.ASSETS.fetch(request);
-  }
-
-  return new Response("Not Found", { status: 404 });
+  const res = await deployWorkerToCloudflare(
+    effectiveReq,
+    wasmBytes,
+    env,
+    fetchFn,
+  );
+  const finalRes =
+    evaluatedResult && !res.evaluatedResult ? { ...res, evaluatedResult } : res;
+  await store.recordDeployment(
+    {
+      machineId: `cf-${finalRes.scriptName}`,
+      status: finalRes.status,
+      url: finalRes.url,
+      appUrl: finalRes.url,
+      region: "cloudflare-edge",
+      createdAtRfc3339: new Date().toISOString(),
+      commitHash: req.commitHash ?? null,
+      wasmHash: wasmHash ?? partId ?? null,
+      provider: "cloudflare_workers",
+    },
+    env,
+  );
+  return finalRes;
 }
 
 export default {

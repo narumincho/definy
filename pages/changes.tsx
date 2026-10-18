@@ -1,6 +1,6 @@
 import { useState, useCallback, type JSX, type FormEvent } from "react";
 import { Link } from "@void/react";
-import { label } from "../src/language.ts";
+import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
 export default function ChangesPage(): JSX.Element {
@@ -183,7 +183,9 @@ export default function ChangesPage(): JSX.Element {
                     {label(language, "Discard", "破棄", "Forĵeti")}
                   </button>
                 </div>
-                <p className="change-desc">{change.description}</p>
+                <p className="change-desc">
+                  {localizedText(change.description, language)}
+                </p>
                 <div className="change-card-footer">
                   <Link
                     href={`/part/${partId}`}

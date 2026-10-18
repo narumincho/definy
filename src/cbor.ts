@@ -241,9 +241,32 @@ export async function sha256EventHashId(bytes: Uint8Array): Promise<string> {
   return bytesToUrlSafeBase64NoPad(await sha256Bytes(bytes));
 }
 
+/** 言語ごとのテキスト (`[{ language: "en", text: "..." }, ...]`) */
+export interface LocalizedTextEntry {
+  readonly language: string;
+  readonly text: string;
+}
+
+export type LocalizedText = ReadonlyArray<LocalizedTextEntry>;
+
+function decodeLocalizedText(raw: unknown): LocalizedText {
+  if (typeof raw === "string") {
+    return raw.length > 0 ? [{ language: "en", text: raw }] : [];
+  }
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.flatMap((entry: unknown): LocalizedText => {
+    const e = entry as Partial<LocalizedTextEntry> | null;
+    return typeof e?.language === "string" && typeof e.text === "string"
+      ? [{ language: e.language, text: e.text }]
+      : [];
+  });
+}
+
 export interface DecodedPart {
   readonly name: string;
-  readonly description: string;
+  readonly description: LocalizedText;
   readonly partType: unknown;
   readonly expression?: unknown;
   readonly contentHash?: string | null;
@@ -251,7 +274,7 @@ export interface DecodedPart {
 
 export interface DecodedModuleCommit {
   readonly moduleName: string;
-  readonly moduleDescription: string;
+  readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
   readonly parts: ReadonlyArray<DecodedPart>;
@@ -278,27 +301,10 @@ export function extractModuleCommit(
     if (!contentObj || !("ModuleCommit" in contentObj)) return null;
 
     const mc = contentObj.ModuleCommit as Record<string, unknown>;
-    const rawDesc = mc.module_description;
-    let moduleDescription = "";
-    if (Array.isArray(rawDesc)) {
-      moduleDescription = rawDesc
-        .map((d: { text?: string }) => d.text ?? "")
-        .join(" ");
-    } else if (typeof rawDesc === "string") {
-      moduleDescription = rawDesc;
-    }
+    const moduleDescription = decodeLocalizedText(mc.module_description);
 
     const rawParts = (mc.parts as ReadonlyArray<Record<string, unknown>>) ?? [];
     const parts: ReadonlyArray<DecodedPart> = rawParts.map((p) => {
-      let pDesc = "";
-      if (Array.isArray(p.description)) {
-        pDesc = p.description
-          .map((d: { text?: string }) => d.text ?? "")
-          .join(" ");
-      } else if (typeof p.description === "string") {
-        pDesc = p.description;
-      }
-
       const hashBytes = toUint8Array(p.content_hash);
       const contentHash = hashBytes
         ? bytesToUrlSafeBase64NoPad(hashBytes)
@@ -308,7 +314,7 @@ export function extractModuleCommit(
 
       return {
         name: String(p.name ?? ""),
-        description: pDesc,
+        description: decodeLocalizedText(p.description),
         partType: p.part_type,
         expression: p.expression ?? null,
         contentHash,

@@ -6,11 +6,8 @@ Registry）を完全に排除し、 外部から取得した最小限の **汎�
 **仮想ファイル（Virtual Wasm Files）の HTTP 配信**
 によって完全な自己完結デプロイを実現するアーキテクチャ仕様。
 
-> **注意**: fly.io Machines API と `runner/`（wasmtime ランタイムイメージ）は
-> 28ea9c95 で削除されました。現在も残っているのは仮想 Wasm 配信エンドポイント
-> （`definy-server/src/virtual_file.rs` の `GET /virtual/wasm/{hash}`）で、
-> デプロイ先は Cloudflare Workers です（[cloudflare-workers.md](cloudflare-workers.md)）。
-> fly.io に関する手順は履歴として残しています。
+> **注意**: fly.io Machines API と `runner/`（wasmtime ランタイムイメージ）は削除されました。仮想 Wasm 配信エンドポイントは Cloudflare Workers（`worker/index.ts` の `GET /virtual/wasm/{hash}`）として動作しており、デプロイ先は Cloudflare Workers です（[cloudflare-workers.md](cloudflare-workers.md)）。
+> fly.io や旧 Rust サーバー（`definy-server`）に関する記述は歴史的経緯として残しています。
 
 ---
 

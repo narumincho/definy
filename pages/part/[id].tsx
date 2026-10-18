@@ -1,11 +1,11 @@
 import { useState, useCallback, type JSX } from "react";
 import { useParams, Link } from "@void/react";
 import { Icon } from "../../src/icons.tsx";
-import { label } from "../../src/language.ts";
+import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import {
-  createStage1Compiler,
   evaluateCompiledWasm,
+  loadStage1Compiler,
   type DefinyValue,
 } from "../../src/stage1_compiler.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
@@ -34,7 +34,7 @@ export default function PartDetailPage(): JSX.Element {
     moduleId: "core",
     moduleName: "core",
     name: id ? id.slice(0, 16) : "unknown",
-    description: "Sample part",
+    description: [],
     partType: null,
     expression: {
       Number: { value: 0 },
@@ -53,13 +53,7 @@ export default function PartDetailPage(): JSX.Element {
     setEvaluating(true);
     setEvalError(null);
     try {
-      const res = await fetch("/virtual/wasm/stage1.wasm");
-      if (!res.ok) {
-        throw new Error(`Failed to load stage1.wasm: ${res.status}`);
-      }
-      const stage1Bytes = await res.arrayBuffer();
-      const stage1Mod = await WebAssembly.compile(stage1Bytes);
-      const compiler = createStage1Compiler(stage1Mod);
+      const compiler = await loadStage1Compiler();
 
       const wasm = compiler.compile(currentExpression);
       setCompiledWasm(wasm);
@@ -208,7 +202,7 @@ export default function PartDetailPage(): JSX.Element {
             <PartDefinitionTree
               name={currentName}
               moduleName={part.moduleName}
-              description={currentDescription}
+              description={localizedText(currentDescription, language)}
               partType={part.partType}
               expression={currentExpression}
               editable={true}
@@ -227,7 +221,11 @@ export default function PartDetailPage(): JSX.Element {
                   moduleDefinitionEventHash: part.moduleId,
                   partDefinitionEventHash: part.partId,
                   name: currentName,
-                  description: newDesc,
+                  description: withLocalizedText(
+                    currentDescription,
+                    language,
+                    newDesc,
+                  ),
                   partType: part.partType,
                   expression: currentExpression,
                 });

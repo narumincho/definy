@@ -8,8 +8,7 @@ Deterministic Encoding (RFC 8949)** を組み合わせて使用しています�
 ## 1. 全体像と設計思想
 
 - **通信レイヤー（Connect-RPC）**:
-  - クライアント（`definy-ui` / `definy-client`
-    WebAssembly）とサーバー（`definy-server` Axum）間の RPC 通信。
+  - クライアント（React 19 UI / 旧 `definy-ui`）とサーバー（Cloudflare Workers `worker/index.ts` / 旧 `definy-server`）間の RPC 通信。
   - プロトコル仕様: Connect-RPC (`Connect-Protocol-Version: 1`)。
   - フォーマット:
     `application/json`（ブラウザからのフェッチやデバッグ・開発ツール用）および
@@ -124,7 +123,7 @@ message GetContentResponse {
   - `signed_event_bytes` は JSON 転送時に URL-safe / standard base64
     で透過的にエンコード・デコード。
 
-- **`definy-server::connect_rpc`**:
+- **サーバー側 (`worker/index.ts` / 旧 `definy-server::connect_rpc`)**:
   - `POST /definy.v1.EventService/GetEvents`
   - `POST /definy.v1.EventService/GetEvent`
   - `POST /definy.v1.EventService/SubmitEvent`
@@ -135,24 +134,21 @@ message GetContentResponse {
     (コンテンツアドレスからの式バイナリ取得)
   - リクエストヘッダーの Content-Type に応じて JSON または Protobuf を自動切替。
   - 受信した `signed_event_bytes` の署名・CBOR 構造を
-    `definy_event::verify_and_deserialize` で即座に検証し、不正データは
+    即座に検証し、不正データは
     `invalid_argument` (HTTP 400) で拒否。
   - `SubmitEvent` では、コミットイベント内で参照されている式（AST）の
     ContentHash がサーバーに存在するか確認。欠損がある場合は
     `status: "missing_content"`
     とともに不足ハッシュ一覧（`missing_content_hashes`）を返却。
 
-- **`definy-ui::fetch`**:
-  - WebAssembly (ブラウザ) 環境から `connect_rpc_post` ヘルパーにより
-    Connect-RPC エンドポイントを呼び出し。
-  - `post_event` 関数による自動差分ハッシュ・ネゴシエーション:
+- **クライアント側 (`src/state.tsx` / 旧 `definy-ui::fetch`)**:
+  - Web ブラウザ環境から `fetch` により Connect-RPC エンドポイントを呼び出し。
+  - 自動差分ハッシュ・ネゴシエーション:
     1. 楽観的送信（初回 `SubmitEvent` を送信）
     2. サーバーが `missing_content`
        を返した場合、指定された不足ハッシュに対応する式バイナリを
        `UploadContent` で一括アップロード
     3. アップロード完了後に再度 `SubmitEvent` を送信してトランザクションを確定
-  - 取得した各イベントの Deterministic CBOR バイナリおよび ContentHash
-    をブラウザ内 IndexedDB にキャッシュ。
   - オフライン時やキューイング送信（Local Event）ともシームレスに統合。
 
 ## 4. 差分ハッシュ・ネゴシエーション方式（Git Tree/Blob モデル）
@@ -164,7 +160,7 @@ DB を圧迫します。 そこで Git の **Tree（メタデータ・参照）*
 **Blob（実体バイナリ）** の分離モデルを採用しています。
 
 ```
-Client (definy-ui)                                Server (definy-server)
+Client (React 19 UI)                             Server (Cloudflare Worker)
        |                                                    |
        |  1. SubmitEvent (Tree: ModuleCommitEvent)           |
        |--------------------------------------------------->|

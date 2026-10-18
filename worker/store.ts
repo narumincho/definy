@@ -1,6 +1,5 @@
 import type {
   ContentItem,
-  ContentItemInput,
   D1Database,
   D1PreparedStatement,
   DeploymentHistoryItem,
@@ -48,17 +47,21 @@ const D1_BATCH_CHUNK_SIZE = 50;
 import {
   base64ToBytes,
   bytesToBase64,
-  parseSignedEventMetadata,
   sha256EventHashId,
+  verifySignedEvent,
 } from "./cbor.ts";
 
 export {
   base64ToBytes,
   bytesToBase64,
   bytesToUrlSafeBase64NoPad,
-  parseSignedEventMetadata,
   sha256EventHashId,
 } from "./cbor.ts";
+
+/** CAS へのアップロード内容が不正であることを表すエラー */
+export class InvalidContentError extends Error {
+  override readonly name = "InvalidContentError";
+}
 
 interface D1EventRow {
   readonly event_hash: string;
@@ -414,7 +417,7 @@ export class WorkerStore {
     req: GetEventsRequest,
     env?: Env,
   ): Promise<ReadonlyArray<EventItem>> {
-    const requestedType = req.eventType ?? req.event_type;
+    const requestedType = req.eventType;
     const offset = Math.max(0, req.offset ?? 0);
     const limit = Math.min(500, Math.max(1, req.limit ?? 50));
 
@@ -511,16 +514,16 @@ export class WorkerStore {
   }
 
   /**
-   * 署名済みイベントバイナリ（Base64）を検証・追加し、`SubmitEventResponse` を返す
+   * 署名済みイベントバイナリ（Base64）の Ed25519 署名を検証して追加し、`SubmitEventResponse` を返す。
+   * 署名・形式が不正な場合は `InvalidSignedEventError` を投げる。
    */
-  async submitEventWithStatus(
+  async submitEvent(
     eventBinaryBase64: string,
-    fallbackEventType = "module_commit",
     env?: Env,
   ): Promise<SubmitEventResponse> {
     const bytes = base64ToBytes(eventBinaryBase64);
+    const meta = await verifySignedEvent(bytes);
     const eventHash = await sha256EventHashId(bytes);
-    const meta = parseSignedEventMetadata(bytes, fallbackEventType);
 
     if (meta.referencedContentHashes.length > 0) {
       const missing = await this.checkMissingHashes(
@@ -577,22 +580,6 @@ export class WorkerStore {
   }
 
   /**
-   * 署名済みイベントバイナリ（Base64）を追加し、`EventHashId` を返す
-   */
-  async submitEvent(
-    eventBinaryBase64: string,
-    eventType = "module_commit",
-    env?: Env,
-  ): Promise<string> {
-    const res = await this.submitEventWithStatus(
-      eventBinaryBase64,
-      eventType,
-      env,
-    );
-    return res.eventHash;
-  }
-
-  /**
    * 指定されたハッシュ一覧のうち、CAS に未保存のハッシュ一覧を返す
    */
   async checkMissingHashes(
@@ -624,43 +611,51 @@ export class WorkerStore {
   }
 
   /**
-   * CAS にコンテンツを保存し、保存したハッシュ一覧を返す
+   * CAS にコンテンツを保存し、保存したハッシュ一覧を返す。
+   * `contentHash` が `contentBytes` の SHA-256 (URL-safe Base64) と一致しない項目が 1 つでもあれば
+   * 何も保存せずに `InvalidContentError` を投げる。既存のハッシュは上書きしない。
    */
   async uploadContent(
-    items: ReadonlyArray<ContentItemInput>,
+    items: ReadonlyArray<ContentItem>,
     env?: Env,
   ): Promise<ReadonlyArray<string>> {
-    const nextContents = new Map<string, string>(this.contents);
-    const stored: string[] = [];
-    const d1Statements: D1PreparedStatement[] = [];
-
+    const verified: Array<ContentItem> = [];
     for (const item of items) {
-      const hash = item.contentHash ?? item.content_hash ?? item.hash ?? "";
-      const bytes =
-        item.contentBytes ?? item.content_bytes ?? item.content ?? "";
-      if (hash && bytes) {
-        nextContents.set(hash, bytes);
-        stored.push(hash);
-        if (env?.DB) {
-          d1Statements.push(
-            env.DB.prepare(
-              `INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes)
-               VALUES (?, ?)`,
-            ).bind(hash, bytes),
-          );
-        }
+      const bytes = base64ToBytes(item.contentBytes);
+      const actualHash = await sha256EventHashId(bytes);
+      if (actualHash !== item.contentHash) {
+        throw new InvalidContentError(
+          `contentHash '${item.contentHash}' does not match SHA-256 of contentBytes ('${actualHash}')`,
+        );
+      }
+      verified.push({
+        contentHash: actualHash,
+        contentBytes: bytesToBase64(bytes),
+      });
+    }
+
+    if (env?.DB && verified.length > 0) {
+      const statements = verified.map((item) =>
+        env
+          .DB!.prepare(
+            `INSERT OR IGNORE INTO cas_contents (content_hash, content_bytes)
+           VALUES (?, ?)`,
+          )
+          .bind(item.contentHash, item.contentBytes),
+      );
+      for (let i = 0; i < statements.length; i += D1_BATCH_CHUNK_SIZE) {
+        await env.DB.batch(statements.slice(i, i + D1_BATCH_CHUNK_SIZE));
       }
     }
 
-    if (env?.DB && d1Statements.length > 0) {
-      for (let i = 0; i < d1Statements.length; i += D1_BATCH_CHUNK_SIZE) {
-        const chunk = d1Statements.slice(i, i + D1_BATCH_CHUNK_SIZE);
-        await env.DB.batch(chunk);
+    const nextContents = new Map<string, string>(this.contents);
+    for (const item of verified) {
+      if (!nextContents.has(item.contentHash)) {
+        nextContents.set(item.contentHash, item.contentBytes);
       }
     }
-
     this.contents = nextContents;
-    return stored;
+    return verified.map((item) => item.contentHash);
   }
 
   /**

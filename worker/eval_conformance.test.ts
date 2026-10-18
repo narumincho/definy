@@ -14,7 +14,7 @@ import {
   deriveModulePartId,
 } from "./cbor.ts";
 import { getDefinyRuntime } from "./definy_runtime.ts";
-import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
+import { loadTestSeedBundle } from "./test_runtime.ts";
 
 /** `definy-server` の開発用システムアカウント鍵 (`DEV_SYSTEM_KEY_SEED`) と同じ値 */
 const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
@@ -74,7 +74,6 @@ async function resolvePartPlaceholders(
   return expr;
 }
 
-await setupTestRuntime();
 const runtime = await getDefinyRuntime();
 const bundle = await loadTestSeedBundle();
 runtime.callOrThrow({

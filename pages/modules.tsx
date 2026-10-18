@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { Link } from "@void/react";
 import { Icon } from "../src/icons.tsx";
-import { label } from "../src/language.ts";
+import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
 export default function ModulesPage(): JSX.Element {
@@ -41,8 +41,10 @@ export default function ModulesPage(): JSX.Element {
                   {mod.parts.length} parts
                 </span>
               </div>
-              {mod.description && (
-                <p className="module-card-desc">{mod.description}</p>
+              {mod.description.length > 0 && (
+                <p className="module-card-desc">
+                  {localizedText(mod.description, language)}
+                </p>
               )}
             </Link>
           ))
