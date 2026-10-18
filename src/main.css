@@ -1633,6 +1633,21 @@ a.status-error {
   overflow: hidden;
 }
 
+/*
+ * 式のツリーの置換メニュー (ExpressionTreeEditor).
+ * 選択中のノード (position-anchor) のすぐ下に左端を揃えて出し,
+ * 画面の下端・右端に収まらないときは上や左に反転する
+ */
+.expression-node-dropdown {
+  position-area: block-end span-inline-end;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
+  margin-block-start: 0.4rem;
+  width: min(26rem, calc(100vw - 1rem));
+}
+
 .dropdown-item-link {
   display: inline-flex;
   align-items: center;

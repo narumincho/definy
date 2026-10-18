@@ -25,7 +25,8 @@ export interface TreeLayoutRendererProps {
     value: string,
   ) => void;
   readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
-  readonly selectionAnchorId?: string;
+  /** 選択中のノードに付ける CSS の anchor-name (`--` で始まる) */
+  readonly selectionAnchorName?: string;
 }
 
 export function nodeBadgeColors(kind: NodeKind): {
@@ -113,7 +114,7 @@ export function TreeLayoutRenderer(
     onChangeNumber,
     onChangeString,
     onClear,
-    selectionAnchorId,
+    selectionAnchorName,
   } = props;
 
   const isSelected = selectedPath ? isSamePath(selectedPath, node.path) : false;
@@ -136,9 +137,11 @@ export function TreeLayoutRenderer(
     onHoverNode?.(null);
   }
 
-  const anchorName = selectionAnchorId
-    ? `--tree-node-${selectionAnchorId}-${node.id.replace(/[^a-zA-Z0-9_-]/g, "-")}`
-    : undefined;
+  /**
+   * 選択中のノードだけに付ける CSS の anchor-name.
+   * 置換メニュー (popover) をこのノードの直下に Anchor Positioning で配置するために使う
+   */
+  const anchorName = isSelected ? selectionAnchorName : undefined;
 
   // 1. Table node rendering (Spreadsheet view)
   if (node.kind === "table") {
@@ -296,7 +299,6 @@ export function TreeLayoutRenderer(
           width: "fit-content",
           maxWidth: "100%",
           boxSizing: "border-box",
-          ...(anchorName ? { anchorName } : {}),
         }}
         onClick={handleSelect}
         onMouseEnter={handleMouseEnter}
@@ -324,6 +326,7 @@ export function TreeLayoutRenderer(
             {isCollapsed ? "▸" : "▾"}
           </button>
 
+          {/* 複数行のときは子を含む全体ではなく, 見出しのバッジの直下にメニューを出す */}
           <div
             className="tree-badge"
             data-state={isSelected ? "selected" : ""}
@@ -340,6 +343,7 @@ export function TreeLayoutRenderer(
               cursor: "pointer",
               userSelect: "none",
               whiteSpace: "nowrap",
+              ...(anchorName ? { anchorName } : {}),
             }}
           >
             {node.label}

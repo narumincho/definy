@@ -4,6 +4,7 @@ import {
   useCallback,
   useRef,
   useEffect,
+  useId,
   type JSX,
   type KeyboardEvent,
 } from "react";
@@ -32,6 +33,31 @@ interface SelectorOption {
   readonly category: string;
 }
 
+/**
+ * 置換メニューを選択中のノードの直下に出すのに必要な
+ * CSS Anchor Positioning と Popover API に対応しているか.
+ * 未対応なら従来どおり式全体の下に通常のフローで表示する
+ */
+function supportsAnchoredPopover(): boolean {
+  return (
+    typeof CSS !== "undefined" &&
+    typeof HTMLElement !== "undefined" &&
+    CSS.supports("position-anchor", "--a") &&
+    CSS.supports("position-area", "block-end") &&
+    "showPopover" in HTMLElement.prototype
+  );
+}
+
+/**
+ * メニューを top layer に出す. エディタの `overflow` で切り取られないようにするため.
+ * 検索欄へのフォーカス (useEffect) より前に表示されている必要があるので ref コールバックで行う
+ */
+function showAsPopover(element: HTMLDivElement | null): void {
+  if (element !== null && !element.matches(":popover-open")) {
+    element.showPopover();
+  }
+}
+
 export function ExpressionTreeEditor({
   expression,
   onChange,
@@ -51,6 +77,9 @@ export function ExpressionTreeEditor({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
+  const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const partNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -257,6 +286,9 @@ export function ExpressionTreeEditor({
     }
   }, [isMenuOpen]);
 
+  // メニューはユーザー操作で開くので, 判定はブラウザ上でのみ行われる
+  const anchoredMenu = isMenuOpen && supportsAnchoredPopover();
+
   return (
     <div
       ref={containerRef}
@@ -342,22 +374,36 @@ export function ExpressionTreeEditor({
         onChangeNumber={handleChangeNumber}
         onChangeString={handleChangeString}
         onClear={handleClear}
+        selectionAnchorName={selectionAnchorName}
       />
 
-      {/* Popover / Anchored Dropdown Panel for expression selection */}
+      {/*
+       * 式の置換メニュー. 対応ブラウザでは popover (top layer) にして,
+       * CSS Anchor Positioning で選択中のノードのすぐ下に表示する
+       */}
       {isMenuOpen && editable && selectedPath && (
         <div
-          className="dropdown-popover-panel"
+          ref={anchoredMenu ? showAsPopover : undefined}
+          popover={anchoredMenu ? "manual" : undefined}
+          className={
+            anchoredMenu
+              ? "dropdown-popover-panel expression-node-dropdown"
+              : "dropdown-popover-panel"
+          }
           style={{
-            position: "relative",
+            ...(anchoredMenu
+              ? { positionAnchor: selectionAnchorName }
+              : {
+                  position: "relative",
+                  marginTop: "0.5rem",
+                  maxWidth: "26rem",
+                }),
             zIndex: 100,
-            marginTop: "0.5rem",
             padding: "0.5rem",
             background: "var(--surface-opaque)",
             border: "1px solid var(--border)",
             borderRadius: "var(--radius-md)",
             boxShadow: "var(--shadow-lg)",
-            maxWidth: "26rem",
             maxHeight: "18rem",
             display: "flex",
             flexDirection: "column",
