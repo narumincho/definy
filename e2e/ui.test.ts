@@ -164,4 +164,72 @@ test.describe("definy UI E2E", () => {
       expect(box.height).toBeGreaterThanOrEqual(12);
     }
   });
+
+  test("command palette opens with shortcut, fuzzy filters, and navigates", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForSelector(".event-card");
+
+    // ショートカット (Control+p) でコマンドパレットが開くことを確認
+    await page.keyboard.press("Control+p");
+    const palette = page.locator(".command-palette");
+    await expect(palette).toBeVisible();
+
+    // 入力欄に "about" を入力し、ファジー検索で "About definy" が最上位に来ることを確認
+    const paletteInput = palette.locator(".command-palette-input input");
+    await expect(paletteInput).toBeFocused();
+    await paletteInput.fill("about");
+
+    const firstItem = palette.locator(".command-palette-item").first();
+    await expect(firstItem).toBeVisible();
+    await expect(
+      firstItem.locator(".command-palette-item-label"),
+    ).toContainText(/About|definy について|Pri definy/);
+
+    // Enter キーで選択項目へ遷移
+    await paletteInput.press("Enter");
+    await page.waitForURL(/\/about/, { timeout: 10000 });
+    await expect(palette).not.toBeVisible();
+
+    // 再度 Control+k ショートカットでも開閉できることを確認
+    await page.keyboard.press("Control+k");
+    await expect(palette).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(palette).not.toBeVisible();
+  });
+
+  test("about page displays definy philosophy, 4 core pillars, and comparison table", async ({
+    page,
+  }) => {
+    await page.goto("/about");
+
+    // ヒーローセクション
+    await expect(page.locator(".about-view h1")).toHaveText("definy");
+    await expect(
+      page.locator(".about-view", {
+        hasText:
+          /Pure functional language|コンテンツアドレスと構造化編集|Pura funkcia lingvo/,
+      }),
+    ).toBeVisible();
+
+    // 4大コアピラー
+    const pillarCards = page.locator(".card", {
+      hasText:
+        /Structured Editing|構文エラーのない構造化編集|Strukturita Redaktado/,
+    });
+    await expect(pillarCards.first()).toBeVisible();
+
+    // 比較表
+    const table = page.locator("table");
+    await expect(table).toBeVisible();
+    await expect(table).toContainText("definy");
+    await expect(table).toContainText(
+      /Traditional Ecosystems|従来のエコシステム|Tradiciaj Ekosistemoj/,
+    );
+
+    // 組み込みモジュール
+    const coreModuleCard = page.locator(".about-view a", { hasText: "core" });
+    await expect(coreModuleCard.first()).toBeVisible();
+  });
 });
