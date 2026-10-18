@@ -58,7 +58,7 @@ export function ExplorerSidebar(): JSX.Element {
 
   return (
     <aside
-      className="sidebar-tree"
+      className="workbench-sidebar"
       style={{ width: `${sidebarWidth}px`, flexBasis: `${sidebarWidth}px` }}
     >
       <div className="sidebar-header">
@@ -78,6 +78,17 @@ export function ExplorerSidebar(): JSX.Element {
           >
             +
           </Link>
+          <button
+            type="button"
+            className="sidebar-action-btn sidebar-close-btn"
+            title={label(language, "Close", "閉じる", "Fermi")}
+            aria-label={label(language, "Close", "閉じる", "Fermi")}
+            onClick={() => {
+              setSidebarOpen(false);
+            }}
+          >
+            ×
+          </button>
         </div>
       </div>
 

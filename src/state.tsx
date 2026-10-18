@@ -166,6 +166,13 @@ export function DefinyProvider({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
+  // Close sidebar on mobile after mount to prevent hydration mismatch
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth <= 760) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
   // Load stored account on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
