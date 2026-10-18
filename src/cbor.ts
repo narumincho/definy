@@ -7,52 +7,25 @@
  * Base64 文字列（標準 / URL-safe / パディング省略すべて対応）を Uint8Array にデコードする
  */
 export function base64ToBytes(base64: string): Uint8Array {
-  if (typeof Uint8Array.fromBase64 === "function") {
-    const isUrlSafe = base64.includes("-") || base64.includes("_");
-    return Uint8Array.fromBase64(base64, {
-      alphabet: isUrlSafe ? "base64url" : "base64",
-      lastChunkHandling: "loose",
-    });
-  }
-  const normalized = base64.replace(/-/g, "+").replace(/_/g, "/");
-  const padLen = (4 - (normalized.length % 4)) % 4;
-  const padded = normalized + "=".repeat(padLen);
-  const binString = atob(padded);
-  const bytes = new Uint8Array(binString.length);
-  for (let i = 0; i < binString.length; i++) {
-    bytes[i] = binString.charCodeAt(i);
-  }
-  return bytes;
+  const isUrlSafe = base64.includes("-") || base64.includes("_");
+  return Uint8Array.fromBase64(base64, {
+    alphabet: isUrlSafe ? "base64url" : "base64",
+    lastChunkHandling: "loose",
+  });
 }
 
 /**
  * Uint8Array を標準 Base64 文字列にエンコードする
  */
 export function bytesToBase64(bytes: Uint8Array): string {
-  if (typeof bytes.toBase64 === "function") {
-    return bytes.toBase64();
-  }
-  let binString = "";
-  for (let i = 0; i < bytes.length; i++) {
-    const byte = bytes[i];
-    if (byte !== undefined) {
-      binString += String.fromCharCode(byte);
-    }
-  }
-  return btoa(binString);
+  return bytes.toBase64();
 }
 
 /**
  * Uint8Array を URL-safe Base64 (パディングなし) にエンコードする
  */
 export function bytesToUrlSafeBase64NoPad(bytes: Uint8Array): string {
-  if (typeof bytes.toBase64 === "function") {
-    return bytes.toBase64({ alphabet: "base64url", omitPadding: true });
-  }
-  return bytesToBase64(bytes)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return bytes.toBase64({ alphabet: "base64url", omitPadding: true });
 }
 
 export function toUint8Array(value: unknown): Uint8Array | undefined {
