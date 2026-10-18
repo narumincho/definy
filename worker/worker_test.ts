@@ -618,3 +618,153 @@ Deno.test("DeployCloudflare compiles definy:deploy part to Wasm and uploads app.
     );
   }
 });
+
+Deno.test("D1 seeding does not re-run when env.DB is a new wrapper per request or on static assets", async () => {
+  const baseD1 = createSqliteD1Database();
+  let writeStatementsCount = 0;
+  let schemaStatementsCount = 0;
+  let seedBundleFetchCount = 0;
+
+  // workerd のようにリクエストごとに異なる D1Database ラッパーオブジェクトを生成するファクトリ
+  const createFreshD1Binding = (): D1Database => ({
+    prepare(query: string): D1PreparedStatement {
+      const normalized = query.trim().toUpperCase();
+      if (normalized.startsWith("CREATE ")) {
+        schemaStatementsCount++;
+      } else if (
+        normalized.startsWith("INSERT ") || normalized.startsWith("DELETE ")
+      ) {
+        writeStatementsCount++;
+      }
+      return baseD1.prepare(query);
+    },
+    batch<T = Record<string, unknown>>(
+      statements: ReadonlyArray<D1PreparedStatement>,
+    ): Promise<ReadonlyArray<D1Result<T>>> {
+      return baseD1.batch<T>(statements);
+    },
+    exec(query: string): Promise<D1ExecResult> {
+      return baseD1.exec(query);
+    },
+  });
+
+  const sampleSeed: SeedBundle = {
+    events: [
+      {
+        eventHash: "seed_ev_once_1",
+        signedEventBytes: bytesToBase64(new Uint8Array([1, 2, 3])),
+        accountId: "acc_seed_once",
+        eventType: "create_account",
+        createdAtRfc3339: "2019-01-31T04:36:01Z",
+        timeMs: 1000,
+      },
+    ],
+    contents: [
+      {
+        contentHash: "seed_content_once_1",
+        contentBytes: bytesToBase64(new Uint8Array([11, 22, 33])),
+      },
+    ],
+  };
+
+  const makeEnv = (): Env => ({
+    DB: createFreshD1Binding(),
+    DEFINY_ROOT_DOMAIN: "definy.workers.dev",
+    ASSETS: {
+      fetch(input: Request | URL | string): Promise<Response> {
+        const url = typeof input === "string"
+          ? input
+          : input instanceof URL
+          ? input.toString()
+          : input.url;
+        if (url.endsWith("/__definy_seed_bundle.json")) {
+          seedBundleFetchCount++;
+          return Promise.resolve(
+            new Response(JSON.stringify(sampleSeed), { status: 200 }),
+          );
+        }
+        return Promise.resolve(new Response("SPA", { status: 200 }));
+      },
+    },
+  });
+
+  const store = new WorkerStore();
+
+  // 1. /healthz と静的アセット取得では D1 スキーマ初期化もシード書き込みも一切行われない
+  await handleWorkerRequest(
+    new Request("https://definy.workers.dev/healthz"),
+    makeEnv(),
+    store,
+  );
+  await handleWorkerRequest(
+    new Request("https://definy.workers.dev/"),
+    makeEnv(),
+    store,
+  );
+  await handleWorkerRequest(
+    new Request("https://definy.workers.dev/assets/app.js"),
+    makeEnv(),
+    store,
+  );
+  assertEquals(schemaStatementsCount, 0);
+  assertEquals(writeStatementsCount, 0);
+  assertEquals(seedBundleFetchCount, 0);
+
+  // 2. 初回 API リクエスト（並行 2 リクエスト）で 1 回だけシードされる
+  await Promise.all([
+    handleWorkerRequest(
+      new Request(
+        "https://definy.workers.dev/definy.v1.EventService/GetEvents",
+        {
+          method: "POST",
+          body: JSON.stringify({ limit: 10 }),
+        },
+      ),
+      makeEnv(),
+      store,
+    ),
+    handleWorkerRequest(
+      new Request(
+        "https://definy.workers.dev/definy.v1.EventService/GetEvents",
+        {
+          method: "POST",
+          body: JSON.stringify({ limit: 10 }),
+        },
+      ),
+      makeEnv(),
+      store,
+    ),
+  ]);
+
+  const initialSchemaCount = schemaStatementsCount;
+  const initialWriteCount = writeStatementsCount;
+  assertEquals(seedBundleFetchCount, 1);
+  assertEquals(initialSchemaCount > 0, true);
+  assertEquals(initialWriteCount, 3); // 1 DELETE + 1 event INSERT + 1 cas INSERT
+
+  // 3. 2 回目以降の API リクエスト（毎回新しい env.DB ラッパーを渡す）では再シードが一切走らない
+  await handleWorkerRequest(
+    new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
+      method: "POST",
+      body: JSON.stringify({ limit: 10 }),
+    }),
+    makeEnv(),
+    store,
+  );
+  assertEquals(schemaStatementsCount, initialSchemaCount);
+  assertEquals(writeStatementsCount, initialWriteCount);
+  assertEquals(seedBundleFetchCount, 1);
+
+  // 4. 別 Isolate のコールドスタート時、D1 に既にシードが存在する場合は DELETE / INSERT バッチをスキップする
+  const coldStartStore = new WorkerStore();
+  await handleWorkerRequest(
+    new Request("https://definy.workers.dev/definy.v1.EventService/GetEvents", {
+      method: "POST",
+      body: JSON.stringify({ limit: 10 }),
+    }),
+    makeEnv(),
+    coldStartStore,
+  );
+  // DELETE / INSERT 書き込みクエリは 1 件も増えないこと
+  assertEquals(writeStatementsCount, initialWriteCount);
+});

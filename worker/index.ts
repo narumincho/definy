@@ -127,8 +127,6 @@ export async function handleWorkerRequest(
   }
 
   const url = new URL(request.url);
-  await store.ensureSeeded(env, url.origin);
-
   const { pathname } = url;
 
   // Health check
@@ -139,6 +137,16 @@ export async function handleWorkerRequest(
       storage: env.DB ? "cloudflare-d1" : "in-memory",
     });
   }
+
+  // Static assets fallback (/healthz や静的アセット取得時には D1 シード処理を実行しない)
+  if (!isWorkerFirstPath(pathname)) {
+    if (env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+    return new Response("Not Found", { status: 404 });
+  }
+
+  await store.ensureSeeded(env, url.origin);
 
   // Virtual Wasm CAS endpoint: /virtual/wasm/:hash
   if (pathname.startsWith("/virtual/wasm/")) {
