@@ -17,8 +17,10 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
   - `components/`: VS Code 風ワークベンチ、ActivityBar、ExplorerSidebar、CommandPalette、StatusBar 等
   - `stage1_compiler.ts`: definy 自己記述コンパイラ (`wasm/stage1.wasm`) の TypeScript 実行パイプライン
   - `state.tsx`: AppState, i18n, イベント管理 Context
+  - `auth.ts` / `rpc_auth.ts`: Ed25519 アカウント・イベント署名と RPC の Authorization ヘッダー ([仕様](docs/rpc-authorization.md))
+  - `tree_layout/`: 式の木構造エディタ (レイアウト計算・編集操作・期待型の推論)
   - `main.css`: IDE ダークテーマ スタイルシート
-- `middleware/`: Void ミドルウェア (Connect-RPC, `/virtual/wasm/*`, `/mcp`, `/healthz` のインターセプト)
+- `middleware/`: Void ミドルウェア (Connect-RPC, `/virtual/wasm/*`, `/healthz` のインターセプトと、SSR レスポンスへのセキュリティヘッダー付与)
 - `worker/`: Cloudflare Worker バックエンド実装
   - `index.ts`: API ハンドラー
   - `store.ts`: Cloudflare D1 (SQLite) イベント・CAS・デプロイ履歴ストア

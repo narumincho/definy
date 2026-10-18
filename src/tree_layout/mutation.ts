@@ -285,6 +285,17 @@ export function updateExpressionAtPath(
     };
   }
 
+  if (head === "letValue" && "Let" in node) {
+    const letInner = node.Let as { value?: unknown };
+    return {
+      ...node,
+      Let: {
+        ...letInner,
+        value: updateExpressionAtPath(letInner.value, tail, updater),
+      },
+    };
+  }
+
   if (
     typeof head === "object" &&
     head.kind === "letBindingValue" &&
@@ -411,6 +422,91 @@ export function updateExpressionAtPath(
         },
       };
     }
+  }
+
+  if (head === "record" && "RecordGet" in node) {
+    const rgInner = node.RecordGet as { record?: unknown };
+    return {
+      ...node,
+      RecordGet: {
+        ...rgInner,
+        record: updateExpressionAtPath(rgInner.record, tail, updater),
+      },
+    };
+  }
+
+  if (head === "variantPayload" && "Variant" in node) {
+    const vInner = node.Variant as { payload?: unknown };
+    return {
+      ...node,
+      Variant: {
+        ...vInner,
+        payload: updateExpressionAtPath(vInner.payload, tail, updater),
+      },
+    };
+  }
+
+  if (head === "constructorValue" && "Constructor" in node) {
+    const cInner = node.Constructor as { value?: unknown };
+    return {
+      ...node,
+      Constructor: {
+        ...cInner,
+        value: updateExpressionAtPath(cInner.value, tail, updater),
+      },
+    };
+  }
+
+  if (head === "matchTarget" && "Match" in node) {
+    const mInner = node.Match as { target?: unknown };
+    return {
+      ...node,
+      Match: {
+        ...mInner,
+        target: updateExpressionAtPath(mInner.target, tail, updater),
+      },
+    };
+  }
+
+  if (
+    typeof head === "object" &&
+    head.kind === "matchArmBody" &&
+    "Match" in node
+  ) {
+    const mInner = node.Match as {
+      arms?: ReadonlyArray<{
+        pattern?: unknown;
+        body?: unknown;
+      }>;
+    };
+    if (Array.isArray(mInner.arms)) {
+      const updated = mInner.arms.map((arm, idx) =>
+        idx === head.index
+          ? {
+              ...arm,
+              body: updateExpressionAtPath(arm.body, tail, updater),
+            }
+          : arm,
+      );
+      return {
+        ...node,
+        Match: {
+          ...mInner,
+          arms: updated,
+        },
+      };
+    }
+  }
+
+  if (head === "matchDefault" && "Match" in node) {
+    const mInner = node.Match as { default?: unknown };
+    return {
+      ...node,
+      Match: {
+        ...mInner,
+        default: updateExpressionAtPath(mInner.default, tail, updater),
+      },
+    };
   }
 
   return expr;

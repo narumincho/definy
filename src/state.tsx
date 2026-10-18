@@ -8,6 +8,7 @@ import {
   type JSX,
   type ReactNode,
 } from "react";
+import { useRouter } from "@void/react";
 import type {
   AccountState,
   ConnectionStatus,
@@ -50,6 +51,7 @@ export interface DefinyContextValue {
   readonly refreshEvents: () => Promise<void>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   readonly parts: ReadonlyArray<PartSnapshot>;
+  readonly partNames: ReadonlyMap<string, string>;
   readonly accountNames: ReadonlyMap<string, string>;
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
@@ -87,9 +89,6 @@ const STORAGE_KEY_LANG = "definy.language";
 const STORAGE_KEY_ACCOUNT = "definy.account.v1";
 
 function loadStoredChanges(): WorkingChanges {
-  if (typeof window === "undefined") {
-    return { parts: new Map<string, PartChange>() };
-  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY_CHANGES);
     if (!raw) return { parts: new Map<string, PartChange>() };
@@ -117,13 +116,20 @@ function saveStoredChanges(changes: WorkingChanges): void {
   localStorage.setItem(STORAGE_KEY_CHANGES, JSON.stringify({ parts: obj }));
 }
 
-function initialLanguage(): LanguageCode {
-  if (typeof window === "undefined") return "en";
-  const params = new URLSearchParams(window.location.search);
-  const q = params.get("lang");
-  if (q === "en" || q === "ja" || q === "eo") return q;
+function isLanguageCode(value: string | null): value is LanguageCode {
+  return value === "en" || value === "ja" || value === "eo";
+}
+
+/**
+ * URL クエリ (?lang=) が無いときにブラウザ側の情報から言語を決める。
+ * 優先順位は localStorage > navigator.language > en。
+ * SSR とのハイドレーション不一致を避けるため、マウント後の useEffect からのみ呼ぶ。
+ */
+function resolveBrowserLanguage(): LanguageCode {
   const stored = localStorage.getItem(STORAGE_KEY_LANG);
-  if (stored === "en" || stored === "ja" || stored === "eo") return stored;
+  if (isLanguageCode(stored)) return stored;
+  if (navigator.language.startsWith("ja")) return "ja";
+  if (navigator.language.startsWith("eo")) return "eo";
   return "en";
 }
 
@@ -132,21 +138,25 @@ export function DefinyProvider({
 }: {
   readonly children: ReactNode;
 }): JSX.Element {
-  const [language, setLanguageState] = useState<LanguageCode>(initialLanguage);
+  // ?lang= は SSR でも Void Router 経由で読めるので初期値に使う。
+  // localStorage など SSR で読めない値はマウント後に反映し、初回レンダーを SSR と揃える。
+  const queryLang = useRouter().query.get("lang");
+  const queryLanguage = isLanguageCode(queryLang) ? queryLang : null;
+  const [language, setLanguageState] = useState<LanguageCode>(
+    queryLanguage ?? "en",
+  );
+  const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
+  const [workingChanges, setWorkingChanges] = useState<WorkingChanges>(() => ({
+    parts: new Map<string, PartChange>(),
+  }));
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(STORAGE_KEY_LANG);
-      if (stored === "en" || stored === "ja" || stored === "eo") {
-        setLanguageState(stored);
-      } else if (navigator.language.startsWith("ja")) {
-        setLanguageState("ja");
-      }
+    if (queryLanguage === null) {
+      setLanguageState(resolveBrowserLanguage());
     }
+    setWorkingChanges(loadStoredChanges());
+    // マウント時に 1 度だけ反映する
   }, []);
-  const [events, setEvents] = useState<ReadonlyArray<EventRecord>>([]);
-  const [workingChanges, setWorkingChanges] =
-    useState<WorkingChanges>(loadStoredChanges);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
   const [currentAccount, setCurrentAccountState] =
@@ -154,6 +164,13 @@ export function DefinyProvider({
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Close sidebar on mobile after mount to prevent hydration mismatch
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth <= 760) {
+      setSidebarOpen(false);
+    }
+  }, []);
 
   // Load stored account on mount
   useEffect(() => {
@@ -310,9 +327,10 @@ export function DefinyProvider({
   }, [setCurrentAccount]);
 
   // Derive module and part snapshots from events and working changes
-  const { modules, parts } = useMemo(() => {
+  const { modules, parts, partNames } = useMemo(() => {
     const moduleMap = new Map<string, ModuleSnapshot>();
     const partMap = new Map<string, PartSnapshot>();
+    const nameMap = new Map<string, string>();
 
     // Sort events ascending by time
     const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
@@ -333,16 +351,28 @@ export function DefinyProvider({
               description: p.description,
               partType: p.partType,
               contentHash: p.contentHash,
+              partIdHash: p.partIdHash,
               expression: p.expression,
               updatedAtMs: ev.timeMs,
             };
             partMap.set(partId, partSnapshot);
+
+            // パーツ参照 (PartReference) の表示名解決用: ID の Base64URL / `module.name` → `module.name`
+            nameMap.set(partId, partId);
+            if (p.partIdHash) {
+              nameMap.set(p.partIdHash, partId);
+            }
+            if (p.contentHash) {
+              nameMap.set(p.contentHash, partId);
+            }
+
             return {
               partId,
               name: p.name,
               description: p.description,
               partType: p.partType,
               contentHash: p.contentHash,
+              partIdHash: p.partIdHash,
               expression: p.expression,
             };
           },
@@ -364,6 +394,7 @@ export function DefinyProvider({
     return {
       modules: Array.from(moduleMap.values()),
       parts: Array.from(partMap.values()),
+      partNames: nameMap,
     };
   }, [events]);
 
@@ -392,7 +423,7 @@ export function DefinyProvider({
         }
       }
 
-      const committedPartIds: Array<string> = [];
+      const committedPartIds = new Set<string>();
       for (const [partId, change] of workingChanges.parts.entries()) {
         const dotIndex = partId.indexOf(".");
         const partModule =
@@ -408,7 +439,7 @@ export function DefinyProvider({
             expression: change.expression,
             contentHash: null,
           });
-          committedPartIds.push(partId);
+          committedPartIds.add(partId);
         }
       }
 
@@ -478,6 +509,7 @@ export function DefinyProvider({
       refreshEvents: loadEvents,
       modules,
       parts,
+      partNames,
       accountNames,
       workingChanges,
       updateWorkingPart,
@@ -506,6 +538,7 @@ export function DefinyProvider({
       loadEvents,
       modules,
       parts,
+      partNames,
       accountNames,
       workingChanges,
       updateWorkingPart,

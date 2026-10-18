@@ -24,6 +24,7 @@ export interface ModulePartSnapshot {
   readonly description: LocalizedText;
   readonly partType: unknown;
   readonly contentHash?: string | null;
+  readonly partIdHash?: string | null;
   readonly expression?: unknown | null;
 }
 
@@ -46,6 +47,7 @@ export interface PartSnapshot {
   readonly description: LocalizedText;
   readonly partType: unknown;
   readonly contentHash?: string | null;
+  readonly partIdHash?: string | null;
   readonly expression?: unknown | null;
   readonly updatedAtMs: number;
 }

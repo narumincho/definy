@@ -16,7 +16,7 @@ export function StatusBar(): JSX.Element {
 
   const statusLabel =
     connectionStatus === "connected"
-      ? label(language, "Connected", "接続中", "Konektita")
+      ? label(language, "Connected", "接続済み", "Konektita")
       : connectionStatus === "connecting"
         ? label(language, "Connecting...", "接続確認中...", "Konektante...")
         : label(language, "Offline", "オフライン", "Senreta");

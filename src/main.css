@@ -366,6 +366,16 @@ select {
   color-scheme: dark;
 }
 
+.input-sm {
+  font-size: 0.84rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.search-input {
+  width: 240px;
+  max-width: 100%;
+}
+
 option,
 optgroup {
   background-color: var(--surface-opaque);
@@ -460,10 +470,12 @@ textarea {
   background: var(--bg-chrome);
 }
 
+.workbench.sidebar-closed,
 .workbench.sidebar-toggled {
   grid-template-columns: var(--activitybar-width) 0 minmax(0, 1fr);
 }
 
+.workbench.sidebar-closed .workbench-sidebar,
 .workbench.sidebar-toggled .workbench-sidebar {
   visibility: hidden;
   border-right: none;
@@ -756,16 +768,22 @@ button.header-title:hover {
   height: 15px;
 }
 
+.sidebar-actions,
 .sidebar-header-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
+.sidebar-action-btn,
 .sidebar-header-action {
   font-size: 1.05rem;
   font-weight: 400;
   line-height: 1;
+}
+
+.sidebar-close-btn {
+  display: none;
 }
 
 .sidebar-filter {
@@ -1388,6 +1406,239 @@ a.status-error {
   padding: 0.75rem;
 }
 
+/* --- 共通カード & リスト / グリッド --- */
+
+.card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+a.card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.card:hover,
+button.card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.view-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.part-grid,
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.85rem;
+}
+
+.part-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.part-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.part-breadcrumb {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+}
+
+.part-name-text {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.part-card-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.part-card-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.module-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.module-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.module-card-title {
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.module-card-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.account-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+}
+
+.account-avatar-large {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(78, 148, 238, 0.15);
+  color: #8cbaf5;
+  font-weight: 700;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(78, 148, 238, 0.35);
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.account-events-count {
+  font-size: 0.8rem;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-link {
+  color: var(--text-secondary);
+}
+
+.breadcrumb-link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.breadcrumb-current {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 680px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.settings-label strong {
+  font-size: 0.92rem;
+  color: var(--text-primary);
+}
+
+.settings-label span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 .event-list {
   display: grid;
   gap: 0.5rem;
@@ -1631,6 +1882,21 @@ a.status-error {
   box-sizing: border-box;
   color-scheme: dark;
   overflow: hidden;
+}
+
+/*
+ * 式のツリーの置換メニュー (ExpressionTreeEditor).
+ * 選択中のノード (position-anchor) のすぐ下に左端を揃えて出し,
+ * 画面の下端・右端に収まらないときは上や左に反転する
+ */
+.expression-node-dropdown {
+  position-area: block-end span-inline-end;
+  position-try-fallbacks:
+    flip-block,
+    flip-inline,
+    flip-block flip-inline;
+  margin-block-start: 0.4rem;
+  width: min(26rem, calc(100vw - 1rem));
 }
 
 .dropdown-item-link {
@@ -2411,13 +2677,15 @@ a.status-error {
  */
 @media (max-width: 760px) {
   .workbench,
+  .workbench.sidebar-open,
+  .workbench.sidebar-closed,
   .workbench.sidebar-toggled {
     grid-template-areas:
       "titlebar"
       "editor"
       "activity";
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto !important;
   }
 
   .status-bar {
@@ -2439,18 +2707,22 @@ a.status-error {
     z-index: 20;
   }
 
-  .workbench.sidebar-toggled .workbench-sidebar {
+  .workbench.sidebar-open .workbench-sidebar {
     visibility: visible;
     transform: none;
     border-right: 1px solid var(--border);
   }
 
-  .workbench.sidebar-toggled .sidebar-scrim {
+  .workbench.sidebar-open .sidebar-scrim {
     display: block;
     position: fixed;
     inset: var(--titlebar-height) 0 0 0;
     background: rgba(0, 0, 0, 0.5);
     z-index: 19;
+  }
+
+  .sidebar-close-btn {
+    display: inline-grid;
   }
 
   .activity-bar {

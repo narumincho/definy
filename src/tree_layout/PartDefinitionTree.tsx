@@ -179,6 +179,7 @@ export function PartDefinitionTree({
           <div className="def-value">
             <ExpressionTreeEditor
               expression={expression}
+              partType={partType}
               onChange={onExpressionChange}
               editable={editable}
             />

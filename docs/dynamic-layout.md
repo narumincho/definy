@@ -46,26 +46,24 @@ data = [
 - ノードを選択すると,
   式・演算子を切り替えるドロップダウンメニューが**選択したノードの直下**に表示される
   (エディタ上部のツールバーには表示しない).
-  - 各ノードに一意の CSS `anchor-name` (`--tree-node-{エディタ連番}-{ノードID}`)
-    を常時付与し, `SearchableDropdownPanel` (popover) も DOM
-    上に常時配置した上で, クリックイベント内で同期的に `position-anchor`
-    を対象ノードに切り替えて `showPopover()` (`show_anchored_popover`)
-    を呼び出す.
+  - 選択中のノードだけに CSS `anchor-name`
+    (`--expression-selection-{useId}`, エディタごとに一意) を付け
+    (`TreeLayoutRenderer` の `selectionAnchorName`), メニューは
+    `popover="manual"` の要素として ref コールバックで `showPopover()` し,
+    `position-anchor` でそのノードを参照する. top layer に出すので
+    エディタの `overflow` で切り取られない.
+    - 複数行カプセルは子を含む全体ではなく見出しのバッジに anchor を付け,
+      メニューがバッジのすぐ下に出るようにする.
+    - 配置は `.expression-node-dropdown` の
+      `position-area: block-end span-inline-end` (ノードの左端揃えで下に出す).
   - ブラウザの popover 既定スタイル (User Agent stylesheet の `inset: 0`)
     がアンカー計算と干渉して画面最上部に飛ぶ問題を防ぐため,
     `[popover]` に `inset: auto; position: absolute;` を指定する.
-  - アンカー要素が画面右寄りにあったり画面右端に近い場合,
-    `span-right` だとドロップダウンが画面右外に飛び出してしまうため,
-    `dom_show_popover_and_focus` でアンカー要素の画面内座標 (`getBoundingClientRect`)
-    を動的に判定し, 右余白が不足している場合は `bottom span-left`
-    (右端揃えで左に展開) または `top span-left` に自動切り替えを行う.
-  - CSS Anchor Positioning の反転フォールバックには
-    `position-try-fallbacks: flip-inline, flip-block, flip-block flip-inline;`
-    を指定し, 水平反転 (`flip-inline`) を優先するとともに対角線反転
-    (`flip-block flip-inline`) も含めることで画面端での飛び出しを防止する.
-  - Anchor Positioning 未対応ブラウザ (古い Safari 等) に対しては,
-    `CSS.supports` で `position-area` の対応を確認し,
-    未対応時に `fixed` 座標で安全にフォールバック配置する.
+  - 画面の下端・右端に収まらないときのために
+    `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;`
+    を指定し, 上や左に反転させる.
+  - Anchor Positioning / Popover 未対応ブラウザでは (`CSS.supports` で判定),
+    popover にせず式全体の下に通常のフローでメニューを表示する.
   - ドロップダウンパネル本体 (`.dropdown-popover-panel`), オプションリスト (`overflow-x: hidden`),
     ヘッダーおよびオプションのメタデータ (`display_meta`) にも省略表示 (`ellipsis`)
     や最大幅制限を設け, 長い識別子や型名による右はみ出しを確実に防止する.

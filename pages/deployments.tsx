@@ -1,24 +1,21 @@
-import { useState, useCallback, type JSX } from "react";
+import { useState, useCallback, useEffect, type JSX } from "react";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
 export default function DeploymentsPage(): JSX.Element {
   const { language } = useDefiny();
-  const [apiToken, setApiToken] = useState(() => {
-    return typeof window !== "undefined"
-      ? (localStorage.getItem("definy_cf_api_token") ?? "")
-      : "";
-  });
-  const [accountId, setAccountId] = useState(() => {
-    return typeof window !== "undefined"
-      ? (localStorage.getItem("definy_cf_account_id") ?? "")
-      : "";
-  });
-  const [scriptName, setScriptName] = useState(() => {
-    return typeof window !== "undefined"
-      ? (localStorage.getItem("definy_cf_script_name") ?? "definy-app")
-      : "definy-app";
-  });
+  // 初回レンダーは SSR と同じ既定値にし、保存値はマウント後に反映する
+  const [apiToken, setApiToken] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [scriptName, setScriptName] = useState("definy-app");
+
+  useEffect(() => {
+    setApiToken(localStorage.getItem("definy_cf_api_token") ?? "");
+    setAccountId(localStorage.getItem("definy_cf_account_id") ?? "");
+    setScriptName(
+      localStorage.getItem("definy_cf_script_name") ?? "definy-app",
+    );
+  }, []);
   const [deploying, setDeploying] = useState(false);
   const [deployResult, setDeployResult] = useState<{
     readonly url?: string;
