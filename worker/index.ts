@@ -153,7 +153,10 @@ export async function handleWorkerRequest(
     const rawHash = pathname
       .slice("/virtual/wasm/".length)
       .replace(/\.wasm$/, "");
-    const bytes = await store.getRawContentBytes(rawHash, env);
+    let bytes = await store.getRawContentBytes(rawHash, env);
+    if (!bytes && rawHash === "stage1") {
+      bytes = await store.getStage1WasmBytes(env, url.origin);
+    }
     if (!bytes) {
       return new Response("Wasm binary not found in CAS", {
         status: 404,

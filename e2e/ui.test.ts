@@ -95,6 +95,38 @@ test.describe("definy UI E2E", () => {
     await expect(resultCard).toBeVisible({ timeout: 10000 });
   });
 
+  test("expression tree editor renders AST structure, supports selection, and evaluates with stage1.wasm", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.triangle-area");
+
+    // パーツ定義ツリーが表示されていることを確認
+    const defTree = page.locator(".part-definition-tree");
+    await expect(defTree).toBeVisible({ timeout: 15000 });
+
+    // AST ツリー内のキーワード・演算子バッジが表示されていることを確認
+    const letBadge = defTree.locator(".tree-badge", { hasText: "let" });
+    await expect(letBadge.first()).toBeVisible();
+
+    const divideBadge = defTree.locator(".tree-badge", { hasText: "divide" });
+    await expect(divideBadge.first()).toBeVisible();
+
+    // ノードをクリックして選択状態になることを確認
+    await divideBadge.first().click();
+    await expect(divideBadge.first()).toHaveAttribute("data-state", "selected");
+
+    // 「式を評価」ボタンをクリックして stage1.wasm による評価結果が 25 になることを検証
+    const evalButton = page.locator(".part-actions button", {
+      hasText: /Evaluate Expression|式を評価|Taksi esprimon/,
+    });
+    await expect(evalButton).toBeVisible();
+    await evalButton.click();
+
+    const resultCard = page.locator(".eval-result-card.success");
+    await expect(resultCard).toBeVisible({ timeout: 15000 });
+    await expect(resultCard).toContainText("25");
+  });
+
   test("icons have bounded and non-zero dimensions across views", async ({
     page,
   }) => {

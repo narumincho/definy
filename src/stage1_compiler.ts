@@ -202,6 +202,159 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   return null;
 }
 
+export function definyAstToSelfHostedAst(ast: unknown): unknown {
+  if (!ast || typeof ast !== "object") {
+    return ast;
+  }
+  const obj = ast as Record<string, unknown>;
+  if ("Variant" in obj) {
+    return ast;
+  }
+  if (
+    "Number" in obj &&
+    typeof obj.Number === "object" &&
+    obj.Number !== null
+  ) {
+    const num = obj.Number as { readonly value: number };
+    return {
+      Variant: {
+        tag: "number",
+        payload: { Number: { value: num.value } },
+      },
+    };
+  }
+  if (
+    "String" in obj &&
+    typeof obj.String === "object" &&
+    obj.String !== null
+  ) {
+    const str = obj.String as { readonly value: string };
+    return {
+      Variant: {
+        tag: "string",
+        payload: { String: { value: str.value } },
+      },
+    };
+  }
+  if (
+    "Boolean" in obj &&
+    typeof obj.Boolean === "object" &&
+    obj.Boolean !== null
+  ) {
+    const b = obj.Boolean as { readonly value: boolean };
+    return {
+      Variant: {
+        tag: "boolean",
+        payload: { Boolean: { value: b.value } },
+      },
+    };
+  }
+  if (
+    "Variable" in obj &&
+    typeof obj.Variable === "object" &&
+    obj.Variable !== null
+  ) {
+    const v = obj.Variable as { readonly variable_id: number };
+    return {
+      Variant: {
+        tag: "variable",
+        payload: {
+          TypeLiteral: {
+            items: [
+              {
+                key: "variable_id",
+                value: { Number: { value: v.variable_id } },
+              },
+            ],
+          },
+        },
+      },
+    };
+  }
+  const binaryOps: ReadonlyArray<readonly [string, string]> = [
+    ["Add", "add"],
+    ["Plus", "add"],
+    ["Subtract", "subtract"],
+    ["Minus", "subtract"],
+    ["Multiply", "multiply"],
+    ["Divide", "divide"],
+    ["Remainder", "remainder"],
+    ["LessThan", "less_than"],
+    ["LessThanOrEqual", "less_than_or_equal"],
+    ["GreaterThan", "greater_than"],
+    ["GreaterThanOrEqual", "greater_than_or_equal"],
+    ["Equal", "equal"],
+    ["NotEqual", "not_equal"],
+  ];
+  for (const [astKey, tag] of binaryOps) {
+    if (
+      astKey in obj &&
+      typeof obj[astKey] === "object" &&
+      obj[astKey] !== null
+    ) {
+      const bin = obj[astKey] as {
+        readonly left: unknown;
+        readonly right: unknown;
+      };
+      return {
+        Variant: {
+          tag,
+          payload: {
+            TypeLiteral: {
+              items: [
+                { key: "left", value: definyAstToSelfHostedAst(bin.left) },
+                { key: "right", value: definyAstToSelfHostedAst(bin.right) },
+              ],
+            },
+          },
+        },
+      };
+    }
+  }
+  if ("Let" in obj && typeof obj.Let === "object" && obj.Let !== null) {
+    const letNode = obj.Let as {
+      readonly bindings: ReadonlyArray<{
+        readonly variable_id: number;
+        readonly value: unknown;
+      }>;
+      readonly body: unknown;
+    };
+    const bindings = letNode.bindings || [];
+    let curBody = definyAstToSelfHostedAst(letNode.body);
+    for (let i = bindings.length - 1; i >= 0; i--) {
+      const b = bindings[i];
+      if (!b) {
+        continue;
+      }
+      curBody = {
+        Variant: {
+          tag: "let",
+          payload: {
+            TypeLiteral: {
+              items: [
+                {
+                  key: "variable_id",
+                  value: { Number: { value: b.variable_id } },
+                },
+                {
+                  key: "value",
+                  value: definyAstToSelfHostedAst(b.value),
+                },
+                {
+                  key: "body",
+                  value: curBody,
+                },
+              ],
+            },
+          },
+        },
+      };
+    }
+    return curBody;
+  }
+  return ast;
+}
+
 export function createStage1Compiler(
   stage1Module: WebAssembly.Module,
 ): Stage1CompilerInstance {
@@ -222,7 +375,8 @@ export function createStage1Compiler(
       const envPtr = view.getInt32(closurePtr + 8, true);
 
       const partsNode = referencedPartsAst ?? { ListLiteral: { items: [] } };
-      const exprPtr = writeLiteral(exports, expressionAst);
+      const effectiveExpr = definyAstToSelfHostedAst(expressionAst);
+      const exprPtr = writeLiteral(exports, effectiveExpr);
       const partsPtr = writeLiteral(exports, partsNode);
 
       const argsPtr = exports.alloc(8);

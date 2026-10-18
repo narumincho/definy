@@ -8,18 +8,23 @@ import {
   evaluateCompiledWasm,
   type DefinyValue,
 } from "../../src/stage1_compiler.ts";
+import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
-  const { language, parts, workingChanges } = useDefiny();
+  const {
+    language,
+    parts,
+    workingChanges,
+    updateWorkingPart,
+    discardWorkingPart,
+  } = useDefiny();
 
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<DefinyValue | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
   const [compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "wasm" | "ast">(
-    "overview",
-  );
+  const [activeTab, setActiveTab] = useState<"tree" | "wasm" | "ast">("tree");
 
   const part = parts.find(
     (p) =>
@@ -32,42 +37,22 @@ export default function PartDetailPage(): JSX.Element {
     description: "Sample part",
     partType: null,
     expression: {
-      Variant: {
-        tag: "add",
-        payload: {
-          TypeLiteral: {
-            items: [
-              {
-                key: "left",
-                value: {
-                  Variant: {
-                    tag: "number",
-                    payload: { Number: { value: 15 } },
-                  },
-                },
-              },
-              {
-                key: "right",
-                value: {
-                  Variant: {
-                    tag: "number",
-                    payload: { Number: { value: 27 } },
-                  },
-                },
-              },
-            ],
-          },
-        },
-      },
+      Number: { value: 0 },
     },
     updatedAtMs: Date.now(),
   };
+
+  const change = workingChanges.parts.get(part.partId);
+  const hasChange = change !== undefined;
+  const currentName = change?.name ?? part.name;
+  const currentDescription = change?.description ?? part.description;
+  const currentExpression =
+    change?.expression !== undefined ? change.expression : part.expression;
 
   const handleEvaluate = useCallback(async () => {
     setEvaluating(true);
     setEvalError(null);
     try {
-      // In browser, fetch stage1.wasm and compile
       const res = await fetch("/virtual/wasm/stage1.wasm");
       if (!res.ok) {
         throw new Error(`Failed to load stage1.wasm: ${res.status}`);
@@ -76,7 +61,7 @@ export default function PartDetailPage(): JSX.Element {
       const stage1Mod = await WebAssembly.compile(stage1Bytes);
       const compiler = createStage1Compiler(stage1Mod);
 
-      const wasm = compiler.compile(part.expression);
+      const wasm = compiler.compile(currentExpression);
       setCompiledWasm(wasm);
 
       const result = await evaluateCompiledWasm(wasm);
@@ -86,7 +71,7 @@ export default function PartDetailPage(): JSX.Element {
     } finally {
       setEvaluating(false);
     }
-  }, [part.expression]);
+  }, [currentExpression]);
 
   function formatValue(v: DefinyValue): string {
     if (v === null) return "null";
@@ -104,13 +89,43 @@ export default function PartDetailPage(): JSX.Element {
             {part.moduleName}
           </Link>
           <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">{part.name}</span>
-          {workingChanges.parts.has(part.partId) && (
-            <span className="badge badge-warning">● Modified</span>
+          <span className="breadcrumb-current">{currentName}</span>
+          {hasChange && (
+            <span
+              className="badge badge-warning"
+              style={{
+                marginLeft: "0.4rem",
+                background: "var(--yellow-bg-strong)",
+                color: "var(--yellow)",
+                border: "1px solid var(--yellow-border)",
+              }}
+            >
+              ● {label(language, "Modified", "編集中の変更あり", "Modifita")}
+            </span>
           )}
         </div>
 
-        <div className="part-actions">
+        <div
+          className="part-actions"
+          style={{ display: "flex", gap: "0.5rem" }}
+        >
+          {hasChange && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                discardWorkingPart(part.partId);
+              }}
+            >
+              {label(
+                language,
+                "Discard Changes",
+                "変更を破棄",
+                "Malfari ŝanĝojn",
+              )}
+            </button>
+          )}
+
           <button
             type="button"
             className="btn btn-primary btn-sm"
@@ -155,12 +170,17 @@ export default function PartDetailPage(): JSX.Element {
       <div className="tabs">
         <button
           type="button"
-          className={`tab-btn ${activeTab === "overview" ? "active" : ""}`}
+          className={`tab-btn ${activeTab === "tree" ? "active" : ""}`}
           onClick={() => {
-            setActiveTab("overview");
+            setActiveTab("tree");
           }}
         >
-          {label(language, "Overview", "概要", "Superrigardo")}
+          {label(
+            language,
+            "Expression Tree Editor",
+            "式の木構造エディタ",
+            "Arba Redaktilo",
+          )}
         </button>
         <button
           type="button"
@@ -183,18 +203,46 @@ export default function PartDetailPage(): JSX.Element {
       </div>
 
       <div className="tab-content card">
-        {activeTab === "overview" && (
+        {activeTab === "tree" && (
           <div className="tab-panel">
-            <h3>{label(language, "Description", "説明", "Priskribo")}</h3>
-            <p className="part-desc-text">
-              {part.description ||
-                label(
-                  language,
-                  "No description",
-                  "説明なし",
-                  "Neniu priskribo",
-                )}
-            </p>
+            <PartDefinitionTree
+              name={currentName}
+              moduleName={part.moduleName}
+              description={currentDescription}
+              partType={part.partType}
+              expression={currentExpression}
+              editable={true}
+              onNameChange={(newName) => {
+                updateWorkingPart(part.partId, {
+                  moduleDefinitionEventHash: part.moduleId,
+                  partDefinitionEventHash: part.partId,
+                  name: newName,
+                  description: currentDescription,
+                  partType: part.partType,
+                  expression: currentExpression,
+                });
+              }}
+              onDescriptionChange={(newDesc) => {
+                updateWorkingPart(part.partId, {
+                  moduleDefinitionEventHash: part.moduleId,
+                  partDefinitionEventHash: part.partId,
+                  name: currentName,
+                  description: newDesc,
+                  partType: part.partType,
+                  expression: currentExpression,
+                });
+              }}
+              onExpressionChange={(newExpr) => {
+                updateWorkingPart(part.partId, {
+                  moduleDefinitionEventHash: part.moduleId,
+                  partDefinitionEventHash: part.partId,
+                  name: currentName,
+                  description: currentDescription,
+                  partType: part.partType,
+                  expression: newExpr,
+                });
+              }}
+            />
           </div>
         )}
 
@@ -236,7 +284,7 @@ export default function PartDetailPage(): JSX.Element {
         {activeTab === "ast" && (
           <div className="tab-panel">
             <pre className="code-block">
-              {JSON.stringify(part.expression, null, 2)}
+              {JSON.stringify(currentExpression, null, 2)}
             </pre>
           </div>
         )}

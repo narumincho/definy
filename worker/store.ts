@@ -752,6 +752,63 @@ export class WorkerStore {
   }
 
   /**
+   * stage1.wasm のバイナリを取得する (CAS, 静的アセット, ファイルシステムから順にフォールバック)
+   */
+  async getStage1WasmBytes(
+    env?: Env,
+    requestOrigin?: string,
+  ): Promise<Uint8Array | undefined> {
+    const direct = await this.getRawContentBytes("stage1", env);
+    if (direct) {
+      return direct;
+    }
+
+    if (env?.ASSETS) {
+      try {
+        const origin = requestOrigin || "https://definy.narumincho.workers.dev";
+        const assetUrl = new URL("/stage1.wasm", origin).toString();
+        const res = await env.ASSETS.fetch(new Request(assetUrl));
+        if (res.ok) {
+          return new Uint8Array(await res.arrayBuffer());
+        }
+      } catch {
+        // Fall through
+      }
+    }
+
+    if (requestOrigin && typeof fetch !== "undefined") {
+      try {
+        const res = await fetch(
+          new URL("/stage1.wasm", requestOrigin).toString(),
+        );
+        if (res.ok) {
+          return new Uint8Array(await res.arrayBuffer());
+        }
+      } catch {
+        // Fall through
+      }
+    }
+
+    try {
+      const { readFile } = await import("node:fs/promises");
+      const { fileURLToPath } = await import("node:url");
+      const path = fileURLToPath(
+        new URL("../wasm/stage1.wasm", import.meta.url),
+      );
+      const content = await readFile(path);
+      return new Uint8Array(
+        content.buffer,
+        content.byteOffset,
+        content.byteLength,
+      );
+    } catch {
+      // Filesystem not available
+    }
+
+    return undefined;
+  }
+
+  /**
    * デプロイ履歴を記録する
    */
   async recordDeployment(
