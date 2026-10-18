@@ -84,7 +84,14 @@ DEFINY_ROOT_DOMAIN = "definy.narumincho.com"
 directory = "./dist-assets"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
-run_worker_first = true
+run_worker_first = [
+  "/definy.v1.*",
+  "/virtual/*",
+  "/mcp",
+  "/healthz",
+  "/swagger-ui*",
+  "/api-docs/*",
+]
 ```
 
 ---

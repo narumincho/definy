@@ -130,27 +130,11 @@ pub(crate) fn assemble_wasm_module(
     // args_ptr points to [state_ptr: i32] (Tag 0 Number with i64 at +8)
     let stream_next_body: [u8; 22] = [
         0x00, // 0 local declarations
-        LOCAL_GET,
-        0x00,
-        I32_LOAD,
-        0x02,
-        0x00, // step0_ptr = i32.load(env_ptr + 0)
-        LOCAL_GET,
-        0x00,
-        I32_LOAD,
-        0x02,
-        0x04, // done_ptr = i32.load(env_ptr + 4)
-        LOCAL_GET,
-        0x01,
-        I32_LOAD,
-        0x02,
-        0x00, // state_ptr = i32.load(args_ptr + 0)
-        I64_LOAD,
-        0x03,
-        0x08, // state_val = i64.load(state_ptr + 8)
-        I64_EQZ,
-        SELECT,
-        END,
+        LOCAL_GET, 0x00, I32_LOAD, 0x02, 0x00, // step0_ptr = i32.load(env_ptr + 0)
+        LOCAL_GET, 0x00, I32_LOAD, 0x02, 0x04, // done_ptr = i32.load(env_ptr + 4)
+        LOCAL_GET, 0x01, I32_LOAD, 0x02, 0x00, // state_ptr = i32.load(args_ptr + 0)
+        I64_LOAD, 0x03, 0x08, // state_val = i64.load(state_ptr + 8)
+        I64_EQZ, SELECT, END,
     ];
     encode_u32_leb128(&mut code_section, stream_next_body.len() as u32);
     code_section.extend_from_slice(&stream_next_body);
