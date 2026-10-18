@@ -96,7 +96,7 @@ export function ActivityBar(): JSX.Element {
             title={itemLabel}
             aria-current={isActive ? "page" : "false"}
           >
-            <Icon kind={target.icon} className="activity-icon" />
+            <Icon kind={target.icon} size={22} className="activity-icon" />
             <span className="activity-label">{itemLabel}</span>
             {badge > 0 && <span className="activity-badge">{badge}</span>}
           </Link>
@@ -110,7 +110,7 @@ export function ActivityBar(): JSX.Element {
         className={`activity-item ${currentPath.startsWith("/about") ? "active" : ""}`}
         title={label(language, "About", "About", "Pri")}
       >
-        <Icon kind="about" className="activity-icon" />
+        <Icon kind="about" size={22} className="activity-icon" />
         <span className="activity-label">
           {label(language, "About", "About", "Pri")}
         </span>
@@ -121,7 +121,7 @@ export function ActivityBar(): JSX.Element {
         className={`activity-item ${currentPath.startsWith("/settings") ? "active" : ""}`}
         title={label(language, "Settings", "設定", "Agordoj")}
       >
-        <Icon kind="settings" className="activity-icon" />
+        <Icon kind="settings" size={22} className="activity-icon" />
         <span className="activity-label">
           {label(language, "Settings", "設定", "Agordoj")}
         </span>

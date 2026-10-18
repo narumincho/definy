@@ -94,4 +94,42 @@ test.describe("definy UI E2E", () => {
     const resultCard = page.locator(".eval-result-card");
     await expect(resultCard).toBeVisible({ timeout: 10000 });
   });
+
+  test("icons have bounded and non-zero dimensions across views", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForSelector(".event-card");
+
+    const rootIconSizes = await page.evaluate(() => {
+      const svgs = Array.from(document.querySelectorAll("svg"));
+      return svgs.map((svg) => {
+        const rect = svg.getBoundingClientRect();
+        return {
+          width: rect.width,
+          height: rect.height,
+        };
+      });
+    });
+
+    expect(rootIconSizes.length).toBeGreaterThan(0);
+    for (const size of rootIconSizes) {
+      expect(size.width).toBeLessThanOrEqual(32);
+      expect(size.height).toBeLessThanOrEqual(32);
+      expect(size.width).toBeGreaterThanOrEqual(8);
+      expect(size.height).toBeGreaterThanOrEqual(8);
+    }
+
+    await page.goto("/modules");
+    await page.waitForSelector(".module-card");
+    const moduleIcon = page.locator(".module-card-icon").first();
+    const box = await moduleIcon.boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      expect(box.width).toBeLessThanOrEqual(32);
+      expect(box.height).toBeLessThanOrEqual(32);
+      expect(box.width).toBeGreaterThanOrEqual(12);
+      expect(box.height).toBeGreaterThanOrEqual(12);
+    }
+  });
 });

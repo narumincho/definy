@@ -155,7 +155,11 @@ export function CommandPalette(): JSX.Element | null {
         aria-modal="true"
       >
         <div className="command-palette-input-wrapper">
-          <Icon kind="search" className="command-palette-search-icon" />
+          <Icon
+            kind="search"
+            size={16}
+            className="command-palette-search-icon"
+          />
           <input
             ref={inputRef}
             type="text"
@@ -202,6 +206,7 @@ export function CommandPalette(): JSX.Element | null {
                 >
                   <Icon
                     kind={item.icon}
+                    size={15}
                     className="command-palette-item-icon"
                   />
                   <span className="command-palette-item-title">

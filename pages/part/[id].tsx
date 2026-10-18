@@ -117,7 +117,7 @@ export default function PartDetailPage(): JSX.Element {
             onClick={handleEvaluate}
             disabled={evaluating}
           >
-            <Icon kind="play" className="btn-icon" />
+            <Icon kind="play" size={14} className="btn-icon" />
             {evaluating
               ? label(language, "Evaluating...", "評価中...", "Taksante...")
               : label(

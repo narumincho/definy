@@ -131,9 +131,14 @@ export function ExplorerSidebar(): JSX.Element {
                 >
                   <Icon
                     kind="chevronRight"
+                    size={14}
                     className={`sidebar-chevron ${isCollapsed ? "" : "expanded"}`}
                   />
-                  <Icon kind="modules" className="sidebar-node-icon" />
+                  <Icon
+                    kind="modules"
+                    size={15}
+                    className="sidebar-node-icon tree-icon-module"
+                  />
                   <span className="sidebar-node-label">{mod.name}</span>
                   <span className="sidebar-count">{moduleParts.length}</span>
                 </button>
@@ -153,7 +158,11 @@ export function ExplorerSidebar(): JSX.Element {
                             }
                           }}
                         >
-                          <Icon kind="part" className="sidebar-node-icon" />
+                          <Icon
+                            kind="part"
+                            size={15}
+                            className="sidebar-node-icon tree-icon-part"
+                          />
                           <span className="sidebar-node-label">
                             {part.name}
                           </span>
