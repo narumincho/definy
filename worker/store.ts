@@ -66,6 +66,7 @@ interface D1EventRow {
   readonly account_id: string;
   readonly event_type: string;
   readonly created_at_rfc3339: string;
+  readonly time_ms?: number;
 }
 
 interface D1ContentRow {
@@ -83,6 +84,54 @@ interface D1DeploymentRow {
   readonly created_at_rfc3339: string;
   readonly wasm_hash: string | null;
   readonly provider: string | null;
+}
+
+async function fetchSeedBundle(
+  env: Env,
+  requestOrigin?: string,
+): Promise<SeedBundle | null> {
+  // 1. Cloudflare Workers (Static Assets binding)
+  if (env.ASSETS) {
+    try {
+      const origin = requestOrigin || "https://definy.narumincho.workers.dev";
+      const assetUrl = new URL("/__definy_seed_bundle.json", origin).toString();
+      const res = await env.ASSETS.fetch(new Request(assetUrl));
+      if (res.ok) {
+        return (await res.json()) as SeedBundle;
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
+  // 2. Local dev server / Void HTTP fetch
+  if (requestOrigin && typeof fetch !== "undefined") {
+    try {
+      const res = await fetch(
+        new URL("/__definy_seed_bundle.json", requestOrigin).toString(),
+      );
+      if (res.ok) {
+        return (await res.json()) as SeedBundle;
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
+  // 3. Node.js runtime / Vitest fallback
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const { fileURLToPath } = await import("node:url");
+    const path = fileURLToPath(
+      new URL("../seeds/seed_bundle.json", import.meta.url),
+    );
+    const content = await readFile(path, "utf-8");
+    return JSON.parse(content) as SeedBundle;
+  } catch {
+    // Filesystem not available
+  }
+
+  return null;
 }
 
 /**
@@ -114,6 +163,15 @@ export class WorkerStore {
     }
     if (!this.schemaInitPromise) {
       this.schemaInitPromise = (async () => {
+        try {
+          const test = await db.prepare("SELECT 1 FROM events LIMIT 1").first();
+          if (test !== undefined) {
+            this.d1SchemaInitialized = true;
+            return;
+          }
+        } catch {
+          // Table does not exist, run schema statements
+        }
         const stmts = D1_SCHEMA_STATEMENTS.map((sql) => db.prepare(sql));
         await db.batch(stmts);
         this.d1SchemaInitialized = true;
@@ -136,17 +194,36 @@ export class WorkerStore {
   }
 
   /**
-   * インメモリストア利用時（`env.DB` 未バインド時）に Static Assets からシードバンドルをロードする。
-   * `env.DB` (Cloudflare D1) バインド時は GitHub Actions デプロイ時 (`wrangler d1 execute`) または
-   * セルフホストデプロイ処理 (`seedD1`) でシード済みのため、リクエスト時のフェッチ・D1 照合は行わない
-   * （単体テスト等で事前に `loadSeedBundle` が呼ばれている場合のみ D1 へ同期する）。
+   * D1 またはインメモリストアにシードデータを投入する。
+   * `env.DB` (Cloudflare D1) 利用時は D1 スキーマを確実に適用し、未投入時のみシードデータを同期する。
    */
   async ensureSeeded(env: Env, requestOrigin?: string): Promise<void> {
     if (env.DB) {
-      if (this.seeded && !this.d1Seeded) {
+      await this.ensureD1Schema(env.DB);
+      if (!this.d1Seeded) {
         if (!this.seedPromise) {
           this.seedPromise = (async () => {
-            await this.persistSeedToD1(env.DB!);
+            let existingEventCount = 0;
+            try {
+              const res = await env
+                .DB!.prepare("SELECT COUNT(*) AS cnt FROM events")
+                .first<number>("cnt");
+              existingEventCount = res ?? 0;
+            } catch {
+              existingEventCount = 0;
+            }
+
+            if (existingEventCount === 0 || this.seeded) {
+              if (!this.seeded) {
+                const bundle = await fetchSeedBundle(env, requestOrigin);
+                if (bundle) {
+                  this.loadSeedBundle(bundle);
+                }
+              }
+              if (this.seeded) {
+                await this.persistSeedToD1(env.DB!);
+              }
+            }
             this.d1Seeded = true;
           })().finally(() => {
             this.seedPromise = null;
@@ -162,22 +239,9 @@ export class WorkerStore {
     }
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
-        if (!this.seeded && env.ASSETS) {
-          const origin =
-            requestOrigin || "https://definy.narumincho.workers.dev";
-          const assetUrl = new URL(
-            "/__definy_seed_bundle.json",
-            origin,
-          ).toString();
-          try {
-            const res = await env.ASSETS.fetch(new Request(assetUrl));
-            if (res.ok) {
-              const bundle = (await res.json()) as SeedBundle;
-              this.loadSeedBundle(bundle);
-            }
-          } catch {
-            // Static Assets 取得失敗時は無視して継続
-          }
+        const bundle = await fetchSeedBundle(env, requestOrigin);
+        if (bundle) {
+          this.loadSeedBundle(bundle);
         }
       })().finally(() => {
         this.seedPromise = null;
@@ -355,11 +419,12 @@ export class WorkerStore {
     const limit = Math.min(500, Math.max(1, req.limit ?? 50));
 
     if (env?.DB) {
+      await this.ensureD1Schema(env.DB);
       let stmt: D1PreparedStatement;
       if (requestedType) {
         const normalized = requestedType.toLowerCase().replace(/_/g, "");
         stmt = env.DB.prepare(
-          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339
+          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
            FROM events
            WHERE REPLACE(LOWER(event_type), '_', '') = ?
            ORDER BY time_ms DESC
@@ -367,7 +432,7 @@ export class WorkerStore {
         ).bind(normalized, limit, offset);
       } else {
         stmt = env.DB.prepare(
-          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339
+          `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
            FROM events
            ORDER BY time_ms DESC
            LIMIT ? OFFSET ?`,
@@ -380,6 +445,9 @@ export class WorkerStore {
         accountId: r.account_id,
         eventType: r.event_type,
         createdAtRfc3339: r.created_at_rfc3339,
+        timeMs:
+          r.time_ms ??
+          (r.created_at_rfc3339 ? Date.parse(r.created_at_rfc3339) : 0),
       }));
     }
 
@@ -396,6 +464,8 @@ export class WorkerStore {
       accountId: e.accountId,
       eventType: e.eventType,
       createdAtRfc3339: e.createdAtRfc3339,
+      timeMs:
+        e.timeMs ?? (e.createdAtRfc3339 ? Date.parse(e.createdAtRfc3339) : 0),
     }));
   }
 
@@ -404,8 +474,9 @@ export class WorkerStore {
    */
   async getEvent(eventHash: string, env?: Env): Promise<EventItem | undefined> {
     if (env?.DB) {
+      await this.ensureD1Schema(env.DB);
       const row = await env.DB.prepare(
-        `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339
+        `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms
          FROM events
          WHERE event_hash = ?`,
       )
@@ -420,6 +491,9 @@ export class WorkerStore {
         accountId: row.account_id,
         eventType: row.event_type,
         createdAtRfc3339: row.created_at_rfc3339,
+        timeMs:
+          row.time_ms ??
+          (row.created_at_rfc3339 ? Date.parse(row.created_at_rfc3339) : 0),
       };
     }
 

@@ -5,6 +5,8 @@ dist-assets
 target
 worker/generated
 .void
+test-results
+playwright-report
 
 # Static assets & test seeds
 public

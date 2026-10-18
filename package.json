@@ -8,6 +8,7 @@
     "deploy": "void deploy --platform cloudflare",
     "check": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "lint": "oxlint",
     "fmt": "prettier --write ."
   },
@@ -16,6 +17,7 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

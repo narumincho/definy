@@ -21,7 +21,10 @@ export default function PartDetailPage(): JSX.Element {
     "overview",
   );
 
-  const part = parts.find((p) => p.partId === id) ?? {
+  const part = parts.find(
+    (p) =>
+      p.partId === id || p.name === id || `${p.moduleName}.${p.name}` === id,
+  ) ?? {
     partId: id ?? "unknown",
     moduleId: "core",
     moduleName: "core",
