@@ -59,6 +59,26 @@ async fn main() -> Result<(), anyhow::Error> {
         );
         return Ok(());
     }
+    if let Some(idx) = args.iter().position(|a| a == "--export-stage1-wasm") {
+        let out_path = args
+            .get(idx + 1)
+            .ok_or_else(|| anyhow::anyhow!("Missing output path after --export-stage1-wasm"))?;
+        let events = definy_server::builtin_migration::build_builtin_verified_events();
+        let wasm = definy_server::self_hosted_wasm_compiler::build_self_hosted_compiler_wasm(&events)
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
+        if let Some(parent) = std::path::Path::new(out_path).parent()
+            && !parent.as_os_str().is_empty()
+        {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(out_path, &wasm)?;
+        println!(
+            "Exported stage1 wasm ({} bytes) to {}",
+            wasm.len(),
+            out_path
+        );
+        return Ok(());
+    }
     if let Some(idx) = args.iter().position(|a| a == "--export-seed-sql") {
         let out_path = args
             .get(idx + 1)
