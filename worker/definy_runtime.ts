@@ -69,8 +69,8 @@ export class DefinyRuntime {
     const imports: Record<string, Record<string, () => never>> = {};
     for (const entry of WebAssembly.Module.imports(module)) {
       if (entry.kind !== "function") continue;
-      imports[entry.module] ??= {};
-      imports[entry.module][entry.name] = () => {
+      const moduleMap = (imports[entry.module] ??= {});
+      moduleMap[entry.name] = () => {
         throw new Error(
           `definy runtime called unsupported import ${entry.module}.${entry.name}`,
         );
