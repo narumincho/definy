@@ -25,22 +25,6 @@ fn runtime_with_seed_bundle() -> Runtime {
     runtime
 }
 
-fn read_body(runtime: &mut Runtime, handle: u32) -> Vec<u8> {
-    use base64::Engine as _;
-    let mut body = Vec::new();
-    loop {
-        match runtime.handle(Request::HttpPull { handle }) {
-            Response::HttpChunk { chunk: Some(chunk) } => body.extend(
-                base64::engine::general_purpose::STANDARD
-                    .decode(chunk)
-                    .unwrap(),
-            ),
-            Response::HttpChunk { chunk: None } => return body,
-            other => panic!("unexpected response: {other:?}"),
-        }
-    }
-}
-
 #[test]
 fn test_evaluate_sample_part() {
     let mut runtime = runtime_with_seed_bundle();
@@ -59,26 +43,23 @@ fn test_evaluate_sample_part() {
 }
 
 #[test]
-fn test_http_self_hosted_definy_server_sample() {
+fn test_compile_part_self_hosted_definy_server_sample() {
+    use base64::Engine as _;
     let mut runtime = runtime_with_seed_bundle();
-    let response = runtime.handle(Request::HttpStart {
+    let response = runtime.handle(Request::CompilePart {
         part_id: "sample.self-hosted-definy-server".into(),
-        method: "GET".into(),
-        url: "http://self-definy.localhost:8000/healthz".into(),
-        headers: vec![("host".into(), "self-definy.localhost:8000".into())],
-        body: String::new(),
     });
-    let Response::HttpStarted { handle, status, .. } = response else {
+    let Response::CompiledPart {
+        wasm,
+        cloudflare_worker_name,
+        ..
+    } = response
+    else {
         panic!("unexpected response: {response:?}");
     };
-    assert_eq!(status, 200);
-    let body: serde_json::Value = serde_json::from_slice(&read_body(&mut runtime, handle)).unwrap();
-    assert_eq!(body["status"], "ok");
-    assert_eq!(body["service"], "self-hosted-definy-server");
-
-    // 読み終わったストリームは破棄されている
-    assert!(matches!(
-        runtime.handle(Request::HttpPull { handle }),
-        Response::Error { .. }
-    ));
+    assert_eq!(cloudflare_worker_name.as_deref(), Some("self-definy"));
+    let wasm_bytes = base64::engine::general_purpose::STANDARD
+        .decode(wasm)
+        .unwrap();
+    assert_eq!(&wasm_bytes[..4], b"\0asm");
 }

@@ -19,13 +19,12 @@ definy の式は Rust サーバーでは「Wasm にコンパイル（`definy_cor
 | ファイル | 役割 |
 | --- | --- |
 | `definy-worker-runtime/src/lib.rs` | ランタイム本体。JSON の要求を処理する `Runtime` と、wasm32 用の C ABI (`definy_alloc` / `definy_free` / `definy_call`) |
-| `definy-core/src/http_app.rs` | パーツの探索、`definy:deploy` 設定からのハンドラ取り出し、HTTP リクエストを適用した式のコンパイル（Rust サーバーと共通） |
-| `worker/definy_runtime.ts` | ランタイムの TypeScript ラッパー。本文を Pull 型 `ReadableStream` にする |
-| `worker/http_stream.ts` | D1 / ストアからイベントと CAS コンテンツを集めてランタイムに渡し、`compilePartToWasm` 等を提供する |
+| `definy-core/src/http_app.rs` | パーツの探索、`definy:deploy` 設定からのハンドラ取り出し（Rust サーバーと共通） |
+| `worker/definy_runtime.ts` | ランタイムの TypeScript ラッパー |
+| `worker/http_stream.ts` | D1 / ストアからイベントと CAS コンテンツを集めてランタイムに渡し、`compilePartToWasm` を提供する |
 | `worker/main.ts` | wrangler のエントリポイント。`./generated/definy_worker_runtime.wasm` を import して設定する |
 
-要求（`op`）は `loadEvents` / `loadContents` / `missingContents` / `compilePart` / `httpStart` / `httpStartWasm` /
-`httpPull` / `httpDrop` / `evaluate` / `evaluateExpression`。読み込んだイベントは isolate が生きている間
+要求（`op`）は `loadEvents` / `loadContents` / `missingContents` / `compilePart` / `evaluate` / `evaluateExpression`。読み込んだイベントは isolate が生きている間
 ランタイム内に保持し、2 回目以降は新しいイベントだけを渡す。
 
 ## ビルドとテスト

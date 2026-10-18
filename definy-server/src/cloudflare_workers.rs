@@ -524,7 +524,7 @@ function createMemoryAllocator(exports) {
   };
 }
 
-function writeHttpRequestToMemory(exports, alloc, request) {
+function writeHttpRequestToMemory(exports, alloc, request, bodyBytes) {
   const writeNumber = (n) => {
     const ptr = alloc(16);
     const mem = new Uint8Array(exports.memory.buffer);
@@ -566,6 +566,24 @@ function writeHttpRequestToMemory(exports, alloc, request) {
     }
     return ptr;
   };
+  const writeClosure = (tableIdx, envPtr) => {
+    const ptr = alloc(16);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 5;
+    view.setUint32(ptr + 4, tableIdx, true);
+    view.setInt32(ptr + 8, envPtr, true);
+    return ptr;
+  };
+  const writeVariant = (tagPtr, payloadPtr) => {
+    const ptr = alloc(16);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 6;
+    view.setUint32(ptr + 4, tagPtr, true);
+    view.setUint32(ptr + 8, payloadPtr, true);
+    return ptr;
+  };
 
   const headerPtrs = [];
   request.headers.forEach((value, name) => {
@@ -577,9 +595,49 @@ function writeHttpRequestToMemory(exports, alloc, request) {
     );
   });
 
-  const bodyRecordPtr = writeRecord([
+  const rawBody = bodyBytes instanceof Uint8Array ? bodyBytes : new Uint8Array(0);
+  const bytePtrs = new Array(rawBody.length);
+  for (let i = 0; i < rawBody.length; i++) {
+    bytePtrs[i] = writeNumber(rawBody[i]);
+  }
+  const bytesListPtr = writeList(bytePtrs);
+  const bodyEntries = [
     [writeString("initialState"), writeNumber(0)],
-  ]);
+    [writeString("bytes"), bytesListPtr],
+    [writeString("text"), writeString(new TextDecoder().decode(rawBody))],
+  ];
+
+  const streamNextIdx =
+    exports.stream_next_table_idx &&
+    typeof exports.stream_next_table_idx.value === "number"
+      ? exports.stream_next_table_idx.value
+      : null;
+  if (streamNextIdx !== null) {
+    const donePtr = writeVariant(writeString("done"), 0);
+    const step0Ptr =
+      rawBody.length === 0
+        ? donePtr
+        : writeVariant(
+            writeString("yield"),
+            writeRecord([
+              [writeString("chunk"), bytesListPtr],
+              [writeString("nextState"), writeNumber(1)],
+            ])
+          );
+    const envPtr = alloc(8);
+    {
+      const mem = new Uint8Array(exports.memory.buffer);
+      const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+      view.setUint32(envPtr, step0Ptr, true);
+      view.setUint32(envPtr + 4, donePtr, true);
+    }
+    bodyEntries.push([
+      writeString("next"),
+      writeClosure(streamNextIdx, envPtr),
+    ]);
+  }
+
+  const bodyRecordPtr = writeRecord(bodyEntries);
 
   return writeRecord([
     [writeString("method"), writeString(request.method)],
@@ -589,57 +647,71 @@ function writeHttpRequestToMemory(exports, alloc, request) {
   ]);
 }
 
-function pullByteStream(exports, alloc, bodyRecordPtr, nextClosure) {
+function createPullByteReadableStream(exports, alloc, bodyRecordPtr, nextClosure) {
   let statePtr = readRecordFieldPtr(
     new Uint8Array(exports.memory.buffer),
     bodyRecordPtr,
     "initialState"
   );
-  if (statePtr === null) return new Uint8Array(0);
-  const argsPtr = alloc(8);
+  const argsPtr = statePtr !== null ? alloc(8) : 0;
   const nextFn = exports.table.get(nextClosure.tableIdx);
-  const chunks = [];
-  let totalLen = 0;
+  let steps = 0;
 
-  for (let step = 0; step < 10000; step++) {
-    {
-      const mem = new Uint8Array(exports.memory.buffer);
-      const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
-      view.setUint32(argsPtr, statePtr, true);
-    }
-    const stepPtr = nextFn(nextClosure.envPtr, argsPtr);
-    const mem = new Uint8Array(exports.memory.buffer);
-    if (stepPtr < 0 || stepPtr >= mem.length || mem[stepPtr] !== 6) break;
-    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
-    const tagPtr = view.getUint32(stepPtr + 4, true);
-    const payloadPtr = view.getUint32(stepPtr + 8, true);
-    const tag = readDefinyValue(mem, tagPtr);
-    if (tag === "done" || payloadPtr === 0) break;
-    if (tag === "yield") {
-      const chunkPtr = readRecordFieldPtr(mem, payloadPtr, "chunk");
-      const nextStatePtr = readRecordFieldPtr(mem, payloadPtr, "nextState");
-      if (chunkPtr !== null) {
-        const listVal = readDefinyValue(mem, chunkPtr);
-        if (Array.isArray(listVal) && listVal.length > 0) {
-          const bytes = new Uint8Array(listVal.map((n) => Number(n) & 0xff));
-          chunks.push(bytes);
-          totalLen += bytes.length;
+  return new ReadableStream({
+    pull(controller) {
+      if (statePtr === null) {
+        controller.close();
+        return;
+      }
+      while (steps < 10000) {
+        steps++;
+        {
+          const mem = new Uint8Array(exports.memory.buffer);
+          const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+          view.setUint32(argsPtr, statePtr, true);
+        }
+        const stepPtr = nextFn(nextClosure.envPtr, argsPtr);
+        const mem = new Uint8Array(exports.memory.buffer);
+        if (stepPtr < 0 || stepPtr >= mem.length || mem[stepPtr] !== 6) {
+          statePtr = null;
+          controller.close();
+          return;
+        }
+        const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+        const tagPtr = view.getUint32(stepPtr + 4, true);
+        const payloadPtr = view.getUint32(stepPtr + 8, true);
+        const tag = readDefinyValue(mem, tagPtr);
+        if (tag === "done" || payloadPtr === 0) {
+          statePtr = null;
+          controller.close();
+          return;
+        }
+        if (tag === "yield") {
+          const chunkPtr = readRecordFieldPtr(mem, payloadPtr, "chunk");
+          const nextStatePtr = readRecordFieldPtr(mem, payloadPtr, "nextState");
+          statePtr = nextStatePtr;
+          if (chunkPtr !== null) {
+            const listVal = readDefinyValue(mem, chunkPtr);
+            if (Array.isArray(listVal) && listVal.length > 0) {
+              const bytes = new Uint8Array(listVal.map((n) => Number(n) & 0xff));
+              controller.enqueue(bytes);
+              return;
+            }
+          }
+          if (statePtr === null) {
+            controller.close();
+            return;
+          }
+        } else {
+          statePtr = null;
+          controller.close();
+          return;
         }
       }
-      if (nextStatePtr === null) break;
-      statePtr = nextStatePtr;
-    } else {
-      break;
-    }
-  }
-
-  const out = new Uint8Array(totalLen);
-  let offset = 0;
-  for (const c of chunks) {
-    out.set(c, offset);
-    offset += c.length;
-  }
-  return out;
+      statePtr = null;
+      controller.close();
+    },
+  });
 }
 
 function stripInternalFields(val) {
@@ -681,7 +753,11 @@ async function evaluateWasmRequest(request) {
     const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
     const tableIdx = view.getUint32(rawPtr + 4, true);
     const envPtr = view.getInt32(rawPtr + 8, true);
-    const reqPtr = writeHttpRequestToMemory(exports, alloc, request);
+    const bodyBytes =
+      request.body && request.method !== "GET" && request.method !== "HEAD"
+        ? new Uint8Array(await request.clone().arrayBuffer())
+        : new Uint8Array(0);
+    const reqPtr = writeHttpRequestToMemory(exports, alloc, request, bodyBytes);
     const argsPtr = alloc(8);
     mem = new Uint8Array(exports.memory.buffer);
     new DataView(mem.buffer, mem.byteOffset, mem.byteLength).setUint32(
@@ -722,7 +798,7 @@ async function evaluateWasmRequest(request) {
       exports.table
     ) {
       const bodyRecordPtr = rawVal.body.__ptr;
-      bodyPayload = pullByteStream(
+      bodyPayload = createPullByteReadableStream(
         exports,
         alloc,
         bodyRecordPtr,

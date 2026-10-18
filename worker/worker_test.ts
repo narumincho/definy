@@ -616,6 +616,38 @@ Deno.test("DeployCloudflare compiles definy:deploy part to Wasm and uploads app.
       JSON.stringify(magic),
       JSON.stringify([0x00, 0x61, 0x73, 0x6d]),
     );
+
+    // 生成された worker.js と app.wasm を実際に V8 WebAssembly.Module として実行し、
+    // ReadableStream による HTTP レスポンスおよびリクエストボディの受け渡しを検証する
+    const wasmBytes = uploadedWasmBytes as Uint8Array;
+    const wasmCopy = new Uint8Array(wasmBytes.byteLength);
+    wasmCopy.set(wasmBytes);
+    const compiledModule = await WebAssembly.compile(wasmCopy.buffer);
+    const executableJs = uploadedWorkerJs
+      .replace('import wasmModule from "./app.wasm";', "")
+      .replace("export default {", "return {");
+    const createWorkerHandler = new Function("wasmModule", executableJs) as (
+      mod: WebAssembly.Module,
+    ) => { fetch(req: Request): Promise<Response> };
+    const workerHandler = createWorkerHandler(compiledModule);
+
+    const healthRes = await workerHandler.fetch(
+      new Request("https://self-definy.narumincho.workers.dev/healthz"),
+    );
+    assertEquals(healthRes.status, 200);
+    const healthJson = await healthRes.json();
+    assertEquals(healthJson.status, "ok");
+    assertEquals(healthJson.service, "self-hosted-definy-server");
+
+    const postRes = await workerHandler.fetch(
+      new Request("https://self-definy.narumincho.workers.dev/api/self-host", {
+        method: "POST",
+        body: JSON.stringify({ hello: "world" }),
+      }),
+    );
+    assertEquals(postRes.status, 200);
+    const postText = await postRes.text();
+    assertEquals(postText.includes("self-hosted"), true);
   }
 });
 
