@@ -83,6 +83,16 @@ runtime.callOrThrow({
   op: "loadEvents",
   events: bundle.events.map((ev) => ev.signedEventBytes),
 });
+if (bundle.contents && bundle.contents.length > 0) {
+  const contentsMap: Record<string, string> = {};
+  for (const c of bundle.contents) {
+    contentsMap[c.contentHash] = c.contentBytes;
+  }
+  runtime.callOrThrow({
+    op: "loadContents",
+    contents: contentsMap,
+  });
+}
 const accountBytes = await devSystemAccountBytes();
 
 describe("eval conformance (worker runtime)", () => {
@@ -92,7 +102,10 @@ describe("eval conformance (worker runtime)", () => {
         testCase.expression,
         accountBytes,
       );
-      const response = runtime.call({ op: "evaluateExpression", expression });
+      const response = await runtime.callAsync({
+        op: "evaluateExpression",
+        expression,
+      });
       if (response.type === "error") {
         throw new Error(response.message);
       }

@@ -1,6 +1,7 @@
 name = "definy"
 main = "worker/main.ts"
 compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 DEFINY_ROOT_DOMAIN = "definy.narumincho.com"

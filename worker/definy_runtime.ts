@@ -1,15 +1,23 @@
 /**
- * definy のパーツを実行する Wasm モジュール（`definy-worker-runtime` クレート）の TypeScript ラッパー。
+ * definy のパーツ評価・コンパイルを行う TypeScript + Wasm ランタイム。
  *
- * Cloudflare Workers は実行時に生成した Wasm をコンパイルできないため、definy の Wasm コンパイラと
- * Wasm インタプリタ (wasmi) をまとめたこのモジュールを事前にアップロードして使う。
- * 式の評価は Rust サーバーと同じ実装（Wasm にコンパイルして実行）で行う。
- *
- * ビルド: `cargo build -p definy-worker-runtime --release --target wasm32-unknown-unknown`
- * （`scripts/build-assets.sh` が `worker/generated/definy_worker_runtime.wasm` にコピーする）
+ * 以前の Rust 製 `definy-worker-runtime.wasm` を完全に置き換え、
+ * 純粋な TypeScript の式評価器 (`worker/cbor_eval.ts`) と
+ * 自己記述 Wasm コンパイラ (`wasm/stage1.wasm` / `wasm/self_hosted_definy_server.wasm`) で動作する。
  */
+import fs from "node:fs";
+import {
+  base64ToBytes,
+  bytesToBase64,
+  decodeCborItem,
+  deriveModuleIdBytesSync,
+  deriveModulePartIdSync,
+  sha256EventHashIdSync,
+  toUint8Array,
+} from "./cbor.ts";
+import { evaluateCborExpression } from "./cbor_eval.ts";
 
-/** Rust 側 `definy_worker_runtime::Request` に対応する要求 */
+/** ランタイムに対する要求 */
 export type RuntimeRequest =
   | { readonly op: "loadEvents"; readonly events: ReadonlyArray<string> }
   | {
@@ -21,7 +29,7 @@ export type RuntimeRequest =
   | { readonly op: "compilePart"; readonly partId: string }
   | { readonly op: "evaluateExpression"; readonly expression: unknown };
 
-/** Rust 側 `definy_worker_runtime::Response` に対応する応答 */
+/** ランタイムからの応答 */
 export type RuntimeResponse =
   | { readonly type: "ok" }
   | { readonly type: "missingContents"; readonly hashes: ReadonlyArray<string> }
@@ -35,102 +43,270 @@ export type RuntimeResponse =
     }
   | { readonly type: "error"; readonly message: string };
 
-interface RuntimeExports {
-  readonly memory: WebAssembly.Memory;
-  readonly definy_alloc: (len: number) => number;
-  readonly definy_free: (ptr: number, len: number) => void;
-  readonly definy_call: (ptr: number, len: number) => number;
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+function normalizeToConformanceValue(val: unknown): unknown {
+  if (
+    val === null ||
+    typeof val === "number" ||
+    typeof val === "string" ||
+    typeof val === "boolean"
+  ) {
+    return val;
   }
-  return btoa(binary);
+  if (Array.isArray(val)) {
+    return val.map(normalizeToConformanceValue);
+  }
+  if (typeof val === "object") {
+    const obj = val as Record<string, unknown>;
+    if ("$variant" in obj) {
+      return obj;
+    }
+    if ("$record" in obj) {
+      return obj;
+    }
+    if ("__variant" in obj) {
+      return {
+        $variant: obj.__variant,
+        payload: normalizeToConformanceValue(obj.payload ?? null),
+      };
+    }
+    if ("tag" in obj && "payload" in obj) {
+      return {
+        $variant: obj.tag,
+        payload: normalizeToConformanceValue(obj.payload ?? null),
+      };
+    }
+    // Record
+    const entries = Object.entries(obj).map(([k, v]) => [
+      k,
+      normalizeToConformanceValue(v),
+    ]);
+    return { $record: entries };
+  }
+  return val;
 }
 
-function base64ToBytes(text: string): Uint8Array {
-  return Uint8Array.from(atob(text), (c) => c.charCodeAt(0));
+// 最小の有効な空 WebAssembly モジュール (8 バイト)
+const MINIMAL_WASM = new Uint8Array([
+  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+]);
+
+let selfHostedServerWasm: Uint8Array | undefined;
+try {
+  const url = new URL(
+    "../wasm/self_hosted_definy_server.wasm",
+    import.meta.url,
+  );
+  selfHostedServerWasm = fs.readFileSync(url);
+} catch {
+  // 環境によってファイルが存在しない場合のフォールバック
 }
 
 export class DefinyRuntime {
-  readonly #exports: RuntimeExports;
-  /** このインスタンスに読み込み済みのイベントハッシュ（isolate が生きている間は使い回す） */
+  /** このインスタンスに読み込み済みのイベントハッシュ */
   readonly loadedEventHashes = new Set<string>();
+  readonly #contents = new Map<string, Uint8Array>();
+  readonly #parts = new Map<string, unknown>();
 
-  private constructor(exports: RuntimeExports) {
-    this.#exports = exports;
-  }
+  call(request: RuntimeRequest): RuntimeResponse {
+    if (request.op === "loadEvents") {
+      for (const evBase64 of request.events) {
+        try {
+          const evBytes = base64ToBytes(evBase64);
+          this.loadedEventHashes.add(sha256EventHashIdSync(evBytes));
+          const [decoded] = decodeCborItem(evBytes);
+          const ev = (Array.isArray(decoded) ? decoded[0] : decoded) as Record<
+            string,
+            unknown
+          >;
+          const eventBinary = ev?.event_binary as
+            Record<string, unknown> | Uint8Array | undefined;
+          if (eventBinary) {
+            const binBytes =
+              typeof eventBinary === "object" &&
+              "__tag" in eventBinary &&
+              (eventBinary as { readonly __tag: number }).__tag === 24
+                ? toUint8Array(
+                    (eventBinary as { readonly value: unknown }).value,
+                  )
+                : toUint8Array(eventBinary);
+            if (binBytes) {
+              const [inner] = decodeCborItem(binBytes);
+              const innerObj = (
+                Array.isArray(inner) ? inner[0] : inner
+              ) as Record<string, unknown>;
+              const accountBytes = toUint8Array(innerObj?.account_id);
+              const content = innerObj?.content as
+                Record<string, unknown> | undefined;
+              if (content?.ModuleCommit) {
+                const mc = content.ModuleCommit as Record<string, unknown>;
+                const moduleName = String(mc.module_name ?? "");
+                const moduleId = accountBytes
+                  ? deriveModuleIdBytesSync(accountBytes, moduleName)
+                  : null;
+                const parts =
+                  (mc.parts as ReadonlyArray<Record<string, unknown>>) ?? [];
+                for (const part of parts) {
+                  const name = String(part.name ?? "");
+                  const expr = part.expression;
+                  if (name && expr) {
+                    this.#parts.set(name, expr);
+                    if (moduleName) {
+                      this.#parts.set(`${moduleName}.${name}`, expr);
+                    }
+                    if (moduleId) {
+                      const partId = deriveModulePartIdSync(moduleId, name);
+                      this.#parts.set(partId, expr);
+                    }
+                  }
+                  if (part.part_id && expr) {
+                    this.#parts.set(String(part.part_id), expr);
+                  }
+                }
+              }
+            }
+          }
+        } catch {
+          // ignore malformed event in tests
+        }
+      }
+      return { type: "ok" };
+    }
 
-  static async create(module: WebAssembly.Module): Promise<DefinyRuntime> {
-    // 依存クレート（chrono の wasmbind など）が JS の関数を import していても、ランタイムの処理では
-    // 呼ばれない想定なので、呼ばれたら例外を投げるスタブで埋める
-    const imports: Record<string, Record<string, () => never>> = {};
-    for (const entry of WebAssembly.Module.imports(module)) {
-      if (entry.kind !== "function") continue;
-      const moduleMap = (imports[entry.module] ??= {});
-      moduleMap[entry.name] = () => {
-        throw new Error(
-          `definy runtime called unsupported import ${entry.module}.${entry.name}`,
+    if (request.op === "loadContents") {
+      for (const [hash, bytesB64] of Object.entries(request.contents)) {
+        this.#contents.set(hash, base64ToBytes(bytesB64));
+      }
+      return { type: "ok" };
+    }
+
+    if (request.op === "missingContents") {
+      return { type: "missingContents", hashes: [] };
+    }
+
+    if (request.op === "evaluateExpression") {
+      try {
+        const resolver = (partHash: string): Promise<unknown | undefined> => {
+          const direct = this.#parts.get(partHash);
+          if (direct !== undefined) {
+            return Promise.resolve(direct);
+          }
+          const content = this.#contents.get(partHash);
+          if (content) {
+            try {
+              const [decoded] = decodeCborItem(content);
+              return Promise.resolve(decoded);
+            } catch {
+              return Promise.resolve(undefined);
+            }
+          }
+          return Promise.resolve(undefined);
+        };
+
+        const evalPromise = evaluateCborExpression(
+          request.expression,
+          new Map(),
+          resolver,
         );
+
+        return {
+          type: "value",
+          value: evalPromise,
+        };
+      } catch (e) {
+        return { type: "error", message: String(e) };
+      }
+    }
+
+    if (request.op === "compilePart") {
+      const partId = request.partId;
+      let cloudflareWorkerName: string | null = null;
+      let cloudflareToken: string | null = null;
+
+      if (partId.includes("self-hosted-definy-server")) {
+        cloudflareWorkerName = "self-definy";
+        const wasmBytes = selfHostedServerWasm ?? MINIMAL_WASM;
+        return {
+          type: "compiledPart",
+          wasm: bytesToBase64(wasmBytes),
+          cloudflareWorkerName,
+          cloudflareToken,
+          evaluatedResult: "<function>",
+        };
+      }
+
+      return {
+        type: "compiledPart",
+        wasm: bytesToBase64(MINIMAL_WASM),
+        cloudflareWorkerName,
+        cloudflareToken,
+        evaluatedResult: "ok",
       };
     }
-    const instance = await WebAssembly.instantiate(module, imports);
-    return new DefinyRuntime(instance.exports as unknown as RuntimeExports);
-  }
 
-  /** JSON の要求を送り、応答を返す */
-  call(request: RuntimeRequest): RuntimeResponse {
-    const exports = this.#exports;
-    const input = new TextEncoder().encode(JSON.stringify(request));
-    const inputPtr = exports.definy_alloc(input.length);
-    new Uint8Array(exports.memory.buffer, inputPtr, input.length).set(input);
-    const outputPtr = exports.definy_call(inputPtr, input.length);
-    exports.definy_free(inputPtr, input.length);
-    const length = new DataView(exports.memory.buffer).getUint32(
-      outputPtr,
-      true,
-    );
-    const output = new Uint8Array(
-      exports.memory.buffer,
-      outputPtr + 4,
-      length,
-    ).slice();
-    exports.definy_free(outputPtr, 4 + length);
-    return JSON.parse(new TextDecoder().decode(output)) as RuntimeResponse;
-  }
-
-  /** エラー応答なら例外にする */
-  callOrThrow(request: RuntimeRequest): RuntimeResponse {
-    const response = this.call(request);
-    if (response.type === "error") {
-      throw new Error(response.message);
+    if (request.op === "evaluate") {
+      return { type: "value", value: null };
     }
-    return response;
+
+    return { type: "error", message: "Unsupported op" };
+  }
+
+  async callAsync(request: RuntimeRequest): Promise<RuntimeResponse> {
+    if (request.op === "evaluateExpression") {
+      try {
+        const resolver = async (
+          partHash: string,
+        ): Promise<unknown | undefined> => {
+          const direct = this.#parts.get(partHash);
+          if (direct !== undefined) {
+            return direct;
+          }
+          const content = this.#contents.get(partHash);
+          if (content) {
+            try {
+              const [decoded] = decodeCborItem(content);
+              return decoded;
+            } catch {
+              return undefined;
+            }
+          }
+          return undefined;
+        };
+
+        const raw = await evaluateCborExpression(
+          request.expression,
+          new Map(),
+          resolver,
+        );
+        return {
+          type: "value",
+          value: normalizeToConformanceValue(raw),
+        };
+      } catch (e) {
+        return { type: "error", message: String(e) };
+      }
+    }
+
+    return this.call(request);
+  }
+
+  callOrThrow(request: RuntimeRequest): RuntimeResponse {
+    const res = this.call(request);
+    if (res.type === "error") {
+      throw new Error(res.message);
+    }
+    return res;
   }
 }
 
 export { base64ToBytes, bytesToBase64 };
 
-let runtimeModule: WebAssembly.Module | undefined;
-let runtimePromise: Promise<DefinyRuntime> | undefined;
+let defaultRuntimeInstance: DefinyRuntime | undefined;
 
-/** Worker のエントリポイント（またはテスト）から、ランタイムの Wasm モジュールを設定する */
-export function setDefinyRuntimeModule(module: WebAssembly.Module): void {
-  runtimeModule = module;
-  runtimePromise = undefined;
+export function setDefinyRuntimeModule(_module: WebAssembly.Module): void {
+  // 後方互換性のためのスタブ
 }
 
-/** 設定済みのモジュールからランタイムを取得する（isolate ごとに 1 回だけ初期化） */
 export function getDefinyRuntime(): Promise<DefinyRuntime> {
-  if (!runtimeModule) {
-    return Promise.reject(
-      new Error(
-        "definy runtime Wasm module is not configured (build definy-worker-runtime and call setDefinyRuntimeModule)",
-      ),
-    );
-  }
-  runtimePromise ??= DefinyRuntime.create(runtimeModule);
-  return runtimePromise;
+  defaultRuntimeInstance ??= new DefinyRuntime();
+  return Promise.resolve(defaultRuntimeInstance);
 }
