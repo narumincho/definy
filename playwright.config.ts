@@ -12,6 +12,12 @@ export default defineConfig({
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",
     headless: true,
+    channel: process.env.CI ? "chrome" : undefined,
+    launchOptions: process.env.CI
+      ? {
+          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        }
+      : undefined,
   },
   webServer: {
     command: "npm run dev",

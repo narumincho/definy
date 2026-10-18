@@ -26,7 +26,5 @@ jobs:
         run: npm test
       - name: Build with Void (Vite 8)
         run: npm run build
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Run Playwright E2E tests
+      - name: Run Playwright E2E tests (using pre-installed Google Chrome)
         run: npm run test:e2e
