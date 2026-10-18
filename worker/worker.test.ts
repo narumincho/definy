@@ -7,7 +7,7 @@ import {
   WorkerStore,
 } from "./index.ts";
 import { bytesToBase64, sha256EventHashId } from "./store.ts";
-import { loadTestSeedBundle, setupTestRuntime } from "./test_runtime.ts";
+import { loadTestSeedBundle } from "./test_runtime.ts";
 import {
   type AccountCredentials,
   createSignedAccountEvent,
@@ -26,8 +26,6 @@ import type {
 const Deno = {
   test: (name: string, fn: () => void | Promise<void>) => it(name, fn),
 };
-
-await setupTestRuntime();
 
 const adminCredentials = await generateAccountCredentials("admin");
 

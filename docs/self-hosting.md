@@ -3,6 +3,12 @@
 definy を definy
 自身の言語仕様・データ構造・評価器を用いて表現し、自己記述・自己検証可能にするための設計と実装仕様。
 
+> [!NOTE]
+> 本リポジトリは Rust + Deno から **TypeScript + React 19 + Void (Vite 8) + Cloudflare Workers** に移行済みです。
+> 本ドキュメント内の Rust ツールチェイン（`cargo run -p definy-server`, `cargo test` など）に関する記述は、セルフホストおよび固定点達成に至るまでの**旧 Rust 実装（廃止済み）における歴史的経緯と仕様**を記録したものです。
+> 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`）で検証されています。
+> なお、シードバンドルの再生成や `stage1.wasm` の再生成は現在 TypeScript 版では**未実装（Rust 版では cargo で生成していた）**です。
+
 ## 概要
 
 definy
@@ -215,17 +221,15 @@ AST を手組みし、そこから JSON を生成していましたが、この�
 - テスト: `self_hosting_tests` は `seed_part("type-check")` のように seed からパーツを取得して検証します。
   `seed_tests.rs` は、コミット済み seed が正規化済み（パースして整形し直した結果と一致）であることと、
   JSON Schema が最新であることを検証します。
-- 編集方法（段階移行）: 今後は definy の UI / MCP でパーツを編集し、その結果を `seeds/*.json` に
-  書き出してコミットする流れを目指します。手で JSON を編集した場合は
-  `cargo run -p definy-server -- --export-seeds seeds` で整形とスキーマ更新を行ってください。
+- 編集方法（段階移行）: 旧 Rust 版では `cargo run -p definy-server -- --export-seeds seeds` で整形とスキーマ更新を行っていましたが、現在は未対応です。
 
-## definy 製コンパイラの対応状況 (2026-10-18 時点)
+## definy 製コンパイラの対応状況 (旧 Rust 版検証時)
 
-definy 製の Wasm コンパイラ (`core.compile-to-wasm` / `core.compile-expr-instructions`) が, Rust 製コンパイラ
-(`definy-core/src/wasm_emitter`, stage0) と比べてどこまでコンパイルできるかを
-`definy-server/tests/self_hosted_compiler_coverage.rs` で測っています。
+definy 製の Wasm コンパイラ (`core.compile-to-wasm` / `core.compile-expr-instructions`) が, 旧 Rust 製コンパイラ
+(`definy-core/src/wasm_emitter`, stage0) と比べてどこまでコンパイルできるかを測るテスト（旧 `definy-server/tests/self_hosted_compiler_coverage.rs`）が行われていました。
 
 ```sh
+# 旧 Rust 版でのテストコマンド（現在は廃止済み）
 cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture
 ```
 

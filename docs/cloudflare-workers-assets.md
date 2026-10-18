@@ -1,132 +1,104 @@
 # Cloudflare Workers Static Assets 構成とデプロイ仕様
 
 > [!NOTE]
-> 従来の Dioxus クライアント（`scripts/build-assets.sh`）から、**Void (Vite 8) + React 19** を用いたフルスタック統合構成への移行が行われました。
-> Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括で約 1.8 秒でビルドされます。詳細は [docs/typescript-react-void-architecture.md](file:///Users/narumi/Documents/GitHub/definy/docs/typescript-react-void-architecture.md) を参照してください。
+> 従来の Dioxus クライアント（旧 Rust 実装・廃止済み）から、**Void (Vite 8) + React 19** を用いたフルスタック統合構成への移行が行われました。
+> Void の `vite build` により、静的クライアント資産（`dist/client/`）と Cloudflare Worker SSR / API ルート（`dist/ssr/`）が一括ビルドされます。詳細は [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
 
-definy のフロントエンド（`definy-ui` / `definy-client`）を **Cloudflare Workers
-Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS
-コンテンツ配信、プレビュー実行、Cloudflare 自己デプロイ等のバックエンド API
-もすべて Worker 内で自己完結して処理する構成についての仕様ドキュメントです。
+definy のフロントエンド（React 19 + `@void/react`）を **Cloudflare Workers Static Assets (`[assets]`)** を用いて配信し、Connect-RPC や CAS コンテンツ配信、自己デプロイ等のバックエンド API もすべて Worker 内で自己完結して処理する構成についての仕様ドキュメントです。
 
 ---
 
 ## 1. アーキテクチャ概要
 
-Cloudflare Pages は Workers
-と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static
-Assets** が公式の最新推奨アプローチとなっています。また、旧 Fly.io
-バックエンドは廃止され、GitHub Actions でのビルドと `wrangler deploy` による
-Cloudflare Workers へのデプロイに一本化されています。
+Cloudflare Pages は Workers と統合され、静的フロントエンドとエッジサーバーの併用には **Workers Static Assets** が公式の最新推奨アプローチとなっています。また、旧 Fly.io バックエンドは廃止され、GitHub Actions でのビルドと `wrangler deploy` による Cloudflare Workers へのデプロイに一本化されています。
 
 ```
 [ ブラウザ / クライアント ]
          │
          ▼
   [ Cloudflare Workers with Static Assets ]
-    ├── Static Assets エンジン (dist-assets/) ── エッジから直接キャッシュ配信
-    │     ├── not_found_handling: "single-page-application" (SPA 自動フォールバック)
-    │     ├── _headers: Wasm/JS/CSS 長期不変キャッシュ & セキュリティヘッダー
-    │     └── __definy_seed_bundle.json: ビルド時に生成された署名済み組み込みシードデータ
+    ├── Static Assets エンジン (dist/client/) ── エッジから直接キャッシュ配信
+    │     ├── _headers: Wasm/JS/CSS キャッシュ & セキュリティヘッダー
+    │     └── __definy_seed_bundle.json: 署名済み組み込みシードデータ
     │
-    └── Worker スクリプト (worker/index.ts) ── エッジ内で直接 API 処理
-          (run_worker_first で直接ディスパッチ)
+    └── Worker スクリプト (dist/ssr/index.js) ── SSR & エッジ API 処理
+          ├── SSR HTML レスポンス（セキュリティヘッダー付与）
           ├── EventService (/definy.v1.EventService/*)
           ├── DeployService (/definy.v1.DeployService/*) ── Cloudflare REST API v4 へ直接デプロイ (app.wasm 同梱)
           ├── 仮想 Wasm バイナリ (/virtual/wasm/*)
           └── ヘルスチェック (/healthz)
 ```
 
-### 特徴とメリット
+### 特徴
 
-- **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io
-  等）に依存せず、単一の Cloudflare Worker 上で UI
-  配信・Connect-RPC・CAS・自己デプロイが完結します。
-- **決定論的シードバンドル**: ビルド時に
-  `cargo run -p definy-server --release -- --export-seed-bundle dist-assets/__definy_seed_bundle.json`
-  を実行し、`COMPILER_SYSTEM_KEY_SEED` で署名された組み込みモジュール（`core`,
-  `std`, `sample`, `wasi`）のイベントと CAS コンテンツを Static Assets
-  に同梱します。
-- **Workers Builds ではなく GitHub Actions でビルド**: Cloudflare
-  ダッシュボード側の「Workers Builds」には Rust の Wasm ターゲットや Dioxus CLI
-  (`dx`) 環境がないため、GitHub Actions (`.github/workflows/deploy.yaml`)
-  でビルドと `wrangler deploy` を実行します。
+- **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS・自己デプロイが完結します。
+- **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `dist/client/` にコピーされ、初回の D1 データベース初期化時に自動同期されます。なお、シードバンドルの再生成機能は TypeScript 版では未実装（Rust 版では cargo で生成していた）のため、既存のバンドルファイルをそのまま利用します。
+- **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`bash scripts/ensure-d1.sh`、`npm run build`、`wrangler deploy` を実行します。
 
 ---
 
 ## 2. ディレクトリ構成
 
-- `wrangler.toml`: Workers および Static Assets の設定
+- `wrangler.toml`: Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）
+- `public/`
+  - `_headers`: 静的アセット配信ヘッダー設定（Void ビルド時に `dist/client/_headers` へコピーされる）
+  - `__definy_seed_bundle.json`: ビルトインシードデータ
+  - `stage1.wasm`: 自己記述コンパイラ Wasm バイナリ
+- `middleware/`
+  - `01.definy.ts`: API パス（Connect-RPC, `/virtual/wasm/*`, `/healthz` 等）の Worker ディスパッチおよび SSR レスポンスへのセキュリティヘッダー付与
 - `worker/`
-  - `index.ts`: Worker エントリポイント（Connect-RPC, Virtual Wasm,
-    `env.ASSETS` フォールバック）
-  - `store.ts`:
-    シードバンドルロード、イベント・CAS・デプロイ履歴のストア
-  - `cloudflare_api.ts`: Cloudflare REST API v4
-    クライアント（`DeployCloudflare`, `ListCloudflareWorkers`）
+  - `index.ts`: Worker リクエストハンドラー
+  - `store.ts`: シードバンドルロード、D1 (SQLite) ストア
+  - `cloudflare_api.ts`: Cloudflare REST API v4 クライアント
+  - `cbor.ts`: 決定論的 CBOR & Ed25519 ユーティリティ
   - `types.ts`: 型定義
-  - `worker_test.ts`: Deno 単体テスト
-- `worker-assets/`
-  - `_headers`: Wasm, JS, CSS のキャッシュポリシーおよびセキュリティヘッダー
-- `scripts/build-assets.sh`: Dioxus
-  ビルド成果物、ヘッダー設定、シードバンドルを統合して `dist-assets/`
-  を生成するスクリプト
+- `scripts/ensure-d1.sh`: D1 データベースのプロビジョニングと UUID バインディング設定スクリプト
 
 ---
 
 ## 3. 設定 (`wrangler.toml`)
 
 ```toml
+# Void (Vite 8) が dist/ssr/wrangler.json を生成する際のベース設定。
+# main, [assets], compatibility_date 等は Void 側で自動設定される。
 name = "definy"
-main = "worker/main.ts"
-compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
 
 [vars]
 DEFINY_ROOT_DOMAIN = "definy.narumincho.com"
 
-[assets]
-directory = "./dist-assets"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-run_worker_first = [
-  "/definy.v1.*",
-  "/virtual/*",
-  "/mcp",
-  "/healthz",
-  "/swagger-ui*",
-  "/api-docs/*",
-]
+[[d1_databases]]
+binding = "DB"
+database_name = "definy-db"
+database_id = "d4c3a982-558e-4d58-95f8-bbc3ca391818"
 ```
+
+ビルド時、Void により `dist/ssr/wrangler.json` が生成され、`assets`（`directory = "../client"`）や `main = "index.js"` が自動設定されます。
 
 ---
 
 ## 4. ビルドとデプロイ
 
-### ローカルビルド & パッケージング
+### フルスタックビルド
 
 ```bash
-# Dioxus クライアントビルド + シードバンドル出力 + dist-assets パッケージングを一括実行
-bash scripts/build-assets.sh
+npm run build
 ```
 
-### Worker 単体テスト
+### テスト
 
 ```bash
-deno test worker/
+npm test
 ```
 
-### ローカルでの Wrangler 開発サーバー起動
+### デプロイ
 
 ```bash
-npx wrangler dev
+npm run deploy
 ```
 
 ### CI/CD (`.github/workflows/deploy.yaml`)
 
-`main` ブランチへの push 時に GitHub Actions
-で自動デプロイされます（`wranglerVersion: "4"` を使用）。 必要な GitHub Actions
-Secrets:
+`main` ブランチへの push 時に GitHub Actions で自動デプロイされます。必要な GitHub Actions Secrets:
 
-- `CLOUDFLARE_API_TOKEN`: Cloudflare Workers
-  の編集権限を持つアカウントトークン（アカウントトークンを使用するため
-  `CLOUDFLARE_ACCOUNT_ID` の指定は不要で自動解決されます）
+- `CLOUDFLARE_API_TOKEN`: Cloudflare Workers の編集権限を持つアカウントトークン（アカウント ID は API から自動解決されます）

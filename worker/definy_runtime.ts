@@ -275,10 +275,6 @@ export { base64ToBytes, bytesToBase64 };
 
 let defaultRuntimeInstance: DefinyRuntime | undefined;
 
-export function setDefinyRuntimeModule(_module: WebAssembly.Module): void {
-  // 後方互換性のためのスタブ
-}
-
 export function getDefinyRuntime(): Promise<DefinyRuntime> {
   defaultRuntimeInstance ??= new DefinyRuntime();
   return Promise.resolve(defaultRuntimeInstance);

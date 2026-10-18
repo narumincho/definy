@@ -3,7 +3,6 @@ set -euo pipefail
 
 DB_NAME="${DEFINY_D1_DATABASE_NAME:-definy-db}"
 WRANGLER_TOML="${WRANGLER_TOML_PATH:-wrangler.toml}"
-SEED_SQL_PATH="${DEFINY_SEED_SQL_PATH:-target/definy_seed.sql}"
 
 run_wrangler() {
   if command -v npx >/dev/null 2>&1; then
@@ -110,12 +109,4 @@ with open(path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2)
 ' "dist/ssr/wrangler.json" "$DB_UUID"
   echo "Successfully updated dist/ssr/wrangler.json."
-fi
-
-if [[ -f "$SEED_SQL_PATH" ]]; then
-  echo "Applying schema and builtin seeds to remote D1 database '${DB_NAME}' (${DB_UUID})..."
-  run_wrangler d1 execute "${DB_NAME}" --remote --file="${SEED_SQL_PATH}"
-  echo "Successfully seeded remote D1 database '${DB_NAME}'."
-else
-  echo "::warning::Seed SQL file '${SEED_SQL_PATH}' not found; skipping remote D1 seed execution."
 fi

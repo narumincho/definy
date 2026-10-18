@@ -41,7 +41,7 @@ definy.deploy({
 ```
 
 - **唯一サーバーで実行される特殊なパーツ**:
-  通常のパーツはクライアント（ブラウザ内 Wasm / 評価器）で評価されますが、`deploy` パーツは唯一バックエンドサーバー（`definy-server` または Cloudflare Worker）上で実行されます。
+  通常のパーツはクライアント（ブラウザ内 Wasm / 評価器）で評価されますが、`deploy` パーツは唯一バックエンドサーバー（Cloudflare Worker / 旧 `definy-server`）上で実行されます。
 - **開発時の動作確認も本番デプロイも Cloudflare Workers 個別配備に一本化**:
   以前はサーバー内プレビュー (`definy:preview`) とエッジデプロイ (`definy:deploy`) に分かれていましたが、Cloudflare Workers REST API v4 による個別 Worker 配備が約2秒で完了し、かつ `app.wasm` (`application/wasm`) モジュールを V8 でネイティブ実行できるため、開発時の動作確認も本番デプロイも `definy:deploy` に一本化されました。
 - **`/deployments` ページの役割**:
@@ -173,7 +173,7 @@ curl -X POST https://definy.narumincho.com/definy.v1.DeployService/DeployCloudfl
 2. **Account ID の自動解決**:
    - Cloudflare API はほとんどのエンドポイントで `account_id`
      を要求しますが、`GET /accounts` を叩くことで API トークンに紐づくアカウント
-     ID を動的に解決可能です。definy-server
+     ID を動的に解決可能です。Cloudflare Worker（`worker/cloudflare_api.ts`）
      ではユーザーの指定がない場合、自動で初手解決を行います。
 3. **`workers.dev` サブドメインの有効化と URL 導出**:
    - スクリプトをアップロードしただけでは `workers.dev`

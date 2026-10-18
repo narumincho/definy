@@ -1,9 +1,6 @@
 # Dependencies & build outputs
 node_modules
 dist
-dist-assets
-target
-worker/generated
 .void
 test-results
 playwright-report

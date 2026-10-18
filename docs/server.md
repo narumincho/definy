@@ -1,42 +1,27 @@
 # サーバーの構成
 
-原理的には 1つのHTTPサーバーで提供できるようにする構造だが,
-クラウドの得意な分野的に分かれているのを活かすために複数のSaaSを使います
+> [!NOTE]
+> 本ドキュメントは初期の設計案（旧設計・廃止済み）です。
+> 現在は UI 配信・API・仮想 Wasm 配信をすべて **Cloudflare Workers (Void + React 19)** に一本化し、データベースには **Cloudflare D1 (SQLite)** を採用しています。詳細は [cloudflare-workers-assets.md](cloudflare-workers-assets.md) および [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
 
-### UIサーバー
+以下は初期構想時の記録です。
+
+### UIサーバー (旧構想)
 
 UIサーバーはHTMLを返すサーバー. ブラウザでの操作UIを提供する
+使用SaaS (旧): Deno Deploy
 
-使用SaaS: Deno Deploy
-
-### ファイルサーバー
+### ファイルサーバー (旧構想)
 
 ファイルを保存して, 配信するサーバー
+使用SaaS (旧): Cloudflare R2
 
-使用SaaS: Cloudflare R2
-
-## APIサーバー
+## APIサーバー (旧構想)
 
 APIサーバーはデータを受け取って処理をするサーバー
+使用SaaS (旧): Deno Deploy
 
-使用SaaS: Deno Deploy
-
-### データベース
+### データベース (旧構想)
 
 イベントの検索向けのデータ保存と, IPアドレス, ログを保存する場所
-APIサーバーと通信する
-
-使用SaaS: SurrealDB Cloud
-
-```mermaid
-graph TD
-  api(APIサーバー)
-  database(データベース)
-  ui(UIサーバー)
-  file(ファイルサーバー)
-  browser(ブラウザ)
-  browser <--> ui <--> api <--> database
-  browser <--> api
-  browser <--> file
-  api <--> file
-```
+使用SaaS (旧): SurrealDB Cloud

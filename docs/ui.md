@@ -7,10 +7,10 @@
 
 ## ワークベンチ (IDE 風レイアウト)
 
-画面全体は `definy-ui/src/workbench.rs` および React 19 実装の [src/components/Workbench.tsx](file:///Users/narumi/Documents/GitHub/definy/src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている.
-詳細なアーキテクチャは [docs/typescript-react-void-architecture.md](file:///Users/narumi/Documents/GitHub/definy/docs/typescript-react-void-architecture.md) を参照.
+画面全体は React 19 実装の [src/components/Workbench.tsx](../src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている (旧 Rust 実装: `definy-ui/src/workbench.rs`).
+詳細なアーキテクチャは [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照.
 
-| 領域               | 内容                                                                               | Rust 実装                           | React 19 実装                        |
+| 領域               | 内容                                                                               | 旧 Rust 実装 (廃止)                 | React 19 実装                        |
 | ------------------ | ---------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
 | タイトルバー       | サイドバー開閉ボタン・ロゴ・現在のページ名・言語・アカウント                       | `header.rs` の `HeaderView`         | `src/components/Header.tsx`          |
 | アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え | `workbench.rs` の `ActivityBar`     | `src/components/ActivityBar.tsx`     |

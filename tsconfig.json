@@ -16,20 +16,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": [
-    "src",
-    "pages",
-    "routes",
-    "middleware",
-    "worker/index.ts",
-    "worker/cbor.ts",
-    "worker/cloudflare_api.ts",
-    "worker/definy_runtime.ts",
-    "worker/http_stream.ts",
-    "worker/main.ts",
-    "worker/store.ts",
-    "worker/types.ts",
-    "vite.config.ts",
-    "vitest.config.ts"
-  ]
+  "include": ["src", "pages", "middleware", "worker", "e2e", "*.config.ts"]
 }

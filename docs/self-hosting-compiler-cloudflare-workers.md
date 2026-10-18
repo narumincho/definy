@@ -139,13 +139,13 @@ UI、コンパイラ）を配備したとき、それが結果として「definy
     も自己記述コンパイラパーツ（`core.compile-to-wasm`）で優先メタ循環コンパイルされ、Cloudflare
     Workers およびテスト環境の Wasm VM 上で `Value::Record` として直接解決可能。
 
-### 2.6 Web UI (`definy-ui/src/deployments.rs`, `deployments_cloudflare.rs`)
+### 2.6 Web UI (`pages/deployments.tsx` / 旧 `definy-ui/src/deployments.rs`)
 
 - Cloudflare Workers カードにて以下の 4 つのソースモードを切り替え可能:
   1. **JavaScript / ES Module**: 任意の JavaScript/TypeScript
      コードを直接記述して配備。
   2. **definy パーツ**: 指定したパーツ（数値演算だけでなく HTML 文字列や HTTP
-     レスポンスを返すパーツも含む）の式をオンデマンドで Wasm 化して配備。
+     レスポンスを返すパーツも含む）の式をオンデマンドで配備。
   3. **自己コンパイラ検証サンプル**:
      サンプル式（`15 + 27 = 42`）を動的ビルドして配備。
   4. **Wasm ハッシュ**: 既存の Wasm ハッシュを指定して配備。
@@ -156,23 +156,11 @@ UI、コンパイラ）を配備したとき、それが結果として「definy
 
 ## 3. 動作確認・テスト
 
-- 単体テスト:
-  - `definy-server/src/cloudflare_workers.rs`:
-    - `test_cloudflare_config_defaults`: クライアント設定デフォルト値検証
-    - `test_default_worker_script_generation`: WASM 埋め込み worker.js 生成検証
-    - `test_mock_resolve_account_id_and_list_workers`: モック API でのアカウント
-      ID 自動解決およびスクリプト一覧取得
-  - `definy-server/src/self_hosted_wasm_compiler.rs`:
-    - `test_live_self_hosted_compiler_deploy_to_cloudflare`: ライブ Cloudflare
-      API による動的デプロイ検証テスト（環境変数指定時）
-- 結合テスト:
-  - `definy-server/src/connect_rpc/tests.rs`
-    (`test_connect_rpc_deploy_cloudflare_success`):
-    - トークン検証
-    - 通常デプロイ
-    - 自己記述コンパイラ動的ビルド（数値）
-    - 外部 ES Modules 汎用デプロイ
-    - Web / HTTP ハンドラーパーツ（HTML 文字列）の登録から Cloudflare Workers
-      配備およびエッジレスポンス検証までのエンドツーエンドテスト
-    - `ListCloudflareWorkers` RPC テスト
-- 全ワークスペーステスト: `cargo test --workspace` にて 100% パスを確認。
+現在の TypeScript 実装では、Cloudflare REST API v4 連携、マルチパートアップロード、および生成された Worker / Wasm の V8 実行検証は `worker/worker.test.ts` で行われます。
+
+```bash
+npm test
+```
+
+> **歴史的注記（旧 Rust 実装・廃止済み）**:
+> 以前は `definy-server/src/cloudflare_workers.rs` および `cargo test --workspace` でテストされていました。現在は TypeScript + Vitest に移行済みです。

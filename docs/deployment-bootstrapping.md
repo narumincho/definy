@@ -237,12 +237,12 @@ graph TD
 
 ### ブートストラップ完了時の姿
 
-| 階層                          | 現在の実装 (Rust / Axum / Dioxus)                | ブートストラップ完成時の姿 (definy 言語)                     |
-| :---------------------------- | :----------------------------------------------- | :----------------------------------------------------------- |
-| **運用層 (Layer 1)**          | `cloudflare_workers.rs` (Cloudflare REST API v4) | definy の純粋パーツ式（Machines API 呼出パーツ）             |
-| **ビルド層 (Layer 2)**        | `cargo build`, `dx build` (Rust ツールチェイン)  | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
-| **I/O・サーバー層 (Layer 3)** | `axum`, `tokio` (Rust 非同期ランタイム)          | `wasi:http/outgoing-handler` Capability 注入パーツ           |
-| **UI・エディタ層**            | Rust Dioxus コンポーネント (`definy-ui`)         | definy の UI 表現パーツ・ツリーレイアウト                    |
+| 階層                          | 現在の実装 (TypeScript + React 19 / 旧 Rust)             | ブートストラップ完成時の姿 (definy 言語)                     |
+| :---------------------------- | :------------------------------------------------------- | :----------------------------------------------------------- |
+| **運用層 (Layer 1)**          | `worker/cloudflare_api.ts` (Cloudflare REST API v4)      | definy の純粋パーツ式（Machines API 呼出パーツ）             |
+| **ビルド層 (Layer 2)**        | `npm run build` (Void / Vite 8) / 旧 Rust ツールチェイン | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
+| **I/O・サーバー層 (Layer 3)** | Cloudflare Workers (`worker/index.ts`) / 旧 `axum`       | `wasi:http/outgoing-handler` Capability 注入パーツ           |
+| **UI・エディタ層**            | React 19 コンポーネント (`src/`, `pages/`) / 旧 Dioxus   | definy の UI 表現パーツ・ツリーレイアウト                    |
 
 この 4 階層がすべて definy の式・パーツとして表現された時、definy
 は外部のあらゆる開発環境（Rust, Cargo, Docker, GitHub Actions,
@@ -279,7 +279,7 @@ definy 自身で作成したパーツを独立したオリジン（サブドメ�
   `*/*-definy.narumincho.com/*` を組み合わせることで、Workers
   インスタンスを増やさず無制限のサブドメインを単一の Worker + D1
   で処理できます。
-- ローカル開発時（`cargo run -p definy-server`）は、起動時に自動で
+- ローカル開発時は、シード投入時に自動で
   `self-definy`（`sample.self-hosted-definy-server`）が登録され、即座に
   `http://self-definy.localhost:8000` でアクセス可能です。
 
