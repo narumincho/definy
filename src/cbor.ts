@@ -400,10 +400,10 @@ export async function sha256EventHashId(bytes: Uint8Array): Promise<string> {
 }
 
 /** 言語ごとのテキスト (`[{ language: "en", text: "..." }, ...]`) */
-export interface LocalizedTextEntry {
+export type LocalizedTextEntry = {
   readonly language: string;
   readonly text: string;
-}
+};
 
 export type LocalizedText = ReadonlyArray<LocalizedTextEntry>;
 
@@ -422,22 +422,22 @@ function decodeLocalizedText(raw: unknown): LocalizedText {
   });
 }
 
-export interface DecodedPart {
+export type DecodedPart = {
   readonly name: string;
   readonly description: LocalizedText;
   readonly partType: unknown;
   readonly expression?: unknown;
   readonly contentHash?: string | null;
   readonly partIdHash?: string | null;
-}
+};
 
-export interface DecodedModuleCommit {
+export type DecodedModuleCommit = {
   readonly moduleName: string;
   readonly moduleDescription: LocalizedText;
   readonly message: string;
   readonly parentCommitHash: string | null;
   readonly parts: ReadonlyArray<DecodedPart>;
-}
+};
 
 export function extractModuleCommit(
   signedBytesBase64: string,
@@ -506,10 +506,10 @@ export function extractModuleCommit(
   }
 }
 
-export interface DecodedCreateAccount {
+export type DecodedCreateAccount = {
   readonly accountId: string;
   readonly accountName: string;
-}
+};
 
 /**
  * SignedEvent バイナリ（Base64）からアカウント作成情報（accountId, accountName）を抽出する

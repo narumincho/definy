@@ -10,18 +10,21 @@ import {
 } from "./definy_runtime.ts";
 import type { Env } from "./types.ts";
 
-export interface PartStoreReader {
-  getEvents(
+export type PartStoreReader = {
+  readonly getEvents: (
     req: { readonly eventType?: string; readonly limit?: number },
     env?: Env,
-  ): Promise<
+  ) => Promise<
     ReadonlyArray<{
       readonly eventHash: string;
       readonly signedEventBytes: string;
     }>
   >;
-  getRawContentBytes(hash: string, env?: Env): Promise<Uint8Array | undefined>;
-}
+  readonly getRawContentBytes: (
+    hash: string,
+    env?: Env,
+  ) => Promise<Uint8Array | undefined>;
+};
 
 function isWasmBinary(bytes: Uint8Array): boolean {
   return (
@@ -71,12 +74,12 @@ async function loadStoreIntoRuntime(
   }
 }
 
-export interface CompiledPartArtifact {
+export type CompiledPartArtifact = {
   readonly wasmBytes: Uint8Array;
   readonly cloudflareWorkerName?: string | null;
   readonly cloudflareToken?: string | null;
   readonly evaluatedResult?: string | null;
-}
+};
 
 /**
  * 指定された `partId`（パーツ ID / `module.part` / パーツ名 / CAS のハッシュ）を

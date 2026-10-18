@@ -9,31 +9,31 @@ import type {
 
 const DEFAULT_API_BASE_URL = "https://api.cloudflare.com/client/v4";
 
-interface CloudflareApiErrorItem {
+type CloudflareApiErrorItem = {
   readonly code: number;
   readonly message: string;
-}
+};
 
-interface CloudflareApiResponse<T> {
+type CloudflareApiResponse<T> = {
   readonly success: boolean;
   readonly errors?: ReadonlyArray<CloudflareApiErrorItem>;
   readonly result?: T;
-}
+};
 
-interface CloudflareAccountItem {
+type CloudflareAccountItem = {
   readonly id: string;
   readonly name: string;
-}
+};
 
-interface CloudflareSubdomainItem {
+type CloudflareSubdomainItem = {
   readonly subdomain: string;
-}
+};
 
-interface CloudflareWorkerSummary {
+type CloudflareWorkerSummary = {
   readonly id: string;
   readonly created_on?: string;
   readonly modified_on?: string;
-}
+};
 
 /**
  * デプロイ先の Cloudflare Worker で動作するエッジ ES Module スクリプトを生成する。

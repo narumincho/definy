@@ -45,7 +45,7 @@ export type PathStep =
   | { readonly kind: "typeUnionVariant"; readonly index: number }
   | "record";
 
-export interface LayoutNode {
+export type LayoutNode = {
   readonly id: string;
   readonly path: ReadonlyArray<PathStep>;
   readonly label: string;
@@ -56,15 +56,15 @@ export interface LayoutNode {
   readonly layoutMode: LayoutMode;
   readonly columnsWidth?: ReadonlyArray<number>;
   readonly tableHeaders?: ReadonlyArray<string>;
-}
+};
 
-export interface LayoutOptions {
+export type LayoutOptions = {
   readonly maxWidth: number;
   readonly charWidth: number;
   readonly lineHeight: number;
   readonly indentSize: number;
   readonly chipPaddingX: number;
-}
+};
 
 export const DEFAULT_LAYOUT_OPTIONS: LayoutOptions = {
   maxWidth: 680,

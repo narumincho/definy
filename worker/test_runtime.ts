@@ -6,7 +6,7 @@ import { readFile } from "node:fs/promises";
 const seedBundleUrl = new URL("../seeds/seed_bundle.json", import.meta.url);
 
 /** 開発用システムアカウントの seed バンドル */
-export interface TestSeedBundle {
+export type TestSeedBundle = {
   readonly events: ReadonlyArray<{
     readonly eventHash: string;
     readonly signedEventBytes: string;
@@ -19,7 +19,7 @@ export interface TestSeedBundle {
     readonly contentHash: string;
     readonly contentBytes: string;
   }>;
-}
+};
 
 export async function loadTestSeedBundle(): Promise<TestSeedBundle> {
   const text = await readFile(seedBundleUrl, "utf-8");

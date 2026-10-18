@@ -5,20 +5,20 @@ import type { LocalizedText } from "./cbor.ts";
 
 export type LanguageCode = "en" | "ja" | "eo";
 
-export interface PartChange {
+export type PartChange = {
   readonly moduleDefinitionEventHash: string;
   readonly partDefinitionEventHash: string;
   readonly name: string;
   readonly description: LocalizedText;
   readonly partType: unknown;
   readonly expression: unknown;
-}
+};
 
-export interface WorkingChanges {
+export type WorkingChanges = {
   readonly parts: ReadonlyMap<string, PartChange>;
-}
+};
 
-export interface ModulePartSnapshot {
+export type ModulePartSnapshot = {
   readonly partId: string;
   readonly name: string;
   readonly description: LocalizedText;
@@ -26,9 +26,9 @@ export interface ModulePartSnapshot {
   readonly contentHash?: string | null;
   readonly partIdHash?: string | null;
   readonly expression?: unknown | null;
-}
+};
 
-export interface ModuleSnapshot {
+export type ModuleSnapshot = {
   readonly moduleId: string;
   readonly name: string;
   readonly description: LocalizedText;
@@ -37,9 +37,9 @@ export interface ModuleSnapshot {
   readonly message: string;
   readonly parts: ReadonlyArray<ModulePartSnapshot>;
   readonly updatedAtMs: number;
-}
+};
 
-export interface PartSnapshot {
+export type PartSnapshot = {
   readonly partId: string;
   readonly moduleId: string;
   readonly moduleName: string;
@@ -50,21 +50,21 @@ export interface PartSnapshot {
   readonly partIdHash?: string | null;
   readonly expression?: unknown | null;
   readonly updatedAtMs: number;
-}
+};
 
-export interface EventRecord {
+export type EventRecord = {
   readonly eventHash: string;
   readonly signedEventBytes: string;
   readonly accountId: string;
   readonly eventType: string;
   readonly createdAtRfc3339: string;
   readonly timeMs: number;
-}
+};
 
 export type ConnectionStatus = "connected" | "connecting" | "offline" | "error";
 
-export interface AccountState {
+export type AccountState = {
   readonly accountId: string;
   readonly accountName: string;
   readonly secretKeyBase64?: string;
-}
+};

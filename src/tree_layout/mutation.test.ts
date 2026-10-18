@@ -17,8 +17,8 @@ describe("tree layout mutation and selection", () => {
 
     expect(updated).not.toBeNull();
     const partRefNode = updated as {
-      PartReference?: {
-        part_definition_event_hash?: unknown;
+      readonly PartReference?: {
+        readonly part_definition_event_hash?: unknown;
       };
     };
     expect(partRefNode.PartReference).toBeDefined();
