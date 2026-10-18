@@ -22,4 +22,4 @@ run_worker_first = [
 [[d1_databases]]
 binding = "DB"
 database_name = "definy-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "d4c3a982-558e-4d58-95f8-bbc3ca391818"
