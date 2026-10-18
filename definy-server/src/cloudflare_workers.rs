@@ -1,5 +1,4 @@
 use axum::http::StatusCode;
-use base64::Engine;
 use serde::{Deserialize, Serialize};
 
 /// Cloudflare Workers REST API v4 の接続設定
@@ -349,9 +348,17 @@ impl CloudflareWorkersClient {
             .mime_str("application/javascript+module")
             .map_err(|e| CloudflareWorkersError::InvalidResponse(e.to_string()))?;
 
-        let form = reqwest::multipart::Form::new()
+        let mut form = reqwest::multipart::Form::new()
             .part("metadata", metadata_part)
             .part("worker.js", script_part);
+
+        if let Some(bytes) = wasm_bytes {
+            let wasm_part = reqwest::multipart::Part::bytes(bytes.to_vec())
+                .file_name("app.wasm")
+                .mime_str("application/wasm")
+                .map_err(|e| CloudflareWorkersError::InvalidResponse(e.to_string()))?;
+            form = form.part("app.wasm", wasm_part);
+        }
 
         // 3. PUT /accounts/{account_id}/workers/scripts/{script_name}
         let url = format!(
@@ -399,147 +406,467 @@ impl CloudflareWorkersClient {
     }
 }
 
-/// Cloudflare Workers (ES Module) で動作するデフォルトの edge HTTP サーバーコード
+/// Cloudflare Workers (ES Module) で動作するデフォルトの edge HTTP サーバーコード。
+/// `wasm_bytes` がある場合は multipart の `app.wasm` (`application/wasm`) を ES Module として import し、
+/// V8 のネイティブ WebAssembly ランタイムで実行します。
 pub fn default_cloudflare_worker_script(wasm_bytes: Option<&[u8]>) -> String {
-    let wasm_base64 = wasm_bytes
-        .map(|bytes| base64::engine::general_purpose::STANDARD.encode(bytes))
-        .unwrap_or_default();
+    if wasm_bytes.is_none() {
+        return r#"export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname === "/healthz") {
+      return new Response("OK", {
+        status: 200,
+        headers: { "content-type": "text/plain" }
+      });
+    }
+    return new Response(JSON.stringify({
+      service: "definy-cloudflare-workers",
+      message: "Hello from Definy on Cloudflare Workers!",
+      evaluatedResult: null,
+      pathname: url.pathname,
+      timestamp: new Date().toISOString()
+    }, null, 2), {
+      status: 200,
+      headers: {
+        "content-type": "application/json",
+        "access-control-allow-origin": "*"
+      }
+    });
+  }
+};
+"#
+        .to_string();
+    }
 
-    let has_wasm = wasm_bytes.is_some();
+    r#"import wasmModule from "./app.wasm";
 
-    let wasm_load_block = if has_wasm {
-        format!(
-            r#"
-const WASM_BASE64 = "{wasm_base64}";
-let wasmInstance = null;
-let evalResult = null;
-
-function readDefinyValue(mem, ptr) {{
+function readDefinyValue(mem, ptr) {
   if (ptr < 0 || ptr >= mem.length) return null;
   const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
   const tag = mem[ptr];
-  if (tag === 0) {{
-    // Number (i64 at ptr + 8)
+  if (tag === 0) {
     return Number(view.getBigInt64(ptr + 8, true));
-  }}
-  if (tag === 1) {{
-    // Bool (u8 at ptr + 8)
+  }
+  if (tag === 1) {
     return mem[ptr + 8] !== 0;
-  }}
-  if (tag === 2) {{
-    // String (len at ptr + 4, bytes at ptr + 8)
+  }
+  if (tag === 2) {
     const len = view.getUint32(ptr + 4, true);
     return new TextDecoder().decode(mem.subarray(ptr + 8, ptr + 8 + len));
-  }}
-  if (tag === 3) {{
-    // List (count at ptr + 4, elem_ptrs at ptr + 8)
+  }
+  if (tag === 3) {
     const count = view.getUint32(ptr + 4, true);
     const items = [];
-    for (let i = 0; i < count; i++) {{
+    for (let i = 0; i < count; i++) {
       const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
       items.push(readDefinyValue(mem, elemPtr));
-    }}
+    }
     return items;
-  }}
-  if (tag === 4) {{
-    // Record (count at ptr + 4, items at ptr + 8)
+  }
+  if (tag === 4) {
     const count = view.getUint32(ptr + 4, true);
-    const obj = {{}};
-    for (let i = 0; i < count; i++) {{
-      const itemBase = ptr + 8 + i * 16;
+    const obj = { __ptr: ptr };
+    for (let i = 0; i < count; i++) {
+      const itemBase = ptr + 8 + i * 8;
       const keyPtr = view.getUint32(itemBase, true);
-      const valPtr = view.getUint32(itemBase + 8, true);
+      const valPtr = view.getUint32(itemBase + 4, true);
       const keyStr = readDefinyValue(mem, keyPtr);
-      if (typeof keyStr === "string") {{
+      if (typeof keyStr === "string") {
         obj[keyStr] = readDefinyValue(mem, valPtr);
-      }}
-    }}
+      }
+    }
     return obj;
-  }}
-  if (tag === 5) {{
-    // Variant (tag at ptr + 8, payload at ptr + 16)
-    const tagPtr = view.getUint32(ptr + 8, true);
-    const payloadPtr = view.getUint32(ptr + 16, true);
+  }
+  if (tag === 5) {
+    return {
+      __closure: true,
+      tableIdx: view.getUint32(ptr + 4, true),
+      envPtr: view.getInt32(ptr + 8, true),
+    };
+  }
+  if (tag === 6) {
+    const tagPtr = view.getUint32(ptr + 4, true);
+    const payloadPtr = view.getUint32(ptr + 8, true);
     const tagName = readDefinyValue(mem, tagPtr);
     const payloadVal = payloadPtr !== 0 ? readDefinyValue(mem, payloadPtr) : null;
-    return {{ tag: tagName, payload: payloadVal }};
-  }}
+    return { tag: tagName, payload: payloadVal };
+  }
   return null;
-}}
+}
 
-async function initWasm() {{
-  if (wasmInstance) return;
-  try {{
-    const binaryString = atob(WASM_BASE64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {{
-      bytes[i] = binaryString.charCodeAt(i);
-    }}
-    const wasmModule = await WebAssembly.instantiate(bytes, {{
-      env: {{
-        print: (v) => console.log("wasm log:", v),
-      }}
-    }});
-    wasmInstance = wasmModule.instance;
-    const exports = wasmInstance.exports;
-    if (typeof exports.main === "function") {{
-      const rawRes = exports.main();
-      if (exports.memory) {{
+function readRecordFieldPtr(mem, recordPtr, targetKey) {
+  if (recordPtr < 0 || recordPtr >= mem.length || mem[recordPtr] !== 4) return null;
+  const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+  const count = view.getUint32(recordPtr + 4, true);
+  for (let i = 0; i < count; i++) {
+    const itemBase = recordPtr + 8 + i * 8;
+    const keyPtr = view.getUint32(itemBase, true);
+    const valPtr = view.getUint32(itemBase + 4, true);
+    if (readDefinyValue(mem, keyPtr) === targetKey) {
+      return valPtr;
+    }
+  }
+  return null;
+}
+
+function createMemoryAllocator(exports) {
+  if (typeof exports.alloc === "function") {
+    return (size) => exports.alloc((size + 7) & ~7);
+  }
+  const basePage = exports.memory.grow(16);
+  let bump = (basePage + 15) * 65536;
+  return (size) => {
+    const aligned = (size + 7) & ~7;
+    const ptr = bump;
+    bump += aligned;
+    return ptr;
+  };
+}
+
+function writeHttpRequestToMemory(exports, alloc, request, bodyBytes) {
+  const writeNumber = (n) => {
+    const ptr = alloc(16);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 0;
+    view.setBigInt64(ptr + 8, BigInt(n), true);
+    return ptr;
+  };
+  const writeString = (s) => {
+    const bytes = new TextEncoder().encode(s);
+    const ptr = alloc(8 + bytes.length);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 2;
+    view.setUint32(ptr + 4, bytes.length, true);
+    mem.set(bytes, ptr + 8);
+    return ptr;
+  };
+  const writeList = (ptrs) => {
+    const ptr = alloc(8 + ptrs.length * 4);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 3;
+    view.setUint32(ptr + 4, ptrs.length, true);
+    for (let i = 0; i < ptrs.length; i++) {
+      view.setUint32(ptr + 8 + i * 4, ptrs[i], true);
+    }
+    return ptr;
+  };
+  const writeRecord = (entries) => {
+    const ptr = alloc(8 + entries.length * 8);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 4;
+    view.setUint32(ptr + 4, entries.length, true);
+    for (let i = 0; i < entries.length; i++) {
+      view.setUint32(ptr + 8 + i * 8, entries[i][0], true);
+      view.setUint32(ptr + 8 + i * 8 + 4, entries[i][1], true);
+    }
+    return ptr;
+  };
+  const writeClosure = (tableIdx, envPtr) => {
+    const ptr = alloc(16);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 5;
+    view.setUint32(ptr + 4, tableIdx, true);
+    view.setInt32(ptr + 8, envPtr, true);
+    return ptr;
+  };
+  const writeVariant = (tagPtr, payloadPtr) => {
+    const ptr = alloc(16);
+    const mem = new Uint8Array(exports.memory.buffer);
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    mem[ptr] = 6;
+    view.setUint32(ptr + 4, tagPtr, true);
+    view.setUint32(ptr + 8, payloadPtr, true);
+    return ptr;
+  };
+
+  const headerPtrs = [];
+  request.headers.forEach((value, name) => {
+    headerPtrs.push(
+      writeRecord([
+        [writeString("name"), writeString(name)],
+        [writeString("value"), writeString(value)],
+      ])
+    );
+  });
+
+  const rawBody = bodyBytes instanceof Uint8Array ? bodyBytes : new Uint8Array(0);
+  const bytePtrs = new Array(rawBody.length);
+  for (let i = 0; i < rawBody.length; i++) {
+    bytePtrs[i] = writeNumber(rawBody[i]);
+  }
+  const bytesListPtr = writeList(bytePtrs);
+  const bodyEntries = [
+    [writeString("initialState"), writeNumber(0)],
+    [writeString("bytes"), bytesListPtr],
+    [writeString("text"), writeString(new TextDecoder().decode(rawBody))],
+  ];
+
+  const streamNextIdx =
+    exports.stream_next_table_idx &&
+    typeof exports.stream_next_table_idx.value === "number"
+      ? exports.stream_next_table_idx.value
+      : null;
+  if (streamNextIdx !== null) {
+    const donePtr = writeVariant(writeString("done"), 0);
+    const step0Ptr =
+      rawBody.length === 0
+        ? donePtr
+        : writeVariant(
+            writeString("yield"),
+            writeRecord([
+              [writeString("chunk"), bytesListPtr],
+              [writeString("nextState"), writeNumber(1)],
+            ])
+          );
+    const envPtr = alloc(8);
+    {
+      const mem = new Uint8Array(exports.memory.buffer);
+      const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+      view.setUint32(envPtr, step0Ptr, true);
+      view.setUint32(envPtr + 4, donePtr, true);
+    }
+    bodyEntries.push([
+      writeString("next"),
+      writeClosure(streamNextIdx, envPtr),
+    ]);
+  }
+
+  const bodyRecordPtr = writeRecord(bodyEntries);
+
+  return writeRecord([
+    [writeString("method"), writeString(request.method)],
+    [writeString("url"), writeString(request.url)],
+    [writeString("headers"), writeList(headerPtrs)],
+    [writeString("body"), bodyRecordPtr],
+  ]);
+}
+
+function createPullByteReadableStream(exports, alloc, bodyRecordPtr, nextClosure) {
+  let statePtr = readRecordFieldPtr(
+    new Uint8Array(exports.memory.buffer),
+    bodyRecordPtr,
+    "initialState"
+  );
+  const argsPtr = statePtr !== null ? alloc(8) : 0;
+  const nextFn = exports.table.get(nextClosure.tableIdx);
+  let steps = 0;
+
+  return new ReadableStream({
+    pull(controller) {
+      if (statePtr === null) {
+        controller.close();
+        return;
+      }
+      while (steps < 10000) {
+        steps++;
+        {
+          const mem = new Uint8Array(exports.memory.buffer);
+          const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+          view.setUint32(argsPtr, statePtr, true);
+        }
+        const stepPtr = nextFn(nextClosure.envPtr, argsPtr);
         const mem = new Uint8Array(exports.memory.buffer);
-        evalResult = readDefinyValue(mem, rawRes) ?? rawRes;
-      }} else {{
-        evalResult = rawRes;
-      }}
-    }}
-  }} catch (e) {{
-    console.error("Wasm initialization error:", e);
-    evalResult = String(e);
-  }}
-}}
-"#
-        )
-    } else {
-        r#"
-let evalResult = null;
-async function initWasm() {}
-"#
-        .to_string()
+        if (stepPtr < 0 || stepPtr >= mem.length || mem[stepPtr] !== 6) {
+          statePtr = null;
+          controller.close();
+          return;
+        }
+        const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+        const tagPtr = view.getUint32(stepPtr + 4, true);
+        const payloadPtr = view.getUint32(stepPtr + 8, true);
+        const tag = readDefinyValue(mem, tagPtr);
+        if (tag === "done" || payloadPtr === 0) {
+          statePtr = null;
+          controller.close();
+          return;
+        }
+        if (tag === "yield") {
+          const chunkPtr = readRecordFieldPtr(mem, payloadPtr, "chunk");
+          const nextStatePtr = readRecordFieldPtr(mem, payloadPtr, "nextState");
+          statePtr = nextStatePtr;
+          if (chunkPtr !== null) {
+            const listVal = readDefinyValue(mem, chunkPtr);
+            if (Array.isArray(listVal) && listVal.length > 0) {
+              const bytes = new Uint8Array(listVal.map((n) => Number(n) & 0xff));
+              controller.enqueue(bytes);
+              return;
+            }
+          }
+          if (statePtr === null) {
+            controller.close();
+            return;
+          }
+        } else {
+          statePtr = null;
+          controller.close();
+          return;
+        }
+      }
+      statePtr = null;
+      controller.close();
+    },
+  });
+}
+
+function stripInternalFields(val) {
+  if (!val || typeof val !== "object") return val;
+  if (Array.isArray(val)) return val.map(stripInternalFields);
+  const copy = {};
+  for (const [k, v] of Object.entries(val)) {
+    if (k !== "__ptr") copy[k] = stripInternalFields(v);
+  }
+  return copy;
+}
+
+async function evaluateWasmRequest(request) {
+  const instantiated = await WebAssembly.instantiate(wasmModule, {
+    env: {
+      print: (v) => console.log("wasm log:", v),
+    },
+  });
+  const instance = instantiated.instance ?? instantiated;
+  const exports = instance.exports;
+  const entry =
+    typeof exports.evaluate === "function"
+      ? exports.evaluate
+      : typeof exports.main === "function"
+      ? exports.main
+      : null;
+  if (!entry) {
+    return { evalResult: null, httpResponse: null };
+  }
+
+  let rawPtr = entry();
+  if (!exports.memory) {
+    return { evalResult: Number(rawPtr), httpResponse: null };
+  }
+
+  const alloc = createMemoryAllocator(exports);
+  let mem = new Uint8Array(exports.memory.buffer);
+  if (rawPtr >= 0 && rawPtr < mem.length && mem[rawPtr] === 5 && exports.table) {
+    const view = new DataView(mem.buffer, mem.byteOffset, mem.byteLength);
+    const tableIdx = view.getUint32(rawPtr + 4, true);
+    const envPtr = view.getInt32(rawPtr + 8, true);
+    const bodyBytes =
+      request.body && request.method !== "GET" && request.method !== "HEAD"
+        ? new Uint8Array(await request.clone().arrayBuffer())
+        : new Uint8Array(0);
+    const reqPtr = writeHttpRequestToMemory(exports, alloc, request, bodyBytes);
+    const argsPtr = alloc(8);
+    mem = new Uint8Array(exports.memory.buffer);
+    new DataView(mem.buffer, mem.byteOffset, mem.byteLength).setUint32(
+      argsPtr,
+      reqPtr,
+      true
+    );
+    const fn = exports.table.get(tableIdx);
+    rawPtr = fn(envPtr, argsPtr);
+  }
+
+  mem = new Uint8Array(exports.memory.buffer);
+  const rawVal = readDefinyValue(mem, rawPtr) ?? rawPtr;
+
+  if (
+    rawVal &&
+    typeof rawVal === "object" &&
+    !Array.isArray(rawVal) &&
+    typeof rawVal.status === "number" &&
+    "body" in rawVal
+  ) {
+    const headers = new Headers({ "access-control-allow-origin": "*" });
+    if (Array.isArray(rawVal.headers)) {
+      for (const h of rawVal.headers) {
+        if (h && typeof h.name === "string" && typeof h.value === "string") {
+          headers.set(h.name, h.value);
+        }
+      }
+    }
+    let bodyPayload = "";
+    if (typeof rawVal.body === "string") {
+      bodyPayload = rawVal.body;
+    } else if (
+      rawVal.body &&
+      typeof rawVal.body === "object" &&
+      rawVal.body.next &&
+      rawVal.body.next.__closure &&
+      exports.table
+    ) {
+      const bodyRecordPtr = rawVal.body.__ptr;
+      bodyPayload = createPullByteReadableStream(
+        exports,
+        alloc,
+        bodyRecordPtr,
+        rawVal.body.next
+      );
+    }
+    return {
+      evalResult: stripInternalFields(rawVal),
+      httpResponse: new Response(bodyPayload, {
+        status: rawVal.status,
+        headers,
+      }),
     };
+  }
 
-    format!(
-        r#"{wasm_load_block}
+  return { evalResult: stripInternalFields(rawVal), httpResponse: null };
+}
 
-export default {{
-  async fetch(request, env, ctx) {{
-    await initWasm();
-
+export default {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
-
-    if (url.pathname === "/healthz") {{
-      return new Response("OK", {{
-        status: 200,
-        headers: {{ "content-type": "text/plain" }}
-      }});
-    }}
-
-    return new Response(JSON.stringify({{
-      service: "definy-cloudflare-workers",
-      message: "Hello from Definy on Cloudflare Workers!",
-      evaluatedResult: evalResult,
-      pathname: url.pathname,
-      timestamp: new Date().toISOString()
-    }}, null, 2), {{
-      status: 200,
-      headers: {{
-        "content-type": "application/json",
-        "access-control-allow-origin": "*"
-      }}
-    }});
-  }}
-}};
+    try {
+      const { evalResult, httpResponse } = await evaluateWasmRequest(request);
+      if (httpResponse) {
+        return httpResponse;
+      }
+      if (url.pathname === "/healthz") {
+        return new Response("OK", {
+          status: 200,
+          headers: { "content-type": "text/plain" },
+        });
+      }
+      return new Response(
+        JSON.stringify(
+          {
+            service: "definy-cloudflare-workers",
+            message: "Hello from Definy on Cloudflare Workers!",
+            evaluatedResult: evalResult,
+            pathname: url.pathname,
+            timestamp: new Date().toISOString(),
+          },
+          null,
+          2
+        ),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+            "access-control-allow-origin": "*",
+          },
+        }
+      );
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: String(e) }),
+        {
+          status: 500,
+          headers: {
+            "content-type": "application/json",
+            "access-control-allow-origin": "*",
+          },
+        }
+      );
+    }
+  },
+};
 "#
-    )
+    .to_string()
 }
 
 #[cfg(test)]
@@ -568,13 +895,13 @@ mod tests {
         let script_no_wasm = default_cloudflare_worker_script(None);
         assert!(script_no_wasm.contains("export default"));
         assert!(script_no_wasm.contains("async fetch"));
-        assert!(!script_no_wasm.contains("WASM_BASE64"));
+        assert!(!script_no_wasm.contains("./app.wasm"));
 
         let sample_wasm = b"\x00asm\x01\x00\x00\x00";
         let script_with_wasm = default_cloudflare_worker_script(Some(sample_wasm));
         assert!(script_with_wasm.contains("export default"));
-        assert!(script_with_wasm.contains("WASM_BASE64"));
-        assert!(script_with_wasm.contains("WebAssembly.instantiate"));
+        assert!(script_with_wasm.contains("import wasmModule from \"./app.wasm\";"));
+        assert!(script_with_wasm.contains("WebAssembly.instantiate(wasmModule"));
     }
 
     #[tokio::test]

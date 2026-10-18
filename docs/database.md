@@ -65,9 +65,6 @@ definy のデータ本体は決定論的 CBOR バイナリと SHA-256 ハッシ�
 - `deployments`: エッジデプロイ履歴 (`id` PK, `machine_id`, `commit_hash`,
   `status`, `url`, `app_url`, `region`, `created_at_rfc3339`, `wasm_hash`,
   `provider`)
-- `preview_apps`: 動的プレビューアプリ登録情報 (`app_id` PK, `display_name`,
-  `part_id`, `preview_url`, `path_url`, `owner_account_id`,
-  `created_at_rfc3339`, `status`, `subdomain`)
 
 ## 自動プロビジョニングと初期化
 

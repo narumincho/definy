@@ -32,17 +32,3 @@ CREATE TABLE IF NOT EXISTS deployments (
 );
 
 CREATE INDEX IF NOT EXISTS idx_deployments_id ON deployments(id DESC);
-
-CREATE TABLE IF NOT EXISTS preview_apps (
-  app_id TEXT PRIMARY KEY,
-  display_name TEXT NOT NULL,
-  part_id TEXT NOT NULL,
-  preview_url TEXT NOT NULL,
-  path_url TEXT NOT NULL,
-  owner_account_id TEXT NOT NULL,
-  created_at_rfc3339 TEXT NOT NULL,
-  status TEXT NOT NULL,
-  subdomain TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_preview_apps_owner ON preview_apps(owner_account_id);

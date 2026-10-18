@@ -247,18 +247,18 @@ fn DeployPartGuideCard(context: PageContext) -> Element {
                         span { "3." }
                         {
                             lang.label(
-                                "Preview vs Deploy",
-                                "プレビューとデプロイの違い",
-                                "Antaŭrigardo vs Deplojo",
+                                "Native Wasm Module on V8",
+                                "V8 Isolate 上でのネイティブ Wasm 実行",
+                                "Indiĝena Wasm-Modula Rulo",
                             )
                         }
                     }
                     div { style: "color: var(--text-secondary);",
                         {
                             lang.label(
-                                "definy:preview works instantly upon definition. In contrast, definy:deploy is executed on demand to deploy to global edge.",
-                                "preview は定義した瞬間からルーティングされますが、deploy は実行したタイミングで世界中のエッジに配備されます。",
-                                "preview aktiviĝas tuj, dum deploy aktiviĝas post eksplicita rulo.",
+                                "Both development verification and production runs use individual Cloudflare Workers with multipart application/wasm upload (~2s deploy).",
+                                "開発時の動作確認も本番運用もすべて Cloudflare REST API v4 による個別 Worker デプロイ（application/wasm モジュール同梱・約2秒）に一本化されています。",
+                                " Kaj evoluiga kontrolo kaj produktado uzas individuajn Cloudflare Workers.",
                             )
                         }
                     }

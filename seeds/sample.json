@@ -497,7 +497,11 @@
       "part_type": {
         "record": [
           {
-            "key": "code",
+            "key": "cloudflareToken",
+            "value": "string"
+          },
+          {
+            "key": "cloudflareWorkerName",
             "value": "string"
           },
           {
@@ -669,11 +673,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Self-hosted definy HTTP server & Studio executing core.expression-to-source, core.optimize-expression, core.type-check, core.eval-ast, and core.compile-to-wasm via definy:preview"
+          "text": "Self-hosted definy HTTP server & Studio executing core.expression-to-source, core.optimize-expression, core.type-check, core.eval-ast, and core.compile-to-wasm via definy:deploy"
         },
         {
           "language": "ja",
-          "text": "definy 自身のコアパーツ群 (フォーマッタ・最適化器・型検査器・評価器・Wasmコンパイラ) を実行して definy Studio を提供する Web アプリ プレビュー (definy:preview) パーツ"
+          "text": "definy 自身のコアパーツ群 (フォーマッタ・最適化器・型検査器・評価器・Wasmコンパイラ) を実行して definy Studio を提供する Cloudflare Workers デプロイ (definy:deploy) パーツ"
         }
       ],
       "expression": {
@@ -681,7 +685,7 @@
           "function": {
             "PartReference": {
               "part_definition_event_hash": {
-                "$part": "definy.preview"
+                "$part": "definy.deploy"
               }
             }
           },
@@ -692,7 +696,15 @@
                 "TypeLiteral": {
                   "items": [
                     {
-                      "key": "code",
+                      "key": "cloudflareToken",
+                      "value": {
+                        "String": {
+                          "value": ""
+                        }
+                      }
+                    },
+                    {
+                      "key": "cloudflareWorkerName",
                       "value": {
                         "String": {
                           "value": "self-definy"
@@ -1854,7 +1866,7 @@
                                                                     },
                                                                     {
                                                                       "String": {
-                                                                        "value": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から新しいサブドメインアプリを起動 (Self-Host App Launcher)</h2>\n<p>このセルフホスト画面から Connect-RPC (<code>/definy.v1.PreviewService/RegisterPreviewApp</code>) を呼び出し、任意のパーツを新しいサブドメインで即座にホストできます。</p>\n<div class=\"grid\">\n<div><label class=\"label\">Subdomain / App ID</label><input id=\"sub\" value=\"my-definy\" placeholder=\"e.g. my-definy\" /></div>\n<div><label class=\"label\">Target Part (module.part or EventHashId)</label>\n<input id=\"part\" list=\"part-presets\" value=\"sample.self-hosted-definy-server\" placeholder=\"e.g. sample.self-hosted-definy-server\" />\n<datalist id=\"part-presets\">\n<option value=\"sample.self-hosted-definy-server\">Self-Hosted definy Studio (fn(req) =&gt; Response)</option>\n<option value=\"sample.greet\">sample.greet (\"Hello, definy!\")</option>\n<option value=\"sample.triangle-area\">sample.triangle-area (25)</option>\n<option value=\"sample.sample-ast-calc\">sample.sample-ast-calc (core.eval-ast =&gt; 95)</option>\n<option value=\"sample.prime-numbers\">sample.prime-numbers ([2, 3, 5, 7, 11])</option>\n</datalist>\n</div>\n<div><label class=\"label\">Admin Account ID</label><input id=\"admin\" value=\"local-dev-admin\" /></div>\n</div>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<button onclick=\"launchApp()\">🚀 Launch Subdomain Server</button>\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n<span id=\"msg\" style=\"font-size:0.85rem;color:var(--ok);\"></span>\n</div>\n<div id=\"apps\" class=\"app-list\"></div>\n</div>\n</div>\n<script>\nasync function refreshApps() {\n  try {\n    const res = await fetch('/definy.v1.PreviewService/ListPreviewApps', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({})\n    });\n    const data = await res.json();\n    const box = document.getElementById('apps');\n    box.innerHTML = (data.apps || []).map(a =>\n      `<div class=\"app-row\"><div><strong>${a.displayName}</strong> (<code>${a.partId}</code>)</div><div><a href=\"${a.previewUrl}\" target=\"_blank\">🔗 ${a.previewUrl}</a></div></div>`\n    ).join('');\n  } catch (e) { console.error(e); }\n}\nasync function launchApp() {\n  const appId = document.getElementById('sub').value.trim();\n  const partId = document.getElementById('part').value.trim();\n  const accountId = document.getElementById('admin').value.trim();\n  const msg = document.getElementById('msg');\n  msg.textContent = 'Starting...';\n  try {\n    const res = await fetch('/definy.v1.PreviewService/RegisterPreviewApp', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({ appId, displayName: appId + ' (Self-Hosted)', partId, accountId })\n    });\n    const data = await res.json();\n    if (res.ok) {\n      msg.textContent = 'Launched: ' + data.previewUrl;\n      refreshApps();\n    } else {\n      msg.textContent = 'Error: ' + (data.message || res.statusText);\n    }\n  } catch (e) { msg.textContent = String(e); }\n}\nrefreshApps();\n</script>\n</body>\n</html>"
+                                                                        "value": "</div>\n<div class=\"card\">\n<h2>🛠️ definy 自身から新しい Cloudflare Worker アプリをデプロイ (Self-Host Edge Deployer)</h2>\n<p>このセルフホスト画面から Connect-RPC (<code>/definy.v1.DeployService/DeployCloudflare</code>) を呼び出し、任意のパーツを Cloudflare Workers エッジにデプロイできます。</p>\n<div class=\"grid\">\n<div><label class=\"label\">Worker Script Name</label><input id=\"sub\" value=\"my-definy\" placeholder=\"e.g. my-definy\" /></div>\n<div><label class=\"label\">Target Part (module.part or EventHashId)</label>\n<input id=\"part\" list=\"part-presets\" value=\"sample.self-hosted-definy-server\" placeholder=\"e.g. sample.self-hosted-definy-server\" />\n<datalist id=\"part-presets\">\n<option value=\"sample.self-hosted-definy-server\">Self-Hosted definy Studio (fn(req) =&gt; Response)</option>\n<option value=\"sample.greet\">sample.greet (\"Hello, definy!\")</option>\n<option value=\"sample.triangle-area\">sample.triangle-area (25)</option>\n<option value=\"sample.sample-ast-calc\">sample.sample-ast-calc (core.eval-ast =&gt; 95)</option>\n<option value=\"sample.prime-numbers\">sample.prime-numbers ([2, 3, 5, 7, 11])</option>\n</datalist>\n</div>\n</div>\n<div style=\"margin-top:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;\">\n<button onclick=\"launchApp()\">🚀 Deploy to Cloudflare Workers</button>\n<a href=\"http://localhost:8000\" target=\"_blank\">🏠 Main definy IDE (localhost:8000)</a>\n<a href=\"/api/self-host\" target=\"_blank\">📄 View /api/self-host JSON</a>\n<a href=\"/healthz\" target=\"_blank\">🩺 View /healthz JSON</a>\n<span id=\"msg\" style=\"font-size:0.85rem;color:var(--ok);\"></span>\n</div>\n<div id=\"apps\" class=\"app-list\"></div>\n</div>\n</div>\n<script>\nasync function refreshApps() {\n  try {\n    const res = await fetch('/definy.v1.DeployService/ListDeployments', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({ limit: 10 })\n    });\n    const data = await res.json();\n    const box = document.getElementById('apps');\n    box.innerHTML = (data.deployments || []).map(d =>\n      `<div class=\"app-row\"><div><strong>${d.machineId}</strong> (<code>${d.status}</code>)</div><div><a href=\"${d.url}\" target=\"_blank\">🔗 ${d.url}</a></div></div>`\n    ).join('');\n  } catch (e) { console.error(e); }\n}\nasync function launchApp() {\n  const scriptName = document.getElementById('sub').value.trim();\n  const partId = document.getElementById('part').value.trim();\n  const msg = document.getElementById('msg');\n  msg.textContent = 'Deploying...';\n  try {\n    const res = await fetch('/definy.v1.DeployService/DeployCloudflare', {\n      method: 'POST',\n      headers: { 'Content-Type': 'application/json', 'Connect-Protocol-Version': '1' },\n      body: JSON.stringify({ apiToken: '', scriptName, partId })\n    });\n    const data = await res.json();\n    if (res.ok) {\n      msg.textContent = 'Deployed: ' + data.url;\n      refreshApps();\n    } else {\n      msg.textContent = 'Error: ' + (data.message || res.statusText);\n    }\n  } catch (e) { msg.textContent = String(e); }\n}\nrefreshApps();\n</script>\n</body>\n</html>"
                                                                       }
                                                                     }
                                                                   ]

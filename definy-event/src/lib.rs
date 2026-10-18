@@ -6,7 +6,6 @@ pub mod event;
 mod event_hash_id;
 pub mod expression;
 pub mod naming;
-pub mod preview_rpc;
 pub mod rpc;
 
 pub use content_hash::{ContentHash, ContentHashFromStrError};

@@ -28,9 +28,7 @@ Cloudflare Workers へのデプロイに一本化されています。
     └── Worker スクリプト (worker/index.ts) ── エッジ内で直接 API 処理
           (run_worker_first で直接ディスパッチ)
           ├── EventService (/definy.v1.EventService/*)
-          ├── DeployService (/definy.v1.DeployService/*) ── Cloudflare REST API v4 へ直接デプロイ
-          ├── PreviewService (/definy.v1.PreviewService/*)
-          ├── インサーバープレビュー (/preview/*, <app>.definy.workers.dev)
+          ├── DeployService (/definy.v1.DeployService/*) ── Cloudflare REST API v4 へ直接デプロイ (app.wasm 同梱)
           ├── 仮想 Wasm バイナリ (/virtual/wasm/*)
           └── ヘルスチェック (/healthz)
 ```
@@ -56,10 +54,10 @@ Cloudflare Workers へのデプロイに一本化されています。
 
 - `wrangler.toml`: Workers および Static Assets の設定
 - `worker/`
-  - `index.ts`: Worker エントリポイント（Connect-RPC, Preview, Virtual Wasm,
+  - `index.ts`: Worker エントリポイント（Connect-RPC, Virtual Wasm,
     `env.ASSETS` フォールバック）
   - `store.ts`:
-    シードバンドルロード、イベント・CAS・デプロイ履歴・プレビューアプリのストア
+    シードバンドルロード、イベント・CAS・デプロイ履歴のストア
   - `cloudflare_api.ts`: Cloudflare REST API v4
     クライアント（`DeployCloudflare`, `ListCloudflareWorkers`）
   - `types.ts`: 型定義
@@ -76,15 +74,18 @@ Cloudflare Workers へのデプロイに一本化されています。
 
 ```toml
 name = "definy"
-main = "worker/index.ts"
+main = "worker/main.ts"
 compatibility_date = "2024-09-23"
+
+[vars]
+DEFINY_ROOT_DOMAIN = "definy.narumincho.com"
 
 [assets]
 directory = "./dist-assets"
+binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = [
   "/definy.v1.*",
-  "/preview/*",
   "/virtual/*",
   "/mcp",
   "/healthz",

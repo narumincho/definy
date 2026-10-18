@@ -17,32 +17,22 @@ export type RuntimeRequest =
     readonly contents: Readonly<Record<string, string>>;
   }
   | { readonly op: "missingContents" }
-  | {
-    readonly op: "httpStart";
-    readonly partId: string;
-    readonly method: string;
-    readonly url: string;
-    readonly headers: ReadonlyArray<readonly [string, string]>;
-    readonly body: string;
-  }
-  | { readonly op: "httpStartWasm"; readonly wasm: string }
-  | { readonly op: "httpPull"; readonly handle: number }
-  | { readonly op: "httpDrop"; readonly handle: number }
   | { readonly op: "evaluate"; readonly partId: string }
+  | { readonly op: "compilePart"; readonly partId: string }
   | { readonly op: "evaluateExpression"; readonly expression: unknown };
 
 /** Rust 側 `definy_worker_runtime::Response` に対応する応答 */
 export type RuntimeResponse =
   | { readonly type: "ok" }
   | { readonly type: "missingContents"; readonly hashes: ReadonlyArray<string> }
-  | {
-    readonly type: "httpStarted";
-    readonly handle: number;
-    readonly status: number;
-    readonly headers: ReadonlyArray<readonly [string, string]>;
-  }
-  | { readonly type: "httpChunk"; readonly chunk: string | null }
   | { readonly type: "value"; readonly value: unknown }
+  | {
+    readonly type: "compiledPart";
+    readonly wasm: string;
+    readonly cloudflareWorkerName?: string | null;
+    readonly cloudflareToken?: string | null;
+    readonly evaluatedResult?: string | null;
+  }
   | { readonly type: "error"; readonly message: string };
 
 interface RuntimeExports {
@@ -115,30 +105,6 @@ export class DefinyRuntime {
       throw new Error(response.message);
     }
     return response;
-  }
-
-  /** HTTP レスポンスの本文を Pull 型の ReadableStream にする */
-  bodyStream(handle: number): ReadableStream<Uint8Array> {
-    return new ReadableStream<Uint8Array>({
-      pull: (controller) => {
-        try {
-          const response = this.callOrThrow({ op: "httpPull", handle });
-          if (response.type !== "httpChunk") {
-            throw new Error(`unexpected runtime response: ${response.type}`);
-          }
-          if (response.chunk === null) {
-            controller.close();
-          } else {
-            controller.enqueue(base64ToBytes(response.chunk));
-          }
-        } catch (err) {
-          controller.error(err);
-        }
-      },
-      cancel: () => {
-        this.call({ op: "httpDrop", handle });
-      },
-    });
   }
 }
 

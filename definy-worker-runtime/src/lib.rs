@@ -12,7 +12,6 @@ use std::collections::HashMap;
 
 use base64::Engine as _;
 use definy_core::EventWithHash;
-use definy_core::wasm_emitter::wasmi_backend::{WasmiPullStream, execute_wasm_http_response};
 use definy_event::EventHashId;
 use definy_event::event::{EventContent, Expression};
 
@@ -36,26 +35,12 @@ pub enum Request {
     LoadContents { contents: HashMap<String, String> },
     /// 読み込んだイベントのパーツが参照しているが、まだ読み込まれていないコンテンツのハッシュ一覧。
     MissingContents,
-    /// パーツを HTTP ハンドラとして実行し、ステータスとヘッダーを返す。本文は `httpPull` で読む。
-    /// `part_id` はパーツ ID・`module.part`・パーツ名、または読み込んだコンテンツ（式）のハッシュ。
-    #[serde(rename_all = "camelCase")]
-    HttpStart {
-        part_id: String,
-        method: String,
-        url: String,
-        headers: Vec<(String, String)>,
-        body: String,
-    },
-    /// Wasm バイナリ（base64）をそのまま HTTP ハンドラとして実行する。
-    #[serde(rename_all = "camelCase")]
-    HttpStartWasm { wasm: String },
-    /// レスポンス本文の次のチャンクを読む。終わりなら `chunk: null`。
-    HttpPull { handle: u32 },
-    /// レスポンス本文のストリームを破棄する。
-    HttpDrop { handle: u32 },
     /// パーツを評価して値を返す（JSON 表現）。
     #[serde(rename_all = "camelCase")]
     Evaluate { part_id: String },
+    /// パーツ（またはその `definy.deploy` ハンドラ）を Wasm バイナリにコンパイルして base64 で返す。
+    #[serde(rename_all = "camelCase")]
+    CompilePart { part_id: String },
     /// 式（`Expression` の JSON 表現）を評価して値を返す。読み込んだイベントのパーツを参照できる。
     EvaluateExpression { expression: Box<Expression> },
 }
@@ -68,24 +53,22 @@ pub enum Response {
     MissingContents {
         hashes: Vec<String>,
     },
-    HttpStarted {
-        handle: u32,
-        status: u16,
-        headers: Vec<(String, String)>,
-    },
-    /// `chunk` は base64。本文の終わりなら `None`
-    HttpChunk {
-        chunk: Option<String>,
-    },
     Value {
         value: serde_json::Value,
+    },
+    #[serde(rename_all = "camelCase")]
+    CompiledPart {
+        wasm: String,
+        cloudflare_worker_name: Option<String>,
+        cloudflare_token: Option<String>,
+        evaluated_result: Option<String>,
     },
     Error {
         message: String,
     },
 }
 
-/// 読み込んだイベント・コンテンツと、実行中の HTTP ストリームを保持する実行環境。
+/// 読み込んだイベント・コンテンツを保持する実行環境。
 ///
 /// Worker の isolate が生きている間は同じインスタンスを使い回すので、イベントの検証・デコードは
 /// 1 回だけで済みます。
@@ -94,8 +77,6 @@ pub struct Runtime {
     events: Vec<EventWithHash>,
     event_hashes: std::collections::HashSet<EventHashId>,
     contents: HashMap<String, Expression>,
-    streams: HashMap<u32, WasmiPullStream>,
-    next_handle: u32,
 }
 
 impl Runtime {
@@ -148,49 +129,6 @@ impl Runtime {
             Request::MissingContents => Ok(Response::MissingContents {
                 hashes: self.missing_contents(),
             }),
-            Request::HttpStart {
-                part_id,
-                method,
-                url,
-                headers,
-                body,
-            } => {
-                let expression =
-                    definy_core::http_app::resolve_http_handler(self.find_expression(&part_id)?);
-                let wasm = definy_core::http_app::compile_http_request_to_wasm(
-                    &expression,
-                    &self.events,
-                    &method,
-                    &url,
-                    &headers,
-                    &b64_decode(&body)?,
-                )?;
-                self.start_http(&wasm)
-            }
-            Request::HttpStartWasm { wasm } => self.start_http(&b64_decode(&wasm)?),
-            Request::HttpPull { handle } => {
-                let stream = self
-                    .streams
-                    .get_mut(&handle)
-                    .ok_or_else(|| format!("unknown stream handle {handle}"))?;
-                match stream.pull_next_chunk() {
-                    Ok(Some(chunk)) => Ok(Response::HttpChunk {
-                        chunk: Some(b64_encode(&chunk)),
-                    }),
-                    Ok(None) => {
-                        self.streams.remove(&handle);
-                        Ok(Response::HttpChunk { chunk: None })
-                    }
-                    Err(error) => {
-                        self.streams.remove(&handle);
-                        Err(error)
-                    }
-                }
-            }
-            Request::HttpDrop { handle } => {
-                self.streams.remove(&handle);
-                Ok(Response::Ok)
-            }
             Request::Evaluate { part_id } => {
                 let expression = self.find_expression(&part_id)?;
                 let wasm = definy_core::wasm_emitter::compile_expression_to_wasm(
@@ -200,6 +138,30 @@ impl Runtime {
                 let value = definy_core::wasm_emitter::wasmi_backend::execute_wasm(&wasm)?;
                 Ok(Response::Value {
                     value: value_to_json(&value),
+                })
+            }
+            Request::CompilePart { part_id } => {
+                let raw_expression = self.find_expression(&part_id)?;
+                let detected = definy_core::detect_deploy_in_expression(&raw_expression);
+                let target_expression = definy_core::http_app::resolve_http_handler(raw_expression);
+                let wasm = definy_core::wasm_emitter::compile_expression_to_wasm(
+                    &target_expression,
+                    &self.events,
+                )?;
+                let evaluated_result =
+                    definy_core::wasm_emitter::wasmi_backend::execute_wasm(&wasm)
+                        .ok()
+                        .map(|val| match val {
+                            definy_core::Value::String(s) => s,
+                            other => other.to_string(),
+                        });
+                Ok(Response::CompiledPart {
+                    wasm: b64_encode(&wasm),
+                    cloudflare_worker_name: detected
+                        .as_ref()
+                        .map(|d| d.cloudflare_worker_name.clone()),
+                    cloudflare_token: detected.and_then(|d| d.cloudflare_token),
+                    evaluated_result,
                 })
             }
             Request::EvaluateExpression { expression } => {
@@ -266,18 +228,6 @@ impl Runtime {
                 }
             }
         }
-    }
-
-    fn start_http(&mut self, wasm: &[u8]) -> Result<Response, String> {
-        let response = execute_wasm_http_response(wasm)?;
-        let handle = self.next_handle;
-        self.next_handle = self.next_handle.wrapping_add(1);
-        self.streams.insert(handle, response.body_stream);
-        Ok(Response::HttpStarted {
-            handle,
-            status: response.status,
-            headers: response.headers,
-        })
     }
 }
 

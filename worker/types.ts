@@ -166,6 +166,8 @@ export interface DeployCloudflareRequest {
   readonly worker_name?: string | null;
   readonly wasmHash?: string | null;
   readonly wasm_hash?: string | null;
+  readonly partId?: string | null;
+  readonly part_id?: string | null;
   readonly customScript?: string | null;
   readonly custom_script?: string | null;
   readonly commitHash?: string | null;
@@ -214,63 +216,4 @@ export interface CloudflareWorkerItem {
 
 export interface ListCloudflareWorkersResponse {
   readonly workers: ReadonlyArray<CloudflareWorkerItem>;
-}
-
-/**
- * Connect-RPC: PreviewService メッセージ型
- */
-export interface RegisterPreviewAppRequest {
-  readonly appId?: string;
-  readonly app_id?: string;
-  readonly displayName?: string;
-  readonly display_name?: string;
-  readonly partId?: string;
-  readonly part_id?: string;
-  readonly accountId?: string;
-  readonly account_id?: string;
-  readonly signature?: string | null;
-  readonly wasmHash?: string | null;
-  readonly wasm_hash?: string | null;
-}
-
-export interface RegisterPreviewAppResponse {
-  readonly appId: string;
-  readonly previewUrl: string;
-  readonly pathUrl: string;
-  readonly status: string;
-  readonly subdomain: string;
-}
-
-export interface ListPreviewAppsRequest {
-  readonly accountId?: string | null;
-  readonly account_id?: string | null;
-}
-
-export interface PreviewAppItem {
-  readonly appId: string;
-  readonly displayName: string;
-  readonly partId: string;
-  readonly previewUrl: string;
-  readonly pathUrl: string;
-  readonly ownerAccountId: string;
-  readonly createdAtRfc3339: string;
-  readonly status: string;
-  readonly subdomain: string;
-}
-
-export interface ListPreviewAppsResponse {
-  readonly apps: ReadonlyArray<PreviewAppItem>;
-}
-
-export interface StopPreviewAppRequest {
-  readonly appId?: string;
-  readonly app_id?: string;
-  readonly accountId?: string;
-  readonly account_id?: string;
-  readonly signature?: string | null;
-}
-
-export interface StopPreviewAppResponse {
-  readonly success: boolean;
-  readonly message: string;
 }
