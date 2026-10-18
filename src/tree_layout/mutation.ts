@@ -1,4 +1,5 @@
 import type { PathStep } from "./types.ts";
+import { base64ToBytes } from "../cbor.ts";
 
 export function getExpressionAtPath(
   expr: unknown,
@@ -658,7 +659,11 @@ export function applySelection(
     newSubExpr = { Variable: { variable_id: varId } };
   } else if (selectionValue.startsWith("ref:part:")) {
     const partHash = selectionValue.replace("ref:part:", "");
-    newSubExpr = { PartReference: { part_definition_event_hash: partHash } };
+    newSubExpr = {
+      PartReference: {
+        part_definition_event_hash: base64ToBytes(partHash),
+      },
+    };
   } else {
     return expr;
   }

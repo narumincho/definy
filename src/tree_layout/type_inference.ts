@@ -183,10 +183,7 @@ export function inferExpectedType(
 /**
  * 式ノードから対応する SelectorOption の value を特定する
  */
-export function getOptionValueForExpression(
-  node: unknown,
-  partNames?: ReadonlyMap<string, string>,
-): string | null {
+export function getOptionValueForExpression(node: unknown): string | null {
   if (!node || typeof node !== "object") {
     return null;
   }
@@ -226,16 +223,10 @@ export function getOptionValueForExpression(
   if ("PartReference" in obj) {
     const raw = (obj.PartReference as { part_definition_event_hash?: unknown })
       ?.part_definition_event_hash;
-    if (typeof raw === "object" && raw !== null && "$part" in raw) {
-      return `ref:part:${String((raw as { $part: unknown }).$part)}`;
-    }
     const bytes = toUint8Array(raw);
     const b64 = bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
-    const partName =
-      (b64 ? partNames?.get(b64) : undefined) ??
-      (typeof raw === "string" ? partNames?.get(raw) : undefined);
-    if (partName) {
-      return `ref:part:${partName}`;
+    if (b64) {
+      return `ref:part:${b64}`;
     }
   }
 

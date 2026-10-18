@@ -170,8 +170,8 @@ export function ExpressionTreeEditor({
   const currentOptionValue = useMemo<string | null>(() => {
     if (!selectedPath) return null;
     const currentSubExpr = getExpressionAtPath(expression, selectedPath);
-    return getOptionValueForExpression(currentSubExpr, partNames);
-  }, [expression, selectedPath, partNames]);
+    return getOptionValueForExpression(currentSubExpr);
+  }, [expression, selectedPath]);
 
   const selectorOptions = useMemo<ReadonlyArray<SelectorOption>>(() => {
     const baseOptions: ReadonlyArray<SelectorOption> = [
@@ -297,7 +297,10 @@ export function ExpressionTreeEditor({
       },
     ];
 
-    const partOptions: ReadonlyArray<SelectorOption> = parts.map((p) => {
+    const partOptions: ReadonlyArray<SelectorOption> = parts.flatMap((p) => {
+      if (!p.partIdHash) {
+        return [];
+      }
       let rType: ExpectedType = "any";
       if (typeof p.partType === "string") {
         if (p.partType === "number") rType = "number";
@@ -313,12 +316,14 @@ export function ExpressionTreeEditor({
           else if (fn.return_type === "boolean") rType = "boolean";
         }
       }
-      return {
-        value: `ref:part:${p.partId}`,
-        label: `${p.moduleName}.${p.name}`,
-        category: "Parts",
-        returnType: rType,
-      };
+      return [
+        {
+          value: `ref:part:${p.partIdHash}`,
+          label: `${p.moduleName}.${p.name}`,
+          category: "Parts",
+          returnType: rType,
+        },
+      ];
     });
 
     return [...baseOptions, ...partOptions];
