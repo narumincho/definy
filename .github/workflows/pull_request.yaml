@@ -12,6 +12,8 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
+      - name: Update npm to latest
+        run: npm install -g npm@latest
       - name: Install npm dependencies
         run: npm ci
       - name: Check code formatting (Prettier)
