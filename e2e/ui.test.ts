@@ -232,4 +232,109 @@ test.describe("definy UI E2E", () => {
     const coreModuleCard = page.locator(".about-view a", { hasText: "core" });
     await expect(coreModuleCard.first()).toBeVisible();
   });
+
+  test("creates an Ed25519 account, displays account badge, and lists account in /accounts", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    // クライアントのハイドレーション完了を確認
+    const eventCards = page.locator(".event-card");
+    await expect(eventCards.first()).toBeVisible({ timeout: 15000 });
+
+    const accountName = `alice_${Date.now().toString().slice(-6)}`;
+
+    // 1. Click "Log In" button in header
+    const loginButton = page.locator("header .header-actions button", {
+      hasText: /Log In|ログイン|Ensaluti/,
+    });
+    await expect(loginButton).toBeVisible();
+    await loginButton.click();
+
+    // 2. AccountModal opens
+    const dialog = page.locator("dialog.account-modal-dialog");
+    await expect(dialog).toBeVisible();
+
+    // 3. Fill in account name and submit
+    const nameInput = page.locator("#create-account-name");
+    await expect(nameInput).toBeVisible();
+    await nameInput.fill(accountName);
+
+    const createBtn = dialog.locator("button[type='submit']");
+    await createBtn.click();
+
+    // 4. Verify account created success message and secret key
+    const successAlert = dialog.locator(".alert-success");
+    await expect(successAlert).toBeVisible({ timeout: 10000 });
+    const secretKeyBox = dialog.locator(".secret-key-display");
+    await expect(secretKeyBox).toBeVisible();
+    const secretKey = await secretKeyBox.textContent();
+    expect(secretKey?.trim().length).toBeGreaterThan(30);
+
+    // Close modal
+    const doneBtn = dialog.locator("button", { hasText: /Done|完了|Farita/ });
+    await doneBtn.click();
+    await expect(dialog).not.toBeVisible();
+
+    // 5. Header shows account badge with name
+    const accountBadge = page.locator(".header-control.account-badge");
+    await expect(accountBadge).toBeVisible();
+    await expect(accountBadge).toContainText(accountName);
+
+    // 6. Navigate to /accounts and verify account is listed with "You" badge
+    await page.goto("/accounts");
+    const userCard = page
+      .locator(".account-card", { hasText: accountName })
+      .filter({ has: page.locator(".badge-success") });
+    await expect(userCard).toBeVisible({ timeout: 10000 });
+    await expect(userCard.locator(".badge-success")).toHaveText(
+      /You|あなた|Vi/,
+    );
+
+    // 7. Test commit flow: stage a working change and commit from /changes
+    await page.evaluate(() => {
+      const changes = {
+        parts: {
+          "sample.e2e-part": {
+            moduleDefinitionEventHash: "sample",
+            partDefinitionEventHash: "sample.e2e-part",
+            name: "e2e-part",
+            description: "Part created in E2E test",
+            partType: "number",
+            expression: { Number: { value: 999 } },
+          },
+        },
+      };
+      localStorage.setItem(
+        "definy.working_changes.v1",
+        JSON.stringify(changes),
+      );
+    });
+
+    await page.goto("/changes");
+    const changeCard = page.locator(".change-card", { hasText: "e2e-part" });
+    await expect(changeCard).toBeVisible({ timeout: 10000 });
+
+    const messageInput = page.locator("#commit-message-input");
+    await expect(messageInput).toBeVisible();
+    await messageInput.fill("Add e2e-part via test");
+
+    const commitBtn = page.locator("button[type='submit']", {
+      hasText: /Sign & Commit|署名してコミット|Subskribi/,
+    });
+    await expect(commitBtn).toBeVisible();
+    await commitBtn.click();
+
+    // Verify commit success banner
+    const commitSuccess = page.locator(".changes-view .alert-success");
+    await expect(commitSuccess).toBeVisible({ timeout: 10000 });
+
+    // Verify change card is cleared
+    await expect(
+      page.locator(".empty-state", {
+        hasText:
+          /No uncommitted changes|未コミットの変更はありません|Neniuj neenmetitaj ŝanĝoj/,
+      }),
+    ).toBeVisible();
+  });
 });

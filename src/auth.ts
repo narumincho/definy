@@ -1,0 +1,255 @@
+/**
+ * definy の Ed25519 署名およびアカウント管理ユーティリティ
+ */
+
+import {
+  base64ToBytes,
+  bytesToBase64,
+  bytesToUrlSafeBase64NoPad,
+  encodeCborItem,
+  sha256EventHashId,
+  type DecodedPart,
+} from "./cbor.ts";
+
+export interface AccountCredentials {
+  readonly accountId: string;
+  readonly accountName: string;
+  readonly secretKeyBase64: string;
+}
+
+export interface SignedEventResult {
+  readonly signedEventBytes: string;
+  readonly eventHash: string;
+}
+
+export interface SubmitEventResult {
+  readonly eventHash: string;
+  readonly status: string;
+  readonly missingContentHashes?: ReadonlyArray<string>;
+}
+
+export interface CreateModuleCommitParams {
+  readonly credentials: AccountCredentials;
+  readonly moduleName: string;
+  readonly moduleDescription: string;
+  readonly message: string;
+  readonly parentCommitHash?: string | null;
+  readonly parts: ReadonlyArray<DecodedPart>;
+}
+
+const ED25519_PKCS8_HEADER: ReadonlyArray<number> = [
+  0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04,
+  0x22, 0x04, 0x20,
+];
+
+function toBufferSource(bytes: Uint8Array): BufferSource {
+  return bytes as unknown as BufferSource;
+}
+
+/**
+ * 32 バイト（または 48/64 バイト）の Base64 秘密鍵シードから Web Crypto の Ed25519 CryptoKey をインポートする
+ */
+export async function importPrivateKeyFromSecretKey(
+  secretKeyBase64: string,
+): Promise<CryptoKey> {
+  const trimmed = secretKeyBase64.trim();
+  let rawBytes = base64ToBytes(trimmed);
+  if (rawBytes.length === 64) {
+    rawBytes = rawBytes.subarray(0, 32);
+  }
+
+  let pkcs8: Uint8Array;
+  if (rawBytes.length === 32) {
+    pkcs8 = new Uint8Array(ED25519_PKCS8_HEADER.length + 32);
+    pkcs8.set(ED25519_PKCS8_HEADER);
+    pkcs8.set(rawBytes, ED25519_PKCS8_HEADER.length);
+  } else if (rawBytes.length === 48) {
+    pkcs8 = rawBytes;
+  } else {
+    throw new Error(
+      `Invalid secret key length: ${rawBytes.length} bytes (expected 32 bytes URL-safe base64)`,
+    );
+  }
+
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    toBufferSource(pkcs8),
+    { name: "Ed25519" },
+    true,
+    ["sign"],
+  );
+}
+
+/**
+ * 新しい Ed25519 アカウント（秘密鍵シード・公開鍵 accountId）を生成する
+ */
+export async function generateAccountCredentials(
+  accountName: string,
+): Promise<AccountCredentials> {
+  const seed = crypto.getRandomValues(new Uint8Array(32));
+  const seedBase64 = bytesToUrlSafeBase64NoPad(seed);
+  const key = await importPrivateKeyFromSecretKey(seedBase64);
+  const jwk = await crypto.subtle.exportKey("jwk", key);
+  const accountId = jwk.x ?? "";
+  const finalSeed = jwk.d ?? seedBase64;
+
+  return {
+    accountId,
+    accountName: accountName.trim(),
+    secretKeyBase64: finalSeed,
+  };
+}
+
+/**
+ * 既存の秘密鍵シードからアカウント情報を復元する
+ */
+export async function importAccountCredentials(
+  secretKeyBase64: string,
+  fallbackAccountName?: string,
+): Promise<AccountCredentials> {
+  const key = await importPrivateKeyFromSecretKey(secretKeyBase64);
+  const jwk = await crypto.subtle.exportKey("jwk", key);
+  const accountId = jwk.x ?? "";
+  const seed = jwk.d ?? secretKeyBase64.trim();
+  const name =
+    fallbackAccountName && fallbackAccountName.trim().length > 0
+      ? fallbackAccountName.trim()
+      : accountId.slice(0, 8);
+
+  return {
+    accountId,
+    accountName: name,
+    secretKeyBase64: seed,
+  };
+}
+
+/**
+ * AccountCredentials から CreateAccount イベントを作成・Ed25519 署名する
+ */
+export async function createSignedAccountEvent(
+  credentials: AccountCredentials,
+  timeSeconds?: number,
+): Promise<SignedEventResult> {
+  const key = await importPrivateKeyFromSecretKey(credentials.secretKeyBase64);
+  const pubBytes = base64ToBytes(credentials.accountId);
+  const nowSec = timeSeconds ?? Math.floor(Date.now() / 1000);
+
+  const innerEvent = {
+    account_id: pubBytes,
+    time: { __tag: 1, value: nowSec },
+    content: {
+      CreateAccount: {
+        account_name: credentials.accountName,
+      },
+    },
+  };
+
+  const innerBytes = encodeCborItem(innerEvent);
+  const sigBuffer = await crypto.subtle.sign(
+    { name: "Ed25519" },
+    key,
+    toBufferSource(innerBytes),
+  );
+  const signature = new Uint8Array(sigBuffer);
+
+  const signedEvent = {
+    signature,
+    event_binary: { __tag: 24, value: innerBytes },
+  };
+
+  const signedBytes = encodeCborItem(signedEvent);
+  const signedEventBytes = bytesToBase64(signedBytes);
+  const eventHash = await sha256EventHashId(signedBytes);
+
+  return {
+    signedEventBytes,
+    eventHash,
+  };
+}
+
+/**
+ * ModuleCommit イベントを作成・Ed25519 署名する
+ */
+export async function createSignedModuleCommitEvent(
+  params: CreateModuleCommitParams,
+  timeSeconds?: number,
+): Promise<SignedEventResult> {
+  const key = await importPrivateKeyFromSecretKey(
+    params.credentials.secretKeyBase64,
+  );
+  const pubBytes = base64ToBytes(params.credentials.accountId);
+  const nowSec = timeSeconds ?? Math.floor(Date.now() / 1000);
+
+  const innerEvent = {
+    account_id: pubBytes,
+    time: { __tag: 1, value: nowSec },
+    content: {
+      ModuleCommit: {
+        module_name: params.moduleName,
+        module_description: [
+          { language: "en", text: params.moduleDescription },
+          { language: "ja", text: params.moduleDescription },
+        ],
+        message: params.message,
+        parent_commit_hash: params.parentCommitHash ?? null,
+        parts: params.parts.map((p) => {
+          const rawHash = p.contentHash ? base64ToBytes(p.contentHash) : null;
+          return {
+            name: p.name,
+            description: [
+              { language: "en", text: p.description },
+              { language: "ja", text: p.description },
+            ],
+            part_type: p.partType,
+            expression: p.expression ?? null,
+            content_hash: rawHash,
+          };
+        }),
+      },
+    },
+  };
+
+  const innerBytes = encodeCborItem(innerEvent);
+  const sigBuffer = await crypto.subtle.sign(
+    { name: "Ed25519" },
+    key,
+    toBufferSource(innerBytes),
+  );
+  const signature = new Uint8Array(sigBuffer);
+
+  const signedEvent = {
+    signature,
+    event_binary: { __tag: 24, value: innerBytes },
+  };
+
+  const signedBytes = encodeCborItem(signedEvent);
+  const signedEventBytes = bytesToBase64(signedBytes);
+  const eventHash = await sha256EventHashId(signedBytes);
+
+  return {
+    signedEventBytes,
+    eventHash,
+  };
+}
+
+/**
+ * 署名済みイベントを backend API (/definy.v1.EventService/SubmitEvent) に提出する
+ */
+export async function submitSignedEvent(
+  signedEventBytes: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<SubmitEventResult> {
+  const res = await fetchFn("/definy.v1.EventService/SubmitEvent", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ signedEventBytes }),
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`SubmitEvent failed (${res.status}): ${errorText}`);
+  }
+
+  const data = (await res.json()) as SubmitEventResult;
+  return data;
+}

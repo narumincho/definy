@@ -2536,6 +2536,98 @@ a.status-error {
   }
 }
 
+/* Account Modal & Secret Key Styling */
+.account-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+
+.account-modal-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.account-modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.account-modal-close:hover {
+  color: var(--text);
+  background: var(--overlay-2);
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.alert-success {
+  background: rgba(92, 199, 138, 0.12);
+  border: 1px solid rgba(92, 199, 138, 0.35);
+  color: #8ad8ab;
+}
+
+.alert-danger {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+.account-profile-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.account-id-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.secret-key-box {
+  padding: 0.9rem;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.secret-key-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.secret-key-display {
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  padding: 0.5rem 0.7rem;
+  word-break: break-all;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  user-select: all;
+}
+
+.commit-panel {
+  padding: 1.2rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-card);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

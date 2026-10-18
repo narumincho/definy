@@ -19,19 +19,38 @@ import type {
   PartSnapshot,
   WorkingChanges,
 } from "./types.ts";
-import { extractModuleCommit } from "./cbor.ts";
+import {
+  extractCreateAccount,
+  extractModuleCommit,
+  type DecodedPart,
+} from "./cbor.ts";
+import {
+  generateAccountCredentials,
+  importAccountCredentials,
+  createSignedAccountEvent,
+  createSignedModuleCommitEvent,
+  submitSignedEvent,
+} from "./auth.ts";
+import { AccountModal } from "./components/AccountModal.tsx";
 import {
   createStage1Compiler,
   evaluateCompiledWasm,
   type DefinyValue,
 } from "./stage1_compiler.ts";
 
+export interface CommitWorkingChangesParams {
+  readonly moduleName: string;
+  readonly message: string;
+}
+
 export interface DefinyContextValue {
   readonly language: LanguageCode;
   readonly setLanguage: (lang: LanguageCode) => void;
   readonly events: ReadonlyArray<EventRecord>;
+  readonly refreshEvents: () => Promise<void>;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   readonly parts: ReadonlyArray<PartSnapshot>;
+  readonly accountNames: ReadonlyMap<string, string>;
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
@@ -39,6 +58,19 @@ export interface DefinyContextValue {
   readonly connectionStatus: ConnectionStatus;
   readonly currentAccount: AccountState | null;
   readonly setCurrentAccount: (account: AccountState | null) => void;
+  readonly accountModalOpen: boolean;
+  readonly setAccountModalOpen: (open: boolean) => void;
+  readonly loginWithSecretKey: (
+    secretKeyBase64: string,
+    fallbackName?: string,
+  ) => Promise<void>;
+  readonly createAccountAndLogin: (
+    accountName: string,
+  ) => Promise<{ secretKeyBase64: string }>;
+  readonly logout: () => void;
+  readonly commitWorkingChanges: (
+    params: CommitWorkingChangesParams,
+  ) => Promise<string>;
   readonly sidebarOpen: boolean;
   readonly toggleSidebar: () => void;
   readonly setSidebarOpen: (open: boolean) => void;
@@ -51,6 +83,7 @@ const DefinyContext = createContext<DefinyContextValue | null>(null);
 
 const STORAGE_KEY_CHANGES = "definy.working_changes.v1";
 const STORAGE_KEY_LANG = "definy.language";
+const STORAGE_KEY_ACCOUNT = "definy.account.v1";
 
 function loadStoredChanges(): WorkingChanges {
   if (typeof window === "undefined") {
@@ -130,11 +163,39 @@ export function DefinyProvider({
     useState<WorkingChanges>(loadStoredChanges);
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("connecting");
-  const [currentAccount, setCurrentAccount] = useState<AccountState | null>(
-    null,
-  );
+  const [currentAccount, setCurrentAccountState] =
+    useState<AccountState | null>(null);
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Load stored account on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(STORAGE_KEY_ACCOUNT);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as AccountState;
+          if (parsed && typeof parsed.accountId === "string") {
+            setCurrentAccountState(parsed);
+          }
+        } catch {
+          // Ignore invalid stored account
+        }
+      }
+    }
+  }, []);
+
+  const setCurrentAccount = useCallback((acc: AccountState | null) => {
+    setCurrentAccountState(acc);
+    if (typeof window !== "undefined") {
+      if (acc) {
+        localStorage.setItem(STORAGE_KEY_ACCOUNT, JSON.stringify(acc));
+      } else {
+        localStorage.removeItem(STORAGE_KEY_ACCOUNT);
+      }
+    }
+  }, []);
 
   const setLanguage = useCallback((lang: LanguageCode) => {
     setLanguageState(lang);
@@ -179,38 +240,88 @@ export function DefinyProvider({
     saveStoredChanges(next);
   }, []);
 
-  // Fetch initial events from worker backend
+  // Fetch events from worker backend
+  const loadEvents = useCallback(async (): Promise<void> => {
+    try {
+      const res = await fetch("/definy.v1.EventService/GetEvents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 100, offset: 0 }),
+      });
+      if (!res.ok) {
+        setConnectionStatus("error");
+        return;
+      }
+      const data = (await res.json()) as {
+        readonly events?: ReadonlyArray<EventRecord>;
+      };
+      if (data.events) {
+        setEvents(data.events);
+        setConnectionStatus("connected");
+      }
+    } catch {
+      setConnectionStatus("offline");
+    }
+  }, []);
+
   useEffect(() => {
-    let cancelled = false;
-    async function loadEvents(): Promise<void> {
-      try {
-        const res = await fetch("/definy.v1.EventService/GetEvents", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ limit: 100, offset: 0 }),
-        });
-        if (!res.ok) {
-          if (!cancelled) setConnectionStatus("error");
-          return;
-        }
-        const data = (await res.json()) as {
-          readonly events?: ReadonlyArray<EventRecord>;
-        };
-        if (!cancelled && data.events) {
-          setEvents(data.events);
-          setConnectionStatus("connected");
-        }
-      } catch {
-        if (!cancelled) {
-          setConnectionStatus("offline");
+    void loadEvents();
+  }, [loadEvents]);
+
+  // Derive account names from CreateAccount events
+  const accountNames = useMemo<ReadonlyMap<string, string>>(() => {
+    const map = new Map<string, string>();
+    for (const ev of events) {
+      if (ev.eventType === "create_account") {
+        const decoded = extractCreateAccount(ev.signedEventBytes);
+        if (decoded) {
+          map.set(decoded.accountId, decoded.accountName);
         }
       }
     }
-    loadEvents();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    return map;
+  }, [events]);
+
+  const loginWithSecretKey = useCallback(
+    async (secretKeyBase64: string, fallbackName?: string): Promise<void> => {
+      const creds = await importAccountCredentials(
+        secretKeyBase64,
+        fallbackName,
+      );
+      const existingName = accountNames.get(creds.accountId);
+      const acc: AccountState = {
+        accountId: creds.accountId,
+        accountName: existingName ?? creds.accountName,
+        secretKeyBase64: creds.secretKeyBase64,
+      };
+      setCurrentAccount(acc);
+    },
+    [accountNames, setCurrentAccount],
+  );
+
+  const createAccountAndLogin = useCallback(
+    async (accountName: string): Promise<{ secretKeyBase64: string }> => {
+      const creds = await generateAccountCredentials(accountName);
+      const { signedEventBytes } = await createSignedAccountEvent(creds);
+      const res = await submitSignedEvent(signedEventBytes);
+      if (res.status !== "accepted") {
+        throw new Error(`Failed to create account: ${res.status}`);
+      }
+      const acc: AccountState = {
+        accountId: creds.accountId,
+        accountName: creds.accountName,
+        secretKeyBase64: creds.secretKeyBase64,
+      };
+      setCurrentAccount(acc);
+      await loadEvents();
+      return { secretKeyBase64: creds.secretKeyBase64 };
+    },
+    [loadEvents, setCurrentAccount],
+  );
+
+  const logout = useCallback(() => {
+    setCurrentAccount(null);
+  }, [setCurrentAccount]);
 
   // Derive module and part snapshots from events and working changes
   const { modules, parts } = useMemo(() => {
@@ -270,6 +381,95 @@ export function DefinyProvider({
     };
   }, [events]);
 
+  const commitWorkingChanges = useCallback(
+    async ({
+      moduleName,
+      message,
+    }: CommitWorkingChangesParams): Promise<string> => {
+      if (!currentAccount || !currentAccount.secretKeyBase64) {
+        throw new Error("You must be logged in to commit changes");
+      }
+
+      const existingModule = modules.find((m) => m.name === moduleName);
+      const parentCommitHash = existingModule?.latestEventHash ?? null;
+
+      const partMap = new Map<string, DecodedPart>();
+      if (existingModule) {
+        for (const p of existingModule.parts) {
+          partMap.set(p.name, {
+            name: p.name,
+            description: p.description,
+            partType: p.partType,
+            expression: p.expression,
+            contentHash: p.contentHash,
+          });
+        }
+      }
+
+      const committedPartIds: Array<string> = [];
+      for (const [partId, change] of workingChanges.parts.entries()) {
+        const dotIndex = partId.indexOf(".");
+        const partModule =
+          dotIndex >= 0 ? partId.slice(0, dotIndex) : moduleName;
+        const partName =
+          dotIndex >= 0 ? partId.slice(dotIndex + 1) : change.name;
+
+        if (partModule === moduleName || change.name === partName) {
+          partMap.set(change.name, {
+            name: change.name,
+            description: change.description,
+            partType: change.partType,
+            expression: change.expression,
+            contentHash: null,
+          });
+          committedPartIds.push(partId);
+        }
+      }
+
+      if (partMap.size === 0) {
+        throw new Error(`No parts found to commit for module '${moduleName}'`);
+      }
+
+      const partsList: ReadonlyArray<DecodedPart> = Array.from(
+        partMap.values(),
+      );
+
+      const { signedEventBytes, eventHash } =
+        await createSignedModuleCommitEvent({
+          credentials: {
+            accountId: currentAccount.accountId,
+            accountName: currentAccount.accountName,
+            secretKeyBase64: currentAccount.secretKeyBase64,
+          },
+          moduleName,
+          moduleDescription:
+            existingModule?.description ?? `${moduleName} module`,
+          message,
+          parentCommitHash,
+          parts: partsList,
+        });
+
+      const submitRes = await submitSignedEvent(signedEventBytes);
+      if (submitRes.status !== "accepted") {
+        throw new Error(`Commit rejected with status: ${submitRes.status}`);
+      }
+
+      setWorkingChanges((prev) => {
+        const nextParts = new Map<string, PartChange>(prev.parts);
+        for (const id of committedPartIds) {
+          nextParts.delete(id);
+        }
+        const next = { parts: nextParts };
+        saveStoredChanges(next);
+        return next;
+      });
+
+      await loadEvents();
+      return eventHash;
+    },
+    [currentAccount, modules, workingChanges, loadEvents],
+  );
+
   const evaluatePart = useCallback(
     async (part: PartSnapshot): Promise<DefinyValue> => {
       const stage1Module = await getCompilerModule();
@@ -291,8 +491,10 @@ export function DefinyProvider({
       language,
       setLanguage,
       events,
+      refreshEvents: loadEvents,
       modules,
       parts,
+      accountNames,
       workingChanges,
       updateWorkingPart,
       discardWorkingPart,
@@ -300,6 +502,12 @@ export function DefinyProvider({
       connectionStatus,
       currentAccount,
       setCurrentAccount,
+      accountModalOpen,
+      setAccountModalOpen,
+      loginWithSecretKey,
+      createAccountAndLogin,
+      logout,
+      commitWorkingChanges,
       sidebarOpen,
       toggleSidebar,
       setSidebarOpen,
@@ -311,14 +519,23 @@ export function DefinyProvider({
       language,
       setLanguage,
       events,
+      loadEvents,
       modules,
       parts,
+      accountNames,
       workingChanges,
       updateWorkingPart,
       discardWorkingPart,
       discardAllWorkingChanges,
       connectionStatus,
       currentAccount,
+      setCurrentAccount,
+      accountModalOpen,
+      setAccountModalOpen,
+      loginWithSecretKey,
+      createAccountAndLogin,
+      logout,
+      commitWorkingChanges,
       sidebarOpen,
       toggleSidebar,
       commandPaletteOpen,
@@ -327,7 +544,15 @@ export function DefinyProvider({
   );
 
   return (
-    <DefinyContext.Provider value={value}>{children}</DefinyContext.Provider>
+    <DefinyContext.Provider value={value}>
+      {children}
+      <AccountModal
+        open={accountModalOpen}
+        onClose={() => {
+          setAccountModalOpen(false);
+        }}
+      />
+    </DefinyContext.Provider>
   );
 }
 

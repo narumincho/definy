@@ -199,6 +199,19 @@ export function encodeCborItem(value: unknown): Uint8Array {
     }
     return concatBytes(chunks);
   }
+  if (
+    value &&
+    typeof value === "object" &&
+    "__tag" in value &&
+    "value" in value &&
+    typeof (value as { readonly __tag: unknown }).__tag === "number"
+  ) {
+    const tagged = value as { readonly __tag: number; readonly value: unknown };
+    return concatBytes([
+      encodeCborHeader(6, tagged.__tag),
+      encodeCborItem(tagged.value),
+    ]);
+  }
   if (typeof value === "object") {
     const entries = Object.entries(value as Record<string, unknown>);
     const chunks: Array<Uint8Array> = [encodeCborHeader(5, entries.length)];
@@ -311,6 +324,49 @@ export function extractModuleCommit(
           ? mc.parent_commit_hash
           : null,
       parts,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface DecodedCreateAccount {
+  readonly accountId: string;
+  readonly accountName: string;
+}
+
+/**
+ * SignedEvent バイナリ（Base64）からアカウント作成情報（accountId, accountName）を抽出する
+ */
+export function extractCreateAccount(
+  signedBytesBase64: string,
+): DecodedCreateAccount | null {
+  try {
+    const bytes = base64ToBytes(signedBytesBase64);
+    const [signedRaw] = decodeCborItem(bytes);
+    if (!signedRaw || typeof signedRaw !== "object") return null;
+    const signedObj = signedRaw as Record<string, unknown>;
+    const eventBinaryField = signedObj.event_binary as
+      { value?: unknown } | undefined;
+    const innerBytes = toUint8Array(
+      eventBinaryField?.value ?? eventBinaryField,
+    );
+    if (!innerBytes) return null;
+    const [innerRaw] = decodeCborItem(innerBytes);
+    if (!innerRaw || typeof innerRaw !== "object") return null;
+    const innerObj = innerRaw as Record<string, unknown>;
+    const contentObj = innerObj.content as Record<string, unknown> | undefined;
+    if (!contentObj || !("CreateAccount" in contentObj)) return null;
+
+    const accountBytes = toUint8Array(innerObj.account_id);
+    const accountId = accountBytes
+      ? bytesToUrlSafeBase64NoPad(accountBytes)
+      : "";
+
+    const ca = contentObj.CreateAccount as Record<string, unknown>;
+    return {
+      accountId,
+      accountName: String(ca.account_name ?? ""),
     };
   } catch {
     return null;
