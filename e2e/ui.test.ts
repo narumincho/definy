@@ -238,6 +238,10 @@ test.describe("definy UI E2E", () => {
   }) => {
     await page.goto("/");
 
+    // クライアントのハイドレーション完了を確認
+    const eventCards = page.locator(".event-card");
+    await expect(eventCards.first()).toBeVisible({ timeout: 15000 });
+
     const accountName = `alice_${Date.now().toString().slice(-6)}`;
 
     // 1. Click "Log In" button in header
