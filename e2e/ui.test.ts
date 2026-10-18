@@ -306,7 +306,7 @@ test.describe("definy UI E2E", () => {
         },
       };
       localStorage.setItem(
-        "definy.working_changes.v2",
+        "definy.working_changes.v3",
         JSON.stringify(changes),
       );
     });

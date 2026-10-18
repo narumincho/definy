@@ -38,6 +38,10 @@ import {
   loadStage1Compiler,
   type DefinyValue,
 } from "./stage1_compiler.ts";
+import {
+  deserializeWorkingChanges,
+  serializeWorkingChanges,
+} from "./working_changes_storage.ts";
 
 export interface CommitWorkingChangesParams {
   readonly moduleName: string;
@@ -83,37 +87,25 @@ export interface DefinyContextValue {
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
 
-// v2: description を LocalizedText (言語ごとの配列) に変更
-const STORAGE_KEY_CHANGES = "definy.working_changes.v2";
+// v3: Uint8Array を {"$bytes": base64url} で保存
+const STORAGE_KEY_CHANGES = "definy.working_changes.v3";
 const STORAGE_KEY_LANG = "definy.language";
 const STORAGE_KEY_ACCOUNT = "definy.account.v1";
 
 function loadStoredChanges(): WorkingChanges {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_CHANGES);
-    if (!raw) return { parts: new Map<string, PartChange>() };
-    const parsed = JSON.parse(raw) as {
-      readonly parts?: Record<string, PartChange>;
-    };
-    const partsMap = new Map<string, PartChange>();
-    if (parsed.parts) {
-      for (const [k, v] of Object.entries(parsed.parts)) {
-        partsMap.set(k, v);
-      }
-    }
-    return { parts: partsMap };
-  } catch {
+  if (typeof window === "undefined") {
     return { parts: new Map<string, PartChange>() };
   }
+  const raw = localStorage.getItem(STORAGE_KEY_CHANGES);
+  if (!raw) {
+    return { parts: new Map<string, PartChange>() };
+  }
+  return deserializeWorkingChanges(raw);
 }
 
 function saveStoredChanges(changes: WorkingChanges): void {
   if (typeof window === "undefined") return;
-  const obj: Record<string, PartChange> = {};
-  for (const [k, v] of changes.parts.entries()) {
-    obj[k] = v;
-  }
-  localStorage.setItem(STORAGE_KEY_CHANGES, JSON.stringify({ parts: obj }));
+  localStorage.setItem(STORAGE_KEY_CHANGES, serializeWorkingChanges(changes));
 }
 
 function isLanguageCode(value: string | null): value is LanguageCode {

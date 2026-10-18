@@ -143,3 +143,13 @@ call f width: 1 height: 2
 - パーツの型の文字列 (エクスプローラー, パーツ一覧, コマンドパレット, モジュール詳細) も,
   型パーツの参照を `type-part(ハッシュ)` ではなくパーツ名で書く
   (`PartType::to_string_with_type_part_names`, UI では `part_projection::part_type_text`)
+- **パーツ参照の実データと UI 選択肢・永続化の整合性**:
+  - 式の AST におけるパーツ参照の実データは `{ PartReference: { part_definition_event_hash: <32 バイトの Uint8Array> } }` であり,
+    CBOR のバイト列 (major type 2) にエンコードされる. パーツ名文字列や数値配列を直接格納してはならない.
+  - ツリーエディタの選択肢 (`SelectorOption.value`) は `ref:part:<partIdHash (URL-safe Base64)>` をキーとし,
+    `partIdHash` がないパーツは候補から除外する. 適用時 (`applySelection`) に `base64ToBytes` で `Uint8Array` に戻し,
+    選択値の判定時 (`getOptionValueForExpression`) は `toUint8Array` → `bytesToUrlSafeBase64NoPad` で Base64URL を生成して照合する.
+  - 作業中の変更 (`WorkingChanges`) を `localStorage` に保存する際, 素朴な `JSON.stringify` では `Uint8Array` が
+    `{"0": 12, ...}` のオブジェクトに分解され CBOR の map として壊れてしまう. そのため `serializeWorkingChanges` /
+    `deserializeWorkingChanges` を通し, 任意の深さの `Uint8Array` を `{"$bytes": "<Base64URL>"}` 形式で安全にシリアライズ・復元する
+    (保存キーは `definy.working_changes.v3`).
