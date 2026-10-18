@@ -8,22 +8,16 @@ SEED_SQL_PATH="${DEFINY_SEED_SQL_PATH:-target/definy_seed.sql}"
 run_wrangler() {
   if command -v npx >/dev/null 2>&1; then
     npx --yes wrangler@4 "$@"
-  elif command -v deno >/dev/null 2>&1; then
-    deno run -A npm:wrangler@4 "$@"
   else
     wrangler "$@"
   fi
 }
 
-# --local 指定時はローカルの Wrangler D1 (SQLite) にスキーマとシード SQL を投入する
+# --local 指定時はローカルの Wrangler D1 (SQLite) にスキーマを投入する
 if [[ "${1:-}" == "--local" ]]; then
-  if [[ ! -f "$SEED_SQL_PATH" ]]; then
-    echo "Generating D1 seed SQL at ${SEED_SQL_PATH}..."
-    cargo run -p definy-server -- --export-seed-sql "$SEED_SQL_PATH"
-  fi
-  echo "Applying schema and builtin seeds to local D1 database '${DB_NAME}'..."
-  run_wrangler d1 execute "${DB_NAME}" --local --file="${SEED_SQL_PATH}"
-  echo "Successfully seeded local D1 database '${DB_NAME}'."
+  echo "Applying initial schema to local D1 database '${DB_NAME}'..."
+  run_wrangler d1 execute "${DB_NAME}" --local --file="migrations/0001_initial_schema.sql"
+  echo "Successfully applied schema to local D1 database '${DB_NAME}'."
   exit 0
 fi
 

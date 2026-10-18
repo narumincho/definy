@@ -163,10 +163,12 @@ export class WorkerStore {
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
         if (!this.seeded && env.ASSETS) {
-          const origin = requestOrigin ||
-            "https://definy.narumincho.workers.dev";
-          const assetUrl = new URL("/__definy_seed_bundle.json", origin)
-            .toString();
+          const origin =
+            requestOrigin || "https://definy.narumincho.workers.dev";
+          const assetUrl = new URL(
+            "/__definy_seed_bundle.json",
+            origin,
+          ).toString();
           try {
             const res = await env.ASSETS.fetch(new Request(assetUrl));
             if (res.ok) {
@@ -400,10 +402,7 @@ export class WorkerStore {
   /**
    * 単一イベントを `eventHash` で取得する
    */
-  async getEvent(
-    eventHash: string,
-    env?: Env,
-  ): Promise<EventItem | undefined> {
+  async getEvent(eventHash: string, env?: Env): Promise<EventItem | undefined> {
     if (env?.DB) {
       const row = await env.DB.prepare(
         `SELECT event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339
@@ -563,8 +562,8 @@ export class WorkerStore {
 
     for (const item of items) {
       const hash = item.contentHash ?? item.content_hash ?? item.hash ?? "";
-      const bytes = item.contentBytes ?? item.content_bytes ?? item.content ??
-        "";
+      const bytes =
+        item.contentBytes ?? item.content_bytes ?? item.content ?? "";
       if (hash && bytes) {
         nextContents.set(hash, bytes);
         stored.push(hash);

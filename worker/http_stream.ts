@@ -24,8 +24,13 @@ export interface PartStoreReader {
 }
 
 function isWasmBinary(bytes: Uint8Array): boolean {
-  return bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x61 &&
-    bytes[2] === 0x73 && bytes[3] === 0x6d;
+  return (
+    bytes.length >= 4 &&
+    bytes[0] === 0x00 &&
+    bytes[1] === 0x61 &&
+    bytes[2] === 0x73 &&
+    bytes[3] === 0x6d
+  );
 }
 
 /** ストアのモジュールコミットと、それが参照する CAS コンテンツをランタイムに読み込む */
@@ -38,8 +43,8 @@ async function loadStoreIntoRuntime(
     { eventType: "module_commit", limit: 500 },
     env,
   );
-  const newEvents = commitEvents.filter((ev) =>
-    !runtime.loadedEventHashes.has(ev.eventHash)
+  const newEvents = commitEvents.filter(
+    (ev) => !runtime.loadedEventHashes.has(ev.eventHash),
   );
   if (newEvents.length > 0) {
     runtime.callOrThrow({

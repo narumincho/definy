@@ -23,14 +23,17 @@ definy の式は「Wasm にコンパイルして実行」で評価します。�
 
 ## 実行
 
-- wasmtime: `cargo test -p definy-server --test eval_conformance`
-  （失敗したケースをまとめて 1 つのメッセージで報告します）
-- wasmi（ネイティブ）: `cargo test -p definy-server --test wasmi_backend`
-- Worker ランタイム: `deno test --allow-read worker/eval_conformance_test.ts`（事前のビルドは [worker-runtime.md](worker-runtime.md)）
-- definy 製コンパイラ（`core.compile-to-wasm`）: `cargo test -p definy-server --test self_hosted_compiler_coverage -- --nocapture`
-  （全ケースの通過は求めず, 対応状況を表示する。[self-hosting.md](self-hosting.md) の「definy 製コンパイラの対応状況」を参照）
+Vitest により、全適合テストケースが Node.js (V8) 上で約 600ms で一括検証されます：
 
-いずれも CI（`pull_request.yaml`）で実行されます。
+```bash
+# 全テスト実行（Wasm 実行テスト、D1 永続化、言語適合テスト）
+npm test
+
+# 適合テストのみ実行
+npx vitest run worker/eval_conformance.test.ts
+```
+
+GitHub Actions の CI（`pull_request.yaml`）でも自動実行されます。
 
 ## 文字列の意味論
 

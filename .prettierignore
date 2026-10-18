@@ -6,8 +6,7 @@ target
 worker/generated
 .void
 
-# Rust crates & test seeds
-crates
+# Static assets & test seeds
+public
 seeds
 conformance
-deno.lock

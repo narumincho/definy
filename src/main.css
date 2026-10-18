@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 /*
  * IDE 風のフラットなダークテーマ.
@@ -141,8 +141,10 @@
   --glass-blur: none;
   --content-max-width: 1200px;
 
-  --font-ui: system-ui, -apple-system, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+  --font-ui:
+    system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP",
+    sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
   --titlebar-height: 38px;
   --activitybar-width: 48px;
@@ -189,7 +191,9 @@ h6 {
 a {
   text-decoration: none;
   color: inherit;
-  transition: color 0.12s ease, background-color 0.12s ease;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease;
 }
 
 button,
@@ -203,7 +207,10 @@ button {
   cursor: pointer;
   border: none;
   font-weight: 500;
-  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -223,7 +230,7 @@ button:disabled {
  * type="button" のボタンの既定スタイル.
  * :where() で詳細度を 0 にし, .btn-primary などのクラス指定が必ず勝つようにする
  */
-:where(button[type='button']),
+:where(button[type="button"]),
 .btn-secondary {
   background: #2c3037;
   color: var(--text);
@@ -232,7 +239,7 @@ button:disabled {
   padding: 0.32rem 0.8rem;
 }
 
-:where(button[type='button']):hover,
+:where(button[type="button"]):hover,
 .btn-secondary:hover {
   background: #343841;
   border-color: #4a4f59;
@@ -436,11 +443,16 @@ textarea {
 .workbench {
   display: grid;
   grid-template-areas:
-    'titlebar titlebar titlebar'
-    'activity sidebar editor'
-    'status status status';
-  grid-template-columns: var(--activitybar-width) var(--sidebar-width) minmax(0, 1fr);
-  grid-template-rows: var(--titlebar-height) minmax(0, 1fr) var(--statusbar-height);
+    "titlebar titlebar titlebar"
+    "activity sidebar editor"
+    "status status status";
+  grid-template-columns: var(--activitybar-width) var(--sidebar-width) minmax(
+      0,
+      1fr
+    );
+  grid-template-rows: var(--titlebar-height) minmax(0, 1fr) var(
+      --statusbar-height
+    );
   height: 100vh;
   height: 100dvh;
   width: 100%;
@@ -810,7 +822,7 @@ button.header-title:hover {
   flex-shrink: 0;
 }
 
-.tree-leaf[data-error='true'] .tree-label {
+.tree-leaf[data-error="true"] .tree-label {
   color: var(--red-text);
 }
 
@@ -1057,7 +1069,7 @@ button.header-title:hover {
 }
 
 .editor-loading-bar::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -40%;
@@ -1145,7 +1157,7 @@ button.header-title:hover {
   color: var(--text);
 }
 
-.command-palette-item[aria-selected='true'] {
+.command-palette-item[aria-selected="true"] {
   background: var(--bg-selection-strong);
   color: var(--text-primary);
 }
@@ -1304,7 +1316,9 @@ a.status-error {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0.85rem 1rem;
-  transition: border-color 0.12s ease, background-color 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
   position: relative;
   overflow: hidden;
 }
@@ -1584,17 +1598,17 @@ a.status-error {
   transition: background-color 0.08s ease;
 }
 
-.dropdown-option[data-secondary='true'] {
+.dropdown-option[data-secondary="true"] {
   opacity: 0.55;
 }
 
-.dropdown-option[data-state='selected'] {
+.dropdown-option[data-state="selected"] {
   background: var(--overlay-3);
   color: var(--text);
   opacity: 1;
 }
 
-.dropdown-option[data-state='highlighted'] {
+.dropdown-option[data-state="highlighted"] {
   background: var(--bg-selection-strong);
   color: var(--text-primary);
   opacity: 1;
@@ -1615,7 +1629,7 @@ a.status-error {
   background: var(--overlay-2);
 }
 
-.lang-option[aria-current='true'] {
+.lang-option[aria-current="true"] {
   background: var(--overlay-3);
   color: var(--primary);
 }
@@ -1641,8 +1655,8 @@ a.status-error {
   color: var(--text-primary) !important;
 }
 
-.toggle-chip[aria-pressed='true'],
-.toggle-chip[aria-current='page'] {
+.toggle-chip[aria-pressed="true"],
+.toggle-chip[aria-current="page"] {
   background: var(--bg-selection-strong) !important;
   border-color: var(--primary) !important;
   color: var(--text-primary) !important;
@@ -1653,7 +1667,7 @@ a.status-error {
   font-size: 0.78rem;
 }
 
-.btn-secondary[aria-pressed='true'] {
+.btn-secondary[aria-pressed="true"] {
   background: var(--bg-selection-strong);
   border-color: var(--primary);
   color: var(--text-primary);
@@ -1670,13 +1684,13 @@ a.status-error {
   color: var(--blue-text);
 }
 
-.tone-message[data-tone='error'] {
+.tone-message[data-tone="error"] {
   border-color: var(--red-border);
   background: var(--red-bg);
   color: var(--red-text);
 }
 
-.tone-message[data-tone='warning'] {
+.tone-message[data-tone="warning"] {
   border-color: var(--yellow-border);
   background: var(--yellow-bg);
   color: var(--yellow-text);
@@ -1725,7 +1739,7 @@ a.status-error {
 }
 
 .commit-graph-row:hover,
-.commit-graph-entry[data-expanded='true'] > .commit-graph-row {
+.commit-graph-entry[data-expanded="true"] > .commit-graph-row {
   background: var(--overlay-1);
 }
 
@@ -1813,7 +1827,7 @@ a.status-error {
   color: var(--text-muted);
 }
 
-.change-badge[data-kind='removed'] {
+.change-badge[data-kind="removed"] {
   color: var(--red-text);
 }
 
@@ -1841,11 +1855,11 @@ a.status-error {
   flex-shrink: 0;
 }
 
-.change-badge[data-kind='added'] {
+.change-badge[data-kind="added"] {
   color: var(--green-text);
 }
 
-.tree-leaf[data-changed='true'] .tree-label {
+.tree-leaf[data-changed="true"] .tree-label {
   color: var(--yellow-text);
 }
 
@@ -1944,7 +1958,7 @@ a.status-error {
   border-radius: var(--radius-xs);
 }
 
-.changes-item input[type='checkbox'] {
+.changes-item input[type="checkbox"] {
   flex: 0 0 auto;
   width: auto;
   margin: 0;
@@ -1986,12 +2000,12 @@ a.status-error {
   color: #fff;
 }
 
-.count-badge[data-tone='warning'] {
+.count-badge[data-tone="warning"] {
   background: var(--yellow);
   color: var(--bg-chrome);
 }
 
-.count-badge[data-tone='error'] {
+.count-badge[data-tone="error"] {
   background: var(--red);
   color: #fff;
 }
@@ -2006,19 +2020,19 @@ a.status-error {
   border: 1px solid;
 }
 
-.status-chip[data-status='queued'] {
+.status-chip[data-status="queued"] {
   background: var(--yellow-bg-strong);
   border-color: var(--yellow-border);
   color: var(--yellow-text);
 }
 
-.status-chip[data-status='sent'] {
+.status-chip[data-status="sent"] {
   background: var(--green-bg-strong);
   border-color: var(--green-border);
   color: var(--green-text);
 }
 
-.status-chip[data-status='failed'] {
+.status-chip[data-status="failed"] {
   background: var(--red-bg-strong);
   border-color: var(--red-border);
   color: var(--red-text);
@@ -2037,7 +2051,7 @@ a.status-error {
   background: var(--blue-bg);
 }
 
-.preview-banner-card[data-tone='error'] {
+.preview-banner-card[data-tone="error"] {
   border-color: var(--red-border);
   background: var(--red-bg);
 }
@@ -2051,47 +2065,47 @@ a.status-error {
   border: 1.5px solid var(--border-strong);
 }
 
-.tree-capsule[data-state='hovered'] {
+.tree-capsule[data-state="hovered"] {
   background: var(--overlay-2);
   border-color: var(--text-muted);
 }
 
-.tree-capsule[data-state='selected'] {
+.tree-capsule[data-state="selected"] {
   background: var(--bg-selection);
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--bg-selection);
 }
 
-.tree-capsule[data-state='error'] {
+.tree-capsule[data-state="error"] {
   background: var(--red-bg);
   border-color: var(--red);
 }
 
-.tree-capsule[data-state='error-selected'] {
+.tree-capsule[data-state="error-selected"] {
   background: var(--red-bg-strong);
   border-color: var(--red);
   box-shadow: 0 0 0 4px var(--red-bg-strong);
 }
 
 /* バッジは種類ごとの色をインラインで持つので, 状態の指定は !important で上書きする */
-.tree-badge[data-state='hovered'] {
+.tree-badge[data-state="hovered"] {
   border-color: var(--text-secondary) !important;
 }
 
-.tree-badge[data-state='selected'] {
+.tree-badge[data-state="selected"] {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
   box-shadow: 0 0 0 5px var(--bg-selection);
 }
 
-.tree-badge[data-state='error'],
-.tree-badge[data-state='error-selected'] {
+.tree-badge[data-state="error"],
+.tree-badge[data-state="error-selected"] {
   background: var(--red-border) !important;
   color: var(--red-text) !important;
   border: 1.5px solid var(--red) !important;
 }
 
-.tree-badge[data-state='error-selected'] {
+.tree-badge[data-state="error-selected"] {
   outline: 2px solid var(--red);
   outline-offset: 1px;
 }
@@ -2100,20 +2114,20 @@ a.status-error {
   border: 1.5px solid var(--border);
 }
 
-.tree-table[data-state='hovered'] {
+.tree-table[data-state="hovered"] {
   border-color: var(--border-strong);
 }
 
-.tree-table[data-state='selected'] {
+.tree-table[data-state="selected"] {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--bg-selection);
 }
 
-.tree-table[data-state='error'] {
+.tree-table[data-state="error"] {
   border-color: var(--red-border);
 }
 
-.tree-table[data-state='error-selected'] {
+.tree-table[data-state="error-selected"] {
   border-color: var(--red);
 }
 
@@ -2129,8 +2143,8 @@ a.status-error {
   outline: none;
 }
 
-.part-definition-tree:focus-visible .def-row[data-state='selected'],
-.part-definition-tree:focus .def-row[data-state='selected'] {
+.part-definition-tree:focus-visible .def-row[data-state="selected"],
+.part-definition-tree:focus .def-row[data-state="selected"] {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--bg-selection);
 }
@@ -2149,7 +2163,7 @@ a.status-error {
   background: var(--overlay-1);
 }
 
-.def-row[data-state='selected'] {
+.def-row[data-state="selected"] {
   background: var(--bg-selection);
   border-color: var(--bg-selection-strong);
 }
@@ -2317,9 +2331,9 @@ a.status-error {
   .workbench,
   .workbench.sidebar-toggled {
     grid-template-areas:
-      'titlebar'
-      'editor'
-      'activity';
+      "titlebar"
+      "editor"
+      "activity";
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto;
   }
@@ -2336,7 +2350,9 @@ a.status-error {
     width: min(84vw, 320px);
     visibility: hidden;
     transform: translateX(-100%);
-    transition: transform 0.18s ease, visibility 0.18s;
+    transition:
+      transform 0.18s ease,
+      visibility 0.18s;
     box-shadow: var(--shadow-lg);
     z-index: 20;
   }

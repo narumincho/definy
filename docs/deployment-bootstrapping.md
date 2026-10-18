@@ -237,12 +237,12 @@ graph TD
 
 ### ブートストラップ完了時の姿
 
-| 階層                          | 現在の実装 (Rust / Axum / Dioxus)               | ブートストラップ完成時の姿 (definy 言語)                     |
-| :---------------------------- | :---------------------------------------------- | :----------------------------------------------------------- |
+| 階層                          | 現在の実装 (Rust / Axum / Dioxus)                | ブートストラップ完成時の姿 (definy 言語)                     |
+| :---------------------------- | :----------------------------------------------- | :----------------------------------------------------------- |
 | **運用層 (Layer 1)**          | `cloudflare_workers.rs` (Cloudflare REST API v4) | definy の純粋パーツ式（Machines API 呼出パーツ）             |
-| **ビルド層 (Layer 2)**        | `cargo build`, `dx build` (Rust ツールチェイン) | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
-| **I/O・サーバー層 (Layer 3)** | `axum`, `tokio` (Rust 非同期ランタイム)         | `wasi:http/outgoing-handler` Capability 注入パーツ           |
-| **UI・エディタ層**            | Rust Dioxus コンポーネント (`definy-ui`)        | definy の UI 表現パーツ・ツリーレイアウト                    |
+| **ビルド層 (Layer 2)**        | `cargo build`, `dx build` (Rust ツールチェイン)  | `core.compile-to-wasm` (definy で書かれた自己記述コンパイラ) |
+| **I/O・サーバー層 (Layer 3)** | `axum`, `tokio` (Rust 非同期ランタイム)          | `wasi:http/outgoing-handler` Capability 注入パーツ           |
+| **UI・エディタ層**            | Rust Dioxus コンポーネント (`definy-ui`)         | definy の UI 表現パーツ・ツリーレイアウト                    |
 
 この 4 階層がすべて definy の式・パーツとして表現された時、definy
 は外部のあらゆる開発環境（Rust, Cargo, Docker, GitHub Actions,

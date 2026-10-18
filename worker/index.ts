@@ -60,8 +60,8 @@ export function isAdminAccount(
   if (normalized.length === 0) {
     return false;
   }
-  const adminEnv = env.DEFINY_ADMIN_ACCOUNT_ID ??
-    env.DEFINY_ADMIN_ACCOUNT_IDS ?? "";
+  const adminEnv =
+    env.DEFINY_ADMIN_ACCOUNT_ID ?? env.DEFINY_ADMIN_ACCOUNT_IDS ?? "";
   const admins = adminEnv
     .split(/[,;\s]+/)
     .map((s) => s.trim().toLowerCase())
@@ -150,10 +150,9 @@ export async function handleWorkerRequest(
 
   // Virtual Wasm CAS endpoint: /virtual/wasm/:hash
   if (pathname.startsWith("/virtual/wasm/")) {
-    const rawHash = pathname.slice("/virtual/wasm/".length).replace(
-      /\.wasm$/,
-      "",
-    );
+    const rawHash = pathname
+      .slice("/virtual/wasm/".length)
+      .replace(/\.wasm$/, "");
     const bytes = await store.getRawContentBytes(rawHash, env);
     if (!bytes) {
       return new Response("Wasm binary not found in CAS", {
@@ -203,8 +202,8 @@ export async function handleWorkerRequest(
 
   if (pathname === "/definy.v1.EventService/SubmitEvent") {
     const req = await parseJsonRequest<SubmitEventRequest>(request);
-    const rawEvent = req.signedEventBytes ?? req.signed_event_bytes ??
-      req.event_binary;
+    const rawEvent =
+      req.signedEventBytes ?? req.signed_event_bytes ?? req.event_binary;
     if (!rawEvent || rawEvent.trim().length === 0) {
       return connectErrorResponse(
         "invalid_argument",
@@ -307,9 +306,10 @@ export async function handleWorkerRequest(
         env,
         fetchFn,
       );
-      const finalRes = evaluatedResult && !res.evaluatedResult
-        ? { ...res, evaluatedResult }
-        : res;
+      const finalRes =
+        evaluatedResult && !res.evaluatedResult
+          ? { ...res, evaluatedResult }
+          : res;
       const nowIso = new Date().toISOString();
       await store.recordDeployment(
         {

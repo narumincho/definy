@@ -1,6 +1,10 @@
-# クレート構成と責務
+# 旧 Rust クレート構成と責務（アーカイブ）
 
-definy は Cargo ワークスペースによって以下のクレートに分割・整理されています。
+> [!NOTE]
+> 本ドキュメントに記載されている Rust クレート群（`definy-core`, `definy-ui`, `definy-server`, `definy-client`, `definy-worker-runtime`, `definy-event`）は、**TypeScript + React 19 + Void (Vite 8)** への移行に伴い全廃されました。
+> 現在のアーキテクチャおよび開発基盤については [docs/typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照してください。
+
+definy は過去に Cargo ワークスペースによって以下のクレートに分割・整理されていました。
 
 | クレート名      | 責務・役割                                                                                                                     | 主な依存関係                                       |
 | :-------------- | :----------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------- |

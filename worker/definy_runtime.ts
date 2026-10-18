@@ -13,9 +13,9 @@
 export type RuntimeRequest =
   | { readonly op: "loadEvents"; readonly events: ReadonlyArray<string> }
   | {
-    readonly op: "loadContents";
-    readonly contents: Readonly<Record<string, string>>;
-  }
+      readonly op: "loadContents";
+      readonly contents: Readonly<Record<string, string>>;
+    }
   | { readonly op: "missingContents" }
   | { readonly op: "evaluate"; readonly partId: string }
   | { readonly op: "compilePart"; readonly partId: string }
@@ -27,12 +27,12 @@ export type RuntimeResponse =
   | { readonly type: "missingContents"; readonly hashes: ReadonlyArray<string> }
   | { readonly type: "value"; readonly value: unknown }
   | {
-    readonly type: "compiledPart";
-    readonly wasm: string;
-    readonly cloudflareWorkerName?: string | null;
-    readonly cloudflareToken?: string | null;
-    readonly evaluatedResult?: string | null;
-  }
+      readonly type: "compiledPart";
+      readonly wasm: string;
+      readonly cloudflareWorkerName?: string | null;
+      readonly cloudflareToken?: string | null;
+      readonly evaluatedResult?: string | null;
+    }
   | { readonly type: "error"; readonly message: string };
 
 interface RuntimeExports {
@@ -92,8 +92,11 @@ export class DefinyRuntime {
       outputPtr,
       true,
     );
-    const output = new Uint8Array(exports.memory.buffer, outputPtr + 4, length)
-      .slice();
+    const output = new Uint8Array(
+      exports.memory.buffer,
+      outputPtr + 4,
+      length,
+    ).slice();
     exports.definy_free(outputPtr, 4 + length);
     return JSON.parse(new TextDecoder().decode(output)) as RuntimeResponse;
   }

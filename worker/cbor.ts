@@ -313,8 +313,7 @@ export function parseSignedEventMetadata(
     }
     const signedObj = signedRaw as Record<string, unknown>;
     const eventBinaryField = signedObj.event_binary as
-      | { value?: unknown }
-      | undefined;
+      { value?: unknown } | undefined;
     const innerBytes = toUint8Array(
       eventBinaryField?.value ?? eventBinaryField,
     );
@@ -332,9 +331,10 @@ export function parseSignedEventMetadata(
       : "";
 
     const timeField = innerObj.time as { value?: unknown } | undefined;
-    const timeSec = typeof timeField?.value === "number"
-      ? timeField.value
-      : now.getTime() / 1000;
+    const timeSec =
+      typeof timeField?.value === "number"
+        ? timeField.value
+        : now.getTime() / 1000;
     const timeMs = Math.round(timeSec * 1000);
     const createdAtRfc3339 = new Date(timeMs).toISOString();
 
@@ -350,8 +350,7 @@ export function parseSignedEventMetadata(
       } else if ("ModuleCommit" in contentObj) {
         eventType = "module_commit";
         const mc = contentObj.ModuleCommit as
-          | { parts?: ReadonlyArray<Record<string, unknown>> }
-          | undefined;
+          { parts?: ReadonlyArray<Record<string, unknown>> } | undefined;
         if (mc && Array.isArray(mc.parts)) {
           for (const part of mc.parts) {
             if (!part || typeof part !== "object") continue;

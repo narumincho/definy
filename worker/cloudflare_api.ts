@@ -40,9 +40,7 @@ interface CloudflareWorkerSummary {
  * `wasmBytes` がある場合は multipart の `app.wasm` (`application/wasm`) を ES Module として import し、
  * V8 のネイティブ WebAssembly ランタイムで実行する。
  */
-export function buildDefaultWorkerScript(
-  wasmBytes?: Uint8Array,
-): string {
+export function buildDefaultWorkerScript(wasmBytes?: Uint8Array): string {
   const hasWasm = Boolean(wasmBytes && wasmBytes.byteLength > 0);
   if (!hasWasm) {
     return `export default {
@@ -545,9 +543,8 @@ async function getSubdomain(
   if (!res.ok) {
     return "workers.dev";
   }
-  const parsed = (await res.json()) as CloudflareApiResponse<
-    CloudflareSubdomainItem
-  >;
+  const parsed =
+    (await res.json()) as CloudflareApiResponse<CloudflareSubdomainItem>;
   return parsed.result?.subdomain || "workers.dev";
 }
 
@@ -584,14 +581,16 @@ export async function deployWorkerToCloudflare(
     .toString(16)
     .padStart(8, "0");
   const rawName = req.scriptName || req.script_name || req.worker_name;
-  const scriptName = rawName && rawName.trim().length > 0
-    ? rawName.trim()
-    : `definy-worker-${randomSuffix}`;
+  const scriptName =
+    rawName && rawName.trim().length > 0
+      ? rawName.trim()
+      : `definy-worker-${randomSuffix}`;
 
   const customScript = req.customScript || req.custom_script;
-  const scriptContent = customScript && customScript.trim().length > 0
-    ? customScript
-    : buildDefaultWorkerScript(wasmBytes);
+  const scriptContent =
+    customScript && customScript.trim().length > 0
+      ? customScript
+      : buildDefaultWorkerScript(wasmBytes);
   const metadata = JSON.stringify({ main_module: "worker.js" });
 
   const form = new FormData();
@@ -650,9 +649,10 @@ export async function deployWorkerToCloudflare(
     apiBaseUrl,
     fetchFn,
   );
-  const publicUrl = subdomain === "workers.dev"
-    ? `https://${scriptName}.workers.dev`
-    : `https://${scriptName}.${subdomain}.workers.dev`;
+  const publicUrl =
+    subdomain === "workers.dev"
+      ? `https://${scriptName}.workers.dev`
+      : `https://${scriptName}.${subdomain}.workers.dev`;
 
   return {
     scriptName,
