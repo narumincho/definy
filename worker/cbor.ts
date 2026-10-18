@@ -19,7 +19,10 @@ export function base64ToBytes(base64: string): Uint8Array {
 export function bytesToBase64(bytes: Uint8Array): string {
   let binString = "";
   for (let i = 0; i < bytes.length; i++) {
-    binString += String.fromCharCode(bytes[i]);
+    const byte = bytes[i];
+    if (byte !== undefined) {
+      binString += String.fromCharCode(byte);
+    }
   }
   return btoa(binString);
 }
@@ -103,15 +106,27 @@ export function decodeCborItem(
     throw new Error("Unexpected EOF in CBOR");
   }
   const initial = bytes[offset++];
+  if (initial === undefined) {
+    throw new Error("Unexpected EOF in CBOR");
+  }
   const major = initial >> 5;
   const info = initial & 0x1f;
   let val = 0;
   if (info < 24) {
     val = info;
   } else if (info === 24) {
-    val = bytes[offset++];
+    const next = bytes[offset++];
+    if (next === undefined) {
+      throw new Error("Unexpected EOF in CBOR");
+    }
+    val = next;
   } else if (info === 25) {
-    val = (bytes[offset] << 8) | bytes[offset + 1];
+    const b0 = bytes[offset];
+    const b1 = bytes[offset + 1];
+    if (b0 === undefined || b1 === undefined) {
+      throw new Error("Unexpected EOF in CBOR");
+    }
+    val = (b0 << 8) | b1;
     offset += 2;
   } else if (info === 26) {
     val = new DataView(bytes.buffer, bytes.byteOffset + offset, 4).getUint32(0);

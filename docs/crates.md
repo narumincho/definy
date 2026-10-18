@@ -77,3 +77,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt
 dx fmt
 ```
+
+## TypeScript + React 19 + Void への移行と Wasm 自己ホスト
+
+現在、ビルド時間の大幅短縮と自己ホスト検証の容易化のため、上記 Rust クレート群から TypeScript + React 19 + Void への段階的移行が進められています。
+自己記述コンパイラ `stage1.wasm`（`core.compile-to-wasm`）が固定点に達したことで、Rust のコンパイラやインタプリタに依存せず、ブラウザ/Worker の V8 上で直接 definy 式を Wasm コンパイル・ネイティブ実行できるようになっています。
+詳細は [docs/typescript-react-void-architecture.md](file:///Users/narumi/Documents/GitHub/definy/docs/typescript-react-void-architecture.md) を参照してください。

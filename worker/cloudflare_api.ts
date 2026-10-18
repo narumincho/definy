@@ -520,10 +520,11 @@ async function resolveAccountId(
   const parsed = (await res.json()) as CloudflareApiResponse<
     ReadonlyArray<CloudflareAccountItem>
   >;
-  if (!parsed.success || !parsed.result || parsed.result.length === 0) {
+  const first = parsed.result?.[0];
+  if (!first) {
     throw new Error("No Cloudflare accounts found for the provided API token");
   }
-  return parsed.result[0].id;
+  return first.id;
 }
 
 async function getSubdomain(

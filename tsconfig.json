@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": [
+    "src",
+    "pages",
+    "routes",
+    "middleware",
+    "worker/index.ts",
+    "worker/cbor.ts",
+    "worker/cloudflare_api.ts",
+    "worker/definy_runtime.ts",
+    "worker/http_stream.ts",
+    "worker/main.ts",
+    "worker/store.ts",
+    "worker/types.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
+}

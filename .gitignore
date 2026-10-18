@@ -8,3 +8,5 @@
 /narumincho-vdom-build/cache/
 /worker/generated/
 /.wrangler/
+node_modules/
+.void/

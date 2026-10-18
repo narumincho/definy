@@ -1,0 +1,13 @@
+# Dependencies & build outputs
+node_modules
+dist
+dist-assets
+target
+worker/generated
+.void
+
+# Rust crates & test seeds
+crates
+seeds
+conformance
+deno.lock
