@@ -1,0 +1,61 @@
+import type { JSX } from "react";
+import { Link } from "@void/react";
+import { label } from "../src/language.ts";
+import { useDefiny } from "../src/state.tsx";
+
+export default function HistoryPage(): JSX.Element {
+  const { language, events } = useDefiny();
+
+  const commits = events.filter((e) => e.eventType === "module_commit");
+
+  return (
+    <div className="history-view">
+      <div className="view-header">
+        <h2 className="view-title">
+          {label(language, "Commit History", "コミット履歴", "Historio")}
+        </h2>
+      </div>
+
+      <div className="commit-list">
+        {commits.length === 0 ? (
+          <div className="empty-state">
+            <p>
+              {label(
+                language,
+                "No commits found",
+                "コミットが見つかりません",
+                "Neniuj enmetoj trovitaj",
+              )}
+            </p>
+          </div>
+        ) : (
+          commits.map((commit) => (
+            <div key={commit.eventHash} className="card commit-card">
+              <div className="commit-header">
+                <span className="commit-hash" title={commit.eventHash}>
+                  {commit.eventHash.slice(0, 12)}
+                </span>
+                <span className="commit-time">
+                  {new Date(commit.timeMs).toLocaleString()}
+                </span>
+              </div>
+              <div className="commit-footer">
+                <Link
+                  href={`/event/${commit.eventHash}`}
+                  className="btn btn-ghost btn-xs"
+                >
+                  {label(
+                    language,
+                    "Inspect Event →",
+                    "イベント詳細 →",
+                    "Inspekti →",
+                  )}
+                </Link>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
