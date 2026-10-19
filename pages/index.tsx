@@ -91,11 +91,27 @@ export default function EventsPage(): JSX.Element {
           </div>
         ) : (
           filteredEvents.map((ev) => (
-            <div key={ev.eventHash} className="card event-card">
+            <div
+              key={ev.eventHash}
+              className={`card event-card ${ev.verification.status === "invalid" ? "event-card-invalid" : ""}`}
+            >
               <div className="event-card-header">
                 <span className={`badge badge-${ev.eventType}`}>
                   {ev.eventType}
                 </span>
+                {ev.verification.status === "invalid" && (
+                  <span
+                    className="badge badge-invalid-signature"
+                    title={ev.verification.reason}
+                  >
+                    {label(
+                      language,
+                      "Invalid signature",
+                      "署名が不正",
+                      "Nevalida subskribo",
+                    )}
+                  </span>
+                )}
                 <span className="event-time" title={ev.createdAtRfc3339}>
                   {new Date(ev.timeMs).toLocaleString()}
                 </span>

@@ -18,6 +18,8 @@ TypeScript + React 19 + Void (Vite 8 / Rolldown / Oxc) によるフルスタッ�
   - `stage1_compiler.ts`: definy 自己記述コンパイラ (`wasm/stage1.wasm`) の TypeScript 実行パイプライン
   - `state.tsx`: AppState, i18n, イベント管理 Context
   - `auth.ts` / `rpc_auth.ts`: Ed25519 アカウント・イベント署名と RPC の Authorization ヘッダー ([仕様](docs/rpc-authorization.md))
+  - `signed_event.ts`: SignedEvent のデコードと Ed25519 署名検証 (Worker と、受信イベントを表示前に検証するブラウザで共用)
+  - `invalid_signature_samples.ts`: ブラウザ側の署名チェック確認用の不正署名サンプル ([手順](docs/invalid-signature-debug.md))
   - `tree_layout/`: 式の木構造エディタ (レイアウト計算・編集操作・期待型の推論)
   - `main.css`: IDE ダークテーマ スタイルシート
 - `middleware/`: Void ミドルウェア (Connect-RPC, `/virtual/wasm/*`, `/healthz` のインターセプトと、SSR レスポンスへのセキュリティヘッダー付与)

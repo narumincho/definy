@@ -50,6 +50,11 @@ export type Env = {
   readonly DEFINY_ROOT_DOMAIN?: string;
   readonly CLOUDFLARE_API_TOKEN?: string;
   readonly CLOUDFLARE_ACCOUNT_ID?: string;
+  /**
+   * `"true"` のとき `DebugService/SubmitUnverifiedEvent` で署名が不正なイベントも保存・配信できるようにする。
+   * ブラウザ側の署名チェックを確認するためのローカル開発専用。本番では設定しない
+   */
+  readonly DEFINY_ALLOW_UNVERIFIED_EVENTS?: string;
 };
 
 /**

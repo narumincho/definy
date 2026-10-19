@@ -11,13 +11,25 @@ SignedEvent = { signature: bytes(64), event_binary: tag24(bytes(Event)) }
 Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateAccount | ChangeProfile | ModuleCommit: ... } }
 ```
 
-`worker/cbor.ts` の `verifySignedEvent` が次を確認し、1 つでも満たさなければ `invalid_argument` (400) を返す。
+`src/signed_event.ts` の `verifySignedEvent` (`worker/cbor.ts` から再エクスポート) が次を確認し、1 つでも満たさなければ `invalid_argument` (400) を返す。
 
 - 末尾に余分なバイトが無く、上の形をしている
 - `event_binary` (tag 24 の中身のバイト列そのもの) に対する `signature` が、`account_id` を公開鍵とする Ed25519 署名として正しい
 - `time` がサーバー時刻より 10 分以上未来ではない
 
 ビルトインのシード (`seeds/seed_bundle.json`) は信頼できる経路なので取り込み時には検証しないが、`src/rpc_auth.test.ts` で全イベントの署名が正しいことをテストしている。
+
+## ブラウザ側での検証
+
+ブラウザはサーバーを信用せず、`GetEvents` で受け取ったイベントをすべて `src/signed_event.ts` の `verifyEventRecord` で検証してから使う (`src/state.tsx`)。
+
+- `verifySignedEvent` と同じ署名・形式・時刻のチェック
+- `eventHash` が `signedEventBytes` の SHA-256 と一致する
+- サーバーが付けたメタデータ (`accountId` / `eventType` / `timeMs`) が署名済みの中身と一致する
+
+結果は `EventRecord.verification` に入る。`invalid` のイベントはモジュール・パーツ・アカウント名の導出には使わず、
+イベント一覧・コミット履歴・イベント詳細で「署名が不正」と警告表示する。
+この表示の確認方法は [不正な署名のイベントを表示して確認する](./invalid-signature-debug.md) を参照。
 
 ## UploadContent: コンテンツハッシュの検証
 

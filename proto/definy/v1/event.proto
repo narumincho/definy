@@ -23,6 +23,13 @@ service EventService {
   rpc GetContent(GetContentRequest) returns (GetContentResponse);
 }
 
+// DebugService is for local development only. Enabled when DEFINY_ALLOW_UNVERIFIED_EVENTS=true.
+service DebugService {
+  // SubmitUnverifiedEvent stores a signed event WITHOUT verifying its Ed25519 signature
+  // (only the format is checked), so that the browser-side signature check can be observed.
+  rpc SubmitUnverifiedEvent(SubmitEventRequest) returns (SubmitEventResponse);
+}
+
 message ContentItem {
   // URL-safe base64 encoded content hash (SHA-256)
   string content_hash = 1;

@@ -2,6 +2,7 @@
  * definy の TypeScript フロントエンド共通型定義
  */
 import type { LocalizedText } from "./cbor.ts";
+import type { EventVerification } from "./signed_event.ts";
 
 export type LanguageCode = "en" | "ja" | "eo";
 
@@ -59,6 +60,11 @@ export type EventRecord = {
   readonly eventType: string;
   readonly createdAtRfc3339: string;
   readonly timeMs: number;
+  /**
+   * ブラウザ側で署名・ハッシュ・メタデータを検証した結果。
+   * `invalid` のイベントはモジュール・パーツ・アカウント名の導出には使わず、一覧で警告として表示する
+   */
+  readonly verification: EventVerification;
 };
 
 export type ConnectionStatus = "connected" | "connecting" | "offline" | "error";

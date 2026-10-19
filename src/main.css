@@ -1609,6 +1609,12 @@ button.card:hover {
   font-weight: 600;
 }
 
+.settings-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
 .settings-card {
   display: flex;
   flex-direction: column;
@@ -1665,6 +1671,15 @@ button.card:hover {
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+}
+
+.event-card-invalid {
+  border-left: 3px solid var(--red);
+  background: var(--red-bg);
+}
+
+.event-card-invalid:hover {
+  background: var(--red-bg-strong);
 }
 
 .back-link {
@@ -1785,6 +1800,12 @@ button.card:hover {
   background: rgba(166, 140, 240, 0.14);
   border: 1px solid rgba(166, 140, 240, 0.34);
   color: #c9b8f7;
+}
+
+.badge-invalid-signature {
+  background: var(--red-bg-strong);
+  border: 1px solid var(--red-border);
+  color: var(--red-text);
 }
 
 /* コンテンツハッシュなどの短いハッシュ表示チップ */

@@ -314,6 +314,28 @@ async function handleRpc(
       return jsonResponse(await store.submitEvent(rawEvent, env));
     }
 
+    case "/definy.v1.DebugService/SubmitUnverifiedEvent": {
+      if (env.DEFINY_ALLOW_UNVERIFIED_EVENTS !== "true") {
+        throw new ConnectError(
+          "permission_denied",
+          "SubmitUnverifiedEvent is disabled. Set DEFINY_ALLOW_UNVERIFIED_EVENTS=true (local development only)",
+        );
+      }
+      const req = parseJsonBody<SubmitEventRequest>(body);
+      const rawEvent = req.signedEventBytes?.trim() ?? "";
+      if (!rawEvent) {
+        throw new ConnectError(
+          "invalid_argument",
+          "signedEventBytes is required",
+        );
+      }
+      return jsonResponse(
+        await store.submitEvent(rawEvent, env, {
+          skipSignatureVerification: true,
+        }),
+      );
+    }
+
     case "/definy.v1.EventService/CheckMissingHashes": {
       const req = parseJsonBody<CheckMissingHashesRequest>(body);
       const missing = await store.checkMissingHashes(
