@@ -1,6 +1,7 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { test as it } from "vitest";
 import {
+  clientIpVersion,
   handleWorkerRequest,
   isAdminAccount,
   isWorkerFirstPath,
@@ -1046,5 +1047,42 @@ Deno.test(
     for (const event of events) {
       assertEquals((await verifyEventRecord(event)).status, "invalid");
     }
+  },
+);
+
+Deno.test(
+  "clientIpVersion reads Cloudflare connecting IP headers",
+  async () => {
+    const withHeaders = (headers: Record<string, string>): Request =>
+      new Request("https://definy.workers.dev/healthz", { headers });
+
+    assertEquals(
+      clientIpVersion(withHeaders({ "CF-Connecting-IP": "203.0.113.5" })),
+      "ipv4",
+    );
+    assertEquals(
+      clientIpVersion(withHeaders({ "CF-Connecting-IP": "2001:db8::1" })),
+      "ipv6",
+    );
+    // Pseudo IPv4: CF-Connecting-IP は IPv4 に書き換わり、元の IPv6 が別ヘッダーに入る
+    assertEquals(
+      clientIpVersion(
+        withHeaders({
+          "CF-Connecting-IP": "240.0.0.1",
+          "Cf-Connecting-IPv6": "2001:db8::1",
+        }),
+      ),
+      "ipv6",
+    );
+    assertEquals(clientIpVersion(withHeaders({})), "unknown");
+
+    const res = await handleWorkerRequest(
+      withHeaders({ "CF-Connecting-IP": "2001:db8::1" }),
+      {},
+      new WorkerStore(),
+    );
+    const json = await res.json();
+    assertEquals(json.ipVersion, "ipv6");
+    assertEquals(JSON.stringify(json).includes("2001:db8"), false);
   },
 );

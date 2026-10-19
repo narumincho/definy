@@ -1,4 +1,4 @@
-import { useState, type JSX } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { label, languageNativeName } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 import type { LanguageCode } from "../src/types.ts";
@@ -15,6 +15,23 @@ export default function SettingsPage(): JSX.Element {
   const [submitting, setSubmitting] = useState(false);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [ipVersion, setIpVersion] = useState<string | null>(null);
+
+  // サーバーから見た接続元が IPv4 / IPv6 のどちらか (`/healthz` の `ipVersion`)
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/healthz")
+      .then((res) => res.json() as Promise<{ readonly ipVersion?: string }>)
+      .then((json) => {
+        if (!cancelled) setIpVersion(json.ipVersion ?? "unknown");
+      })
+      .catch(() => {
+        if (!cancelled) setIpVersion("unknown");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleInsertSamples = async () => {
     setSubmitting(true);
@@ -77,6 +94,21 @@ export default function SettingsPage(): JSX.Element {
             )}
           </span>
           <span className="badge badge-neutral">{connectionStatus}</span>
+        </div>
+
+        <div className="setting-row">
+          <span>
+            {label(language, "IP Version", "IP バージョン", "IP-versio")}
+          </span>
+          <span className="badge badge-neutral">
+            {ipVersion === null
+              ? "..."
+              : ipVersion === "ipv6"
+                ? "IPv6"
+                : ipVersion === "ipv4"
+                  ? "IPv4"
+                  : label(language, "Unknown", "不明", "Nekonata")}
+          </span>
         </div>
       </div>
 
