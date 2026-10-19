@@ -9,10 +9,10 @@ export type PartDefinitionTreeProps = {
   readonly description: string;
   readonly partType: unknown;
   readonly expression: unknown;
-  readonly editable?: boolean;
-  readonly onNameChange?: (name: string) => void;
-  readonly onDescriptionChange?: (desc: string) => void;
-  readonly onExpressionChange?: (expr: unknown) => void;
+  readonly editable?: boolean | undefined;
+  readonly onNameChange?: ((name: string) => void) | undefined;
+  readonly onDescriptionChange?: ((desc: string) => void) | undefined;
+  readonly onExpressionChange?: ((expr: unknown) => void) | undefined;
 };
 
 export function PartDefinitionTree({

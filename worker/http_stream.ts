@@ -76,9 +76,9 @@ async function loadStoreIntoRuntime(
 
 export type CompiledPartArtifact = {
   readonly wasmBytes: Uint8Array;
-  readonly cloudflareWorkerName?: string | null;
-  readonly cloudflareToken?: string | null;
-  readonly evaluatedResult?: string | null;
+  readonly cloudflareWorkerName?: string | null | undefined;
+  readonly cloudflareToken?: string | null | undefined;
+  readonly evaluatedResult?: string | null | undefined;
 };
 
 /**

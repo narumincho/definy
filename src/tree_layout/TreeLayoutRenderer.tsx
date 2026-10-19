@@ -8,25 +8,22 @@ import {
 
 export type TreeLayoutRendererProps = {
   readonly node: LayoutNode;
-  readonly selectedPath?: ReadonlyArray<PathStep> | null;
-  readonly hoveredId?: string | null;
-  readonly collapsedIds?: ReadonlySet<string>;
-  readonly inlineEdit?: boolean;
-  readonly editable?: boolean;
-  readonly onSelectNode?: (id: string, path: ReadonlyArray<PathStep>) => void;
-  readonly onHoverNode?: (id: string | null) => void;
-  readonly onToggleCollapse?: (id: string) => void;
-  readonly onChangeNumber?: (
-    path: ReadonlyArray<PathStep>,
-    value: number,
-  ) => void;
-  readonly onChangeString?: (
-    path: ReadonlyArray<PathStep>,
-    value: string,
-  ) => void;
-  readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
+  readonly selectedPath?: ReadonlyArray<PathStep> | null | undefined;
+  readonly hoveredId?: string | null | undefined;
+  readonly collapsedIds?: ReadonlySet<string> | undefined;
+  readonly inlineEdit?: boolean | undefined;
+  readonly editable?: boolean | undefined;
+  readonly onSelectNode?:
+    ((id: string, path: ReadonlyArray<PathStep>) => void) | undefined;
+  readonly onHoverNode?: ((id: string | null) => void) | undefined;
+  readonly onToggleCollapse?: ((id: string) => void) | undefined;
+  readonly onChangeNumber?:
+    ((path: ReadonlyArray<PathStep>, value: number) => void) | undefined;
+  readonly onChangeString?:
+    ((path: ReadonlyArray<PathStep>, value: string) => void) | undefined;
+  readonly onClear?: ((path: ReadonlyArray<PathStep>) => void) | undefined;
   /** 選択中のノードに付ける CSS の anchor-name (`--` で始まる) */
-  readonly selectionAnchorName?: string;
+  readonly selectionAnchorName?: string | undefined;
 };
 
 export function nodeBadgeColors(kind: NodeKind): {
@@ -463,21 +460,17 @@ function LeafNodeRenderer({
   readonly isSelected: boolean;
   readonly isHovered: boolean;
   readonly state: string;
-  readonly anchorName?: string;
+  readonly anchorName?: string | undefined;
   readonly inlineEdit: boolean;
   readonly editable: boolean;
   readonly onSelect: (e: React.MouseEvent) => void;
   readonly onMouseEnter: (e: React.MouseEvent) => void;
   readonly onMouseLeave: () => void;
-  readonly onChangeNumber?: (
-    path: ReadonlyArray<PathStep>,
-    value: number,
-  ) => void;
-  readonly onChangeString?: (
-    path: ReadonlyArray<PathStep>,
-    value: string,
-  ) => void;
-  readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
+  readonly onChangeNumber?:
+    ((path: ReadonlyArray<PathStep>, value: number) => void) | undefined;
+  readonly onChangeString?:
+    ((path: ReadonlyArray<PathStep>, value: string) => void) | undefined;
+  readonly onClear?: ((path: ReadonlyArray<PathStep>) => void) | undefined;
 }): JSX.Element {
   const colors = nodeBadgeColors(node.kind);
   const isEditing = editable && isSelected && inlineEdit;

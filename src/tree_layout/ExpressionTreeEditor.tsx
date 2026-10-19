@@ -29,9 +29,9 @@ import {
 export type ExpressionTreeEditorProps = {
   readonly expression: unknown;
   readonly partType?: unknown;
-  readonly onChange?: (newExpression: unknown) => void;
-  readonly editable?: boolean;
-  readonly maxWidth?: number;
+  readonly onChange?: ((newExpression: unknown) => void) | undefined;
+  readonly editable?: boolean | undefined;
+  readonly maxWidth?: number | undefined;
 };
 
 type SelectorOption = {
