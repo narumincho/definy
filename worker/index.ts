@@ -181,6 +181,27 @@ async function requireAdmin(
   }
 }
 
+export type ClientIpVersion = "ipv4" | "ipv6" | "unknown";
+
+/**
+ * Cloudflare が付ける接続元 IP ヘッダーから、クライアントが IPv4 / IPv6 のどちらで接続してきたかを判定する。
+ * Pseudo IPv4 が有効なゾーンでは `CF-Connecting-IP` が IPv4 に書き換わり、元の IPv6 は `Cf-Connecting-IPv6` に入る。
+ * ローカルの dev サーバーなどヘッダーが無い場合は `unknown`。
+ */
+export function clientIpVersion(request: Request): ClientIpVersion {
+  if (request.headers.get("Cf-Connecting-IPv6")) {
+    return "ipv6";
+  }
+  const ip = request.headers.get("CF-Connecting-IP") ?? "";
+  if (ip.includes(":")) {
+    return "ipv6";
+  }
+  if (ip.includes(".")) {
+    return "ipv4";
+  }
+  return "unknown";
+}
+
 /**
  * Worker リクエストハンドラー（テスト用にカスタム Store と Fetch 関数を注入可能）
  */
@@ -203,6 +224,8 @@ export async function handleWorkerRequest(
       status: "ok",
       runtime: "cloudflare-workers",
       storage: env.DB ? "cloudflare-d1" : "in-memory",
+      // IP アドレスそのものは返さず、IPv4 / IPv6 のどちらかだけを返す
+      ipVersion: clientIpVersion(request),
     });
   }
 
@@ -312,6 +335,28 @@ async function handleRpc(
         );
       }
       return jsonResponse(await store.submitEvent(rawEvent, env));
+    }
+
+    case "/definy.v1.DebugService/SubmitUnverifiedEvent": {
+      if (env.DEFINY_ALLOW_UNVERIFIED_EVENTS !== "true") {
+        throw new ConnectError(
+          "permission_denied",
+          "SubmitUnverifiedEvent is disabled. Set DEFINY_ALLOW_UNVERIFIED_EVENTS=true (local development only)",
+        );
+      }
+      const req = parseJsonBody<SubmitEventRequest>(body);
+      const rawEvent = req.signedEventBytes?.trim() ?? "";
+      if (!rawEvent) {
+        throw new ConnectError(
+          "invalid_argument",
+          "signedEventBytes is required",
+        );
+      }
+      return jsonResponse(
+        await store.submitEvent(rawEvent, env, {
+          skipSignatureVerification: true,
+        }),
+      );
     }
 
     case "/definy.v1.EventService/CheckMissingHashes": {

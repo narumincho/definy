@@ -42,6 +42,7 @@ import {
   deserializeWorkingChanges,
   serializeWorkingChanges,
 } from "./working_changes_storage.ts";
+import { verifyEventRecord } from "./signed_event.ts";
 
 export type CommitWorkingChangesParams = {
   readonly moduleName: string;
@@ -248,10 +249,17 @@ export function DefinyProvider({
         return;
       }
       const data = (await res.json()) as {
-        readonly events?: ReadonlyArray<EventRecord>;
+        readonly events?: ReadonlyArray<Omit<EventRecord, "verification">>;
       };
       if (data.events) {
-        setEvents(data.events);
+        // サーバーを信用せず、表示前に署名・ハッシュ・メタデータを検証する
+        const verified = await Promise.all(
+          data.events.map(async (ev): Promise<EventRecord> => ({
+            ...ev,
+            verification: await verifyEventRecord(ev),
+          })),
+        );
+        setEvents(verified);
         setConnectionStatus("connected");
       }
     } catch {
@@ -263,10 +271,16 @@ export function DefinyProvider({
     void loadEvents();
   }, [loadEvents]);
 
+  // 署名の検証に通ったイベントだけを、モジュール・パーツ・アカウント名の導出に使う
+  const validEvents = useMemo(
+    () => events.filter((ev) => ev.verification.status === "valid"),
+    [events],
+  );
+
   // Derive account names from CreateAccount events
   const accountNames = useMemo<ReadonlyMap<string, string>>(() => {
     const map = new Map<string, string>();
-    for (const ev of events) {
+    for (const ev of validEvents) {
       if (ev.eventType === "create_account") {
         const decoded = extractCreateAccount(ev.signedEventBytes);
         if (decoded) {
@@ -275,7 +289,7 @@ export function DefinyProvider({
       }
     }
     return map;
-  }, [events]);
+  }, [validEvents]);
 
   const loginWithSecretKey = useCallback(
     async (secretKeyBase64: string, fallbackName?: string): Promise<void> => {
@@ -325,7 +339,7 @@ export function DefinyProvider({
     const nameMap = new Map<string, string>();
 
     // Sort events ascending by time
-    const sorted = [...events].sort((a, b) => a.timeMs - b.timeMs);
+    const sorted = [...validEvents].sort((a, b) => a.timeMs - b.timeMs);
 
     for (const ev of sorted) {
       if (ev.eventType === "module_commit") {
@@ -388,7 +402,7 @@ export function DefinyProvider({
       parts: Array.from(partMap.values()),
       partNames: nameMap,
     };
-  }, [events]);
+  }, [validEvents]);
 
   const commitWorkingChanges = useCallback(
     async ({

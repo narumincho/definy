@@ -12,19 +12,23 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:5173",
     trace: "on-first-retry",
     headless: true,
-    channel: process.env.CI ? "chrome" : undefined,
-    launchOptions: process.env.CI
+    ...(process.env.CI
       ? {
-          args: ["--no-sandbox", "--disable-setuid-sandbox"],
+          channel: "chrome",
+          launchOptions: {
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+          },
         }
-      : undefined,
+      : {}),
   },
-  webServer: process.env.PLAYWRIGHT_BASE_URL
-    ? undefined
+  ...(process.env.PLAYWRIGHT_BASE_URL
+    ? {}
     : {
-        command: "npm run dev",
-        url: "http://localhost:5173/healthz",
-        reuseExistingServer: true,
-        timeout: 30000,
-      },
+        webServer: {
+          command: "npm run dev",
+          url: "http://localhost:5173/healthz",
+          reuseExistingServer: true,
+          timeout: 30000,
+        },
+      }),
 });

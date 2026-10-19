@@ -1,6 +1,7 @@
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { test as it } from "vitest";
 import {
+  clientIpVersion,
   handleWorkerRequest,
   isAdminAccount,
   isWorkerFirstPath,
@@ -14,6 +15,11 @@ import {
   generateAccountCredentials,
 } from "../src/auth.ts";
 import { createRpcAuthorization } from "../src/rpc_auth.ts";
+import { createInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
+import {
+  type UnverifiedEventRecord,
+  verifyEventRecord,
+} from "../src/signed_event.ts";
 import type {
   D1Database,
   D1ExecResult,
@@ -968,5 +974,115 @@ Deno.test(
     assertEquals(schemaStatementsCount, initialSchemaCount);
     assertEquals(writeStatementsCount, initialWriteCount);
     assertEquals(seedBundleFetchCount, 0);
+  },
+);
+
+Deno.test(
+  "DebugService/SubmitUnverifiedEvent stores invalid signatures only when enabled",
+  async () => {
+    const samples = await createInvalidSignatureSamples();
+    const post = (path: string, signedEventBytes: string): Request =>
+      new Request(`https://definy.workers.dev/definy.v1.${path}`, {
+        method: "POST",
+        body: JSON.stringify({ signedEventBytes }),
+      });
+
+    const store = new WorkerStore();
+    store.loadSeedBundle({ events: [], contents: [] });
+
+    // 通常の SubmitEvent は不正な署名をすべて拒否する
+    for (const sample of samples) {
+      const res = await handleWorkerRequest(
+        post("EventService/SubmitEvent", sample.signedEventBytes),
+        {},
+        store,
+      );
+      assertEquals(res.status, 400);
+    }
+
+    // フラグが無ければデバッグ用エンドポイントも拒否する
+    const disabledRes = await handleWorkerRequest(
+      post("DebugService/SubmitUnverifiedEvent", samples[0]!.signedEventBytes),
+      {},
+      store,
+    );
+    assertEquals(disabledRes.status, 403);
+
+    // フラグがあれば形式だけ確認して保存し、GetEvents で配信される
+    const env: Env = { DEFINY_ALLOW_UNVERIFIED_EVENTS: "true" };
+    const garbageRes = await handleWorkerRequest(
+      post(
+        "DebugService/SubmitUnverifiedEvent",
+        bytesToBase64(new Uint8Array([7, 8, 9])),
+      ),
+      env,
+      store,
+    );
+    assertEquals(garbageRes.status, 400);
+    for (const sample of samples) {
+      const res = await handleWorkerRequest(
+        post("DebugService/SubmitUnverifiedEvent", sample.signedEventBytes),
+        env,
+        store,
+      );
+      assertEquals(res.status, 200);
+      assertEquals((await res.json()).status, "accepted");
+    }
+
+    const eventsRes = await handleWorkerRequest(
+      new Request(
+        "https://definy.workers.dev/definy.v1.EventService/GetEvents",
+        {
+          method: "POST",
+          body: JSON.stringify({}),
+        },
+      ),
+      env,
+      store,
+    );
+    const { events } = (await eventsRes.json()) as {
+      readonly events: ReadonlyArray<UnverifiedEventRecord>;
+    };
+    assertEquals(events.length, samples.length);
+    for (const event of events) {
+      assertEquals((await verifyEventRecord(event)).status, "invalid");
+    }
+  },
+);
+
+Deno.test(
+  "clientIpVersion reads Cloudflare connecting IP headers",
+  async () => {
+    const withHeaders = (headers: Record<string, string>): Request =>
+      new Request("https://definy.workers.dev/healthz", { headers });
+
+    assertEquals(
+      clientIpVersion(withHeaders({ "CF-Connecting-IP": "203.0.113.5" })),
+      "ipv4",
+    );
+    assertEquals(
+      clientIpVersion(withHeaders({ "CF-Connecting-IP": "2001:db8::1" })),
+      "ipv6",
+    );
+    // Pseudo IPv4: CF-Connecting-IP は IPv4 に書き換わり、元の IPv6 が別ヘッダーに入る
+    assertEquals(
+      clientIpVersion(
+        withHeaders({
+          "CF-Connecting-IP": "240.0.0.1",
+          "Cf-Connecting-IPv6": "2001:db8::1",
+        }),
+      ),
+      "ipv6",
+    );
+    assertEquals(clientIpVersion(withHeaders({})), "unknown");
+
+    const res = await handleWorkerRequest(
+      withHeaders({ "CF-Connecting-IP": "2001:db8::1" }),
+      {},
+      new WorkerStore(),
+    );
+    const json = await res.json();
+    assertEquals(json.ipVersion, "ipv6");
+    assertEquals(JSON.stringify(json).includes("2001:db8"), false);
   },
 );

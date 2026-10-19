@@ -14,7 +14,8 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "exactOptionalPropertyTypes": true
   },
   "include": ["src", "pages", "middleware", "worker", "e2e", "*.config.ts"]
 }

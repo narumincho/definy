@@ -30,11 +30,27 @@ export default function HistoryPage(): JSX.Element {
           </div>
         ) : (
           commits.map((commit) => (
-            <div key={commit.eventHash} className="card commit-card">
+            <div
+              key={commit.eventHash}
+              className={`card commit-card ${commit.verification.status === "invalid" ? "event-card-invalid" : ""}`}
+            >
               <div className="commit-header">
                 <span className="commit-hash" title={commit.eventHash}>
                   {commit.eventHash.slice(0, 12)}
                 </span>
+                {commit.verification.status === "invalid" && (
+                  <span
+                    className="badge badge-invalid-signature"
+                    title={commit.verification.reason}
+                  >
+                    {label(
+                      language,
+                      "Invalid signature",
+                      "署名が不正",
+                      "Nevalida subskribo",
+                    )}
+                  </span>
+                )}
                 <span className="commit-time">
                   {new Date(commit.timeMs).toLocaleString()}
                 </span>

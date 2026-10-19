@@ -47,6 +47,7 @@ const D1_BATCH_CHUNK_SIZE = 50;
 import {
   base64ToBytes,
   bytesToBase64,
+  parseSignedEventMetadata,
   sha256EventHashId,
   verifySignedEvent,
 } from "./cbor.ts";
@@ -516,13 +517,19 @@ export class WorkerStore {
   /**
    * 署名済みイベントバイナリ（Base64）の Ed25519 署名を検証して追加し、`SubmitEventResponse` を返す。
    * 署名・形式が不正な場合は `InvalidSignedEventError` を投げる。
+   *
+   * `skipSignatureVerification` はブラウザ側の署名チェックを確認するためのデバッグ用で、
+   * 形式だけを確認して不正な署名のイベントも保存する (`DebugService/SubmitUnverifiedEvent`)。
    */
   async submitEvent(
     eventBinaryBase64: string,
     env?: Env,
+    options: { readonly skipSignatureVerification?: boolean } = {},
   ): Promise<SubmitEventResponse> {
     const bytes = base64ToBytes(eventBinaryBase64);
-    const meta = await verifySignedEvent(bytes);
+    const meta = options.skipSignatureVerification
+      ? parseSignedEventMetadata(bytes)
+      : await verifySignedEvent(bytes);
     const eventHash = await sha256EventHashId(bytes);
 
     if (meta.referencedContentHashes.length > 0) {

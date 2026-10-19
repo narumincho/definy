@@ -50,6 +50,11 @@ export type Env = {
   readonly DEFINY_ROOT_DOMAIN?: string;
   readonly CLOUDFLARE_API_TOKEN?: string;
   readonly CLOUDFLARE_ACCOUNT_ID?: string;
+  /**
+   * `"true"` のとき `DebugService/SubmitUnverifiedEvent` で署名が不正なイベントも保存・配信できるようにする。
+   * ブラウザ側の署名チェックを確認するためのローカル開発専用。本番では設定しない
+   */
+  readonly DEFINY_ALLOW_UNVERIFIED_EVENTS?: string;
 };
 
 /**
@@ -148,15 +153,15 @@ export type GetContentResponse = {
  */
 export type DeployCloudflareRequest = {
   /** 省略時はサーバーの `CLOUDFLARE_API_TOKEN` を使う（管理者のみ） */
-  readonly apiToken?: string | null;
-  readonly accountId?: string | null;
-  readonly scriptName?: string | null;
-  readonly wasmHash?: string | null;
-  readonly partId?: string | null;
-  readonly customScript?: string | null;
-  readonly commitHash?: string | null;
+  readonly apiToken?: string | null | undefined;
+  readonly accountId?: string | null | undefined;
+  readonly scriptName?: string | null | undefined;
+  readonly wasmHash?: string | null | undefined;
+  readonly partId?: string | null | undefined;
+  readonly customScript?: string | null | undefined;
+  readonly commitHash?: string | null | undefined;
   /** D1 にシードを再投入する（管理者のみ） */
-  readonly seedD1?: boolean | null;
+  readonly seedD1?: boolean | null | undefined;
 };
 
 export type DeployCloudflareResponse = {
@@ -194,8 +199,8 @@ export type ListCloudflareWorkersRequest = {
 
 export type CloudflareWorkerItem = {
   readonly id: string;
-  readonly createdOn?: string;
-  readonly modifiedOn?: string;
+  readonly createdOn?: string | undefined;
+  readonly modifiedOn?: string | undefined;
 };
 
 export type ListCloudflareWorkersResponse = {
