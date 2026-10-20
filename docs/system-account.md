@@ -26,7 +26,7 @@ seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列では�
 ## 編集フロー
 
 1. システムアカウントの秘密鍵で UI にログインし（または MCP から）、ビルトインモジュールのパーツを編集してコミットする。
-2. 編集したサーバーから seed に書き戻す機能（旧 Rust 版の `cargo run -p definy-server -- --export-seeds-from`）は、**現在 TypeScript 版では未実装（Rust 版では cargo で生成していた）**です。
+2. 編集したサーバーから seed に書き戻す機能は `npm run export:seeds <baseUrl>` で実行可能です。詳細は [seed の書き戻し (`export:seeds`)](./seed-export.md) を参照してください。
 3. シードバンドル（`seeds/seed_bundle.json` / `public/__definy_seed_bundle.json`）の再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。
 
 ## ブートストラップイベントと編集イベントの区別
