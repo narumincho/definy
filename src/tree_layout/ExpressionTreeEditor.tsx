@@ -96,9 +96,7 @@ function showAsPopover(element: HTMLDivElement | null): void {
 }
 
 /** 表示順 (行きがけ順) にノード ID とパスを集める */
-function collectNodeIndex(
-  node: LayoutNode,
-): ReadonlyArray<{
+function collectNodeIndex(node: LayoutNode): ReadonlyArray<{
   readonly id: string;
   readonly path: ReadonlyArray<PathStep>;
 }> {
