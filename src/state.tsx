@@ -34,11 +34,6 @@ import {
 } from "./auth.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import {
-  evaluateCompiledWasm,
-  loadStage1Compiler,
-  type DefinyValue,
-} from "./stage1_compiler.ts";
-import {
   deserializeWorkingChanges,
   serializeWorkingChanges,
 } from "./working_changes_storage.ts";
@@ -57,6 +52,12 @@ export type DefinyContextValue = {
   readonly modules: ReadonlyArray<ModuleSnapshot>;
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
+  /**
+   * パーツ ID (`partIdHash`, URL-safe Base64) → パーツ. 全コミットのパーツを ID ごとに最新で持つ.
+   * `parts` は `module.name` ごとに最新の 1 つだけなので, 別アカウントの同名モジュールのパーツへの
+   * `PartReference` はこちらで解決する
+   */
+  readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
   readonly accountNames: ReadonlyMap<string, string>;
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
@@ -83,7 +84,6 @@ export type DefinyContextValue = {
   readonly setSidebarOpen: (open: boolean) => void;
   readonly commandPaletteOpen: boolean;
   readonly setCommandPaletteOpen: (open: boolean) => void;
-  readonly evaluatePart: (part: PartSnapshot) => Promise<DefinyValue>;
 };
 
 const DefinyContext = createContext<DefinyContextValue | null>(null);
@@ -333,9 +333,10 @@ export function DefinyProvider({
   }, [setCurrentAccount]);
 
   // Derive module and part snapshots from events and working changes
-  const { modules, parts, partNames } = useMemo(() => {
+  const { modules, parts, partNames, partsByIdHash } = useMemo(() => {
     const moduleMap = new Map<string, ModuleSnapshot>();
     const partMap = new Map<string, PartSnapshot>();
+    const partIdHashMap = new Map<string, PartSnapshot>();
     const nameMap = new Map<string, string>();
 
     // Sort events ascending by time
@@ -362,6 +363,9 @@ export function DefinyProvider({
               updatedAtMs: ev.timeMs,
             };
             partMap.set(partId, partSnapshot);
+            if (p.partIdHash) {
+              partIdHashMap.set(p.partIdHash, partSnapshot);
+            }
 
             // パーツ参照 (PartReference) の表示名解決用: ID の Base64URL / `module.name` → `module.name`
             nameMap.set(partId, partId);
@@ -401,6 +405,7 @@ export function DefinyProvider({
       modules: Array.from(moduleMap.values()),
       parts: Array.from(partMap.values()),
       partNames: nameMap,
+      partsByIdHash: partIdHashMap,
     };
   }, [validEvents]);
 
@@ -492,21 +497,6 @@ export function DefinyProvider({
     [currentAccount, modules, workingChanges, loadEvents],
   );
 
-  const evaluatePart = useCallback(
-    async (part: PartSnapshot): Promise<DefinyValue> => {
-      const compiler = await loadStage1Compiler();
-      const expr = part.expression ?? {
-        Variant: {
-          tag: "number",
-          payload: { Number: { value: 0 } },
-        },
-      };
-      const wasmBytes = compiler.compile(expr);
-      return await evaluateCompiledWasm(wasmBytes);
-    },
-    [],
-  );
-
   const value = useMemo<DefinyContextValue>(
     () => ({
       language,
@@ -516,6 +506,7 @@ export function DefinyProvider({
       modules,
       parts,
       partNames,
+      partsByIdHash,
       accountNames,
       workingChanges,
       updateWorkingPart,
@@ -535,7 +526,6 @@ export function DefinyProvider({
       setSidebarOpen,
       commandPaletteOpen,
       setCommandPaletteOpen,
-      evaluatePart,
     }),
     [
       language,
@@ -545,6 +535,7 @@ export function DefinyProvider({
       modules,
       parts,
       partNames,
+      partsByIdHash,
       accountNames,
       workingChanges,
       updateWorkingPart,
@@ -562,7 +553,6 @@ export function DefinyProvider({
       sidebarOpen,
       toggleSidebar,
       commandPaletteOpen,
-      evaluatePart,
     ],
   );
 

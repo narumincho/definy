@@ -4,6 +4,7 @@ import { Icon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import {
+  collectReferencedParts,
   evaluateCompiledWasm,
   loadStage1Compiler,
   type DefinyValue,
@@ -15,6 +16,8 @@ export default function PartDetailPage(): JSX.Element {
   const {
     language,
     parts,
+    partNames,
+    partsByIdHash,
     workingChanges,
     updateWorkingPart,
     discardWorkingPart,
@@ -58,7 +61,33 @@ export default function PartDetailPage(): JSX.Element {
     try {
       const compiler = await loadStage1Compiler();
 
-      const wasm = compiler.compile(currentExpression);
+      // 式が参照するパーツ (作業中の変更があればそちら) を集めて stage1 に渡す
+      const { parts: referencedParts, unresolved } = collectReferencedParts(
+        currentExpression,
+        (partIdHash) => {
+          // 作業中の変更は表示中 (`module.name` ごとに最新) のパーツに対するものだけ使う
+          const shown = parts.find((p) => p.partIdHash === partIdHash);
+          const shownChange =
+            shown === undefined
+              ? undefined
+              : workingChanges.parts.get(shown.partId);
+          return shownChange?.expression !== undefined
+            ? shownChange.expression
+            : partsByIdHash.get(partIdHash)?.expression;
+        },
+      );
+      if (unresolved.length > 0) {
+        throw new Error(
+          `${label(
+            language,
+            "Referenced parts were not found, have no expression, or are compiler built-ins",
+            "参照しているパーツが見つからないか, 式が無いか, コンパイラ組み込みのため評価できません",
+            "Referencitaj partoj ne troviĝis, ne havas esprimon aŭ estas enkonstruitaj en la kompililo",
+          )}: ${unresolved.map((partIdHash) => partNames.get(partIdHash) ?? partIdHash).join(", ")}`,
+        );
+      }
+
+      const wasm = compiler.compile(currentExpression, referencedParts);
       setCompiledWasm(wasm);
 
       const result = await evaluateCompiledWasm(wasm);
@@ -68,7 +97,14 @@ export default function PartDetailPage(): JSX.Element {
     } finally {
       setEvaluating(false);
     }
-  }, [currentExpression]);
+  }, [
+    currentExpression,
+    parts,
+    partsByIdHash,
+    workingChanges,
+    partNames,
+    language,
+  ]);
 
   function formatValue(v: DefinyValue): string {
     if (v === null) return "null";

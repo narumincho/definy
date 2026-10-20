@@ -1,13 +1,13 @@
 # 評価器の適合テスト
 
-definy の式評価について、共有テストケース `conformance/eval_cases.json`（65 件）を用いて実装間の適合性を検証しています。
+definy の式評価について、共有テストケース `conformance/eval_cases.json`（67 件）を用いて実装間の適合性を検証しています。
 
 現在の TypeScript 実装では、次の 2 つのバックエンドに対して Vitest で検証を行っています。
 
 1. **TypeScript 製評価器 (`worker/cbor_eval.ts`)**:
-   `worker/eval_conformance.test.ts` で 65 件すべてがパスします。
+   `worker/eval_conformance.test.ts` で 67 件すべてがパスします。
 2. **自己記述コンパイラ (`wasm/stage1.wasm` + `src/stage1_compiler.ts`)**:
-   `src/stage1_conformance.test.ts` で検証しています。現在 21 件が対応、44 件が未対応（`it.fails`）です。
+   `src/stage1_conformance.test.ts` で 67 件すべてがパスします。
 
 > **歴史的注記（旧 Rust 実装・廃止済み）**: 移行前は Rust サーバー（wasmtime、wasmi ネイティブ、wasmi wasm32 の `definy-worker-runtime`）との比較にも使用されていました。
 
@@ -32,31 +32,34 @@ npx vitest run worker/eval_conformance.test.ts
 npx vitest run src/stage1_conformance.test.ts
 ```
 
-## stage1.wasm 適合テスト結果 (対応 21 件 / 未対応 44 件)
+## stage1.wasm の入力 (`src/stage1_compiler.ts`)
 
-自己記述コンパイラ `wasm/stage1.wasm` に対するテスト（`src/stage1_conformance.test.ts`）の結果は以下の通りです。
+stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取らず, 次の 2 つを引数に取ります。
 
-- **対応 (21 件)**:
-  - 数値リテラル (`number literal`)
-  - 算術演算 (`add`, `subtract negative`, `multiply`, `divide`, `divide negative truncates toward zero`, `remainder`, `remainder negative`)
-  - 比較演算 (`less than`, `less than or equal`, `greater than`, `greater than or equal`, `equal numbers`, `not equal numbers`)
-  - 文字列リテラル・同値判定 (`string literal`, `equal strings`, `equal non-ascii strings`)
-  - Let 式 (`let single`, `let multiple bindings`, `let later binding refers earlier`, `let binds a comparison result`)
+1. **式**: `core.expression` の値。`{"Add": {...}}` は `Variant("add", {left, right})` のように,
+   リテラル (`Variant` / `TypeLiteral` / `ListLiteral` / `Number` / `String` / `Boolean`) だけの木で表します。
+   変換は `definyAstToSelfHostedAst` (旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植) が行います。
+   - `Match` の束縛しないアームの `variable_id` は `-1`, `default` はワイルドカードアーム `_` にします。
+   - `Variant` の payload は `some(式)` / `none` で包みます。
+   - `PartReference` の ID (CBOR 由来のバイト列, seed 由来の数値配列) は URL-safe Base64 の文字列にします。
+   - ビット演算・型の式・`Compiler` 組み込み・`Hole` は `core.expression` で表せないので `SelfHostedAstConversionError` になります。
+2. **参照するパーツ**: `list<{ id: string, expression: core.expression }>`。式から `PartReference` を
+   参照先までたどって集めます (`collectReferencedParts`)。`id` は 1 の `part_reference` の文字列と同じ形式でなければなりません。
+   見つからない・式を持たない・変換できないパーツは渡さず `unresolved` として返します。
+   stage1 は渡されなかったパーツへの参照を `unreachable` にコンパイルするので, 呼び出し側は `unresolved` が空でなければ評価前にエラーにします。
 
-- **未対応 (44 件 - `it.fails` で期待通り失敗)**: 原因は 2 種類ある。
-  - **TypeScript 側の AST 変換が未対応 (36 件)**: `src/stage1_compiler.ts` の `definyAstToSelfHostedAst` / `writeLiteral` が
-    次のノードを stage1 の入力形式に変換できず、`Unsupported literal node in layout` で失敗する。stage1 本体が対応しているかはまだ分からない。
-    - `Not` / `And` / `Or`
-    - `StringConcat` / `StringLength` / `StringSlice` / `StringToBytes`
-    - `ListLength` / `ListGet` / `ListConcat` / `ListAppend` / `RecordGet`
-    - `Match`
-    - `Call` / `PartReference`（参照先パーツを `compile` の第 2 引数で渡す処理も未接続）
-    - レコード・バリアントの中に入った `Add` などの演算（トップレベルの演算は変換できる）
-  - **stage1 が出力した Wasm が `unreachable` で停止 (8 件)**: リスト・レコード・バリアントのリテラル
-    （`list literal`, `record literal`, `record with large number`, `record with negative number`, `record with three fields`,
-    `nested record`, `variant without payload`, `variant with payload`）。コンパイルは成功するが、実行時に trap する。
+以前は TS 側の変換が数値・文字列・算術・`Let` しか扱わず, 参照するパーツも渡していなかったため,
+`Call` + `PartReference` を含む式 (`sample.sample-ast-calc` など) は `Unsupported literal node in layout` で失敗し,
+適合テストの 44 件が `it.fails` になっていました。また入力の `Variant` を変換済みとみなしてそのまま渡していたため,
+バリアント・レコード・リストのリテラルが stage1 の出力で `unreachable` になっていました。stage1 本体は全ケースに対応しています。
 
-未対応ケースはテスト冒頭の `UNSUPPORTED_ON_STAGE1` 配列に列挙され、`it.fails` で実行されています。コンパイラ側の対応が進むとテストが失敗（成功に転じる）し、配列からの削除が促されます。
+## パーツ詳細画面の「式を評価 (Wasm)」
+
+[pages/part/[id].tsx](../pages/part/[id].tsx) は `collectReferencedParts` でパーツを集めてから `compile` します。
+参照先は `useDefiny().partsByIdHash` (全コミットのパーツをパーツ ID ごとに持つ) で引きます。
+`parts` は `module.name` ごとに最新の 1 つしか持たないため, 開発 DB に別アカウントで投稿した同名モジュール
+(`core` など) があると, seed の `PartReference` が指す ID のパーツが `parts` から消えていることがあるためです。
+表示中のパーツに作業中の変更があれば, その式を使います。
 
 ## 文字列の意味論
 
