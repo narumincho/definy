@@ -201,6 +201,18 @@ export function encodeCborItem(value: unknown): Uint8Array {
   if (
     value &&
     typeof value === "object" &&
+    "__float64" in value &&
+    typeof (value as { readonly __float64: unknown }).__float64 === "number"
+  ) {
+    const num = (value as { readonly __float64: number }).__float64;
+    const buf = new Uint8Array(9);
+    buf[0] = 0xfb;
+    new DataView(buf.buffer).setFloat64(1, num);
+    return buf;
+  }
+  if (
+    value &&
+    typeof value === "object" &&
     "__tag" in value &&
     "value" in value &&
     typeof (value as { readonly __tag: unknown }).__tag === "number"

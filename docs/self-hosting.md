@@ -7,7 +7,7 @@ definy を definy
 > 本リポジトリは Rust + Deno から **TypeScript + React 19 + Void (Vite 8) + Cloudflare Workers** に移行済みです。
 > 本ドキュメント内の Rust ツールチェイン（`cargo run -p definy-server`, `cargo test` など）に関する記述は、セルフホストおよび固定点達成に至るまでの**旧 Rust 実装（廃止済み）における歴史的経緯と仕様**を記録したものです。
 > 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`）で検証されています。
-> なお、シードバンドルの再生成や `stage1.wasm` の再生成は現在 TypeScript 版では**未実装（Rust 版では cargo で生成していた）**です。
+> シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。なお、`stage1.wasm` の再生成は現在 TypeScript 版では**未実装（Rust 版では cargo で生成していた）**です。
 
 ## 概要
 

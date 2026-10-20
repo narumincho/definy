@@ -60,6 +60,9 @@ npm run lint
 # コード整形 (Prettier)
 npm run fmt
 
+# シードバンドル再生成 (seeds/*.json -> seed_bundle.json & public/__definy_seed_bundle.json)
+npm run build:seeds
+
 # フルスタック プロダクションビルド (Worker + クライアント)
 npm run build
 
