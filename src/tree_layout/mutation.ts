@@ -1,6 +1,59 @@
 import type { PathStep } from "./types.ts";
 import { base64ToBytes } from "../cbor.ts";
 
+/**
+ * 子の式をフィールド 1 つに持つ組み込みの式の, パスの段とフィールド名の対応.
+ * ast_to_layout.ts の表示とここでの取得・更新で同じ対応を使う
+ */
+export const FIELD_STEPS: Readonly<
+  Record<
+    string,
+    ReadonlyArray<{ readonly step: string; readonly field: string }>
+  >
+> = {
+  ListGet: [
+    { step: "left", field: "list" },
+    { step: "index", field: "index" },
+  ],
+  ListAppend: [
+    { step: "left", field: "list" },
+    { step: "item", field: "item" },
+  ],
+  ListLength: [{ step: "condition", field: "value" }],
+  StringLength: [{ step: "condition", field: "value" }],
+  StringToBytes: [{ step: "condition", field: "value" }],
+  StringSlice: [
+    { step: "condition", field: "value" },
+    { step: "start", field: "start" },
+    { step: "end", field: "end" },
+  ],
+  TypeList: [{ step: "typeListItem", field: "item_type" }],
+};
+
+/** パスの段がフィールドの表にあれば, その式のキーとフィールド名 */
+function fieldForStep(
+  node: Record<string, unknown>,
+  head: PathStep,
+): { readonly key: string; readonly field: string } | null {
+  if (typeof head !== "string") return null;
+  for (const [key, steps] of Object.entries(FIELD_STEPS)) {
+    if (key in node) {
+      const found = steps.find((s) => s.step === head);
+      return found ? { key, field: found.field } : null;
+    }
+  }
+  return null;
+}
+
+/** union 型の i 番目のバリアントのペイロードの型 */
+function typeUnionVariants(
+  node: Record<string, unknown>,
+): ReadonlyArray<{ readonly payload_type?: unknown }> | null {
+  if (!("TypeUnion" in node)) return null;
+  const variants = (node.TypeUnion as { variants?: unknown } | null)?.variants;
+  return Array.isArray(variants) ? variants : null;
+}
+
 export function getExpressionAtPath(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
@@ -15,6 +68,20 @@ export function getExpressionAtPath(
   const node = expr as Record<string, unknown>;
   const [head, ...tail] = path;
   if (!head) return expr;
+
+  const fieldStep = fieldForStep(node, head);
+  if (fieldStep) {
+    const inner = node[fieldStep.key] as Record<string, unknown> | null;
+    return getExpressionAtPath(inner?.[fieldStep.field], tail);
+  }
+  const variants = typeUnionVariants(node);
+  if (
+    variants &&
+    typeof head === "object" &&
+    head.kind === "typeUnionVariant"
+  ) {
+    return getExpressionAtPath(variants[head.index]?.payload_type, tail);
+  }
 
   if (head === "left") {
     for (const key of Object.keys(node)) {
@@ -197,6 +264,47 @@ export function updateExpressionAtPath(
   const node = expr as Record<string, unknown>;
   const [head, ...tail] = path;
   if (!head) return updater(expr);
+
+  const fieldStep = fieldForStep(node, head);
+  if (fieldStep) {
+    const inner = (node[fieldStep.key] ?? {}) as Record<string, unknown>;
+    return {
+      ...node,
+      [fieldStep.key]: {
+        ...inner,
+        [fieldStep.field]: updateExpressionAtPath(
+          inner[fieldStep.field],
+          tail,
+          updater,
+        ),
+      },
+    };
+  }
+  const variants = typeUnionVariants(node);
+  if (
+    variants &&
+    typeof head === "object" &&
+    head.kind === "typeUnionVariant"
+  ) {
+    return {
+      ...node,
+      TypeUnion: {
+        ...(node.TypeUnion as object),
+        variants: variants.map((v, i) =>
+          i === head.index
+            ? {
+                ...v,
+                payload_type: updateExpressionAtPath(
+                  v.payload_type,
+                  tail,
+                  updater,
+                ),
+              }
+            : v,
+        ),
+      },
+    };
+  }
 
   if (head === "left") {
     for (const key of Object.keys(node)) {
@@ -646,6 +754,80 @@ export function applySelection(
     };
   } else if (selectionValue === "expr:list") {
     newSubExpr = { ListLiteral: { items: [] } };
+  } else if (
+    selectionValue === "expr:less_than_or_equal" ||
+    selectionValue === "expr:greater_than_or_equal"
+  ) {
+    newSubExpr = {
+      [selectionValue === "expr:less_than_or_equal"
+        ? "LessThanOrEqual"
+        : "GreaterThanOrEqual"]: {
+        left: { Number: { value: 0 } },
+        right: { Number: { value: 0 } },
+      },
+    };
+  } else if (selectionValue === "expr:list_concat") {
+    newSubExpr = {
+      ListConcat: {
+        left: { ListLiteral: { items: [] } },
+        right: { ListLiteral: { items: [] } },
+      },
+    };
+  } else if (selectionValue === "expr:list_get") {
+    newSubExpr = {
+      ListGet: {
+        list: { ListLiteral: { items: [] } },
+        index: { Number: { value: 0 } },
+      },
+    };
+  } else if (selectionValue === "expr:list_length") {
+    newSubExpr = { ListLength: { value: { ListLiteral: { items: [] } } } };
+  } else if (selectionValue === "expr:list_append") {
+    newSubExpr = {
+      ListAppend: {
+        list: { ListLiteral: { items: [] } },
+        item: { Number: { value: 0 } },
+      },
+    };
+  } else if (selectionValue === "expr:string_length") {
+    newSubExpr = { StringLength: { value: { String: { value: "" } } } };
+  } else if (selectionValue === "expr:string_slice") {
+    newSubExpr = {
+      StringSlice: {
+        value: { String: { value: "" } },
+        start: { Number: { value: 0 } },
+        end: { Number: { value: 0 } },
+      },
+    };
+  } else if (selectionValue === "expr:let") {
+    // 新しい変数は式全体で使われていない ID にし, 本体はその変数を参照しておく
+    const variableId = nextVariableId(expr);
+    newSubExpr = {
+      Let: {
+        bindings: [
+          {
+            variable_id: variableId,
+            variable_name: "x",
+            value: { Number: { value: 0 } },
+          },
+        ],
+        body: { Variable: { variable_id: variableId } },
+      },
+    };
+  } else if (selectionValue === "expr:match_boolean") {
+    const arm = (tag: string) => ({
+      tag,
+      variable_id: null,
+      variable_name: null,
+      body: { Number: { value: 0 } },
+    });
+    newSubExpr = {
+      Match: {
+        target: { Boolean: { value: false } },
+        arms: [arm("true"), arm("false")],
+        default: null,
+      },
+    };
   } else if (selectionValue === "expr:if") {
     newSubExpr = {
       If: {
@@ -668,5 +850,87 @@ export function applySelection(
     return expr;
   }
 
-  return updateExpressionAtPath(expr, path, () => newSubExpr);
+  // 二項演算を別の二項演算に差し替えるときは, 既定値で上書きせず元の左右の式を引き継ぐ
+  // (例: `index < 0` → `index <= 0`)
+  return updateExpressionAtPath(expr, path, (current) =>
+    keepBinaryOperands(newSubExpr, current),
+  );
+}
+
+/** 左右 2 つの式を取る演算の式のキー */
+const BINARY_KEYS: ReadonlyArray<string> = [
+  "Add",
+  "Subtract",
+  "Multiply",
+  "Divide",
+  "Remainder",
+  "Equal",
+  "NotEqual",
+  "LessThan",
+  "LessThanOrEqual",
+  "GreaterThan",
+  "GreaterThanOrEqual",
+  "And",
+  "Or",
+  "StringConcat",
+  "ListConcat",
+  "BitAnd",
+  "BitOr",
+  "BitXor",
+  "ShiftLeft",
+  "ShiftRight",
+];
+
+function binaryOperands(expr: unknown): {
+  readonly key: string;
+  readonly left: unknown;
+  readonly right: unknown;
+} | null {
+  if (!expr || typeof expr !== "object") return null;
+  const node = expr as Record<string, unknown>;
+  const key = BINARY_KEYS.find((k) => k in node);
+  if (key === undefined) return null;
+  const inner = node[key] as { left?: unknown; right?: unknown } | null;
+  return { key, left: inner?.left, right: inner?.right };
+}
+
+/** 新しい式も元の式も二項演算なら, 元の左右の式を新しい式に移す */
+export function keepBinaryOperands(next: unknown, current: unknown): unknown {
+  const nextOperands = binaryOperands(next);
+  const currentOperands = binaryOperands(current);
+  if (nextOperands === null || currentOperands === null) {
+    return next;
+  }
+  return {
+    [nextOperands.key]: {
+      left: currentOperands.left,
+      right: currentOperands.right,
+    },
+  };
+}
+
+/** 式全体で使われている変数 ID (let の束縛, 関数のパラメーター, match の束縛) の最大 + 1 */
+export function nextVariableId(expr: unknown): number {
+  let max = -1;
+  function walk(value: unknown): void {
+    if (Array.isArray(value)) {
+      value.forEach(walk);
+      return;
+    }
+    if (!value || typeof value !== "object" || value instanceof Uint8Array) {
+      return;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      if (
+        (key === "variable_id" || key === "parameter_id") &&
+        typeof child === "number"
+      ) {
+        max = Math.max(max, child);
+      } else {
+        walk(child);
+      }
+    }
+  }
+  walk(expr);
+  return max + 1;
 }

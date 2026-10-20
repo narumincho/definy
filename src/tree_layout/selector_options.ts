@@ -115,6 +115,20 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "boolean",
   },
   {
+    value: "expr:less_than_or_equal",
+    name: "less-than-or-equal",
+    detail: "<=",
+    category: "Operator",
+    returnType: "boolean",
+  },
+  {
+    value: "expr:greater_than_or_equal",
+    name: "greater-than-or-equal",
+    detail: ">=",
+    category: "Operator",
+    returnType: "boolean",
+  },
+  {
     value: "expr:and",
     name: "and",
     detail: "&&",
@@ -140,6 +154,59 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     name: "string-concat",
     category: "Operator",
     returnType: "string",
+  },
+  {
+    value: "expr:string_length",
+    name: "string-length",
+    category: "Function",
+    returnType: "number",
+  },
+  {
+    value: "expr:string_slice",
+    name: "string-slice",
+    detail: "value, start, end",
+    category: "Function",
+    returnType: "string",
+  },
+  {
+    value: "expr:list_concat",
+    name: "list-concat",
+    category: "Function",
+    returnType: "list",
+  },
+  {
+    value: "expr:list_get",
+    name: "list-get",
+    detail: "list, index",
+    category: "Function",
+    returnType: "any",
+  },
+  {
+    value: "expr:list_length",
+    name: "list-length",
+    category: "Function",
+    returnType: "number",
+  },
+  {
+    value: "expr:list_append",
+    name: "list-append",
+    detail: "list, item",
+    category: "Function",
+    returnType: "list",
+  },
+  {
+    value: "expr:let",
+    name: "let",
+    detail: "x = 0",
+    category: "Syntax",
+    returnType: "any",
+  },
+  {
+    value: "expr:match_boolean",
+    name: "match",
+    detail: "true / false",
+    category: "Syntax",
+    returnType: "any",
   },
   {
     value: "expr:if",
@@ -178,6 +245,22 @@ function partReturnType(partType: unknown): ExpectedType {
   return "any";
 }
 
+/** パーツの型の短い表記 (`number`, `function` など). 選択肢の名前の横に出す */
+export function partTypeText(partType: unknown): string | undefined {
+  if (typeof partType === "string") return partType;
+  if (typeof partType === "object" && partType !== null) {
+    const obj = partType as Record<string, unknown>;
+    if ("function" in obj) {
+      const ret = partTypeText(
+        (obj.function as { return_type?: unknown } | null)?.return_type,
+      );
+      return ret === undefined ? "function" : `function → ${ret}`;
+    }
+    return Object.keys(obj)[0];
+  }
+  return undefined;
+}
+
 /** パーツの選択肢. value は `ref:part:<パーツ ID の Base64URL>` */
 export function partSelectorOptions(
   parts: ReadonlyArray<PartSnapshot>,
@@ -188,6 +271,7 @@ export function partSelectorOptions(
           {
             value: `ref:part:${p.partIdHash}`,
             name: `${p.moduleName}.${p.name}`,
+            detail: partTypeText(p.partType),
             category: "Part",
             returnType: partReturnType(p.partType),
             partId: p.partId,

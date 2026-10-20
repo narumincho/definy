@@ -134,7 +134,19 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   ツリーの外をクリックするとメニューを閉じる
 - 参照しているパーツ ID と選択肢の ID (`partIdHash`) が違う場合 (同じ名前のモジュールを別のアカウントがコミットしたときなど) でも,
   `partNames` で名前に直して現在の選択肢とみなす
-- `less-than` を `less-than-or-equal` にするなど, 二項演算を別の二項演算に差し替えるときは左右の式を引き継ぐ (旧 Rust 版の仕様. TS 版は未対応)
+- `less-than` を `less-than-or-equal` にするなど, 二項演算を別の二項演算に差し替えるときは左右の式を引き継ぐ
+  (`mutation.ts` の `keepBinaryOperands`)
+- 構文の候補として `let` (式全体で使われていない変数 ID で `x = 0` の束縛を作り, 本体はその変数) と
+  `match (true / false)` を出す. 組み込みの `list-get` `list-length` `list-append` `list-concat` `string-length` `string-slice`
+  `less-than-or-equal` `greater-than-or-equal` も候補にある
+- パーツの候補には型 (`number`, `function → number` など) を名前の横に出す
+
+### ツリーに表示する組み込みの式
+
+`ListGet` `ListAppend` `ListLength` `StringLength` `StringToBytes` `StringSlice` `TypeList` は,
+子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`TypeUnion` はバリアントごとに行を分け, ペイロードの型を子の式にする (ペイロードのないバリアントを選ぶと union 全体を選ぶ).
+表の対応がない式は, 子を持たないキーワード (`ListGet` のようなキー名) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
 
 ### 履歴グラフ
 

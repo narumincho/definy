@@ -52,8 +52,11 @@ export function inferExpressionType(node: unknown): ExpectedType {
     return "number";
   }
 
-  if ("StringConcat" in obj) return "string";
-  if ("ListConcat" in obj) return "list";
+  if ("ListLength" in obj || "StringLength" in obj) return "number";
+  if ("StringConcat" in obj || "StringSlice" in obj) return "string";
+  if ("ListConcat" in obj || "ListAppend" in obj || "StringToBytes" in obj) {
+    return "list";
+  }
 
   return "any";
 }
@@ -99,6 +102,24 @@ export function inferExpectedType(
     return "any";
   }
   const parent = parentNode as Record<string, unknown>;
+
+  // list-get, string-slice などの子の式
+  const fieldTypes: ReadonlyArray<readonly [string, PathStep, ExpectedType]> = [
+    ["ListGet", "left", "list"],
+    ["ListGet", "index", "number"],
+    ["ListAppend", "left", "list"],
+    ["ListLength", "condition", "list"],
+    ["StringLength", "condition", "string"],
+    ["StringToBytes", "condition", "string"],
+    ["StringSlice", "condition", "string"],
+    ["StringSlice", "start", "number"],
+    ["StringSlice", "end", "number"],
+  ];
+  for (const [key, step, type] of fieldTypes) {
+    if (key in parent && lastStep === step) {
+      return type;
+    }
+  }
 
   if (lastStep === "left" || lastStep === "right") {
     if (
@@ -217,6 +238,13 @@ export function getOptionValueForExpression(node: unknown): string | null {
   if ("Not" in obj) return "expr:not";
   if ("StringConcat" in obj) return "expr:string_concat";
   if ("ListConcat" in obj) return "expr:list_concat";
+  if ("ListGet" in obj) return "expr:list_get";
+  if ("ListLength" in obj) return "expr:list_length";
+  if ("ListAppend" in obj) return "expr:list_append";
+  if ("StringLength" in obj) return "expr:string_length";
+  if ("StringSlice" in obj) return "expr:string_slice";
+  if ("Let" in obj) return "expr:let";
+  if ("Match" in obj && isBooleanMatch(obj.Match)) return "expr:match_boolean";
   if ("If" in obj) return "expr:if";
   if ("Hole" in obj) return "expr:hole";
   if ("Variable" in obj) {
@@ -241,4 +269,16 @@ export function getOptionValueForExpression(node: unknown): string | null {
   }
 
   return null;
+}
+
+/** アームが `true` / `false` (と `_`) だけの, Bool に対する match か */
+export function isBooleanMatch(match: unknown): boolean {
+  const arms = (match as { arms?: unknown } | null)?.arms;
+  return (
+    Array.isArray(arms) &&
+    arms.length > 0 &&
+    arms.every((arm: { tag?: unknown }) =>
+      ["true", "false", "_"].includes(String(arm?.tag)),
+    )
+  );
 }

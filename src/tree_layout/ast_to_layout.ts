@@ -1,5 +1,17 @@
 import type { LayoutMode, LayoutNode, NodeKind, PathStep } from "./types.ts";
 import { bytesToUrlSafeBase64NoPad, toUint8Array } from "../cbor.ts";
+import { FIELD_STEPS } from "./mutation.ts";
+
+/** FIELD_STEPS の式の表示名 */
+const FIELD_STEP_LABELS: Readonly<Record<string, string>> = {
+  ListGet: "list-get",
+  ListAppend: "list-append",
+  ListLength: "list-length",
+  StringLength: "string-length",
+  StringToBytes: "string-to-bytes",
+  StringSlice: "string-slice",
+  TypeList: "List",
+};
 
 export type ScopeContext = {
   readonly partNames?: ReadonlyMap<string, string>;
@@ -759,6 +771,88 @@ function buildExpressionLayoutNode(
       label: "match",
       kind: "block",
       children: [targetChild, ...armChildren],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "multiline",
+    };
+  }
+
+  // list-get, string-slice など, 子の式をフィールドに持つ組み込みの式
+  for (const [key, steps] of Object.entries(FIELD_STEPS)) {
+    if (key in node) {
+      const inner = (node[key] ?? {}) as Record<string, unknown>;
+      return {
+        id: idPrefix,
+        path: currentPath,
+        label: FIELD_STEP_LABELS[key] ?? key,
+        kind: key === "TypeList" ? "keyword" : "operator",
+        children: steps.map(({ step, field }) =>
+          buildLayoutNode(
+            inner[field],
+            `${idPrefix}.${field}`,
+            childPath(currentPath, step as PathStep),
+            context,
+          ),
+        ),
+        computedWidth: 0,
+        computedHeight: 0,
+        layoutMode: "inline",
+      };
+    }
+  }
+
+  if ("TypeUnion" in node) {
+    const variants =
+      (
+        node.TypeUnion as {
+          variants?: ReadonlyArray<{
+            readonly tag?: unknown;
+            readonly payload_type?: unknown;
+          }>;
+        } | null
+      )?.variants ?? [];
+    return {
+      id: idPrefix,
+      path: currentPath,
+      label: "union",
+      kind: "block",
+      children: variants.map((variant, index) => {
+        const tag = String(variant.tag ?? "");
+        // ペイロードのないバリアントは式を持たないので, 選ぶと union 全体を選ぶ
+        if (variant.payload_type == null) {
+          return {
+            id: `${idPrefix}.v_${index}`,
+            path: currentPath,
+            label: tag,
+            kind: "identifier" as const,
+            children: [],
+            computedWidth: 0,
+            computedHeight: 0,
+            layoutMode: "inline" as const,
+          };
+        }
+        const variantPath = childPath(currentPath, {
+          kind: "typeUnionVariant",
+          index,
+        });
+        return {
+          id: `${idPrefix}.v_${index}`,
+          path: variantPath,
+          label: `${tag}:`,
+          kind: "keyword" as const,
+          children: [
+            buildLayoutNode(
+              variant.payload_type,
+              `${idPrefix}.v_${index}.payload`,
+              variantPath,
+              context,
+            ),
+          ],
+          computedWidth: 0,
+          computedHeight: 0,
+          layoutMode: "inline" as const,
+        };
+      }),
       computedWidth: 0,
       computedHeight: 0,
       layoutMode: "multiline",
