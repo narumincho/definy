@@ -131,6 +131,26 @@ sequenceDiagram
 
 ---
 
+### ローカルでの確認 (`CLOUDFLARE_API_BASE_URL`)
+
+Worker の環境変数 `CLOUDFLARE_API_BASE_URL` を設定すると, Cloudflare REST API の送信先 (既定は
+`https://api.cloudflare.com/client/v4`) を差し替えられる。本番では設定しない。
+
+`npm run dev` で `DeployCloudflare` を本物の Cloudflare に送らずに確かめるには, リポジトリ直下の `.env` に
+`CLOUDFLARE_API_BASE_URL=http://127.0.0.1:8788/client/v4` を書き, そこで `GET /accounts`・`GET /workers/subdomain`・
+`PUT /workers/scripts/:name` (multipart の `worker.js` と `app.wasm`)・`POST /workers/scripts/:name/subdomain` に
+`{ "success": true, "result": ... }` を返すモックを動かす。`apiToken` を指定すれば管理者の署名は要らない。
+受け取った `worker.js` の `import wasmModule from "./app.wasm"` を外して `app.wasm` の `WebAssembly.Module` を渡せば,
+デプロイ先と同じ処理を Node.js で動かせる (`worker/deploy.test.ts` と同じ方法)。
+
+2026-10-21 にこの方法で `sample.self-hosted-definy-server` / `sample.greet` / `sample.prime-numbers` のデプロイと,
+デプロイされた Worker の応答 (`/healthz`・`/api/self-host`・`/` / `"Hello, definy!"` / `[2, 3, 5, 7, 11]`) を確かめた。
+
+> [!NOTE]
+> dev サーバーのローカル D1 は, イベントが 1 件でもあると seed を入れ直さない (`worker/store.ts` の `ensureSeeded`)。
+> seed を変えても古いシステムアカウントの seed イベントが残るので, 事前コンパイルのキャッシュには当たらず,
+> 古いパーツを Worker 内でコンパイルすることになる。
+
 ## 4. UI からの利用方法
 
 1. [Cloudflare ダッシュボード API Tokens (`https://dash.cloudflare.com/profile/api-tokens`)](https://dash.cloudflare.com/profile/api-tokens)

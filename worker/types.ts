@@ -56,6 +56,11 @@ export type Env = {
   readonly CLOUDFLARE_API_TOKEN?: string;
   readonly CLOUDFLARE_ACCOUNT_ID?: string;
   /**
+   * Cloudflare REST API のベース URL (既定は `https://api.cloudflare.com/client/v4`).
+   * ローカル開発で DeployCloudflare をモックの API に向けるときだけ設定する
+   */
+  readonly CLOUDFLARE_API_BASE_URL?: string;
+  /**
    * `"true"` のとき `DebugService/SubmitUnverifiedEvent` で署名が不正なイベントも保存・配信できるようにする。
    * ブラウザ側の署名チェックを確認するためのローカル開発専用。本番では設定しない
    */
