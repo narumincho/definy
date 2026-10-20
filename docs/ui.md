@@ -114,13 +114,56 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 
 ### ツリーエディタの選択肢
 
-ノードを選ぶと出るメニュー (`SearchableDropdownPanel`) の選択肢と並び順.
+ノードを選ぶと出るメニュー (置換メニュー) の選択肢と並び順・操作.
+実装は [src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx),
+選択肢と検索・ハイライトの規則は [src/tree_layout/selector_options.ts](../src/tree_layout/selector_options.ts) (単体テストあり).
+旧 Rust 版 (`definy-ui/src/dropdown.rs` の `SearchableDropdownPanel`) の操作感に合わせている. キー操作は [key.md](key.md).
 
-- その位置から参照できる変数 (関数のパラメーター, let の束縛, match のアームの束縛) を先頭に出す
-  (`expression_editor::scope_variables_at_path`)
-- 検索語を打つと, 名前が一致するもの, 名前が検索語で始まるもの, 名前に含むもの, ラベルのどこかに含むものの順に並べる.
-  `index` と打てば変数 `index` がパーツ `string-index-of` より先に来て, Enter でそれが入る
+- 開くと検索欄に選択中の式の名前 (`core.eval-ast`, `plus` など) が全選択で入る. 打てば置き換わり, 打つまでは絞り込まずに全部の選択肢を出す.
+  現在の選択肢には ✓ を付け, リストの中央に来るようにスクロールする. 未入力にした直後は検索欄を空にする
+- 見出しに選択中の式の名前と期待する型を出す. ⌫ で未入力に, ✕ で選択解除
+- その位置から参照できる変数 (関数のパラメーター, let の束縛, match のアームの束縛) を先頭に出す.
+  変数は `ast_to_layout.ts` が式 1 つ分のレイアウトのノードに付ける `scopeVariables` から作る
+- 検索語を打つと, 名前が一致するもの, 名前 (または `module.` を除いた名前) が検索語で始まるもの, 名前に含むもの,
+  補足・分類に含むものの順に並べる. `index` と打てば変数 `index` がパーツ `std.string-index-of` より先に来る.
+  期待型に合わない選択肢は一致度に関わらず「その他 (型が合わない)」の区切りの下に薄く出す
+- パーツの選択肢の右端の ↗ はそのパーツのページ (`/part/<module>.<name>`) へのリンク. クリックするとメニューを閉じて移動する
+- ↑ / ↓ で選び, Enter で適用する. 開いた直後の Enter (現在値を示しているだけ) では式を置き換えずにツリーに戻る.
+  現在と同じ選択肢を選び直しても式を作り直さない (中身が初期値に戻ってしまうため)
+- 適用・Escape のあとはツリーの枠にフォーカスが戻り, 選択を残したまま続けて WASD で移動できる.
+  ツリーの外をクリックするとメニューを閉じる
+- 参照しているパーツ ID と選択肢の ID (`partIdHash`) が違う場合 (同じ名前のモジュールを別のアカウントがコミットしたときなど) でも,
+  `partNames` で名前に直して現在の選択肢とみなす
 - `less-than` を `less-than-or-equal` にするなど, 二項演算を別の二項演算に差し替えるときは左右の式を引き継ぐ
+  (`mutation.ts` の `keepBinaryOperands`)
+- 構文の候補として `let` (式全体で使われていない変数 ID で `x = 0` の束縛を作り, 本体はその変数) と
+  `match (true / false)` を出す. 組み込みの `list-get` `list-length` `list-append` `list-concat` `string-length` `string-slice`
+  `less-than-or-equal` `greater-than-or-equal` も候補にある
+- パーツの候補には型 (`number`, `function → number` など) を名前の横に出す
+
+### パーツの型の行 (型のツリーエディタ)
+
+パーツ詳細の `type` の行は, 旧 Rust 版と同じく型を式にして式のツリーエディタで編集する
+(`ExpressionTreeEditor` の `mode="type"`).
+
+- パーツの型 (`partType`, seeds/schemas の `PartType`) と型の式の相互変換は
+  [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts). seed の全パーツの型が往復で変わらないことをテストしている
+  - `"number"` ↔ `"TypeNumber"`, `{ list: T }` ↔ `{ TypeList: { item_type } }`, `{ function }` ↔ `{ TypeFunction }`,
+    `{ record }` ↔ `{ TypeLiteral }`, `{ union }` ↔ `{ TypeUnion }`, `{ type_part: ID }` ↔ `{ PartReference }`, 型指定なし ↔ `null`
+  - `"type"` (型そのもの) は内部だけの `"TypeType"` にする. 未入力 (`Hole`) は `null` に戻す
+- 型のメニューの候補は number / string / boolean / type / list / function / record / union / 型指定なしと,
+  型のパーツ (`partType` が `type` のパーツ, `{ type_part: ID }` で参照する). 期待型の推論はしない
+- 行の右端の × で型指定をなくす
+- 変更は式と同じく作業中の変更 (`PartChange.partType`) に記録する. パーツ詳細は作業中の変更の型を優先して表示し,
+  式のツリーの期待型の推論にもその型を使う
+- ツリーでは `TypeNumber` などは `number` のように型の名前で出す
+
+### ツリーに表示する組み込みの式
+
+`ListGet` `ListAppend` `ListLength` `StringLength` `StringToBytes` `StringSlice` `TypeList` は,
+子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`TypeUnion` はバリアントごとに行を分け, ペイロードの型を子の式にする (ペイロードのないバリアントを選ぶと union 全体を選ぶ).
+表の対応がない式は, 子を持たないキーワード (`ListGet` のようなキー名) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
 
 ### 履歴グラフ
 

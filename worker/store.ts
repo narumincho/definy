@@ -316,25 +316,24 @@ export class WorkerStore {
       return;
     }
 
-    const statements: D1PreparedStatement[] = [];
-
     // 組み込みシステムアカウントの古いシードイベント（過去デプロイ分）を D1 から削除し、最新シードに同期する
-    if (seedAccounts.size > 0 && this.seedEvents.length > 0) {
-      const hashPlaceholders = this.seedEvents.map(() => "?").join(", ");
-      const hashValues = this.seedEvents.map((ev) => ev.eventHash);
-      for (const accountId of seedAccounts) {
-        statements.push(
-          db
-            .prepare(
-              `DELETE FROM events WHERE account_id = ? AND event_hash NOT IN (${hashPlaceholders})`,
-            )
-            .bind(accountId, ...hashValues),
-        );
-      }
-    }
+    const deleteStatements: ReadonlyArray<D1PreparedStatement> =
+      seedAccounts.size > 0 && this.seedEvents.length > 0
+        ? (() => {
+            const hashPlaceholders = this.seedEvents.map(() => "?").join(", ");
+            const hashValues = this.seedEvents.map((ev) => ev.eventHash);
+            return Array.from(seedAccounts).map((accountId) =>
+              db
+                .prepare(
+                  `DELETE FROM events WHERE account_id = ? AND event_hash NOT IN (${hashPlaceholders})`,
+                )
+                .bind(accountId, ...hashValues),
+            );
+          })()
+        : [];
 
-    for (const ev of this.seedEvents) {
-      statements.push(
+    const insertEventStatements: ReadonlyArray<D1PreparedStatement> =
+      this.seedEvents.map((ev) =>
         db
           .prepare(
             `INSERT OR IGNORE INTO events (event_hash, signed_event_bytes, account_id, event_type, created_at_rfc3339, time_ms)
@@ -349,18 +348,23 @@ export class WorkerStore {
             ev.timeMs,
           ),
       );
-    }
 
-    for (const [contentHash, contentBytes] of this.seedContents.entries()) {
-      statements.push(
-        db
-          .prepare(
-            `INSERT OR IGNORE INTO cas_contents (content_hash, content_bytes)
+    const insertContentStatements: ReadonlyArray<D1PreparedStatement> =
+      Array.from(this.seedContents.entries()).map(
+        ([contentHash, contentBytes]) =>
+          db
+            .prepare(
+              `INSERT OR IGNORE INTO cas_contents (content_hash, content_bytes)
              VALUES (?, ?)`,
-          )
-          .bind(contentHash, contentBytes),
+            )
+            .bind(contentHash, contentBytes),
       );
-    }
+
+    const statements: ReadonlyArray<D1PreparedStatement> = [
+      ...deleteStatements,
+      ...insertEventStatements,
+      ...insertContentStatements,
+    ];
 
     for (let i = 0; i < statements.length; i += D1_BATCH_CHUNK_SIZE) {
       const chunk = statements.slice(i, i + D1_BATCH_CHUNK_SIZE);
@@ -626,20 +630,21 @@ export class WorkerStore {
     items: ReadonlyArray<ContentItem>,
     env?: Env,
   ): Promise<ReadonlyArray<string>> {
-    const verified: Array<ContentItem> = [];
-    for (const item of items) {
-      const bytes = base64ToBytes(item.contentBytes);
-      const actualHash = await sha256EventHashId(bytes);
-      if (actualHash !== item.contentHash) {
-        throw new InvalidContentError(
-          `contentHash '${item.contentHash}' does not match SHA-256 of contentBytes ('${actualHash}')`,
-        );
-      }
-      verified.push({
-        contentHash: actualHash,
-        contentBytes: bytesToBase64(bytes),
-      });
-    }
+    const verified: ReadonlyArray<ContentItem> = await Promise.all(
+      items.map(async (item) => {
+        const bytes = base64ToBytes(item.contentBytes);
+        const actualHash = await sha256EventHashId(bytes);
+        if (actualHash !== item.contentHash) {
+          throw new InvalidContentError(
+            `contentHash '${item.contentHash}' does not match SHA-256 of contentBytes ('${actualHash}')`,
+          );
+        }
+        return {
+          contentHash: actualHash,
+          contentBytes: bytesToBase64(bytes),
+        };
+      }),
+    );
 
     if (env?.DB && verified.length > 0) {
       const statements = verified.map((item) =>
@@ -719,24 +724,18 @@ export class WorkerStore {
           byHash.set(row.content_hash, row.content_bytes);
         }
       }
-      const items: ContentItem[] = [];
-      for (const h of hashes) {
+      return hashes.flatMap((h) => {
         const b64 = byHash.get(h);
-        if (b64 !== undefined) {
-          items.push({ contentHash: h, contentBytes: b64 });
-        }
-      }
-      return items;
+        return b64 !== undefined ? [{ contentHash: h, contentBytes: b64 }] : [];
+      });
     }
 
-    const result: ContentItem[] = [];
-    for (const h of hashes) {
+    return hashes.flatMap((h) => {
       const contentBytes = this.contents.get(h);
-      if (contentBytes !== undefined) {
-        result.push({ contentHash: h, contentBytes });
-      }
-    }
-    return result;
+      return contentBytes !== undefined
+        ? [{ contentHash: h, contentBytes }]
+        : [];
+    });
   }
 
   /**

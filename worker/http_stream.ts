@@ -76,9 +76,9 @@ async function loadStoreIntoRuntime(
 
 export type CompiledPartArtifact = {
   readonly wasmBytes: Uint8Array;
-  readonly cloudflareWorkerName?: string | null | undefined;
-  readonly cloudflareToken?: string | null | undefined;
-  readonly evaluatedResult?: string | null | undefined;
+  readonly cloudflareWorkerName: string | null;
+  readonly cloudflareToken: string | null;
+  readonly evaluatedResult: string | null;
 };
 
 /**
@@ -96,7 +96,12 @@ export async function compilePartToWasm(
   }
   const directBytes = await store.getRawContentBytes(trimmed, env);
   if (directBytes && isWasmBinary(directBytes)) {
-    return { wasmBytes: directBytes };
+    return {
+      wasmBytes: directBytes,
+      cloudflareWorkerName: null,
+      cloudflareToken: null,
+      evaluatedResult: null,
+    };
   }
   const runtime = await getDefinyRuntime();
   await loadStoreIntoRuntime(runtime, store, env);
@@ -115,9 +120,9 @@ export async function compilePartToWasm(
   }
   return {
     wasmBytes: base64ToBytes(res.wasm),
-    cloudflareWorkerName: res.cloudflareWorkerName,
-    cloudflareToken: res.cloudflareToken,
-    evaluatedResult: res.evaluatedResult,
+    cloudflareWorkerName: res.cloudflareWorkerName ?? null,
+    cloudflareToken: res.cloudflareToken ?? null,
+    evaluatedResult: res.evaluatedResult ?? null,
   };
 }
 

@@ -139,7 +139,7 @@ Void は Vite をベースにした Cloudflare Workers フルスタックフレ�
    - 未コミット変更ショートカット
    - 現在の言語名
 5. **パーツ詳細 & ブラウザ内即時評価 ([pages/part/[id].tsx](../pages/part/[id].tsx))**:
-   - **「式を評価 (Wasm)」ボタン**: バックエンド通信なしで、ブラウザ内で `stage1.wasm` を用いて式を Wasm に動的コンパイルし、V8 上で即座に実行して結果を表示。
+   - **「式を評価 (Wasm)」ボタン**: バックエンド通信なしで、ブラウザ内で `stage1.wasm` を用いて式を Wasm に動的コンパイルし、V8 上で即座に実行して結果を表示。式が参照するパーツも集めて stage1 に渡す（[eval-conformance.md](eval-conformance.md) の「stage1.wasm の入力」を参照）。
    - **WebAssembly タブ**: 生成された Wasm バイナリのサイズ（バイト数）と先頭 16 進ダンプの確認。
 
 ---

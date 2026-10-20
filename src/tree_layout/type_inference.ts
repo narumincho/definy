@@ -52,8 +52,11 @@ export function inferExpressionType(node: unknown): ExpectedType {
     return "number";
   }
 
-  if ("StringConcat" in obj) return "string";
-  if ("ListConcat" in obj) return "list";
+  if ("ListLength" in obj || "StringLength" in obj) return "number";
+  if ("StringConcat" in obj || "StringSlice" in obj) return "string";
+  if ("ListConcat" in obj || "ListAppend" in obj || "StringToBytes" in obj) {
+    return "list";
+  }
 
   return "any";
 }
@@ -99,6 +102,24 @@ export function inferExpectedType(
     return "any";
   }
   const parent = parentNode as Record<string, unknown>;
+
+  // list-get, string-slice などの子の式
+  const fieldTypes: ReadonlyArray<readonly [string, PathStep, ExpectedType]> = [
+    ["ListGet", "left", "list"],
+    ["ListGet", "index", "number"],
+    ["ListAppend", "left", "list"],
+    ["ListLength", "condition", "list"],
+    ["StringLength", "condition", "string"],
+    ["StringToBytes", "condition", "string"],
+    ["StringSlice", "condition", "string"],
+    ["StringSlice", "start", "number"],
+    ["StringSlice", "end", "number"],
+  ];
+  for (const [key, step, type] of fieldTypes) {
+    if (key in parent && lastStep === step) {
+      return type;
+    }
+  }
 
   if (lastStep === "left" || lastStep === "right") {
     if (
@@ -184,10 +205,17 @@ export function inferExpectedType(
  * 式ノードから対応する SelectorOption の value を特定する
  */
 export function getOptionValueForExpression(node: unknown): string | null {
+  // 型の式 (part_type.ts)
+  if (typeof node === "string" && /^Type[A-Z]/.test(node)) {
+    return `expr:type:${node.slice(4).toLowerCase()}`;
+  }
   if (!node || typeof node !== "object") {
     return null;
   }
   const obj = node as Record<string, unknown>;
+  if ("TypeList" in obj) return "expr:type:list";
+  if ("TypeFunction" in obj) return "expr:type:function";
+  if ("TypeUnion" in obj) return "expr:type:union";
 
   if ("Number" in obj) return "expr:number";
   if ("String" in obj) return "expr:string";
@@ -217,8 +245,25 @@ export function getOptionValueForExpression(node: unknown): string | null {
   if ("Not" in obj) return "expr:not";
   if ("StringConcat" in obj) return "expr:string_concat";
   if ("ListConcat" in obj) return "expr:list_concat";
+  if ("ListGet" in obj) return "expr:list_get";
+  if ("ListLength" in obj) return "expr:list_length";
+  if ("ListAppend" in obj) return "expr:list_append";
+  if ("StringLength" in obj) return "expr:string_length";
+  if ("StringSlice" in obj) return "expr:string_slice";
+  if ("Let" in obj) return "expr:let";
+  if ("Match" in obj && isBooleanMatch(obj.Match)) return "expr:match_boolean";
   if ("If" in obj) return "expr:if";
   if ("Hole" in obj) return "expr:hole";
+  if ("Variable" in obj) {
+    const raw = obj.Variable;
+    const id =
+      typeof raw === "number"
+        ? raw
+        : (raw as { variable_id?: unknown } | null)?.variable_id;
+    if (typeof id === "number" || typeof id === "bigint") {
+      return `ref:local:${id}`;
+    }
+  }
 
   if ("PartReference" in obj) {
     const raw = (obj.PartReference as { part_definition_event_hash?: unknown })
@@ -231,4 +276,18 @@ export function getOptionValueForExpression(node: unknown): string | null {
   }
 
   return null;
+}
+
+const BOOLEAN_MATCH_TAGS: ReadonlySet<string> = new Set(["true", "false", "_"]);
+
+/** アームが `true` / `false` (と `_`) だけの, Bool に対する match か */
+export function isBooleanMatch(match: unknown): boolean {
+  const arms = (match as { arms?: unknown } | null)?.arms;
+  return (
+    Array.isArray(arms) &&
+    arms.length > 0 &&
+    arms.every((arm: { tag?: unknown }) =>
+      BOOLEAN_MATCH_TAGS.has(String(arm?.tag)),
+    )
+  );
 }

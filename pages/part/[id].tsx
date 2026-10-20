@@ -4,6 +4,7 @@ import { Icon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import {
+  collectReferencedParts,
   evaluateCompiledWasm,
   loadStage1Compiler,
   type DefinyValue,
@@ -15,6 +16,8 @@ export default function PartDetailPage(): JSX.Element {
   const {
     language,
     parts,
+    partNames,
+    partsByIdHash,
     workingChanges,
     updateWorkingPart,
     discardWorkingPart,
@@ -46,6 +49,9 @@ export default function PartDetailPage(): JSX.Element {
   const hasChange = change !== undefined;
   const currentName = change?.name ?? part.name;
   const currentDescription = change?.description ?? part.description;
+  // 作業中の変更の型 (null は型指定なし) を優先する
+  const currentPartType =
+    change !== undefined ? change.partType : part.partType;
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
 
@@ -55,7 +61,33 @@ export default function PartDetailPage(): JSX.Element {
     try {
       const compiler = await loadStage1Compiler();
 
-      const wasm = compiler.compile(currentExpression);
+      // 式が参照するパーツ (作業中の変更があればそちら) を集めて stage1 に渡す
+      const { parts: referencedParts, unresolved } = collectReferencedParts(
+        currentExpression,
+        (partIdHash) => {
+          // 作業中の変更は表示中 (`module.name` ごとに最新) のパーツに対するものだけ使う
+          const shown = parts.find((p) => p.partIdHash === partIdHash);
+          const shownChange =
+            shown === undefined
+              ? undefined
+              : workingChanges.parts.get(shown.partId);
+          return shownChange?.expression !== undefined
+            ? shownChange.expression
+            : partsByIdHash.get(partIdHash)?.expression;
+        },
+      );
+      if (unresolved.length > 0) {
+        throw new Error(
+          `${label(
+            language,
+            "Referenced parts were not found, have no expression, or are compiler built-ins",
+            "参照しているパーツが見つからないか, 式が無いか, コンパイラ組み込みのため評価できません",
+            "Referencitaj partoj ne troviĝis, ne havas esprimon aŭ estas enkonstruitaj en la kompililo",
+          )}: ${unresolved.map((partIdHash) => partNames.get(partIdHash) ?? partIdHash).join(", ")}`,
+        );
+      }
+
+      const wasm = compiler.compile(currentExpression, referencedParts);
       setCompiledWasm(wasm);
 
       const result = await evaluateCompiledWasm(wasm);
@@ -65,7 +97,14 @@ export default function PartDetailPage(): JSX.Element {
     } finally {
       setEvaluating(false);
     }
-  }, [currentExpression]);
+  }, [
+    currentExpression,
+    parts,
+    partsByIdHash,
+    workingChanges,
+    partNames,
+    language,
+  ]);
 
   function formatValue(v: DefinyValue): string {
     if (v === null) return "null";
@@ -203,7 +242,7 @@ export default function PartDetailPage(): JSX.Element {
               name={currentName}
               moduleName={part.moduleName}
               description={localizedText(currentDescription, language)}
-              partType={part.partType}
+              partType={currentPartType}
               expression={currentExpression}
               editable={true}
               onNameChange={(newName) => {
@@ -212,7 +251,7 @@ export default function PartDetailPage(): JSX.Element {
                   partDefinitionEventHash: part.partId,
                   name: newName,
                   description: currentDescription,
-                  partType: part.partType,
+                  partType: currentPartType,
                   expression: currentExpression,
                 });
               }}
@@ -226,7 +265,17 @@ export default function PartDetailPage(): JSX.Element {
                     language,
                     newDesc,
                   ),
-                  partType: part.partType,
+                  partType: currentPartType,
+                  expression: currentExpression,
+                });
+              }}
+              onPartTypeChange={(newPartType) => {
+                updateWorkingPart(part.partId, {
+                  moduleDefinitionEventHash: part.moduleId,
+                  partDefinitionEventHash: part.partId,
+                  name: currentName,
+                  description: currentDescription,
+                  partType: newPartType,
                   expression: currentExpression,
                 });
               }}
@@ -236,7 +285,7 @@ export default function PartDetailPage(): JSX.Element {
                   partDefinitionEventHash: part.partId,
                   name: currentName,
                   description: currentDescription,
-                  partType: part.partType,
+                  partType: currentPartType,
                   expression: newExpr,
                 });
               }}

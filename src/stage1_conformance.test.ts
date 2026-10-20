@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import cases from "../conformance/eval_cases.json" with { type: "json" };
 import {
@@ -7,62 +7,10 @@ import {
   deriveModulePartId,
 } from "../worker/cbor.ts";
 import {
+  collectReferencedParts,
   createStage1Compiler,
   evaluateCompiledWasm,
 } from "./stage1_compiler.ts";
-
-/**
- * stage1.wasm (自己記述コンパイラ) で未対応のテストケース一覧。
- * it.fails で実行し、将来 stage1 が対応した際にテストが落ちてリスト更新を促す。
- */
-export const UNSUPPORTED_ON_STAGE1: ReadonlyArray<string> = [
-  "not",
-  "and",
-  "or",
-  "string concat",
-  "string length ascii",
-  "string slice",
-  "boolean match true",
-  "boolean match false",
-  "list literal",
-  "list length",
-  "list get",
-  "list concat",
-  "list append",
-  "record literal",
-  "record get",
-  "variant without payload",
-  "variant with payload",
-  "record with computed field",
-  "record with large number",
-  "record with negative number",
-  "record with three fields",
-  "nested record",
-  "variant with computed payload",
-  "match some",
-  "match none",
-  "call std.abs",
-  "call std.min",
-  "call std.max",
-  "call std.sign",
-  "call std.bool-to-string",
-  "call std.list-is-empty",
-  "call std.string-index-of",
-  "call std.url-path",
-  "call std.url-query",
-  "sample.triangle-area",
-  "sample.is-even-sample",
-  "sample.prime-numbers",
-  "string length counts UTF-8 bytes",
-  "string length mixed",
-  "string slice by UTF-8 byte offsets",
-  "string slice clamps out of range",
-  "string slice end before start is empty",
-  "string to bytes is UTF-8",
-  "string concat non-ascii",
-];
-
-const unsupportedSet: ReadonlySet<string> = new Set(UNSUPPORTED_ON_STAGE1);
 
 /** `definy-server` の開発用システムアカウント鍵 (`DEV_SYSTEM_KEY_SEED`) と同じ値 */
 const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
@@ -162,19 +110,50 @@ function normalizeToConformanceValue(val: unknown): unknown {
   return val;
 }
 
+/** `seeds/*.json` の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
+async function loadSeedPartExpressions(
+  accountBytes: Uint8Array,
+): Promise<ReadonlyMap<string, unknown>> {
+  const map = new Map<string, unknown>();
+  for (const file of readdirSync("seeds")) {
+    if (!file.endsWith(".json") || file === "seed_bundle.json") {
+      continue;
+    }
+    const seed = JSON.parse(readFileSync(`seeds/${file}`, "utf8")) as {
+      readonly module_name: string;
+      readonly parts: ReadonlyArray<{
+        readonly name: string;
+        readonly expression?: unknown;
+      }>;
+    };
+    const moduleId = await deriveModuleIdBytes(accountBytes, seed.module_name);
+    for (const part of seed.parts) {
+      map.set(
+        await deriveModulePartId(moduleId, part.name),
+        await resolvePartPlaceholders(part.expression ?? null, accountBytes),
+      );
+    }
+  }
+  return map;
+}
+
 const wasmBytes = readFileSync("wasm/stage1.wasm");
 const compiler = createStage1Compiler(new WebAssembly.Module(wasmBytes));
 const accountBytes = await devSystemAccountBytes();
+const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
 
 describe("eval conformance (stage1.wasm)", () => {
   for (const testCase of cases.cases) {
-    const runner = unsupportedSet.has(testCase.name) ? it.fails : it;
-    runner(testCase.name, async () => {
+    it(testCase.name, async () => {
       const expression = await resolvePartPlaceholders(
         testCase.expression,
         accountBytes,
       );
-      const compiledWasm = compiler.compile(expression);
+      const { parts, unresolved } = collectReferencedParts(expression, (id) =>
+        seedPartExpressions.get(id),
+      );
+      expect(unresolved).toEqual([]);
+      const compiledWasm = compiler.compile(expression, parts);
       const rawValue = await evaluateCompiledWasm(compiledWasm);
       const actualValue = normalizeToConformanceValue(rawValue);
       expect(actualValue).toEqual(testCase.expected);

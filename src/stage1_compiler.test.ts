@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import * as fs from "node:fs";
 import {
+  collectReferencedParts,
   createStage1Compiler,
+  definyAstToSelfHostedAst,
   evaluateCompiledWasm,
+  SelfHostedAstConversionError,
 } from "./stage1_compiler.ts";
 
 describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
@@ -11,16 +14,7 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const stage1Module = new WebAssembly.Module(wasmBytes);
     const compiler = createStage1Compiler(stage1Module);
 
-    // Number(42) in self-hosted AST:
-    // Variant("number", Number(42))
-    const ast = {
-      Variant: {
-        tag: "number",
-        payload: {
-          Number: { value: 42 },
-        },
-      },
-    };
+    const ast = { Number: { value: 42 } };
 
     const compiledWasm = compiler.compile(ast);
     expect(compiledWasm[0]).toBe(0x00);
@@ -38,32 +32,9 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const compiler = createStage1Compiler(stage1Module);
 
     const ast = {
-      Variant: {
-        tag: "add",
-        payload: {
-          TypeLiteral: {
-            items: [
-              {
-                key: "left",
-                value: {
-                  Variant: {
-                    tag: "number",
-                    payload: { Number: { value: 15 } },
-                  },
-                },
-              },
-              {
-                key: "right",
-                value: {
-                  Variant: {
-                    tag: "number",
-                    payload: { Number: { value: 27 } },
-                  },
-                },
-              },
-            ],
-          },
-        },
+      Add: {
+        left: { Number: { value: 15 } },
+        right: { Number: { value: 27 } },
       },
     };
 
@@ -113,5 +84,86 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
 
     const evaluated = await evaluateCompiledWasm(compiledWasm);
     expect(evaluated).toBe(25);
+  });
+
+  it("compiles and evaluates a call to a referenced part (Call + PartReference with 32-byte ID)", async () => {
+    const wasmBytes = fs.readFileSync("wasm/stage1.wasm");
+    const compiler = createStage1Compiler(new WebAssembly.Module(wasmBytes));
+
+    // CBOR / seed から来る PartReference の ID は 32 バイトのバイト列
+    const doubleId = Array.from({ length: 32 }, (_, i) => i);
+    const offsetId = new Uint8Array(32).fill(7);
+    const partExpressions = new Map<string, unknown>([
+      [
+        // double(x) = x * 2 + offset
+        "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+        {
+          Function: {
+            parameters: [{ parameter_id: 1, parameter_name: "x" }],
+            body: {
+              Add: {
+                left: {
+                  Multiply: {
+                    left: { Variable: { variable_id: 1 } },
+                    right: { Number: { value: 2 } },
+                  },
+                },
+                right: {
+                  PartReference: { part_definition_event_hash: offsetId },
+                },
+              },
+            },
+          },
+        },
+      ],
+      // offset = 2
+      ["BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc", { Number: { value: 2 } }],
+    ]);
+    const expression = {
+      Call: {
+        function: { PartReference: { part_definition_event_hash: doubleId } },
+        arguments: [{ name: "x", value: { Number: { value: 20 } } }],
+      },
+    };
+
+    const { parts, unresolved } = collectReferencedParts(expression, (id) =>
+      partExpressions.get(id),
+    );
+    expect(parts.map((part) => part.id)).toEqual([
+      "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+      "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc",
+    ]);
+    expect(unresolved).toEqual([]);
+
+    const compiledWasm = compiler.compile(expression, parts);
+    expect(await evaluateCompiledWasm(compiledWasm)).toBe(42);
+  });
+
+  it("reports parts that cannot be passed to stage1 as unresolved", () => {
+    const expression = {
+      Add: {
+        left: { PartReference: { part_definition_event_hash: "missing" } },
+        right: { PartReference: { part_definition_event_hash: "builtin" } },
+      },
+    };
+    const { parts, unresolved } = collectReferencedParts(expression, (id) =>
+      id === "builtin" ? { Compiler: "let" } : undefined,
+    );
+    expect(parts).toEqual([]);
+    expect(unresolved).toEqual(["missing", "builtin"]);
+  });
+
+  it("rejects expressions that core.expression cannot represent", () => {
+    expect(() => definyAstToSelfHostedAst({ Hole: null })).toThrow(
+      SelfHostedAstConversionError,
+    );
+    expect(() =>
+      definyAstToSelfHostedAst({
+        BitAnd: {
+          left: { Number: { value: 1 } },
+          right: { Number: { value: 1 } },
+        },
+      }),
+    ).toThrow(SelfHostedAstConversionError);
   });
 });

@@ -6,7 +6,8 @@
 
 ## 式のツリーエディタでの実装
 
-`definy-ui/src/tree_layout/editor.rs` の `ExpressionTreeEditor` で, 上記のキーで選択中の式を移動する.
+[src/tree_layout/ExpressionTreeEditor.tsx](../src/tree_layout/ExpressionTreeEditor.tsx) の `ExpressionTreeEditor` で, 上記のキーで選択中の式を移動する
+(旧 Rust 実装 `definy-ui/src/tree_layout/editor.rs` と同じ操作感).
 キー操作はツリーの枠 (`.expression-tree-container`, `tabindex=0`) にフォーカスがあるときに効く.
 クリックやタブキーでフォーカスすると枠が青くなる.
 
@@ -17,19 +18,20 @@
 | E / Shift+E        | 子の式の先頭 / 末尾へ. 直下の子が表示されていなければ最も浅い子孫を子とみなす                                   |
 | Enter              | 選択中の式を編集する. 数値・文字列リテラルはノード上の入力欄, それ以外は検索付きメニューを開く                  |
 | Escape             | メニュー・入力欄からツリーに戻る (選択は残る). ツリーで押すと選択を解除する                                     |
-| Delete / Backspace | 選択中の式を未入力にする                                                                                        |
+| Delete / Backspace | 選択中の式を未入力にし, すぐ別の式を選べるようにメニューを開いて検索欄にフォーカスする                          |
 
 - 未選択でいずれかの移動キーを押すとルートの式を選ぶ
 - Ctrl / Cmd / Alt 付きのキーはブラウザのショートカットとして扱い, 移動しない
 - キーボードで移動している間はメニューを閉じ, リテラルも入力欄にしない (WASD が入力欄に吸われないようにするため).
   マウスでクリックしたときは従来どおりすぐメニュー・入力欄にフォーカスする
-- 移動先の決定 (`tree_layout/keyboard.rs` の `navigate`) は DOM に依存しない純粋な関数で, 単体テストがある.
+- 移動先の決定 ([src/tree_layout/keyboard.ts](../src/tree_layout/keyboard.ts) の `navigate`) は DOM に依存しない純粋な関数で, 単体テストがある.
   画面上の矩形は各ノードの `data-node-id` 要素の `getBoundingClientRect` から, 式のパスごとに表示順で最初の要素 (式全体を囲む要素) を使う
 
 ## パーツ定義のツリーでの実装
 
 パーツ詳細ページでは, パーツ定義全体を式のツリーと同じ見た目の木構造で表示する
-(`definy-ui/src/part_detail/definition_tree.rs` の `PartDefinitionTree`).
+([src/tree_layout/PartDefinitionTree.tsx](../src/tree_layout/PartDefinitionTree.tsx) の `PartDefinitionTree`.
+行の移動先は [src/tree_layout/definition_rows.ts](../src/tree_layout/definition_rows.ts) の `nextRow`).
 
 ```text
 part <名前>        ← ルート (見出し)
@@ -44,9 +46,17 @@ part <名前>        ← ルート (見出し)
 | W / S (↑ / ↓) | 行の間を移動                                                                                                          |
 | Q / Shift+Q   | 見出し (`part <名前>`) へ                                                                                             |
 | E / Shift+E   | 見出しからは先頭 (`module`) / 末尾 (`value`) の行へ. `type` / `value` の行ではそのツリーの中へ入る (ルートが選ばれる) |
-| Enter         | 行を編集する. 名前・説明は入力欄, モジュールはメニュー, 型・式はツリーの中へ                                          |
+| Enter         | 行を編集する. 名前・説明は入力欄, 型・式はツリーの中へ                                                                |
 | Escape        | 入力欄からツリーに戻る. ツリーで押すと選択を解除する                                                                  |
 
 - 型・式のツリーの中では式のツリーのキー操作になる. ルートで Q, 上端で W, 下端で S を押す (または未選択で Escape) と
-  `ExpressionTreeEditor` の `on_exit` が呼ばれ, パーツ定義のツリーの行に戻る
-- 子のツリーで処理したキーは `stop_propagation` し, 外側のツリーで二重に処理しない
+  `ExpressionTreeEditor` の `onExit` が呼ばれ, パーツ定義のツリーの行に戻る (上端・下端なら隣の行, それ以外はそのツリーの行)
+- 子のツリーで処理したキーは `stopPropagation` し, 外側のツリーで二重に処理しない
+
+## React で実装するときの注意
+
+- ツリーの枠にフォーカスが戻ったときの `onFocus` で「未選択ならルート (見出し) を選ぶ」処理は,
+  同じイベント処理の中で `setState` した値をまだ見られない. `setSelectedRow((prev) => prev ?? "name")` のように関数で更新し,
+  直前に選んだ値を上書きしない
+- メニューを開いた直後の検索欄へのフォーカスは `requestAnimationFrame` を使わず `useEffect` の中で行う.
+  裏のタブ・隠れたプレビューでは rAF が止まり, その間に打った文字がツリーの移動キー (WASD) として処理されてしまう

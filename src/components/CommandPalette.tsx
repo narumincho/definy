@@ -23,6 +23,8 @@ const MAX_RESULTS = 60;
  * 3: 任意位置の部分一致
  * 4: あいまい一致（クエリの全文字が順番に出現）
  */
+const SEPARATOR_CHARS: ReadonlySet<string> = new Set([".", "-", "_", " ", "/"]);
+
 export function matchScore(labelStr: string, query: string): number | null {
   const normLabel = labelStr.toLowerCase();
   const normQuery = query.toLowerCase();
@@ -39,7 +41,7 @@ export function matchScore(labelStr: string, query: string): number | null {
   const pos = normLabel.indexOf(normQuery);
   if (pos >= 0) {
     const prevChar = pos > 0 ? normLabel[pos - 1] : "";
-    const isAfterSeparator = [".", "-", "_", " ", "/"].includes(prevChar ?? "");
+    const isAfterSeparator = SEPARATOR_CHARS.has(prevChar ?? "");
     return isAfterSeparator ? 2 : 3;
   }
 
@@ -75,36 +77,25 @@ export function rankItems(
     return items.slice(0, maxResults);
   }
 
-  const scored: Array<{
+  const scored: ReadonlyArray<{
     readonly score: number;
     readonly length: number;
     readonly index: number;
     readonly item: PaletteItem;
-  }> = [];
-
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (!item) {
-      continue;
-    }
+  }> = items.flatMap((item, index) => {
     const score = matchScore(item.label, trimmed);
-    if (score !== null) {
-      scored.push({
-        score,
-        length: item.label.length,
-        index: i,
-        item,
-      });
-    }
-  }
+    return score !== null
+      ? [{ score, length: item.label.length, index, item }]
+      : [];
+  });
 
-  scored.sort((a, b) => {
+  const sorted = [...scored].sort((a, b) => {
     if (a.score !== b.score) return a.score - b.score;
     if (a.length !== b.length) return a.length - b.length;
     return a.index - b.index;
   });
 
-  return scored.slice(0, maxResults).map((s) => s.item);
+  return sorted.slice(0, maxResults).map((s) => s.item);
 }
 
 export function CommandPalette(): JSX.Element | null {

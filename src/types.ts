@@ -24,9 +24,9 @@ export type ModulePartSnapshot = {
   readonly name: string;
   readonly description: LocalizedText;
   readonly partType: unknown;
-  readonly contentHash?: string | null | undefined;
-  readonly partIdHash?: string | null | undefined;
-  readonly expression?: unknown | null | undefined;
+  readonly contentHash: string | null;
+  readonly partIdHash: string | null;
+  readonly expression: unknown | null;
 };
 
 export type ModuleSnapshot = {
@@ -34,7 +34,7 @@ export type ModuleSnapshot = {
   readonly name: string;
   readonly description: LocalizedText;
   readonly latestEventHash: string;
-  readonly parentCommitHash?: string | null | undefined;
+  readonly parentCommitHash: string | null;
   readonly message: string;
   readonly parts: ReadonlyArray<ModulePartSnapshot>;
   readonly updatedAtMs: number;
@@ -47,9 +47,9 @@ export type PartSnapshot = {
   readonly name: string;
   readonly description: LocalizedText;
   readonly partType: unknown;
-  readonly contentHash?: string | null | undefined;
-  readonly partIdHash?: string | null | undefined;
-  readonly expression?: unknown | null | undefined;
+  readonly contentHash: string | null;
+  readonly partIdHash: string | null;
+  readonly expression: unknown | null;
   readonly updatedAtMs: number;
 };
 
@@ -72,5 +72,5 @@ export type ConnectionStatus = "connected" | "connecting" | "offline" | "error";
 export type AccountState = {
   readonly accountId: string;
   readonly accountName: string;
-  readonly secretKeyBase64?: string | undefined;
+  readonly secretKeyBase64?: string;
 };

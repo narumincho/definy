@@ -1469,6 +1469,28 @@
       ]
     },
     {
+      "name": "sample.greet",
+      "expression": {
+        "PartReference": {
+          "part_definition_event_hash": {
+            "$part": "sample.greet"
+          }
+        }
+      },
+      "expected": "Hello, definy!"
+    },
+    {
+      "name": "sample.sample-ast-calc",
+      "expression": {
+        "PartReference": {
+          "part_definition_event_hash": {
+            "$part": "sample.sample-ast-calc"
+          }
+        }
+      },
+      "expected": 95
+    },
+    {
       "name": "string length counts UTF-8 bytes",
       "expression": {
         "StringLength": {

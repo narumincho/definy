@@ -3,6 +3,8 @@
  * WebAssembly ランタイム上で直接実行し、definy の式から Wasm バイナリを動的に生成するパイプライン。
  */
 
+import { bytesToUrlSafeBase64NoPad, toUint8Array } from "./cbor.ts";
+
 export type DefinyValue =
   | number
   | string
@@ -18,9 +20,13 @@ export type DefinyValue =
   | null;
 
 export type Stage1CompilerInstance = {
+  /**
+   * definy の JSON AST の式を Wasm にコンパイルする.
+   * 式が参照するパーツは `referencedParts` に渡す (`collectReferencedParts` で集める)
+   */
   readonly compile: (
     expressionAst: unknown,
-    referencedPartsAst?: unknown,
+    referencedParts?: ReadonlyArray<Stage1ReferencedPart>,
   ) => Uint8Array;
 };
 
@@ -167,12 +173,10 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   }
   if (tag === 3) {
     const count = view.getUint32(ptr + 4, true);
-    const items: Array<DefinyValue> = [];
-    for (let i = 0; i < count; i++) {
+    return Array.from({ length: count }, (_, i) => {
       const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
-      items.push(readDefinyValue(mem, elemPtr));
-    }
-    return items;
+      return readDefinyValue(mem, elemPtr);
+    });
   }
   if (tag === 4) {
     const count = view.getUint32(ptr + 4, true);
@@ -206,164 +210,418 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   return null;
 }
 
+/**
+ * `core.compile-to-wasm` に渡す, 式が参照するパーツ.
+ * `id` は式の `PartReference` の ID (URL-safe Base64), `expression` は definy の JSON AST
+ */
+export type Stage1ReferencedPart = {
+  readonly id: string;
+  readonly expression: unknown;
+};
+
+/** definy の式を `core.expression` の値で表せないときのエラー */
+export class SelfHostedAstConversionError extends Error {
+  override readonly name = "SelfHostedAstConversionError";
+}
+
+/**
+ * `PartReference.part_definition_event_hash` (CBOR 由来のバイト列, seed 由来の数値配列, 文字列) を
+ * stage1 が比較に使う文字列 ID (URL-safe Base64) にする
+ */
+export function partReferenceId(hash: unknown): string {
+  if (typeof hash === "string") {
+    return hash;
+  }
+  const bytes = toUint8Array(hash);
+  if (bytes === undefined) {
+    throw new SelfHostedAstConversionError(
+      `Invalid part reference hash: ${JSON.stringify(hash)}`,
+    );
+  }
+  return bytesToUrlSafeBase64NoPad(bytes);
+}
+
+function selfHostedVariant(tag: string, payload?: unknown): unknown {
+  return payload === undefined
+    ? { Variant: { tag } }
+    : { Variant: { tag, payload } };
+}
+
+function selfHostedRecord(items: ReadonlyArray<readonly [string, unknown]>) {
+  return {
+    TypeLiteral: {
+      items: items.map(([key, value]) => ({ key, value })),
+    },
+  };
+}
+
+function selfHostedList(items: ReadonlyArray<unknown>) {
+  return { ListLiteral: { items } };
+}
+
+function selfHostedNumber(value: number) {
+  return { Number: { value } };
+}
+
+function selfHostedString(value: string) {
+  return { String: { value } };
+}
+
+const binaryOperators: ReadonlyArray<readonly [string, string]> = [
+  ["Add", "add"],
+  ["Subtract", "subtract"],
+  ["Multiply", "multiply"],
+  ["Divide", "divide"],
+  ["Remainder", "remainder"],
+  ["Equal", "equal"],
+  ["NotEqual", "not_equal"],
+  ["LessThan", "less_than"],
+  ["LessThanOrEqual", "less_than_or_equal"],
+  ["GreaterThan", "greater_than"],
+  ["GreaterThanOrEqual", "greater_than_or_equal"],
+  ["And", "and"],
+  ["Or", "or"],
+  ["StringConcat", "string_concat"],
+  ["ListConcat", "list_concat"],
+];
+
+const unaryOperators: ReadonlyArray<readonly [string, string]> = [
+  ["Not", "not"],
+  ["StringLength", "string_length"],
+  ["StringToBytes", "string_to_bytes"],
+  ["ListLength", "list_length"],
+];
+
+/**
+ * definy の JSON AST (`{"Add": {...}}` など) を, stage1 (`core.compile-to-wasm`) が受け取る
+ * `core.expression` の値 (`Variant` / `TypeLiteral` / `ListLiteral` などのリテラルの木) に変換する.
+ * 旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植.
+ * `core.expression` で表せない式 (ビット演算・型の式・コンパイラ組み込み・未入力) は
+ * `SelfHostedAstConversionError` を投げる
+ */
 export function definyAstToSelfHostedAst(ast: unknown): unknown {
+  if (ast === "Hole") {
+    throw new SelfHostedAstConversionError("Expression has an unfilled hole");
+  }
   if (!ast || typeof ast !== "object") {
-    return ast;
+    throw new SelfHostedAstConversionError(
+      `Invalid expression: ${JSON.stringify(ast)}`,
+    );
   }
   const obj = ast as Record<string, unknown>;
-  if ("Variant" in obj) {
-    return ast;
-  }
-  if (
-    "Number" in obj &&
-    typeof obj.Number === "object" &&
-    obj.Number !== null
-  ) {
-    const num = obj.Number as { readonly value: number };
-    return {
-      Variant: {
-        tag: "number",
-        payload: { Number: { value: num.value } },
-      },
-    };
-  }
-  if (
-    "String" in obj &&
-    typeof obj.String === "object" &&
-    obj.String !== null
-  ) {
-    const str = obj.String as { readonly value: string };
-    return {
-      Variant: {
-        tag: "string",
-        payload: { String: { value: str.value } },
-      },
-    };
-  }
-  if (
-    "Boolean" in obj &&
-    typeof obj.Boolean === "object" &&
-    obj.Boolean !== null
-  ) {
-    const b = obj.Boolean as { readonly value: boolean };
-    return {
-      Variant: {
-        tag: "boolean",
-        payload: { Boolean: { value: b.value } },
-      },
-    };
-  }
-  if (
-    "Variable" in obj &&
-    typeof obj.Variable === "object" &&
-    obj.Variable !== null
-  ) {
-    const v = obj.Variable as { readonly variable_id: number };
-    return {
-      Variant: {
-        tag: "variable",
-        payload: {
-          TypeLiteral: {
-            items: [
-              {
-                key: "variable_id",
-                value: { Number: { value: v.variable_id } },
-              },
-            ],
-          },
-        },
-      },
-    };
-  }
-  const binaryOps: ReadonlyArray<readonly [string, string]> = [
-    ["Add", "add"],
-    ["Plus", "add"],
-    ["Subtract", "subtract"],
-    ["Minus", "subtract"],
-    ["Multiply", "multiply"],
-    ["Divide", "divide"],
-    ["Remainder", "remainder"],
-    ["LessThan", "less_than"],
-    ["LessThanOrEqual", "less_than_or_equal"],
-    ["GreaterThan", "greater_than"],
-    ["GreaterThanOrEqual", "greater_than_or_equal"],
-    ["Equal", "equal"],
-    ["NotEqual", "not_equal"],
-  ];
-  for (const [astKey, tag] of binaryOps) {
-    if (
-      astKey in obj &&
-      typeof obj[astKey] === "object" &&
-      obj[astKey] !== null
-    ) {
-      const bin = obj[astKey] as {
-        readonly left: unknown;
-        readonly right: unknown;
-      };
-      return {
-        Variant: {
-          tag,
-          payload: {
-            TypeLiteral: {
-              items: [
-                { key: "left", value: definyAstToSelfHostedAst(bin.left) },
-                { key: "right", value: definyAstToSelfHostedAst(bin.right) },
-              ],
-            },
-          },
-        },
-      };
+  const key = Object.keys(obj)[0] ?? "";
+  const node = obj[key] as Record<string, unknown>;
+  const convert = definyAstToSelfHostedAst;
+
+  for (const [astKey, tag] of binaryOperators) {
+    if (key === astKey) {
+      return selfHostedVariant(
+        tag,
+        selfHostedRecord([
+          ["left", convert(node.left)],
+          ["right", convert(node.right)],
+        ]),
+      );
     }
   }
-  if ("Let" in obj && typeof obj.Let === "object" && obj.Let !== null) {
-    const letNode = obj.Let as {
-      readonly bindings: ReadonlyArray<{
+  for (const [astKey, tag] of unaryOperators) {
+    if (key === astKey) {
+      return selfHostedVariant(
+        tag,
+        selfHostedRecord([["value", convert(node.value)]]),
+      );
+    }
+  }
+
+  switch (key) {
+    case "Number":
+      return selfHostedVariant("number", selfHostedNumber(Number(node.value)));
+    case "String":
+      return selfHostedVariant("string", selfHostedString(String(node.value)));
+    case "Boolean":
+      return selfHostedVariant("boolean", {
+        Boolean: { value: node.value === true },
+      });
+    case "Variable":
+      return selfHostedVariant(
+        "variable",
+        selfHostedRecord([
+          ["variable_id", selfHostedNumber(Number(node.variable_id))],
+        ]),
+      );
+    case "ListLiteral":
+      return selfHostedVariant(
+        "list",
+        selfHostedList(
+          (node.items as ReadonlyArray<unknown>).map((item) => convert(item)),
+        ),
+      );
+    case "TypeLiteral":
+      return selfHostedVariant(
+        "record",
+        selfHostedList(
+          (
+            node.items as ReadonlyArray<{
+              readonly key: string;
+              readonly value: unknown;
+            }>
+          ).map((item) =>
+            selfHostedRecord([
+              ["key", selfHostedString(item.key)],
+              ["value", convert(item.value)],
+            ]),
+          ),
+        ),
+      );
+    case "RecordGet":
+      return selfHostedVariant(
+        "record_get",
+        selfHostedRecord([
+          ["record", convert(node.record)],
+          ["key", selfHostedString(String(node.key))],
+        ]),
+      );
+    case "Variant":
+      return selfHostedVariant(
+        "variant",
+        selfHostedRecord([
+          ["tag", selfHostedString(String(node.tag))],
+          [
+            "payload",
+            node.payload == null
+              ? selfHostedVariant("none")
+              : selfHostedVariant("some", convert(node.payload)),
+          ],
+        ]),
+      );
+    case "Match": {
+      // ペイロードを束縛しないアーム (Bool の true / false など) は参照されない変数 ID として -1 を使う.
+      // default アームは, どのタグにも一致するワイルドカードアーム `_` として表す
+      const arms = (
+        node.arms as ReadonlyArray<{
+          readonly tag: string;
+          readonly variable_id?: number | null;
+          readonly body: unknown;
+        }>
+      ).map((arm) => [arm.tag, arm.variable_id ?? -1, arm.body] as const);
+      const allArms =
+        node.default == null
+          ? arms
+          : [...arms, ["_", -1, node.default] as const];
+      return selfHostedVariant(
+        "match",
+        selfHostedRecord([
+          ["target", convert(node.target)],
+          [
+            "arms",
+            selfHostedList(
+              allArms.map(([tag, variableId, body]) =>
+                selfHostedRecord([
+                  ["tag", selfHostedString(tag)],
+                  ["variable_id", selfHostedNumber(variableId)],
+                  ["body", convert(body)],
+                ]),
+              ),
+            ),
+          ],
+        ]),
+      );
+    }
+    case "Call":
+      return selfHostedVariant(
+        "call",
+        selfHostedRecord([
+          ["function", convert(node.function)],
+          [
+            "arguments",
+            selfHostedList(
+              (
+                node.arguments as ReadonlyArray<{
+                  readonly name: string;
+                  readonly value: unknown;
+                }>
+              ).map((argument) =>
+                selfHostedRecord([
+                  ["name", selfHostedString(argument.name)],
+                  ["value", convert(argument.value)],
+                ]),
+              ),
+            ),
+          ],
+        ]),
+      );
+    case "Function":
+      return selfHostedVariant(
+        "function",
+        selfHostedRecord([
+          [
+            "parameters",
+            selfHostedList(
+              (
+                node.parameters as ReadonlyArray<{
+                  readonly parameter_id: number;
+                  readonly parameter_name: string;
+                }>
+              ).map((parameter) =>
+                selfHostedRecord([
+                  ["parameter_id", selfHostedNumber(parameter.parameter_id)],
+                  [
+                    "parameter_name",
+                    selfHostedString(parameter.parameter_name),
+                  ],
+                ]),
+              ),
+            ),
+          ],
+          ["body", convert(node.body)],
+        ]),
+      );
+    case "PartReference":
+      return selfHostedVariant(
+        "part_reference",
+        selfHostedRecord([
+          [
+            "part_definition_event_hash",
+            selfHostedString(partReferenceId(node.part_definition_event_hash)),
+          ],
+        ]),
+      );
+    case "Let": {
+      const bindings = node.bindings as ReadonlyArray<{
         readonly variable_id: number;
         readonly value: unknown;
       }>;
-      readonly body: unknown;
-    };
-    const bindings = letNode.bindings || [];
-    let curBody = definyAstToSelfHostedAst(letNode.body);
-    for (let i = bindings.length - 1; i >= 0; i--) {
-      const b = bindings[i];
-      if (!b) {
+      return bindings.reduceRight<unknown>(
+        (body, binding) =>
+          selfHostedVariant(
+            "let",
+            selfHostedRecord([
+              ["variable_id", selfHostedNumber(binding.variable_id)],
+              ["value", convert(binding.value)],
+              ["body", body],
+            ]),
+          ),
+        convert(node.body),
+      );
+    }
+    case "StringSlice":
+      return selfHostedVariant(
+        "string_slice",
+        selfHostedRecord([
+          ["value", convert(node.value)],
+          ["start", convert(node.start)],
+          ["end", convert(node.end)],
+        ]),
+      );
+    case "ListGet":
+      return selfHostedVariant(
+        "list_get",
+        selfHostedRecord([
+          ["list", convert(node.list)],
+          ["index", convert(node.index)],
+        ]),
+      );
+    case "ListAppend":
+      return selfHostedVariant(
+        "list_append",
+        selfHostedRecord([
+          ["list", convert(node.list)],
+          ["item", convert(node.item)],
+        ]),
+      );
+    case "Hole":
+      throw new SelfHostedAstConversionError("Expression has an unfilled hole");
+  }
+  throw new SelfHostedAstConversionError(
+    `core.expression cannot represent ${key || JSON.stringify(ast)}`,
+  );
+}
+
+/** 式の中の `PartReference` の ID を出現順に集める */
+function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
+  if (Array.isArray(expression)) {
+    return expression.flatMap(collectPartReferenceIds);
+  }
+  if (!expression || typeof expression !== "object") {
+    return [];
+  }
+  if (expression instanceof Uint8Array) {
+    return [];
+  }
+  const obj = expression as Record<string, unknown>;
+  const reference = obj.PartReference as
+    { readonly part_definition_event_hash?: unknown } | undefined;
+  const selfId =
+    reference && typeof reference === "object"
+      ? [partReferenceId(reference.part_definition_event_hash)]
+      : [];
+  const childIds = Object.values(obj).flatMap(collectPartReferenceIds);
+  return [...selfId, ...childIds];
+}
+
+/**
+ * 式が (参照先をたどって) 参照するパーツを集める.
+ * `resolve` は ID からパーツの式 (definy の JSON AST) を返す. 見つからない・式を持たないときは `undefined`.
+ * 見つからない・式を持たない・`core.expression` で表せないパーツの ID は `unresolved` に入れる
+ * (stage1 はその参照を unreachable にコンパイルする)
+ */
+export function collectReferencedParts(
+  expression: unknown,
+  resolve: (id: string) => unknown,
+): {
+  readonly parts: ReadonlyArray<Stage1ReferencedPart>;
+  readonly unresolved: ReadonlyArray<string>;
+} {
+  let queue: ReadonlyArray<string> = collectPartReferenceIds(expression);
+  const seen = new Set<string>();
+  const parts: Stage1ReferencedPart[] = [];
+  const unresolved: string[] = [];
+  while (queue.length > 0) {
+    const [id, ...rest] = queue;
+    queue = rest;
+    if (id === undefined || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    const partExpression = resolve(id);
+    if (partExpression == null) {
+      unresolved.push(id);
+      continue;
+    }
+    try {
+      definyAstToSelfHostedAst(partExpression);
+    } catch (e) {
+      // コンパイラ組み込み (`{"Compiler": ...}`) など core.expression で表せないパーツは渡さない
+      if (e instanceof SelfHostedAstConversionError) {
+        unresolved.push(id);
         continue;
       }
-      curBody = {
-        Variant: {
-          tag: "let",
-          payload: {
-            TypeLiteral: {
-              items: [
-                {
-                  key: "variable_id",
-                  value: { Number: { value: b.variable_id } },
-                },
-                {
-                  key: "value",
-                  value: definyAstToSelfHostedAst(b.value),
-                },
-                {
-                  key: "body",
-                  value: curBody,
-                },
-              ],
-            },
-          },
-        },
-      };
+      throw e;
     }
-    return curBody;
+    queue = [...queue, ...collectPartReferenceIds(partExpression)];
+    parts.push({ id, expression: partExpression });
   }
-  return ast;
+  return { parts, unresolved };
 }
 
 export function createStage1Compiler(
   stage1Module: WebAssembly.Module,
 ): Stage1CompilerInstance {
   return {
-    compile(expressionAst: unknown, referencedPartsAst?: unknown): Uint8Array {
+    compile(
+      expressionAst: unknown,
+      referencedParts: ReadonlyArray<Stage1ReferencedPart> = [],
+    ): Uint8Array {
+      const effectiveExpr = definyAstToSelfHostedAst(expressionAst);
+      const partsNode = selfHostedList(
+        referencedParts.map((part) =>
+          selfHostedRecord([
+            ["id", selfHostedString(part.id)],
+            ["expression", definyAstToSelfHostedAst(part.expression)],
+          ]),
+        ),
+      );
+
       const instance = new WebAssembly.Instance(stage1Module, {});
       const exports = instance.exports as unknown as WasmExports;
 
@@ -378,8 +636,6 @@ export function createStage1Compiler(
       const tableIndex = view.getUint32(closurePtr + 4, true);
       const envPtr = view.getInt32(closurePtr + 8, true);
 
-      const partsNode = referencedPartsAst ?? { ListLiteral: { items: [] } };
-      const effectiveExpr = definyAstToSelfHostedAst(expressionAst);
       const exprPtr = writeLiteral(exports, effectiveExpr);
       const partsPtr = writeLiteral(exports, partsNode);
 

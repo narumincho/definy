@@ -56,6 +56,11 @@ export type LayoutNode = {
   readonly layoutMode: LayoutMode;
   readonly columnsWidth?: ReadonlyArray<number>;
   readonly tableHeaders?: ReadonlyArray<string>;
+  /**
+   * 式 1 つ分のノード (式全体を表すノード) にだけ付く, その位置から参照できる変数 (ID → 名前).
+   * 置換メニューの変数の選択肢に使う
+   */
+  readonly scopeVariables?: ReadonlyMap<number, string>;
 };
 
 export type LayoutOptions = {
