@@ -10,11 +10,12 @@ import {
   base64ToBytes,
   bytesToUrlSafeBase64NoPad,
   decodeCborItem,
+  encodeCborItem,
+  sha256Bytes,
   toUint8Array,
 } from "../src/cbor.ts";
 import {
   checkModuleCommitParts,
-  expressionContentHash,
   outcomeErrorMessage,
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
@@ -41,6 +42,13 @@ function partContentHash(
   return bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
 }
 
+/** 式の CBOR の SHA-256 (URL-safe Base64, CAS の content hash と同じ). ネイティブの SHA-256 を使う */
+async function expressionContentHash(expression: unknown): Promise<string> {
+  return bytesToUrlSafeBase64NoPad(
+    await sha256Bytes(encodeCborItem(expression)),
+  );
+}
+
 /** モジュールのコミットのパーツを `LatestPart` にする (CAS に預けた式はまだ読まない) */
 async function commitParts(
   commit: ModuleCommitContent,
@@ -64,15 +72,66 @@ async function commitParts(
       expression,
       expressionKey:
         contentHash ??
-        (expression === null ? null : expressionContentHash(expression)),
+        (expression === null ? null : await expressionContentHash(expression)),
       contentHash,
     });
   }
   return parts;
 }
 
+type CachedCommit = {
+  readonly moduleId: string;
+  readonly timeMs: number;
+  /** 型環境に使う形のパーツ. 式は型パーツのものだけ持つ (メモリを節約する) */
+  readonly parts: ReadonlyArray<
+    LatestPart & { readonly contentHash: string | null }
+  >;
+};
+
 /**
- * ストアの署名の正しいモジュールコミットから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID)
+ * イベントハッシュごとの, 署名を検証してデコードしたモジュールコミット (モジュールコミットでなければ `null`).
+ * イベントは変わらないので isolate の中で使い回す (seed の core のコミットは数 MB あり, 毎回デコード・ハッシュすると重い)
+ */
+const commitCache = new Map<string, CachedCommit | null>();
+
+async function decodeCommit(item: {
+  readonly eventHash: string;
+  readonly signedEventBytes: string;
+}): Promise<CachedCommit | null> {
+  const cached = commitCache.get(item.eventHash);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const decoded = await decodeVerifiedSignedEvent(
+    base64ToBytes(item.signedEventBytes),
+  ).catch(() => undefined);
+  const commit = decoded?.content.ModuleCommit as
+    ModuleCommitContent | undefined;
+  let result: CachedCommit | null = null;
+  if (
+    decoded !== undefined &&
+    commit !== undefined &&
+    typeof commit.module_name === "string"
+  ) {
+    const moduleIdBytes = await deriveModuleIdBytes(
+      decoded.accountIdBytes,
+      commit.module_name,
+    );
+    result = {
+      moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
+      timeMs: decoded.meta.timeMs,
+      parts: (await commitParts(commit, moduleIdBytes)).map((part) =>
+        part.partType === "type" ? part : { ...part, expression: null },
+      ),
+    };
+  }
+  commitCache.set(item.eventHash, result);
+  return result;
+}
+
+/**
+ * ストアの署名の正しいモジュールコミットから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
+ * 型パーツ以外の式は持たない
  */
 async function loadLatestParts(
   store: PartStoreReader,
@@ -80,44 +139,20 @@ async function loadLatestParts(
 ): Promise<
   ReadonlyMap<string, LatestPart & { readonly contentHash: string | null }>
 > {
-  const latestCommits = new Map<
-    string,
-    {
-      readonly timeMs: number;
-      readonly moduleIdBytes: Uint8Array;
-      readonly commit: ModuleCommitContent;
-    }
-  >();
+  const latestCommits = new Map<string, CachedCommit>();
   for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
     const page = await store.getEvents(
       { eventType: "module_commit", limit: EVENTS_PAGE_SIZE, offset },
       env,
     );
     for (const item of page) {
-      const decoded = await decodeVerifiedSignedEvent(
-        base64ToBytes(item.signedEventBytes),
-      ).catch(() => undefined);
-      const commit = decoded?.content.ModuleCommit as
-        ModuleCommitContent | undefined;
-      if (
-        decoded === undefined ||
-        commit === undefined ||
-        typeof commit.module_name !== "string"
-      ) {
+      const commit = await decodeCommit(item);
+      if (commit === null) {
         continue;
       }
-      const moduleIdBytes = await deriveModuleIdBytes(
-        decoded.accountIdBytes,
-        commit.module_name,
-      );
-      const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
-      const existing = latestCommits.get(moduleId);
-      if (existing === undefined || existing.timeMs < decoded.meta.timeMs) {
-        latestCommits.set(moduleId, {
-          timeMs: decoded.meta.timeMs,
-          moduleIdBytes,
-          commit,
-        });
+      const existing = latestCommits.get(commit.moduleId);
+      if (existing === undefined || existing.timeMs < commit.timeMs) {
+        latestCommits.set(commit.moduleId, commit);
       }
     }
     if (page.length < EVENTS_PAGE_SIZE) {
@@ -128,8 +163,8 @@ async function loadLatestParts(
     string,
     LatestPart & { readonly contentHash: string | null }
   >();
-  for (const { moduleIdBytes, commit } of latestCommits.values()) {
-    for (const part of await commitParts(commit, moduleIdBytes)) {
+  for (const commit of latestCommits.values()) {
+    for (const part of commit.parts) {
       parts.set(part.partId, part);
     }
   }

@@ -1017,6 +1017,24 @@ button.header-title:hover {
   flex-shrink: 0;
 }
 
+/* 型エラーのあるパーツの印と, モジュールの型エラーの件数 (definy 製の型チェッカーの結果) */
+.sidebar-type-error-dot {
+  color: var(--red, #ef4444);
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.sidebar-type-error-count {
+  min-width: 1.1rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.18);
+  color: var(--red, #ef4444);
+  font-size: 0.68rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .module-card-icon {
   width: 18px;
   height: 18px;
@@ -3010,6 +3028,34 @@ button.card:hover {
   padding: 1.2rem;
   border: 1px solid var(--border-strong);
   background: var(--surface-card);
+}
+
+/* パーツ詳細の型チェックの行 (pages/part/[id].tsx) */
+.part-type-check {
+  display: flex;
+  gap: 0.8rem;
+  align-items: baseline;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+}
+
+.part-type-check-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.part-type-check-result {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.part-type-check-error .part-type-check-result {
+  color: var(--red);
+}
+
+.part-type-check-checking .part-type-check-result,
+.part-type-check-unsupported .part-type-check-result {
+  color: var(--text-muted);
 }
 
 /* コミット前の型検査の結果 (pages/changes.tsx) */

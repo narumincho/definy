@@ -389,14 +389,13 @@ export function compileTypeChecker(options: {
 }
 
 /**
- * `parts` の各パーツを, `compileTypeChecker` でコンパイルした型チェッカーで検査する.
- * 結果は `parts` と同じ順に並ぶ
+ * 型環境を決めて, パーツを 1 つずつ検査できるようにする. 型チェッカーのインスタンスと線形メモリに書いた型環境を
+ * 呼び出しの間で使い回すので, 裏で少しずつ検査するときにも使う
  */
-export function checkParts(options: {
+export function createTypeCheckSession(options: {
   readonly typeChecker: WebAssembly.Module;
-  readonly parts: ReadonlyArray<PartToCheck>;
   readonly env: ReadonlyArray<PartTypeEntry>;
-}): ReadonlyArray<SelfHostedTypeCheckOutcome> {
+}): { readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome } {
   const env = typeEnvExpression(options.env);
   // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで使い回す.
   // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
@@ -407,37 +406,52 @@ export function checkParts(options: {
         calls: number;
       }
     | undefined;
-  return options.parts.map((part): SelfHostedTypeCheckOutcome => {
-    let args: ReturnType<typeof partCheckArguments>;
-    try {
-      args = partCheckArguments(part);
-    } catch (e) {
-      if (e instanceof SelfHostedAstConversionError) {
-        return { kind: "unsupported", message: e.message };
+  return {
+    check: (part) => {
+      let args: ReturnType<typeof partCheckArguments>;
+      try {
+        args = partCheckArguments(part);
+      } catch (e) {
+        if (e instanceof SelfHostedAstConversionError) {
+          return { kind: "unsupported", message: e.message };
+        }
+        throw e;
       }
-      throw e;
-    }
-    try {
-      if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
-        const instance = instantiateCompiledFunction(options.typeChecker);
-        current = { instance, envPtr: instance.writeArgument(env), calls: 0 };
+      try {
+        if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
+          const instance = instantiateCompiledFunction(options.typeChecker);
+          current = { instance, envPtr: instance.writeArgument(env), calls: 0 };
+        }
+        const { instance, envPtr } = current;
+        current.calls += 1;
+        return typeResultToOutcome(
+          instance.read(
+            instance.call([
+              instance.writeArgument(args.expression),
+              envPtr,
+              instance.writeArgument(args.expectedType),
+            ]),
+          ),
+        );
+      } catch (e) {
+        current = undefined;
+        return { kind: "checker_failed", message: errorMessage(e) };
       }
-      const { instance, envPtr } = current;
-      current.calls += 1;
-      return typeResultToOutcome(
-        instance.read(
-          instance.call([
-            instance.writeArgument(args.expression),
-            envPtr,
-            instance.writeArgument(args.expectedType),
-          ]),
-        ),
-      );
-    } catch (e) {
-      current = undefined;
-      return { kind: "checker_failed", message: errorMessage(e) };
-    }
-  });
+    },
+  };
+}
+
+/**
+ * `parts` の各パーツを, `compileTypeChecker` でコンパイルした型チェッカーで検査する.
+ * 結果は `parts` と同じ順に並ぶ
+ */
+export function checkParts(options: {
+  readonly typeChecker: WebAssembly.Module;
+  readonly parts: ReadonlyArray<PartToCheck>;
+  readonly env: ReadonlyArray<PartTypeEntry>;
+}): ReadonlyArray<SelfHostedTypeCheckOutcome> {
+  const session = createTypeCheckSession(options);
+  return options.parts.map((part) => session.check(part));
 }
 
 function isTaggedValue(
@@ -573,9 +587,40 @@ export type LatestPart = {
   readonly partType: unknown;
   /** 式. 無い (CAS に預けたまま読んでいないものを含む) ときは `null` */
   readonly expression: unknown;
-  /** 式が変わったかを比べるキー (式の CBOR の SHA-256 = CAS の content hash). 式が無ければ `null` */
+  /**
+   * 式が変わっていないかを比べるキー. 同じキーなら式も同じ (違うキーでも式が同じことはある).
+   * サーバーは式の CBOR の SHA-256 (= CAS の content hash), ブラウザは定義したイベントとパーツ名.
+   * `null` は比べられない (変わったものとして扱う)
+   */
   readonly expressionKey: string | null;
 };
+
+/** 最新のパーツを型環境にする (型の無いパーツは入れない. 型パーツは宣言式も入れる) */
+export function typeEnvFromParts(
+  parts: Iterable<LatestPart>,
+): ReadonlyArray<PartTypeEntry> {
+  return [...parts]
+    .filter((part) => part.partType != null)
+    .map((part) => ({
+      partId: part.partId,
+      partType: part.partType,
+      typeDeclaration: part.partType === "type" ? part.expression : undefined,
+    }));
+}
+
+/** 型環境が変わったかを比べるキー (全パーツの ID と型, 型パーツの宣言式から決まる) */
+export function typeEnvKey(parts: Iterable<LatestPart>): string {
+  return expressionContentHash(
+    [...parts]
+      .map(
+        (part) =>
+          `${part.partId}:${partTypeKey(part.partType)}:${
+            part.partType === "type" ? (part.expressionKey ?? "") : ""
+          }`,
+      )
+      .sort(),
+  );
+}
 
 /** 式の CBOR の SHA-256 (URL-safe Base64). CAS の content hash と同じ */
 export function expressionContentHash(expression: unknown): string {
@@ -661,17 +706,10 @@ export function checkModuleCommitParts(options: {
     return results;
   }
 
-  const env: ReadonlyArray<PartTypeEntry> = [...parts.values()]
-    .filter((part) => part.partType != null)
-    .map((part) => ({
-      partId: part.partId,
-      partType: part.partType,
-      typeDeclaration: part.partType === "type" ? part.expression : undefined,
-    }));
   const outcomes = checkParts({
     typeChecker: options.typeChecker,
     parts: toCheck,
-    env,
+    env: typeEnvFromParts(parts.values()),
   });
   toCheck.forEach((part, i) => {
     const outcome = outcomes[i];

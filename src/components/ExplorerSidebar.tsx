@@ -5,8 +5,28 @@ import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
 export function ExplorerSidebar(): JSX.Element {
-  const { language, modules, parts, workingChanges, setSidebarOpen } =
-    useDefiny();
+  const {
+    language,
+    modules,
+    parts,
+    workingChanges,
+    setSidebarOpen,
+    partTypeCheckResults,
+    typeCheckMessage,
+  } = useDefiny();
+  // 型エラー (と型チェッカーの失敗) の理由. 式の無いパーツ・コンパイラ組み込み (unsupported) は出さない
+  const typeErrorOf = (part: {
+    readonly name: string;
+    readonly partIdHash?: string | null;
+  }): string | null => {
+    const outcome =
+      part.partIdHash == null
+        ? undefined
+        : partTypeCheckResults.get(part.partIdHash);
+    return outcome === undefined || outcome.kind === "unsupported"
+      ? null
+      : typeCheckMessage(part.name, outcome);
+  };
   const [filterQuery, setFilterQuery] = useState("");
   const [collapsedModules, setCollapsedModules] = useState<ReadonlySet<string>>(
     new Set(),
@@ -131,6 +151,9 @@ export function ExplorerSidebar(): JSX.Element {
             if (query && filteredParts.length === 0) {
               return null;
             }
+            const moduleTypeErrorCount = moduleParts.filter(
+              (p) => typeErrorOf(p) !== null,
+            ).length;
 
             return (
               <div key={mod.moduleId} className="sidebar-module-group">
@@ -150,6 +173,19 @@ export function ExplorerSidebar(): JSX.Element {
                     className="sidebar-node-icon tree-icon-module"
                   />
                   <span className="sidebar-node-label">{mod.name}</span>
+                  {moduleTypeErrorCount > 0 && (
+                    <span
+                      className="sidebar-type-error-count"
+                      title={label(
+                        language,
+                        `${moduleTypeErrorCount} parts with type errors`,
+                        `型エラーのあるパーツ ${moduleTypeErrorCount} 件`,
+                        `${moduleTypeErrorCount} partoj kun tiperaroj`,
+                      )}
+                    >
+                      {moduleTypeErrorCount}
+                    </span>
+                  )}
                   <span className="sidebar-count">{moduleParts.length}</span>
                 </button>
 
@@ -157,6 +193,7 @@ export function ExplorerSidebar(): JSX.Element {
                   <div className="sidebar-module-parts">
                     {filteredParts.map((part) => {
                       const isChanged = workingChanges.parts.has(part.partId);
+                      const typeError = typeErrorOf(part);
                       return (
                         <Link
                           key={part.partId}
@@ -175,6 +212,15 @@ export function ExplorerSidebar(): JSX.Element {
                           <span className="sidebar-node-label">
                             {part.name}
                           </span>
+                          {typeError !== null && (
+                            <span
+                              className="sidebar-type-error-dot"
+                              title={typeError}
+                              aria-label={typeError}
+                            >
+                              ●
+                            </span>
+                          )}
                           {isChanged && (
                             <span
                               className="sidebar-dirty-dot"

@@ -37,36 +37,49 @@ export type WasmExports = {
   readonly alloc: (size: number) => number;
 };
 
+/**
+ * リテラルの式の木を, definy の値の形 (タグ付きの箱, 8 バイト境界) で線形メモリに書き込み, ポインタを返す.
+ * 1 度だけ走査して JavaScript 側のバッファに先頭 0 からの相対アドレスで書き, `alloc` した位置に合わせて
+ * ポインタを直してからまとめて写す (型環境のような大きな値を書くので速さが要る)
+ */
 function writeLiteral(exports: WasmExports, node: unknown): number {
-  function push(
-    buffer: Array<number>,
-    base: number,
-    bytes: ReadonlyArray<number>,
-  ): number {
-    const ptr = base + buffer.length;
-    buffer.push(...bytes);
-    while (buffer.length % 8 !== 0) {
-      buffer.push(0);
+  let buffer = new Uint8Array(4096);
+  let view = new DataView(buffer.buffer);
+  let length = 0;
+  /** ポインタを書いた位置. 最後に先頭のアドレスを足す */
+  const pointerFields: Array<number> = [];
+  const encoder = new TextEncoder();
+
+  /** `size` バイト (8 バイト境界に揃える) を確保し, その相対アドレスを返す */
+  function reserve(size: number): number {
+    const at = length;
+    length += Math.ceil(size / 8) * 8;
+    if (length > buffer.length) {
+      let nextSize = buffer.length * 2;
+      while (nextSize < length) nextSize *= 2;
+      const next = new Uint8Array(nextSize);
+      next.set(buffer);
+      buffer = next;
+      view = new DataView(buffer.buffer);
     }
-    return ptr;
+    return at;
   }
 
-  function writeString(
-    buffer: Array<number>,
-    base: number,
-    val: string,
-  ): number {
-    const encoder = new TextEncoder();
-    const strBytes = encoder.encode(val);
-    const bytes: Array<number> = [2, 0, 0, 0];
-    const lenView = new DataView(new ArrayBuffer(4));
-    lenView.setUint32(0, strBytes.length, true);
-    bytes.push(...new Uint8Array(lenView.buffer));
-    bytes.push(...strBytes);
-    return push(buffer, base, bytes);
+  function setPointer(at: number, pointer: number): void {
+    view.setUint32(at, pointer, true);
+    pointerFields.push(at);
   }
 
-  function layout(n: unknown, base: number, buffer: Array<number>): number {
+  function writeString(value: string): number {
+    const bytes = encoder.encode(value);
+    const at = reserve(8 + bytes.length);
+    buffer[at] = 2;
+    view.setUint32(at + 4, bytes.length, true);
+    buffer.set(bytes, at + 8);
+    return at;
+  }
+
+  function layout(n: unknown): number {
     if (!n || typeof n !== "object") {
       throw new Error(`Invalid AST node for layout: ${JSON.stringify(n)}`);
     }
@@ -77,46 +90,45 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
         readonly tag: string;
         readonly payload?: unknown;
       };
-      const tagPtr = writeString(buffer, base, v.tag);
-      const payloadPtr = v.payload ? layout(v.payload, base, buffer) : 0;
-      const bytes: number[] = [6, 0, 0, 0];
-      const pView = new DataView(new ArrayBuffer(8));
-      pView.setUint32(0, tagPtr, true);
-      pView.setUint32(4, payloadPtr, true);
-      bytes.push(...new Uint8Array(pView.buffer));
-      return push(buffer, base, bytes);
+      const tagPtr = writeString(v.tag);
+      const payloadPtr = v.payload ? layout(v.payload) : null;
+      const at = reserve(12);
+      buffer[at] = 6;
+      setPointer(at + 4, tagPtr);
+      if (payloadPtr !== null) {
+        setPointer(at + 8, payloadPtr);
+      }
+      return at;
     }
     if (obj.Number) {
       const num = obj.Number as { readonly value: number };
-      const bytes: number[] = [0, 0, 0, 0, 0, 0, 0, 0];
-      const nView = new DataView(new ArrayBuffer(8));
-      nView.setBigInt64(0, BigInt(num.value), true);
-      bytes.push(...new Uint8Array(nView.buffer));
-      return push(buffer, base, bytes);
+      const at = reserve(16);
+      view.setBigInt64(at + 8, BigInt(num.value), true);
+      return at;
     }
     if (obj.Boolean) {
       const b = obj.Boolean as { readonly value: boolean };
-      return push(buffer, base, [1, 0, 0, 0, 0, 0, 0, 0, b.value ? 1 : 0]);
+      const at = reserve(9);
+      buffer[at] = 1;
+      buffer[at + 8] = b.value ? 1 : 0;
+      return at;
     }
     if (obj.String) {
-      const s = obj.String as { readonly value: string };
-      return writeString(buffer, base, s.value);
+      const str = obj.String as { readonly value: string };
+      return writeString(str.value);
     }
     if (obj.ListLiteral) {
       const list = obj.ListLiteral as {
         readonly items: ReadonlyArray<unknown>;
       };
-      const itemPtrs = list.items.map((item) => layout(item, base, buffer));
-      const bytes: number[] = [3, 0, 0, 0];
-      const countView = new DataView(new ArrayBuffer(4));
-      countView.setUint32(0, itemPtrs.length, true);
-      bytes.push(...new Uint8Array(countView.buffer));
-      for (const ptr of itemPtrs) {
-        const ptrView = new DataView(new ArrayBuffer(4));
-        ptrView.setUint32(0, ptr, true);
-        bytes.push(...new Uint8Array(ptrView.buffer));
-      }
-      return push(buffer, base, bytes);
+      const itemPtrs = list.items.map((item) => layout(item));
+      const at = reserve(8 + 4 * itemPtrs.length);
+      buffer[at] = 3;
+      view.setUint32(at + 4, itemPtrs.length, true);
+      itemPtrs.forEach((ptr, i) => {
+        setPointer(at + 8 + 4 * i, ptr);
+      });
+      return at;
     }
     if (obj.TypeLiteral) {
       const record = obj.TypeLiteral as {
@@ -125,36 +137,28 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
           readonly value: unknown;
         }>;
       };
-      const fieldPairs = record.items.map((it) => {
-        const kPtr = writeString(buffer, base, it.key);
-        const vPtr = layout(it.value, base, buffer);
-        return [kPtr, vPtr] as const;
+      const fieldPairs = record.items.map(
+        (it) => [writeString(it.key), layout(it.value)] as const,
+      );
+      const at = reserve(8 + 8 * fieldPairs.length);
+      buffer[at] = 4;
+      view.setUint32(at + 4, fieldPairs.length, true);
+      fieldPairs.forEach(([keyPtr, valuePtr], i) => {
+        setPointer(at + 8 + 8 * i, keyPtr);
+        setPointer(at + 12 + 8 * i, valuePtr);
       });
-      const bytes: number[] = [4, 0, 0, 0];
-      const countView = new DataView(new ArrayBuffer(4));
-      countView.setUint32(0, fieldPairs.length, true);
-      bytes.push(...new Uint8Array(countView.buffer));
-      for (const [kPtr, vPtr] of fieldPairs) {
-        const pairView = new DataView(new ArrayBuffer(8));
-        pairView.setUint32(0, kPtr, true);
-        pairView.setUint32(4, vPtr, true);
-        bytes.push(...new Uint8Array(pairView.buffer));
-      }
-      return push(buffer, base, bytes);
+      return at;
     }
     throw new Error(`Unsupported literal node in layout: ${JSON.stringify(n)}`);
   }
 
-  const sizingBuffer: Array<number> = [];
-  layout(node, 0, sizingBuffer);
-
-  const base = exports.alloc(sizingBuffer.length);
-  const actualBuffer: Array<number> = [];
-  const ptr = layout(node, base, actualBuffer);
-
-  const mem = new Uint8Array(exports.memory.buffer);
-  mem.set(actualBuffer, base);
-  return ptr;
+  const root = layout(node);
+  const base = exports.alloc(length);
+  for (const at of pointerFields) {
+    view.setUint32(at, view.getUint32(at, true) + base, true);
+  }
+  new Uint8Array(exports.memory.buffer).set(buffer.subarray(0, length), base);
+  return root + base;
 }
 
 export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {

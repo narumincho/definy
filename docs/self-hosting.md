@@ -498,6 +498,12 @@ TypeScript への移行で一度なくなっていた definy 製型チェッカ�
   書き込んで, パーツごとに `expr`・`expected_type` を書き込んで呼ぶ。seed の 169 パーツで, コンパイル 335ms・検査 600ms ほど
   (パーツごとに `let env = ... in [check(a), ...]` の式をコンパイルし直していたときは 73 秒かかった)。
   線形メモリは解放しないので 32 パーツごとにインスタンスを作り直し, trap したときも作り直す
+- **値の書き込み** (`writeLiteral`): 型環境のような大きな値を線形メモリに書くので, 1 度だけ走査して JavaScript 側の
+  `Uint8Array` に相対アドレスで書き, `alloc` した位置に合わせてポインタを直してから写す。以前の (2 回走査して小さな配列を
+  `push(...bytes)` でつなぐ) 実装は workerd で型環境 1 つに 600ms かかっていた
+- **サーバーの型環境の読み込み**: モジュールコミットはイベントハッシュごとに, 署名の検証・デコード・式のハッシュ
+  (ネイティブの SHA-256) をした結果を isolate の中で使い回す (`commitCache`, 型パーツ以外の式は捨ててメモリを節約する)。
+  ローカルの 33 コミット (9.4MB) で, isolate の最初の `SubmitEvent` は 2.4 秒, 2 回目からは 200ms ほど (型検査なしで 80ms)
 - **型チェッカーはビルド時に作る**: Cloudflare Workers は実行時に Wasm をコンパイルできないので,
   `npm run build:seeds` が seed の型チェッカーを `wasm/type_checker.wasm` (コミットしない) に書き出し,
   Worker は `?module` で取り込む ([build-artifacts.md](build-artifacts.md))。本番で `core` の型チェッカーを編集しても,
