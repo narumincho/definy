@@ -440,18 +440,122 @@ export function checkParts(options: {
   });
 }
 
-/** `checkParts` の結果を, コミットを拒否する理由の 1 行にする. 問題なければ `null` */
+function isTaggedValue(
+  value: DefinyValue,
+): value is { readonly tag: string; readonly payload: DefinyValue | null } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly tag?: unknown }).tag === "string" &&
+    "payload" in value
+  );
+}
+
+function fieldOf(value: DefinyValue | null, key: string): DefinyValue | null {
+  return typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !isTaggedValue(value)
+    ? ((value as { readonly [key: string]: DefinyValue })[key] ?? null)
+    : null;
+}
+
+/**
+ * `core.type-ast` の値を `List<number>` のような文字列にする. 型でなければ `null`.
+ * `reference` 型は `resolveName` でパーツ名にする (分からなければ ID の先頭)
+ */
+export function formatTypeAst(
+  value: DefinyValue | null,
+  resolveName: (partId: string) => string | undefined = () => undefined,
+): string | null {
+  if (value === null || !isTaggedValue(value)) {
+    return null;
+  }
+  const format = (v: DefinyValue | null): string =>
+    formatTypeAst(v, resolveName) ?? JSON.stringify(v);
+  const items = (v: DefinyValue | null): ReadonlyArray<DefinyValue> =>
+    Array.isArray(v) ? v : [];
+  switch (value.tag) {
+    case "number":
+    case "string":
+    case "boolean":
+    case "type":
+      return value.tag;
+    case "list":
+      return `List<${format(fieldOf(value.payload, "item_type"))}>`;
+    case "function":
+      return `(${items(fieldOf(value.payload, "parameters"))
+        .map(
+          (parameter) =>
+            `${String(fieldOf(parameter, "name"))}: ${format(fieldOf(parameter, "type"))}`,
+        )
+        .join(", ")}) -> ${format(fieldOf(value.payload, "return_type"))}`;
+    case "record":
+      return `{ ${items(value.payload)
+        .map(
+          (field) =>
+            `${String(fieldOf(field, "key"))}: ${format(fieldOf(field, "field_type"))}`,
+        )
+        .join(", ")} }`;
+    case "union":
+      return items(value.payload)
+        .map((variant) => {
+          const payloadType = fieldOf(variant, "payload_type");
+          const tag = String(fieldOf(variant, "tag"));
+          return isTaggedValue(payloadType) && payloadType.tag === "some"
+            ? `${tag}(${format(payloadType.payload)})`
+            : tag;
+        })
+        .join(" | ");
+    case "reference": {
+      const partId = String(fieldOf(value.payload, "part_hash"));
+      return resolveName(partId) ?? partId.slice(0, 8);
+    }
+    default:
+      return null;
+  }
+}
+
+/** `core.type-error` のペイロードを読める形にする (型は `formatTypeAst`, それ以外は JSON) */
+function formatTypeErrorDetail(
+  detail: DefinyValue,
+  resolveName: (partId: string) => string | undefined,
+): string {
+  if (detail === null) {
+    return "";
+  }
+  const asType = formatTypeAst(detail, resolveName);
+  if (asType !== null) {
+    return asType;
+  }
+  if (typeof detail === "object" && !Array.isArray(detail)) {
+    return Object.entries(detail as { readonly [key: string]: DefinyValue })
+      .map(
+        ([key, value]) =>
+          `${key}: ${formatTypeAst(value, resolveName) ?? JSON.stringify(value)}`,
+      )
+      .join(", ");
+  }
+  return JSON.stringify(detail);
+}
+
+/**
+ * `checkParts` の結果を, コミットを拒否する理由の 1 行にする. 問題なければ `null`.
+ * `resolveName` は型の中のパーツ参照をパーツ名にするのに使う
+ */
 export function outcomeErrorMessage(
   name: string,
   outcome: SelfHostedTypeCheckOutcome,
+  resolveName: (partId: string) => string | undefined = () => undefined,
 ): string | null {
   switch (outcome.kind) {
     case "ok":
       return null;
-    case "type_error":
-      return `part '${name}': type error: ${outcome.tag}${
-        outcome.detail == null ? "" : ` ${JSON.stringify(outcome.detail)}`
-      }`;
+    case "type_error": {
+      const detail = formatTypeErrorDetail(outcome.detail, resolveName);
+      return `part '${name}': type error: ${outcome.tag}${detail === "" ? "" : ` (${detail})`}`;
+    }
     case "unsupported":
       return `part '${name}': not supported: ${outcome.message}`;
     case "checker_failed":

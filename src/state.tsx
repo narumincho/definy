@@ -21,10 +21,21 @@ import type {
   WorkingChanges,
 } from "./types.ts";
 import {
+  base64ToBytes,
+  bytesToUrlSafeBase64NoPad,
+  deriveModuleIdBytesSync,
+  deriveModulePartIdSync,
   extractCreateAccount,
   extractModuleCommit,
   type DecodedPart,
 } from "./cbor.ts";
+import {
+  checkModuleCommitParts,
+  expressionContentHash,
+  outcomeErrorMessage,
+  type LatestPart,
+} from "./self_hosted_type_check.ts";
+import { loadTypeChecker } from "./type_checker_browser.ts";
 import {
   generateAccountCredentials,
   importAccountCredentials,
@@ -41,6 +52,12 @@ import { verifyEventRecord } from "./signed_event.ts";
 
 export type CommitWorkingChangesParams = {
   readonly moduleName: string;
+  readonly message: string;
+};
+
+/** コミット前の型検査で見つかった問題 (1 パーツ 1 件) */
+export type CommitTypeError = {
+  readonly partName: string;
   readonly message: string;
 };
 
@@ -79,6 +96,13 @@ export type DefinyContextValue = {
   readonly commitWorkingChanges: (
     params: CommitWorkingChangesParams,
   ) => Promise<string>;
+  /**
+   * `moduleName` に作業中の変更をコミットしたときのパーツを, サーバーの `SubmitEvent` と同じ
+   * definy 製の型チェッカーで検査する. ログインしていなければ空
+   */
+  readonly checkCommitTypes: (
+    moduleName: string,
+  ) => Promise<ReadonlyArray<CommitTypeError>>;
   readonly sidebarOpen: boolean;
   readonly toggleSidebar: () => void;
   readonly setSidebarOpen: (open: boolean) => void;
@@ -124,6 +148,55 @@ function resolveBrowserLanguage(): LanguageCode {
   if (navigator.language.startsWith("ja")) return "ja";
   if (navigator.language.startsWith("eo")) return "eo";
   return "en";
+}
+
+/**
+ * 署名の正しいイベントから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
+ * 型チェッカーの型環境に使う
+ */
+function latestParts(
+  events: ReadonlyArray<EventRecord>,
+): ReadonlyMap<string, LatestPart> {
+  const commits = new Map<
+    string,
+    {
+      readonly timeMs: number;
+      readonly commit: NonNullable<ReturnType<typeof extractModuleCommit>>;
+    }
+  >();
+  for (const ev of events) {
+    if (ev.eventType !== "module_commit") {
+      continue;
+    }
+    const commit = extractModuleCommit(ev.signedEventBytes);
+    if (commit?.moduleIdHash == null) {
+      continue;
+    }
+    const existing = commits.get(commit.moduleIdHash);
+    if (existing === undefined || existing.timeMs < ev.timeMs) {
+      commits.set(commit.moduleIdHash, { timeMs: ev.timeMs, commit });
+    }
+  }
+  const parts = new Map<string, LatestPart>();
+  for (const [moduleId, { commit }] of commits) {
+    for (const part of commit.parts) {
+      if (part.partIdHash == null) {
+        continue;
+      }
+      parts.set(part.partIdHash, {
+        partId: part.partIdHash,
+        moduleId,
+        name: part.name,
+        partType: part.partType ?? null,
+        expression: part.expression ?? null,
+        expressionKey:
+          part.expression == null
+            ? (part.contentHash ?? null)
+            : expressionContentHash(part.expression),
+      });
+    }
+  }
+  return parts;
 }
 
 export function DefinyProvider({
@@ -409,17 +482,16 @@ export function DefinyProvider({
     };
   }, [validEvents]);
 
-  const commitWorkingChanges = useCallback(
-    async ({
-      moduleName,
-      message,
-    }: CommitWorkingChangesParams): Promise<string> => {
-      if (!currentAccount || !currentAccount.secretKeyBase64) {
-        throw new Error("You must be logged in to commit changes");
-      }
-
+  /** `moduleName` に作業中の変更をコミットするときのパーツ (今のモジュールのパーツに変更を重ねたもの) */
+  const buildCommitParts = useCallback(
+    (
+      moduleName: string,
+    ): {
+      readonly existingModule: ModuleSnapshot | undefined;
+      readonly partsList: ReadonlyArray<DecodedPart>;
+      readonly committedPartIds: ReadonlySet<string>;
+    } => {
       const existingModule = modules.find((m) => m.name === moduleName);
-      const parentCommitHash = existingModule?.latestEventHash ?? null;
 
       const partMap = new Map<string, DecodedPart>();
       if (existingModule) {
@@ -456,13 +528,29 @@ export function DefinyProvider({
         }
       }
 
-      if (partMap.size === 0) {
-        throw new Error(`No parts found to commit for module '${moduleName}'`);
-      }
-
       const partsList: ReadonlyArray<DecodedPart> = Array.from(
         partMap.values(),
       );
+      return { existingModule, partsList, committedPartIds };
+    },
+    [modules, workingChanges],
+  );
+
+  const commitWorkingChanges = useCallback(
+    async ({
+      moduleName,
+      message,
+    }: CommitWorkingChangesParams): Promise<string> => {
+      if (!currentAccount || !currentAccount.secretKeyBase64) {
+        throw new Error("You must be logged in to commit changes");
+      }
+
+      const { existingModule, partsList, committedPartIds } =
+        buildCommitParts(moduleName);
+      if (partsList.length === 0) {
+        throw new Error(`No parts found to commit for module '${moduleName}'`);
+      }
+      const parentCommitHash = existingModule?.latestEventHash ?? null;
 
       const { signedEventBytes, eventHash } =
         await createSignedModuleCommitEvent({
@@ -496,7 +584,51 @@ export function DefinyProvider({
       await loadEvents();
       return eventHash;
     },
-    [currentAccount, modules, workingChanges, loadEvents],
+    [currentAccount, buildCommitParts, loadEvents],
+  );
+
+  const checkCommitTypes = useCallback(
+    async (moduleName: string): Promise<ReadonlyArray<CommitTypeError>> => {
+      if (!currentAccount) {
+        return [];
+      }
+      const { partsList } = buildCommitParts(moduleName);
+      if (partsList.length === 0) {
+        return [];
+      }
+      const typeChecker = await loadTypeChecker();
+      const moduleIdBytes = deriveModuleIdBytesSync(
+        base64ToBytes(currentAccount.accountId),
+        moduleName,
+      );
+      const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
+      const committed: ReadonlyArray<LatestPart> = partsList.map((part) => ({
+        partId: deriveModulePartIdSync(moduleIdBytes, part.name),
+        moduleId,
+        name: part.name,
+        partType: part.partType ?? null,
+        expression: part.expression ?? null,
+        expressionKey:
+          part.expression == null
+            ? (part.contentHash ?? null)
+            : expressionContentHash(part.expression),
+      }));
+      return checkModuleCommitParts({
+        typeChecker,
+        moduleId,
+        committed,
+        latestParts: latestParts(validEvents),
+        // 式の無いパーツ・コンパイラ組み込みを受け入れるか (システムアカウントか) はサーバーが決めるので,
+        // ここでは型エラーと型チェッカーの失敗だけを出す
+        allowBuiltinParts: true,
+      }).flatMap(({ name, outcome }) => {
+        const message = outcomeErrorMessage(name, outcome, (partId) =>
+          partNames.get(partId),
+        );
+        return message === null ? [] : [{ partName: name, message }];
+      });
+    },
+    [currentAccount, buildCommitParts, validEvents, partNames],
   );
 
   const value = useMemo<DefinyContextValue>(
@@ -523,6 +655,7 @@ export function DefinyProvider({
       createAccountAndLogin,
       logout,
       commitWorkingChanges,
+      checkCommitTypes,
       sidebarOpen,
       toggleSidebar,
       setSidebarOpen,
@@ -552,6 +685,7 @@ export function DefinyProvider({
       createAccountAndLogin,
       logout,
       commitWorkingChanges,
+      checkCommitTypes,
       sidebarOpen,
       toggleSidebar,
       commandPaletteOpen,

@@ -1,7 +1,13 @@
-import { useState, useCallback, type JSX, type FormEvent } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  type JSX,
+  type FormEvent,
+} from "react";
 import { Link } from "@void/react";
 import { label, localizedText } from "../src/language.ts";
-import { useDefiny } from "../src/state.tsx";
+import { useDefiny, type CommitTypeError } from "../src/state.tsx";
 
 export default function ChangesPage(): JSX.Element {
   const {
@@ -12,6 +18,7 @@ export default function ChangesPage(): JSX.Element {
     currentAccount,
     setAccountModalOpen,
     commitWorkingChanges,
+    checkCommitTypes,
   } = useDefiny();
 
   const [commitMessage, setCommitMessage] = useState("");
@@ -33,6 +40,46 @@ export default function ChangesPage(): JSX.Element {
   const [selectedModule, setSelectedModule] = useState<string>(
     affectedModules[0] ?? "core",
   );
+
+  // コミットする前に, サーバーと同じ definy 製の型チェッカーで検査する.
+  // 変更・対象モジュール・取得済みのイベントが変わったら 300ms 待ってから検査し直す
+  const [typeCheck, setTypeCheck] = useState<
+    | { readonly status: "idle" | "checking" }
+    | {
+        readonly status: "done";
+        readonly errors: ReadonlyArray<CommitTypeError>;
+      }
+    | { readonly status: "failed"; readonly message: string }
+  >({ status: "idle" });
+  useEffect(() => {
+    if (!currentAccount || workingChanges.parts.size === 0) {
+      setTypeCheck({ status: "idle" });
+      return;
+    }
+    let cancelled = false;
+    setTypeCheck({ status: "checking" });
+    const timer = setTimeout(() => {
+      checkCommitTypes(selectedModule).then(
+        (errors) => {
+          if (!cancelled) setTypeCheck({ status: "done", errors });
+        },
+        (e: unknown) => {
+          if (!cancelled) {
+            setTypeCheck({
+              status: "failed",
+              message: e instanceof Error ? e.message : String(e),
+            });
+          }
+        },
+      );
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [checkCommitTypes, selectedModule, currentAccount, workingChanges]);
+  const hasTypeErrors =
+    typeCheck.status === "done" && typeCheck.errors.length > 0;
 
   const handleCommit = useCallback(
     async (e: FormEvent) => {
@@ -301,6 +348,57 @@ export default function ChangesPage(): JSX.Element {
                   />
                 </div>
 
+                <div className="commit-type-check" aria-live="polite">
+                  {typeCheck.status === "checking" && (
+                    <p className="text-muted">
+                      {label(
+                        language,
+                        "Type checking with the definy type checker...",
+                        "definy 製の型チェッカーで検査しています...",
+                        "Tipkontrolado per la definy-tipkontrolilo...",
+                      )}
+                    </p>
+                  )}
+                  {typeCheck.status === "done" && !hasTypeErrors && (
+                    <p className="text-muted">
+                      {label(
+                        language,
+                        "No type errors",
+                        "型エラーはありません",
+                        "Neniuj tiperaroj",
+                      )}
+                    </p>
+                  )}
+                  {typeCheck.status === "failed" && (
+                    <p className="text-muted">
+                      {label(
+                        language,
+                        "Could not run the type checker:",
+                        "型チェッカーを実行できませんでした:",
+                        "Ne eblis ruli la tipkontrolilon:",
+                      )}{" "}
+                      {typeCheck.message}
+                    </p>
+                  )}
+                  {typeCheck.status === "done" && hasTypeErrors && (
+                    <div className="alert alert-danger">
+                      <strong>
+                        {label(
+                          language,
+                          "Type errors (the server will reject this commit):",
+                          "型エラー (サーバーがこのコミットを拒否します):",
+                          "Tiperaroj (la servilo rifuzos ĉi tiun enmeton):",
+                        )}
+                      </strong>
+                      <ul>
+                        {typeCheck.errors.map((error) => (
+                          <li key={error.partName}>{error.message}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
                 <div
                   style={{
                     display: "flex",
@@ -343,7 +441,9 @@ export default function ChangesPage(): JSX.Element {
                   <button
                     type="submit"
                     className="btn btn-primary btn-sm"
-                    disabled={committing || !commitMessage.trim()}
+                    disabled={
+                      committing || !commitMessage.trim() || hasTypeErrors
+                    }
                   >
                     {committing
                       ? label(

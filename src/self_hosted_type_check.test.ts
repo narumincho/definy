@@ -8,6 +8,8 @@ import {
 import {
   checkParts,
   compileTypeChecker,
+  formatTypeAst,
+  outcomeErrorMessage,
   type PartTypeEntry,
   type PartToCheck,
 } from "./self_hosted_type_check.ts";
@@ -100,4 +102,43 @@ describe("self-hosted type check (stage1)", () => {
       failures.filter(({ outcome }) => outcome?.kind !== "unsupported"),
     ).toEqual([]);
   }, 600_000);
+
+  it("型エラーの型を読める形にする", () => {
+    const number = { tag: "number", payload: null };
+    const listOfUser = {
+      tag: "list",
+      payload: {
+        item_type: { tag: "reference", payload: { part_hash: "user-id" } },
+      },
+    };
+    expect(
+      formatTypeAst(listOfUser, (id) =>
+        id === "user-id" ? "app.user" : undefined,
+      ),
+    ).toBe("List<app.user>");
+    expect(
+      formatTypeAst({
+        tag: "function",
+        payload: {
+          parameters: [{ name: "n", type: number }],
+          return_type: {
+            tag: "union",
+            payload: [
+              { tag: "none", payload_type: { tag: "none", payload: null } },
+              { tag: "some", payload_type: { tag: "some", payload: number } },
+            ],
+          },
+        },
+      }),
+    ).toBe("(n: number) -> none | some(number)");
+    expect(
+      outcomeErrorMessage("bad", {
+        kind: "type_error",
+        tag: "type_mismatch",
+        detail: { expected: number, actual: { tag: "string", payload: null } },
+      }),
+    ).toBe(
+      "part 'bad': type error: type_mismatch (expected: number, actual: string)",
+    );
+  });
 });

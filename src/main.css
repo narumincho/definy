@@ -3012,6 +3012,19 @@ button.card:hover {
   background: var(--surface-card);
 }
 
+/* コミット前の型検査の結果 (pages/changes.tsx) */
+.commit-type-check {
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+}
+
+.commit-type-check ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+  font-family: var(--font-mono, monospace);
+  overflow-wrap: anywhere;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
