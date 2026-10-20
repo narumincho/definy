@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("stage1 fixed point", () => {
@@ -18,12 +17,4 @@ describe("stage1 fixed point", () => {
     }
     expect(result.status).toBe(0);
   }, 60_000);
-
-  it("public/stage1.wasm is identical to wasm/stage1.wasm", () => {
-    expect(
-      Buffer.from(readFileSync("public/stage1.wasm")).equals(
-        readFileSync("wasm/stage1.wasm"),
-      ),
-    ).toBe(true);
-  });
 });

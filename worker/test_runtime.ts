@@ -1,9 +1,13 @@
 /**
  * テスト用: seed バンドルを読み込む。
+ * バンドルは Vitest の起動時に `src/test_global_setup.ts` が生成する
  */
 import { readFile } from "node:fs/promises";
 
-const seedBundleUrl = new URL("../seeds/seed_bundle.json", import.meta.url);
+const seedBundleUrl = new URL(
+  "../public/__definy_seed_bundle.json",
+  import.meta.url,
+);
 
 /** 開発用システムアカウントの seed バンドル */
 export type TestSeedBundle = {

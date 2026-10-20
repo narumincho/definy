@@ -51,7 +51,7 @@ export async function loadSeedPartExpressions(
 ): Promise<ReadonlyMap<string, unknown>> {
   const map = new Map<string, unknown>();
   for (const file of readdirSync("seeds")) {
-    // seed_bundle.json / seed_bundle_fingerprint.json はモジュールの seed ではない
+    // seed_bundle_fingerprint.json はモジュールの seed ではない
     if (!file.endsWith(".json") || file.startsWith("seed_bundle")) {
       continue;
     }

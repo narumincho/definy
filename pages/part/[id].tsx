@@ -1,14 +1,14 @@
-import { useState, useCallback, type JSX } from "react";
+import { useState, useCallback, useEffect, type JSX } from "react";
 import { useParams, Link } from "@void/react";
-import { Icon } from "../../src/icons.tsx";
+import { PlayIcon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import {
   collectReferencedParts,
   evaluateCompiledWasm,
-  loadStage1Compiler,
   type DefinyValue,
 } from "../../src/stage1_compiler.ts";
+import { loadStage1Compiler } from "../../src/stage1_browser.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 
 export default function PartDetailPage(): JSX.Element {
@@ -21,6 +21,8 @@ export default function PartDetailPage(): JSX.Element {
     workingChanges,
     updateWorkingPart,
     discardWorkingPart,
+    checkPartType,
+    typeCheckMessage,
   } = useDefiny();
 
   const [evaluating, setEvaluating] = useState(false);
@@ -54,6 +56,59 @@ export default function PartDetailPage(): JSX.Element {
     change !== undefined ? change.partType : part.partType;
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
+
+  // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査する (コミット済みの型環境を使う)
+  const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
+  const [typeCheck, setTypeCheck] = useState<
+    | { readonly status: "checking" }
+    | { readonly status: "ok" }
+    | { readonly status: "error"; readonly message: string }
+    | { readonly status: "unsupported"; readonly message: string }
+  >({ status: "checking" });
+  useEffect(() => {
+    let cancelled = false;
+    setTypeCheck({ status: "checking" });
+    const timer = setTimeout(() => {
+      checkPartType({
+        partIdHash,
+        partType: currentPartType,
+        expression: currentExpression,
+      }).then(
+        (outcome) => {
+          if (cancelled) return;
+          if (outcome.kind === "ok") {
+            setTypeCheck({ status: "ok" });
+          } else if (outcome.kind === "unsupported") {
+            setTypeCheck({ status: "unsupported", message: outcome.message });
+          } else {
+            setTypeCheck({
+              status: "error",
+              message: typeCheckMessage(currentName, outcome) ?? "",
+            });
+          }
+        },
+        (e: unknown) => {
+          if (!cancelled) {
+            setTypeCheck({
+              status: "error",
+              message: e instanceof Error ? e.message : String(e),
+            });
+          }
+        },
+      );
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    checkPartType,
+    typeCheckMessage,
+    partIdHash,
+    currentPartType,
+    currentExpression,
+    currentName,
+  ]);
 
   const handleEvaluate = useCallback(async () => {
     setEvaluating(true);
@@ -165,7 +220,7 @@ export default function PartDetailPage(): JSX.Element {
             onClick={handleEvaluate}
             disabled={evaluating}
           >
-            <Icon kind="play" size={14} className="btn-icon" />
+            <PlayIcon size={14} className="btn-icon" />
             {evaluating
               ? label(language, "Evaluating...", "評価中...", "Taksante...")
               : label(
@@ -176,6 +231,39 @@ export default function PartDetailPage(): JSX.Element {
                 )}
           </button>
         </div>
+      </div>
+
+      <div
+        className={`card part-type-check part-type-check-${typeCheck.status}`}
+        aria-live="polite"
+      >
+        <span className="part-type-check-label">
+          {label(
+            language,
+            "Type check (definy)",
+            "型チェック (definy 製)",
+            "Tipkontrolo (definy)",
+          )}
+        </span>
+        <span className="part-type-check-result">
+          {typeCheck.status === "checking" &&
+            label(language, "Checking...", "検査中...", "Kontrolante...")}
+          {typeCheck.status === "ok" &&
+            label(
+              language,
+              "No type errors",
+              "型エラーはありません",
+              "Neniuj tiperaroj",
+            )}
+          {typeCheck.status === "unsupported" &&
+            `${label(
+              language,
+              "Cannot be checked",
+              "検査できません",
+              "Ne kontroleblas",
+            )}: ${typeCheck.message}`}
+          {typeCheck.status === "error" && typeCheck.message}
+        </span>
       </div>
 
       {evalResult !== null && (

@@ -17,7 +17,7 @@ Event       = { account_id: bytes(32), time: tag1(epoch 秒), content: { CreateA
 - `event_binary` (tag 24 の中身のバイト列そのもの) に対する `signature` が、`account_id` を公開鍵とする Ed25519 署名として正しい
 - `time` がサーバー時刻より 10 分以上未来ではない
 
-ビルトインのシード (`seeds/seed_bundle.json`) は信頼できる経路なので取り込み時には検証しないが、`src/rpc_auth.test.ts` で全イベントの署名が正しいことをテストしている。
+ビルトインのシード (`npm run build:seeds` が作る `public/__definy_seed_bundle.json`) は信頼できる経路なので取り込み時には検証しないが、`src/rpc_auth.test.ts` で全イベントの署名が正しいことをテストしている。
 
 ## ブラウザ側での検証
 

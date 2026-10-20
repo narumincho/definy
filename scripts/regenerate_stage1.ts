@@ -56,7 +56,6 @@ if (unresolved.length > 0) {
 }
 
 const currentWasmPath = "wasm/stage1.wasm";
-const PUBLIC_WASM_PATH = "public/stage1.wasm";
 const currentWasmBytes = readFileSync(currentWasmPath);
 /** `compilerBytes` のコンパイラでコンパイラ自身をコンパイルする */
 function compileCompiler(compilerBytes: Uint8Array): Uint8Array {
@@ -129,9 +128,7 @@ if (isCheckMode) {
   );
 } else {
   writeFileSync(currentWasmPath, stage2Bytes);
-  // 静的アセットとして配信するコピー (`/stage1.wasm`. worker/store.ts の getStage1WasmBytes が使う)
-  writeFileSync(PUBLIC_WASM_PATH, stage2Bytes);
   console.log(
-    `Successfully regenerated ${currentWasmPath} and ${PUBLIC_WASM_PATH} (${stage2Bytes.length} bytes) at fixed point.`,
+    `Successfully regenerated ${currentWasmPath} (${stage2Bytes.length} bytes) at fixed point.`,
   );
 }

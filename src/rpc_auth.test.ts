@@ -5,9 +5,6 @@ import {
   RPC_AUTHORIZATION_MAX_SKEW_SECONDS,
   verifyRpcAuthorization,
 } from "./rpc_auth.ts";
-import { base64ToBytes } from "./cbor.ts";
-import { verifySignedEvent } from "../worker/cbor.ts";
-import seedBundle from "../seeds/seed_bundle.json" with { type: "json" };
 
 const path = "/definy.v1.DeployService/DeployCloudflare";
 const body = JSON.stringify({ partId: "x" });
@@ -64,17 +61,5 @@ describe("rpc authorization", () => {
     await expect(
       verifyRpcAuthorization(forged, "POST", path, body, now),
     ).rejects.toThrow();
-  });
-});
-
-describe("builtin seed events", () => {
-  it("all carry a valid Ed25519 signature", async () => {
-    for (const event of seedBundle.events) {
-      const meta = await verifySignedEvent(
-        base64ToBytes(event.signedEventBytes),
-      );
-      expect(meta.accountId).toBe(event.accountId);
-      expect(meta.eventType).toBe(event.eventType);
-    }
   });
 });

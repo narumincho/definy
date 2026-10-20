@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "list-contains-string を前から走査する形にし, 呼び出し元を 0 から始めるように揃える",
+  "message": "呼び出しの引数の関数の数え上げを count-functions-in-arguments-range に分け, 型エラーを直す",
   "parts": [
     {
       "name": "let",
@@ -53634,11 +53634,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Number of function expressions in the value fields of items[lo..hi) (record items and call arguments)"
+          "text": "Number of function expressions in the value fields of record items[lo..hi)"
         },
         {
           "language": "ja",
-          "text": "items の lo 以上 hi 未満の value (レコードの項目・呼び出しの引数の式) に含まれる関数の数"
+          "text": "レコードの項目 items の lo 以上 hi 未満の value の式に含まれる関数の数"
         }
       ],
       "expression": {
@@ -53839,6 +53839,295 @@
                                 "PartReference": {
                                   "part_definition_event_hash": {
                                     "$part": "core.count-functions-in-values-range"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "items",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "lo",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "hi",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "count-functions-in-arguments-range",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "items",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "name",
+                      "value": "string"
+                    },
+                    {
+                      "key": "value",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "lo",
+              "type": "number"
+            },
+            {
+              "name": "hi",
+              "type": "number"
+            }
+          ],
+          "return_type": "number"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Number of function expressions in the values of call arguments[lo..hi)"
+        },
+        {
+          "language": "ja",
+          "text": "呼び出しの引数 items の lo 以上 hi 未満の value の式に含まれる関数の数"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "items"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "lo"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "hi"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThanOrEqual": {
+                  "left": {
+                    "Subtract": {
+                      "left": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      },
+                      "right": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 1
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "LessThan": {
+                          "left": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          },
+                          "right": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.count-functions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "ListGet": {
+                                          "list": {
+                                            "Variable": {
+                                              "variable_id": 0
+                                            }
+                                          },
+                                          "index": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "key": "value"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 3,
+                          "variable_name": "mid",
+                          "value": {
+                            "Divide": {
+                              "left": {
+                                "Add": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "right": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 2
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Add": {
+                          "left": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.count-functions-in-arguments-range"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "items",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "lo",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "hi",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.count-functions-in-arguments-range"
                                   }
                                 }
                               },
@@ -57897,7 +58186,7 @@
                                           "function": {
                                             "PartReference": {
                                               "part_definition_event_hash": {
-                                                "$part": "core.count-functions-in-values-range"
+                                                "$part": "core.count-functions-in-arguments-range"
                                               }
                                             }
                                           },

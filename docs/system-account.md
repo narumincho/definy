@@ -27,7 +27,7 @@ seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列では�
 
 1. システムアカウントの秘密鍵で UI にログインし（または MCP から）、ビルトインモジュールのパーツを編集してコミットする。
 2. 編集したサーバーから seed に書き戻す機能は `npm run export:seeds <baseUrl>` で実行可能です。詳細は [seed の書き戻し (`export:seeds`)](./seed-export.md) を参照してください。
-3. シードバンドル（`seeds/seed_bundle.json` / `public/__definy_seed_bundle.json`）の再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。
+3. `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で指紋 `seeds/seed_bundle_fingerprint.json` を更新してコミットします。シードバンドル本体 (`public/__definy_seed_bundle.json`) はコミットせず、dev / build / test のたびに作ります ([build-artifacts.md](build-artifacts.md))。
 
 ## ブートストラップイベントと編集イベントの区別
 
@@ -36,7 +36,7 @@ seed から作るイベントは時刻 `2019-01-31T04:36:01Z`（リポジトリ�
 ## D1 の seed の入れ替え（古い seed は残さない）
 
 `npm run build:seeds` は seed バンドルの指紋（全イベントのハッシュと全 CAS の内容の SHA-256, `src/seed_fingerprint.ts`）を
-`seeds/seed_bundle.json` と `seeds/seed_bundle_fingerprint.json` に書き、Worker はビルド時に後者を取り込みます。
+`public/__definy_seed_bundle.json` と `seeds/seed_bundle_fingerprint.json` に書き、Worker はビルド時に後者を取り込みます。
 Worker は isolate ごとに 1 回、D1 に記録した指紋（`cas_contents` のキー `seed-bundle-fingerprint`）と比べ、
 違えば seed バンドルを読んで D1 を入れ替えます（`worker/store.ts` の `ensureSeeded` / `persistSeedToD1`）。
 一致していればコールドスタートでも seed バンドルは読みません。

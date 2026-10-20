@@ -68,8 +68,8 @@ definy
     において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
     を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
-- Connect-RPC の `SubmitEvent` は、`definy_core::self_hosted_type_check::check_module_commit`
-  でコミットのパーツを `core.type-check-against` で検査してから保存します (UI の型エラー表示・
+- Connect-RPC の `SubmitEvent` は、`checkSubmittedModuleCommit` (`worker/type_check.ts`。旧 Rust 版は `definy_core::self_hosted_type_check::check_module_commit`)
+  でコミットのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行 (TypeScript 版)」) (UI の型エラー表示・
   seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに
   コミットのパーツを重ねたものなので, 他のモジュールのパーツ参照も解決できます。
   パーツの型が変わらなければ式の変わったパーツだけを検査し (core の 1 パーツの編集なら 1 回の評価),
@@ -291,7 +291,7 @@ npm run build:stage1
 2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全パーツ (2026-10-21 時点で 63 個) を収集する。
 3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (2026-10-21 時点で 85,610 バイト)。
 4. 得られた `stage2` のバイナリを使って同じ式を再コンパイルし、`stage3` を生成する。
-5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は `wasm/stage1.wasm` と静的アセットのコピー `public/stage1.wasm` に書き出す（2 つが一致することもテストする）。stage1 を変えたら `npm run build:seeds` で seed バンドル（stage1 自身と事前コンパイルの結果を含む）も作り直す。
+5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は `wasm/stage1.wasm` に書き出す。stage1 を変えたら `npm run build:seeds` で seed バンドルの指紋 (事前コンパイルの結果を含む) も更新する。
 6. `src/stage1_fixed_point.test.ts` において、Vitest 経由でも不動点検証が自動テストされる。
 
 #### 参照パーツの順序 (LIFO) とバイト一致
@@ -487,10 +487,42 @@ Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024
 `module_builder::assemble_wasm_module` でヒープを静的データの後ろから始め, メモリの初期ページ数も足りるようにしました
 (`test_large_static_data_is_not_overwritten_by_heap`)。
 
+### definy 製型チェッカーの実行 (TypeScript 版, 2026-10-21)
+
+TypeScript への移行で一度なくなっていた definy 製型チェッカーの実行を, stage1 の上に作り直した
+(`src/self_hosted_type_check.ts`。旧 Rust 版 `definy_core::self_hosted_type_check` の移植)。
+
+- **1 度だけコンパイルして何度も呼ぶ**: `compileTypeChecker` が `core.type-check-against` への
+  `PartReference` を stage1 でコンパイルする (関数を返す式の Wasm になる)。`checkParts` は
+  `instantiateCompiledFunction` (`src/stage1_compiler.ts`) でインスタンスを作り, 型環境を 1 度だけ線形メモリに
+  書き込んで, パーツごとに `expr`・`expected_type` を書き込んで呼ぶ。seed の 169 パーツで, コンパイル 335ms・検査 600ms ほど
+  (パーツごとに `let env = ... in [check(a), ...]` の式をコンパイルし直していたときは 73 秒かかった)。
+  線形メモリは解放しないので 32 パーツごとにインスタンスを作り直し, trap したときも作り直す
+- **値の書き込み** (`writeLiteral`): 型環境のような大きな値を線形メモリに書くので, 1 度だけ走査して JavaScript 側の
+  `Uint8Array` に相対アドレスで書き, `alloc` した位置に合わせてポインタを直してから写す。以前の (2 回走査して小さな配列を
+  `push(...bytes)` でつなぐ) 実装は workerd で型環境 1 つに 600ms かかっていた
+- **サーバーの型環境の読み込み**: モジュールコミットはイベントハッシュごとに, 署名の検証・デコード・式のハッシュ
+  (ネイティブの SHA-256) をした結果を isolate の中で使い回す (`commitCache`, 型パーツ以外の式は捨ててメモリを節約する)。
+  ローカルの 33 コミット (9.4MB) で, isolate の最初の `SubmitEvent` は 2.4 秒, 2 回目からは 200ms ほど (型検査なしで 80ms)
+- **型チェッカーはビルド時に作る**: Cloudflare Workers は実行時に Wasm をコンパイルできないので,
+  `npm run build:seeds` が seed の型チェッカーを `wasm/type_checker.wasm` (コミットしない) に書き出し,
+  Worker は `?module` で取り込む ([build-artifacts.md](build-artifacts.md))。本番で `core` の型チェッカーを編集しても,
+  seed に書き戻してデプロイするまでサーバーの検査には反映されない
+- **`SubmitEvent` の検査** (`worker/type_check.ts`): 署名の正しいモジュールコミットから, モジュールごとに最新のコミットの
+  パーツを集めて型環境にし, 投稿されたコミットのパーツを重ねて `checkModuleCommitParts` で検査する。
+  型が 1 つも変わらなければ式が変わったパーツだけ, 変われば全パーツを検査する。式を CAS に預けたパーツは読んでから検査し,
+  CAS に足りない内容があるときは検査せず `missing_content` を返す。型エラーは `400` (`invalid_argument`) で,
+  メッセージは `part 'name': type error: type_mismatch {...}` の行。システムアカウントは式の無いパーツや
+  コンパイラ組み込みを検査せずに受け入れる。`worker/type_check.test.ts` で確かめる
+- **seed の検査**: `src/self_hosted_type_check.test.ts` が seed の全パーツ (コンパイラ組み込みの `core.number-literal` を除く)
+  が型エラーなしで通ることを確かめる。作り直したときに `core.compile-call-arguments-range` が
+  `core.count-functions-in-values-range` (`{key, value}` のリストを取る) に呼び出しの引数 (`{name, value}` のリスト) を
+  渡している型エラーが見つかり, `core.count-functions-in-arguments-range` を分けて直した
+
 ### 次に進める順番の案
 
 1. ~~stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う~~ (済み: 上の「サーバーの本番のコンパイルで stage1 を使う」)。次はプレビュー (上の「HTTP アプリとプレビュー」)
-2. definy 製型チェッカーの実行 (サーバー・UI) を stage1 でコンパイルするように切り替え, Rust 製コンパイラの出番を減らす
+2. ~~definy 製型チェッカーの実行 (サーバー・UI) を stage1 でコンパイルするように切り替え, Rust 製コンパイラの出番を減らす~~ (済み: 上の「definy 製型チェッカーの実行 (TypeScript 版)」)
 3. 文字列リテラルなどをデータセグメントにまとめて, 出力を小さくする
 
 ## セルフホストのロードマップと到達状況

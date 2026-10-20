@@ -1,6 +1,18 @@
 import { useEffect, useState, useRef, type JSX } from "react";
 import { useRouter } from "@void/react";
-import { Icon, type IconKind } from "../icons.tsx";
+import {
+  AboutIcon,
+  AccountsIcon,
+  ChangesIcon,
+  DeployIcon,
+  EventsIcon,
+  HistoryIcon,
+  ModuleIcon,
+  PartsIcon,
+  SearchIcon,
+  SettingsIcon,
+  type IconComponent,
+} from "../icons.tsx";
 import { label, localizedText } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
@@ -9,7 +21,7 @@ export type PaletteItem = {
   readonly label: string;
   readonly detail: string;
   readonly href: string;
-  readonly icon: IconKind;
+  readonly icon: IconComponent;
 };
 
 const MAX_RESULTS = 60;
@@ -154,42 +166,42 @@ export function CommandPalette(): JSX.Element | null {
       label: label(language, "Events", "イベント一覧", "Eventoj"),
       detail: pageDetail,
       href: "/",
-      icon: "events",
+      icon: EventsIcon,
     },
     {
       id: "page-parts",
       label: label(language, "Parts", "パーツ一覧", "Partoj"),
       detail: pageDetail,
       href: "/parts",
-      icon: "parts",
+      icon: PartsIcon,
     },
     {
       id: "page-modules",
       label: label(language, "Modules", "モジュール一覧", "Moduloj"),
       detail: pageDetail,
       href: "/modules",
-      icon: "modules",
+      icon: ModuleIcon,
     },
     {
       id: "page-changes",
       label: label(language, "Changes", "変更", "Ŝanĝoj"),
       detail: pageDetail,
       href: "/changes",
-      icon: "changes",
+      icon: ChangesIcon,
     },
     {
       id: "page-history",
       label: label(language, "History", "履歴", "Historio"),
       detail: pageDetail,
       href: "/history",
-      icon: "history",
+      icon: HistoryIcon,
     },
     {
       id: "page-accounts",
       label: label(language, "Accounts", "アカウント一覧", "Kontoj"),
       detail: pageDetail,
       href: "/accounts",
-      icon: "accounts",
+      icon: AccountsIcon,
     },
     {
       id: "page-deploy",
@@ -201,35 +213,35 @@ export function CommandPalette(): JSX.Element | null {
       ),
       detail: pageDetail,
       href: "/deployments",
-      icon: "deploy",
+      icon: DeployIcon,
     },
     {
       id: "page-about",
       label: label(language, "About definy", "definy について", "Pri definy"),
       detail: pageDetail,
       href: "/about",
-      icon: "about",
+      icon: AboutIcon,
     },
     {
       id: "page-settings",
       label: label(language, "Settings", "設定", "Agordoj"),
       detail: pageDetail,
       href: "/settings",
-      icon: "settings",
+      icon: SettingsIcon,
     },
     ...modules.map((m) => ({
       id: `module-${m.moduleId}`,
       label: m.name,
       detail: moduleDetail,
       href: `/module/${m.moduleId}`,
-      icon: "modules" as const,
+      icon: ModuleIcon,
     })),
     ...parts.map((p) => ({
       id: `part-${p.partId}`,
       label: `${p.moduleName}.${p.name}`,
       detail: localizedText(p.description, language).slice(0, 36) || "Part",
       href: `/part/${p.partId}`,
-      icon: "part" as const,
+      icon: ModuleIcon,
     })),
   ];
 
@@ -296,11 +308,7 @@ export function CommandPalette(): JSX.Element | null {
         aria-label={placeholder}
       >
         <div className="command-palette-input">
-          <Icon
-            kind="search"
-            size={14}
-            className="command-palette-search-icon"
-          />
+          <SearchIcon size={14} className="command-palette-search-icon" />
           <input
             ref={inputRef}
             type="text"
@@ -352,11 +360,7 @@ export function CommandPalette(): JSX.Element | null {
                     setSelectedIndex(idx);
                   }}
                 >
-                  <Icon
-                    kind={item.icon}
-                    size={15}
-                    className="command-palette-item-icon"
-                  />
+                  <item.icon size={15} className="command-palette-item-icon" />
                   <span className="command-palette-item-label">
                     {item.label}
                   </span>

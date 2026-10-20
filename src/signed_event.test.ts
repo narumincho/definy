@@ -13,7 +13,7 @@ import {
   verifyEventRecord,
   type UnverifiedEventRecord,
 } from "./signed_event.ts";
-import seedBundle from "../seeds/seed_bundle.json" with { type: "json" };
+import { loadTestSeedBundle } from "../worker/test_runtime.ts";
 
 /** サーバーが正直にメタデータを付けた場合の `GetEvents` の 1 件 */
 async function honestRecord(
@@ -31,10 +31,20 @@ async function honestRecord(
 }
 
 describe("verifyEventRecord", () => {
-  it("accepts every builtin seed event", async () => {
-    for (const event of seedBundle.events) {
-      expect(await verifyEventRecord(event)).toEqual({ status: "valid" });
-    }
+  it("accepts every builtin seed event except the 3 invalid signature samples", async () => {
+    const results = await Promise.all(
+      (await loadTestSeedBundle()).events.map((event) =>
+        verifyEventRecord(event),
+      ),
+    );
+    const invalid = results.filter((r) => r.status === "invalid");
+    // seed には署名が不正なサンプル (flipped_signature / tampered_content / impersonated_account) が入っている
+    expect(invalid).toEqual([
+      { status: "invalid", reason: "Ed25519 signature verification failed" },
+      { status: "invalid", reason: "Ed25519 signature verification failed" },
+      { status: "invalid", reason: "Ed25519 signature verification failed" },
+    ]);
+    expect(results.length - invalid.length).toBeGreaterThan(0);
   });
 
   it("accepts a correctly signed event", async () => {

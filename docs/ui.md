@@ -57,24 +57,40 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
 - 上部の欄でパーツ名 (`module.part` でも可) を絞り込める. Escape で解除
 - 見出しの `+` で新しいパーツを作成する (`/parts?tab=new`).
   モジュール行のホバーで出る `+` からは, そのモジュールを選んだ状態で作成フォームを開く (`tab=new:<モジュールのハッシュ>`)
-- 型エラーのあるパーツは赤い印, モジュールにはエラー件数を出す. 判定は definy 製の型チェッカー
+- 型エラーのあるパーツは赤い印 (title に理由), モジュールにはエラー件数を出す. 判定は definy 製の型チェッカー
   (下の「型エラー表示」)
 
 ### 型エラー表示
 
-型エラーの判定は, サーバーや seed の検証と同じ definy 製の型チェッカー (`core.type-check-against`) で行う.
-入口は `definy_core::self_hosted_type_check::check_parts` で, UI 側は `definy-ui/src/self_hosted_type_check.rs`.
+型エラーの判定は, サーバーの `SubmitEvent` と同じ definy 製の型チェッカー (`core.type-check-against`) で行う
+(`src/self_hosted_type_check.ts`. [self-hosting.md](self-hosting.md) の「definy 製型チェッカーの実行 (TypeScript 版)」).
 
-- 取得済みイベントから `core.type-check-against` を持つ `core` モジュールを探し, 全パーツの型を型環境にして検査する.
-  `core` がまだ無い (読み込み前) ときは何も表示しない
-- 1 回の検査は式を Wasm にコンパイルして実行するので重い (ネイティブの release で 1 回 400ms ほど, 大半がコンパイル).
-  そのため同期的に描画中に検査しない
-  - エクスプローラー: 取得済みイベントの数が変わったら裏で 4 パーツずつ検査し, 合間に `setTimeout(0)` でブラウザへ処理を返す.
-    結果は `PART_CHECK_RESULTS` (GlobalSignal) に入れ, 全パーツの型が変わらず式 (content hash) も同じパーツは検査し直さない
-  - パーツ詳細: 編集中の式を, 編集が 500ms 止まってから検査し「型チェック (definy 製)」の行に出す
-- 型エラーの中の型 (`core.type-ast`) は `List<user>` のように表示し, `reference` 型はパーツ名にする
-- Rust 製の型チェッカー (`expression_editor::diagnostics`) は編集補助 (ノードごとの期待型・選択肢の絞り込み・
-  ツリーエディタの件数表示) にだけ使う. 合否の正本は definy 製の型チェッカー
+- 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/type_checker_browser.ts` が
+  ハッシュ付きアセットとして読み込んでコンパイルする (1 度だけ). サーバーと同じものなので, UI で通ればサーバーでも通る
+- 変更ページ (`/changes`) はコミットする前に `checkCommitTypes` (`src/state.tsx`) で検査する.
+  コミットと同じパーツ (今のモジュールのパーツに作業中の変更を重ねたもの, `buildCommitParts`) を,
+  署名の正しいイベントから集めた全モジュールの最新のパーツを型環境にして `checkModuleCommitParts` に渡す.
+  型エラーがあればパーツ名と理由を出し, コミットボタンを押せなくする
+  - 変更・対象モジュール・取得済みのイベント・ログイン中のアカウントが変わったら 300ms 待ってから検査し直す
+  - 式の無いパーツ・コンパイラ組み込みを受け入れるか (システムアカウントか) はサーバーが決める
+    (本番のシステムアカウントの公開鍵をブラウザは知らない) ので, 変更ページは型エラーと型チェッカーの失敗だけを出す
+- 型エラーの中の型 (`core.type-ast`) は `formatTypeAst` で `List<app.user>` のように表示し, `reference` 型はパーツ名にする
+- エクスプローラー: `partTypeCheckResults` (`src/state.tsx`) に, コミット済みの全パーツを裏で検査した結果を入れる.
+  取得済みのイベントが変わったら 300ms 待ってから始め, 30ms ずつ検査しては `MessageChannel` でブラウザに処理を返す
+  (`setTimeout(0)` は裏のタブで 1 秒ほどに間引かれる). 結果はコンテキストを使う全コンポーネントを描画し直すので最後に 1 度だけ反映する.
+  型環境 (`typeEnvKey`: 全パーツの型と型パーツの定義) と定義 (`expressionKey`) が前と同じパーツは前の結果を使う.
+  式の無いパーツ・コンパイラ組み込み (`unsupported`) には印を出さない
+- パーツ詳細: 編集中の式と型を, 編集が 500ms 止まってから `checkPartType` で検査し「型チェック (definy 製)」の行に出す.
+  型環境はコミット済みのもの (このパーツだけ編集中の型と式に置き換える) なので, パーツの型を変えたときに,
+  それを参照する別のパーツ (式は変えていない) が壊れることは分からない. 変更ページの検査はモジュールの全パーツを検査するので見つかる
+- 速さの目安: 1 パーツ 2〜4ms. ブラウザの `expressionKey` は式のハッシュではなく「定義したイベントとパーツ名」にしている
+  (seed の core だけで式が数 MB あり, 毎回 JavaScript の SHA-256 で計算すると読み込みのたびに重い).
+  モジュールコミットのデコード (`extractModuleCommit`) も `decodedCommits` で 1 度だけにしている
+- 型エラーのあるコミットはサーバーが拒否するので, 表示を確かめるには `DEFINY_ALLOW_UNVERIFIED_EVENTS=true` の dev サーバーで
+  `DebugService/SubmitUnverifiedEvent` (型検査をしない) に, 正しく署名した型エラーのあるコミットを送る
+- 動作確認のノウハウ: 作業中の変更は localStorage の `definy.working_changes.v3` に
+  `{"parts": {"myapp.bad": {"name": "bad", "partType": "number", "expression": {"String": {"value": "x"}}, ...}}}`
+  の形 (`src/working_changes_storage.ts`) で入れて `/changes` を開けば再現できる
 
 ### 作業中の変更とまとめてコミット
 

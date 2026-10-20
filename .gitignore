@@ -6,3 +6,6 @@ node_modules/
 test-results/
 playwright-report/
 .env
+# npm run build:seeds が生成する (seeds/*.json から作れるのでコミットしない)
+/public/__definy_seed_bundle.json
+/wasm/type_checker.wasm

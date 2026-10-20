@@ -19,7 +19,7 @@ import {
   stage1OutputCacheKey,
 } from "../src/deploy_target.ts";
 import { devSystemAccountBytes } from "../src/system_account.ts";
-import { decodeTrustedSignedEvent } from "../src/signed_event.ts";
+import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
@@ -76,7 +76,7 @@ function isWasmBinary(bytes: Uint8Array): boolean {
   );
 }
 
-/** ストアの全モジュールコミットから, パーツ ID ごとに最新の定義を集める */
+/** ストアの全モジュールコミットのうち署名の正しいものから, パーツ ID ごとに最新の定義を集める */
 async function loadPartEntries(
   store: PartStoreReader,
   env: Env | undefined,
@@ -88,9 +88,14 @@ async function loadPartEntries(
       env,
     );
     for (const item of page) {
-      const { accountIdBytes, content, meta } = decodeTrustedSignedEvent(
+      // ストアには署名が不正なイベントもある (seed の署名が不正なサンプルなど) ので, 検証できたものだけ使う
+      const decoded = await decodeVerifiedSignedEvent(
         base64ToBytes(item.signedEventBytes),
-      );
+      ).catch(() => undefined);
+      if (decoded === undefined) {
+        continue;
+      }
+      const { accountIdBytes, content, meta } = decoded;
       const commit = content.ModuleCommit as
         | {
             readonly module_name?: unknown;
@@ -129,7 +134,9 @@ async function loadPartEntries(
 }
 
 /** システムアカウントの公開鍵. 未設定なら seed と同じ開発用の鍵 */
-async function systemAccountBytes(env: Env | undefined): Promise<Uint8Array> {
+export async function systemAccountBytes(
+  env: Env | undefined,
+): Promise<Uint8Array> {
   const publicKey = env?.DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?.trim();
   return publicKey ? base64ToBytes(publicKey) : await devSystemAccountBytes();
 }

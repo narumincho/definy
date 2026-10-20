@@ -152,26 +152,17 @@ export function parseSignedEventMetadata(
 }
 
 /**
- * 信頼できる経路 (ストアに保存済みのイベントなど) から来た SignedEvent の中身を取り出す.
- * 署名は検証しない。外部から受け取ったイベントには `verifySignedEvent` を使うこと。
+ * SignedEvent を厳密にデコードし、`account_id` の公開鍵で Ed25519 署名を検証して中身を返す。
+ * 署名が不正・形式が不正・署名時刻が未来すぎる場合は `InvalidSignedEventError` を投げる。
  */
-export function decodeTrustedSignedEvent(bytes: Uint8Array): {
+export async function decodeVerifiedSignedEvent(
+  bytes: Uint8Array,
+  nowMs: number = Date.now(),
+): Promise<{
   readonly accountIdBytes: Uint8Array;
   readonly content: Readonly<Record<string, unknown>>;
   readonly meta: ParsedSignedEventMeta;
-} {
-  const { accountIdBytes, content, meta } = decodeSignedEvent(bytes);
-  return { accountIdBytes, content, meta };
-}
-
-/**
- * SignedEvent を厳密にデコードし、`account_id` の公開鍵で Ed25519 署名を検証する。
- * 署名が不正・形式が不正・署名時刻が未来すぎる場合は `InvalidSignedEventError` を投げる。
- */
-export async function verifySignedEvent(
-  bytes: Uint8Array,
-  nowMs: number = Date.now(),
-): Promise<ParsedSignedEventMeta> {
+}> {
   const decoded = decodeSignedEvent(bytes);
   const publicKey = await crypto.subtle.importKey(
     "raw",
@@ -192,7 +183,19 @@ export async function verifySignedEvent(
   if (decoded.meta.timeMs > nowMs + MAX_FUTURE_SKEW_MS) {
     throw new InvalidSignedEventError("event time is too far in the future");
   }
-  return decoded.meta;
+  const { accountIdBytes, content, meta } = decoded;
+  return { accountIdBytes, content, meta };
+}
+
+/**
+ * SignedEvent を厳密にデコードし、`account_id` の公開鍵で Ed25519 署名を検証する。
+ * 署名が不正・形式が不正・署名時刻が未来すぎる場合は `InvalidSignedEventError` を投げる。
+ */
+export async function verifySignedEvent(
+  bytes: Uint8Array,
+  nowMs: number = Date.now(),
+): Promise<ParsedSignedEventMeta> {
+  return (await decodeVerifiedSignedEvent(bytes, nowMs)).meta;
 }
 
 /** サーバーから受け取った 1 件のイベントをブラウザ側で検証した結果 */

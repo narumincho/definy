@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { Link } from "@void/react";
-import { Icon } from "../src/icons.tsx";
+import { ModuleIcon } from "../src/icons.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
@@ -35,7 +35,7 @@ export default function ModulesPage(): JSX.Element {
               className="card module-card"
             >
               <div className="module-card-header">
-                <Icon kind="modules" size={18} className="module-card-icon" />
+                <ModuleIcon size={18} className="module-card-icon" />
                 <h3 className="module-card-title">{mod.name}</h3>
                 <span className="badge badge-neutral">
                   {mod.parts.length} parts

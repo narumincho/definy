@@ -220,9 +220,9 @@ export default defineConfig({
 ### ④ シードデータの自動初期化とブラウザ側 CBOR 射影
 
 - **D1 自動スキーマ適用とシード同期 ([worker/store.ts](../worker/store.ts))**:
-  - `npm run dev`（ローカル環境）では新規の SQLite データベースが空の状態で割り当てられます。`store.ensureSeeded` において、`events` テーブルの存在を検知して未作成時は DDL（[migrations/0001_initial_schema.sql](../migrations/0001_initial_schema.sql)）を自動適用し、イベント件数が 0 の場合は静的シードバンドル（`/__definy_seed_bundle.json` または `seeds/seed_bundle.json`）をロードして自動同期します。
+  - `npm run dev`（ローカル環境）では新規の SQLite データベースが空の状態で割り当てられます。`store.ensureSeeded` において、`events` テーブルの存在を検知して未作成時は DDL（[migrations/0001_initial_schema.sql](../migrations/0001_initial_schema.sql)）を自動適用し、イベント件数が 0 の場合は静的シードバンドル（`/__definy_seed_bundle.json`）をロードして自動同期します。
   - すでにイベントが存在する本番環境やテスト環境では再シードを自動スキップし、安全かつ無駄なクエリを発生させません。
-  - シードバンドル（`seeds/seed_bundle.json` / `public/__definy_seed_bundle.json`）の再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。`seeds/*.json` の変更をバンドルに反映してコミットできます。
+  - シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) が生成し、`npm run dev` / `npm run build` / `npm test` でも自動で作られます。コミットするのは指紋 `seeds/seed_bundle_fingerprint.json` だけです ([build-artifacts.md](build-artifacts.md))。
 - **純粋なブラウザ対応 CBOR デコーダー ([src/cbor.ts](../src/cbor.ts))**:
   - `node:crypto` に依存しない標準 Web API（`atob`, `Uint8Array`, `TextDecoder`）のみで CBOR デコードおよび `ModuleCommit` 抽出を行い、署名済みイベントバイト列からモジュールメタデータ（`module_name`, `parts`, `expression`, `content_hash` 等）を React 状態（[src/state.tsx](../src/state.tsx)）へ動的に射影します。
 
