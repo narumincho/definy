@@ -147,9 +147,8 @@ Worker の環境変数 `CLOUDFLARE_API_BASE_URL` を設定すると, Cloudflare 
 デプロイされた Worker の応答 (`/healthz`・`/api/self-host`・`/` / `"Hello, definy!"` / `[2, 3, 5, 7, 11]`) を確かめた。
 
 > [!NOTE]
-> dev サーバーのローカル D1 は, イベントが 1 件でもあると seed を入れ直さない (`worker/store.ts` の `ensureSeeded`)。
-> seed を変えても古いシステムアカウントの seed イベントが残るので, 事前コンパイルのキャッシュには当たらず,
-> 古いパーツを Worker 内でコンパイルすることになる。
+> 以前は dev サーバーのローカル D1 がイベントを 1 件でも持つと seed を入れ直さず, 古い seed が残っていた。
+> 今は seed バンドルの指紋が変われば入れ替わる ([system-account.md](system-account.md) の「D1 の seed の入れ替え」)。
 
 ## 4. UI からの利用方法
 

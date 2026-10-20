@@ -31,4 +31,19 @@ seed（`seeds/*.json`）の中のパーツ ID は、32 バイトの配列では�
 
 ## ブートストラップイベントと編集イベントの区別
 
-seed から作るイベントは時刻 `2019-01-31T04:36:01Z`（リポジトリの最初のコミット）から 1 秒以内に置きます。サーバー起動時の移行処理は、この時刻範囲の古いシステムアカウントのイベントだけを削除し、UI などから投稿された編集イベントは残します。
+seed から作るイベントは時刻 `2019-01-31T04:36:01Z`（リポジトリの最初のコミット）から 1 秒以内に置きます。
+
+## D1 の seed の入れ替え（古い seed は残さない）
+
+`npm run build:seeds` は seed バンドルの指紋（全イベントのハッシュと全 CAS の内容の SHA-256, `src/seed_fingerprint.ts`）を
+`seeds/seed_bundle.json` と `seeds/seed_bundle_fingerprint.json` に書き、Worker はビルド時に後者を取り込みます。
+Worker は isolate ごとに 1 回、D1 に記録した指紋（`cas_contents` のキー `seed-bundle-fingerprint`）と比べ、
+違えば seed バンドルを読んで D1 を入れ替えます（`worker/store.ts` の `ensureSeeded` / `persistSeedToD1`）。
+一致していればコールドスタートでも seed バンドルは読みません。
+
+入れ替えでは、**システムアカウントのイベントのうち新しい seed に無いものをすべて削除します**。古い seed の上で
+システムアカウントとして行った UI の編集も消えます（時刻が新しい編集を残すと新しい seed のパーツを上書きしてしまい、
+古い seed との互換性を保つのが大変なため）。残したい編集は、seed を変える前に `npm run export:seeds` で
+`seeds/*.json` に書き戻してください。seed が変わらない間は、システムアカウントの編集も残ります。
+他のアカウントのイベントは削除しません。CAS は上書きするので、ハッシュでないキー（`stage1` や
+事前コンパイルの `stage1-output:*`）も新しい seed の内容になります。

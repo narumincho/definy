@@ -92,6 +92,8 @@ export type SeedContentEntry = {
 };
 
 export type SeedBundle = {
+  /** `seedBundleFingerprint` (src/seed_fingerprint.ts). 無ければ読み込むときに計算する */
+  readonly fingerprint?: string;
   readonly events: ReadonlyArray<SeedEventEntry>;
   readonly contents: ReadonlyArray<SeedContentEntry>;
 };

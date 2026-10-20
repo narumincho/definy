@@ -16,6 +16,7 @@ import {
   deployTargetExpression,
   stage1OutputCacheKey,
 } from "../src/deploy_target.ts";
+import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
@@ -26,6 +27,9 @@ import type {
   SeedContentEntry,
   SeedEventEntry,
 } from "../worker/types.ts";
+
+/** seed バンドルの指紋を書くファイル */
+export const SEED_FINGERPRINT_PATH = "seeds/seed_bundle_fingerprint.json";
 
 /** `definy-server` の開発用システムアカウント鍵 (`DEV_SYSTEM_KEY_SEED`) */
 const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
@@ -332,6 +336,7 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   const events: ReadonlyArray<SeedEventEntry> = eventsList;
 
   return {
+    fingerprint: await seedBundleFingerprint({ events, contents }),
     events,
     contents,
   };
@@ -351,6 +356,12 @@ if (
 
   await writeFile(seedsBundlePath, json, "utf-8");
   await writeFile(publicBundlePath, json, "utf-8");
+  // Worker がビルド時に取り込み, D1 の seed が最新かを調べるのに使う (worker/store.ts)
+  await writeFile(
+    resolve(SEED_FINGERPRINT_PATH),
+    `${JSON.stringify({ fingerprint: bundle.fingerprint }, null, 2)}\n`,
+    "utf-8",
+  );
 
   console.log(
     `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents`,
