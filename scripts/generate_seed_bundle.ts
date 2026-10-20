@@ -12,7 +12,13 @@ import {
   sha256Bytes,
   sha256EventHashId,
 } from "../src/cbor.ts";
+import {
+  deployTargetExpression,
+  stage1OutputCacheKey,
+} from "../src/deploy_target.ts";
+import { collectReferencedParts } from "../src/stage1_compiler.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
+import { compileWithStage1InWorker } from "./stage1_compile_worker.ts";
 import type {
   SeedBundle,
   SeedContentEntry,
@@ -111,6 +117,56 @@ async function resolvePartPlaceholders(
   return expr;
 }
 
+/**
+ * `definy.deploy({ ..., handler })` を持つパーツの handler を stage1 で事前にコンパイルし, CAS に入れる内容を返す.
+ * 大きなパーツは Cloudflare Workers のスタックでは stage1 がコンパイルしきれないので,
+ * Worker (`worker/part_compiler.ts`) は同じキー (`stage1OutputCacheKey`) でこの結果を探して使う
+ */
+async function precompileDeployTargets(
+  modules: ReadonlyMap<string, ModuleSeedData>,
+  accountBytes: Uint8Array,
+): Promise<ReadonlyArray<SeedContentEntry>> {
+  const partExpressions = new Map<string, unknown>();
+  for (const mod of modules.values()) {
+    const moduleId = await deriveModuleIdBytes(accountBytes, mod.module_name);
+    for (const part of mod.parts) {
+      partExpressions.set(
+        await deriveModulePartId(moduleId, String(part.name)),
+        part.expression ?? undefined,
+      );
+    }
+  }
+  const entries: Array<SeedContentEntry> = [];
+  for (const spec of MODULE_SPECS) {
+    for (const part of modules.get(spec.name)?.parts ?? []) {
+      if (part.expression == null) {
+        continue;
+      }
+      const { target, deploy } = deployTargetExpression(part.expression);
+      if (deploy === undefined) {
+        continue;
+      }
+      const { parts, unresolved } = collectReferencedParts(target, (id) =>
+        partExpressions.get(id),
+      );
+      if (unresolved.length > 0) {
+        throw new Error(
+          `${spec.name}.${String(part.name)}: unresolved parts ${unresolved.join(", ")}`,
+        );
+      }
+      const wasmBytes = await compileWithStage1InWorker({
+        expression: target,
+        parts,
+      });
+      entries.push({
+        contentHash: await stage1OutputCacheKey(target, parts),
+        contentBytes: bytesToBase64(wasmBytes),
+      });
+    }
+  }
+  return entries;
+}
+
 export async function generateSeedBundle(): Promise<SeedBundle> {
   const secretKeyEnv = process.env.DEFINY_SYSTEM_ACCOUNT_SECRET_KEY;
   const secretKeyBase64 =
@@ -193,6 +249,9 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
     contentHash: "stage1",
     contentBytes: bytesToBase64(new Uint8Array(stage1Bytes)),
   });
+  contentsList.push(
+    ...(await precompileDeployTargets(loadedModules, accountBytes)),
+  );
   const contents: ReadonlyArray<SeedContentEntry> = contentsList;
 
   // 3. イベント一覧の構築 (sample, wasi, std, core, definy, create_account の順)

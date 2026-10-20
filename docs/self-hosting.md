@@ -306,6 +306,7 @@ npm run build:stage1
 
 > [!WARNING]
 > ブラウザや Cloudflare Workers の JavaScript / WebAssembly 実行環境においても既定のコールスタックサイズに同様の制約があるため、コンパイラ自身のように再帰が非常に深くなる大きな式を評価・コンパイルする場合はスタックオーバーフローが発生する可能性があります。
+> Cloudflare Workers 上での実測と, 大きなパーツを seed バンドル生成時に事前コンパイルする仕組みは [worker-runtime.md](worker-runtime.md) を参照してください。
 
 ### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
 

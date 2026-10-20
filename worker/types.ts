@@ -48,6 +48,11 @@ export type Env = {
   /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
   readonly DEFINY_ROOT_DOMAIN?: string;
+  /**
+   * システムアカウントの公開鍵 (URL-safe base64). `DeployCloudflare` の `partId` に `module.part` と書いたとき,
+   * このアカウントのモジュールとして解決する. 未設定なら開発用の鍵 (docs/system-account.md)
+   */
+  readonly DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?: string;
   readonly CLOUDFLARE_API_TOKEN?: string;
   readonly CLOUDFLARE_ACCOUNT_ID?: string;
   /**

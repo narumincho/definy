@@ -116,8 +116,10 @@ sequenceDiagram
   スクリプト（未指定時はデフォルトの edge runner が利用されます）。
 - `compileSelfHosted`: (bool, 任意)
   自己記述コンパイラ検証サンプル（`15 + 27 = 42`）を動的ビルドして配備。
-- `partId`: (string, 任意) definy のパーツ ID
-  またはパーツ名。指定時は該当パーツの式をオンデマンドで Wasm 化して配備。
+- `partId`: (string, 任意) definy のパーツ ID, システムアカウントの `module.part`, または CAS の content hash。
+  指定時は該当パーツの式を自己記述コンパイラ (`wasm/stage1.wasm`) で Wasm 化して配備。式に
+  `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` があれば `handler` を配備し, worker 名を使う。
+  Workers のスタックに収まらない大きなパーツは `resource_exhausted` になる (詳細は [worker-runtime.md](worker-runtime.md))。
 
 #### レスポンス (`DeployCloudflareResponse`)
 
@@ -125,7 +127,7 @@ sequenceDiagram
 - `status`: デプロイステータス (`"succeeded"`)
 - `url`: デプロイされた Worker のメイン URL
   (`https://<script>.<subdomain>.workers.dev`)
-- `evaluatedResult`: 式の評価結果（自己コンパイラやパーツデプロイ時）
+- `evaluatedResult`: 式の評価結果（自己コンパイラ検証時。Workers は実行時に作った Wasm を動かせないので, パーツデプロイ時は返さない）
 
 ---
 
