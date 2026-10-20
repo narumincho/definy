@@ -2,7 +2,8 @@
  * `seeds/*.json` の definy 製コンパイラ (`core.compile-to-wasm`) を今の `wasm/stage1.wasm` でコンパイルし直し (stage2),
  * stage2 で同じ入力をコンパイルした stage3 と一致する (不動点) ことを確かめる.
  * `--check` のときは stage2 が今の `wasm/stage1.wasm` と一致するかを確かめ, 引数なしのときは書き出す.
- * stage1 内部の再帰が深いので `node --stack-size=4000` で動かす (`npm run build:stage1` / `npm run check:stage1`)
+ * `--bootstrap` のときは, コンパイラの出力を変えたとき (古い stage1 で作った stage2 は古い出力をする) のために,
+ * 不動点に達するまでできたコンパイラで自分自身をコンパイルし直す (`npm run build:stage1 -- --bootstrap`)
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import {
@@ -55,27 +56,47 @@ if (unresolved.length > 0) {
 }
 
 const currentWasmPath = "wasm/stage1.wasm";
+const PUBLIC_WASM_PATH = "public/stage1.wasm";
 const currentWasmBytes = readFileSync(currentWasmPath);
-const stage1Compiler = createStage1Compiler(
-  new WebAssembly.Module(currentWasmBytes),
-);
+/** `compilerBytes` のコンパイラでコンパイラ自身をコンパイルする */
+function compileCompiler(compilerBytes: Uint8Array): Uint8Array {
+  return createStage1Compiler(new WebAssembly.Module(compilerBytes)).compile(
+    expression,
+    parts,
+  );
+}
+
+const MAX_BOOTSTRAP_ROUNDS = 5;
+const isBootstrap = process.argv.includes("--bootstrap");
 
 console.log(
   `Compiling stage2 with current stage1 (${parts.length} referenced parts)...`,
 );
-const stage2Bytes = stage1Compiler.compile(expression, parts);
+let stage2Bytes = compileCompiler(currentWasmBytes);
 console.log(`stage2 generated: ${stage2Bytes.length} bytes`);
 
 console.log("Compiling stage3 with stage2 to verify fixed point...");
-const stage2Compiler = createStage1Compiler(
-  new WebAssembly.Module(stage2Bytes),
-);
-const stage3Bytes = stage2Compiler.compile(expression, parts);
+let stage3Bytes = compileCompiler(stage2Bytes);
 console.log(`stage3 generated: ${stage3Bytes.length} bytes`);
+
+for (
+  let round = 1;
+  isBootstrap &&
+  !areBytesEqual(stage2Bytes, stage3Bytes) &&
+  round < MAX_BOOTSTRAP_ROUNDS;
+  round++
+) {
+  stage2Bytes = stage3Bytes;
+  stage3Bytes = compileCompiler(stage2Bytes);
+  console.log(
+    `bootstrap round ${round}: stage${round + 3} generated: ${stage3Bytes.length} bytes`,
+  );
+}
 
 if (!areBytesEqual(stage2Bytes, stage3Bytes)) {
   console.error(
-    "Fixed point verification failed: stage3 does not match stage2.",
+    "Fixed point verification failed: stage3 does not match stage2." +
+      (isBootstrap ? "" : " If the compiler output changed, use --bootstrap."),
   );
   process.exit(1);
 }
@@ -108,7 +129,9 @@ if (isCheckMode) {
   );
 } else {
   writeFileSync(currentWasmPath, stage2Bytes);
+  // 静的アセットとして配信するコピー (`/stage1.wasm`. worker/store.ts の getStage1WasmBytes が使う)
+  writeFileSync(PUBLIC_WASM_PATH, stage2Bytes);
   console.log(
-    `Successfully regenerated ${currentWasmPath} (${stage2Bytes.length} bytes) at fixed point.`,
+    `Successfully regenerated ${currentWasmPath} and ${PUBLIC_WASM_PATH} (${stage2Bytes.length} bytes) at fixed point.`,
   );
 }

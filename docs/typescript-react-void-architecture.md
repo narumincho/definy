@@ -33,7 +33,7 @@ TypeScript + React に移行したことで：
 
 ### アーキテクチャ概要
 
-[wasm/stage1.wasm](../wasm/stage1.wasm) は、`definy` 自身のコードから生成された **68,452 バイト** のスタンドアロンな Wasm バイナリです。外部環境への import は一切ありません (`Imports: []`)。
+[wasm/stage1.wasm](../wasm/stage1.wasm) は、`definy` 自身のコードから生成された スタンドアロンな Wasm バイナリ (2026-10-21 時点で 81,143 バイト) です。外部環境への import は一切ありません (`Imports: []`)。
 
 ```
 definy AST (JSON / Object)

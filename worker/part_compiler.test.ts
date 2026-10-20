@@ -7,7 +7,10 @@ import {
 } from "../src/auth.ts";
 import {
   base64ToBytes,
+  bytesToBase64,
   bytesToUrlSafeBase64NoPad,
+  encodeCborItem,
+  sha256Bytes,
   type DecodedPart,
 } from "../src/cbor.ts";
 import { STAGE1_OUTPUT_CACHE_PREFIX } from "../src/deploy_target.ts";
@@ -129,19 +132,60 @@ describe("compilePartToWasm", () => {
     );
   });
 
-  it("キャッシュが無く stage1 のスタックが足りないときは resource_exhausted", async () => {
+  it("キャッシュが無くても大きなパーツを stage1 でコンパイルでき, キャッシュと同じバイト列になる", async () => {
     const bundle = await loadTestSeedBundle();
-    const { store, env } = await createSeededStore({
+    const cached = await createSeededStore(bundle);
+    const uncached = await createSeededStore({
       ...bundle,
       contents: bundle.contents.filter(
         (c) => !c.contentHash.startsWith(STAGE1_OUTPUT_CACHE_PREFIX),
       ),
     });
-    const error = await compilePartToWasm(
+    const fromCache = await compilePartToWasm(
       "sample.self-hosted-definy-server",
-      store,
-      env,
-    ).catch((e: unknown) => e);
+      cached.store,
+      cached.env,
+    );
+    const compiled = await compilePartToWasm(
+      "sample.self-hosted-definy-server",
+      uncached.store,
+      uncached.env,
+    );
+    expect(compiled.cloudflareWorkerName).toBe("self-definy");
+    expect(bytesToUrlSafeBase64NoPad(compiled.wasmBytes)).toBe(
+      bytesToUrlSafeBase64NoPad(fromCache.wasmBytes),
+    );
+  });
+
+  it("スタックが足りないほど深い式は resource_exhausted", async () => {
+    // Add の右に 5000 段入れ子にした式. テスト側で溢れないように CBOR を再帰せずに組み立てる
+    const depth = 5000;
+    const prefix = [
+      0xa1,
+      ...encodeCborItem("Add"),
+      0xa2,
+      ...encodeCborItem("left"),
+      ...encodeCborItem({ Number: { value: 1 } }),
+      ...encodeCborItem("right"),
+    ];
+    const leaf = encodeCborItem({ Number: { value: 1 } });
+    const bytes = new Uint8Array(prefix.length * depth + leaf.length);
+    for (let i = 0; i < depth; i++) {
+      bytes.set(prefix, i * prefix.length);
+    }
+    bytes.set(leaf, prefix.length * depth);
+    const contentHash = bytesToUrlSafeBase64NoPad(await sha256Bytes(bytes));
+    const bundle = await loadTestSeedBundle();
+    const { store, env } = await createSeededStore({
+      ...bundle,
+      contents: [
+        ...bundle.contents,
+        { contentHash, contentBytes: bytesToBase64(bytes) },
+      ],
+    });
+    const error = await compilePartToWasm(contentHash, store, env).catch(
+      (e: unknown) => e,
+    );
     expect(error).toBeInstanceOf(PartCompileError);
     expect((error as PartCompileError).code).toBe("resource_exhausted");
   });

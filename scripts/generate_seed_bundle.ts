@@ -16,9 +16,11 @@ import {
   deployTargetExpression,
   stage1OutputCacheKey,
 } from "../src/deploy_target.ts";
-import { collectReferencedParts } from "../src/stage1_compiler.ts";
+import {
+  collectReferencedParts,
+  createStage1Compiler,
+} from "../src/stage1_compiler.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
-import { compileWithStage1InWorker } from "./stage1_compile_worker.ts";
 import type {
   SeedBundle,
   SeedContentEntry,
@@ -119,8 +121,8 @@ async function resolvePartPlaceholders(
 
 /**
  * `definy.deploy({ ..., handler })` を持つパーツの handler を stage1 で事前にコンパイルし, CAS に入れる内容を返す.
- * 大きなパーツは Cloudflare Workers のスタックでは stage1 がコンパイルしきれないので,
- * Worker (`worker/part_compiler.ts`) は同じキー (`stage1OutputCacheKey`) でこの結果を探して使う
+ * Worker (`worker/part_compiler.ts`) は同じキー (`stage1OutputCacheKey`) でこの結果を探して使い,
+ * デプロイのたびにコンパイルする CPU 時間を省く
  */
 async function precompileDeployTargets(
   modules: ReadonlyMap<string, ModuleSeedData>,
@@ -136,6 +138,9 @@ async function precompileDeployTargets(
       );
     }
   }
+  const stage1 = createStage1Compiler(
+    new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
+  );
   const entries: Array<SeedContentEntry> = [];
   for (const spec of MODULE_SPECS) {
     for (const part of modules.get(spec.name)?.parts ?? []) {
@@ -154,10 +159,7 @@ async function precompileDeployTargets(
           `${spec.name}.${String(part.name)}: unresolved parts ${unresolved.join(", ")}`,
         );
       }
-      const wasmBytes = await compileWithStage1InWorker({
-        expression: target,
-        parts,
-      });
+      const wasmBytes = stage1.compile(target, parts);
       entries.push({
         contentHash: await stage1OutputCacheKey(target, parts),
         contentBytes: bytesToBase64(wasmBytes),

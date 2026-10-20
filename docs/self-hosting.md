@@ -288,25 +288,50 @@ npm run build:stage1
 #### 再生成の手順と検証フロー
 
 1. `seeds/*.json` のパーツ定義を読み込み、開発用システムアカウント鍵から導出した公開鍵を用いてパーツ ID のプレースホルダ (`{"$part": "core.compile-to-wasm"}`) を解決する。
-2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全 38 パーツを収集する。
-3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (68,452 バイト)。
+2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全パーツ (2026-10-21 時点で 60 個) を収集する。
+3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (2026-10-21 時点で 81,143 バイト)。
 4. 得られた `stage2` のバイナリを使って同じ式を再コンパイルし、`stage3` を生成する。
-5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は書き出す。
+5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は `wasm/stage1.wasm` と静的アセットのコピー `public/stage1.wasm` に書き出す（2 つが一致することもテストする）。stage1 を変えたら `npm run build:seeds` で seed バンドル（stage1 自身と事前コンパイルの結果を含む）も作り直す。
 6. `src/stage1_fixed_point.test.ts` において、Vitest 経由でも不動点検証が自動テストされる。
 
 #### 参照パーツの順序 (LIFO) とバイト一致
 
 `src/stage1_compiler.ts` の `collectReferencedParts` では、参照パーツの探索キューから**末尾の要素を取り出す LIFO (後入れ先出し)** を採用しています。
-旧 Rust 実装 (`definy-server/src/self_hosted_wasm_compiler.rs` の `referenced_parts_expression`) が `queue.pop()` で末尾から取り出していたため、同じ順序に揃えることで関数表（Wasm の table）のインデックス順や関数の配置順が一致し、既存の `wasm/stage1.wasm` (68,452 バイト) と 1 バイトの差異もなく完全一致させることができます（FIFO にするとサイズは同じでもインデックスがずれてバイト不一致になります）。
+旧 Rust 実装 (`definy-server/src/self_hosted_wasm_compiler.rs` の `referenced_parts_expression`) が `queue.pop()` で末尾から取り出していたため、同じ順序に揃えることで関数表（Wasm の table）のインデックス順や関数の配置順が一致し、当時の `wasm/stage1.wasm` (68,452 バイト) と 1 バイトの差異もなく完全一致させることができます（FIFO にするとサイズは同じでもインデックスがずれてバイト不一致になります）。
 
-#### Node のスタックサイズ (`--stack-size=4000`)
+#### コンパイラの出力を変えたとき (`--bootstrap`)
 
-コンパイラ自身のコード（38 パーツ）のような巨大な AST をコンパイルする際、`stage1.wasm` 内部の再帰呼び出しが深くなり、Node.js の既定コールスタックサイズ（約 984 KB）では `RangeError: Maximum call stack size exceeded` が発生します。
-そのため、実行時には `node --stack-size=4000` を指定してスタックサイズを拡張する必要があります（コンパイル 1 回あたりの所要時間は約 0.3 秒）。
+stage2 は今の stage1 (古いコンパイラ) でコンパイルしたものなので, コンパイラが出力するコードを変えると stage2 は古い出力をし,
+stage3 と一致しない。`npm run build:stage1 -- --bootstrap` は不動点に達するまで (最大 5 回) できたコンパイラで
+自分自身をコンパイルし直す。出力を変えない書き換え (リファクタリング) なら `--bootstrap` なしで 1 回で不動点になる。
 
-> [!WARNING]
-> ブラウザや Cloudflare Workers の JavaScript / WebAssembly 実行環境においても既定のコールスタックサイズに同様の制約があるため、コンパイラ自身のように再帰が非常に深くなる大きな式を評価・コンパイルする場合はスタックオーバーフローが発生する可能性があります。
-> Cloudflare Workers 上での実測と, 大きなパーツを seed バンドル生成時に事前コンパイルする仕組みは [worker-runtime.md](worker-runtime.md) を参照してください。
+#### stage1 の再帰の深さとフレームの大きさ (2026-10-21)
+
+以前の stage1 は, `sample.self-hosted-definy-server` の handler のコンパイルに Node.js で 16MB 以上のスタックと約 10 秒,
+コンパイラ自身のコンパイルに 4MB のスタックを要し, Cloudflare Workers ではどちらもスタックオーバーフローした。原因は 3 つ:
+
+1. **リストの長さだけ深くなる再帰**: `collect-functions-in-list` などの補助関数が `f(items[i]) +++ 自分(i + 1)` の形で,
+   子の多い式 (`core.wasm-runtime-functions` の数千要素のリストなど) で数千段再帰していた。
+   生成コードは末尾呼び出しを最適化しない (`return_call` を出さない) ので, 末尾再帰でも深さは減らない
+2. **二乗のリストの連結**: 右に入れ子になった `a +++ (b +++ (c +++ ...))` は外側の連結のたびに内側を丸ごとコピーする
+   (`list_concat` は新しいリストにコピーする)。時間の 82% がランタイム関数 `list_concat` だった
+3. **大きなフレーム**: 生成する関数がすべて i32 のローカル変数を 512 個固定で宣言していた (1 フレーム 2KB 以上)
+
+対策 (seeds/core.json):
+
+1. 2 の対策も兼ねて, 補助関数 `H(items, index, ...)` を, 範囲 `[lo, hi)` を半分に割って `H-range(lo, mid) +++ H-range(mid, hi)`
+   とする `H-range` に任せる (分割統治)。深さは O(log n), 連結のコピー量は O(n log n) になる。右半分に渡す `fn_base`
+   (それまでの関数の数) は `count-functions-in-range` などで左半分の分を数えて進める。出力は変わらない。
+   `repeat-number` / `uleb-range` も count を半分に割る
+2. `core.max-local(expr, depth, ctx)` で, 式が使うローカル変数の番号の上限を求めて宣言する
+   (式が 1 段深くなるごとに使うローカル変数は高々 2 つ増え, 関数の本体は別の関数になり,
+   関数でないパーツへの参照は同じ depth で展開される)。多めに見積もる分には安全で,
+   少なすぎれば Wasm の検証エラーになる (気づかずに壊れることはない)
+
+結果: handler は既定のスタックで 0.7 秒 (100KB のスタックでも足りる), コンパイラ自身も 100KB で足りる。
+`npm run build:stage1` / `check:stage1` に `--stack-size` は要らなくなった。
+残る深さは式の入れ子の深さ (正当な再帰) と, 線形に探す `compile-env-lookup` / `compile-find-part` などの末尾再帰。
+さらに減らすには, 生成コードで末尾呼び出し (`return_call_indirect`) を出すのがよい。
 
 ### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
 

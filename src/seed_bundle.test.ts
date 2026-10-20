@@ -18,8 +18,8 @@ describe("generateSeedBundle", () => {
 
     expect(generated.events).toEqual(existing.events);
     expect(generated.contents).toEqual(existing.contents);
-    // デプロイするパーツの handler を stage1 で事前にコンパイルするので時間がかかる
-  }, 120_000);
+    // デプロイするパーツの handler を stage1 で事前にコンパイルするので少し時間がかかる
+  }, 30_000);
 
   it("public/__definy_seed_bundle.json is identical to seeds/seed_bundle.json", async () => {
     const seedsRaw = await readFile(resolve("seeds/seed_bundle.json"), "utf-8");

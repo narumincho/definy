@@ -46,32 +46,32 @@ Cloudflare Worker (`definy`) 内で definy のパーツを Wasm にコンパイ�
   `vitest.config.ts` のプラグインが同じ `?module` を `new WebAssembly.Module(readFileSync(...))` にする
 - 同じ理由で, **コンパイル結果を Worker 内で評価することはできない**。旧 Rust 版はコンパイル結果を評価して
   `evaluatedResult` を返していたが, TS 版ではパーツデプロイ時に `evaluatedResult` を返さない
-- **stage1 の内部の再帰が深く, Workers の既定のスタックでは大きなパーツをコンパイルできない**。ローカルの workerd で
-  確かめた結果 (2026-10-20):
+- **スタック**: Workers ではスタックを広げられない。以前の stage1 は補助関数がリストの長さだけ再帰し, 生成する関数が
+  ローカル変数を 512 個固定で宣言していたため (1 フレーム 2KB 以上), 大きなパーツでスタックオーバーフローした。
+  これを直したあと ([self-hosting.md](self-hosting.md) の「stage1 の再帰の深さとフレームの大きさ」), ローカルの workerd で
+  確かめた結果 (2026-10-21, キャッシュを使わずにコンパイル):
 
-  | パーツ                             | 結果                                          |
-  | ---------------------------------- | --------------------------------------------- |
-  | `sample.greet` など小さいパーツ    | 0.1〜0.3 秒でコンパイルできる                 |
-  | `core.type-check` (167KB)          | 0.45 秒でコンパイルできる                     |
-  | `sample.self-hosted-definy-server` | スタックオーバーフロー (事前コンパイルで対応) |
-  | `core.compile-to-wasm`             | スタックオーバーフロー                        |
+  | パーツ                             | 出力  | 時間 (イベントの読み込みを含む)   |
+  | ---------------------------------- | ----- | --------------------------------- |
+  | `sample.greet`                     | 1.2KB | 0.1〜0.4 秒                       |
+  | `core.type-check`                  | 167KB | 0.44 秒                           |
+  | `core.compile-to-wasm`             | 81KB  | 0.35 秒                           |
+  | `sample.self-hosted-definy-server` | 288KB | 0.95 秒 (キャッシュありで 0.3 秒) |
 
-  スタックが足りないときは `resource_exhausted` (HTTP 429) を返す。`sample.self-hosted-definy-server` の handler は
-  Node.js で 16MB 以上のスタックと約 10 秒が要る
+  Node.js では `sample.self-hosted-definy-server` の handler とコンパイラ自身のどちらも 100KB のスタックでコンパイルできる
+  (既定は約 1MB)。それでもスタックが足りないときは `resource_exhausted` (HTTP 429) を返す
 
 ### 事前コンパイル (seed バンドル)
 
 `npm run build:seeds` は seed の各パーツのうち `definy.deploy` を持つものの handler を stage1 で事前にコンパイルし,
-`stage1-output:<SHA-256>` をキーにして seed バンドルの contents (CAS) に入れる。stage1 は
-`scripts/stage1_compile_worker.ts` の worker thread (`resourceLimits.stackSizeMb: 64`) で動かす
-(`node --stack-size` はメインスレッドの OS のスタックを超えると落ちるため)。
+`stage1-output:<SHA-256>` をキーにして seed バンドルの contents (CAS) に入れる。Worker でもコンパイルできるが,
+デプロイのたびにかかる CPU 時間 (`sample.self-hosted-definy-server` で約 0.7 秒) を省ける。
 
-キャッシュキーは入力だけで決まるので, `wasm/stage1.wasm` を作り直したら `npm run build:seeds` もやり直すこと。
-UI から編集した (seed に無い) 大きなパーツは事前コンパイルされないので, Workers 上ではデプロイできない。
-根本的には stage1 (seed の `core.compile-*`) の再帰を浅くする必要がある。
+キャッシュキーは入力だけで決まるので, `wasm/stage1.wasm` を作り直したら `npm run build:seeds` もやり直すこと
+(`src/seed_bundle.test.ts` が seed バンドルとのずれを検出する)。
 
 以前は `wasm/self_hosted_definy_server.wasm` (旧 Rust 製コンパイラで作った 528KB) を名前の部分一致で返していたが,
-stage1 で作った handler (275KB) に置き換えて削除した。デプロイ先のシム (`worker/cloudflare_api.ts` の `worker.js`) で
+stage1 で作った handler に置き換えて削除した。デプロイ先のシム (`worker/cloudflare_api.ts` の `worker.js`) で
 動かしたときの応答は同じ。
 
 ## テストと適合検証

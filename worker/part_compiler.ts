@@ -4,9 +4,8 @@
  *
  * Cloudflare Workers は実行時にバイト列から Wasm をコンパイルできないので, stage1 はバンドル時にコンパイル済みの
  * `WebAssembly.Module` として import する (`?module`. Vitest では `vitest.config.ts` のプラグインで同じ形にする).
- * stage1 の内部の再帰は深く, Workers の既定のスタックでは大きなパーツ (`sample.self-hosted-definy-server` など) を
- * コンパイルできない. そうしたパーツは `npm run build:seeds` で事前にコンパイルして seed バンドルの CAS に入れておき,
- * 入力 (式と参照パーツ) のハッシュをキーに使い回す (`stage1OutputCacheKey`)
+ * seed のデプロイするパーツは `npm run build:seeds` で事前にコンパイルして seed バンドルの CAS に入れてあるので,
+ * 入力 (式と参照パーツ) のハッシュ (`stage1OutputCacheKey`) で見つかればコンパイルを省く
  */
 import stage1Module from "../wasm/stage1.wasm?module";
 import {
@@ -215,33 +214,31 @@ async function collectParts(
   }
 }
 
-/** stage1 でコンパイルする. Worker のスタックで足りないときは `resource_exhausted` */
-function compileWithStage1(
-  expression: unknown,
-  parts: ReadonlyArray<Stage1ReferencedPart>,
-  partLabel: string,
-): Uint8Array {
+/**
+ * `partId` (パーツ ID / システムアカウントの `module.part` / CAS の content hash) を
+ * Cloudflare Workers にアップロードする `.wasm` バイナリにコンパイルする.
+ * 式に `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` があれば `handler` をコンパイルし,
+ * worker 名とトークンも返す. 式が深すぎてスタックが足りないときは `resource_exhausted`
+ */
+export async function compilePartToWasm(
+  partId: string,
+  store: PartStoreReader,
+  env?: Env,
+): Promise<CompiledPartArtifact> {
   try {
-    return createStage1Compiler(stage1Module).compile(expression, parts);
+    return await compilePart(partId, store, env);
   } catch (e) {
     if (e instanceof RangeError) {
       throw new PartCompileError(
         "resource_exhausted",
-        `パーツ '${partLabel}' はこのサーバーの stage1 でコンパイルするには大きすぎます (${e.message})。` +
-          "システムアカウントのパーツなら npm run build:seeds で事前コンパイルして seed バンドルに入れてください",
+        `パーツ '${partId.trim()}' は深すぎてこのサーバーのスタックではコンパイルできません (${e.message})`,
       );
     }
     throw e;
   }
 }
 
-/**
- * `partId` (パーツ ID / システムアカウントの `module.part` / CAS の content hash) を
- * Cloudflare Workers にアップロードする `.wasm` バイナリにコンパイルする.
- * 式に `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` があれば `handler` をコンパイルし,
- * worker 名とトークンも返す
- */
-export async function compilePartToWasm(
+async function compilePart(
   partId: string,
   store: PartStoreReader,
   env?: Env,
@@ -288,7 +285,7 @@ export async function compilePartToWasm(
   const wasmBytes =
     cached !== undefined && isWasmBinary(cached)
       ? cached
-      : compileWithStage1(target, parts, trimmed);
+      : createStage1Compiler(stage1Module).compile(target, parts);
   return {
     wasmBytes,
     cloudflareWorkerName: deploy?.cloudflareWorkerName ?? null,
