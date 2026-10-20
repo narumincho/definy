@@ -357,9 +357,9 @@ export function DefinyProvider({
               name: p.name,
               description: p.description,
               partType: p.partType,
-              contentHash: p.contentHash,
-              partIdHash: p.partIdHash,
-              expression: p.expression,
+              contentHash: p.contentHash ?? null,
+              partIdHash: p.partIdHash ?? null,
+              expression: p.expression ?? null,
               updatedAtMs: ev.timeMs,
             };
             partMap.set(partId, partSnapshot);
@@ -381,9 +381,9 @@ export function DefinyProvider({
               name: p.name,
               description: p.description,
               partType: p.partType,
-              contentHash: p.contentHash,
-              partIdHash: p.partIdHash,
-              expression: p.expression,
+              contentHash: p.contentHash ?? null,
+              partIdHash: p.partIdHash ?? null,
+              expression: p.expression ?? null,
             };
           },
         );
@@ -430,6 +430,7 @@ export function DefinyProvider({
             partType: p.partType,
             expression: p.expression,
             contentHash: p.contentHash,
+            partIdHash: p.partIdHash,
           });
         }
       }
@@ -449,6 +450,7 @@ export function DefinyProvider({
             partType: change.partType,
             expression: change.expression,
             contentHash: null,
+            partIdHash: null,
           });
           committedPartIds.add(partId);
         }

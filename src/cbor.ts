@@ -426,9 +426,9 @@ export type DecodedPart = {
   readonly name: string;
   readonly description: LocalizedText;
   readonly partType: unknown;
-  readonly expression?: unknown | undefined;
-  readonly contentHash?: string | null | undefined;
-  readonly partIdHash?: string | null | undefined;
+  readonly expression?: unknown;
+  readonly contentHash?: string | null;
+  readonly partIdHash?: string | null;
 };
 
 export type DecodedModuleCommit = {

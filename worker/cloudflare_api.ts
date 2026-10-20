@@ -707,8 +707,8 @@ export async function listWorkersFromCloudflare(
 
   const workers: ReadonlyArray<CloudflareWorkerItem> = summaries.map((w) => ({
     id: w.id,
-    createdOn: w.created_on,
-    modifiedOn: w.modified_on,
+    ...(w.created_on !== undefined ? { createdOn: w.created_on } : {}),
+    ...(w.modified_on !== undefined ? { modifiedOn: w.modified_on } : {}),
   }));
 
   return { workers };

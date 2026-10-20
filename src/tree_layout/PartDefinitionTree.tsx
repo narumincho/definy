@@ -7,10 +7,10 @@ import { nextRow, type DefinitionRow } from "./definition_rows.ts";
 import { expressionToPartType, partTypeToExpression } from "./part_type.ts";
 
 /** 中に型・式のツリーエディタを持つ行と, そのツリーの枠の ID */
-const INNER_TREE_IDS: Partial<Record<DefinitionRow, string>> = {
+const INNER_TREE_IDS = {
   type: "part-def-type-tree",
   value: "part-def-value-tree",
-};
+} as const;
 
 function rowElementId(row: DefinitionRow): string {
   return `part-def-${row}`;
@@ -22,12 +22,12 @@ export type PartDefinitionTreeProps = {
   readonly description: string;
   readonly partType: unknown;
   readonly expression: unknown;
-  readonly editable?: boolean | undefined;
-  readonly onNameChange?: ((name: string) => void) | undefined;
-  readonly onDescriptionChange?: ((desc: string) => void) | undefined;
-  readonly onExpressionChange?: ((expr: unknown) => void) | undefined;
+  readonly editable?: boolean;
+  readonly onNameChange?: (name: string) => void;
+  readonly onDescriptionChange?: (desc: string) => void;
+  readonly onExpressionChange?: (expr: unknown) => void;
   /** 型を変えたとき. `null` は型指定なし */
-  readonly onPartTypeChange?: ((partType: unknown) => void) | undefined;
+  readonly onPartTypeChange?: (partType: unknown) => void;
 };
 
 export function PartDefinitionTree({
@@ -66,8 +66,8 @@ export function PartDefinitionTree({
 
   /** 型・式のツリーへフォーカスを移す (ツリー側でルートが選ばれる) */
   function enterInnerTree(row: DefinitionRow): boolean {
+    if (row !== "type" && row !== "value") return false;
     const treeId = INNER_TREE_IDS[row];
-    if (treeId === undefined) return false;
     document.getElementById(treeId)?.focus();
     return true;
   }
@@ -275,14 +275,14 @@ export function PartDefinitionTree({
             <ExpressionTreeEditor
               mode="type"
               expression={typeExpression}
-              onChange={
-                onPartTypeChange
-                  ? (next) => {
+              {...(onPartTypeChange
+                ? {
+                    onChange: (next) => {
                       onPartTypeChange(expressionToPartType(next));
-                    }
-                  : undefined
-              }
-              editable={editable}
+                    },
+                  }
+                : {})}
+              {...(editable !== undefined ? { editable } : {})}
               containerId={INNER_TREE_IDS.type}
               onExit={exitInnerTree("type")}
             />
@@ -327,9 +327,11 @@ export function PartDefinitionTree({
           <div className="def-value">
             <ExpressionTreeEditor
               expression={expression}
-              partType={partType}
-              onChange={onExpressionChange}
-              editable={editable}
+              {...(partType !== undefined ? { partType } : {})}
+              {...(onExpressionChange !== undefined
+                ? { onChange: onExpressionChange }
+                : {})}
+              {...(editable !== undefined ? { editable } : {})}
               containerId={INNER_TREE_IDS.value}
               onExit={exitInnerTree("value")}
             />

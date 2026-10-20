@@ -151,6 +151,7 @@ export type GetContentResponse = {
 /**
  * Connect-RPC: DeployService メッセージ型
  */
+// Connect-RPC の JSON リクエスト body からデシリアライズされ、未指定プロパティに undefined や null が混在しうるため
 export type DeployCloudflareRequest = {
   /** 省略時はサーバーの `CLOUDFLARE_API_TOKEN` を使う（管理者のみ） */
   readonly apiToken?: string | null | undefined;
@@ -199,8 +200,8 @@ export type ListCloudflareWorkersRequest = {
 
 export type CloudflareWorkerItem = {
   readonly id: string;
-  readonly createdOn?: string | undefined;
-  readonly modifiedOn?: string | undefined;
+  readonly createdOn?: string;
+  readonly modifiedOn?: string;
 };
 
 export type ListCloudflareWorkersResponse = {

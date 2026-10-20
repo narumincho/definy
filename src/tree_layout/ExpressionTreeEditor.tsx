@@ -53,21 +53,21 @@ import {
 export type ExpressionTreeEditorProps = {
   readonly expression: unknown;
   readonly partType?: unknown;
-  readonly onChange?: ((newExpression: unknown) => void) | undefined;
-  readonly editable?: boolean | undefined;
-  readonly maxWidth?: number | undefined;
+  readonly onChange?: (newExpression: unknown) => void;
+  readonly editable?: boolean;
+  readonly maxWidth?: number;
   /** ツリーの枠の要素 ID. 外側 (パーツ定義のツリーなど) からフォーカスを移すときに使う */
-  readonly containerId?: string | undefined;
+  readonly containerId?: string;
   /**
    * キー操作でツリーの外へ出ようとしたとき (ルートで Q, 端で上下移動, 未選択で Escape) に呼ばれる.
    * 指定しなければ何もしない
    */
-  readonly onExit?: ((key: NavKey) => void) | undefined;
+  readonly onExit?: (key: NavKey) => void;
   /**
    * "type" ならパーツの型の行の型のツリーエディタにする (part_type.ts の型の式を編集する).
    * 選択肢は型と型のパーツだけで, 期待型の推論はしない
    */
-  readonly mode?: "expression" | "type" | undefined;
+  readonly mode?: "expression" | "type";
 };
 
 /**
@@ -634,7 +634,7 @@ export function ExpressionTreeEditor({
         onChangeNumber={handleChangeNumber}
         onChangeString={handleChangeString}
         onClear={handleClear}
-        selectionAnchorName={selectionAnchorName}
+        {...(selectionAnchorName !== undefined ? { selectionAnchorName } : {})}
       />
 
       {/*
