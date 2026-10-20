@@ -39842,672 +39842,64 @@
                           "variable_id": 43,
                           "variable_name": "e",
                           "body": {
-                            "Let": {
-                              "bindings": [
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-call"
+                                  }
+                                }
+                              },
+                              "arguments": [
                                 {
-                                  "variable_id": 96,
-                                  "variable_name": "function",
+                                  "name": "e",
                                   "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 43
-                                        }
-                                      },
-                                      "key": "function"
+                                    "Variable": {
+                                      "variable_id": 43
                                     }
                                   }
                                 },
                                 {
-                                  "variable_id": 97,
-                                  "variable_name": "arguments",
+                                  "name": "env",
                                   "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 43
-                                        }
-                                      },
-                                      "key": "arguments"
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "depth",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "fn_base",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "ctx",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "opcode",
+                                  "value": {
+                                    "Number": {
+                                      "value": 17
                                     }
                                   }
                                 }
-                              ],
-                              "body": {
-                                "ListConcat": {
-                                  "left": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.compile-expr-instructions"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "expr",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 96
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "env",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "depth",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "fn_base",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 3
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "ctx",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 4
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "right": {
-                                    "ListConcat": {
-                                      "left": {
-                                        "ListConcat": {
-                                          "left": {
-                                            "ListLiteral": {
-                                              "items": [
-                                                {
-                                                  "Number": {
-                                                    "value": 33
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "right": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.unsigned-leb128"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "n",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 2
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      },
-                                      "right": {
-                                        "ListConcat": {
-                                          "left": {
-                                            "Match": {
-                                              "target": {
-                                                "Equal": {
-                                                  "left": {
-                                                    "ListLength": {
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 97
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  "right": {
-                                                    "Number": {
-                                                      "value": 0
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "ListConcat": {
-                                                      "left": {
-                                                        "ListLiteral": {
-                                                          "items": [
-                                                            {
-                                                              "Number": {
-                                                                "value": 65
-                                                              }
-                                                            },
-                                                            {
-                                                              "Number": {
-                                                                "value": 0
-                                                              }
-                                                            }
-                                                          ]
-                                                        }
-                                                      },
-                                                      "right": {
-                                                        "ListConcat": {
-                                                          "left": {
-                                                            "ListLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "Number": {
-                                                                    "value": 33
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "Call": {
-                                                              "function": {
-                                                                "PartReference": {
-                                                                  "part_definition_event_hash": {
-                                                                    "$part": "core.unsigned-leb128"
-                                                                  }
-                                                                }
-                                                              },
-                                                              "arguments": [
-                                                                {
-                                                                  "name": "n",
-                                                                  "value": {
-                                                                    "Add": {
-                                                                      "left": {
-                                                                        "Variable": {
-                                                                          "variable_id": 2
-                                                                        }
-                                                                      },
-                                                                      "right": {
-                                                                        "Number": {
-                                                                          "value": 1
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "ListConcat": {
-                                                      "left": {
-                                                        "ListConcat": {
-                                                          "left": {
-                                                            "ListLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "Number": {
-                                                                    "value": 65
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "Call": {
-                                                              "function": {
-                                                                "PartReference": {
-                                                                  "part_definition_event_hash": {
-                                                                    "$part": "core.signed-leb128"
-                                                                  }
-                                                                }
-                                                              },
-                                                              "arguments": [
-                                                                {
-                                                                  "name": "n",
-                                                                  "value": {
-                                                                    "Multiply": {
-                                                                      "left": {
-                                                                        "ListLength": {
-                                                                          "value": {
-                                                                            "Variable": {
-                                                                              "variable_id": 97
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      },
-                                                                      "right": {
-                                                                        "Number": {
-                                                                          "value": 4
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      "right": {
-                                                        "ListConcat": {
-                                                          "left": {
-                                                            "ListLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "Number": {
-                                                                    "value": 16
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "Number": {
-                                                                    "value": 1
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "ListConcat": {
-                                                              "left": {
-                                                                "ListConcat": {
-                                                                  "left": {
-                                                                    "ListLiteral": {
-                                                                      "items": [
-                                                                        {
-                                                                          "Number": {
-                                                                            "value": 33
-                                                                          }
-                                                                        }
-                                                                      ]
-                                                                    }
-                                                                  },
-                                                                  "right": {
-                                                                    "Call": {
-                                                                      "function": {
-                                                                        "PartReference": {
-                                                                          "part_definition_event_hash": {
-                                                                            "$part": "core.unsigned-leb128"
-                                                                          }
-                                                                        }
-                                                                      },
-                                                                      "arguments": [
-                                                                        {
-                                                                          "name": "n",
-                                                                          "value": {
-                                                                            "Add": {
-                                                                              "left": {
-                                                                                "Variable": {
-                                                                                  "variable_id": 2
-                                                                                }
-                                                                              },
-                                                                              "right": {
-                                                                                "Number": {
-                                                                                  "value": 1
-                                                                                }
-                                                                              }
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      ]
-                                                                    }
-                                                                  }
-                                                                }
-                                                              },
-                                                              "right": {
-                                                                "Call": {
-                                                                  "function": {
-                                                                    "PartReference": {
-                                                                      "part_definition_event_hash": {
-                                                                        "$part": "core.compile-call-arguments"
-                                                                      }
-                                                                    }
-                                                                  },
-                                                                  "arguments": [
-                                                                    {
-                                                                      "name": "arguments",
-                                                                      "value": {
-                                                                        "Variable": {
-                                                                          "variable_id": 97
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "name": "index",
-                                                                      "value": {
-                                                                        "Number": {
-                                                                          "value": 0
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "name": "env",
-                                                                      "value": {
-                                                                        "Variable": {
-                                                                          "variable_id": 1
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "name": "depth",
-                                                                      "value": {
-                                                                        "Add": {
-                                                                          "left": {
-                                                                            "Variable": {
-                                                                              "variable_id": 2
-                                                                            }
-                                                                          },
-                                                                          "right": {
-                                                                            "Number": {
-                                                                              "value": 2
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "name": "fn_base",
-                                                                      "value": {
-                                                                        "Add": {
-                                                                          "left": {
-                                                                            "Variable": {
-                                                                              "variable_id": 3
-                                                                            }
-                                                                          },
-                                                                          "right": {
-                                                                            "Call": {
-                                                                              "function": {
-                                                                                "PartReference": {
-                                                                                  "part_definition_event_hash": {
-                                                                                    "$part": "core.count-functions"
-                                                                                  }
-                                                                                }
-                                                                              },
-                                                                              "arguments": [
-                                                                                {
-                                                                                  "name": "expr",
-                                                                                  "value": {
-                                                                                    "Variable": {
-                                                                                      "variable_id": 96
-                                                                                    }
-                                                                                  }
-                                                                                }
-                                                                              ]
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "name": "ctx",
-                                                                      "value": {
-                                                                        "Variable": {
-                                                                          "variable_id": 4
-                                                                        }
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "name": "args_local",
-                                                                      "value": {
-                                                                        "Add": {
-                                                                          "left": {
-                                                                            "Variable": {
-                                                                              "variable_id": 2
-                                                                            }
-                                                                          },
-                                                                          "right": {
-                                                                            "Number": {
-                                                                              "value": 1
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          },
-                                          "right": {
-                                            "ListConcat": {
-                                              "left": {
-                                                "ListConcat": {
-                                                  "left": {
-                                                    "ListLiteral": {
-                                                      "items": [
-                                                        {
-                                                          "Number": {
-                                                            "value": 32
-                                                          }
-                                                        }
-                                                      ]
-                                                    }
-                                                  },
-                                                  "right": {
-                                                    "Call": {
-                                                      "function": {
-                                                        "PartReference": {
-                                                          "part_definition_event_hash": {
-                                                            "$part": "core.unsigned-leb128"
-                                                          }
-                                                        }
-                                                      },
-                                                      "arguments": [
-                                                        {
-                                                          "name": "n",
-                                                          "value": {
-                                                            "Variable": {
-                                                              "variable_id": 2
-                                                            }
-                                                          }
-                                                        }
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              "right": {
-                                                "ListConcat": {
-                                                  "left": {
-                                                    "ListLiteral": {
-                                                      "items": [
-                                                        {
-                                                          "Number": {
-                                                            "value": 40
-                                                          }
-                                                        },
-                                                        {
-                                                          "Number": {
-                                                            "value": 2
-                                                          }
-                                                        },
-                                                        {
-                                                          "Number": {
-                                                            "value": 8
-                                                          }
-                                                        }
-                                                      ]
-                                                    }
-                                                  },
-                                                  "right": {
-                                                    "ListConcat": {
-                                                      "left": {
-                                                        "ListConcat": {
-                                                          "left": {
-                                                            "ListLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "Number": {
-                                                                    "value": 32
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "Call": {
-                                                              "function": {
-                                                                "PartReference": {
-                                                                  "part_definition_event_hash": {
-                                                                    "$part": "core.unsigned-leb128"
-                                                                  }
-                                                                }
-                                                              },
-                                                              "arguments": [
-                                                                {
-                                                                  "name": "n",
-                                                                  "value": {
-                                                                    "Add": {
-                                                                      "left": {
-                                                                        "Variable": {
-                                                                          "variable_id": 2
-                                                                        }
-                                                                      },
-                                                                      "right": {
-                                                                        "Number": {
-                                                                          "value": 1
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      "right": {
-                                                        "ListConcat": {
-                                                          "left": {
-                                                            "ListConcat": {
-                                                              "left": {
-                                                                "ListLiteral": {
-                                                                  "items": [
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 32
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              },
-                                                              "right": {
-                                                                "Call": {
-                                                                  "function": {
-                                                                    "PartReference": {
-                                                                      "part_definition_event_hash": {
-                                                                        "$part": "core.unsigned-leb128"
-                                                                      }
-                                                                    }
-                                                                  },
-                                                                  "arguments": [
-                                                                    {
-                                                                      "name": "n",
-                                                                      "value": {
-                                                                        "Variable": {
-                                                                          "variable_id": 2
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              }
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "ListConcat": {
-                                                              "left": {
-                                                                "ListLiteral": {
-                                                                  "items": [
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 40
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 2
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 4
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              },
-                                                              "right": {
-                                                                "ListLiteral": {
-                                                                  "items": [
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 17
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 3
-                                                                      }
-                                                                    },
-                                                                    {
-                                                                      "Number": {
-                                                                        "value": 0
-                                                                      }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              }
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                      }
-                                    }
-                                  }
-                                }
-                              }
+                              ]
                             }
                           }
                         },
@@ -41267,6 +40659,1616 @@
                         {
                           "Number": {
                             "value": 0
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "compile-call",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "e",
+              "type": {
+                "record": [
+                  {
+                    "key": "function",
+                    "value": {
+                      "type_part": {
+                        "$part": "core.expression"
+                      }
+                    }
+                  },
+                  {
+                    "key": "arguments",
+                    "value": {
+                      "list": {
+                        "record": [
+                          {
+                            "key": "name",
+                            "value": "string"
+                          },
+                          {
+                            "key": "value",
+                            "value": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "local",
+                      "value": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "depth",
+              "type": "number"
+            },
+            {
+              "name": "fn_base",
+              "type": "number"
+            },
+            {
+              "name": "ctx",
+              "type": {
+                "record": [
+                  {
+                    "key": "parts",
+                    "value": {
+                      "list": {
+                        "record": [
+                          {
+                            "key": "id",
+                            "value": "string"
+                          },
+                          {
+                            "key": "expression",
+                            "value": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          },
+                          {
+                            "key": "base",
+                            "value": "number"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "inlining",
+                    "value": {
+                      "list": "string"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "opcode",
+              "type": "number"
+            }
+          ],
+          "return_type": {
+            "list": "number"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Instructions for a call expression. The closure is called with the instruction opcode: call_indirect (17), or return_call_indirect (19) in tail position"
+        },
+        {
+          "language": "ja",
+          "text": "呼び出し式の命令列. クロージャを opcode の命令で呼ぶ: 通常は call_indirect (17), 末尾位置では return_call_indirect (19)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 43,
+              "parameter_name": "e"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "depth"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "fn_base"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "ctx"
+            },
+            {
+              "parameter_id": 200,
+              "parameter_name": "opcode"
+            }
+          ],
+          "body": {
+            "Let": {
+              "bindings": [
+                {
+                  "variable_id": 96,
+                  "variable_name": "function",
+                  "value": {
+                    "RecordGet": {
+                      "record": {
+                        "Variable": {
+                          "variable_id": 43
+                        }
+                      },
+                      "key": "function"
+                    }
+                  }
+                },
+                {
+                  "variable_id": 97,
+                  "variable_name": "arguments",
+                  "value": {
+                    "RecordGet": {
+                      "record": {
+                        "Variable": {
+                          "variable_id": 43
+                        }
+                      },
+                      "key": "arguments"
+                    }
+                  }
+                }
+              ],
+              "body": {
+                "ListConcat": {
+                  "left": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.compile-expr-instructions"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 96
+                            }
+                          }
+                        },
+                        {
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "depth",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "fn_base",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        },
+                        {
+                          "name": "ctx",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 4
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "right": {
+                    "ListConcat": {
+                      "left": {
+                        "ListConcat": {
+                          "left": {
+                            "ListLiteral": {
+                              "items": [
+                                {
+                                  "Number": {
+                                    "value": 33
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "right": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.unsigned-leb128"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "n",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "right": {
+                        "ListConcat": {
+                          "left": {
+                            "Match": {
+                              "target": {
+                                "Equal": {
+                                  "left": {
+                                    "ListLength": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 97
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "Number": {
+                                                "value": 65
+                                              }
+                                            },
+                                            {
+                                              "Number": {
+                                                "value": 0
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "right": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 33
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.unsigned-leb128"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "n",
+                                                  "value": {
+                                                    "Add": {
+                                                      "left": {
+                                                        "Variable": {
+                                                          "variable_id": 2
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "Number": {
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 65
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.signed-leb128"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "n",
+                                                  "value": {
+                                                    "Multiply": {
+                                                      "left": {
+                                                        "ListLength": {
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 97
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "Number": {
+                                                          "value": 4
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "right": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 16
+                                                  }
+                                                },
+                                                {
+                                                  "Number": {
+                                                    "value": 1
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "ListConcat": {
+                                                  "left": {
+                                                    "ListLiteral": {
+                                                      "items": [
+                                                        {
+                                                          "Number": {
+                                                            "value": 33
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  },
+                                                  "right": {
+                                                    "Call": {
+                                                      "function": {
+                                                        "PartReference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.unsigned-leb128"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "n",
+                                                          "value": {
+                                                            "Add": {
+                                                              "left": {
+                                                                "Variable": {
+                                                                  "variable_id": 2
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "Number": {
+                                                                  "value": 1
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "right": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.compile-call-arguments"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "arguments",
+                                                      "value": {
+                                                        "Variable": {
+                                                          "variable_id": 97
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "index",
+                                                      "value": {
+                                                        "Number": {
+                                                          "value": 0
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "env",
+                                                      "value": {
+                                                        "Variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "depth",
+                                                      "value": {
+                                                        "Add": {
+                                                          "left": {
+                                                            "Variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "Number": {
+                                                              "value": 2
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "fn_base",
+                                                      "value": {
+                                                        "Add": {
+                                                          "left": {
+                                                            "Variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "Call": {
+                                                              "function": {
+                                                                "PartReference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.count-functions"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "expr",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 96
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "ctx",
+                                                      "value": {
+                                                        "Variable": {
+                                                          "variable_id": 4
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "args_local",
+                                                      "value": {
+                                                        "Add": {
+                                                          "left": {
+                                                            "Variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "Number": {
+                                                              "value": 1
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          },
+                          "right": {
+                            "ListConcat": {
+                              "left": {
+                                "ListConcat": {
+                                  "left": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 32
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "right": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.unsigned-leb128"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "n",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "right": {
+                                "ListConcat": {
+                                  "left": {
+                                    "ListLiteral": {
+                                      "items": [
+                                        {
+                                          "Number": {
+                                            "value": 40
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 2
+                                          }
+                                        },
+                                        {
+                                          "Number": {
+                                            "value": 8
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "right": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 32
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.unsigned-leb128"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "n",
+                                                  "value": {
+                                                    "Add": {
+                                                      "left": {
+                                                        "Variable": {
+                                                          "variable_id": 2
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "Number": {
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "right": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "Number": {
+                                                        "value": 32
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "right": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.unsigned-leb128"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "n",
+                                                      "value": {
+                                                        "Variable": {
+                                                          "variable_id": 2
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "right": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "Number": {
+                                                        "value": 40
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 2
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 4
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "right": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "Variable": {
+                                                        "variable_id": 200
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 3
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 0
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "compile-tail-instructions",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "expr",
+              "type": {
+                "type_part": {
+                  "$part": "core.expression"
+                }
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "local",
+                      "value": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "depth",
+              "type": "number"
+            },
+            {
+              "name": "fn_base",
+              "type": "number"
+            },
+            {
+              "name": "ctx",
+              "type": {
+                "record": [
+                  {
+                    "key": "parts",
+                    "value": {
+                      "list": {
+                        "record": [
+                          {
+                            "key": "id",
+                            "value": "string"
+                          },
+                          {
+                            "key": "expression",
+                            "value": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          },
+                          {
+                            "key": "base",
+                            "value": "number"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "inlining",
+                    "value": {
+                      "list": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": {
+            "list": "number"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Instructions for an expression in tail position of a function body. Calls become return_call_indirect (definy has no exceptions and needs no stack traces, so every tail call can reuse the frame); let bodies and match arm bodies stay in tail position, and other expressions use core.compile-expr-instructions"
+        },
+        {
+          "language": "ja",
+          "text": "関数の本体の末尾位置の式の命令列. 呼び出しは return_call_indirect にする (definy には例外による大域脱出がなく, スタックトレースも要らないので, 末尾位置の呼び出しはすべてフレームを使い回してよい). let の本体と match のアームの本体は末尾位置のままにし, それ以外の式は core.compile-expr-instructions に任せる"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "expr"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "depth"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "fn_base"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "ctx"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  },
+                  "right": {
+                    "Number": {
+                      "value": 508
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "call",
+                          "variable_id": 43,
+                          "variable_name": "e",
+                          "body": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-call"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "e",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 43
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "env",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "depth",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "fn_base",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "ctx",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "opcode",
+                                  "value": {
+                                    "Number": {
+                                      "value": 19
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "let",
+                          "variable_id": 27,
+                          "variable_name": "e",
+                          "body": {
+                            "ListConcat": {
+                              "left": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.compile-expr-instructions"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 27
+                                            }
+                                          },
+                                          "key": "value"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "depth",
+                                      "value": {
+                                        "Add": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "fn_base",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "ctx",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "right": {
+                                "ListConcat": {
+                                  "left": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "Number": {
+                                                "value": 33
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "right": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.unsigned-leb128"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "n",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.compile-tail-instructions"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 27
+                                                }
+                                              },
+                                              "key": "body"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "TypeLiteral": {
+                                                        "items": [
+                                                          {
+                                                            "key": "variable_id",
+                                                            "value": {
+                                                              "RecordGet": {
+                                                                "record": {
+                                                                  "Variable": {
+                                                                    "variable_id": 27
+                                                                  }
+                                                                },
+                                                                "key": "variable_id"
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "key": "local",
+                                                            "value": {
+                                                              "Variable": {
+                                                                "variable_id": 2
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "right": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "depth",
+                                          "value": {
+                                            "Add": {
+                                              "left": {
+                                                "Variable": {
+                                                  "variable_id": 2
+                                                }
+                                              },
+                                              "right": {
+                                                "Number": {
+                                                  "value": 1
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "fn_base",
+                                          "value": {
+                                            "Add": {
+                                              "left": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              },
+                                              "right": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.count-functions"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "expr",
+                                                      "value": {
+                                                        "RecordGet": {
+                                                          "record": {
+                                                            "Variable": {
+                                                              "variable_id": 27
+                                                            }
+                                                          },
+                                                          "key": "value"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "ctx",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "tag": "match",
+                          "variable_id": 41,
+                          "variable_name": "e",
+                          "body": {
+                            "ListConcat": {
+                              "left": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.compile-expr-instructions"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 41
+                                            }
+                                          },
+                                          "key": "target"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "depth",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "fn_base",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "ctx",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "right": {
+                                "ListConcat": {
+                                  "left": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "Number": {
+                                                "value": 33
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "right": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.unsigned-leb128"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "n",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.compile-match-arms-tail"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "arms",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 41
+                                                }
+                                              },
+                                              "key": "arms"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "depth",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "fn_base",
+                                          "value": {
+                                            "Add": {
+                                              "left": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              },
+                                              "right": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.count-functions"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "expr",
+                                                      "value": {
+                                                        "RecordGet": {
+                                                          "record": {
+                                                            "Variable": {
+                                                              "variable_id": 41
+                                                            }
+                                                          },
+                                                          "key": "target"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "ctx",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "default": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.compile-expr-instructions"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "depth",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "fn_base",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            },
+                            {
+                              "name": "ctx",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.compile-expr-instructions"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "depth",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "fn_base",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 3
+                            }
+                          }
+                        },
+                        {
+                          "name": "ctx",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 4
+                            }
                           }
                         }
                       ]
@@ -59411,7 +60413,7 @@
                                               "function": {
                                                 "PartReference": {
                                                   "part_definition_event_hash": {
-                                                    "$part": "core.compile-expr-instructions"
+                                                    "$part": "core.compile-tail-instructions"
                                                   }
                                                 }
                                               },
@@ -64060,6 +65062,867 @@
                                                                     "PartReference": {
                                                                       "part_definition_event_hash": {
                                                                         "$part": "core.compile-match-arms"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "arms",
+                                                                      "value": {
+                                                                        "Variable": {
+                                                                          "variable_id": 0
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "index",
+                                                                      "value": {
+                                                                        "Add": {
+                                                                          "left": {
+                                                                            "Variable": {
+                                                                              "variable_id": 1
+                                                                            }
+                                                                          },
+                                                                          "right": {
+                                                                            "Number": {
+                                                                              "value": 1
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "env",
+                                                                      "value": {
+                                                                        "Variable": {
+                                                                          "variable_id": 2
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "depth",
+                                                                      "value": {
+                                                                        "Variable": {
+                                                                          "variable_id": 3
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "fn_base",
+                                                                      "value": {
+                                                                        "Add": {
+                                                                          "left": {
+                                                                            "Variable": {
+                                                                              "variable_id": 4
+                                                                            }
+                                                                          },
+                                                                          "right": {
+                                                                            "Call": {
+                                                                              "function": {
+                                                                                "PartReference": {
+                                                                                  "part_definition_event_hash": {
+                                                                                    "$part": "core.count-functions"
+                                                                                  }
+                                                                                }
+                                                                              },
+                                                                              "arguments": [
+                                                                                {
+                                                                                  "name": "expr",
+                                                                                  "value": {
+                                                                                    "RecordGet": {
+                                                                                      "record": {
+                                                                                        "Variable": {
+                                                                                          "variable_id": 6
+                                                                                        }
+                                                                                      },
+                                                                                      "key": "body"
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "ctx",
+                                                                      "value": {
+                                                                        "Variable": {
+                                                                          "variable_id": 5
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "ListLiteral": {
+                                                                  "items": [
+                                                                    {
+                                                                      "Number": {
+                                                                        "value": 11
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "default": null
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "compile-match-arms-tail",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "arms",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "tag",
+                      "value": "string"
+                    },
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "body",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": "number"
+            },
+            {
+              "name": "env",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "variable_id",
+                      "value": "number"
+                    },
+                    {
+                      "key": "local",
+                      "value": "number"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "depth",
+              "type": "number"
+            },
+            {
+              "name": "fn_base",
+              "type": "number"
+            },
+            {
+              "name": "ctx",
+              "type": {
+                "record": [
+                  {
+                    "key": "parts",
+                    "value": {
+                      "list": {
+                        "record": [
+                          {
+                            "key": "id",
+                            "value": "string"
+                          },
+                          {
+                            "key": "expression",
+                            "value": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          },
+                          {
+                            "key": "base",
+                            "value": "number"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "inlining",
+                    "value": {
+                      "list": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": {
+            "list": "number"
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "core.compile-match-arms whose arm bodies are in tail position (core.compile-tail-instructions)"
+        },
+        {
+          "language": "ja",
+          "text": "アームの本体を末尾位置 (core.compile-tail-instructions) としてコンパイルする core.compile-match-arms"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "arms"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "env"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "depth"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "fn_base"
+            },
+            {
+              "parameter_id": 5,
+              "parameter_name": "ctx"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThanOrEqual": {
+                  "left": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  },
+                  "right": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "ListLiteral": {
+                      "items": [
+                        {
+                          "Number": {
+                            "value": 0
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 6,
+                          "variable_name": "arm",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "variable_id": 7,
+                          "variable_name": "binds",
+                          "value": {
+                            "LessThan": {
+                              "left": {
+                                "Number": {
+                                  "value": -1
+                                }
+                              },
+                              "right": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 6
+                                    }
+                                  },
+                                  "key": "variable_id"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "variable_id": 8,
+                          "variable_name": "arm_env",
+                          "value": {
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 7
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "TypeLiteral": {
+                                                "items": [
+                                                  {
+                                                    "key": "variable_id",
+                                                    "value": {
+                                                      "RecordGet": {
+                                                        "record": {
+                                                          "Variable": {
+                                                            "variable_id": 6
+                                                          }
+                                                        },
+                                                        "key": "variable_id"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "local",
+                                                    "value": {
+                                                      "Add": {
+                                                        "left": {
+                                                          "Variable": {
+                                                            "variable_id": 3
+                                                          }
+                                                        },
+                                                        "right": {
+                                                          "Number": {
+                                                            "value": 1
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "right": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "variable_id": 9,
+                          "variable_name": "bind",
+                          "value": {
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 7
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 32
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.unsigned-leb128"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "n",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "right": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "ListLiteral": {
+                                              "items": [
+                                                {
+                                                  "Number": {
+                                                    "value": 16
+                                                  }
+                                                },
+                                                {
+                                                  "Number": {
+                                                    "value": 14
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "Number": {
+                                                        "value": 33
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "right": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.unsigned-leb128"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "n",
+                                                      "value": {
+                                                        "Add": {
+                                                          "left": {
+                                                            "Variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "Number": {
+                                                              "value": 1
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "ListLiteral": {
+                                      "items": []
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "variable_id": 10,
+                          "variable_name": "body",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-tail-instructions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 6
+                                        }
+                                      },
+                                      "key": "body"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "env",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 8
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "depth",
+                                  "value": {
+                                    "Add": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      },
+                                      "right": {
+                                        "Number": {
+                                          "value": 2
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "fn_base",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "ctx",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 5
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Match": {
+                          "target": {
+                            "Equal": {
+                              "left": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 6
+                                    }
+                                  },
+                                  "key": "tag"
+                                }
+                              },
+                              "right": {
+                                "String": {
+                                  "value": "_"
+                                }
+                              }
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "ListConcat": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 9
+                                    }
+                                  },
+                                  "right": {
+                                    "Variable": {
+                                      "variable_id": 10
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "ListConcat": {
+                                  "left": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "Number": {
+                                                "value": 32
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "right": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.unsigned-leb128"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "n",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "ListConcat": {
+                                      "left": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "Number": {
+                                                "value": 16
+                                              }
+                                            },
+                                            {
+                                              "Number": {
+                                                "value": 13
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "right": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.compile-string-literal"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "RecordGet": {
+                                                      "record": {
+                                                        "Variable": {
+                                                          "variable_id": 6
+                                                        }
+                                                      },
+                                                      "key": "tag"
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "local",
+                                                  "value": {
+                                                    "Add": {
+                                                      "left": {
+                                                        "Variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "Number": {
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "right": {
+                                            "ListConcat": {
+                                              "left": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "Number": {
+                                                        "value": 16
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 4
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 4
+                                                      }
+                                                    },
+                                                    {
+                                                      "Number": {
+                                                        "value": 127
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "right": {
+                                                "ListConcat": {
+                                                  "left": {
+                                                    "Variable": {
+                                                      "variable_id": 9
+                                                    }
+                                                  },
+                                                  "right": {
+                                                    "ListConcat": {
+                                                      "left": {
+                                                        "Variable": {
+                                                          "variable_id": 10
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "ListConcat": {
+                                                          "left": {
+                                                            "ListLiteral": {
+                                                              "items": [
+                                                                {
+                                                                  "Number": {
+                                                                    "value": 5
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          },
+                                                          "right": {
+                                                            "ListConcat": {
+                                                              "left": {
+                                                                "Call": {
+                                                                  "function": {
+                                                                    "PartReference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.compile-match-arms-tail"
                                                                       }
                                                                     }
                                                                   },
