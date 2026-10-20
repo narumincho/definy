@@ -16,7 +16,9 @@ import {
   deployTargetExpression,
   stage1OutputCacheKey,
 } from "../src/deploy_target.ts";
+import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
+import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
@@ -37,6 +39,9 @@ const DEV_SYSTEM_KEY_SEED = new TextEncoder().encode(
 );
 
 const BASE_EPOCH_SECONDS = 1548909361;
+
+/** 署名が不正なサンプルの時刻 (seed のイベントは BASE_EPOCH_SECONDS から 1 秒以内に置く) */
+const INVALID_SIGNATURE_SAMPLE_TIME_OFFSET = 0.5;
 
 function toBufferSource(bytes: Uint8Array): BufferSource {
   return bytes as unknown as BufferSource;
@@ -253,7 +258,7 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   );
   const contents: ReadonlyArray<SeedContentEntry> = contentsList;
 
-  // 3. イベント一覧の構築 (sample, wasi, std, core, definy, create_account の順)
+  // 3. イベント一覧の構築 (sample, wasi, std, core, definy, create_account, 署名が不正なサンプルの順)
   const eventsList: Array<SeedEventEntry> = [];
 
   for (const spec of MODULE_SPECS) {
@@ -325,6 +330,26 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
     createdAtRfc3339: "2019-01-31T04:36:01+00:00",
     timeMs: BASE_EPOCH_SECONDS * 1000,
   });
+
+  // 署名が不正なイベントのサンプル. ブラウザの署名チェックをどの環境でも確かめられるように入れる
+  // (docs/invalid-signature-debug.md). ブラウザはこれらを一覧で「署名が不正」と表示し, モジュール・パーツ・
+  // アカウント名の導出から外す. サーバーも署名を検証してからパーツを読む (worker/part_compiler.ts)
+  const invalidSamples = await createSeedInvalidSignatureSamples({
+    systemAccountId: creds.accountId,
+    timeSeconds: BASE_EPOCH_SECONDS + INVALID_SIGNATURE_SAMPLE_TIME_OFFSET,
+  });
+  for (const sample of invalidSamples) {
+    const bytes = base64ToBytes(sample.signedEventBytes);
+    const meta = parseSignedEventMetadata(bytes);
+    eventsList.push({
+      eventHash: await sha256EventHashId(bytes),
+      signedEventBytes: sample.signedEventBytes,
+      accountId: meta.accountId,
+      eventType: meta.eventType,
+      createdAtRfc3339: meta.createdAtRfc3339,
+      timeMs: meta.timeMs,
+    });
+  }
 
   const events: ReadonlyArray<SeedEventEntry> = eventsList;
 

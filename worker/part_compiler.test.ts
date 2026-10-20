@@ -14,6 +14,7 @@ import {
   type DecodedPart,
 } from "../src/cbor.ts";
 import { STAGE1_OUTPUT_CACHE_PREFIX } from "../src/deploy_target.ts";
+import { INVALID_SIGNATURE_SAMPLE_MODULE_NAME } from "../src/invalid_signature_samples.ts";
 import { evaluateCompiledWasm } from "../src/stage1_compiler.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
@@ -241,6 +242,19 @@ describe("compilePartToWasm", () => {
   it("見つからないパーツは not_found", async () => {
     const { store, env } = await createSeededStore();
     const error = await compilePartToWasm("sample.no-such-part", store, env)
+      .then(() => undefined)
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(PartCompileError);
+    expect((error as PartCompileError).code).toBe("not_found");
+  });
+
+  it("seed の署名が不正なサンプル (システムアカウントへのなりすまし) のパーツは使わない", async () => {
+    const { store, env } = await createSeededStore();
+    const error = await compilePartToWasm(
+      `${INVALID_SIGNATURE_SAMPLE_MODULE_NAME}.answer`,
+      store,
+      env,
+    )
       .then(() => undefined)
       .catch((e: unknown) => e);
     expect(error).toBeInstanceOf(PartCompileError);

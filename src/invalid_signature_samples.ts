@@ -1,18 +1,21 @@
 /**
  * ブラウザ側の署名チェックを確認するための「署名が不正なイベント」のサンプルを作る。
- * サーバーの通常の `SubmitEvent` はこれらを拒否するので、
- * 保存にはローカル開発専用の `DebugService/SubmitUnverifiedEvent` を使う (docs/invalid-signature-debug.md)。
+ * サーバーの通常の `SubmitEvent` はこれらを拒否する。決まった鍵で作ったものを seed バンドルに入れて
+ * どの環境でも表示を確かめられるようにしている (`createSeedInvalidSignatureSamples`)。
+ * ローカル開発では `DebugService/SubmitUnverifiedEvent` で追加することもできる (docs/invalid-signature-debug.md)。
  */
 import {
   createSignedAccountEvent,
   createSignedModuleCommitEvent,
   generateAccountCredentials,
+  importAccountCredentials,
   type AccountCredentials,
   type SubmitEventResult,
 } from "./auth.ts";
 import {
   base64ToBytes,
   bytesToBase64,
+  bytesToUrlSafeBase64NoPad,
   decodeCborItem,
   encodeCborItem,
   toUint8Array,
@@ -29,6 +32,17 @@ export type InvalidSignatureSample = {
 
 /** サンプルのモジュール名。不正なイベントを表示から除外できていなければ、このモジュールが一覧に現れる */
 export const INVALID_SIGNATURE_SAMPLE_MODULE_NAME = "invalid_signature_sample";
+
+/** サンプルのアカウント名。不正なイベントを除外できていなければ、アカウント一覧に現れる */
+export const INVALID_SIGNATURE_SAMPLE_ACCOUNT_NAME = "invalid-signature-sample";
+
+/**
+ * seed に入れるサンプルを署名する鍵の種 (32 バイト)。seed バンドルを何度作っても同じになるよう固定する。
+ * 秘密鍵が公開されているので、この鍵の正しい署名にも意味は無い
+ */
+const SEED_SAMPLE_SIGNER_KEY_SEED = new TextEncoder().encode(
+  "definy-invalid-signature-sample\0",
+);
 
 const SAMPLE_PARTS: ReadonlyArray<DecodedPart> = [
   {
@@ -103,15 +117,19 @@ async function signSampleModuleCommit(
  * - `impersonated_account`: 別の鍵で署名した ModuleCommit の `account_id` を `impersonatedAccountId` にすり替えたもの
  *
  * `impersonatedAccountId` を省略すると、使い捨ての別アカウントになりすます。
+ * `signer` を省略すると使い捨ての鍵で署名する。
  */
 export async function createInvalidSignatureSamples(
   options: {
     readonly impersonatedAccountId?: string | undefined;
     readonly timeSeconds?: number | undefined;
+    readonly signer?: AccountCredentials | undefined;
   } = {},
 ): Promise<ReadonlyArray<InvalidSignatureSample>> {
   const timeSeconds = options.timeSeconds ?? Math.floor(Date.now() / 1000);
-  const signer = await generateAccountCredentials("invalid-signature-sample");
+  const signer =
+    options.signer ??
+    (await generateAccountCredentials(INVALID_SIGNATURE_SAMPLE_ACCOUNT_NAME));
 
   const account = decodeSigned(
     (await createSignedAccountEvent(signer, timeSeconds)).signedEventBytes,
@@ -201,4 +219,24 @@ export async function submitInvalidSignatureSamples(
     results.push((await res.json()) as SubmitEventResult);
   }
   return results;
+}
+
+/**
+ * seed バンドルに入れるサンプルを作る。鍵と時刻を固定するので毎回同じバイト列になる。
+ * `impersonated_account` はシステムアカウントになりすます
+ * (ブラウザが `definy` のモジュールとして扱わないことを確かめる)。
+ */
+export async function createSeedInvalidSignatureSamples(options: {
+  readonly systemAccountId: string;
+  readonly timeSeconds: number;
+}): Promise<ReadonlyArray<InvalidSignatureSample>> {
+  const signer = await importAccountCredentials(
+    bytesToUrlSafeBase64NoPad(SEED_SAMPLE_SIGNER_KEY_SEED),
+    INVALID_SIGNATURE_SAMPLE_ACCOUNT_NAME,
+  );
+  return createInvalidSignatureSamples({
+    signer,
+    impersonatedAccountId: options.systemAccountId,
+    timeSeconds: options.timeSeconds,
+  });
 }
