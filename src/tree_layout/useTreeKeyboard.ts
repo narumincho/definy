@@ -17,7 +17,6 @@ export type UseTreeKeyboardParams = {
     readonly id: string;
     readonly path: ReadonlyArray<PathStep>;
   }>;
-  readonly isMenuOpen: boolean;
   readonly onExit?: ((key: NavKey) => void) | undefined;
   readonly openMenu: (path: ReadonlyArray<PathStep>) => void;
   readonly closeMenu: () => void;
@@ -37,7 +36,6 @@ export function useTreeKeyboard({
   selectedPath,
   setSelectedPath,
   nodeIndex,
-  isMenuOpen,
   onExit,
   openMenu,
   closeMenu,

@@ -145,7 +145,6 @@ export function ExpressionTreeEditor({
     selectedPath,
     setSelectedPath,
     nodeIndex,
-    isMenuOpen: menu.isMenuOpen,
     onExit,
     openMenu: menu.openMenu,
     closeMenu: menu.closeMenu,
