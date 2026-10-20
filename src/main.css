@@ -86,26 +86,6 @@
   --bg-inset: #1a1c21;
   --shadow-color: rgba(0, 0, 0, 0.35);
 
-  --badge-type-bg: rgba(166, 140, 240, 0.14);
-  --badge-type-border: rgba(166, 140, 240, 0.32);
-  --badge-type-text: #c9b8f7;
-
-  --badge-number-bg: rgba(78, 201, 176, 0.14);
-  --badge-number-border: rgba(78, 201, 176, 0.32);
-  --badge-number-text: #7fd8c4;
-
-  --badge-string-bg: rgba(220, 180, 100, 0.14);
-  --badge-string-border: rgba(220, 180, 100, 0.32);
-  --badge-string-text: #e5c482;
-
-  --badge-boolean-bg: rgba(236, 110, 130, 0.14);
-  --badge-boolean-border: rgba(236, 110, 130, 0.32);
-  --badge-boolean-text: #f2a3b0;
-
-  --badge-func-bg: rgba(78, 148, 238, 0.14);
-  --badge-func-border: rgba(78, 148, 238, 0.32);
-  --badge-func-text: #8cbaf5;
-
   --error: #f1707b;
   --error-bg: rgba(241, 112, 123, 0.1);
   --warning: #e2b64f;
@@ -328,17 +308,6 @@ dialog::backdrop {
   }
 }
 
-@keyframes pulse-glow {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.55;
-  }
-}
-
 .form-group {
   margin-bottom: 1rem;
   display: flex;
@@ -470,13 +439,11 @@ textarea {
   background: var(--bg-chrome);
 }
 
-.workbench.sidebar-closed,
-.workbench.sidebar-toggled {
+.workbench.sidebar-closed {
   grid-template-columns: var(--activitybar-width) 0 minmax(0, 1fr);
 }
 
-.workbench.sidebar-closed .workbench-sidebar,
-.workbench.sidebar-toggled .workbench-sidebar {
+.workbench.sidebar-closed .workbench-sidebar {
   visibility: hidden;
   border-right: none;
 }
@@ -626,25 +593,6 @@ button.header-title:hover {
   color: var(--text-primary) !important;
 }
 
-.header-control-caret {
-  opacity: 0.5;
-  font-size: 0.6rem;
-}
-
-.header-account-avatar {
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--brand-gradient);
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  flex-shrink: 0;
-  text-transform: uppercase;
-}
-
 /* --- アクティビティバー --- */
 
 .activity-bar {
@@ -740,43 +688,13 @@ button.header-title:hover {
   flex-shrink: 0;
 }
 
-.sidebar-header-status {
-  margin-left: auto;
-  margin-right: 0.4rem;
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
-  color: var(--text-muted);
-}
-
-.sidebar-header-action {
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-}
-
-.sidebar-header-action:hover {
-  background: var(--bg-chrome-hover);
-  color: var(--text-primary);
-}
-
-.sidebar-header-icon {
-  width: 15px;
-  height: 15px;
-}
-
-.sidebar-actions,
-.sidebar-header-actions {
+.sidebar-actions {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.sidebar-action-btn,
-.sidebar-header-action {
+.sidebar-action-btn {
   font-size: 1.05rem;
   font-weight: 400;
   line-height: 1;
@@ -792,85 +710,10 @@ button.header-title:hover {
   flex-shrink: 0;
 }
 
-.sidebar-filter-icon {
-  position: absolute;
-  left: 1.1rem;
-  top: 0.45rem;
-  width: 12px;
-  height: 12px;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
 .sidebar-filter input {
   height: 26px;
   padding: 0 0.5rem 0 1.65rem;
   font-size: 0.86rem;
-}
-
-/* モジュール行のホバーで出る「新しいパーツ」 */
-.tree-row-action {
-  display: none;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: var(--radius-xs);
-  color: var(--text-secondary);
-  font-size: 1rem;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.tree-row:hover .tree-row-action,
-.tree-row:focus-within .tree-row-action {
-  display: inline-grid;
-}
-
-.tree-row-action:hover {
-  background: var(--overlay-3);
-  color: var(--text-primary);
-}
-
-/* 型エラーのあるパーツの印 */
-.tree-error-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--red);
-  flex-shrink: 0;
-}
-
-.tree-leaf[data-error="true"] .tree-label {
-  color: var(--red-text);
-}
-
-.tree-error-count {
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: var(--radius-full);
-  background: var(--red-bg-strong);
-  color: var(--red-text);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.sidebar-section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 24px;
-  padding: 0 0.75rem 0 1rem;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
 }
 
 .sidebar-tree {
@@ -885,54 +728,6 @@ button.header-title:hover {
   padding: 0.6rem 1rem;
   font-size: 0.86rem;
   color: var(--text-muted);
-}
-
-.tree-group > summary {
-  list-style: none;
-}
-
-.tree-group > summary::-webkit-details-marker {
-  display: none;
-}
-
-.tree-row {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  height: 24px;
-  padding: 0 0.75rem 0 0.4rem;
-  font-size: 0.92rem;
-  color: var(--text);
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  border: 1px solid transparent;
-}
-
-.tree-row:hover {
-  background: var(--bg-chrome-hover);
-}
-
-.tree-row.active {
-  background: var(--bg-selection);
-  border-color: var(--bg-selection-strong);
-  color: var(--text-primary);
-}
-
-.tree-leaf {
-  padding-left: 2.15rem;
-}
-
-.tree-chevron {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  color: var(--text-secondary);
-  transition: transform 0.12s ease;
-}
-
-.tree-group[open] > summary .tree-chevron {
-  transform: rotate(90deg);
 }
 
 .tree-icon {
@@ -1019,7 +814,7 @@ button.header-title:hover {
 
 /* 型エラーのあるパーツの印と, モジュールの型エラーの件数 (definy 製の型チェッカーの結果) */
 .sidebar-type-error-dot {
-  color: var(--red, #ef4444);
+  color: var(--red);
   font-size: 0.65rem;
   flex-shrink: 0;
 }
@@ -1028,8 +823,8 @@ button.header-title:hover {
   min-width: 1.1rem;
   padding: 0 0.3rem;
   border-radius: 999px;
-  background: rgba(239, 68, 68, 0.18);
-  color: var(--red, #ef4444);
+  background: var(--red-bg-strong);
+  color: var(--red);
   font-size: 0.68rem;
   text-align: center;
   flex-shrink: 0;
@@ -1049,32 +844,6 @@ button.header-title:hover {
   color: var(--accent);
 }
 
-.tree-label {
-  flex: 1 0 auto;
-  max-width: 100%;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tree-type {
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  color: var(--text-muted);
-  flex-shrink: 1;
-  min-width: 0;
-  max-width: 30%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tree-count {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
 .sidebar-scrim {
   display: none;
 }
@@ -1090,83 +859,6 @@ button.header-title:hover {
   background: var(--background);
 }
 
-.editor-tabs {
-  display: flex;
-  align-items: stretch;
-  height: 35px;
-  flex-shrink: 0;
-  background: var(--bg-chrome);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.editor-tab {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0 1rem 0 0.85rem;
-  max-width: 280px;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  border-right: 1px solid var(--border);
-  white-space: nowrap;
-}
-
-.editor-tab.active {
-  color: var(--text-primary);
-  background: var(--background);
-  box-shadow: inset 0 1px 0 var(--primary);
-  margin-bottom: -1px;
-}
-
-.editor-tab-icon {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
-  color: var(--primary);
-}
-
-.editor-tab-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.editor-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 0.15rem;
-  height: 24px;
-  flex-shrink: 0;
-  padding: 0 1rem;
-  font-size: 0.84rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.breadcrumb-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.breadcrumb-chevron {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-}
-
-.breadcrumb-segment {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.breadcrumb-segment.current {
-  color: var(--text-secondary);
-}
-
 .workbench-editor-scroll {
   flex: 1;
   min-height: 0;
@@ -1174,37 +866,6 @@ button.header-title:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
-}
-
-/* 読み込み中にエディタ上端に出す細いバー */
-.editor-loading-bar {
-  position: relative;
-  height: 2px;
-  margin-bottom: -2px;
-  overflow: hidden;
-  flex-shrink: 0;
-  z-index: 1;
-}
-
-.editor-loading-bar::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -40%;
-  width: 40%;
-  height: 100%;
-  background: var(--primary);
-  animation: loading-bar 1.1s ease-in-out infinite;
-}
-
-@keyframes loading-bar {
-  from {
-    left: -40%;
-  }
-
-  to {
-    left: 100%;
-  }
 }
 
 /* --- コマンドパレット --- */
@@ -1332,75 +993,6 @@ button.header-title:hover {
   white-space: nowrap;
 }
 
-.status-bar-location {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
-  line-height: calc(var(--statusbar-height) - 1px);
-}
-
-.status-bar-button {
-  height: 100%;
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  color: inherit !important;
-  font-size: inherit;
-  font-weight: 400;
-  padding: 0 0.55rem !important;
-}
-
-.status-bar-button:hover {
-  background: var(--bg-chrome-hover) !important;
-  color: var(--text-primary) !important;
-}
-
-.status-bar .connection-dot {
-  width: 7px;
-  height: 7px;
-  box-shadow: none;
-  animation: none;
-}
-
-.status-ok .connection-dot {
-  background: var(--success);
-}
-
-.status-warning .connection-dot {
-  background: var(--warning);
-}
-
-.status-error .connection-dot {
-  background: var(--error);
-}
-
-.status-info .connection-dot {
-  background: var(--info);
-  animation: pulse-glow 1.6s infinite ease-in-out;
-}
-
-a.status-warning {
-  color: var(--warning) !important;
-}
-
-a.status-error {
-  color: var(--error) !important;
-}
-
-/* 接続エラーの通知バー (エディタ上部) */
-.connection-warning-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.4rem 1rem;
-  background: var(--warning-bg);
-  border-bottom: 1px solid rgba(226, 182, 79, 0.3);
-  color: #e9c97a;
-  font-size: 0.86rem;
-}
-
 /* ===================================================================
  * ページ内の共通部品
  * =================================================================== */
@@ -1413,15 +1005,6 @@ a.status-error {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
-}
-
-.composer {
-  display: flex;
-  gap: 0.6rem;
-  background: var(--surface-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 0.75rem;
 }
 
 /* --- 共通カード & リスト / グリッド --- */
@@ -1640,29 +1223,6 @@ button.card:hover {
   max-width: 680px;
 }
 
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.settings-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.settings-label strong {
-  font-size: 0.92rem;
-  color: var(--text-primary);
-}
-
-.settings-label span {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
 .event-list {
   display: grid;
   gap: 0.5rem;
@@ -1700,66 +1260,6 @@ button.card:hover {
   background: var(--red-bg-strong);
 }
 
-.back-link {
-  width: fit-content;
-  color: var(--primary);
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.back-link:hover {
-  color: var(--primary-hover);
-}
-
-.error-card {
-  background-color: var(--error-bg);
-  border: 1px solid rgba(241, 112, 123, 0.35);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  color: #f6bcc2;
-}
-
-.not-found {
-  padding-top: 4rem;
-  text-align: center;
-  justify-items: center;
-}
-
-.not-found-code {
-  font-size: clamp(4rem, 12vw, 6rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: var(--text-muted);
-}
-
-.not-found-title {
-  font-size: clamp(1.2rem, 4vw, 1.6rem);
-}
-
-.cta-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: var(--primary-content);
-  background: var(--primary-solid);
-  padding: 0.5rem 1.2rem;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-}
-
-.cta-link:hover {
-  background: var(--primary-solid-hover);
-}
-
-.auth-tabs {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1771,42 +1271,7 @@ button.card:hover {
   line-height: 1.35;
 }
 
-.badge-type {
-  background: var(--badge-type-bg);
-  border: 1px solid var(--badge-type-border);
-  color: var(--badge-type-text);
-}
-
-.badge-number {
-  background: var(--badge-number-bg);
-  border: 1px solid var(--badge-number-border);
-  color: var(--badge-number-text);
-}
-
-.badge-string {
-  background: var(--badge-string-bg);
-  border: 1px solid var(--badge-string-border);
-  color: var(--badge-string-text);
-}
-
-.badge-boolean {
-  background: var(--badge-boolean-bg);
-  border: 1px solid var(--badge-boolean-border);
-  color: var(--badge-boolean-text);
-}
-
-.badge-func {
-  background: var(--badge-func-bg);
-  border: 1px solid var(--badge-func-border);
-  color: var(--badge-func-text);
-}
-
 /* イベント種別などのセマンティックバッジ */
-.badge-primary {
-  background: rgba(78, 148, 238, 0.12);
-  border: 1px solid rgba(78, 148, 238, 0.32);
-  color: #8cbaf5;
-}
 
 .badge-success {
   background: var(--success-bg);
@@ -1814,78 +1279,10 @@ button.card:hover {
   color: #8ad8ab;
 }
 
-.badge-accent {
-  background: rgba(166, 140, 240, 0.14);
-  border: 1px solid rgba(166, 140, 240, 0.34);
-  color: #c9b8f7;
-}
-
 .badge-invalid-signature {
   background: var(--red-bg-strong);
   border: 1px solid var(--red-border);
   color: var(--red-text);
-}
-
-/* コンテンツハッシュなどの短いハッシュ表示チップ */
-.hash-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  color: #8cbaf5;
-  background: rgba(78, 148, 238, 0.08);
-  border: 1px solid rgba(78, 148, 238, 0.22);
-  padding: 0.05rem 0.4rem;
-  border-radius: var(--radius-xs);
-  white-space: nowrap;
-}
-
-/* アイコン付き検索入力欄 */
-.search-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.search-field-icon {
-  position: absolute;
-  left: 0.65rem;
-  z-index: 1;
-  width: 0.95rem;
-  height: 0.95rem;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-.search-field input {
-  padding: 0.38rem 2.1rem 0.38rem 2.1rem;
-  font-size: 0.92rem;
-}
-
-.search-field:focus-within .search-field-icon {
-  color: var(--primary);
-}
-
-.search-field-clear {
-  position: absolute;
-  right: 0.35rem;
-  z-index: 1;
-  background: transparent !important;
-  border: none !important;
-  color: var(--text-secondary);
-  padding: 0.15rem 0.4rem;
-  font-size: 0.78rem;
-}
-
-.connection-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--success);
-  display: inline-block;
-  flex-shrink: 0;
 }
 
 /* SearchableDropdown & Popover Styles */
@@ -2092,332 +1489,12 @@ button.card:hover {
   opacity: 1;
 }
 
-/* 言語メニューの項目 */
-.lang-option {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.45rem 0.65rem;
-  border-bottom: 1px solid var(--overlay-2);
-  color: var(--text);
-  font-weight: 500;
-}
-
-.lang-option:hover {
-  background: var(--overlay-2);
-}
-
-.lang-option[aria-current="true"] {
-  background: var(--overlay-3);
-  color: var(--primary);
-}
-
 /* タブ・切り替えボタン (選択中は aria-pressed / aria-current) */
-.toggle-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.32rem 0.7rem !important;
-  border-radius: var(--radius-sm) !important;
-  border: 1px solid var(--border) !important;
-  background: var(--overlay-2) !important;
-  color: var(--text-secondary) !important;
-  font-size: 0.86rem;
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.toggle-chip:hover {
-  background: var(--overlay-3) !important;
-  color: var(--text-primary) !important;
-}
-
-.toggle-chip[aria-pressed="true"],
-.toggle-chip[aria-current="page"] {
-  background: var(--bg-selection-strong) !important;
-  border-color: var(--primary) !important;
-  color: var(--text-primary) !important;
-}
-
-.toggle-chip-sm {
-  padding: 0.15rem 0.5rem !important;
-  font-size: 0.78rem;
-}
 
 .btn-secondary[aria-pressed="true"] {
   background: var(--bg-selection-strong);
   border-color: var(--primary);
   color: var(--text-primary);
-}
-
-/* 評価結果などのメッセージ */
-.tone-message {
-  font-size: 0.88rem;
-  word-break: break-word;
-  padding: 0.55rem 0.85rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--blue-border);
-  background: var(--blue-bg);
-  color: var(--blue-text);
-}
-
-.tone-message[data-tone="error"] {
-  border-color: var(--red-border);
-  background: var(--red-bg);
-  color: var(--red-text);
-}
-
-.tone-message[data-tone="warning"] {
-  border-color: var(--yellow-border);
-  background: var(--yellow-bg);
-  color: var(--yellow-text);
-}
-
-/* 履歴グラフ (Git Graph 風) */
-.commit-graph-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-}
-
-.commit-graph-filter {
-  width: auto;
-  padding: 0.35rem 0.65rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--overlay-2);
-  color: var(--text);
-  font-size: 0.82rem;
-}
-
-.commit-graph {
-  padding: 0.3rem 0;
-  overflow-x: auto;
-}
-
-.commit-graph-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 9rem) 8.5rem 4.5rem;
-  align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  min-height: 30px;
-  padding: 0 0.8rem;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  text-decoration: none;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-.commit-graph-row:hover,
-.commit-graph-entry[data-expanded="true"] > .commit-graph-row {
-  background: var(--overlay-1);
-}
-
-.commit-graph-svg {
-  display: block;
-  overflow: visible;
-}
-
-.commit-graph-message {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-  font-size: 0.86rem;
-}
-
-.commit-graph-message-text,
-.commit-graph-working-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.commit-graph-working-label {
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
-.commit-graph-module {
-  flex-shrink: 0;
-  padding: 0 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-}
-
-.commit-graph-author,
-.commit-graph-date,
-.commit-graph-hash {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.commit-graph-details {
-  display: flex;
-  gap: 0.6rem;
-  padding: 0 0.8rem;
-  background: var(--bg-inset);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-.commit-graph-continuation {
-  flex-shrink: 0;
-  height: auto;
-  align-self: stretch;
-}
-
-.commit-graph-details-body {
-  display: grid;
-  gap: 0.4rem;
-  padding: 0.6rem 0;
-  min-width: 0;
-}
-
-.commit-graph-details-meta {
-  display: flex;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.commit-graph-details-meta a {
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.commit-graph-note {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.change-badge[data-kind="removed"] {
-  color: var(--red-text);
-}
-
-@media (max-width: 760px) {
-  .commit-graph-row {
-    grid-template-columns: auto minmax(0, 1fr) 4.5rem;
-  }
-
-  .commit-graph-author,
-  .commit-graph-date {
-    display: none;
-  }
-}
-
-/* 作業中の変更 (M: 変更, A: 新しいパーツ) */
-.change-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.1rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--yellow-text);
-  flex-shrink: 0;
-}
-
-.change-badge[data-kind="added"] {
-  color: var(--green-text);
-}
-
-.tree-leaf[data-changed="true"] .tree-label {
-  color: var(--yellow-text);
-}
-
-.def-change-status {
-  flex: 1;
-  min-width: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  color: var(--text);
-}
-
-.def-change-status.muted {
-  color: var(--text-muted);
-}
-
-.changes-commit {
-  display: grid;
-  gap: 0.6rem;
-  padding: 0.9rem 1rem;
-}
-
-.changes-commit-input {
-  width: 100%;
-  box-sizing: border-box;
-  resize: vertical;
-}
-
-.changes-commit-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.changes-commit-note {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.changes-empty {
-  padding: 1.2rem 1rem;
-  color: var(--text-secondary);
-}
-
-.changes-module {
-  display: grid;
-  gap: 0.5rem;
-  padding: 0.8rem 1rem;
-}
-
-.changes-module-header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 600;
-}
-
-.changes-module-header a {
-  color: var(--text);
-  text-decoration: none;
-}
-
-/* コミット前の検査で見つかった型エラー */
-.changes-problems {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.3rem;
-}
-
-.changes-problems li {
-  font-size: 0.78rem;
-  overflow-wrap: anywhere;
-}
-
-.changes-problem-part {
-  font-weight: 600;
 }
 
 .changes-list {
@@ -2426,45 +1503,6 @@ button.card:hover {
   padding: 0;
   display: grid;
   gap: 0.2rem;
-}
-
-.changes-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.3rem;
-  border-radius: var(--radius-xs);
-}
-
-.changes-item input[type="checkbox"] {
-  flex: 0 0 auto;
-  width: auto;
-  margin: 0;
-}
-
-.changes-item:hover {
-  background: var(--overlay-1);
-}
-
-.changes-item-name {
-  font-family: var(--font-mono);
-  color: var(--text);
-  text-decoration: none;
-}
-
-.changes-item-fields {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.changes-item-discard {
-  padding: 0.15rem 0.5rem;
-  font-size: 0.76rem;
 }
 
 /* 件数バッジ */
@@ -2486,52 +1524,6 @@ button.card:hover {
 .count-badge[data-tone="error"] {
   background: var(--red);
   color: #fff;
-}
-
-/* ローカルイベントの送信状態 */
-.status-chip {
-  display: inline-flex;
-  padding: 0.08rem 0.5rem;
-  border-radius: var(--radius-full);
-  font-size: 0.78rem;
-  font-weight: 600;
-  border: 1px solid;
-}
-
-.status-chip[data-status="queued"] {
-  background: var(--yellow-bg-strong);
-  border-color: var(--yellow-border);
-  color: var(--yellow-text);
-}
-
-.status-chip[data-status="sent"] {
-  background: var(--green-bg-strong);
-  border-color: var(--green-border);
-  color: var(--green-text);
-}
-
-.status-chip[data-status="failed"] {
-  background: var(--red-bg-strong);
-  border-color: var(--red-border);
-  color: var(--red-text);
-}
-
-/* パーツ詳細のプレビュー告知 */
-.preview-banner-card {
-  border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  border: 1px solid var(--blue-border);
-  background: var(--blue-bg);
-}
-
-.preview-banner-card[data-tone="error"] {
-  border-color: var(--red-border);
-  background: var(--red-bg);
 }
 
 /*
@@ -2725,10 +1717,6 @@ button.card:hover {
   field-sizing: content;
 }
 
-.def-module {
-  max-width: 18rem;
-}
-
 .def-row-action {
   width: 22px;
   height: 22px;
@@ -2743,19 +1731,6 @@ button.card:hover {
 .def-row-action:hover {
   background: var(--overlay-3) !important;
   color: var(--text-primary) !important;
-}
-
-.def-save-row {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.def-commit-input {
-  flex: 1;
-  min-width: 0;
 }
 
 @media (max-width: 760px) {
@@ -2808,8 +1783,7 @@ button.card:hover {
 @media (max-width: 760px) {
   .workbench,
   .workbench.sidebar-open,
-  .workbench.sidebar-closed,
-  .workbench.sidebar-toggled {
+  .workbench.sidebar-closed {
     grid-template-areas:
       "titlebar"
       "editor"
@@ -2908,24 +1882,12 @@ button.card:hover {
     display: none;
   }
 
-  .editor-tabs {
-    display: none;
-  }
-
   dialog {
     padding: 1.2rem;
   }
 
   .page-shell {
     padding: 0.8rem 0.9rem 1.5rem;
-  }
-
-  .composer {
-    flex-direction: column;
-  }
-
-  .composer button {
-    width: 100%;
   }
 
   .dialog-buttons {
