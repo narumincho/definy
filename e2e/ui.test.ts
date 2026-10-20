@@ -13,8 +13,11 @@ test.describe("definy UI E2E", () => {
     const totalEvents = await eventCards.count();
     expect(totalEvents).toBeGreaterThanOrEqual(1);
 
-    // イベントバッジに module_commit または create_account が含まれることを検証
-    const firstBadge = eventCards.first().locator(".badge");
+    // イベントの種類のバッジに module_commit または create_account が含まれることを検証
+    // (seed の署名が不正なサンプルには「署名が不正」のバッジも付く)
+    const firstBadge = eventCards
+      .first()
+      .locator(".badge:not(.badge-invalid-signature)");
     await expect(firstBadge).toBeVisible();
     const badgeText = await firstBadge.textContent();
     expect(["module_commit", "create_account"]).toContain(badgeText?.trim());
@@ -29,7 +32,9 @@ test.describe("definy UI E2E", () => {
 
       const filteredCount = await eventCards.count();
       expect(filteredCount).toBeGreaterThanOrEqual(1);
-      const filteredBadge = eventCards.first().locator(".badge");
+      const filteredBadge = eventCards
+        .first()
+        .locator(".badge:not(.badge-invalid-signature)");
       await expect(filteredBadge).toHaveText("create_account");
 
       // 「すべて」フィルターで全件に戻ることを確認

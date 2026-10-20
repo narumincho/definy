@@ -37,9 +37,10 @@ export default function ChangesPage(): JSX.Element {
     ),
   );
 
-  const [selectedModule, setSelectedModule] = useState<string>(
-    affectedModules[0] ?? "core",
-  );
+  // 作業中の変更は localStorage からマウント後に読むので, 初期値を useState で決めると変更の無い状態 ("core") になる.
+  // 選んでいなければ, 変更のあるモジュールの先頭を使う
+  const [chosenModule, setSelectedModule] = useState<string | null>(null);
+  const selectedModule = chosenModule ?? affectedModules[0] ?? "core";
 
   // コミットする前に, サーバーと同じ definy 製の型チェッカーで検査する.
   // 変更・対象モジュール・取得済みのイベントが変わったら 300ms 待ってから検査し直す
