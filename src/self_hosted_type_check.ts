@@ -591,7 +591,7 @@ export function typeEnvFromParts(
 
 /** 型環境が変わったかを比べるキー (全パーツの ID と型, 型パーツの宣言式から決まる) */
 export function typeEnvKey(parts: Iterable<LatestPart>): string {
-  return expressionContentHash(
+  return expressionContentHashSync(
     [...parts]
       .map(
         (part) =>
@@ -603,13 +603,15 @@ export function typeEnvKey(parts: Iterable<LatestPart>): string {
   );
 }
 
-/** 式の CBOR の SHA-256 (URL-safe Base64). CAS の content hash と同じ */
-export function expressionContentHash(expression: unknown): string {
+/** 式の CBOR の SHA-256 (URL-safe Base64). CAS の content hash と同じ (同期版) */
+export function expressionContentHashSync(expression: unknown): string {
   return bytesToUrlSafeBase64NoPad(sha256BytesSync(encodeCborItem(expression)));
 }
 
+export { expressionContentHashSync as expressionContentHash };
+
 function partTypeKey(partType: unknown): string {
-  return partType == null ? "" : expressionContentHash(partType);
+  return partType == null ? "" : expressionContentHashSync(partType);
 }
 
 /**

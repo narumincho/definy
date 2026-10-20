@@ -41,6 +41,7 @@ import {
   type SelfHostedTypeCheckOutcome,
 } from "./self_hosted_type_check.ts";
 import { loadTypeChecker } from "./type_checker_browser.ts";
+import { pickLatestCommitPerModule } from "./latest_commits.ts";
 import {
   generateAccountCredentials,
   importAccountCredentials,
@@ -207,27 +208,24 @@ function yieldToBrowser(): Promise<void> {
 function latestParts(
   decodedCommits: ReadonlyArray<DecodedCommitEvent>,
 ): ReadonlyMap<string, LatestPart> {
-  const commits = new Map<
-    string,
-    {
-      readonly timeMs: number;
-      readonly eventHash: string;
-      readonly commit: NonNullable<ReturnType<typeof extractModuleCommit>>;
-    }
-  >();
+  const candidates: Array<{
+    readonly moduleId: string;
+    readonly timeMs: number;
+    readonly eventHash: string;
+    readonly commit: NonNullable<ReturnType<typeof extractModuleCommit>>;
+  }> = [];
   for (const { event: ev, commit } of decodedCommits) {
     if (commit.moduleIdHash == null) {
       continue;
     }
-    const existing = commits.get(commit.moduleIdHash);
-    if (existing === undefined || existing.timeMs < ev.timeMs) {
-      commits.set(commit.moduleIdHash, {
-        timeMs: ev.timeMs,
-        eventHash: ev.eventHash,
-        commit,
-      });
-    }
+    candidates.push({
+      moduleId: commit.moduleIdHash,
+      timeMs: ev.timeMs,
+      eventHash: ev.eventHash,
+      commit,
+    });
   }
+  const commits = pickLatestCommitPerModule(candidates);
   const parts = new Map<string, LatestPart>();
   for (const [moduleId, { commit, eventHash }] of commits) {
     for (const part of commit.parts) {

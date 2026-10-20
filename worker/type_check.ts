@@ -19,6 +19,7 @@ import {
   outcomeErrorMessage,
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
+import { pickLatestCommitPerModule } from "../src/latest_commits.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { systemAccountBytes, type PartStoreReader } from "./part_compiler.ts";
@@ -42,8 +43,10 @@ function partContentHash(
   return bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
 }
 
-/** 式の CBOR の SHA-256 (URL-safe Base64, CAS の content hash と同じ). ネイティブの SHA-256 を使う */
-async function expressionContentHash(expression: unknown): Promise<string> {
+/** 式の CBOR の SHA-256 (URL-safe Base64, CAS の content hash と同じ). ネイティブの非同期 SHA-256 を使う */
+async function expressionContentHashAsync(
+  expression: unknown,
+): Promise<string> {
   return bytesToUrlSafeBase64NoPad(
     await sha256Bytes(encodeCborItem(expression)),
   );
@@ -72,7 +75,9 @@ async function commitParts(
       expression,
       expressionKey:
         contentHash ??
-        (expression === null ? null : await expressionContentHash(expression)),
+        (expression === null
+          ? null
+          : await expressionContentHashAsync(expression)),
       contentHash,
     });
   }
@@ -139,7 +144,7 @@ async function loadLatestParts(
 ): Promise<
   ReadonlyMap<string, LatestPart & { readonly contentHash: string | null }>
 > {
-  const latestCommits = new Map<string, CachedCommit>();
+  const commits: Array<CachedCommit> = [];
   for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
     const page = await store.getEvents(
       { eventType: "module_commit", limit: EVENTS_PAGE_SIZE, offset },
@@ -147,18 +152,15 @@ async function loadLatestParts(
     );
     for (const item of page) {
       const commit = await decodeCommit(item);
-      if (commit === null) {
-        continue;
-      }
-      const existing = latestCommits.get(commit.moduleId);
-      if (existing === undefined || existing.timeMs < commit.timeMs) {
-        latestCommits.set(commit.moduleId, commit);
+      if (commit !== null) {
+        commits.push(commit);
       }
     }
     if (page.length < EVENTS_PAGE_SIZE) {
       break;
     }
   }
+  const latestCommits = pickLatestCommitPerModule(commits);
   const parts = new Map<
     string,
     LatestPart & { readonly contentHash: string | null }
