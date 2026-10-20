@@ -139,13 +139,11 @@ export function tryBuildFunctionNode(
     };
     const params = fnNode.parameters ?? [];
     let nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
-    const paramChildren: LayoutNode[] = [];
-
-    for (const [idx, p] of params.entries()) {
+    const paramChildren: ReadonlyArray<LayoutNode> = params.map((p, idx) => {
       const pId = Number(p.parameter_id ?? p.variable_id ?? 0);
       const pName = String(p.parameter_name ?? p.name ?? `arg${idx}`);
       nextScopeVars.set(pId, pName);
-      paramChildren.push({
+      return {
         id: `${idPrefix}.param_${idx}`,
         path: childPath(currentPath, {
           kind: "typeFunctionParameter",
@@ -157,8 +155,8 @@ export function tryBuildFunctionNode(
         computedWidth: 0,
         computedHeight: 0,
         layoutMode: "inline",
-      });
-    }
+      };
+    });
 
     const bodyChild = buildLayoutNode(
       fnNode.body,
@@ -191,9 +189,7 @@ export function tryBuildFunctionNode(
       context,
     );
     const args = callNode.arguments ?? [];
-    const argChildren: LayoutNode[] = [];
-
-    for (const [idx, arg] of args.entries()) {
+    const argChildren: ReadonlyArray<LayoutNode> = args.map((arg, idx) => {
       const argPath = childPath(currentPath, {
         kind: "callArgument",
         index: idx,
@@ -206,7 +202,7 @@ export function tryBuildFunctionNode(
       );
       const argName = String(arg.name ?? "");
       const label = argName.length > 0 ? `${argName}:` : `arg${idx}:`;
-      argChildren.push({
+      return {
         id: `${idPrefix}.arg_${idx}`,
         path: argPath,
         label,
@@ -215,8 +211,8 @@ export function tryBuildFunctionNode(
         computedWidth: 0,
         computedHeight: 0,
         layoutMode: "inline",
-      });
-    }
+      };
+    });
 
     return {
       id: idPrefix,

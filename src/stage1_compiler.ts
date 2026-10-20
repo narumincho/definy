@@ -173,12 +173,10 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
   }
   if (tag === 3) {
     const count = view.getUint32(ptr + 4, true);
-    const items: Array<DefinyValue> = [];
-    for (let i = 0; i < count; i++) {
+    return Array.from({ length: count }, (_, i) => {
       const elemPtr = view.getUint32(ptr + 8 + i * 4, true);
-      items.push(readDefinyValue(mem, elemPtr));
-    }
-    return items;
+      return readDefinyValue(mem, elemPtr);
+    });
   }
   if (tag === 4) {
     const count = view.getUint32(ptr + 4, true);
@@ -540,28 +538,25 @@ export function definyAstToSelfHostedAst(ast: unknown): unknown {
 }
 
 /** 式の中の `PartReference` の ID を出現順に集める */
-function collectPartReferenceIds(expression: unknown, out: Array<string>) {
+function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
   if (Array.isArray(expression)) {
-    for (const item of expression) {
-      collectPartReferenceIds(item, out);
-    }
-    return;
+    return expression.flatMap(collectPartReferenceIds);
   }
   if (!expression || typeof expression !== "object") {
-    return;
+    return [];
   }
   if (expression instanceof Uint8Array) {
-    return;
+    return [];
   }
   const obj = expression as Record<string, unknown>;
   const reference = obj.PartReference as
     { readonly part_definition_event_hash?: unknown } | undefined;
-  if (reference && typeof reference === "object") {
-    out.push(partReferenceId(reference.part_definition_event_hash));
-  }
-  for (const value of Object.values(obj)) {
-    collectPartReferenceIds(value, out);
-  }
+  const selfId =
+    reference && typeof reference === "object"
+      ? [partReferenceId(reference.part_definition_event_hash)]
+      : [];
+  const childIds = Object.values(obj).flatMap(collectPartReferenceIds);
+  return [...selfId, ...childIds];
 }
 
 /**
@@ -577,13 +572,14 @@ export function collectReferencedParts(
   readonly parts: ReadonlyArray<Stage1ReferencedPart>;
   readonly unresolved: ReadonlyArray<string>;
 } {
-  const queue: Array<string> = [];
-  collectPartReferenceIds(expression, queue);
+  let queue: ReadonlyArray<string> = collectPartReferenceIds(expression);
   const seen = new Set<string>();
-  const parts: Array<Stage1ReferencedPart> = [];
-  const unresolved: Array<string> = [];
-  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
-    if (seen.has(id)) {
+  const parts: Stage1ReferencedPart[] = [];
+  const unresolved: string[] = [];
+  while (queue.length > 0) {
+    const [id, ...rest] = queue;
+    queue = rest;
+    if (id === undefined || seen.has(id)) {
       continue;
     }
     seen.add(id);
@@ -602,7 +598,7 @@ export function collectReferencedParts(
       }
       throw e;
     }
-    collectPartReferenceIds(partExpression, queue);
+    queue = [...queue, ...collectPartReferenceIds(partExpression)];
     parts.push({ id, expression: partExpression });
   }
   return { parts, unresolved };

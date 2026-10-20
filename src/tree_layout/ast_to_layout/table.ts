@@ -36,16 +36,13 @@ export function tryBuildTable(
 
   if (allKeys.length === 0) return null;
 
-  const rows: LayoutNode[] = [];
-  for (const [rowIdx, item] of items.entries()) {
+  const rows: ReadonlyArray<LayoutNode> = items.map((item, rowIdx) => {
     const rec =
       (item as Record<string, unknown>).TypeLiteral ??
       (item as Record<string, unknown>).RecordLiteral;
     const fields =
       (rec as { items?: ReadonlyArray<Record<string, unknown>> }).items ?? [];
-    const rowCells: LayoutNode[] = [];
-
-    for (const [colIdx, key] of allKeys.entries()) {
+    const rowCells: ReadonlyArray<LayoutNode> = allKeys.map((key, colIdx) => {
       const fieldIdx = fields.findIndex(
         (f) => String(f.key ?? f.name ?? "") === key,
       );
@@ -55,29 +52,26 @@ export function tryBuildTable(
           childPath(basePath, { kind: "listItemValue", index: rowIdx }),
           { kind: "recordItemValue", index: fieldIdx },
         );
-        rowCells.push(
-          buildLayoutNode(
-            field?.value,
-            `${idPrefix}.r${rowIdx}.c${colIdx}`,
-            cellPath,
-            context,
-          ),
+        return buildLayoutNode(
+          field?.value,
+          `${idPrefix}.r${rowIdx}.c${colIdx}`,
+          cellPath,
+          context,
         );
-      } else {
-        rowCells.push({
-          id: `${idPrefix}.r${rowIdx}.c${colIdx}.none`,
-          path: childPath(basePath, { kind: "listItemValue", index: rowIdx }),
-          label: "-",
-          kind: "delimiter",
-          children: [],
-          computedWidth: 20,
-          computedHeight: 26,
-          layoutMode: "inline",
-        });
       }
-    }
+      return {
+        id: `${idPrefix}.r${rowIdx}.c${colIdx}.none`,
+        path: childPath(basePath, { kind: "listItemValue", index: rowIdx }),
+        label: "-",
+        kind: "delimiter",
+        children: [],
+        computedWidth: 20,
+        computedHeight: 26,
+        layoutMode: "inline",
+      };
+    });
 
-    rows.push({
+    return {
       id: `${idPrefix}.row_${rowIdx}`,
       path: childPath(basePath, { kind: "listItemValue", index: rowIdx }),
       label: `row ${rowIdx + 1}`,
@@ -86,8 +80,8 @@ export function tryBuildTable(
       computedWidth: 0,
       computedHeight: 0,
       layoutMode: "inline",
-    });
-  }
+    };
+  });
 
   return {
     id: idPrefix,

@@ -94,13 +94,13 @@ export function decodeCborItem(
         offset + val,
       ];
     case 4: {
-      const arr: Array<unknown> = [];
+      const arr: unknown[] = [];
       for (let i = 0; i < val; i++) {
         const [elem, next] = decodeCborItem(bytes, offset);
         arr.push(elem);
         offset = next;
       }
-      return [arr, offset];
+      return [arr as ReadonlyArray<unknown>, offset];
     }
     case 5: {
       const obj: Record<string, unknown> = {};
@@ -193,11 +193,10 @@ export function encodeCborItem(value: unknown): Uint8Array {
     return concatBytes([encodeCborHeader(2, value.length), value]);
   }
   if (Array.isArray(value)) {
-    const chunks: Array<Uint8Array> = [encodeCborHeader(4, value.length)];
-    for (const item of value) {
-      chunks.push(encodeCborItem(item));
-    }
-    return concatBytes(chunks);
+    return concatBytes([
+      encodeCborHeader(4, value.length),
+      ...value.map((item) => encodeCborItem(item)),
+    ]);
   }
   if (
     value &&
@@ -214,12 +213,10 @@ export function encodeCborItem(value: unknown): Uint8Array {
   }
   if (typeof value === "object") {
     const entries = Object.entries(value as Record<string, unknown>);
-    const chunks: Array<Uint8Array> = [encodeCborHeader(5, entries.length)];
-    for (const [k, v] of entries) {
-      chunks.push(encodeCborItem(k));
-      chunks.push(encodeCborItem(v));
-    }
-    return concatBytes(chunks);
+    return concatBytes([
+      encodeCborHeader(5, entries.length),
+      ...entries.flatMap(([k, v]) => [encodeCborItem(k), encodeCborItem(v)]),
+    ]);
   }
   return new Uint8Array([0xf6]);
 }

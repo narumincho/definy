@@ -126,22 +126,16 @@ function layoutTableNode(
     };
   }
 
-  const colWidths: Array<number> = headers.map(
-    (h) => estimateTextWidth(h, options.charWidth) + 16.0,
-  );
-
-  for (const row of node.children) {
-    for (const [colIdx, cell] of row.children.entries()) {
-      if (colIdx < numColumns) {
-        const cellW = estimateInlineWidth(cell, options) + 12.0;
-        colWidths[colIdx] = Math.max(colWidths[colIdx] ?? 0, cellW);
-      }
-    }
-  }
-
-  for (let i = 0; i < colWidths.length; i++) {
-    colWidths[i] = Math.max(colWidths[i] ?? 0, 60.0);
-  }
+  const colWidths: ReadonlyArray<number> = headers.map((h, colIdx) => {
+    const headerWidth = estimateTextWidth(h, options.charWidth) + 16.0;
+    const maxCellWidth = node.children.reduce((maxW, row) => {
+      const cell = row.children[colIdx];
+      if (!cell) return maxW;
+      const cellW = estimateInlineWidth(cell, options) + 12.0;
+      return Math.max(maxW, cellW);
+    }, headerWidth);
+    return Math.max(maxCellWidth, 60.0);
+  });
 
   const tableWidth =
     colWidths.reduce((a, b) => a + b, 0) + numColumns * 8.0 + 16.0;

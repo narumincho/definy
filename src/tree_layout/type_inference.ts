@@ -278,6 +278,8 @@ export function getOptionValueForExpression(node: unknown): string | null {
   return null;
 }
 
+const BOOLEAN_MATCH_TAGS: ReadonlySet<string> = new Set(["true", "false", "_"]);
+
 /** アームが `true` / `false` (と `_`) だけの, Bool に対する match か */
 export function isBooleanMatch(match: unknown): boolean {
   const arms = (match as { arms?: unknown } | null)?.arms;
@@ -285,7 +287,7 @@ export function isBooleanMatch(match: unknown): boolean {
     Array.isArray(arms) &&
     arms.length > 0 &&
     arms.every((arm: { tag?: unknown }) =>
-      ["true", "false", "_"].includes(String(arm?.tag)),
+      BOOLEAN_MATCH_TAGS.has(String(arm?.tag)),
     )
   );
 }

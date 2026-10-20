@@ -98,12 +98,14 @@ function showAsPopover(element: HTMLDivElement | null): void {
 /** 表示順 (行きがけ順) にノード ID とパスを集める */
 function collectNodeIndex(
   node: LayoutNode,
-  out: Array<{ readonly id: string; readonly path: ReadonlyArray<PathStep> }>,
-): void {
-  out.push({ id: node.id, path: node.path });
-  for (const child of node.children) {
-    collectNodeIndex(child, out);
-  }
+): ReadonlyArray<{
+  readonly id: string;
+  readonly path: ReadonlyArray<PathStep>;
+}> {
+  return [
+    { id: node.id, path: node.path },
+    ...node.children.flatMap(collectNodeIndex),
+  ];
 }
 
 /** そのパスの式を表すノード (式 1 つ分のノード) を探す */
@@ -120,6 +122,13 @@ function findExpressionNode(
   }
   return null;
 }
+
+const TREE_INTERCEPT_KEYS: ReadonlySet<string> = new Set([
+  "Enter",
+  "Escape",
+  "Delete",
+  "Backspace",
+]);
 
 function isTextInput(target: EventTarget | null): boolean {
   return (
@@ -174,14 +183,7 @@ export function ExpressionTreeEditor({
   }, [expression, partNames, maxWidth]);
 
   // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
-  const nodeIndex = useMemo(() => {
-    const out: Array<{
-      readonly id: string;
-      readonly path: ReadonlyArray<PathStep>;
-    }> = [];
-    collectNodeIndex(layoutRoot, out);
-    return out;
-  }, [layoutRoot]);
+  const nodeIndex = useMemo(() => collectNodeIndex(layoutRoot), [layoutRoot]);
 
   const toggleCollapse = useCallback((id: string) => {
     setCollapsedIds((prev) => {
@@ -400,10 +402,7 @@ export function ExpressionTreeEditor({
   function handleContainerKeyDown(e: KeyboardEvent<HTMLDivElement>): void {
     const navKey = navKeyFromEvent(e);
     // このツリーで処理したキーは外側 (パーツ定義のツリーなど) に二重に処理させない
-    if (
-      navKey !== null ||
-      ["Enter", "Escape", "Delete", "Backspace"].includes(e.key)
-    ) {
+    if (navKey !== null || TREE_INTERCEPT_KEYS.has(e.key)) {
       e.stopPropagation();
     }
 
