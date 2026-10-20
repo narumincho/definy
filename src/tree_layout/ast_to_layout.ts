@@ -23,7 +23,23 @@ export function expressionToLayoutNode(
   return buildLayoutNode(expr, idPrefix, currentPath, context);
 }
 
+/**
+ * 式 1 つ分のノードを作り, その位置から参照できる変数 (`scopeVariables`) を付ける.
+ * let の束縛の Map はあとから変数が足されるので複製しておく
+ */
 function buildLayoutNode(
+  expr: unknown,
+  idPrefix: string,
+  currentPath: ReadonlyArray<PathStep>,
+  context: ScopeContext,
+): LayoutNode {
+  return {
+    ...buildExpressionLayoutNode(expr, idPrefix, currentPath, context),
+    scopeVariables: new Map(context.scopeVariables ?? []),
+  };
+}
+
+function buildExpressionLayoutNode(
   expr: unknown,
   idPrefix: string,
   currentPath: ReadonlyArray<PathStep>,

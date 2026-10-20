@@ -507,9 +507,7 @@ function LeafNodeRenderer({
         return;
       }
     }
-    if (e.key === "Escape") {
-      e.currentTarget.blur();
-    }
+    // Escape / Enter はツリーの枠 (ExpressionTreeEditor) で受けてツリーにフォーカスを戻す
   }
 
   let content: JSX.Element;
@@ -519,6 +517,9 @@ function LeafNodeRenderer({
       <input
         type="number"
         value={localNumber}
+        // クリック・Enter で選んだときはすぐ入力できるようにする.
+        // キーボードで移動している間は inlineEdit が false なので入力欄にならない
+        autoFocus
         onFocus={(e) => {
           e.currentTarget.select();
         }}
@@ -554,6 +555,7 @@ function LeafNodeRenderer({
       <input
         type="text"
         value={localString}
+        autoFocus
         onFocus={(e) => {
           e.currentTarget.select();
         }}

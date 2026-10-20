@@ -219,6 +219,16 @@ export function getOptionValueForExpression(node: unknown): string | null {
   if ("ListConcat" in obj) return "expr:list_concat";
   if ("If" in obj) return "expr:if";
   if ("Hole" in obj) return "expr:hole";
+  if ("Variable" in obj) {
+    const raw = obj.Variable;
+    const id =
+      typeof raw === "number"
+        ? raw
+        : (raw as { variable_id?: unknown } | null)?.variable_id;
+    if (typeof id === "number" || typeof id === "bigint") {
+      return `ref:local:${id}`;
+    }
+  }
 
   if ("PartReference" in obj) {
     const raw = (obj.PartReference as { part_definition_event_hash?: unknown })

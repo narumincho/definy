@@ -1944,6 +1944,97 @@ button.card:hover {
   border-color: var(--bg-selection-strong) !important;
 }
 
+/* 式の置換メニューの見出しのボタン (未入力にする・選択解除) */
+.dropdown-header-button {
+  padding: 0.05rem 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.dropdown-header-button:hover {
+  color: var(--text);
+  background: var(--overlay-2);
+}
+
+/* 式の置換メニューの検索欄. 開いたときは選択中の式の名前が全選択で入っている */
+.dropdown-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  outline: none;
+  box-shadow: none;
+}
+
+/* 期待型に合わない選択肢の区切り */
+.dropdown-option-heading {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  background: var(--bg-inset);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+}
+
+.dropdown-option-button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-option-check {
+  width: 0.75rem;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--primary);
+}
+
+.dropdown-option-name {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.dropdown-option-detail {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.dropdown-option-category {
+  margin-left: auto;
+  padding-left: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* キーボードで選択を移動する式のツリー. フォーカス中はキー操作を受け付けることを示す */
 .expression-tree-container:focus-visible,
 .expression-tree-container:focus {
