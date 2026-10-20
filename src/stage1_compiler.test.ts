@@ -150,7 +150,8 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
       id === "builtin" ? { Compiler: "let" } : undefined,
     );
     expect(parts).toEqual([]);
-    expect(unresolved).toEqual(["missing", "builtin"]);
+    // 旧 Rust 版と同じく後に現れた参照から調べる
+    expect(unresolved).toEqual(["builtin", "missing"]);
   });
 
   it("rejects expressions that core.expression cannot represent", () => {

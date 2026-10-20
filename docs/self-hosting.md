@@ -6,8 +6,8 @@ definy を definy
 > [!NOTE]
 > 本リポジトリは Rust + Deno から **TypeScript + React 19 + Void (Vite 8) + Cloudflare Workers** に移行済みです。
 > 本ドキュメント内の Rust ツールチェイン（`cargo run -p definy-server`, `cargo test` など）に関する記述は、セルフホストおよび固定点達成に至るまでの**旧 Rust 実装（廃止済み）における歴史的経緯と仕様**を記録したものです。
-> 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`）で検証されています。
-> シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。なお、`stage1.wasm` の再生成は現在 TypeScript 版では**未実装（Rust 版では cargo で生成していた）**です。
+> 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`, `src/stage1_fixed_point.test.ts`）で検証されています。
+> シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`)、`stage1.wasm` の再生成と不動点検証は `npm run build:stage1` / `npm run check:stage1` (`scripts/regenerate_stage1.ts`) で実行可能です。
 
 ## 概要
 
@@ -272,6 +272,40 @@ definy 製コンパイラは, Rust 製コンパイラ (stage0) と同じく評�
 
 所要時間 (debug ビルド, Apple Silicon): stage1 を作る (stage0) 約 13 秒, stage1 の読み込み (wasmtime のコンパイル) 0.6 秒,
 stage1 でコンパイラ自身をコンパイル 0.16 秒, 適合テストの 65 個の式のコンパイルは stage0 で 125 秒, stage1 で 0.045 秒。
+
+### stage1.wasm の再生成 (TypeScript 版)
+
+TypeScript 移行後は、`scripts/regenerate_stage1.ts` を用いて `wasm/stage1.wasm` の再生成と不動点（fixed point）の自動検証を行えます。
+
+```bash
+# 再生成と既存バイナリとの一致検証 (CI / テスト向け)
+npm run check:stage1
+
+# 再生成して wasm/stage1.wasm に書き出し
+npm run build:stage1
+```
+
+#### 再生成の手順と検証フロー
+
+1. `seeds/*.json` のパーツ定義を読み込み、開発用システムアカウント鍵から導出した公開鍵を用いてパーツ ID のプレースホルダ (`{"$part": "core.compile-to-wasm"}`) を解決する。
+2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全 38 パーツを収集する。
+3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (68,452 バイト)。
+4. 得られた `stage2` のバイナリを使って同じ式を再コンパイルし、`stage3` を生成する。
+5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は書き出す。
+6. `src/stage1_fixed_point.test.ts` において、Vitest 経由でも不動点検証が自動テストされる。
+
+#### 参照パーツの順序 (LIFO) とバイト一致
+
+`src/stage1_compiler.ts` の `collectReferencedParts` では、参照パーツの探索キューから**末尾の要素を取り出す LIFO (後入れ先出し)** を採用しています。
+旧 Rust 実装 (`definy-server/src/self_hosted_wasm_compiler.rs` の `referenced_parts_expression`) が `queue.pop()` で末尾から取り出していたため、同じ順序に揃えることで関数表（Wasm の table）のインデックス順や関数の配置順が一致し、既存の `wasm/stage1.wasm` (68,452 バイト) と 1 バイトの差異もなく完全一致させることができます（FIFO にするとサイズは同じでもインデックスがずれてバイト不一致になります）。
+
+#### Node のスタックサイズ (`--stack-size=4000`)
+
+コンパイラ自身のコード（38 パーツ）のような巨大な AST をコンパイルする際、`stage1.wasm` 内部の再帰呼び出しが深くなり、Node.js の既定コールスタックサイズ（約 984 KB）では `RangeError: Maximum call stack size exceeded` が発生します。
+そのため、実行時には `node --stack-size=4000` を指定してスタックサイズを拡張する必要があります（コンパイル 1 回あたりの所要時間は約 0.3 秒）。
+
+> [!WARNING]
+> ブラウザや Cloudflare Workers の JavaScript / WebAssembly 実行環境においても既定のコールスタックサイズに同様の制約があるため、コンパイラ自身のように再帰が非常に深くなる大きな式を評価・コンパイルする場合はスタックオーバーフローが発生する可能性があります。
 
 ### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
 
