@@ -71,11 +71,16 @@ function buildExpressionLayoutNode(
   }
 
   if (typeof expr !== "object") {
+    // TypeNumber などの型は `number` のように型の名前で出す
+    const text = String(expr);
+    const typeName = /^Type[A-Z]/.test(text)
+      ? text.slice(4).toLowerCase()
+      : null;
     return {
       id: idPrefix,
       path: currentPath,
-      label: String(expr),
-      kind: "identifier",
+      label: typeName ?? text,
+      kind: typeName !== null ? "keyword" : "identifier",
       children: [],
       computedWidth: 32,
       computedHeight: 26,
@@ -774,6 +779,71 @@ function buildExpressionLayoutNode(
       computedWidth: 0,
       computedHeight: 0,
       layoutMode: "multiline",
+    };
+  }
+
+  if ("TypeFunction" in node) {
+    const fn = (node.TypeFunction ?? {}) as {
+      readonly parameters?: ReadonlyArray<{
+        readonly name?: unknown;
+        readonly type?: unknown;
+      }>;
+      readonly return_type?: unknown;
+    };
+    const parameterNodes = (fn.parameters ?? []).map(
+      (parameter, index): LayoutNode => {
+        const parameterPath = childPath(currentPath, {
+          kind: "typeFunctionParameter",
+          index,
+        });
+        return {
+          id: `${idPrefix}.p_${index}`,
+          path: parameterPath,
+          label: `${String(parameter.name ?? "")}:`,
+          kind: "identifier",
+          children: [
+            buildLayoutNode(
+              parameter.type,
+              `${idPrefix}.p_${index}.type`,
+              parameterPath,
+              context,
+            ),
+          ],
+          computedWidth: 0,
+          computedHeight: 0,
+          layoutMode: "inline",
+        };
+      },
+    );
+    const returnPath = childPath(currentPath, "typeFunctionReturn");
+    return {
+      id: idPrefix,
+      path: currentPath,
+      label: "function",
+      kind: "keyword",
+      children: [
+        ...parameterNodes,
+        {
+          id: `${idPrefix}.return`,
+          path: returnPath,
+          label: "→",
+          kind: "operator",
+          children: [
+            buildLayoutNode(
+              fn.return_type,
+              `${idPrefix}.return.type`,
+              returnPath,
+              context,
+            ),
+          ],
+          computedWidth: 0,
+          computedHeight: 0,
+          layoutMode: "inline",
+        },
+      ],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
     };
   }
 

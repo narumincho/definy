@@ -82,6 +82,18 @@ export function getExpressionAtPath(
   ) {
     return getExpressionAtPath(variants[head.index]?.payload_type, tail);
   }
+  if ("TypeFunction" in node) {
+    const fn = node.TypeFunction as {
+      parameters?: ReadonlyArray<{ type?: unknown }>;
+      return_type?: unknown;
+    } | null;
+    if (typeof head === "object" && head.kind === "typeFunctionParameter") {
+      return getExpressionAtPath(fn?.parameters?.[head.index]?.type, tail);
+    }
+    if (head === "typeFunctionReturn") {
+      return getExpressionAtPath(fn?.return_type, tail);
+    }
+  }
 
   if (head === "left") {
     for (const key of Object.keys(node)) {
@@ -279,6 +291,34 @@ export function updateExpressionAtPath(
         ),
       },
     };
+  }
+  if ("TypeFunction" in node) {
+    const fn = (node.TypeFunction ?? {}) as {
+      parameters?: ReadonlyArray<{ type?: unknown }>;
+      return_type?: unknown;
+    };
+    if (typeof head === "object" && head.kind === "typeFunctionParameter") {
+      return {
+        ...node,
+        TypeFunction: {
+          ...fn,
+          parameters: (fn.parameters ?? []).map((p, i) =>
+            i === head.index
+              ? { ...p, type: updateExpressionAtPath(p.type, tail, updater) }
+              : p,
+          ),
+        },
+      };
+    }
+    if (head === "typeFunctionReturn") {
+      return {
+        ...node,
+        TypeFunction: {
+          ...fn,
+          return_type: updateExpressionAtPath(fn.return_type, tail, updater),
+        },
+      };
+    }
   }
   const variants = typeUnionVariants(node);
   if (
@@ -828,6 +868,8 @@ export function applySelection(
         default: null,
       },
     };
+  } else if (selectionValue in TYPE_SELECTIONS) {
+    newSubExpr = TYPE_SELECTIONS[selectionValue];
   } else if (selectionValue === "expr:if") {
     newSubExpr = {
       If: {
@@ -856,6 +898,32 @@ export function applySelection(
     keepBinaryOperands(newSubExpr, current),
   );
 }
+
+/** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
+const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
+  "expr:type:number": "TypeNumber",
+  "expr:type:string": "TypeString",
+  "expr:type:boolean": "TypeBoolean",
+  "expr:type:type": "TypeType",
+  "expr:type:list": { TypeList: { item_type: "TypeNumber" } },
+  "expr:type:function": {
+    TypeFunction: {
+      parameters: [{ name: "x", type: "TypeNumber" }],
+      return_type: "TypeNumber",
+    },
+  },
+  "expr:type:record": {
+    TypeLiteral: { items: [{ key: "key", value: "TypeString" }] },
+  },
+  "expr:type:union": {
+    TypeUnion: {
+      variants: [
+        { tag: "a", payload_type: null },
+        { tag: "b", payload_type: null },
+      ],
+    },
+  },
+};
 
 /** 左右 2 つの式を取る演算の式のキー */
 const BINARY_KEYS: ReadonlyArray<string> = [

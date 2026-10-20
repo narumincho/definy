@@ -245,6 +245,79 @@ function partReturnType(partType: unknown): ExpectedType {
   return "any";
 }
 
+/** 型のツリーエディタ (パーツの型の行) の選択肢 */
+export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
+  {
+    value: "expr:type:number",
+    name: "number",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:string",
+    name: "string",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:boolean",
+    name: "boolean",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:type",
+    name: "type",
+    detail: "型そのもの",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:list",
+    name: "list",
+    detail: "List<number>",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:function",
+    name: "function",
+    detail: "x: number → number",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:record",
+    name: "record",
+    detail: "{ key: string }",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:union",
+    name: "union",
+    detail: "a | b",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:hole",
+    name: "□",
+    detail: "型指定なし",
+    category: "Syntax",
+    returnType: "any",
+  },
+];
+
+/** 型のパーツ (partType が `type`) の選択肢. 型の行で `{ type_part: ID }` として参照する */
+export function typePartSelectorOptions(
+  parts: ReadonlyArray<PartSnapshot>,
+): ReadonlyArray<SelectorOption> {
+  return partSelectorOptions(parts.filter((p) => p.partType === "type")).map(
+    (option) => ({ ...option, detail: undefined, category: "Type part" }),
+  );
+}
+
 /** パーツの型の短い表記 (`number`, `function` など). 選択肢の名前の横に出す */
 export function partTypeText(partType: unknown): string | undefined {
   if (typeof partType === "string") return partType;

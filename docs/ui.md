@@ -141,6 +141,23 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   `less-than-or-equal` `greater-than-or-equal` も候補にある
 - パーツの候補には型 (`number`, `function → number` など) を名前の横に出す
 
+### パーツの型の行 (型のツリーエディタ)
+
+パーツ詳細の `type` の行は, 旧 Rust 版と同じく型を式にして式のツリーエディタで編集する
+(`ExpressionTreeEditor` の `mode="type"`).
+
+- パーツの型 (`partType`, seeds/schemas の `PartType`) と型の式の相互変換は
+  [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts). seed の全パーツの型が往復で変わらないことをテストしている
+  - `"number"` ↔ `"TypeNumber"`, `{ list: T }` ↔ `{ TypeList: { item_type } }`, `{ function }` ↔ `{ TypeFunction }`,
+    `{ record }` ↔ `{ TypeLiteral }`, `{ union }` ↔ `{ TypeUnion }`, `{ type_part: ID }` ↔ `{ PartReference }`, 型指定なし ↔ `null`
+  - `"type"` (型そのもの) は内部だけの `"TypeType"` にする. 未入力 (`Hole`) は `null` に戻す
+- 型のメニューの候補は number / string / boolean / type / list / function / record / union / 型指定なしと,
+  型のパーツ (`partType` が `type` のパーツ, `{ type_part: ID }` で参照する). 期待型の推論はしない
+- 行の右端の × で型指定をなくす
+- 変更は式と同じく作業中の変更 (`PartChange.partType`) に記録する. パーツ詳細は作業中の変更の型を優先して表示し,
+  式のツリーの期待型の推論にもその型を使う
+- ツリーでは `TypeNumber` などは `number` のように型の名前で出す
+
 ### ツリーに表示する組み込みの式
 
 `ListGet` `ListAppend` `ListLength` `StringLength` `StringToBytes` `StringSlice` `TypeList` は,

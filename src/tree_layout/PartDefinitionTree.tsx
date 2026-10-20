@@ -1,11 +1,16 @@
-import { useState, useRef, type JSX, type KeyboardEvent } from "react";
+import { useState, useRef, useMemo, type JSX, type KeyboardEvent } from "react";
 import { ExpressionTreeEditor } from "./ExpressionTreeEditor.tsx";
 import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
 import { navKeyFromEvent, type NavKey } from "./keyboard.ts";
 import { nextRow, type DefinitionRow } from "./definition_rows.ts";
+import { expressionToPartType, partTypeToExpression } from "./part_type.ts";
 
-const VALUE_TREE_ID = "part-def-value-tree";
+/** 中に型・式のツリーエディタを持つ行と, そのツリーの枠の ID */
+const INNER_TREE_IDS: Partial<Record<DefinitionRow, string>> = {
+  type: "part-def-type-tree",
+  value: "part-def-value-tree",
+};
 
 function rowElementId(row: DefinitionRow): string {
   return `part-def-${row}`;
@@ -21,6 +26,8 @@ export type PartDefinitionTreeProps = {
   readonly onNameChange?: ((name: string) => void) | undefined;
   readonly onDescriptionChange?: ((desc: string) => void) | undefined;
   readonly onExpressionChange?: ((expr: unknown) => void) | undefined;
+  /** 型を変えたとき. `null` は型指定なし */
+  readonly onPartTypeChange?: ((partType: unknown) => void) | undefined;
 };
 
 export function PartDefinitionTree({
@@ -33,10 +40,16 @@ export function PartDefinitionTree({
   onNameChange,
   onDescriptionChange,
   onExpressionChange,
+  onPartTypeChange,
 }: PartDefinitionTreeProps): JSX.Element {
   const { language } = useDefiny();
   const [selectedRow, setSelectedRow] = useState<DefinitionRow | null>(null);
   const treeRef = useRef<HTMLDivElement>(null);
+  // 型は旧 Rust 版と同じく型の式にして式のツリーエディタで編集する (part_type.ts)
+  const typeExpression = useMemo(
+    () => partTypeToExpression(partType),
+    [partType],
+  );
 
   function selectRow(row: DefinitionRow): void {
     setSelectedRow(row);
@@ -51,17 +64,18 @@ export function PartDefinitionTree({
     treeRef.current?.focus({ preventScroll: true });
   }
 
-  /** 式のツリーへフォーカスを移す (ツリー側でルートが選ばれる) */
-  function enterValueTree(): void {
-    document.getElementById(VALUE_TREE_ID)?.focus();
+  /** 型・式のツリーへフォーカスを移す (ツリー側でルートが選ばれる) */
+  function enterInnerTree(row: DefinitionRow): boolean {
+    const treeId = INNER_TREE_IDS[row];
+    if (treeId === undefined) return false;
+    document.getElementById(treeId)?.focus();
+    return true;
   }
 
-  /** 行の中身を編集する (Enter). 式はツリーの中へ入る */
+  /** 行の中身を編集する (Enter). 型・式はツリーの中へ入る */
   function editRow(row: DefinitionRow): void {
     const element = document.getElementById(rowElementId(row));
-    if (row === "value") {
-      enterValueTree();
-    } else {
+    if (!enterInnerTree(row)) {
       element?.querySelector<HTMLElement>("input, textarea")?.focus();
     }
   }
@@ -95,12 +109,12 @@ export function PartDefinitionTree({
     const navKey = navKeyFromEvent(e);
     if (navKey === null) return;
     e.preventDefault();
-    // 式の行で E を押したらそのツリーの中へ入る
+    // 型・式の行で E を押したらそのツリーの中へ入る
     if (
-      selectedRow === "value" &&
-      (navKey === "firstChild" || navKey === "lastChild")
+      selectedRow !== null &&
+      (navKey === "firstChild" || navKey === "lastChild") &&
+      enterInnerTree(selectedRow)
     ) {
-      enterValueTree();
       return;
     }
     const next = nextRow(selectedRow, navKey);
@@ -109,24 +123,13 @@ export function PartDefinitionTree({
     }
   }
 
-  /** 式のツリーの上端・下端から抜けたら隣の行へ, ルートで Q ならその行へ戻る */
-  function handleExitValueTree(key: NavKey): void {
-    returnToRow(
-      key === "up" || key === "down"
-        ? (nextRow("value", key) ?? "value")
-        : "value",
-    );
-  }
-
-  function formatType(t: unknown): string {
-    if (!t) return "unknown";
-    if (typeof t === "string") return t;
-    if (typeof t === "object") {
-      const keys = Object.keys(t);
-      if (keys.length === 1 && keys[0]) return keys[0];
-      return JSON.stringify(t);
-    }
-    return String(t);
+  /** 型・式のツリーの上端・下端から抜けたら隣の行へ, ルートで Q ならその行へ戻る */
+  function exitInnerTree(row: DefinitionRow): (key: NavKey) => void {
+    return (key) => {
+      returnToRow(
+        key === "up" || key === "down" ? (nextRow(row, key) ?? row) : row,
+      );
+    };
   }
 
   return (
@@ -259,7 +262,7 @@ export function PartDefinitionTree({
 
         {/* Type row */}
         <div
-          className="def-row"
+          className="def-row def-row-tree"
           id={rowElementId("type")}
           role="treeitem"
           data-state={selectedRow === "type" ? "selected" : ""}
@@ -268,21 +271,46 @@ export function PartDefinitionTree({
           }}
         >
           <span className="def-label">type</span>
-          <span className="def-value" style={{ paddingTop: "0.2rem" }}>
-            <span
-              style={{
-                display: "inline-block",
-                padding: "0.1rem 0.45rem",
-                borderRadius: "var(--radius-full)",
-                background: "var(--overlay-3)",
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.8rem",
-                color: "var(--text)",
+          <div className="def-value">
+            <ExpressionTreeEditor
+              mode="type"
+              expression={typeExpression}
+              onChange={
+                onPartTypeChange
+                  ? (next) => {
+                      onPartTypeChange(expressionToPartType(next));
+                    }
+                  : undefined
+              }
+              editable={editable}
+              containerId={INNER_TREE_IDS.type}
+              onExit={exitInnerTree("type")}
+            />
+          </div>
+          {editable && onPartTypeChange && partType != null && (
+            <button
+              type="button"
+              className="def-row-action"
+              title={label(
+                language,
+                "Clear (no type)",
+                "型指定をなくす",
+                "Forigi tipon",
+              )}
+              aria-label={label(
+                language,
+                "Clear (no type)",
+                "型指定をなくす",
+                "Forigi tipon",
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPartTypeChange(null);
               }}
             >
-              {formatType(partType)}
-            </span>
-          </span>
+              ×
+            </button>
+          )}
         </div>
 
         {/* Value (Expression Tree) row */}
@@ -302,8 +330,8 @@ export function PartDefinitionTree({
               partType={partType}
               onChange={onExpressionChange}
               editable={editable}
-              containerId={VALUE_TREE_ID}
-              onExit={handleExitValueTree}
+              containerId={INNER_TREE_IDS.value}
+              onExit={exitInnerTree("value")}
             />
           </div>
         </div>

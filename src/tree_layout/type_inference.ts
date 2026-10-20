@@ -205,10 +205,17 @@ export function inferExpectedType(
  * 式ノードから対応する SelectorOption の value を特定する
  */
 export function getOptionValueForExpression(node: unknown): string | null {
+  // 型の式 (part_type.ts)
+  if (typeof node === "string" && /^Type[A-Z]/.test(node)) {
+    return `expr:type:${node.slice(4).toLowerCase()}`;
+  }
   if (!node || typeof node !== "object") {
     return null;
   }
   const obj = node as Record<string, unknown>;
+  if ("TypeList" in obj) return "expr:type:list";
+  if ("TypeFunction" in obj) return "expr:type:function";
+  if ("TypeUnion" in obj) return "expr:type:union";
 
   if ("Number" in obj) return "expr:number";
   if ("String" in obj) return "expr:string";

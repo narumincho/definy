@@ -46,6 +46,9 @@ export default function PartDetailPage(): JSX.Element {
   const hasChange = change !== undefined;
   const currentName = change?.name ?? part.name;
   const currentDescription = change?.description ?? part.description;
+  // 作業中の変更の型 (null は型指定なし) を優先する
+  const currentPartType =
+    change !== undefined ? change.partType : part.partType;
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
 
@@ -203,7 +206,7 @@ export default function PartDetailPage(): JSX.Element {
               name={currentName}
               moduleName={part.moduleName}
               description={localizedText(currentDescription, language)}
-              partType={part.partType}
+              partType={currentPartType}
               expression={currentExpression}
               editable={true}
               onNameChange={(newName) => {
@@ -212,7 +215,7 @@ export default function PartDetailPage(): JSX.Element {
                   partDefinitionEventHash: part.partId,
                   name: newName,
                   description: currentDescription,
-                  partType: part.partType,
+                  partType: currentPartType,
                   expression: currentExpression,
                 });
               }}
@@ -226,7 +229,17 @@ export default function PartDetailPage(): JSX.Element {
                     language,
                     newDesc,
                   ),
-                  partType: part.partType,
+                  partType: currentPartType,
+                  expression: currentExpression,
+                });
+              }}
+              onPartTypeChange={(newPartType) => {
+                updateWorkingPart(part.partId, {
+                  moduleDefinitionEventHash: part.moduleId,
+                  partDefinitionEventHash: part.partId,
+                  name: currentName,
+                  description: currentDescription,
+                  partType: newPartType,
                   expression: currentExpression,
                 });
               }}
@@ -236,7 +249,7 @@ export default function PartDetailPage(): JSX.Element {
                   partDefinitionEventHash: part.partId,
                   name: currentName,
                   description: currentDescription,
-                  partType: part.partType,
+                  partType: currentPartType,
                   expression: newExpr,
                 });
               }}

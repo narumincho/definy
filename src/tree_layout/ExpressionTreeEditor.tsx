@@ -43,6 +43,8 @@ import {
   highlightIndex,
   isTypeMismatch,
   partSelectorOptions,
+  TYPE_SELECTOR_OPTIONS,
+  typePartSelectorOptions,
   resolveHighlight,
   variableSelectorOptions,
   type SelectorOption,
@@ -61,6 +63,11 @@ export type ExpressionTreeEditorProps = {
    * 指定しなければ何もしない
    */
   readonly onExit?: ((key: NavKey) => void) | undefined;
+  /**
+   * "type" ならパーツの型の行の型のツリーエディタにする (part_type.ts の型の式を編集する).
+   * 選択肢は型と型のパーツだけで, 期待型の推論はしない
+   */
+  readonly mode?: "expression" | "type" | undefined;
 };
 
 /**
@@ -130,6 +137,7 @@ export function ExpressionTreeEditor({
   maxWidth = 720,
   containerId,
   onExit,
+  mode = "expression",
 }: ExpressionTreeEditorProps): JSX.Element {
   const { language, parts, partNames } = useDefiny();
   const [selectedPath, setSelectedPath] =
@@ -253,21 +261,30 @@ export function ExpressionTreeEditor({
   }
 
   const expectedType = useMemo<ExpectedType>(() => {
-    if (!selectedPath) return "any";
+    if (!selectedPath || mode === "type") return "any";
     return inferExpectedType(expression, selectedPath, partType);
-  }, [expression, selectedPath, partType]);
+  }, [expression, selectedPath, partType, mode]);
 
   const selectedLayoutNode = useMemo(
     () => (selectedPath ? findExpressionNode(layoutRoot, selectedPath) : null),
     [layoutRoot, selectedPath],
   );
 
-  const partOptions = useMemo(() => partSelectorOptions(parts), [parts]);
+  const partOptions = useMemo(
+    () =>
+      mode === "type"
+        ? typePartSelectorOptions(parts)
+        : partSelectorOptions(parts),
+    [parts, mode],
+  );
 
   /** その位置の選択肢. その位置から参照できる変数 (関数のパラメーター・let・match の束縛) を先頭に出す */
   function selectorOptionsAt(
     path: ReadonlyArray<PathStep>,
   ): ReadonlyArray<SelectorOption> {
+    if (mode === "type") {
+      return [...TYPE_SELECTOR_OPTIONS, ...partOptions];
+    }
     return [
       ...variableSelectorOptions(
         findExpressionNode(layoutRoot, path)?.scopeVariables ?? new Map(),
@@ -282,9 +299,14 @@ export function ExpressionTreeEditor({
     path: ReadonlyArray<PathStep>,
     options: ReadonlyArray<SelectorOption>,
   ): string | null {
-    const value = getOptionValueForExpression(
-      getExpressionAtPath(expression, path),
-    );
+    const target = getExpressionAtPath(expression, path);
+    const value =
+      mode === "type" &&
+      typeof target === "object" &&
+      target !== null &&
+      "TypeLiteral" in target
+        ? "expr:type:record"
+        : getOptionValueForExpression(target);
     if (
       value === null ||
       !value.startsWith("ref:part:") ||
@@ -577,7 +599,14 @@ export function ExpressionTreeEditor({
               fontWeight: 600,
             }}
           >
-            {label(language, "Expression Tree", "式の木構造", "Esprima Arbo")}
+            {mode === "type"
+              ? label(language, "Type Tree", "型の木構造", "Tipa Arbo")
+              : label(
+                  language,
+                  "Expression Tree",
+                  "式の木構造",
+                  "Esprima Arbo",
+                )}
           </span>
           {editable && (
             <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
