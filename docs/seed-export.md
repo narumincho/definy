@@ -48,11 +48,11 @@ DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY="<public_key>" npm run export:seeds https://def
 
 ## 書き出し後の手順 (`npm run build:seeds`)
 
-`seeds/*.json` を書き戻した後は、シードバンドルを再生成してリポジトリに反映してください:
+`seeds/*.json` を書き戻した後は、シードバンドルの指紋を更新してください:
 
 ```bash
 npm run build:seeds
 ```
 
-これにより `seeds/seed_bundle.json` と `public/__definy_seed_bundle.json` が最新の seed から更新されます。
+これにより `public/__definy_seed_bundle.json` (コミットしない) と `seeds/seed_bundle_fingerprint.json` (コミットする) が最新の seed から更新されます ([build-artifacts.md](build-artifacts.md))。
 その後、`git status` や `git diff` で差分を確認してください。

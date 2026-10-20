@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "npm run build:seeds && vite",
+    "build": "npm run build:seeds && vite build",
     "build:seeds": "node scripts/generate_seed_bundle.ts",
     "export:seeds": "node scripts/export_seeds.ts",
     "build:stage1": "node scripts/regenerate_stage1.ts",

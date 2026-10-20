@@ -248,13 +248,6 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
     }
   }
 
-  // stage1.wasm を contents に追加
-  const stage1Path = resolve("wasm/stage1.wasm");
-  const stage1Bytes = await readFile(stage1Path);
-  contentsList.push({
-    contentHash: "stage1",
-    contentBytes: bytesToBase64(new Uint8Array(stage1Bytes)),
-  });
   contentsList.push(
     ...(await precompileDeployTargets(loadedModules, accountBytes)),
   );
@@ -342,30 +335,38 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   };
 }
 
-// 直接実行時の処理
+/** 生成した seed バンドルを書き出すファイル (コミットしない. 静的アセット `/__definy_seed_bundle.json` として配信する) */
+export const SEED_BUNDLE_PATH = "public/__definy_seed_bundle.json";
+
+/**
+ * seed バンドルを生成して {@link SEED_BUNDLE_PATH} に書き出す.
+ * Vitest の起動時にも呼ぶ (指紋のファイルはテストで確かめるので書き換えない)
+ */
+export async function writeSeedBundle(): Promise<SeedBundle> {
+  const bundle = await generateSeedBundle();
+  await writeFile(
+    resolve(SEED_BUNDLE_PATH),
+    `${JSON.stringify(bundle)}\n`,
+    "utf-8",
+  );
+  return bundle;
+}
+
+// 直接実行時の処理 (`npm run build:seeds`. `npm run dev` / `npm run build` の前にも実行する)
 if (
   process.argv[1] &&
   (process.argv[1].endsWith("generate_seed_bundle.ts") ||
     process.argv[1].endsWith("generate_seed_bundle.js"))
 ) {
-  const bundle = await generateSeedBundle();
-  const json = `${JSON.stringify(bundle, null, 2)}\n`;
-
-  const seedsBundlePath = resolve("seeds/seed_bundle.json");
-  const publicBundlePath = resolve("public/__definy_seed_bundle.json");
-
-  await writeFile(seedsBundlePath, json, "utf-8");
-  await writeFile(publicBundlePath, json, "utf-8");
-  // Worker がビルド時に取り込み, D1 の seed が最新かを調べるのに使う (worker/store.ts)
+  const bundle = await writeSeedBundle();
+  // Worker がビルド時に取り込み, D1 の seed が最新かを調べるのに使う (worker/store.ts).
+  // 型検査で必要なのでこちらはコミットする
   await writeFile(
     resolve(SEED_FINGERPRINT_PATH),
     `${JSON.stringify({ fingerprint: bundle.fingerprint }, null, 2)}\n`,
     "utf-8",
   );
-
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}`,
   );
-  console.log(`- ${seedsBundlePath}`);
-  console.log(`- ${publicBundlePath}`);
 }

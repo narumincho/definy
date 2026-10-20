@@ -243,7 +243,7 @@ export async function handleWorkerRequest(
 
   // Virtual Wasm CAS endpoint: /virtual/wasm/:hash
   if (pathname.startsWith("/virtual/wasm/")) {
-    return serveVirtualWasm(pathname, env, store, url.origin);
+    return serveVirtualWasm(pathname, env, store);
   }
 
   try {
@@ -274,22 +274,18 @@ async function serveVirtualWasm(
   pathname: string,
   env: Env,
   store: WorkerStore,
-  origin: string,
 ): Promise<Response> {
   const rawHash = pathname
     .slice("/virtual/wasm/".length)
     .replace(/\.wasm$/, "");
-  let bytes = await store.getRawContentBytes(rawHash, env);
-  if (!bytes && rawHash === "stage1") {
-    bytes = await store.getStage1WasmBytes(env, origin);
-  }
+  const bytes = await store.getRawContentBytes(rawHash, env);
   if (!bytes) {
     return new Response("Wasm binary not found in CAS", {
       status: 404,
       headers: CORS_HEADERS,
     });
   }
-  // コンテンツハッシュで指定されたものだけ永続キャッシュする (`stage1` のような名前付きは更新されうる)
+  // コンテンツハッシュで指定されたものだけ永続キャッシュする (名前付きのキーは更新されうる)
   const isContentAddressed = (await sha256EventHashId(bytes)) === rawHash;
   return new Response(new Uint8Array(bytes), {
     status: 200,

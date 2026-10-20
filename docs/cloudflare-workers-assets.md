@@ -32,7 +32,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 ### 特徴
 
 - **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS・自己デプロイが完結します。
-- **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `dist/client/` にコピーされ、初回の D1 データベース初期化時に自動同期されます。シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。
+- **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `npm run build` の最初に `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で `seeds/*.json` から作られ、`dist/client/` にコピーされて D1 データベースの初期化時に自動同期されます。コミットはしません ([build-artifacts.md](build-artifacts.md))。
 - **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`bash scripts/ensure-d1.sh`、`npm run build`、`wrangler deploy` を実行します。
 
 ---
@@ -42,8 +42,8 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 - `wrangler.toml`: Workers および D1 バインディングのベース設定（Void が `dist/ssr/wrangler.json` を生成する際に参照）
 - `public/`
   - `_headers`: 静的アセット配信ヘッダー設定（Void ビルド時に `dist/client/_headers` へコピーされる）
-  - `__definy_seed_bundle.json`: ビルトインシードデータ
-  - `stage1.wasm`: 自己記述コンパイラ Wasm バイナリ
+  - `__definy_seed_bundle.json`: ビルトインシードデータ (`npm run build:seeds` が生成。コミットしない)
+- `wasm/stage1.wasm`: 自己記述コンパイラ Wasm バイナリ (クライアントにはハッシュ付きアセットとして出力される)
 - `middleware/`
   - `01.definy.ts`: API パス（Connect-RPC, `/virtual/wasm/*`, `/healthz` 等）の Worker ディスパッチおよび SSR レスポンスへのセキュリティヘッダー付与
 - `worker/`

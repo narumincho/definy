@@ -291,7 +291,7 @@ npm run build:stage1
 2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全パーツ (2026-10-21 時点で 63 個) を収集する。
 3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (2026-10-21 時点で 85,610 バイト)。
 4. 得られた `stage2` のバイナリを使って同じ式を再コンパイルし、`stage3` を生成する。
-5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は `wasm/stage1.wasm` と静的アセットのコピー `public/stage1.wasm` に書き出す（2 つが一致することもテストする）。stage1 を変えたら `npm run build:seeds` で seed バンドル（stage1 自身と事前コンパイルの結果を含む）も作り直す。
+5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は `wasm/stage1.wasm` に書き出す。stage1 を変えたら `npm run build:seeds` で seed バンドルの指紋 (事前コンパイルの結果を含む) も更新する。
 6. `src/stage1_fixed_point.test.ts` において、Vitest 経由でも不動点検証が自動テストされる。
 
 #### 参照パーツの順序 (LIFO) とバイト一致

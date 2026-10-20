@@ -13,7 +13,7 @@ import {
   verifyEventRecord,
   type UnverifiedEventRecord,
 } from "./signed_event.ts";
-import seedBundle from "../seeds/seed_bundle.json" with { type: "json" };
+import { loadTestSeedBundle } from "../worker/test_runtime.ts";
 
 /** サーバーが正直にメタデータを付けた場合の `GetEvents` の 1 件 */
 async function honestRecord(
@@ -32,7 +32,7 @@ async function honestRecord(
 
 describe("verifyEventRecord", () => {
   it("accepts every builtin seed event", async () => {
-    for (const event of seedBundle.events) {
+    for (const event of (await loadTestSeedBundle()).events) {
       expect(await verifyEventRecord(event)).toEqual({ status: "valid" });
     }
   });

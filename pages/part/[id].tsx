@@ -6,9 +6,9 @@ import { useDefiny } from "../../src/state.tsx";
 import {
   collectReferencedParts,
   evaluateCompiledWasm,
-  loadStage1Compiler,
   type DefinyValue,
 } from "../../src/stage1_compiler.ts";
+import { loadStage1Compiler } from "../../src/stage1_browser.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 
 export default function PartDetailPage(): JSX.Element {
