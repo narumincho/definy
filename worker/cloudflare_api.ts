@@ -9,6 +9,14 @@ import type {
 
 const DEFAULT_API_BASE_URL = "https://api.cloudflare.com/client/v4";
 
+/** Cloudflare REST API のベース URL. ローカル開発でモックに向けるときだけ `CLOUDFLARE_API_BASE_URL` を設定する */
+function cloudflareApiBaseUrl(env: Env): string {
+  return (
+    env.CLOUDFLARE_API_BASE_URL?.trim().replace(/\/+$/, "") ||
+    DEFAULT_API_BASE_URL
+  );
+}
+
 type CloudflareApiErrorItem = {
   readonly code: number;
   readonly message: string;
@@ -559,7 +567,7 @@ export async function deployWorkerToCloudflare(
   wasmBytes: Uint8Array | undefined,
   env: Env,
   fetchFn: typeof fetch = fetch,
-  apiBaseUrl: string = DEFAULT_API_BASE_URL,
+  apiBaseUrl: string = cloudflareApiBaseUrl(env),
 ): Promise<DeployCloudflareResponse> {
   const apiToken = (req.apiToken || env.CLOUDFLARE_API_TOKEN || "").trim();
   if (!apiToken) {
@@ -670,7 +678,7 @@ export async function listWorkersFromCloudflare(
   req: ListCloudflareWorkersRequest,
   env: Env,
   fetchFn: typeof fetch = fetch,
-  apiBaseUrl: string = DEFAULT_API_BASE_URL,
+  apiBaseUrl: string = cloudflareApiBaseUrl(env),
 ): Promise<ListCloudflareWorkersResponse> {
   const apiToken = (req.apiToken || env.CLOUDFLARE_API_TOKEN || "").trim();
   if (!apiToken) {

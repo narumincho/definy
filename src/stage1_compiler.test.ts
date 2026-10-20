@@ -150,7 +150,8 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
       id === "builtin" ? { Compiler: "let" } : undefined,
     );
     expect(parts).toEqual([]);
-    expect(unresolved).toEqual(["missing", "builtin"]);
+    // 旧 Rust 版と同じく後に現れた参照から調べる
+    expect(unresolved).toEqual(["builtin", "missing"]);
   });
 
   it("rejects expressions that core.expression cannot represent", () => {
@@ -165,5 +166,70 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
         },
       }),
     ).toThrow(SelfHostedAstConversionError);
+  });
+
+  it("compiles tail calls to return_call_indirect so that deep tail recursion does not overflow the stack", async () => {
+    const compiler = createStage1Compiler(
+      new WebAssembly.Module(fs.readFileSync("wasm/stage1.wasm")),
+    );
+    const variable = (id: number) => ({ Variable: { variable_id: id } });
+    const callLoop = (n: unknown, acc: unknown) => ({
+      Call: {
+        function: { PartReference: { part_definition_event_hash: "loop" } },
+        arguments: [
+          { name: "n", value: n },
+          { name: "acc", value: acc },
+        ],
+      },
+    });
+    // loop(n, acc) = n <= 0 ? acc : loop(n - 1, acc + 2). 呼び出しは match のアームの中の末尾位置
+    const loop = {
+      Function: {
+        parameters: [
+          { parameter_id: 0, parameter_name: "n" },
+          { parameter_id: 1, parameter_name: "acc" },
+        ],
+        body: {
+          Match: {
+            target: {
+              LessThanOrEqual: {
+                left: variable(0),
+                right: { Number: { value: 0 } },
+              },
+            },
+            arms: [
+              {
+                tag: "true",
+                variable_id: null,
+                variable_name: null,
+                body: variable(1),
+              },
+              {
+                tag: "false",
+                variable_id: null,
+                variable_name: null,
+                body: callLoop(
+                  {
+                    Subtract: {
+                      left: variable(0),
+                      right: { Number: { value: 1 } },
+                    },
+                  },
+                  {
+                    Add: { left: variable(1), right: { Number: { value: 2 } } },
+                  },
+                ),
+              },
+            ],
+            default: null,
+          },
+        },
+      },
+    };
+    const compiledWasm = compiler.compile(
+      callLoop({ Number: { value: 1_000_000 } }, { Number: { value: 0 } }),
+      [{ id: "loop", expression: loop }],
+    );
+    expect(await evaluateCompiledWasm(compiledWasm)).toBe(2_000_000);
   });
 });

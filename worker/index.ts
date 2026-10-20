@@ -1,5 +1,5 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
-import { compilePartToWasm } from "./http_stream.ts";
+import { compilePartToWasm, PartCompileError } from "./part_compiler.ts";
 import {
   deployWorkerToCloudflare,
   listWorkersFromCloudflare,
@@ -96,6 +96,7 @@ type ConnectErrorCode =
   | "unauthenticated"
   | "permission_denied"
   | "unimplemented"
+  | "resource_exhausted"
   | "internal";
 
 const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
@@ -104,6 +105,7 @@ const CONNECT_ERROR_STATUS: Readonly<Record<ConnectErrorCode, number>> = {
   permission_denied: 403,
   not_found: 404,
   unimplemented: 404,
+  resource_exhausted: 429,
   internal: 500,
 };
 
@@ -250,6 +252,9 @@ export async function handleWorkerRequest(
   } catch (e) {
     if (e instanceof ConnectError) {
       return connectErrorResponse(e);
+    }
+    if (e instanceof PartCompileError) {
+      return connectErrorResponse(new ConnectError(e.code, e.message));
     }
     if (
       e instanceof InvalidSignedEventError ||
@@ -457,7 +462,6 @@ async function deployCloudflare(
   const partId = req.partId?.trim();
   let wasmBytes: Uint8Array | undefined;
   let effectiveReq: DeployCloudflareRequest = req;
-  let evaluatedResult: string | null = null;
 
   if (wasmHash) {
     wasmBytes = await store.getRawContentBytes(wasmHash, env);
@@ -470,7 +474,6 @@ async function deployCloudflare(
   } else if (partId) {
     const compiled = await compilePartToWasm(partId, store, env);
     wasmBytes = compiled.wasmBytes;
-    evaluatedResult = compiled.evaluatedResult ?? null;
     effectiveReq = {
       ...req,
       scriptName: req.scriptName?.trim()
@@ -490,14 +493,12 @@ async function deployCloudflare(
     env,
     fetchFn,
   );
-  const finalRes =
-    evaluatedResult && !res.evaluatedResult ? { ...res, evaluatedResult } : res;
   await store.recordDeployment(
     {
-      machineId: `cf-${finalRes.scriptName}`,
-      status: finalRes.status,
-      url: finalRes.url,
-      appUrl: finalRes.url,
+      machineId: `cf-${res.scriptName}`,
+      status: res.status,
+      url: res.url,
+      appUrl: res.url,
       region: "cloudflare-edge",
       createdAtRfc3339: new Date().toISOString(),
       commitHash: req.commitHash ?? null,
@@ -506,7 +507,7 @@ async function deployCloudflare(
     },
     env,
   );
-  return finalRes;
+  return res;
 }
 
 export default {

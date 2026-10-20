@@ -10,6 +10,27 @@ import type {
   SeedEventEntry,
   SubmitEventResponse,
 } from "./types.ts";
+import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
+import seedFingerprintFile from "../seeds/seed_bundle_fingerprint.json" with { type: "json" };
+
+/** D1 に入っている seed の指紋を記録する cas_contents のキー */
+const SEED_FINGERPRINT_KEY = "seed-bundle-fingerprint";
+
+/** D1 に記録された seed の指紋. 無ければ null */
+async function readSeedFingerprint(db: D1Database): Promise<string | null> {
+  try {
+    return (
+      (await db
+        .prepare(
+          "SELECT content_bytes FROM cas_contents WHERE content_hash = ?",
+        )
+        .bind(SEED_FINGERPRINT_KEY)
+        .first<string>("content_bytes")) ?? null
+    );
+  } catch {
+    return null;
+  }
+}
 
 const D1_SCHEMA_STATEMENTS: ReadonlyArray<string> = [
   `CREATE TABLE IF NOT EXISTS events (
@@ -144,6 +165,10 @@ async function fetchSeedBundle(
  * 未バインド時はインメモリストアとして動作する。
  */
 export class WorkerStore {
+  /** D1 の seed がこの指紋なら最新とみなす. 既定はビルド時の seed バンドルの指紋 */
+  private readonly expectedSeedFingerprint: string;
+  /** 読み込んだ seed バンドルの指紋 (バンドルに無ければ D1 に書くときに計算する) */
+  private seedFingerprint: string | undefined;
   private seeded = false;
   private d1SchemaInitialized = false;
   private d1Seeded = false;
@@ -155,6 +180,11 @@ export class WorkerStore {
   private eventHashes: ReadonlySet<string> = new Set<string>();
   private contents: ReadonlyMap<string, string> = new Map<string, string>();
   private deployments: ReadonlyArray<DeploymentHistoryItem> = [];
+
+  constructor(options: { readonly expectedSeedFingerprint?: string } = {}) {
+    this.expectedSeedFingerprint =
+      options.expectedSeedFingerprint ?? seedFingerprintFile.fingerprint;
+  }
 
   /**
    * D1 テーブルとインデックスを冪等に初期化する。
@@ -207,17 +237,11 @@ export class WorkerStore {
       if (!this.d1Seeded) {
         if (!this.seedPromise) {
           this.seedPromise = (async () => {
-            let existingEventCount = 0;
-            try {
-              const res = await env
-                .DB!.prepare("SELECT COUNT(*) AS cnt FROM events")
-                .first<number>("cnt");
-              existingEventCount = res ?? 0;
-            } catch {
-              existingEventCount = 0;
-            }
-
-            if (existingEventCount === 0 || this.seeded) {
+            // D1 の seed が最新なら何もしない (コールドスタートのたびに seed バンドルを取りに行かない)
+            if (
+              (await readSeedFingerprint(env.DB!)) !==
+              this.expectedSeedFingerprint
+            ) {
               if (!this.seeded) {
                 const bundle = await fetchSeedBundle(env, requestOrigin);
                 if (bundle) {
@@ -254,53 +278,6 @@ export class WorkerStore {
     await this.seedPromise;
   }
 
-  private async isD1AlreadySeeded(
-    db: D1Database,
-    seedAccounts: ReadonlySet<string>,
-  ): Promise<boolean> {
-    if (this.seedEvents.length === 0 || this.seedEvents.length > 90) {
-      return false;
-    }
-    const hashPlaceholders = this.seedEvents.map(() => "?").join(", ");
-    const hashValues = this.seedEvents.map((ev) => ev.eventHash);
-
-    const existingSeedEvents = await db
-      .prepare(
-        `SELECT COUNT(*) AS cnt FROM events WHERE event_hash IN (${hashPlaceholders})`,
-      )
-      .bind(...hashValues)
-      .first<number>("cnt");
-
-    if ((existingSeedEvents ?? 0) < hashValues.length) {
-      return false;
-    }
-
-    if (seedAccounts.size > 0) {
-      const accountValues = Array.from(seedAccounts);
-      const accountPlaceholders = accountValues.map(() => "?").join(", ");
-      const obsoleteEvents = await db
-        .prepare(
-          `SELECT COUNT(*) AS cnt FROM events WHERE account_id IN (${accountPlaceholders}) AND event_hash NOT IN (${hashPlaceholders})`,
-        )
-        .bind(...accountValues, ...hashValues)
-        .first<number>("cnt");
-      if ((obsoleteEvents ?? 0) > 0) {
-        return false;
-      }
-    }
-
-    if (this.seedContents.size > 0) {
-      const existingCasCount = await db
-        .prepare("SELECT COUNT(*) AS cnt FROM cas_contents")
-        .first<number>("cnt");
-      if ((existingCasCount ?? 0) < this.seedContents.size) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
   private async persistSeedToD1(db: D1Database): Promise<void> {
     await this.ensureD1Schema(db);
 
@@ -311,12 +288,23 @@ export class WorkerStore {
       }
     }
 
-    // コールドスタート時に D1 側が既に最新シードと一致していれば DELETE / INSERT バッチをスキップする
-    if (await this.isD1AlreadySeeded(db, seedAccounts)) {
+    // D1 側が既に最新シードと一致していれば DELETE / INSERT バッチをスキップする
+    const fingerprint =
+      this.seedFingerprint ??
+      (await seedBundleFingerprint({
+        events: this.seedEvents,
+        contents: Array.from(
+          this.seedContents,
+          ([contentHash, contentBytes]) => ({ contentHash, contentBytes }),
+        ),
+      }));
+    if ((await readSeedFingerprint(db)) === fingerprint) {
       return;
     }
 
-    // 組み込みシステムアカウントの古いシードイベント（過去デプロイ分）を D1 から削除し、最新シードに同期する
+    // seed が変わったら, seed のアカウント (システムアカウント) のイベントのうち最新のシードに無いものを
+    // すべて削除する. 古いシードの上の編集も消える (古いシードとの互換性は保たない. 残したい編集は
+    // npm run export:seeds で seeds/*.json に書き戻しておく)
     const deleteStatements: ReadonlyArray<D1PreparedStatement> =
       seedAccounts.size > 0 && this.seedEvents.length > 0
         ? (() => {
@@ -354,16 +342,23 @@ export class WorkerStore {
         ([contentHash, contentBytes]) =>
           db
             .prepare(
-              `INSERT OR IGNORE INTO cas_contents (content_hash, content_bytes)
+              `INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes)
              VALUES (?, ?)`,
             )
             .bind(contentHash, contentBytes),
       );
 
+    // 指紋は最後に書く (途中で失敗したら次の起動で同期し直す)
     const statements: ReadonlyArray<D1PreparedStatement> = [
       ...deleteStatements,
       ...insertEventStatements,
       ...insertContentStatements,
+      db
+        .prepare(
+          `INSERT OR REPLACE INTO cas_contents (content_hash, content_bytes)
+           VALUES (?, ?)`,
+        )
+        .bind(SEED_FINGERPRINT_KEY, fingerprint),
     ];
 
     for (let i = 0; i < statements.length; i += D1_BATCH_CHUNK_SIZE) {
@@ -379,6 +374,7 @@ export class WorkerStore {
    */
   loadSeedBundle(bundle: SeedBundle): void {
     this.seeded = true;
+    this.seedFingerprint = bundle.fingerprint;
     const nextSeedHashes = new Set<string>();
     const nextSeedEvents: SeedEventEntry[] = [];
     for (const ev of bundle.events) {

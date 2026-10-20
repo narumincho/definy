@@ -116,8 +116,10 @@ sequenceDiagram
   スクリプト（未指定時はデフォルトの edge runner が利用されます）。
 - `compileSelfHosted`: (bool, 任意)
   自己記述コンパイラ検証サンプル（`15 + 27 = 42`）を動的ビルドして配備。
-- `partId`: (string, 任意) definy のパーツ ID
-  またはパーツ名。指定時は該当パーツの式をオンデマンドで Wasm 化して配備。
+- `partId`: (string, 任意) definy のパーツ ID, システムアカウントの `module.part`, または CAS の content hash。
+  指定時は該当パーツの式を自己記述コンパイラ (`wasm/stage1.wasm`) で Wasm 化して配備。式に
+  `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` があれば `handler` を配備し, worker 名を使う。
+  Workers のスタックに収まらない大きなパーツは `resource_exhausted` になる (詳細は [worker-runtime.md](worker-runtime.md))。
 
 #### レスポンス (`DeployCloudflareResponse`)
 
@@ -125,9 +127,28 @@ sequenceDiagram
 - `status`: デプロイステータス (`"succeeded"`)
 - `url`: デプロイされた Worker のメイン URL
   (`https://<script>.<subdomain>.workers.dev`)
-- `evaluatedResult`: 式の評価結果（自己コンパイラやパーツデプロイ時）
+- `evaluatedResult`: 式の評価結果（自己コンパイラ検証時。Workers は実行時に作った Wasm を動かせないので, パーツデプロイ時は返さない）
 
 ---
+
+### ローカルでの確認 (`CLOUDFLARE_API_BASE_URL`)
+
+Worker の環境変数 `CLOUDFLARE_API_BASE_URL` を設定すると, Cloudflare REST API の送信先 (既定は
+`https://api.cloudflare.com/client/v4`) を差し替えられる。本番では設定しない。
+
+`npm run dev` で `DeployCloudflare` を本物の Cloudflare に送らずに確かめるには, リポジトリ直下の `.env` に
+`CLOUDFLARE_API_BASE_URL=http://127.0.0.1:8788/client/v4` を書き, そこで `GET /accounts`・`GET /workers/subdomain`・
+`PUT /workers/scripts/:name` (multipart の `worker.js` と `app.wasm`)・`POST /workers/scripts/:name/subdomain` に
+`{ "success": true, "result": ... }` を返すモックを動かす。`apiToken` を指定すれば管理者の署名は要らない。
+受け取った `worker.js` の `import wasmModule from "./app.wasm"` を外して `app.wasm` の `WebAssembly.Module` を渡せば,
+デプロイ先と同じ処理を Node.js で動かせる (`worker/deploy.test.ts` と同じ方法)。
+
+2026-10-21 にこの方法で `sample.self-hosted-definy-server` / `sample.greet` / `sample.prime-numbers` のデプロイと,
+デプロイされた Worker の応答 (`/healthz`・`/api/self-host`・`/` / `"Hello, definy!"` / `[2, 3, 5, 7, 11]`) を確かめた。
+
+> [!NOTE]
+> 以前は dev サーバーのローカル D1 がイベントを 1 件でも持つと seed を入れ直さず, 古い seed が残っていた。
+> 今は seed バンドルの指紋が変われば入れ替わる ([system-account.md](system-account.md) の「D1 の seed の入れ替え」)。
 
 ## 4. UI からの利用方法
 

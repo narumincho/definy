@@ -48,8 +48,18 @@ export type Env = {
   /** 管理者アカウント ID（カンマ・空白区切りで複数可） */
   readonly DEFINY_ADMIN_ACCOUNT_IDS?: string;
   readonly DEFINY_ROOT_DOMAIN?: string;
+  /**
+   * システムアカウントの公開鍵 (URL-safe base64). `DeployCloudflare` の `partId` に `module.part` と書いたとき,
+   * このアカウントのモジュールとして解決する. 未設定なら開発用の鍵 (docs/system-account.md)
+   */
+  readonly DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?: string;
   readonly CLOUDFLARE_API_TOKEN?: string;
   readonly CLOUDFLARE_ACCOUNT_ID?: string;
+  /**
+   * Cloudflare REST API のベース URL (既定は `https://api.cloudflare.com/client/v4`).
+   * ローカル開発で DeployCloudflare をモックの API に向けるときだけ設定する
+   */
+  readonly CLOUDFLARE_API_BASE_URL?: string;
   /**
    * `"true"` のとき `DebugService/SubmitUnverifiedEvent` で署名が不正なイベントも保存・配信できるようにする。
    * ブラウザ側の署名チェックを確認するためのローカル開発専用。本番では設定しない
@@ -82,6 +92,8 @@ export type SeedContentEntry = {
 };
 
 export type SeedBundle = {
+  /** `seedBundleFingerprint` (src/seed_fingerprint.ts). 無ければ読み込むときに計算する */
+  readonly fingerprint?: string;
   readonly events: ReadonlyArray<SeedEventEntry>;
   readonly contents: ReadonlyArray<SeedContentEntry>;
 };

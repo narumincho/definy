@@ -6,8 +6,8 @@ definy を definy
 > [!NOTE]
 > 本リポジトリは Rust + Deno から **TypeScript + React 19 + Void (Vite 8) + Cloudflare Workers** に移行済みです。
 > 本ドキュメント内の Rust ツールチェイン（`cargo run -p definy-server`, `cargo test` など）に関する記述は、セルフホストおよび固定点達成に至るまでの**旧 Rust 実装（廃止済み）における歴史的経緯と仕様**を記録したものです。
-> 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`）で検証されています。
-> なお、シードバンドルの再生成や `stage1.wasm` の再生成は現在 TypeScript 版では**未実装（Rust 版では cargo で生成していた）**です。
+> 現在の TypeScript 実装では `wasm/stage1.wasm` の実行パイプライン（`src/stage1_compiler.ts`）および Vitest（`src/stage1_conformance.test.ts`, `src/stage1_fixed_point.test.ts`）で検証されています。
+> シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`)、`stage1.wasm` の再生成と不動点検証は `npm run build:stage1` / `npm run check:stage1` (`scripts/regenerate_stage1.ts`) で実行可能です。
 
 ## 概要
 
@@ -272,6 +272,82 @@ definy 製コンパイラは, Rust 製コンパイラ (stage0) と同じく評�
 
 所要時間 (debug ビルド, Apple Silicon): stage1 を作る (stage0) 約 13 秒, stage1 の読み込み (wasmtime のコンパイル) 0.6 秒,
 stage1 でコンパイラ自身をコンパイル 0.16 秒, 適合テストの 65 個の式のコンパイルは stage0 で 125 秒, stage1 で 0.045 秒。
+
+### stage1.wasm の再生成 (TypeScript 版)
+
+TypeScript 移行後は、`scripts/regenerate_stage1.ts` を用いて `wasm/stage1.wasm` の再生成と不動点（fixed point）の自動検証を行えます。
+
+```bash
+# 再生成と既存バイナリとの一致検証 (CI / テスト向け)
+npm run check:stage1
+
+# 再生成して wasm/stage1.wasm に書き出し
+npm run build:stage1
+```
+
+#### 再生成の手順と検証フロー
+
+1. `seeds/*.json` のパーツ定義を読み込み、開発用システムアカウント鍵から導出した公開鍵を用いてパーツ ID のプレースホルダ (`{"$part": "core.compile-to-wasm"}`) を解決する。
+2. `core.compile-to-wasm` への `PartReference` 式から、`collectReferencedParts` により参照される全パーツ (2026-10-21 時点で 63 個) を収集する。
+3. 現在の `wasm/stage1.wasm` でコンパイルして `stage2` を生成する (2026-10-21 時点で 85,610 バイト)。
+4. 得られた `stage2` のバイナリを使って同じ式を再コンパイルし、`stage3` を生成する。
+5. `stage2` と `stage3` が完全一致することを確認する（不動点検証）。`--check` 指定時は既存の `wasm/stage1.wasm` とも比較し、引数なし時は `wasm/stage1.wasm` と静的アセットのコピー `public/stage1.wasm` に書き出す（2 つが一致することもテストする）。stage1 を変えたら `npm run build:seeds` で seed バンドル（stage1 自身と事前コンパイルの結果を含む）も作り直す。
+6. `src/stage1_fixed_point.test.ts` において、Vitest 経由でも不動点検証が自動テストされる。
+
+#### 参照パーツの順序 (LIFO) とバイト一致
+
+`src/stage1_compiler.ts` の `collectReferencedParts` では、参照パーツの探索キューから**末尾の要素を取り出す LIFO (後入れ先出し)** を採用しています。
+旧 Rust 実装 (`definy-server/src/self_hosted_wasm_compiler.rs` の `referenced_parts_expression`) が `queue.pop()` で末尾から取り出していたため、同じ順序に揃えることで関数表（Wasm の table）のインデックス順や関数の配置順が一致し、当時の `wasm/stage1.wasm` (68,452 バイト) と 1 バイトの差異もなく完全一致させることができます（FIFO にするとサイズは同じでもインデックスがずれてバイト不一致になります）。
+
+#### コンパイラの出力を変えたとき (`--bootstrap`)
+
+stage2 は今の stage1 (古いコンパイラ) でコンパイルしたものなので, コンパイラが出力するコードを変えると stage2 は古い出力をし,
+stage3 と一致しない。`npm run build:stage1 -- --bootstrap` は不動点に達するまで (最大 5 回) できたコンパイラで
+自分自身をコンパイルし直す。出力を変えない書き換え (リファクタリング) なら `--bootstrap` なしで 1 回で不動点になる。
+
+#### stage1 の再帰の深さとフレームの大きさ (2026-10-21)
+
+以前の stage1 は, `sample.self-hosted-definy-server` の handler のコンパイルに Node.js で 16MB 以上のスタックと約 10 秒,
+コンパイラ自身のコンパイルに 4MB のスタックを要し, Cloudflare Workers ではどちらもスタックオーバーフローした。原因は 3 つ:
+
+1. **リストの長さだけ深くなる再帰**: `collect-functions-in-list` などの補助関数が `f(items[i]) +++ 自分(i + 1)` の形で,
+   子の多い式 (`core.wasm-runtime-functions` の数千要素のリストなど) で数千段再帰していた。
+   当時の生成コードは末尾呼び出しを最適化しなかった (`return_call` を出さなかった) ので, 末尾再帰でも深さは減らなかった
+2. **二乗のリストの連結**: 右に入れ子になった `a +++ (b +++ (c +++ ...))` は外側の連結のたびに内側を丸ごとコピーする
+   (`list_concat` は新しいリストにコピーする)。時間の 82% がランタイム関数 `list_concat` だった
+3. **大きなフレーム**: 生成する関数がすべて i32 のローカル変数を 512 個固定で宣言していた (1 フレーム 2KB 以上)
+
+対策 (seeds/core.json):
+
+1. 2 の対策も兼ねて, 補助関数 `H(items, index, ...)` を, 範囲 `[lo, hi)` を半分に割って `H-range(lo, mid) +++ H-range(mid, hi)`
+   とする `H-range` に任せる (分割統治)。深さは O(log n), 連結のコピー量は O(n log n) になる。右半分に渡す `fn_base`
+   (それまでの関数の数) は `count-functions-in-range` などで左半分の分を数えて進める。出力は変わらない。
+   `repeat-number` / `uleb-range` も count を半分に割る
+2. `core.max-local(expr, depth, ctx)` で, 式が使うローカル変数の番号の上限を求めて宣言する
+   (式が 1 段深くなるごとに使うローカル変数は高々 2 つ増え, 関数の本体は別の関数になり,
+   関数でないパーツへの参照は同じ depth で展開される)。多めに見積もる分には安全で,
+   少なすぎれば Wasm の検証エラーになる (気づかずに壊れることはない)
+
+結果: handler は既定のスタックで 0.7 秒 (100KB のスタックでも足りる), コンパイラ自身も 100KB で足りる。
+`npm run build:stage1` / `check:stage1` に `--stack-size` は要らなくなった。
+残る深さは式の入れ子の深さ (末尾位置でない, 正当な再帰)。
+
+#### 末尾呼び出し (`return_call_indirect`, 2026-10-21)
+
+関数の本体の末尾位置の呼び出しは `return_call_indirect` (Wasm の tail call 拡張, opcode 0x13) にする。
+definy には例外による大域脱出がなく, スタックトレースも要らないので, 末尾位置の呼び出しはすべてフレームを使い回してよい。
+
+- `core.compile-call(e, env, depth, fn_base, ctx, opcode)`: 呼び出し式の命令列。最後にクロージャを `opcode` の命令で呼ぶ
+  (通常は `call_indirect` = 17, 末尾位置では `return_call_indirect` = 19)
+- `core.compile-tail-instructions`: 末尾位置の式。呼び出しは `return_call_indirect` にし, `let` の本体と `match` のアームの本体
+  (`core.compile-match-arms-tail`) は末尾位置のまま再帰する。それ以外は `core.compile-expr-instructions`
+- `core.compile-function-body` は関数の本体を `compile-tail-instructions` でコンパイルする (`evaluate` は対象外)
+
+`return_call_indirect` は呼び出し先と呼び出し元の結果の型が同じなら使える。クロージャも関数本体も型 3 (`(i32, i32) -> i32`) なので満たす。
+これで `loop(n, acc) = n <= 0 ? acc : loop(n - 1, acc + 2)` のような末尾再帰は 100 万回でもスタックを消費しない
+(以前は 10 万回で溢れた。`src/stage1_compiler.test.ts` で確かめる)。stage1 自身もこの出力なので, `compile-env-lookup` や
+`compile-find-part` などの線形の探索もスタックを使わない。V8 (Node.js 20 以降, Chrome 112 以降, Cloudflare Workers),
+Firefox 121 以降, Safari 18.2 以降が対応している。
 
 ### 本番で stage1 の Wasm を使い回す道筋 (2026-10-18 の調査)
 

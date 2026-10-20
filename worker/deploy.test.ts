@@ -272,3 +272,50 @@ Deno.test(
     }
   },
 );
+
+Deno.test(
+  "DeployCloudflare sends Cloudflare API requests to CLOUDFLARE_API_BASE_URL when set",
+  async () => {
+    const store = new WorkerStore();
+    const env: Env = {
+      CLOUDFLARE_API_BASE_URL: "http://127.0.0.1:8788/client/v4/",
+    };
+    const requestedUrls: Array<string> = [];
+    const mockFetch: typeof fetch = (input: Request | URL | string) => {
+      requestedUrls.push(
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url,
+      );
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ success: true, result: [{ id: "mock-account" }] }),
+          { status: 200 },
+        ),
+      );
+    };
+    const res = await handleWorkerRequest(
+      new Request(
+        "https://definy.narumincho.com/definy.v1.DeployService/DeployCloudflare",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ apiToken: "test-token", scriptName: "mock" }),
+        },
+      ),
+      env,
+      store,
+      mockFetch,
+    );
+    assertEquals(res.status, 200);
+    assertEquals(requestedUrls.length > 0, true);
+    assertEquals(
+      requestedUrls.every((url) =>
+        url.startsWith("http://127.0.0.1:8788/client/v4/accounts"),
+      ),
+      true,
+    );
+  },
+);

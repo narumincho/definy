@@ -34,6 +34,7 @@ type DecodedSignedEvent = {
   readonly signature: Uint8Array;
   readonly innerBytes: Uint8Array;
   readonly accountIdBytes: Uint8Array;
+  readonly content: Readonly<Record<string, unknown>>;
   readonly meta: ParsedSignedEventMeta;
 };
 
@@ -129,6 +130,7 @@ function decodeSignedEvent(bytes: Uint8Array): DecodedSignedEvent {
     signature,
     innerBytes,
     accountIdBytes,
+    content: contentObj,
     meta: {
       accountId: bytesToUrlSafeBase64NoPad(accountIdBytes),
       eventType: eventTypeOf(contentObj),
@@ -147,6 +149,19 @@ export function parseSignedEventMetadata(
   bytes: Uint8Array,
 ): ParsedSignedEventMeta {
   return decodeSignedEvent(bytes).meta;
+}
+
+/**
+ * 信頼できる経路 (ストアに保存済みのイベントなど) から来た SignedEvent の中身を取り出す.
+ * 署名は検証しない。外部から受け取ったイベントには `verifySignedEvent` を使うこと。
+ */
+export function decodeTrustedSignedEvent(bytes: Uint8Array): {
+  readonly accountIdBytes: Uint8Array;
+  readonly content: Readonly<Record<string, unknown>>;
+  readonly meta: ParsedSignedEventMeta;
+} {
+  const { accountIdBytes, content, meta } = decodeSignedEvent(bytes);
+  return { accountIdBytes, content, meta };
 }
 
 /**

@@ -1,11 +1,8 @@
 /**
- * definy のパーツ評価・コンパイルを行う TypeScript + Wasm ランタイム。
- *
- * 以前の Rust 製 `definy-worker-runtime.wasm` を完全に置き換え、
- * 純粋な TypeScript の式評価器 (`worker/cbor_eval.ts`) と
- * 自己記述 Wasm コンパイラ (`wasm/stage1.wasm` / `wasm/self_hosted_definy_server.wasm`) で動作する。
+ * ModuleCommit のパーツを読み込んで, 純粋な TypeScript の式評価器 (`worker/cbor_eval.ts`) で式を評価するランタイム。
+ * 以前の Rust 製 `definy-worker-runtime.wasm` の評価部分を置き換えたもの (評価器の適合テストで使う)。
+ * パーツの Wasm へのコンパイルは `worker/part_compiler.ts` (自己記述コンパイラ `wasm/stage1.wasm`) が行う。
  */
-import fs from "node:fs";
 import {
   base64ToBytes,
   bytesToBase64,
@@ -24,23 +21,12 @@ export type RuntimeRequest =
       readonly op: "loadContents";
       readonly contents: Readonly<Record<string, string>>;
     }
-  | { readonly op: "missingContents" }
-  | { readonly op: "evaluate"; readonly partId: string }
-  | { readonly op: "compilePart"; readonly partId: string }
   | { readonly op: "evaluateExpression"; readonly expression: unknown };
 
 /** ランタイムからの応答 */
 export type RuntimeResponse =
   | { readonly type: "ok" }
-  | { readonly type: "missingContents"; readonly hashes: ReadonlyArray<string> }
   | { readonly type: "value"; readonly value: unknown }
-  | {
-      readonly type: "compiledPart";
-      readonly wasm: string;
-      readonly cloudflareWorkerName?: string | null;
-      readonly cloudflareToken?: string | null;
-      readonly evaluatedResult?: string | null;
-    }
   | { readonly type: "error"; readonly message: string };
 
 function normalizeToConformanceValue(val: unknown): unknown {
@@ -83,22 +69,6 @@ function normalizeToConformanceValue(val: unknown): unknown {
     return { $record: entries };
   }
   return val;
-}
-
-// 最小の有効な空 WebAssembly モジュール (8 バイト)
-const MINIMAL_WASM = new Uint8Array([
-  0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
-]);
-
-let selfHostedServerWasm: Uint8Array | undefined;
-try {
-  const url = new URL(
-    "../wasm/self_hosted_definy_server.wasm",
-    import.meta.url,
-  );
-  selfHostedServerWasm = fs.readFileSync(url);
-} catch {
-  // 環境によってファイルが存在しない場合のフォールバック
 }
 
 export class DefinyRuntime {
@@ -179,45 +149,11 @@ export class DefinyRuntime {
       return { type: "ok" };
     }
 
-    if (request.op === "missingContents") {
-      return { type: "missingContents", hashes: [] };
-    }
-
     if (request.op === "evaluateExpression") {
       return {
         type: "error",
         message: "evaluateExpression is asynchronous; use callAsync",
       };
-    }
-
-    if (request.op === "compilePart") {
-      const partId = request.partId;
-      let cloudflareWorkerName: string | null = null;
-      let cloudflareToken: string | null = null;
-
-      if (partId.includes("self-hosted-definy-server")) {
-        cloudflareWorkerName = "self-definy";
-        const wasmBytes = selfHostedServerWasm ?? MINIMAL_WASM;
-        return {
-          type: "compiledPart",
-          wasm: bytesToBase64(wasmBytes),
-          cloudflareWorkerName,
-          cloudflareToken,
-          evaluatedResult: "<function>",
-        };
-      }
-
-      return {
-        type: "compiledPart",
-        wasm: bytesToBase64(MINIMAL_WASM),
-        cloudflareWorkerName,
-        cloudflareToken,
-        evaluatedResult: "ok",
-      };
-    }
-
-    if (request.op === "evaluate") {
-      return { type: "value", value: null };
     }
 
     return { type: "error", message: "Unsupported op" };

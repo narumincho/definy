@@ -561,6 +561,7 @@ function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
 
 /**
  * 式が (参照先をたどって) 参照するパーツを集める.
+ * 旧 Rust 版と同じ順序 (末尾から取り出す LIFO)。`wasm/stage1.wasm` の再生成でバイト一致させるために必要。
  * `resolve` は ID からパーツの式 (definy の JSON AST) を返す. 見つからない・式を持たないときは `undefined`.
  * 見つからない・式を持たない・`core.expression` で表せないパーツの ID は `unresolved` に入れる
  * (stage1 はその参照を unreachable にコンパイルする)
@@ -577,8 +578,8 @@ export function collectReferencedParts(
   const parts: Stage1ReferencedPart[] = [];
   const unresolved: string[] = [];
   while (queue.length > 0) {
-    const [id, ...rest] = queue;
-    queue = rest;
+    const id = queue[queue.length - 1];
+    queue = queue.slice(0, -1);
     if (id === undefined || seen.has(id)) {
       continue;
     }

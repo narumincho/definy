@@ -5,6 +5,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:seeds": "node scripts/generate_seed_bundle.ts",
+    "export:seeds": "node scripts/export_seeds.ts",
+    "build:stage1": "node scripts/regenerate_stage1.ts",
+    "check:stage1": "node scripts/regenerate_stage1.ts --check",
     "deploy": "npm run build && npx wrangler deploy",
     "check": "tsc --noEmit",
     "test": "vitest run",

@@ -33,7 +33,7 @@ TypeScript + React に移行したことで：
 
 ### アーキテクチャ概要
 
-[wasm/stage1.wasm](../wasm/stage1.wasm) は、`definy` 自身のコードから生成された **68,452 バイト** のスタンドアロンな Wasm バイナリです。外部環境への import は一切ありません (`Imports: []`)。
+[wasm/stage1.wasm](../wasm/stage1.wasm) は、`definy` 自身のコードから生成された スタンドアロンな Wasm バイナリ (2026-10-21 時点で 85,610 バイト) です。外部環境への import は一切ありません (`Imports: []`)。
 
 ```
 definy AST (JSON / Object)
@@ -215,14 +215,14 @@ export default defineConfig({
 - **WebAssembly インポートなし**: `wasi_snapshot_preview1` やホスト環境の関数に一切依存しないため、ブラウザ（Chrome, Firefox, Safari, Edge）、Node.js、Cloudflare Workers (V8 Isolate)、Deno、Bun など、WebAssembly 規格に準拠したあらゆるランタイムで追加のポリフィルやバインディングなしに `WebAssembly.instantiate(wasmBytes)` だけで即座に起動します。
 - **メモリ管理**: コンパイラ自身が持つ `alloc(size: number) -> number` 関数により、線形メモリ内の 8 バイト境界アラインメントでバンプアロケーションを行い、AST を書き込むだけで安全にコンパイラクロージャ（Tag 5）を呼び出せます。
 - **自己ホストの検証サイクル**: これにより、フロントエンドの UI 画面上でユーザーが式を変更した際、バックエンド通信や重いビルドツールを介さずに、ブラウザローカルで即座に Wasm バイナリを出力し、V8 ネイティブで評価結果を確認できるようになりました。
-- **再生成についての注記**: 現時点で `wasm/stage1.wasm` や `wasm/self_hosted_definy_server.wasm` の再生成パイプライン、およびサーバー側の任意パーツ Wasm コンパイル (`compilePart`) は TypeScript 版では未実装（Rust 版では cargo で生成していた）です。
+- **再生成とサーバー側コンパイル**: `wasm/stage1.wasm` は `npm run build:stage1` で再生成できます ([self-hosting.md](self-hosting.md))。サーバー側のパーツの Wasm コンパイル (`worker/part_compiler.ts`) も stage1 で行います ([worker-runtime.md](worker-runtime.md))。
 
 ### ④ シードデータの自動初期化とブラウザ側 CBOR 射影
 
 - **D1 自動スキーマ適用とシード同期 ([worker/store.ts](../worker/store.ts))**:
   - `npm run dev`（ローカル環境）では新規の SQLite データベースが空の状態で割り当てられます。`store.ensureSeeded` において、`events` テーブルの存在を検知して未作成時は DDL（[migrations/0001_initial_schema.sql](../migrations/0001_initial_schema.sql)）を自動適用し、イベント件数が 0 の場合は静的シードバンドル（`/__definy_seed_bundle.json` または `seeds/seed_bundle.json`）をロードして自動同期します。
   - すでにイベントが存在する本番環境やテスト環境では再シードを自動スキップし、安全かつ無駄なクエリを発生させません。
-  - なお、シードバンドル（`seeds/seed_bundle.json` / `public/__definy_seed_bundle.json`）の再生成機能は TypeScript 版では未実装（Rust 版では cargo で生成していた）のため、既存のコミット済みバンドルファイルを直接使用します。
+  - シードバンドル（`seeds/seed_bundle.json` / `public/__definy_seed_bundle.json`）の再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。`seeds/*.json` の変更をバンドルに反映してコミットできます。
 - **純粋なブラウザ対応 CBOR デコーダー ([src/cbor.ts](../src/cbor.ts))**:
   - `node:crypto` に依存しない標準 Web API（`atob`, `Uint8Array`, `TextDecoder`）のみで CBOR デコードおよび `ModuleCommit` 抽出を行い、署名済みイベントバイト列からモジュールメタデータ（`module_name`, `parts`, `expression`, `content_hash` 等）を React 状態（[src/state.tsx](../src/state.tsx)）へ動的に射影します。
 

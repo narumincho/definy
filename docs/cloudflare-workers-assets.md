@@ -32,7 +32,7 @@ Cloudflare Pages は Workers と統合され、静的フロントエンドとエ
 ### 特徴
 
 - **完全エッジ自己完結**: 外部の常時稼働コンテナサーバー（Fly.io 等）に依存せず、単一の Cloudflare Worker 上で UI 配信・Connect-RPC・CAS・自己デプロイが完結します。
-- **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `dist/client/` にコピーされ、初回の D1 データベース初期化時に自動同期されます。なお、シードバンドルの再生成機能は TypeScript 版では未実装（Rust 版では cargo で生成していた）のため、既存のバンドルファイルをそのまま利用します。
+- **シードバンドル**: 静的シードバンドル（`public/__definy_seed_bundle.json`）は `dist/client/` にコピーされ、初回の D1 データベース初期化時に自動同期されます。シードバンドルの再生成は `npm run build:seeds` (`scripts/generate_seed_bundle.ts`) で実行可能です。
 - **GitHub Actions でビルド & デプロイ**: GitHub Actions (`.github/workflows/deploy.yaml`) で `npm ci`、`bash scripts/ensure-d1.sh`、`npm run build`、`wrangler deploy` を実行します。
 
 ---
