@@ -121,7 +121,7 @@ describe("exportSeeds", () => {
           {
             name: "malicious-part",
             description: [{ language: "en", text: "Malicious" }],
-            partType: null,
+            partType: "number",
             expression: { Number: { value: 999 } },
           },
         ],
@@ -196,7 +196,15 @@ describe("exportSeeds", () => {
                 part_definition_event_hash: coreEvalAstBytes,
               },
             },
-            arguments: [],
+            // 型チェッカーを通るように core.expression の値を渡す
+            arguments: [
+              {
+                name: "e",
+                value: {
+                  Variant: { tag: "number", payload: { Number: { value: 1 } } },
+                },
+              },
+            ],
           },
         },
       };

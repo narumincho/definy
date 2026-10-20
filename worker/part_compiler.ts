@@ -134,7 +134,9 @@ async function loadPartEntries(
 }
 
 /** システムアカウントの公開鍵. 未設定なら seed と同じ開発用の鍵 */
-async function systemAccountBytes(env: Env | undefined): Promise<Uint8Array> {
+export async function systemAccountBytes(
+  env: Env | undefined,
+): Promise<Uint8Array> {
   const publicKey = env?.DEFINY_SYSTEM_ACCOUNT_PUBLIC_KEY?.trim();
   return publicKey ? base64ToBytes(publicKey) : await devSystemAccountBytes();
 }

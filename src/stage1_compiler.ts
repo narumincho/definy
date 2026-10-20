@@ -30,7 +30,7 @@ export type Stage1CompilerInstance = {
   ) => Uint8Array;
 };
 
-type WasmExports = {
+export type WasmExports = {
   readonly evaluate: () => number;
   readonly table: WebAssembly.Table;
   readonly memory: WebAssembly.Memory;
@@ -605,6 +605,61 @@ export function collectReferencedParts(
   return { parts, unresolved };
 }
 
+/** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
+export type CompiledFunctionInstance = {
+  readonly exports: WasmExports;
+  /**
+   * リテラルの式 (`Variant` / `TypeLiteral` / `ListLiteral` / `String` / `Number` / `Boolean` の木) を
+   * 線形メモリに書き込み, その値のポインタを返す. 同じ値を何度も渡すときは 1 度だけ書けばよい
+   */
+  readonly writeArgument: (literal: unknown) => number;
+  /** 関数を引数の順に並べたポインタで呼び, 結果のポインタを返す */
+  readonly call: (argumentPointers: ReadonlyArray<number>) => number;
+  /** 結果のポインタを JavaScript の値として読む */
+  readonly read: (pointer: number) => DefinyValue;
+};
+
+/**
+ * stage1 でコンパイルした「関数を返す式」の Wasm を新しいインスタンスで評価し, 返った関数を呼べるようにする.
+ * 型チェッカーのように 1 度コンパイルして何度も呼ぶものに使う.
+ * 線形メモリは解放しないので, 呼び出しが多いときや Wasm が trap したときは作り直す
+ */
+export function instantiateCompiledFunction(
+  module: WebAssembly.Module,
+): CompiledFunctionInstance {
+  const instance = new WebAssembly.Instance(module, {});
+  const exports = instance.exports as unknown as WasmExports;
+
+  const closurePtr = exports.evaluate();
+  const view = new DataView(exports.memory.buffer);
+  const tag = view.getUint8(closurePtr);
+  if (tag !== 5) {
+    throw new Error(
+      `compiled wasm evaluate() did not return a function closure (tag: ${tag})`,
+    );
+  }
+  const fn = exports.table.get(view.getUint32(closurePtr + 4, true)) as (
+    env: number,
+    args: number,
+  ) => number;
+  const envPtr = view.getInt32(closurePtr + 8, true);
+
+  return {
+    exports,
+    writeArgument: (literal) => writeLiteral(exports, literal),
+    call: (argumentPointers) => {
+      const argsPtr = exports.alloc(Math.max(4 * argumentPointers.length, 8));
+      const argsView = new DataView(exports.memory.buffer);
+      argumentPointers.forEach((ptr, i) => {
+        argsView.setUint32(argsPtr + 4 * i, ptr, true);
+      });
+      return fn(envPtr, argsPtr);
+    },
+    read: (pointer) =>
+      readDefinyValue(new Uint8Array(exports.memory.buffer), pointer),
+  };
+}
+
 export function createStage1Compiler(
   stage1Module: WebAssembly.Module,
 ): Stage1CompilerInstance {
@@ -623,33 +678,12 @@ export function createStage1Compiler(
         ),
       );
 
-      const instance = new WebAssembly.Instance(stage1Module, {});
-      const exports = instance.exports as unknown as WasmExports;
-
-      const closurePtr = exports.evaluate();
-      const view = new DataView(exports.memory.buffer);
-      const tag = view.getUint8(closurePtr);
-      if (tag !== 5) {
-        throw new Error(
-          `stage1.wasm evaluate() did not return a function closure (tag: ${tag})`,
-        );
-      }
-      const tableIndex = view.getUint32(closurePtr + 4, true);
-      const envPtr = view.getInt32(closurePtr + 8, true);
-
-      const exprPtr = writeLiteral(exports, effectiveExpr);
-      const partsPtr = writeLiteral(exports, partsNode);
-
-      const argsPtr = exports.alloc(8);
-      const argsView = new DataView(exports.memory.buffer);
-      argsView.setUint32(argsPtr, exprPtr, true);
-      argsView.setUint32(argsPtr + 4, partsPtr, true);
-
-      const fn = exports.table.get(tableIndex) as (
-        env: number,
-        args: number,
-      ) => number;
-      const resultPtr = fn(envPtr, argsPtr);
+      const instance = instantiateCompiledFunction(stage1Module);
+      const { exports } = instance;
+      const resultPtr = instance.call([
+        instance.writeArgument(effectiveExpr),
+        instance.writeArgument(partsNode),
+      ]);
 
       const resultView = new DataView(exports.memory.buffer);
       const resultTag = resultView.getUint8(resultPtr);

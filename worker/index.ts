@@ -1,5 +1,6 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
 import { compilePartToWasm, PartCompileError } from "./part_compiler.ts";
+import { checkSubmittedModuleCommit } from "./type_check.ts";
 import {
   deployWorkerToCloudflare,
   listWorkersFromCloudflare,
@@ -334,6 +335,11 @@ async function handleRpc(
           "invalid_argument",
           "signedEventBytes is required",
         );
+      }
+      // 型エラーのあるモジュールのコミットは保存しない
+      const typeErrors = await checkSubmittedModuleCommit(rawEvent, store, env);
+      if (typeErrors.length > 0) {
+        throw new ConnectError("invalid_argument", typeErrors.join("\n"));
       }
       return jsonResponse(await store.submitEvent(rawEvent, env));
     }

@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   importAccountCredentials,
+  type AccountCredentials,
   importPrivateKeyFromSecretKey,
 } from "../src/auth.ts";
 import {
@@ -18,6 +19,7 @@ import {
 } from "../src/deploy_target.ts";
 import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
+import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
 import { parseSignedEventMetadata } from "../src/signed_event.ts";
 import {
   collectReferencedParts,
@@ -137,16 +139,7 @@ async function precompileDeployTargets(
   modules: ReadonlyMap<string, ModuleSeedData>,
   accountBytes: Uint8Array,
 ): Promise<ReadonlyArray<SeedContentEntry>> {
-  const partExpressions = new Map<string, unknown>();
-  for (const mod of modules.values()) {
-    const moduleId = await deriveModuleIdBytes(accountBytes, mod.module_name);
-    for (const part of mod.parts) {
-      partExpressions.set(
-        await deriveModulePartId(moduleId, String(part.name)),
-        part.expression ?? undefined,
-      );
-    }
-  }
+  const partExpressions = await seedPartExpressions(modules, accountBytes);
   const stage1 = createStage1Compiler(
     new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
   );
@@ -178,17 +171,20 @@ async function precompileDeployTargets(
   return entries;
 }
 
-export async function generateSeedBundle(): Promise<SeedBundle> {
+/** seed に署名するシステムアカウント. `DEFINY_SYSTEM_ACCOUNT_SECRET_KEY` が無ければ開発用の鍵 */
+async function seedAccountCredentials(): Promise<AccountCredentials> {
   const secretKeyEnv = process.env.DEFINY_SYSTEM_ACCOUNT_SECRET_KEY;
   const secretKeyBase64 =
     secretKeyEnv && secretKeyEnv.trim().length > 0
       ? secretKeyEnv.trim()
       : bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED);
+  return await importAccountCredentials(secretKeyBase64, "definy");
+}
 
-  const creds = await importAccountCredentials(secretKeyBase64, "definy");
-  const accountBytes = base64ToBytes(creds.accountId);
-  const privateKey = await importPrivateKeyFromSecretKey(creds.secretKeyBase64);
-
+/** 各モジュールの seed ファイルを読み込み, パーツ ID のプレースホルダーを解決する */
+async function loadSeedModules(
+  accountBytes: Uint8Array,
+): Promise<ReadonlyMap<string, ModuleSeedData>> {
   // 1. 各モジュールシードファイルを読み込み、プレースホルダーを解決
   const loadedModulesMap = new Map<string, ModuleSeedData>();
   for (const spec of MODULE_SPECS) {
@@ -221,7 +217,32 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
       parts: resolvedParts,
     });
   }
-  const loadedModules: ReadonlyMap<string, ModuleSeedData> = loadedModulesMap;
+  return loadedModulesMap;
+}
+
+/** seed の全パーツの式を, パーツ ID (URL-safe Base64) から引けるようにする */
+async function seedPartExpressions(
+  modules: ReadonlyMap<string, ModuleSeedData>,
+  accountBytes: Uint8Array,
+): Promise<ReadonlyMap<string, unknown>> {
+  const partExpressions = new Map<string, unknown>();
+  for (const mod of modules.values()) {
+    const moduleId = await deriveModuleIdBytes(accountBytes, mod.module_name);
+    for (const part of mod.parts) {
+      partExpressions.set(
+        await deriveModulePartId(moduleId, String(part.name)),
+        part.expression ?? undefined,
+      );
+    }
+  }
+  return partExpressions;
+}
+
+export async function generateSeedBundle(): Promise<SeedBundle> {
+  const creds = await seedAccountCredentials();
+  const accountBytes = base64ToBytes(creds.accountId);
+  const privateKey = await importPrivateKeyFromSecretKey(creds.secretKeyBase64);
+  const loadedModules = await loadSeedModules(accountBytes);
 
   // 2. CAS コンテンツ一覧の構築 (definy, core, std, sample, wasi の順に走査し重複排除)
   const contentOrder: ReadonlyArray<string> = [
@@ -377,6 +398,43 @@ export async function writeSeedBundle(): Promise<SeedBundle> {
   return bundle;
 }
 
+/**
+ * seed の `core.type-check-against` を stage1 でコンパイルした型チェッカーの Wasm を書き出すファイル
+ * (コミットしない). Cloudflare Workers は実行時に Wasm をコンパイルできないので, Worker はこれを
+ * `?module` で取り込み, ブラウザも同じものを使う (src/self_hosted_type_check.ts)
+ */
+export const TYPE_CHECKER_WASM_PATH = "wasm/type_checker.wasm";
+
+/** seed の型チェッカーを stage1 でコンパイルする */
+export async function generateTypeCheckerWasm(): Promise<Uint8Array> {
+  const creds = await seedAccountCredentials();
+  const accountBytes = base64ToBytes(creds.accountId);
+  const partExpressions = await seedPartExpressions(
+    await loadSeedModules(accountBytes),
+    accountBytes,
+  );
+  return compileTypeChecker({
+    compiler: createStage1Compiler(
+      new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
+    ),
+    core: {
+      typeCheckAgainst: await deriveModulePartId(
+        await deriveModuleIdBytes(accountBytes, "core"),
+        "type-check-against",
+      ),
+    },
+    resolvePart: (id) => partExpressions.get(id),
+  });
+}
+
+/** {@link generateTypeCheckerWasm} の結果を {@link TYPE_CHECKER_WASM_PATH} に書き出す */
+export async function writeTypeCheckerWasm(): Promise<void> {
+  await writeFile(
+    resolve(TYPE_CHECKER_WASM_PATH),
+    await generateTypeCheckerWasm(),
+  );
+}
+
 // 直接実行時の処理 (`npm run build:seeds`. `npm run dev` / `npm run build` の前にも実行する)
 if (
   process.argv[1] &&
@@ -384,6 +442,7 @@ if (
     process.argv[1].endsWith("generate_seed_bundle.js"))
 ) {
   const bundle = await writeSeedBundle();
+  await writeTypeCheckerWasm();
   // Worker がビルド時に取り込み, D1 の seed が最新かを調べるのに使う (worker/store.ts).
   // 型検査で必要なのでこちらはコミットする
   await writeFile(
@@ -392,6 +451,6 @@ if (
     "utf-8",
   );
   console.log(
-    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}`,
+    `Successfully generated seed bundle: ${bundle.events.length} events, ${bundle.contents.length} contents -> ${SEED_BUNDLE_PATH}, type checker -> ${TYPE_CHECKER_WASM_PATH}`,
   );
 }
