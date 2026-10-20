@@ -1,12 +1,23 @@
 import type { JSX } from "react";
 import { Link, useRouter } from "@void/react";
-import { Icon, type IconKind } from "../icons.tsx";
+import {
+  AboutIcon,
+  AccountsIcon,
+  ChangesIcon,
+  DeployIcon,
+  EventsIcon,
+  HistoryIcon,
+  ModuleIcon,
+  PartsIcon,
+  SettingsIcon,
+  type IconComponent,
+} from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
 type ActivityTarget = {
   readonly path: string;
-  readonly icon: IconKind;
+  readonly icon: IconComponent;
   readonly en: string;
   readonly ja: string;
   readonly eo: string;
@@ -15,49 +26,49 @@ type ActivityTarget = {
 const PRIMARY_TARGETS: ReadonlyArray<ActivityTarget> = [
   {
     path: "/",
-    icon: "events",
+    icon: EventsIcon,
     en: "Events",
     ja: "イベント",
     eo: "Eventoj",
   },
   {
     path: "/parts",
-    icon: "parts",
+    icon: PartsIcon,
     en: "Parts",
     ja: "パーツ",
     eo: "Partoj",
   },
   {
     path: "/modules",
-    icon: "modules",
+    icon: ModuleIcon,
     en: "Modules",
     ja: "モジュール",
     eo: "Moduloj",
   },
   {
     path: "/changes",
-    icon: "changes",
+    icon: ChangesIcon,
     en: "Changes",
     ja: "変更",
     eo: "Ŝanĝoj",
   },
   {
     path: "/history",
-    icon: "history",
+    icon: HistoryIcon,
     en: "History",
     ja: "履歴",
     eo: "Historio",
   },
   {
     path: "/accounts",
-    icon: "accounts",
+    icon: AccountsIcon,
     en: "Accounts",
     ja: "アカウント",
     eo: "Kontoj",
   },
   {
     path: "/deployments",
-    icon: "deploy",
+    icon: DeployIcon,
     en: "Deploy",
     ja: "デプロイ",
     eo: "Deplojo",
@@ -96,7 +107,7 @@ export function ActivityBar(): JSX.Element {
             title={itemLabel}
             aria-current={isActive ? "page" : "false"}
           >
-            <Icon kind={target.icon} size={22} className="activity-icon" />
+            <target.icon size={22} className="activity-icon" />
             <span className="activity-label">{itemLabel}</span>
             {badge > 0 && <span className="activity-badge">{badge}</span>}
           </Link>
@@ -110,7 +121,7 @@ export function ActivityBar(): JSX.Element {
         className={`activity-item ${currentPath.startsWith("/about") ? "active" : ""}`}
         title={label(language, "About", "About", "Pri")}
       >
-        <Icon kind="about" size={22} className="activity-icon" />
+        <AboutIcon size={22} className="activity-icon" />
         <span className="activity-label">
           {label(language, "About", "About", "Pri")}
         </span>
@@ -121,7 +132,7 @@ export function ActivityBar(): JSX.Element {
         className={`activity-item ${currentPath.startsWith("/settings") ? "active" : ""}`}
         title={label(language, "Settings", "設定", "Agordoj")}
       >
-        <Icon kind="settings" size={22} className="activity-icon" />
+        <SettingsIcon size={22} className="activity-icon" />
         <span className="activity-label">
           {label(language, "Settings", "設定", "Agordoj")}
         </span>

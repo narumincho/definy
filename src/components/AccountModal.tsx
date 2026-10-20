@@ -8,7 +8,7 @@ import {
 } from "react";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
-import { Icon } from "../icons.tsx";
+import { AccountsIcon } from "../icons.tsx";
 
 export type AccountModalProps = {
   readonly open: boolean;
@@ -373,7 +373,7 @@ export function AccountModal({
                     setErrorMessage(null);
                   }}
                 >
-                  <Icon kind="accounts" size={14} className="btn-icon" />
+                  <AccountsIcon size={14} className="btn-icon" />
                   {label(
                     language,
                     "Create Account",

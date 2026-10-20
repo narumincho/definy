@@ -1,6 +1,6 @@
 import { useState, useCallback, type JSX } from "react";
 import { useParams, Link } from "@void/react";
-import { Icon } from "../../src/icons.tsx";
+import { PlayIcon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import {
@@ -165,7 +165,7 @@ export default function PartDetailPage(): JSX.Element {
             onClick={handleEvaluate}
             disabled={evaluating}
           >
-            <Icon kind="play" size={14} className="btn-icon" />
+            <PlayIcon size={14} className="btn-icon" />
             {evaluating
               ? label(language, "Evaluating...", "評価中...", "Taksante...")
               : label(

@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { Link } from "@void/react";
-import { Icon } from "../icons.tsx";
+import { SearchIcon, SidebarIcon } from "../icons.tsx";
 import { label, languageNativeName } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import type { LanguageCode } from "../types.ts";
@@ -37,7 +37,7 @@ export function Header(): JSX.Element {
         aria-label={toggleLabel}
         onClick={toggleSidebar}
       >
-        <Icon kind="sidebar" size={17} className="titlebar-icon" />
+        <SidebarIcon size={17} className="titlebar-icon" />
       </button>
 
       <Link href="/" className="app-logo">
@@ -54,7 +54,7 @@ export function Header(): JSX.Element {
             setCommandPaletteOpen(true);
           }}
         >
-          <Icon kind="search" size={13} className="header-title-icon" />
+          <SearchIcon size={13} className="header-title-icon" />
           <span className="header-title-text">{paletteLabel}</span>
           <kbd className="header-title-kbd">⌘P</kbd>
         </button>

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, type JSX } from "react";
 import { Link } from "@void/react";
-import { Icon } from "../icons.tsx";
+import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
@@ -141,13 +141,11 @@ export function ExplorerSidebar(): JSX.Element {
                     toggleModuleCollapse(mod.moduleId);
                   }}
                 >
-                  <Icon
-                    kind="chevronRight"
+                  <ChevronRightIcon
                     size={14}
                     className={`sidebar-chevron ${isCollapsed ? "" : "expanded"}`}
                   />
-                  <Icon
-                    kind="modules"
+                  <ModuleIcon
                     size={15}
                     className="sidebar-node-icon tree-icon-module"
                   />
@@ -170,8 +168,7 @@ export function ExplorerSidebar(): JSX.Element {
                             }
                           }}
                         >
-                          <Icon
-                            kind="part"
+                          <ModuleIcon
                             size={15}
                             className="sidebar-node-icon tree-icon-part"
                           />

@@ -1,6 +1,6 @@
 import { useState, type JSX } from "react";
 import { Link } from "@void/react";
-import { Icon } from "../src/icons.tsx";
+import { PlayIcon } from "../src/icons.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
@@ -84,7 +84,7 @@ export default function PartsPage(): JSX.Element {
                   </p>
                 )}
                 <div className="part-card-footer">
-                  <Icon kind="play" size={14} className="part-card-play-icon" />
+                  <PlayIcon size={14} className="part-card-play-icon" />
                   <span className="part-card-link-text">
                     {label(
                       language,
