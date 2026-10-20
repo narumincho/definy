@@ -1,4 +1,4 @@
-import type { PathStep } from "./types.ts";
+import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { base64ToBytes } from "../cbor.ts";
 import { updateExpressionAtPath } from "./path.ts";
 
@@ -313,4 +313,30 @@ export function applySelection(
   return updateExpressionAtPath(expr, path, (current) =>
     keepBinaryOperands(newSubExpr, current),
   );
+}
+
+/** 表示順 (行きがけ順) にノード ID とパスを集める */
+export function collectNodeIndex(node: LayoutNode): ReadonlyArray<{
+  readonly id: string;
+  readonly path: ReadonlyArray<PathStep>;
+}> {
+  return [
+    { id: node.id, path: node.path },
+    ...node.children.flatMap(collectNodeIndex),
+  ];
+}
+
+/** そのパスの式を表すノード (式 1 つ分のノード) を探す */
+export function findExpressionNode(
+  node: LayoutNode,
+  path: ReadonlyArray<PathStep>,
+): LayoutNode | null {
+  if (node.scopeVariables !== undefined && isSamePath(node.path, path)) {
+    return node;
+  }
+  for (const child of node.children) {
+    const found = findExpressionNode(child, path);
+    if (found !== null) return found;
+  }
+  return null;
 }

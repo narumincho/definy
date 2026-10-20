@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSelectorOptions,
   filterAndRankOptions,
+  resolveCurrentOptionValue,
   resolveHighlight,
   type SelectorOption,
 } from "./selector_options.ts";
@@ -78,5 +80,38 @@ describe("resolveHighlight", () => {
       kind: "implicit",
       index: 1,
     });
+  });
+});
+
+describe("buildSelectorOptions and resolveCurrentOptionValue", () => {
+  it("builds type options in type mode", () => {
+    const opts = buildSelectorOptions({
+      mode: "type",
+      partOptions: [option("ref:part:type1", "my.type")],
+    });
+    expect(opts.some((o) => o.value === "expr:type:number")).toBe(true);
+    expect(opts.some((o) => o.value === "ref:part:type1")).toBe(true);
+  });
+
+  it("builds expression options with variables in expression mode", () => {
+    const opts = buildSelectorOptions({
+      mode: "expression",
+      scopeVariables: new Map([[1, "myVar"]]),
+      partOptions: [option("ref:part:fn1", "my.func")],
+    });
+    expect(opts.some((o) => o.value === "ref:local:1")).toBe(true);
+    expect(opts.some((o) => o.value === "expr:number")).toBe(true);
+    expect(opts.some((o) => o.value === "ref:part:fn1")).toBe(true);
+  });
+
+  it("resolves current option value for literals and types", () => {
+    const val = resolveCurrentOptionValue({
+      expression: { Number: { value: 42 } },
+      path: [],
+      options: [option("expr:number", "number")],
+      mode: "expression",
+      partNames: new Map(),
+    });
+    expect(val).toBe("expr:number");
   });
 });
