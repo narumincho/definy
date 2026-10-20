@@ -23,6 +23,7 @@ import {
   sha256BytesSync,
 } from "./cbor.ts";
 import { expressionToPartType } from "./tree_layout/part_type.ts";
+import { list, record, string, variant } from "./self_hosted_ast.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
@@ -62,26 +63,6 @@ export type SelfHostedTypeCheckOutcome =
   | { readonly kind: "unsupported"; readonly message: string }
   /** 型チェッカーの実行に失敗した (Wasm の実行時エラーなど) */
   | { readonly kind: "checker_failed"; readonly message: string };
-
-function variant(tag: string, payload?: unknown): unknown {
-  return payload === undefined
-    ? { Variant: { tag } }
-    : { Variant: { tag, payload } };
-}
-
-function record(items: ReadonlyArray<readonly [string, unknown]>): unknown {
-  return {
-    TypeLiteral: { items: items.map(([key, value]) => ({ key, value })) },
-  };
-}
-
-function list(items: ReadonlyArray<unknown>): unknown {
-  return { ListLiteral: { items } };
-}
-
-function string(value: string): unknown {
-  return { String: { value } };
-}
 
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   return typeof value === "object" &&

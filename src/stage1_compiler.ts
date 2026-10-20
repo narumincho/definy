@@ -4,6 +4,13 @@
  */
 
 import { bytesToUrlSafeBase64NoPad, toUint8Array } from "./cbor.ts";
+import {
+  selfHostedList,
+  selfHostedNumber,
+  selfHostedRecord,
+  selfHostedString,
+  selfHostedVariant,
+} from "./self_hosted_ast.ts";
 
 export type DefinyValue =
   | number
@@ -243,32 +250,6 @@ export function partReferenceId(hash: unknown): string {
     );
   }
   return bytesToUrlSafeBase64NoPad(bytes);
-}
-
-function selfHostedVariant(tag: string, payload?: unknown): unknown {
-  return payload === undefined
-    ? { Variant: { tag } }
-    : { Variant: { tag, payload } };
-}
-
-function selfHostedRecord(items: ReadonlyArray<readonly [string, unknown]>) {
-  return {
-    TypeLiteral: {
-      items: items.map(([key, value]) => ({ key, value })),
-    },
-  };
-}
-
-function selfHostedList(items: ReadonlyArray<unknown>) {
-  return { ListLiteral: { items } };
-}
-
-function selfHostedNumber(value: number) {
-  return { Number: { value } };
-}
-
-function selfHostedString(value: string) {
-  return { String: { value } };
 }
 
 const binaryOperators: ReadonlyArray<readonly [string, string]> = [
