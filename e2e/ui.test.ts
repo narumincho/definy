@@ -139,7 +139,11 @@ test.describe("definy UI E2E", () => {
     await page.waitForSelector(".event-card");
 
     const rootIconSizes = await page.evaluate(() => {
-      const svgs = Array.from(document.querySelectorAll("svg"));
+      // 狭い画面でだけ出すボタン (エクスプローラーのドロワーを開くボタン) のように
+      // display: none で描画されていないアイコンは除く
+      const svgs = Array.from(document.querySelectorAll("svg")).filter(
+        (svg) => svg.getClientRects().length > 0,
+      );
       return svgs.map((svg) => {
         const rect = svg.getBoundingClientRect();
         return {
