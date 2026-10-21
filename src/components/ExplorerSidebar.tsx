@@ -11,6 +11,39 @@ import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
+const SIDEBAR_WIDTH_STORAGE_KEY = "definy.sidebar.width";
+const MIN_SIDEBAR_WIDTH = 160;
+const MAX_SIDEBAR_WIDTH = 600;
+/** 矢印キーで幅を変えるときの 1 回分 */
+const SIDEBAR_WIDTH_KEY_STEP = 16;
+
+function clampSidebarWidth(width: number): number {
+  return Math.round(
+    Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, width)),
+  );
+}
+
+function loadSidebarWidth(): number | null {
+  try {
+    const stored = Number(localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY));
+    return stored > 0 ? clampSidebarWidth(stored) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSidebarWidth(width: number | null): void {
+  try {
+    if (width === null) {
+      localStorage.removeItem(SIDEBAR_WIDTH_STORAGE_KEY);
+    } else {
+      localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(width));
+    }
+  } catch {
+    // 保存できなくても今の表示の幅はそのまま使う
+  }
+}
+
 export function ExplorerSidebar(): JSX.Element {
   const {
     language,
@@ -38,12 +71,34 @@ export function ExplorerSidebar(): JSX.Element {
   const [collapsedModules, setCollapsedModules] = useState<ReadonlySet<string>>(
     new Set(),
   );
-  // 初回レンダーは SSR と同じ既定値にし、保存値はマウント後に反映する
-  const [sidebarWidth, setSidebarWidth] = useState(260);
-  useEffect(() => {
-    const stored = localStorage.getItem("definy.sidebar.width");
-    if (stored) setSidebarWidth(Number(stored) || 260);
+  // エクスプローラーの幅. ワークベンチのグリッドの列 (`--sidebar-width`) をワークベンチの要素に直接書き換える.
+  // ドラッグ中に React の state を変えると大きなツリーを毎回描画し直すので, 確定したときだけ state にする.
+  // `null` は CSS の既定の幅 (画面の幅で変わる). 初回レンダーは SSR と揃え, 保存値はマウント後に反映する
+  const asideRef = useRef<HTMLElement>(null);
+  const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
+  const applySidebarWidth = useCallback((width: number | null) => {
+    const workbench = asideRef.current?.parentElement;
+    if (width === null) {
+      workbench?.style.removeProperty("--sidebar-width");
+    } else {
+      workbench?.style.setProperty("--sidebar-width", `${width}px`);
+    }
   }, []);
+  const commitSidebarWidth = useCallback(
+    (width: number | null) => {
+      applySidebarWidth(width);
+      setSidebarWidth(width);
+      saveSidebarWidth(width);
+    },
+    [applySidebarWidth],
+  );
+  useEffect(() => {
+    const stored = loadSidebarWidth();
+    applySidebarWidth(stored);
+    setSidebarWidth(stored);
+  }, [applySidebarWidth]);
+  const currentSidebarWidth = (): number =>
+    asideRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
 
   const query = filterQuery.trim().toLowerCase();
 
@@ -98,35 +153,56 @@ export function ExplorerSidebar(): JSX.Element {
     });
   }, []);
 
-  const handleResizeStart = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+  /** 境界をドラッグして幅を変える. ポインターをキャプチャして, 境界から外れても追いかける */
+  function handleResizePointerDown(
+    e: React.PointerEvent<HTMLDivElement>,
+  ): void {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const handle = e.currentTarget;
+    const pointerId = e.pointerId;
+    const startX = e.clientX;
+    const startWidth = currentSidebarWidth();
+    let width = clampSidebarWidth(startWidth);
+    handle.setPointerCapture(pointerId);
+    document.body.classList.add("sidebar-resizing");
+
+    function onPointerMove(moveEvent: PointerEvent): void {
+      width = clampSidebarWidth(startWidth + moveEvent.clientX - startX);
+      applySidebarWidth(width);
+    }
+    function onPointerEnd(): void {
+      handle.removeEventListener("pointermove", onPointerMove);
+      handle.removeEventListener("pointerup", onPointerEnd);
+      handle.removeEventListener("pointercancel", onPointerEnd);
+      document.body.classList.remove("sidebar-resizing");
+      if (handle.hasPointerCapture(pointerId)) {
+        handle.releasePointerCapture(pointerId);
+      }
+      commitSidebarWidth(width);
+    }
+    handle.addEventListener("pointermove", onPointerMove);
+    handle.addEventListener("pointerup", onPointerEnd);
+    handle.addEventListener("pointercancel", onPointerEnd);
+  }
+
+  /** 矢印キーで幅を変え, Home / ダブルクリックで既定の幅に戻す */
+  function handleResizeKeyDown(e: React.KeyboardEvent<HTMLDivElement>): void {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
-      const startX = e.clientX;
-      const startWidth = sidebarWidth;
-
-      function onMouseMove(moveEvent: MouseEvent): void {
-        const delta = moveEvent.clientX - startX;
-        const newWidth = Math.max(140, Math.min(600, startWidth + delta));
-        setSidebarWidth(newWidth);
-        localStorage.setItem("definy.sidebar.width", String(newWidth));
-      }
-
-      function onMouseUp(): void {
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      }
-
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-    },
-    [sidebarWidth],
-  );
+      const delta =
+        e.key === "ArrowLeft"
+          ? -SIDEBAR_WIDTH_KEY_STEP
+          : SIDEBAR_WIDTH_KEY_STEP;
+      commitSidebarWidth(clampSidebarWidth(currentSidebarWidth() + delta));
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      commitSidebarWidth(null);
+    }
+  }
 
   return (
-    <aside
-      className="workbench-sidebar"
-      style={{ width: `${sidebarWidth}px`, flexBasis: `${sidebarWidth}px` }}
-    >
+    <aside className="workbench-sidebar" ref={asideRef}>
       <div className="sidebar-header">
         <span className="sidebar-title">
           {label(language, "Explorer", "エクスプローラー", "Esplorilo")}
@@ -248,9 +324,8 @@ export function ExplorerSidebar(): JSX.Element {
                           className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
                           aria-current={isSelected ? "page" : undefined}
                           onClick={() => {
-                            if (window.innerWidth < 768) {
-                              setSidebarOpen(false);
-                            }
+                            // 狭い画面ではドロワーを閉じてパーツを見せる (広い画面では何も変わらない)
+                            setSidebarOpen(false);
                           }}
                         >
                           <ModuleIcon
@@ -290,9 +365,23 @@ export function ExplorerSidebar(): JSX.Element {
 
       <div
         className="sidebar-resizer"
-        onMouseDown={handleResizeStart}
         role="separator"
         aria-orientation="vertical"
+        aria-label={label(
+          language,
+          "Resize Explorer (double-click to reset)",
+          "エクスプローラーの幅を変える (ダブルクリックで元に戻す)",
+          "Ŝanĝi la larĝon de la esplorilo (duoble alklaku por restarigi)",
+        )}
+        aria-valuemin={MIN_SIDEBAR_WIDTH}
+        aria-valuemax={MAX_SIDEBAR_WIDTH}
+        {...(sidebarWidth !== null ? { "aria-valuenow": sidebarWidth } : {})}
+        tabIndex={0}
+        onPointerDown={handleResizePointerDown}
+        onKeyDown={handleResizeKeyDown}
+        onDoubleClick={() => {
+          commitSidebarWidth(null);
+        }}
       />
     </aside>
   );

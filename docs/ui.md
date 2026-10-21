@@ -10,20 +10,27 @@
 画面全体は React 19 実装の [src/components/Workbench.tsx](../src/components/Workbench.tsx) で, VS Code のような IDE 風の構成にしている (旧 Rust 実装: `definy-ui/src/workbench.rs`).
 詳細なアーキテクチャは [typescript-react-void-architecture.md](typescript-react-void-architecture.md) を参照.
 
-| 領域               | 内容                                                                               | 旧 Rust 実装 (廃止)                 | React 19 実装                        |
-| ------------------ | ---------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
-| タイトルバー       | サイドバー開閉ボタン・ロゴ・現在のページ名・言語・アカウント                       | `header.rs` の `HeaderView`         | `src/components/Header.tsx`          |
-| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え | `workbench.rs` の `ActivityBar`     | `src/components/ActivityBar.tsx`     |
-| エクスプローラー   | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示                | `workbench.rs` の `ExplorerSidebar` | `src/components/ExplorerSidebar.tsx` |
-| エディタ領域       | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする | `workbench.rs` の `EditorTabBar`    | `pages/` 各ページコンポーネント      |
-| ステータスバー     | 接続状態・未送信ローカルイベント数・言語                                           | `header.rs` の `StatusBarView`      | `src/components/StatusBar.tsx`       |
+| 領域               | 内容                                                                                | 旧 Rust 実装 (廃止)                 | React 19 実装                        |
+| ------------------ | ----------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------ |
+| タイトルバー       | エクスプローラーのドロワーを開くボタン (狭い画面だけ)・ロゴ・検索・言語・アカウント | `header.rs` の `HeaderView`         | `src/components/Header.tsx`          |
+| アクティビティバー | イベント / パーツ / モジュール / アカウント / デプロイ / About / 設定 への切り替え  | `workbench.rs` の `ActivityBar`     | `src/components/ActivityBar.tsx`     |
+| エクスプローラー   | モジュール → パーツの木構造. 開いているパーツ・モジュールを強調表示                 | `workbench.rs` の `ExplorerSidebar` | `src/components/ExplorerSidebar.tsx` |
+| エディタ領域       | 現在のページのタブ・パンくずリストと, 各ページの本体. この領域だけがスクロールする  | `workbench.rs` の `EditorTabBar`    | `pages/` 各ページコンポーネント      |
+| ステータスバー     | 接続状態・未送信ローカルイベント数・言語                                            | `header.rs` の `StatusBarView`      | `src/components/StatusBar.tsx`       |
 
 - `body` はスクロールさせず, エディタ領域 (`.workbench-editor-scroll`) が独立してスクロールする.
   ページ側で `window` のスクロール位置に依存する処理は書かないこと
 - エクスプローラーのモジュールの開閉は `<details>` を使い, 状態を持たない
-- サイドバーの開閉状態は `SidebarToggle` (context) の 1 つの bool で持つ.
-  幅の広い画面では `true` で隠し, 幅 760px 以下では `true` でドロワーとして表示する (既定は隠れた状態).
-  狭い画面ではアクティビティバーが下部のタブバーになり, ステータスバーは隠れる
+- 幅の広い画面ではエクスプローラーは常に出ている. 右端の境界 (`.sidebar-resizer`) をドラッグして幅を変えられる
+  (矢印キーでも 16px ずつ変わる. ダブルクリック・Home で既定の幅に戻す). 幅は localStorage の `definy.sidebar.width` に保存する
+  - 幅はワークベンチのグリッドの列 `--sidebar-width` をワークベンチの要素に直接書いて変える.
+    エクスプローラーの要素だけに幅を書くとグリッドの列とずれてエディタ領域に重なる.
+    ドラッグ中は React の state を変えない (エクスプローラーの大きな木を毎回描画し直さない) で, 離したときに保存する
+- 幅 760px 以下 (スマホ) ではアクティビティバーが下部のタブバーになり, ステータスバーは隠れる.
+  エクスプローラーはタイトルバー左のボタンで開くドロワーになり, パーツを選ぶか外側を押すと閉じる.
+  開閉は `sidebarOpen` (`src/state/useUiState.ts`) で持ち, SSR と揃えるため閉じた状態から始める
+- スマホのレイアウトには `<meta name="viewport">` が必要 (無いと幅 980px で描画され `@media (max-width: 760px)` が効かない).
+  `void.json` の `head` を書くと Void の既定の head が置き換わるので, `head.meta` に `charset` と `viewport` も書いておくこと
 - 配色はフラットなダークテーマで, 影やガラス効果を使わず境界線で面を区切る.
   色・角丸は `main.css` の `:root` のトークンで定義しているので, ページ側のインラインスタイルでもなるべくトークンを使う
 

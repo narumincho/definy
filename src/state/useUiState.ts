@@ -24,6 +24,10 @@ function resolveBrowserLanguage(): LanguageCode {
 export type UiState = {
   readonly language: LanguageCode;
   readonly setLanguage: (lang: LanguageCode) => void;
+  /**
+   * 狭い画面 (スマホ) でエクスプローラーのドロワーを開いているか. 広い画面のエクスプローラーは常に出ているので使わない.
+   * SSR と揃えるため閉じた状態から始める (開いた状態で描画してから閉じると, 読み込みのたびにドロワーが一瞬見える)
+   */
   readonly sidebarOpen: boolean;
   readonly toggleSidebar: () => void;
   readonly setSidebarOpen: (open: boolean) => void;
@@ -41,7 +45,7 @@ export function useUiState(): UiState {
   const [language, setLanguageState] = useState<LanguageCode>(
     queryLanguage ?? "en",
   );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
 
@@ -50,13 +54,6 @@ export function useUiState(): UiState {
       setLanguageState(resolveBrowserLanguage());
     }
   }, [queryLanguage]);
-
-  // Close sidebar on mobile after mount to prevent hydration mismatch
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth <= 760) {
-      setSidebarOpen(false);
-    }
-  }, []);
 
   const setLanguage = useCallback((lang: LanguageCode) => {
     setLanguageState(lang);

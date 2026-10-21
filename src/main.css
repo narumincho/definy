@@ -450,15 +450,6 @@ textarea {
   background: var(--bg-chrome);
 }
 
-.workbench.sidebar-closed {
-  grid-template-columns: var(--activitybar-width) 0 minmax(0, 1fr);
-}
-
-.workbench.sidebar-closed .workbench-sidebar {
-  visibility: hidden;
-  border-right: none;
-}
-
 /* --- タイトルバー --- */
 
 .app-header {
@@ -491,6 +482,12 @@ textarea {
 .titlebar-icon {
   width: 17px;
   height: 17px;
+}
+
+/* エクスプローラーのドロワーを開くボタン. 狭い画面 (下の @media) でだけ出す */
+.sidebar-toggle-btn {
+  display: none;
+  place-items: center;
 }
 
 .app-logo {
@@ -680,6 +677,7 @@ button.header-title:hover {
 
 .workbench-sidebar {
   grid-area: sidebar;
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -687,6 +685,45 @@ button.header-title:hover {
   border-right: 1px solid var(--border);
   overflow: hidden;
   z-index: 2;
+}
+
+/* エクスプローラーの右端の境界. ドラッグ・矢印キーで幅を変える (ExplorerSidebar) */
+.sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 3;
+}
+
+.sidebar-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 0.1s ease 0.1s;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+body.sidebar-resizing .sidebar-resizer::after {
+  background: var(--primary);
+}
+
+.sidebar-resizer:focus-visible {
+  outline: none;
+}
+
+/* ドラッグ中はどこにポインターがあってもリサイズのカーソルにし, 文字を選択しない */
+body.sidebar-resizing {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .sidebar-header {
@@ -1809,9 +1846,7 @@ button.card:hover {
  * エクスプローラーはサイドバー開閉ボタンで開くドロワーにする
  */
 @media (max-width: 760px) {
-  .workbench,
-  .workbench.sidebar-open,
-  .workbench.sidebar-closed {
+  .workbench {
     grid-template-areas:
       "titlebar"
       "editor"
@@ -1854,6 +1889,15 @@ button.card:hover {
   }
 
   .sidebar-close-btn {
+    display: inline-grid;
+  }
+
+  /* ドロワーの幅は固定なので境界のドラッグは出さない */
+  .sidebar-resizer {
+    display: none;
+  }
+
+  .sidebar-toggle-btn {
     display: inline-grid;
   }
 
