@@ -28,7 +28,7 @@ export default function PartDetailPage(): JSX.Element {
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<DefinyValue | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
-  const [compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
+  const [_compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
 
   const part = parts.find(
     (p) =>

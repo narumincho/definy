@@ -342,4 +342,47 @@ test.describe("definy UI E2E", () => {
       }),
     ).toBeVisible();
   });
+
+  test("definy logo and icon match definy.app styling and assets", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForSelector(".logo-text");
+
+    const logo = page.locator(".logo-text");
+    await expect(logo).toHaveText("definy");
+
+    const logoStyle = await logo.evaluate((el) => {
+      const cs = window.getComputedStyle(el);
+      return {
+        fontFamily: cs.fontFamily,
+        color: cs.color,
+        fontWeight: cs.fontWeight,
+      };
+    });
+
+    // Check Hack font and #b9d09b (rgb(185, 208, 155))
+    expect(logoStyle.fontFamily).toContain("Hack");
+    expect(logoStyle.color).toBe("rgb(185, 208, 155)");
+    expect(logoStyle.fontWeight).toBe("400");
+
+    // Check icon link tag
+    const faviconHref = await page.evaluate(() => {
+      const link = document.querySelector('link[rel="icon"]');
+      return link ? link.getAttribute("href") : null;
+    });
+    expect(faviconHref).toBe("/icon.png");
+
+    // Check /icon.png can be fetched and matches 5126 bytes
+    const iconRes = await page.request.get("/icon.png");
+    expect(iconRes.ok()).toBe(true);
+    const iconBuffer = await iconRes.body();
+    expect(iconBuffer.length).toBe(5126);
+
+    // Check /hack_regular_subset.woff2 can be fetched and matches 23244 bytes
+    const fontRes = await page.request.get("/hack_regular_subset.woff2");
+    expect(fontRes.ok()).toBe(true);
+    const fontBuffer = await fontRes.body();
+    expect(fontBuffer.length).toBe(23244);
+  });
 });

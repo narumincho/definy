@@ -62,7 +62,7 @@ export function ExpressionPopoverMenu({
   language,
   selectedPath,
   selectionAnchorName,
-  currentName,
+  currentName: _currentName,
   expectedType,
   searchQuery,
   setSearchQuery,

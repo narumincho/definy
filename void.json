@@ -1,5 +1,44 @@
 {
   "worker": {
     "compatibility_date": "2026-02-24"
+  },
+  "head": {
+    "title": "definy",
+    "meta": [
+      {
+        "name": "description",
+        "content": "definy is Web App for Web App."
+      },
+      {
+        "name": "twitter:card",
+        "content": "summary"
+      },
+      {
+        "property": "og:title",
+        "content": "definy"
+      },
+      {
+        "property": "og:site_name",
+        "content": "definy"
+      },
+      {
+        "property": "og:description",
+        "content": "definy is Web App for Web App."
+      },
+      {
+        "property": "og:image",
+        "content": "/icon.png"
+      }
+    ],
+    "link": [
+      {
+        "rel": "icon",
+        "href": "/icon.png"
+      },
+      {
+        "rel": "apple-touch-icon",
+        "href": "/icon.png"
+      }
+    ]
   }
 }
