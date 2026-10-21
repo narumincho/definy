@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   createSignedModuleCommitEvent,
@@ -10,6 +11,7 @@ import {
   bytesToUrlSafeBase64NoPad,
   type DecodedPart,
 } from "../src/cbor.ts";
+import { resolvePartPlaceholders } from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
@@ -152,4 +154,51 @@ describe("SubmitEvent の型検査", () => {
     expect(result.status).toBe(400);
     expect(result.message).toContain("part 'double': type error");
   });
+
+  it("コンパイラ組み込みのパーツは名前を変えてもシステムアカウントなら受け付ける", async () => {
+    const { store, env } = await createSeededStore();
+    const system = await importAccountCredentials(
+      bytesToUrlSafeBase64NoPad(DEV_SYSTEM_KEY_SEED),
+      "definy",
+    );
+    const seed = JSON.parse(await readFile("seeds/core.json", "utf8")) as {
+      readonly parts: ReadonlyArray<{
+        readonly name: string;
+        readonly part_type?: unknown;
+        readonly expression?: unknown;
+      }>;
+    };
+    const accountBytes = base64ToBytes(system.accountId);
+    const parts = await Promise.all(
+      seed.parts.map(async (seedPart) =>
+        part(
+          // 組み込みかどうかは式 ({"Compiler": "string_concat"}) で決まり, 名前によらない
+          seedPart.name === "string-concat" ? "joined-text" : seedPart.name,
+          await resolvePartPlaceholders(
+            seedPart.part_type ?? null,
+            accountBytes,
+          ),
+          await resolvePartPlaceholders(
+            seedPart.expression ?? null,
+            accountBytes,
+          ),
+        ),
+      ),
+    );
+    expect(parts.find((p) => p.name === "joined-text")?.expression).toEqual({
+      Compiler: "string_concat",
+    });
+    expect(await submitCommit(store, env, system, "core", parts)).toEqual({
+      status: 200,
+      message: "",
+    });
+
+    // 一般のアカウントのコンパイラ組み込みは, 名前によらず検査できないので拒否する
+    const user = await generateAccountCredentials("user");
+    const result = await submitCommit(store, env, user, "app", [
+      part("string-concat", null, { Compiler: "string_concat" }),
+    ]);
+    expect(result.status).toBe(400);
+    expect(result.message).toContain("part 'string-concat': not supported");
+  }, 60_000);
 });

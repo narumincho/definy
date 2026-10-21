@@ -129,6 +129,21 @@ export function tryBuildLiteralNode(
     };
   }
 
+  // コンパイラ組み込み (`{"Compiler": "string_concat"}`). パーツ名ではなく式の値から `builtin string-concat` と出す
+  // (パーツ名を変えても, 中身がどの組み込みかは変わらないため)
+  if ("Compiler" in node) {
+    return {
+      id: idPrefix,
+      path: currentPath,
+      label: `builtin ${String(node.Compiler).replaceAll("_", "-")}`,
+      kind: "keyword",
+      children: [],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
+    };
+  }
+
   if ("Hole" in node) {
     return {
       id: idPrefix,
