@@ -16,6 +16,18 @@ import { collectNodeIndex, findExpressionNode } from "./selection.ts";
 import { useTreeKeyboard } from "./useTreeKeyboard.ts";
 import { useSelectorMenu } from "./useSelectorMenu.ts";
 import { ExpressionPopoverMenu } from "./ExpressionPopoverMenu.tsx";
+import { findTypeErrorPath } from "./type_error_location.ts";
+import type { DefinyValue } from "../stage1_compiler.ts";
+
+/** 式に出す型エラー */
+export type ExpressionTypeError = {
+  /**
+   * 型チェッカーがエラーを見つけた式 (`core.expression` の値). `null` や,
+   * ツリーの中に見つからないときはルートの式に出す
+   */
+  readonly expression: DefinyValue;
+  readonly message: string;
+};
 
 export type ExpressionTreeEditorProps = {
   readonly expression: unknown;
@@ -35,6 +47,8 @@ export type ExpressionTreeEditorProps = {
    * 選択肢は型と型のパーツだけで, 期待型の推論はしない
    */
   readonly mode?: "expression" | "type";
+  /** 型エラー. エラーのある式の横に警告を出す */
+  readonly typeError?: ExpressionTypeError | null;
 };
 
 export function ExpressionTreeEditor({
@@ -46,6 +60,7 @@ export function ExpressionTreeEditor({
   containerId,
   onExit,
   mode = "expression",
+  typeError = null,
 }: ExpressionTreeEditorProps): JSX.Element {
   const { language, parts, partNames } = useDefiny();
   const [selectedPath, setSelectedPath] =
@@ -69,6 +84,18 @@ export function ExpressionTreeEditor({
     const rawTree = expressionToLayoutNode(expression, "root", { partNames });
     return computeLayout(rawTree, { maxWidth });
   }, [expression, partNames, maxWidth]);
+
+  const typeErrorNodeId = useMemo(() => {
+    if (typeError === null) return null;
+    const path =
+      typeError.expression === null
+        ? null
+        : findTypeErrorPath(layoutRoot, expression, typeError.expression);
+    return (
+      (path === null ? null : findExpressionNode(layoutRoot, path))?.id ??
+      layoutRoot.id
+    );
+  }, [typeError, layoutRoot, expression]);
 
   // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
   const nodeIndex = useMemo(() => collectNodeIndex(layoutRoot), [layoutRoot]);
@@ -228,6 +255,8 @@ export function ExpressionTreeEditor({
         onChangeString={handleChangeString}
         onClear={handleClear}
         {...(selectionAnchorName !== undefined ? { selectionAnchorName } : {})}
+        typeErrorNodeId={typeErrorNodeId}
+        typeErrorMessage={typeError?.message ?? ""}
       />
 
       {/*

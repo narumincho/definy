@@ -10,6 +10,7 @@ import {
 } from "../../src/stage1_compiler.ts";
 import { loadStage1Compiler } from "../../src/stage1_browser.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
+import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -56,17 +57,20 @@ export default function PartDetailPage(): JSX.Element {
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
 
-  // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査する (コミット済みの型環境を使う)
+  // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査し (コミット済みの型環境を使う),
+  // 型エラーはエラーのある式の横に出す. 検査できない式 (未入力・コンパイラ組み込み) には何も出さない.
+  // 検査した後に式を編集したら, 検査し直すまで出さない (エラーの式が見つからずルートに出てしまうため)
   const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
-  const [typeCheck, setTypeCheck] = useState<
-    | { readonly status: "checking" }
-    | { readonly status: "ok" }
-    | { readonly status: "error"; readonly message: string }
-    | { readonly status: "unsupported"; readonly message: string }
-  >({ status: "checking" });
+  const [typeCheckResult, setTypeCheckResult] = useState<{
+    readonly expression: unknown;
+    readonly error: ExpressionTypeError | null;
+  } | null>(null);
+  const typeError =
+    typeCheckResult !== null && typeCheckResult.expression === currentExpression
+      ? typeCheckResult.error
+      : null;
   useEffect(() => {
     let cancelled = false;
-    setTypeCheck({ status: "checking" });
     const timer = setTimeout(() => {
       checkPartType({
         partIdHash,
@@ -75,22 +79,26 @@ export default function PartDetailPage(): JSX.Element {
       }).then(
         (outcome) => {
           if (cancelled) return;
-          if (outcome.kind === "ok") {
-            setTypeCheck({ status: "ok" });
-          } else if (outcome.kind === "unsupported") {
-            setTypeCheck({ status: "unsupported", message: outcome.message });
-          } else {
-            setTypeCheck({
-              status: "error",
-              message: typeCheckMessage(currentName, outcome) ?? "",
-            });
-          }
+          setTypeCheckResult({
+            expression: currentExpression,
+            error:
+              outcome.kind === "type_error" || outcome.kind === "checker_failed"
+                ? {
+                    expression:
+                      outcome.kind === "type_error" ? outcome.expression : null,
+                    message: typeCheckMessage(null, outcome) ?? "",
+                  }
+                : null,
+          });
         },
         (e: unknown) => {
           if (!cancelled) {
-            setTypeCheck({
-              status: "error",
-              message: e instanceof Error ? e.message : String(e),
+            setTypeCheckResult({
+              expression: currentExpression,
+              error: {
+                expression: null,
+                message: e instanceof Error ? e.message : String(e),
+              },
             });
           }
         },
@@ -106,7 +114,6 @@ export default function PartDetailPage(): JSX.Element {
     partIdHash,
     currentPartType,
     currentExpression,
-    currentName,
   ]);
 
   const handleEvaluate = useCallback(async () => {
@@ -232,31 +239,6 @@ export default function PartDetailPage(): JSX.Element {
         </div>
       </div>
 
-      <div
-        className={`card part-type-check part-type-check-${typeCheck.status}`}
-        aria-live="polite"
-      >
-        <span className="part-type-check-result">
-          {typeCheck.status === "checking" &&
-            label(language, "Checking...", "検査中...", "Kontrolante...")}
-          {typeCheck.status === "ok" &&
-            label(
-              language,
-              "No type errors",
-              "型エラーはありません",
-              "Neniuj tiperaroj",
-            )}
-          {typeCheck.status === "unsupported" &&
-            `${label(
-              language,
-              "Cannot be checked",
-              "検査できません",
-              "Ne kontroleblas",
-            )}: ${typeCheck.message}`}
-          {typeCheck.status === "error" && typeCheck.message}
-        </span>
-      </div>
-
       {evalResult !== null && (
         <div className="card eval-result-card success">
           <div className="eval-result-header">
@@ -286,6 +268,7 @@ export default function PartDetailPage(): JSX.Element {
         partType={currentPartType}
         expression={currentExpression}
         editable={true}
+        typeError={typeError}
         onNameChange={(newName) => {
           updateWorkingPart(part.partId, {
             moduleDefinitionEventHash: part.moduleId,

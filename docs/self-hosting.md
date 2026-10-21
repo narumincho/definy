@@ -714,7 +714,16 @@ eval-value: expression -> env -> value
     モジュール型環境にパーツ定義が存在しない
   - `cannot_infer_empty_list`: 期待型のない空リストの型推論失敗
   - `unknown_error`: 未知のエラー
+  - `located({ expression: core.expression, error: type-error })`: エラーと, それを見つけた一番内側の式の組
 - `core.type-result`: `ok(type-ast) | error(type-error)`
+- エラーの場所: `core.type-check` / `core.type-check-against` は本体 (`core.type-check-unlocated` /
+  `core.type-check-against-unlocated`) を呼んで, `located` でないエラーを今検査している式と組にして返すだけのパーツ.
+  本体の中の再帰呼び出しはこの包むほうを呼ぶので, 一番内側でエラーを返した呼び出しの式が付く.
+  - 式の型を推論してから `type-equals` で比べると, エラーはその親の式に付いてしまう.
+    `add` などの演算子のオペランドは `type-check-against` で期待する型 (`number` など) に照らして検査し,
+    オペランドの式にエラーが付くようにしている
+  - UI (パーツ詳細) は `located` の `expression` と同じ値になるツリーの式 (`findTypeErrorPath`,
+    `src/tree_layout/type_error_location.ts`) の横に警告を出す. 同じ式が何か所にもあれば表示順で最初のもの
 
 #### 2. 型環境型: `core.type-env`, `core.part-type-env`, `core.type-env-lookup`, `core.type-env-extend`, `core.part-type-lookup`, `core.type-env-lookup-part`
 

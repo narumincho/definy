@@ -7995,11 +7995,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Definy type checker error diagnostics"
+          "text": "Definy type checker error diagnostics. located wraps an error with the innermost expression where it was found"
         },
         {
           "language": "ja",
-          "text": "Definy の自己記述型チェッカーのエラー情報"
+          "text": "Definy の自己記述型チェッカーのエラー情報. located はエラーを見つけた一番内側の式とエラーの組"
         }
       ],
       "expression": {
@@ -8214,6 +8214,35 @@
             {
               "tag": "unknown_error",
               "payload_type": null
+            },
+            {
+              "tag": "located",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "expression",
+                      "value": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "key": "error",
+                      "value": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.type-error"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ]
         }
@@ -20109,11 +20138,183 @@
       "description": [
         {
           "language": "en",
-          "text": "Self-hosted type checker verifying expressions and deriving types"
+          "text": "Self-hosted type checker verifying expressions and deriving types. Errors are located at the innermost expression where they were found"
         },
         {
           "language": "ja",
-          "text": "式の整合性を検証し型を導出する自己記述型チェッカー"
+          "text": "式の整合性を検証し型を導出する自己記述型チェッカー. エラーは見つけた一番内側の式と組にして返す"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "expr"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-check-unlocated"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "expr",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "env",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "ok",
+                  "variable_id": 2,
+                  "variable_name": "t",
+                  "body": {
+                    "Variant": {
+                      "tag": "ok",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "error",
+                  "variable_id": 3,
+                  "variable_name": "e",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "located",
+                          "variable_id": 4,
+                          "variable_name": "l",
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": {
+                        "Variant": {
+                          "tag": "error",
+                          "payload": {
+                            "Variant": {
+                              "tag": "located",
+                              "payload": {
+                                "TypeLiteral": {
+                                  "items": [
+                                    {
+                                      "key": "expression",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "key": "error",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          },
+                          "type_part_definition_event_hash": null
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-check-unlocated",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "expr",
+              "type": {
+                "type_part": {
+                  "$part": "core.expression"
+                }
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.type-result"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Body of type-check. Errors are returned without the expression where they were found"
+        },
+        {
+          "language": "ja",
+          "text": "type-check の本体. エラーを見つけた式は付けずに返す"
         }
       ],
       "expression": {
@@ -20201,7 +20402,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -20226,6 +20427,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "number",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -20242,21 +20453,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 13
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "number",
@@ -20270,204 +20494,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 13
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "number",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "number",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "number",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -20511,7 +20564,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -20536,6 +20589,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "number",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -20552,21 +20615,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 14
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "number",
@@ -20580,204 +20656,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 14
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "number",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "number",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "number",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -20821,7 +20726,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -20846,6 +20751,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "number",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -20862,21 +20777,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 15
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "number",
@@ -20890,204 +20818,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 15
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "number",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "number",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "number",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -21131,7 +20888,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -21156,6 +20913,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "number",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -21172,21 +20939,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 16
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "number",
@@ -21200,204 +20980,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 16
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "number",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "number",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "number",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -21441,7 +21050,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -21466,6 +21075,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "number",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -21482,21 +21101,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 17
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "number",
@@ -21510,204 +21142,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 17
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "number",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "number",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "number",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "number",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -22045,7 +21506,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -22070,6 +21531,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "boolean",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -22086,21 +21557,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 44
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "boolean",
@@ -22114,204 +21598,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 44
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "boolean",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "boolean",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "boolean",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "boolean",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "boolean",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -22355,7 +21668,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -22380,6 +21693,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "boolean",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -22396,21 +21719,34 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
+                                        "$part": "core.type-check-against"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "t1",
+                                      "name": "expr",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 30
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 45
+                                            }
+                                          },
+                                          "key": "right"
                                         }
                                       }
                                     },
                                     {
-                                      "name": "t2",
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "expected_type",
                                       "value": {
                                         "Variant": {
                                           "tag": "boolean",
@@ -22424,204 +21760,33 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "ok",
+                                  "variable_id": 31,
+                                  "variable_name": "r_ok",
                                   "body": {
-                                    "Match": {
-                                      "target": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.type-check"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "expr",
-                                              "value": {
-                                                "RecordGet": {
-                                                  "record": {
-                                                    "Variable": {
-                                                      "variable_id": 45
-                                                    }
-                                                  },
-                                                  "key": "right"
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "env",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
+                                    "Variant": {
+                                      "tag": "ok",
+                                      "payload": {
+                                        "Variant": {
+                                          "tag": "boolean",
+                                          "payload": null,
+                                          "type_part_definition_event_hash": null
                                         }
                                       },
-                                      "arms": [
-                                        {
-                                          "tag": "ok",
-                                          "variable_id": 31,
-                                          "variable_name": "r_ok",
-                                          "body": {
-                                            "Match": {
-                                              "target": {
-                                                "Call": {
-                                                  "function": {
-                                                    "PartReference": {
-                                                      "part_definition_event_hash": {
-                                                        "$part": "core.type-equals"
-                                                      }
-                                                    }
-                                                  },
-                                                  "arguments": [
-                                                    {
-                                                      "name": "t1",
-                                                      "value": {
-                                                        "Variable": {
-                                                          "variable_id": 31
-                                                        }
-                                                      }
-                                                    },
-                                                    {
-                                                      "name": "t2",
-                                                      "value": {
-                                                        "Variant": {
-                                                          "tag": "boolean",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      }
-                                                    }
-                                                  ]
-                                                }
-                                              },
-                                              "arms": [
-                                                {
-                                                  "tag": "true",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "ok",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "boolean",
-                                                          "payload": null,
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "tag": "false",
-                                                  "variable_id": null,
-                                                  "variable_name": null,
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "error",
-                                                      "payload": {
-                                                        "Variant": {
-                                                          "tag": "type_mismatch",
-                                                          "payload": {
-                                                            "TypeLiteral": {
-                                                              "items": [
-                                                                {
-                                                                  "key": "expected",
-                                                                  "value": {
-                                                                    "Variant": {
-                                                                      "tag": "boolean",
-                                                                      "payload": null,
-                                                                      "type_part_definition_event_hash": null
-                                                                    }
-                                                                  }
-                                                                },
-                                                                {
-                                                                  "key": "actual",
-                                                                  "value": {
-                                                                    "Variable": {
-                                                                      "variable_id": 31
-                                                                    }
-                                                                  }
-                                                                }
-                                                              ]
-                                                            }
-                                                          },
-                                                          "type_part_definition_event_hash": null
-                                                        }
-                                                      },
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                }
-                                              ],
-                                              "default": null
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "tag": "error",
-                                          "variable_id": 32,
-                                          "variable_name": "err",
-                                          "body": {
-                                            "Variant": {
-                                              "tag": "error",
-                                              "payload": {
-                                                "Variable": {
-                                                  "variable_id": 32
-                                                }
-                                              },
-                                              "type_part_definition_event_hash": null
-                                            }
-                                          }
-                                        }
-                                      ],
-                                      "default": null
+                                      "type_part_definition_event_hash": null
                                     }
                                   }
                                 },
                                 {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "tag": "error",
+                                  "variable_id": 32,
+                                  "variable_name": "err",
                                   "body": {
                                     "Variant": {
                                       "tag": "error",
                                       "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "boolean",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 30
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
+                                        "Variable": {
+                                          "variable_id": 32
                                         }
                                       },
                                       "type_part_definition_event_hash": null
@@ -22665,7 +21830,7 @@
                           "function": {
                             "PartReference": {
                               "part_definition_event_hash": {
-                                "$part": "core.type-check"
+                                "$part": "core.type-check-against"
                               }
                             }
                           },
@@ -22690,6 +21855,16 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "expected_type",
+                              "value": {
+                                "Variant": {
+                                  "tag": "boolean",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
                             }
                           ]
                         }
@@ -22700,100 +21875,16 @@
                           "variable_id": 47,
                           "variable_name": "v_ok",
                           "body": {
-                            "Match": {
-                              "target": {
-                                "Call": {
-                                  "function": {
-                                    "PartReference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.type-equals"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "t1",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 47
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "t2",
-                                      "value": {
-                                        "Variant": {
-                                          "tag": "boolean",
-                                          "payload": null,
-                                          "type_part_definition_event_hash": null
-                                        }
-                                      }
-                                    }
-                                  ]
+                            "Variant": {
+                              "tag": "ok",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "boolean",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
                                 }
                               },
-                              "arms": [
-                                {
-                                  "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
-                                  "body": {
-                                    "Variant": {
-                                      "tag": "ok",
-                                      "payload": {
-                                        "Variant": {
-                                          "tag": "boolean",
-                                          "payload": null,
-                                          "type_part_definition_event_hash": null
-                                        }
-                                      },
-                                      "type_part_definition_event_hash": null
-                                    }
-                                  }
-                                },
-                                {
-                                  "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
-                                  "body": {
-                                    "Variant": {
-                                      "tag": "error",
-                                      "payload": {
-                                        "Variant": {
-                                          "tag": "type_mismatch",
-                                          "payload": {
-                                            "TypeLiteral": {
-                                              "items": [
-                                                {
-                                                  "key": "expected",
-                                                  "value": {
-                                                    "Variant": {
-                                                      "tag": "boolean",
-                                                      "payload": null,
-                                                      "type_part_definition_event_hash": null
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "key": "actual",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 47
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": null
-                                        }
-                                      },
-                                      "type_part_definition_event_hash": null
-                                    }
-                                  }
-                                }
-                              ],
-                              "default": null
+                              "type_part_definition_event_hash": null
                             }
                           }
                         },
@@ -28703,11 +27794,203 @@
       "description": [
         {
           "language": "en",
-          "text": "Check an expression against an expected type, binding typed function parameters"
+          "text": "Check an expression against an expected type, binding typed function parameters. Errors are located at the innermost expression where they were found"
         },
         {
           "language": "ja",
-          "text": "期待型に照らして式を検査し、関数引数の型を環境へ束縛"
+          "text": "期待型に照らして式を検査し、関数引数の型を環境へ束縛. エラーは見つけた一番内側の式と組にして返す"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "expr"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "env"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "expected_type"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-check-against-unlocated"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "expr",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "env",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "expected_type",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "ok",
+                  "variable_id": 3,
+                  "variable_name": "t",
+                  "body": {
+                    "Variant": {
+                      "tag": "ok",
+                      "payload": {
+                        "Variable": {
+                          "variable_id": 3
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "error",
+                  "variable_id": 4,
+                  "variable_name": "e",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 4
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "located",
+                          "variable_id": 5,
+                          "variable_name": "l",
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variable": {
+                                  "variable_id": 4
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": {
+                        "Variant": {
+                          "tag": "error",
+                          "payload": {
+                            "Variant": {
+                              "tag": "located",
+                              "payload": {
+                                "TypeLiteral": {
+                                  "items": [
+                                    {
+                                      "key": "expression",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "key": "error",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          },
+                          "type_part_definition_event_hash": null
+                        }
+                      }
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-check-against-unlocated",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "expr",
+              "type": {
+                "type_part": {
+                  "$part": "core.expression"
+                }
+              }
+            },
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
+            },
+            {
+              "name": "expected_type",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-ast"
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.type-result"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Body of type-check-against. Errors are returned without the expression where they were found"
+        },
+        {
+          "language": "ja",
+          "text": "type-check-against の本体. エラーを見つけた式は付けずに返す"
         }
       ],
       "expression": {

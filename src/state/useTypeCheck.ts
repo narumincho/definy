@@ -65,7 +65,7 @@ export type TypeCheckOperations = {
     moduleName: string,
   ) => Promise<ReadonlyArray<CommitTypeError>>;
   readonly typeCheckMessage: (
-    partName: string,
+    partName: string | null,
     outcome: SelfHostedTypeCheckOutcome,
   ) => string | null;
 };
@@ -77,7 +77,7 @@ export function useTypeCheck({
   buildCommitParts,
 }: TypeCheckParams): TypeCheckOperations {
   const typeCheckMessage = useCallback(
-    (partName: string, outcome: SelfHostedTypeCheckOutcome) =>
+    (partName: string | null, outcome: SelfHostedTypeCheckOutcome) =>
       outcomeErrorMessage(partName, outcome, (partId) => partNames.get(partId)),
     [partNames],
   );

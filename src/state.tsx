@@ -87,9 +87,12 @@ export type DefinyContextValue = {
     readonly partType: unknown;
     readonly expression: unknown;
   }) => Promise<SelfHostedTypeCheckOutcome>;
-  /** 型エラーの理由を 1 行にする (型の中のパーツ参照はパーツ名にする). 問題なければ `null` */
+  /**
+   * 型エラーの理由を 1 行にする (型の中のパーツ参照はパーツ名にする). 問題なければ `null`.
+   * `partName` が `null` ならパーツ名を付けない
+   */
   readonly typeCheckMessage: (
-    partName: string,
+    partName: string | null,
     outcome: SelfHostedTypeCheckOutcome,
   ) => string | null;
   readonly sidebarOpen: boolean;

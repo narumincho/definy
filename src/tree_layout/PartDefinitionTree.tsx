@@ -1,5 +1,8 @@
 import { useState, useRef, useMemo, type JSX, type KeyboardEvent } from "react";
-import { ExpressionTreeEditor } from "./ExpressionTreeEditor.tsx";
+import {
+  ExpressionTreeEditor,
+  type ExpressionTypeError,
+} from "./ExpressionTreeEditor.tsx";
 import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
 import { navKeyFromEvent, type NavKey } from "./keyboard.ts";
@@ -28,6 +31,8 @@ export type PartDefinitionTreeProps = {
   readonly onExpressionChange?: (expr: unknown) => void;
   /** 型を変えたとき. `null` は型指定なし */
   readonly onPartTypeChange?: (partType: unknown) => void;
+  /** 式の型エラー. エラーのある式の横に警告を出す */
+  readonly typeError?: ExpressionTypeError | null;
 };
 
 export function PartDefinitionTree({
@@ -41,6 +46,7 @@ export function PartDefinitionTree({
   onDescriptionChange,
   onExpressionChange,
   onPartTypeChange,
+  typeError = null,
 }: PartDefinitionTreeProps): JSX.Element {
   const { language } = useDefiny();
   const [selectedRow, setSelectedRow] = useState<DefinitionRow | null>(null);
@@ -334,6 +340,7 @@ export function PartDefinitionTree({
               {...(editable !== undefined ? { editable } : {})}
               containerId={INNER_TREE_IDS.value}
               onExit={exitInnerTree("value")}
+              typeError={typeError}
             />
           </div>
         </div>

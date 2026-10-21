@@ -2021,31 +2021,36 @@ button.card:hover {
 }
 
 /* パーツ詳細の型チェックの行 (pages/part/[id].tsx) */
-.part-type-check {
-  display: flex;
-  gap: 0.8rem;
-  align-items: baseline;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
+/* 型エラーのある式 (パーツ詳細の型検査, TreeLayoutRenderer) */
+.tree-badge[data-type-error="true"],
+.tree-table[data-type-error="true"] {
+  border-color: var(--red) !important;
+  text-decoration: underline wavy var(--red);
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
 }
 
-.part-type-check-label {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.part-type-check-result {
+.tree-type-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 32rem;
+  margin-left: 0.3rem;
+  padding: 0.08rem 0.45rem;
+  border: 1px solid var(--red-border);
+  border-radius: var(--radius-sm);
+  background: var(--red-bg-strong);
+  color: var(--red-text);
   font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: normal;
   overflow-wrap: anywhere;
+  cursor: default;
 }
 
-.part-type-check-error .part-type-check-result {
+.tree-type-error-icon {
   color: var(--red);
-}
-
-.part-type-check-checking .part-type-check-result,
-.part-type-check-unsupported .part-type-check-result {
-  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* コミット前の型検査の結果 (pages/changes.tsx) */

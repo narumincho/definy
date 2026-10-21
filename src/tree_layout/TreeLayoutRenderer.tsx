@@ -27,7 +27,27 @@ export type TreeLayoutRendererProps = {
   readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
   /** 選択中のノードに付ける CSS の anchor-name (`--` で始まる) */
   readonly selectionAnchorName?: string;
+  /** 型エラーのあるノード (式 1 つ分のノード) の ID. そのノードに警告を出す */
+  readonly typeErrorNodeId?: string | null;
+  /** 型エラーの理由. `typeErrorNodeId` のノードの横に出す */
+  readonly typeErrorMessage?: string;
 };
+
+/** 型エラーのあるノードの横に出す警告 */
+function TypeErrorMarker({
+  message,
+}: {
+  readonly message: string;
+}): JSX.Element {
+  return (
+    <span className="tree-type-error" role="alert" title={message}>
+      <span className="tree-type-error-icon" aria-hidden="true">
+        ⚠
+      </span>
+      <span className="tree-type-error-message">{message}</span>
+    </span>
+  );
+}
 
 export function nodeBadgeColors(kind: NodeKind): {
   readonly bg: string;
@@ -115,6 +135,8 @@ export function TreeLayoutRenderer(
     onChangeString,
     onClear,
     selectionAnchorName,
+    typeErrorNodeId,
+    typeErrorMessage = "",
   } = props;
 
   const isSelected = selectedPath ? isSamePath(selectedPath, node.path) : false;
@@ -122,6 +144,10 @@ export function TreeLayoutRenderer(
   const isCollapsed = collapsedIds.has(node.id);
 
   const state = isSelected ? "selected" : isHovered ? "hovered" : "";
+  const hasTypeError = typeErrorNodeId != null && typeErrorNodeId === node.id;
+  const typeErrorMarker = hasTypeError ? (
+    <TypeErrorMarker message={typeErrorMessage} />
+  ) : null;
 
   function handleSelect(e: React.MouseEvent): void {
     e.stopPropagation();
@@ -153,6 +179,7 @@ export function TreeLayoutRenderer(
         className="tree-node-table-wrapper tree-table"
         data-node-id={node.id}
         data-state={state}
+        data-type-error={hasTypeError ? "true" : undefined}
         style={{
           display: "flex",
           flexDirection: "column",
@@ -168,6 +195,7 @@ export function TreeLayoutRenderer(
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
+        {typeErrorMarker}
         <div
           style={{
             display: "flex",
@@ -275,6 +303,7 @@ export function TreeLayoutRenderer(
         {...(onChangeNumber !== undefined ? { onChangeNumber } : {})}
         {...(onChangeString !== undefined ? { onChangeString } : {})}
         {...(onClear !== undefined ? { onClear } : {})}
+        typeErrorMarker={typeErrorMarker}
       />
     );
   }
@@ -330,6 +359,7 @@ export function TreeLayoutRenderer(
           <div
             className="tree-badge"
             data-state={isSelected ? "selected" : ""}
+            data-type-error={hasTypeError ? "true" : undefined}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -348,6 +378,7 @@ export function TreeLayoutRenderer(
           >
             {node.label}
           </div>
+          {typeErrorMarker}
 
           {isCollapsed && (
             <span
@@ -421,6 +452,7 @@ export function TreeLayoutRenderer(
       <div
         className="tree-badge"
         data-state={isSelected ? "selected" : ""}
+        data-type-error={hasTypeError ? "true" : undefined}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -441,6 +473,7 @@ export function TreeLayoutRenderer(
       {node.children.map((child) => (
         <TreeLayoutRenderer key={child.id} {...props} node={child} />
       ))}
+      {typeErrorMarker}
     </div>
   );
 }
@@ -458,6 +491,7 @@ function LeafNodeRenderer({
   onChangeNumber,
   onChangeString,
   onClear,
+  typeErrorMarker,
 }: {
   readonly node: LayoutNode;
   readonly isSelected: boolean;
@@ -478,6 +512,7 @@ function LeafNodeRenderer({
     value: string,
   ) => void;
   readonly onClear?: (path: ReadonlyArray<PathStep>) => void;
+  readonly typeErrorMarker: JSX.Element | null;
 }): JSX.Element {
   const colors = nodeBadgeColors(node.kind);
   const isEditing = editable && isSelected && inlineEdit;
@@ -612,6 +647,7 @@ function LeafNodeRenderer({
       <div
         className="tree-badge"
         data-state={state}
+        data-type-error={typeErrorMarker !== null ? "true" : undefined}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -629,6 +665,7 @@ function LeafNodeRenderer({
       >
         {content}
       </div>
+      {typeErrorMarker}
     </div>
   );
 }

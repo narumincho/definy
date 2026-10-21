@@ -58,6 +58,11 @@ export type SelfHostedTypeCheckOutcome =
       readonly kind: "type_error";
       readonly tag: string;
       readonly detail: DefinyValue;
+      /**
+       * エラーを見つけた一番内側の式 (`core.expression` の値). `located` で包まれていなければ `null`.
+       * `findTypeErrorPath` (tree_layout) でエディタのパスにする
+       */
+      readonly expression: DefinyValue;
     }
   /** 式を `core.expression` で表せない (未入力, コンパイラ組み込みなど) */
   | { readonly kind: "unsupported"; readonly message: string }
@@ -322,15 +327,39 @@ function typeResultToOutcome(result: DefinyValue): SelfHostedTypeCheckOutcome {
     readonly payload?: DefinyValue;
   } | null;
   if (value?.tag === "error" && typeof error?.tag === "string") {
-    return {
-      kind: "type_error",
-      tag: error.tag,
-      detail: error.payload ?? null,
-    };
+    return typeErrorToOutcome(error.tag, error.payload ?? null, null);
   }
   throw new Error(
     `unexpected core.type-result value: ${JSON.stringify(result)}`,
   );
+}
+
+/**
+ * `core.type-error` を結果にする. `located` (`core.type-check` がエラーを見つけた式と組にしたもの) は外して
+ * 式を `expression` に入れる
+ */
+function typeErrorToOutcome(
+  tag: string,
+  payload: DefinyValue,
+  expression: DefinyValue,
+): SelfHostedTypeCheckOutcome {
+  if (tag === "located") {
+    const located = asRecord(payload) as {
+      readonly expression?: DefinyValue;
+      readonly error?: {
+        readonly tag?: unknown;
+        readonly payload?: DefinyValue;
+      };
+    } | null;
+    if (typeof located?.error?.tag === "string") {
+      return typeErrorToOutcome(
+        located.error.tag,
+        located.error.payload ?? null,
+        located.expression ?? null,
+      );
+    }
+  }
+  return { kind: "type_error", tag, detail: payload, expression };
 }
 
 /**
@@ -537,24 +566,26 @@ function formatTypeErrorDetail(
 
 /**
  * `checkParts` の結果を, コミットを拒否する理由の 1 行にする. 問題なければ `null`.
+ * `name` が `null` なら `part '...': ` を付けない (パーツ詳細でエラーの式の横に出すとき).
  * `resolveName` は型の中のパーツ参照をパーツ名にするのに使う
  */
 export function outcomeErrorMessage(
-  name: string,
+  name: string | null,
   outcome: SelfHostedTypeCheckOutcome,
   resolveName: (partId: string) => string | undefined = () => undefined,
 ): string | null {
+  const prefix = name === null ? "" : `part '${name}': `;
   switch (outcome.kind) {
     case "ok":
       return null;
     case "type_error": {
       const detail = formatTypeErrorDetail(outcome.detail, resolveName);
-      return `part '${name}': type error: ${outcome.tag}${detail === "" ? "" : ` (${detail})`}`;
+      return `${prefix}type error: ${outcome.tag}${detail === "" ? "" : ` (${detail})`}`;
     }
     case "unsupported":
-      return `part '${name}': not supported: ${outcome.message}`;
+      return `${prefix}not supported: ${outcome.message}`;
     case "checker_failed":
-      return `part '${name}': type checker failed: ${outcome.message.split("\n")[0] ?? ""}`;
+      return `${prefix}type checker failed: ${outcome.message.split("\n")[0] ?? ""}`;
   }
 }
 

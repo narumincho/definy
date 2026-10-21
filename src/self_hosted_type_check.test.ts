@@ -14,6 +14,11 @@ import {
   type PartToCheck,
 } from "./self_hosted_type_check.ts";
 import { createStage1Compiler } from "./stage1_compiler.ts";
+import { expressionToLayoutNode } from "./tree_layout/ast_to_layout.ts";
+import {
+  expressionToSelfHostedValue,
+  findTypeErrorPath,
+} from "./tree_layout/type_error_location.ts";
 
 type SeedPart = {
   readonly id: string;
@@ -53,34 +58,43 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
   return parts;
 }
 
+/** seed の `core.type-check-against` を stage1 でコンパイルし, seed の全パーツを型環境にする */
+function compileSeedTypeChecker(parts: ReadonlyArray<SeedPart>): {
+  readonly typeChecker: WebAssembly.Module;
+  readonly env: ReadonlyArray<PartTypeEntry>;
+} {
+  const byId = new Map(parts.map((part) => [part.id, part]));
+  const typeCheckAgainst = parts.find(
+    (part) => part.name === "core.type-check-against",
+  );
+  expect(typeCheckAgainst).toBeDefined();
+  const env: ReadonlyArray<PartTypeEntry> = parts.map((part) => ({
+    partId: part.id,
+    partType: part.partType,
+    typeDeclaration: part.partType === "type" ? part.expression : undefined,
+  }));
+  const compileStarted = performance.now();
+  const typeChecker = new WebAssembly.Module(
+    compileTypeChecker({
+      compiler: createStage1Compiler(
+        new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
+      ),
+      core: { typeCheckAgainst: typeCheckAgainst?.id ?? "" },
+      resolvePart: (id) => byId.get(id)?.expression ?? undefined,
+    }) as unknown as BufferSource,
+  );
+  console.log(
+    `compiled the type checker in ${Math.round(performance.now() - compileStarted)}ms`,
+  );
+  return { typeChecker, env };
+}
+
 describe("self-hosted type check (stage1)", () => {
   it("accepts every seed part except compiler builtins", async () => {
     const parts = await loadSeedParts();
-    const byId = new Map(parts.map((part) => [part.id, part]));
-    const typeCheckAgainst = parts.find(
-      (part) => part.name === "core.type-check-against",
-    );
-    expect(typeCheckAgainst).toBeDefined();
-    const env: ReadonlyArray<PartTypeEntry> = parts.map((part) => ({
-      partId: part.id,
-      partType: part.partType,
-      typeDeclaration: part.partType === "type" ? part.expression : undefined,
-    }));
+    const { typeChecker, env } = compileSeedTypeChecker(parts);
     const targets = parts.filter(
       (part) => part.expression != null && part.partType != null,
-    );
-    const compileStarted = performance.now();
-    const typeChecker = new WebAssembly.Module(
-      compileTypeChecker({
-        compiler: createStage1Compiler(
-          new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
-        ),
-        core: { typeCheckAgainst: typeCheckAgainst?.id ?? "" },
-        resolvePart: (id) => byId.get(id)?.expression ?? undefined,
-      }) as unknown as BufferSource,
-    );
-    console.log(
-      `compiled the type checker in ${Math.round(performance.now() - compileStarted)}ms`,
     );
     const started = performance.now();
     const outcomes = checkParts({
@@ -101,6 +115,51 @@ describe("self-hosted type check (stage1)", () => {
     expect(
       failures.filter(({ outcome }) => outcome?.kind !== "unsupported"),
     ).toEqual([]);
+  }, 600_000);
+
+  it("型エラーにエラーを見つけた一番内側の式を付ける", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const bad = { String: { value: "x" } };
+    const expression = {
+      Function: {
+        parameters: [{ parameter_id: 0, parameter_name: "n" }],
+        body: {
+          Add: {
+            left: { Variable: { variable_id: 0 } },
+            right: { Multiply: { left: { Number: { value: 2 } }, right: bad } },
+          },
+        },
+      },
+    };
+    const [outcome] = checkParts({
+      typeChecker,
+      parts: [
+        {
+          expression,
+          partType: {
+            function: {
+              parameters: [{ name: "n", type: "number" }],
+              return_type: "number",
+            },
+          },
+        },
+      ],
+      env,
+    });
+    expect(outcome).toMatchObject({
+      kind: "type_error",
+      tag: "type_mismatch",
+      expression: expressionToSelfHostedValue(bad),
+    });
+    expect(
+      outcome?.kind === "type_error"
+        ? findTypeErrorPath(
+            expressionToLayoutNode(expression),
+            expression,
+            outcome.expression,
+          )
+        : null,
+    ).toEqual(["functionBody", "right", "right"]);
   }, 600_000);
 
   it("型エラーの型を読める形にする", () => {
@@ -136,6 +195,7 @@ describe("self-hosted type check (stage1)", () => {
         kind: "type_error",
         tag: "type_mismatch",
         detail: { expected: number, actual: { tag: "string", payload: null } },
+        expression: null,
       }),
     ).toBe(
       "part 'bad': type error: type_mismatch (expected: number, actual: string)",
