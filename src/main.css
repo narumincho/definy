@@ -425,13 +425,9 @@ textarea {
     "titlebar titlebar titlebar"
     "activity sidebar editor"
     "status status status";
-  grid-template-columns: var(--activitybar-width) var(--sidebar-width) minmax(
-      0,
-      1fr
-    );
-  grid-template-rows: var(--titlebar-height) minmax(0, 1fr) var(
-      --statusbar-height
-    );
+  grid-template-columns: var(--activitybar-width) var(--sidebar-width) minmax(0,
+      1fr);
+  grid-template-rows: var(--titlebar-height) minmax(0, 1fr) var(--statusbar-height);
   height: 100vh;
   height: 100dvh;
   width: 100%;
@@ -1378,7 +1374,6 @@ button.card:hover {
 
 /* 式の置換メニューの検索欄. 開いたときは選択中の式の名前が全選択で入っている */
 .dropdown-search-input {
-  width: 100%;
   box-sizing: border-box;
   padding: 0.4rem 0.6rem;
   border: none;
@@ -1781,6 +1776,7 @@ button.card:hover {
  * エクスプローラーはサイドバー開閉ボタンで開くドロワーにする
  */
 @media (max-width: 760px) {
+
   .workbench,
   .workbench.sidebar-open,
   .workbench.sidebar-closed {
@@ -2034,6 +2030,7 @@ button.card:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

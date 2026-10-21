@@ -29,7 +29,6 @@ export default function PartDetailPage(): JSX.Element {
   const [evalResult, setEvalResult] = useState<DefinyValue | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
   const [compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
-  const [activeTab, setActiveTab] = useState<"tree" | "wasm" | "ast">("tree");
 
   const part = parts.find(
     (p) =>
@@ -237,14 +236,6 @@ export default function PartDetailPage(): JSX.Element {
         className={`card part-type-check part-type-check-${typeCheck.status}`}
         aria-live="polite"
       >
-        <span className="part-type-check-label">
-          {label(
-            language,
-            "Type check (definy)",
-            "型チェック (definy 製)",
-            "Tipkontrolo (definy)",
-          )}
-        </span>
         <span className="part-type-check-result">
           {typeCheck.status === "checking" &&
             label(language, "Checking...", "検査中...", "Kontrolante...")}
@@ -288,142 +279,58 @@ export default function PartDetailPage(): JSX.Element {
         </div>
       )}
 
-      <div className="tabs">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "tree" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("tree");
-          }}
-        >
-          {label(
-            language,
-            "Expression Tree Editor",
-            "式の木構造エディタ",
-            "Arba Redaktilo",
-          )}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "wasm" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("wasm");
-          }}
-        >
-          {label(language, "WebAssembly", "WebAssembly 出力", "WebAssembly")}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "ast" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("ast");
-          }}
-        >
-          {label(language, "AST JSON", "構文木 JSON", "AST JSON")}
-        </button>
-      </div>
-
-      <div className="tab-content card">
-        {activeTab === "tree" && (
-          <div className="tab-panel">
-            <PartDefinitionTree
-              name={currentName}
-              moduleName={part.moduleName}
-              description={localizedText(currentDescription, language)}
-              partType={currentPartType}
-              expression={currentExpression}
-              editable={true}
-              onNameChange={(newName) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: newName,
-                  description: currentDescription,
-                  partType: currentPartType,
-                  expression: currentExpression,
-                });
-              }}
-              onDescriptionChange={(newDesc) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: currentName,
-                  description: withLocalizedText(
-                    currentDescription,
-                    language,
-                    newDesc,
-                  ),
-                  partType: currentPartType,
-                  expression: currentExpression,
-                });
-              }}
-              onPartTypeChange={(newPartType) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: currentName,
-                  description: currentDescription,
-                  partType: newPartType,
-                  expression: currentExpression,
-                });
-              }}
-              onExpressionChange={(newExpr) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: currentName,
-                  description: currentDescription,
-                  partType: currentPartType,
-                  expression: newExpr,
-                });
-              }}
-            />
-          </div>
-        )}
-
-        {activeTab === "wasm" && (
-          <div className="tab-panel">
-            {compiledWasm ? (
-              <div>
-                <p>
-                  {label(
-                    language,
-                    "Compiled Wasm Size:",
-                    "コンパイル後 Wasm サイズ:",
-                    "Grandeco:",
-                  )}{" "}
-                  <strong>{compiledWasm.byteLength} bytes</strong>
-                </p>
-                <div className="wasm-hex-preview">
-                  <pre>
-                    {Array.from(compiledWasm.slice(0, 128))
-                      .map((b) => b.toString(16).padStart(2, "0"))
-                      .join(" ")}
-                    {compiledWasm.byteLength > 128 ? " ..." : ""}
-                  </pre>
-                </div>
-              </div>
-            ) : (
-              <p className="text-muted">
-                {label(
-                  language,
-                  "Click 'Evaluate Expression' above to compile this part with stage1.wasm.",
-                  "上の「式を評価」ボタンを押すと stage1.wasm でコンパイルされます。",
-                  "Alklaku 'Taksi esprimon' por kompili.",
-                )}
-              </p>
-            )}
-          </div>
-        )}
-
-        {activeTab === "ast" && (
-          <div className="tab-panel">
-            <pre className="code-block">
-              {JSON.stringify(currentExpression, null, 2)}
-            </pre>
-          </div>
-        )}
-      </div>
+      <PartDefinitionTree
+        name={currentName}
+        moduleName={part.moduleName}
+        description={localizedText(currentDescription, language)}
+        partType={currentPartType}
+        expression={currentExpression}
+        editable={true}
+        onNameChange={(newName) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: newName,
+            description: currentDescription,
+            partType: currentPartType,
+            expression: currentExpression,
+          });
+        }}
+        onDescriptionChange={(newDesc) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: currentName,
+            description: withLocalizedText(
+              currentDescription,
+              language,
+              newDesc,
+            ),
+            partType: currentPartType,
+            expression: currentExpression,
+          });
+        }}
+        onPartTypeChange={(newPartType) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: currentName,
+            description: currentDescription,
+            partType: newPartType,
+            expression: currentExpression,
+          });
+        }}
+        onExpressionChange={(newExpr) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: currentName,
+            description: currentDescription,
+            partType: currentPartType,
+            expression: newExpr,
+          });
+        }}
+      />
     </div>
   );
 }

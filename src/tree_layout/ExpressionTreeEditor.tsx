@@ -212,43 +212,6 @@ export function ExpressionTreeEditor({
         overflowX: "auto",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-          <span
-            style={{
-              fontSize: "0.78rem",
-              color: "var(--text-secondary)",
-              fontWeight: 600,
-            }}
-          >
-            {mode === "type"
-              ? label(language, "Type Tree", "型の木構造", "Tipa Arbo")
-              : label(
-                  language,
-                  "Expression Tree",
-                  "式の木構造",
-                  "Esprima Arbo",
-                )}
-          </span>
-          {editable && (
-            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-              {label(
-                language,
-                "(Click / Enter to replace, WASD to move, Q / E for parent / child, Del to clear)",
-                "(クリック / Enter で置換, WASD で移動, Q / E で親 / 子, Del で未入力化)",
-                "(Alklaku / Enter por anstataŭigi, WASD por movi)",
-              )}
-            </span>
-          )}
-        </div>
-      </div>
-
       <TreeLayoutRenderer
         node={layoutRoot}
         selectedPath={selectedPath}

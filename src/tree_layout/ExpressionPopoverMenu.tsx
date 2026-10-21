@@ -175,38 +175,33 @@ export function ExpressionPopoverMenu({
           display: "flex",
           alignItems: "center",
           gap: "0.45rem",
-          flexWrap: "wrap",
           padding: "0.4rem 0.6rem",
           borderBottom: "1px solid var(--border)",
           fontSize: "0.76rem",
         }}
       >
-        <span
-          style={{
-            fontWeight: 600,
-            color: "var(--primary)",
-            whiteSpace: "nowrap",
+        <input
+          ref={searchInputRef}
+          type="text"
+          className="dropdown-search-input"
+          placeholder={label(
+            language,
+            "Search expression, operator or part...",
+            "式・演算子・パーツを検索...",
+            "Serĉi esprimon...",
+          )}
+          value={searchQuery}
+          onFocus={(e) => {
+            e.currentTarget.select();
           }}
-        >
-          {label(language, "Selected:", "選択中:", "Elektita:")}
-        </span>
-        <span
-          className="mono"
-          title={currentName}
-          style={{
-            background: "var(--bg-inset)",
-            padding: "0.08rem 0.45rem",
-            borderRadius: "var(--radius-full)",
-            color: "var(--green)",
-            border: "1px solid var(--overlay-3)",
-            maxWidth: "14rem",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setQueryEdited(true);
+            setChosenIndex(0);
           }}
-        >
-          {currentName}
-        </span>
+          onKeyDown={handleMenuKeyDown}
+        />
+
         {expectedType !== "any" && (
           <span
             style={{ color: "var(--text-secondary)", whiteSpace: "nowrap" }}
@@ -245,28 +240,6 @@ export function ExpressionPopoverMenu({
           ✕
         </button>
       </div>
-
-      <input
-        ref={searchInputRef}
-        type="text"
-        className="dropdown-search-input"
-        placeholder={label(
-          language,
-          "Search expression, operator or part...",
-          "式・演算子・パーツを検索...",
-          "Serĉi esprimon...",
-        )}
-        value={searchQuery}
-        onFocus={(e) => {
-          e.currentTarget.select();
-        }}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setQueryEdited(true);
-          setChosenIndex(0);
-        }}
-        onKeyDown={handleMenuKeyDown}
-      />
 
       <div
         ref={listRef}
