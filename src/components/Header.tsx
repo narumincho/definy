@@ -9,7 +9,6 @@ export function Header(): JSX.Element {
   const {
     language,
     setLanguage,
-    toggleSidebar,
     setCommandPaletteOpen,
     currentAccount,
     setAccountModalOpen,

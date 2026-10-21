@@ -1,5 +1,12 @@
-import { useState, useCallback, useEffect, type JSX } from "react";
-import { Link } from "@void/react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type JSX,
+} from "react";
+import { Link, useRouter } from "@void/react";
 import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
@@ -39,6 +46,45 @@ export function ExplorerSidebar(): JSX.Element {
   }, []);
 
   const query = filterQuery.trim().toLowerCase();
+
+  // 開いているパーツ (VSCode のアクティブなファイルのように強調表示する).
+  // window.location は SSR で読めずハイドレーション不一致になるため Void Router から取る
+  const currentPath = useRouter().path;
+  const selectedPart = useMemo(() => {
+    const id = partIdFromPath(currentPath);
+    if (id === null) return undefined;
+    // パーツ詳細ページと同じく ID・名前・モジュール名付きの名前のどれでも開ける
+    return parts.find(
+      (p) =>
+        p.partId === id || p.name === id || `${p.moduleName}.${p.name}` === id,
+    );
+  }, [currentPath, parts]);
+  const selectedPartId = selectedPart?.partId;
+  const selectedModuleId = selectedPart?.moduleId;
+
+  // 選択が変わったら, 折りたたまれたモジュールを開いて選択中のパーツが見えるようにする
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const revealPendingRef = useRef(false);
+  useEffect(() => {
+    if (selectedPartId === undefined || selectedModuleId === undefined) return;
+    revealPendingRef.current = true;
+    setCollapsedModules((prev) => {
+      if (!prev.has(selectedModuleId)) return prev;
+      const next = new Set(prev);
+      next.delete(selectedModuleId);
+      return next;
+    });
+  }, [selectedPartId, selectedModuleId]);
+  // モジュールを開いた後のレンダーで要素が現れてからスクロールする
+  useEffect(() => {
+    if (!revealPendingRef.current) return;
+    const selectedElement = scrollRef.current?.querySelector(
+      '.part-node[aria-current="page"]',
+    );
+    if (selectedElement == null) return;
+    revealPendingRef.current = false;
+    selectedElement.scrollIntoView({ block: "nearest" });
+  });
 
   const toggleModuleCollapse = useCallback((moduleId: string) => {
     setCollapsedModules((prev) => {
@@ -124,7 +170,7 @@ export function ExplorerSidebar(): JSX.Element {
         />
       </div>
 
-      <div className="sidebar-scroll">
+      <div className="sidebar-scroll" ref={scrollRef}>
         {modules.length === 0 ? (
           <div className="sidebar-empty">
             {label(
@@ -194,11 +240,13 @@ export function ExplorerSidebar(): JSX.Element {
                     {filteredParts.map((part) => {
                       const isChanged = workingChanges.parts.has(part.partId);
                       const typeError = typeErrorOf(part);
+                      const isSelected = part.partId === selectedPartId;
                       return (
                         <Link
                           key={part.partId}
                           href={`/part/${part.partId}`}
-                          className="sidebar-tree-node part-node"
+                          className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
+                          aria-current={isSelected ? "page" : undefined}
                           onClick={() => {
                             if (window.innerWidth < 768) {
                               setSidebarOpen(false);
@@ -248,4 +296,16 @@ export function ExplorerSidebar(): JSX.Element {
       />
     </aside>
   );
+}
+
+/** `/part/{id}` のパスから id を取り出す. パーツ詳細ページでなければ null */
+function partIdFromPath(path: string): string | null {
+  const match = /^\/part\/([^/?#]+)/.exec(path);
+  const encoded = match?.[1];
+  if (encoded === undefined) return null;
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
 }
