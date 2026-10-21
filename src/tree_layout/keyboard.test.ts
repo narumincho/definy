@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  isTextInput,
   navigate,
   navKeyFromEvent,
+  TREE_INTERCEPT_KEYS,
   type NavNode,
   type Rect,
 } from "./keyboard.ts";
@@ -117,5 +119,17 @@ describe("navKeyFromEvent", () => {
     expect(navKeyFromEvent(key("E", { shiftKey: true }))).toBe("lastChild");
     expect(navKeyFromEvent(key("s", { metaKey: true }))).toBeNull();
     expect(navKeyFromEvent(key("x"))).toBeNull();
+  });
+
+  it("TREE_INTERCEPT_KEYS contains expected keys", () => {
+    expect(TREE_INTERCEPT_KEYS.has("Enter")).toBe(true);
+    expect(TREE_INTERCEPT_KEYS.has("Escape")).toBe(true);
+    expect(TREE_INTERCEPT_KEYS.has("Delete")).toBe(true);
+    expect(TREE_INTERCEPT_KEYS.has("Backspace")).toBe(true);
+    expect(TREE_INTERCEPT_KEYS.has("ArrowUp")).toBe(false);
+  });
+
+  it("isTextInput handles null gracefully", () => {
+    expect(isTextInput(null)).toBe(false);
   });
 });

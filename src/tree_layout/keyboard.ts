@@ -207,3 +207,19 @@ function findSpatialNeighbor(
   }
   return bestIn(candidates);
 }
+
+export const TREE_INTERCEPT_KEYS: ReadonlySet<string> = new Set([
+  "Enter",
+  "Escape",
+  "Delete",
+  "Backspace",
+]);
+
+export function isTextInput(target: EventTarget | null): boolean {
+  return (
+    typeof HTMLElement !== "undefined" &&
+    (target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement)
+  );
+}

@@ -172,33 +172,25 @@ export default function AboutPage(): JSX.Element {
           />
 
           {/* ロゴ / アイコンバッジ */}
-          <div
+          <img
+            src="/icon.png"
+            alt="definy"
+            width={76}
+            height={76}
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 76,
-              height: 76,
               borderRadius: 22,
-              background: "var(--blue-bg-strong)",
-              border: "1px solid var(--blue-border)",
               boxShadow: "0 8px 24px var(--shadow-color)",
-              fontSize: "2.4rem",
-              color: "var(--blue-text)",
             }}
-          >
-            ✦
-          </div>
+          />
 
           <h1
             style={{
-              fontSize: "2.4rem",
-              fontWeight: 800,
+              fontFamily: '"Hack", var(--font-mono)',
+              fontSize: "2.8rem",
+              fontWeight: 400,
               margin: 0,
-              background:
-                "linear-gradient(135deg, var(--text-primary) 30%, var(--blue-text) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              color: "#b9d09b",
+              letterSpacing: 0,
             }}
           >
             definy

@@ -3,7 +3,10 @@
  * DOM に依存しない純粋な関数にしてテストできるようにしている.
  */
 import type { ExpectedType } from "./type_inference.ts";
+import { getOptionValueForExpression } from "./type_inference.ts";
 import type { PartSnapshot } from "../types.ts";
+import type { PathStep } from "./types.ts";
+import { getExpressionAtPath } from "./mutation.ts";
 
 export type SelectorOption = {
   readonly value: string;
@@ -212,13 +215,6 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     value: "expr:if",
     name: "if",
     detail: "cond, then, else",
-    category: "Syntax",
-    returnType: "any",
-  },
-  {
-    value: "expr:hole",
-    name: "□",
-    detail: "未入力",
     category: "Syntax",
     returnType: "any",
   },
@@ -450,4 +446,58 @@ export function resolveHighlight(
 
 export function highlightIndex(highlight: Highlight): number | null {
   return highlight.kind === "none" ? null : highlight.index;
+}
+
+/** その位置の選択肢を組み立てる */
+export function buildSelectorOptions({
+  mode,
+  scopeVariables,
+  partOptions,
+}: {
+  readonly mode: "expression" | "type";
+  readonly scopeVariables?: ReadonlyMap<number, string> | undefined;
+  readonly partOptions: ReadonlyArray<SelectorOption>;
+}): ReadonlyArray<SelectorOption> {
+  if (mode === "type") {
+    return [...TYPE_SELECTOR_OPTIONS, ...partOptions];
+  }
+  return [
+    ...variableSelectorOptions(scopeVariables ?? new Map()),
+    ...BASE_SELECTOR_OPTIONS,
+    ...partOptions,
+  ];
+}
+
+/** その位置の式に対応する選択肢の value を求める */
+export function resolveCurrentOptionValue({
+  expression,
+  path,
+  options,
+  mode,
+  partNames,
+}: {
+  readonly expression: unknown;
+  readonly path: ReadonlyArray<PathStep>;
+  readonly options: ReadonlyArray<SelectorOption>;
+  readonly mode: "expression" | "type";
+  readonly partNames: ReadonlyMap<string, string>;
+}): string | null {
+  const target = getExpressionAtPath(expression, path);
+  const value =
+    mode === "type" &&
+    typeof target === "object" &&
+    target !== null &&
+    "TypeLiteral" in target
+      ? "expr:type:record"
+      : getOptionValueForExpression(target);
+  if (
+    value === null ||
+    !value.startsWith("ref:part:") ||
+    options.some((o) => o.value === value)
+  ) {
+    return value;
+  }
+  // 参照しているパーツ ID が選択肢の ID と違う (別のアカウントのコミットなど) ときは名前で対応させる
+  const partId = partNames.get(value.slice("ref:part:".length));
+  return options.find((o) => o.partId === partId)?.value ?? value;
 }

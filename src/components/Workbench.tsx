@@ -14,9 +14,7 @@ export function Workbench({
   const { sidebarOpen, setSidebarOpen } = useDefiny();
 
   return (
-    <div
-      className={`workbench ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}
-    >
+    <div className={`workbench ${sidebarOpen ? "sidebar-open" : ""}`}>
       <Header />
       <ActivityBar />
       <ExplorerSidebar />

@@ -23,6 +23,7 @@ import {
   sha256BytesSync,
 } from "./cbor.ts";
 import { expressionToPartType } from "./tree_layout/part_type.ts";
+import { list, record, string, variant } from "./self_hosted_ast.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
@@ -57,31 +58,16 @@ export type SelfHostedTypeCheckOutcome =
       readonly kind: "type_error";
       readonly tag: string;
       readonly detail: DefinyValue;
+      /**
+       * エラーを見つけた一番内側の式 (`core.expression` の値). `located` で包まれていなければ `null`.
+       * `findTypeErrorPath` (tree_layout) でエディタのパスにする
+       */
+      readonly expression: DefinyValue;
     }
   /** 式を `core.expression` で表せない (未入力, コンパイラ組み込みなど) */
   | { readonly kind: "unsupported"; readonly message: string }
   /** 型チェッカーの実行に失敗した (Wasm の実行時エラーなど) */
   | { readonly kind: "checker_failed"; readonly message: string };
-
-function variant(tag: string, payload?: unknown): unknown {
-  return payload === undefined
-    ? { Variant: { tag } }
-    : { Variant: { tag, payload } };
-}
-
-function record(items: ReadonlyArray<readonly [string, unknown]>): unknown {
-  return {
-    TypeLiteral: { items: items.map(([key, value]) => ({ key, value })) },
-  };
-}
-
-function list(items: ReadonlyArray<unknown>): unknown {
-  return { ListLiteral: { items } };
-}
-
-function string(value: string): unknown {
-  return { String: { value } };
-}
 
 function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
   return typeof value === "object" &&
@@ -341,15 +327,39 @@ function typeResultToOutcome(result: DefinyValue): SelfHostedTypeCheckOutcome {
     readonly payload?: DefinyValue;
   } | null;
   if (value?.tag === "error" && typeof error?.tag === "string") {
-    return {
-      kind: "type_error",
-      tag: error.tag,
-      detail: error.payload ?? null,
-    };
+    return typeErrorToOutcome(error.tag, error.payload ?? null, null);
   }
   throw new Error(
     `unexpected core.type-result value: ${JSON.stringify(result)}`,
   );
+}
+
+/**
+ * `core.type-error` を結果にする. `located` (`core.type-check` がエラーを見つけた式と組にしたもの) は外して
+ * 式を `expression` に入れる
+ */
+function typeErrorToOutcome(
+  tag: string,
+  payload: DefinyValue,
+  expression: DefinyValue,
+): SelfHostedTypeCheckOutcome {
+  if (tag === "located") {
+    const located = asRecord(payload) as {
+      readonly expression?: DefinyValue;
+      readonly error?: {
+        readonly tag?: unknown;
+        readonly payload?: DefinyValue;
+      };
+    } | null;
+    if (typeof located?.error?.tag === "string") {
+      return typeErrorToOutcome(
+        located.error.tag,
+        located.error.payload ?? null,
+        located.expression ?? null,
+      );
+    }
+  }
+  return { kind: "type_error", tag, detail: payload, expression };
 }
 
 /**
@@ -556,24 +566,26 @@ function formatTypeErrorDetail(
 
 /**
  * `checkParts` の結果を, コミットを拒否する理由の 1 行にする. 問題なければ `null`.
+ * `name` が `null` なら `part '...': ` を付けない (パーツ詳細でエラーの式の横に出すとき).
  * `resolveName` は型の中のパーツ参照をパーツ名にするのに使う
  */
 export function outcomeErrorMessage(
-  name: string,
+  name: string | null,
   outcome: SelfHostedTypeCheckOutcome,
   resolveName: (partId: string) => string | undefined = () => undefined,
 ): string | null {
+  const prefix = name === null ? "" : `part '${name}': `;
   switch (outcome.kind) {
     case "ok":
       return null;
     case "type_error": {
       const detail = formatTypeErrorDetail(outcome.detail, resolveName);
-      return `part '${name}': type error: ${outcome.tag}${detail === "" ? "" : ` (${detail})`}`;
+      return `${prefix}type error: ${outcome.tag}${detail === "" ? "" : ` (${detail})`}`;
     }
     case "unsupported":
-      return `part '${name}': not supported: ${outcome.message}`;
+      return `${prefix}not supported: ${outcome.message}`;
     case "checker_failed":
-      return `part '${name}': type checker failed: ${outcome.message.split("\n")[0] ?? ""}`;
+      return `${prefix}type checker failed: ${outcome.message.split("\n")[0] ?? ""}`;
   }
 }
 
@@ -610,7 +622,7 @@ export function typeEnvFromParts(
 
 /** 型環境が変わったかを比べるキー (全パーツの ID と型, 型パーツの宣言式から決まる) */
 export function typeEnvKey(parts: Iterable<LatestPart>): string {
-  return expressionContentHash(
+  return expressionContentHashSync(
     [...parts]
       .map(
         (part) =>
@@ -622,13 +634,15 @@ export function typeEnvKey(parts: Iterable<LatestPart>): string {
   );
 }
 
-/** 式の CBOR の SHA-256 (URL-safe Base64). CAS の content hash と同じ */
-export function expressionContentHash(expression: unknown): string {
+/** 式の CBOR の SHA-256 (URL-safe Base64). CAS の content hash と同じ (同期版) */
+export function expressionContentHashSync(expression: unknown): string {
   return bytesToUrlSafeBase64NoPad(sha256BytesSync(encodeCborItem(expression)));
 }
 
+export { expressionContentHashSync as expressionContentHash };
+
 function partTypeKey(partType: unknown): string {
-  return partType == null ? "" : expressionContentHash(partType);
+  return partType == null ? "" : expressionContentHashSync(partType);
 }
 
 /**

@@ -9,18 +9,19 @@ export function Header(): JSX.Element {
   const {
     language,
     setLanguage,
-    toggleSidebar,
     setCommandPaletteOpen,
     currentAccount,
     setAccountModalOpen,
+    toggleSidebar,
   } = useDefiny();
 
-  const toggleLabel = label(
+  const explorerLabel = label(
     language,
     "Toggle Explorer",
     "エクスプローラーの表示切替",
     "Baskuligi esplorilon",
   );
+
   const paletteLabel = label(
     language,
     "Search parts, modules and pages",
@@ -30,11 +31,12 @@ export function Header(): JSX.Element {
 
   return (
     <header className="app-header">
+      {/* 狭い画面ではエクスプローラーがドロワーになるので, それを開くボタンを出す (CSS で狭い画面だけ表示) */}
       <button
         type="button"
-        className="titlebar-icon-button"
-        title={toggleLabel}
-        aria-label={toggleLabel}
+        className="titlebar-icon-button sidebar-toggle-btn"
+        title={explorerLabel}
+        aria-label={explorerLabel}
         onClick={toggleSidebar}
       >
         <SidebarIcon size={17} className="titlebar-icon" />

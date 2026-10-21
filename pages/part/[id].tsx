@@ -10,9 +10,15 @@ import {
 } from "../../src/stage1_compiler.ts";
 import { loadStage1Compiler } from "../../src/stage1_browser.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
+import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
+  // パーツを切り替えたら作り直し, 選択中の行・式や評価結果を前のパーツから持ち越さない
+  return <PartDetail key={id ?? ""} id={id} />;
+}
+
+function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   const {
     language,
     parts,
@@ -28,8 +34,7 @@ export default function PartDetailPage(): JSX.Element {
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<DefinyValue | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
-  const [compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
-  const [activeTab, setActiveTab] = useState<"tree" | "wasm" | "ast">("tree");
+  const [_compiledWasm, setCompiledWasm] = useState<Uint8Array | null>(null);
 
   const part = parts.find(
     (p) =>
@@ -57,17 +62,20 @@ export default function PartDetailPage(): JSX.Element {
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
 
-  // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査する (コミット済みの型環境を使う)
+  // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査し (コミット済みの型環境を使う),
+  // 型エラーはエラーのある式の横に出す. 検査できない式 (未入力・コンパイラ組み込み) には何も出さない.
+  // 検査した後に式を編集したら, 検査し直すまで出さない (エラーの式が見つからずルートに出てしまうため)
   const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
-  const [typeCheck, setTypeCheck] = useState<
-    | { readonly status: "checking" }
-    | { readonly status: "ok" }
-    | { readonly status: "error"; readonly message: string }
-    | { readonly status: "unsupported"; readonly message: string }
-  >({ status: "checking" });
+  const [typeCheckResult, setTypeCheckResult] = useState<{
+    readonly expression: unknown;
+    readonly error: ExpressionTypeError | null;
+  } | null>(null);
+  const typeError =
+    typeCheckResult !== null && typeCheckResult.expression === currentExpression
+      ? typeCheckResult.error
+      : null;
   useEffect(() => {
     let cancelled = false;
-    setTypeCheck({ status: "checking" });
     const timer = setTimeout(() => {
       checkPartType({
         partIdHash,
@@ -76,22 +84,26 @@ export default function PartDetailPage(): JSX.Element {
       }).then(
         (outcome) => {
           if (cancelled) return;
-          if (outcome.kind === "ok") {
-            setTypeCheck({ status: "ok" });
-          } else if (outcome.kind === "unsupported") {
-            setTypeCheck({ status: "unsupported", message: outcome.message });
-          } else {
-            setTypeCheck({
-              status: "error",
-              message: typeCheckMessage(currentName, outcome) ?? "",
-            });
-          }
+          setTypeCheckResult({
+            expression: currentExpression,
+            error:
+              outcome.kind === "type_error" || outcome.kind === "checker_failed"
+                ? {
+                    expression:
+                      outcome.kind === "type_error" ? outcome.expression : null,
+                    message: typeCheckMessage(null, outcome) ?? "",
+                  }
+                : null,
+          });
         },
         (e: unknown) => {
           if (!cancelled) {
-            setTypeCheck({
-              status: "error",
-              message: e instanceof Error ? e.message : String(e),
+            setTypeCheckResult({
+              expression: currentExpression,
+              error: {
+                expression: null,
+                message: e instanceof Error ? e.message : String(e),
+              },
             });
           }
         },
@@ -107,7 +119,6 @@ export default function PartDetailPage(): JSX.Element {
     partIdHash,
     currentPartType,
     currentExpression,
-    currentName,
   ]);
 
   const handleEvaluate = useCallback(async () => {
@@ -233,39 +244,6 @@ export default function PartDetailPage(): JSX.Element {
         </div>
       </div>
 
-      <div
-        className={`card part-type-check part-type-check-${typeCheck.status}`}
-        aria-live="polite"
-      >
-        <span className="part-type-check-label">
-          {label(
-            language,
-            "Type check (definy)",
-            "型チェック (definy 製)",
-            "Tipkontrolo (definy)",
-          )}
-        </span>
-        <span className="part-type-check-result">
-          {typeCheck.status === "checking" &&
-            label(language, "Checking...", "検査中...", "Kontrolante...")}
-          {typeCheck.status === "ok" &&
-            label(
-              language,
-              "No type errors",
-              "型エラーはありません",
-              "Neniuj tiperaroj",
-            )}
-          {typeCheck.status === "unsupported" &&
-            `${label(
-              language,
-              "Cannot be checked",
-              "検査できません",
-              "Ne kontroleblas",
-            )}: ${typeCheck.message}`}
-          {typeCheck.status === "error" && typeCheck.message}
-        </span>
-      </div>
-
       {evalResult !== null && (
         <div className="card eval-result-card success">
           <div className="eval-result-header">
@@ -288,142 +266,59 @@ export default function PartDetailPage(): JSX.Element {
         </div>
       )}
 
-      <div className="tabs">
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "tree" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("tree");
-          }}
-        >
-          {label(
-            language,
-            "Expression Tree Editor",
-            "式の木構造エディタ",
-            "Arba Redaktilo",
-          )}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "wasm" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("wasm");
-          }}
-        >
-          {label(language, "WebAssembly", "WebAssembly 出力", "WebAssembly")}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${activeTab === "ast" ? "active" : ""}`}
-          onClick={() => {
-            setActiveTab("ast");
-          }}
-        >
-          {label(language, "AST JSON", "構文木 JSON", "AST JSON")}
-        </button>
-      </div>
-
-      <div className="tab-content card">
-        {activeTab === "tree" && (
-          <div className="tab-panel">
-            <PartDefinitionTree
-              name={currentName}
-              moduleName={part.moduleName}
-              description={localizedText(currentDescription, language)}
-              partType={currentPartType}
-              expression={currentExpression}
-              editable={true}
-              onNameChange={(newName) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: newName,
-                  description: currentDescription,
-                  partType: currentPartType,
-                  expression: currentExpression,
-                });
-              }}
-              onDescriptionChange={(newDesc) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: currentName,
-                  description: withLocalizedText(
-                    currentDescription,
-                    language,
-                    newDesc,
-                  ),
-                  partType: currentPartType,
-                  expression: currentExpression,
-                });
-              }}
-              onPartTypeChange={(newPartType) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: currentName,
-                  description: currentDescription,
-                  partType: newPartType,
-                  expression: currentExpression,
-                });
-              }}
-              onExpressionChange={(newExpr) => {
-                updateWorkingPart(part.partId, {
-                  moduleDefinitionEventHash: part.moduleId,
-                  partDefinitionEventHash: part.partId,
-                  name: currentName,
-                  description: currentDescription,
-                  partType: currentPartType,
-                  expression: newExpr,
-                });
-              }}
-            />
-          </div>
-        )}
-
-        {activeTab === "wasm" && (
-          <div className="tab-panel">
-            {compiledWasm ? (
-              <div>
-                <p>
-                  {label(
-                    language,
-                    "Compiled Wasm Size:",
-                    "コンパイル後 Wasm サイズ:",
-                    "Grandeco:",
-                  )}{" "}
-                  <strong>{compiledWasm.byteLength} bytes</strong>
-                </p>
-                <div className="wasm-hex-preview">
-                  <pre>
-                    {Array.from(compiledWasm.slice(0, 128))
-                      .map((b) => b.toString(16).padStart(2, "0"))
-                      .join(" ")}
-                    {compiledWasm.byteLength > 128 ? " ..." : ""}
-                  </pre>
-                </div>
-              </div>
-            ) : (
-              <p className="text-muted">
-                {label(
-                  language,
-                  "Click 'Evaluate Expression' above to compile this part with stage1.wasm.",
-                  "上の「式を評価」ボタンを押すと stage1.wasm でコンパイルされます。",
-                  "Alklaku 'Taksi esprimon' por kompili.",
-                )}
-              </p>
-            )}
-          </div>
-        )}
-
-        {activeTab === "ast" && (
-          <div className="tab-panel">
-            <pre className="code-block">
-              {JSON.stringify(currentExpression, null, 2)}
-            </pre>
-          </div>
-        )}
-      </div>
+      <PartDefinitionTree
+        name={currentName}
+        moduleName={part.moduleName}
+        description={localizedText(currentDescription, language)}
+        partType={currentPartType}
+        expression={currentExpression}
+        editable={true}
+        typeError={typeError}
+        onNameChange={(newName) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: newName,
+            description: currentDescription,
+            partType: currentPartType,
+            expression: currentExpression,
+          });
+        }}
+        onDescriptionChange={(newDesc) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: currentName,
+            description: withLocalizedText(
+              currentDescription,
+              language,
+              newDesc,
+            ),
+            partType: currentPartType,
+            expression: currentExpression,
+          });
+        }}
+        onPartTypeChange={(newPartType) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: currentName,
+            description: currentDescription,
+            partType: newPartType,
+            expression: currentExpression,
+          });
+        }}
+        onExpressionChange={(newExpr) => {
+          updateWorkingPart(part.partId, {
+            moduleDefinitionEventHash: part.moduleId,
+            partDefinitionEventHash: part.partId,
+            name: currentName,
+            description: currentDescription,
+            partType: currentPartType,
+            expression: newExpr,
+          });
+        }}
+      />
     </div>
   );
 }
