@@ -218,13 +218,6 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     category: "Syntax",
     returnType: "any",
   },
-  {
-    value: "expr:hole",
-    name: "□",
-    detail: "未入力",
-    category: "Syntax",
-    returnType: "any",
-  },
 ];
 
 function partReturnType(partType: unknown): ExpectedType {
