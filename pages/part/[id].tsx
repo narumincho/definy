@@ -14,6 +14,11 @@ import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEd
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
+  // パーツを切り替えたら作り直し, 選択中の行・式や評価結果を前のパーツから持ち越さない
+  return <PartDetail key={id ?? ""} id={id} />;
+}
+
+function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   const {
     language,
     parts,
