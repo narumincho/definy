@@ -155,15 +155,6 @@ export function HistoryIcon(props: IconProps): JSX.Element {
   );
 }
 
-export function SidebarIcon(props: IconProps): JSX.Element {
-  return (
-    <StrokeIcon {...props}>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="M9 4v16" />
-    </StrokeIcon>
-  );
-}
-
 export function ChevronRightIcon(props: IconProps): JSX.Element {
   return (
     <StrokeIcon {...props}>

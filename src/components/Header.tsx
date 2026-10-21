@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 import { Link } from "@void/react";
-import { SearchIcon, SidebarIcon } from "../icons.tsx";
+import { SearchIcon } from "../icons.tsx";
 import { label, languageNativeName } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 import type { LanguageCode } from "../types.ts";
@@ -15,12 +15,6 @@ export function Header(): JSX.Element {
     setAccountModalOpen,
   } = useDefiny();
 
-  const toggleLabel = label(
-    language,
-    "Toggle Explorer",
-    "エクスプローラーの表示切替",
-    "Baskuligi esplorilon",
-  );
   const paletteLabel = label(
     language,
     "Search parts, modules and pages",
@@ -30,16 +24,6 @@ export function Header(): JSX.Element {
 
   return (
     <header className="app-header">
-      <button
-        type="button"
-        className="titlebar-icon-button"
-        title={toggleLabel}
-        aria-label={toggleLabel}
-        onClick={toggleSidebar}
-      >
-        <SidebarIcon size={17} className="titlebar-icon" />
-      </button>
-
       <Link href="/" className="app-logo">
         <h1 className="logo-text">definy</h1>
       </Link>
