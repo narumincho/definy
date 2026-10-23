@@ -7,7 +7,11 @@ import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
 import { navKeyFromEvent, type NavKey } from "./keyboard.ts";
 import { nextRow, type DefinitionRow } from "./definition_rows.ts";
-import { expressionToPartType, partTypeToExpression } from "./part_type.ts";
+import {
+  expressionToPartType,
+  partTypeToExpression,
+  syncPartTypeParameterNames,
+} from "./part_type.ts";
 
 /** 中に型・式のツリーエディタを持つ行と, そのツリーの枠の ID */
 const INNER_TREE_IDS = {
@@ -28,7 +32,11 @@ export type PartDefinitionTreeProps = {
   readonly editable?: boolean;
   readonly onNameChange?: (name: string) => void;
   readonly onDescriptionChange?: (desc: string) => void;
-  readonly onExpressionChange?: (expr: unknown) => void;
+  /**
+   * 式を変えたとき. 式の根の関数の引数名を変えたときは, パーツの型の同じ位置の引数名も合わせて
+   * `partType` に渡す (変えていなければ `undefined`)
+   */
+  readonly onExpressionChange?: (expr: unknown, partType?: unknown) => void;
   /** 型を変えたとき. `null` は型指定なし */
   readonly onPartTypeChange?: (partType: unknown) => void;
   /** 式の型エラー. エラーのある式の横に警告を出す */
@@ -335,7 +343,14 @@ export function PartDefinitionTree({
               expression={expression}
               {...(partType !== undefined ? { partType } : {})}
               {...(onExpressionChange !== undefined
-                ? { onChange: onExpressionChange }
+                ? {
+                    onChange: (next: unknown) => {
+                      onExpressionChange(
+                        next,
+                        syncPartTypeParameterNames(partType, expression, next),
+                      );
+                    },
+                  }
                 : {})}
               {...(editable !== undefined ? { editable } : {})}
               containerId={INNER_TREE_IDS.value}

@@ -11,6 +11,8 @@ import { computeLayout, expressionToLayoutNode } from "./engine.ts";
 import {
   applySelection,
   clearExpressionAtPath,
+  functionParameterIndex,
+  renameFunctionParameter,
   setNumberValue,
   setStringValue,
 } from "./mutation.ts";
@@ -170,7 +172,8 @@ export function ExpressionTreeEditor({
 
   const isLiteralSelected =
     selectedLayoutNode?.kind === "literalNumber" ||
-    selectedLayoutNode?.kind === "literalString";
+    selectedLayoutNode?.kind === "literalString" ||
+    selectedLayoutNode?.kind === "parameterName";
 
   const handleChangeNumber = useCallback(
     (path: ReadonlyArray<PathStep>, value: number) => {
@@ -183,7 +186,12 @@ export function ExpressionTreeEditor({
   const handleChangeString = useCallback(
     (path: ReadonlyArray<PathStep>, value: string) => {
       if (!onChange) return;
-      onChange(setStringValue(expression, path, value));
+      // 関数の引数名の入力欄も文字列と同じ入力欄を使う
+      onChange(
+        functionParameterIndex(path) === null
+          ? setStringValue(expression, path, value)
+          : renameFunctionParameter(expression, path, value),
+      );
     },
     [expression, onChange],
   );
@@ -193,7 +201,10 @@ export function ExpressionTreeEditor({
    */
   const handleClear = useCallback(
     (path: ReadonlyArray<PathStep>): void => {
-      if (!onChange || !editable) return;
+      // 関数の引数名は式ではないので未入力にできない
+      if (!onChange || !editable || functionParameterIndex(path) !== null) {
+        return;
+      }
       onChange(clearExpressionAtPath(expression, path));
       menu.openMenu(path, "");
     },

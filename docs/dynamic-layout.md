@@ -84,6 +84,12 @@ data = [
     以前は TypeScript の独自推論 (`inferExpectedType`) で数値・文字列・真偽値・リストだけを見分けていた.
     未入力はコンパイルできないので, コミットの検査や評価では今までどおり未入力を受け付けない
     (`definyAstToSelfHostedAst` は未入力で `SelfHostedAstConversionError` を投げる)
+  - 関数の引数名 (`parameterName` のノード, パスの最後が `functionParameter`) は式ではないので置換メニューを開かず,
+    選ぶと文字列リテラルと同じ入力欄でその場で名前を変える (`renameFunctionParameter`).
+    本体の変数は ID で引数を参照しているので名前だけを変えればよく, 表示はスコープどおりに新しい名前になる.
+    式の根の関数の引数名を変えたときは, パーツの型の同じ位置の引数名も合わせて変える
+    (`syncPartTypeParameterNames`, `src/tree_layout/part_type.ts`). 呼び出し側はパーツの型の引数名で引数を渡すため.
+    他のパーツの呼び出し側の引数名は変えないので, 型チェッカーがそこを型エラーにする
   - 型宣言のない組み込みパーツ (`plus` など) は,
     選択肢のメタ情報に推定した型を型宣言と同じ小文字表記で表示する.
   - メニューを開いたときは, 現在の値の選択肢 (`data-selected="true"`)

@@ -148,3 +148,56 @@ export function expressionToPartType(expression: unknown): unknown {
   }
   return null;
 }
+
+/** 式の根が関数なら, その引数名の一覧 */
+function rootParameterNames(
+  expression: unknown,
+): ReadonlyArray<unknown> | null {
+  const fn = (expression as { readonly Function?: unknown } | null)
+    ?.Function as
+    | {
+        readonly parameters?: ReadonlyArray<{
+          readonly parameter_name?: unknown;
+        }>;
+      }
+    | undefined;
+  return fn?.parameters?.map((parameter) => parameter.parameter_name) ?? null;
+}
+
+/**
+ * 式の根の関数の引数名が `before` から `after` で変わったら, 関数のパーツの型の同じ位置の引数名も変えた型を返す.
+ * 呼び出し側は引数をパーツの型の引数名で渡すので, 型の引数名と式の引数名を揃えておく.
+ * 変わっていなければ `undefined`
+ */
+export function syncPartTypeParameterNames(
+  partType: unknown,
+  before: unknown,
+  after: unknown,
+): unknown {
+  const beforeNames = rootParameterNames(before);
+  const afterNames = rootParameterNames(after);
+  const fn = (partType as { readonly function?: unknown } | null)?.function as
+    | {
+        readonly parameters?: ReadonlyArray<Readonly<Record<string, unknown>>>;
+      }
+    | undefined;
+  if (
+    beforeNames === null ||
+    afterNames === null ||
+    fn?.parameters === undefined ||
+    beforeNames.length !== afterNames.length ||
+    beforeNames.every((name, i) => name === afterNames[i])
+  ) {
+    return undefined;
+  }
+  return {
+    function: {
+      ...fn,
+      parameters: fn.parameters.map((parameter, i) =>
+        beforeNames[i] !== afterNames[i] && typeof afterNames[i] === "string"
+          ? { ...parameter, name: afterNames[i] }
+          : parameter,
+      ),
+    },
+  };
+}

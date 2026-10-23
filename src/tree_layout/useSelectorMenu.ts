@@ -3,6 +3,7 @@ import type { PartSnapshot } from "../types.ts";
 import type { LayoutNode, PathStep } from "./types.ts";
 import type { ExpectedType } from "./type_inference.ts";
 import { findExpressionNode } from "./selection.ts";
+import { functionParameterIndex } from "./mutation.ts";
 import {
   buildSelectorOptions,
   filterAndRankOptions,
@@ -120,7 +121,11 @@ export function useSelectorMenu({
     ): void => {
       setSelectedPath(path);
       setInlineEdit(true);
-      if (!editable) return;
+      // 関数の引数名はその場で名前を変えるだけで, 置き換える式の選択肢は無い
+      if (!editable || functionParameterIndex(path) !== null) {
+        setIsMenuOpen(false);
+        return;
+      }
       setIsMenuOpen(true);
       setMenuOpenCount((n) => n + 1);
       setChosenIndex(null);

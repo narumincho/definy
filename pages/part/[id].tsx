@@ -308,13 +308,13 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
             expression: currentExpression,
           });
         }}
-        onExpressionChange={(newExpr) => {
+        onExpressionChange={(newExpr, newPartType) => {
           updateWorkingPart(part.partId, {
             moduleDefinitionEventHash: part.moduleId,
             partDefinitionEventHash: part.partId,
             name: currentName,
             description: currentDescription,
-            partType: currentPartType,
+            partType: newPartType === undefined ? currentPartType : newPartType,
             expression: newExpr,
           });
         }}

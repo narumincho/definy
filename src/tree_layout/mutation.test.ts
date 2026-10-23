@@ -3,6 +3,7 @@ import {
   applySelection,
   getExpressionAtPath,
   nextVariableId,
+  renameFunctionParameter,
   updateExpressionAtPath,
 } from "./mutation.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
@@ -112,5 +113,38 @@ describe("list-get などの子の式", () => {
     const node = expressionToLayoutNode(listGet);
     expect(node.label).toBe("list-get");
     expect(node.children.map((c) => c.path)).toEqual([["left"], ["index"]]);
+  });
+});
+
+describe("関数の引数名を変える", () => {
+  it("functionParameter のパスで引数の名前だけを変える (本体は ID で参照するのでそのまま)", () => {
+    const expression = {
+      Function: {
+        parameters: [
+          { parameter_id: 0, parameter_name: "x" },
+          { parameter_id: 1, parameter_name: "y" },
+        ],
+        body: { Variable: { variable_id: 1 } },
+      },
+    };
+    const layout = expressionToLayoutNode(expression);
+    const parameterNode = layout.children[1];
+    expect(parameterNode?.kind).toBe("parameterName");
+    expect(
+      renameFunctionParameter(expression, parameterNode?.path ?? [], "count"),
+    ).toEqual({
+      Function: {
+        parameters: [
+          { parameter_id: 0, parameter_name: "x" },
+          { parameter_id: 1, parameter_name: "count" },
+        ],
+        body: { Variable: { variable_id: 1 } },
+      },
+    });
+    expect(
+      expressionToLayoutNode(
+        renameFunctionParameter(expression, parameterNode?.path ?? [], "count"),
+      ).children[2]?.label,
+    ).toBe("count");
   });
 });

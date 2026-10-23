@@ -132,6 +132,45 @@ test.describe("definy UI E2E", () => {
     await expect(resultCard).toContainText("25");
   });
 
+  test("expression tree editor asks the definy type checker for the expected type and renames function parameters", async ({
+    page,
+  }) => {
+    await page.goto("/part/std.abs");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+
+    // 0 - x の 0 (数値の位置) を選ぶと, 型が合わない選択肢の区切りが出る (期待する型が number と分かる)
+    const subtract = valueTree.locator(".tree-badge", { hasText: /^minus$/ });
+    await subtract.first().click();
+    // 検索欄には今の式の名前が入っているので, 空にして全ての選択肢を出す
+    await page.locator(".dropdown-search-input").fill("");
+    await expect(
+      page.locator(".dropdown-option-heading", {
+        hasText: /Other \(type does not match\)|その他 \(型が合わない\)|Aliaj/,
+      }),
+    ).toBeVisible({ timeout: 15000 });
+    await page.keyboard.press("Escape");
+
+    // 引数名 x を選ぶとその場で名前を変えられ, 本体の変数の表示も変わる
+    const parameter = valueTree
+      .locator(".tree-badge", { hasText: /^x$/ })
+      .first();
+    await parameter.click();
+    const input = valueTree.locator(".tree-badge input[type=text]");
+    await expect(input).toBeVisible();
+    await input.fill("value");
+    // 本体の 3 か所の変数 (引数名の入力欄は文字を持たない)
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^value$/ }),
+    ).toHaveCount(3);
+    // パーツの型の引数名も合わせて変わる
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^value:$/ }),
+    ).toHaveCount(1);
+  });
+
   test("icons have bounded and non-zero dimensions across views", async ({
     page,
   }) => {

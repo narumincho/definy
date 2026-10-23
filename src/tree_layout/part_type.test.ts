@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { expressionToPartType, partTypeToExpression } from "./part_type.ts";
+import {
+  expressionToPartType,
+  partTypeToExpression,
+  syncPartTypeParameterNames,
+} from "./part_type.ts";
 
 const SEED_MODULES = ["core", "std", "sample", "definy", "wasi"];
 
@@ -45,5 +49,55 @@ describe("partType と型の式の相互変換", () => {
     expect(
       expressionToPartType({ TypeList: { item_type: { Hole: {} } } }),
     ).toEqual({ list: null });
+  });
+});
+
+describe("syncPartTypeParameterNames", () => {
+  const fn = (names: ReadonlyArray<string>): unknown => ({
+    Function: {
+      parameters: names.map((name, i) => ({
+        parameter_id: i,
+        parameter_name: name,
+      })),
+      body: { Variable: { variable_id: 0 } },
+    },
+  });
+  const partType = {
+    function: {
+      parameters: [
+        { name: "a", type: "number" },
+        { name: "b", type: "string" },
+      ],
+      return_type: "number",
+    },
+  };
+
+  it("式の根の関数の引数名を変えたら型の引数名も変える", () => {
+    expect(
+      syncPartTypeParameterNames(partType, fn(["a", "b"]), fn(["a", "text"])),
+    ).toEqual({
+      function: {
+        parameters: [
+          { name: "a", type: "number" },
+          { name: "text", type: "string" },
+        ],
+        return_type: "number",
+      },
+    });
+  });
+
+  it("引数名が変わっていなければ undefined", () => {
+    expect(
+      syncPartTypeParameterNames(partType, fn(["a", "b"]), fn(["a", "b"])),
+    ).toBeUndefined();
+    expect(
+      syncPartTypeParameterNames(
+        "number",
+        { Number: { value: 1 } },
+        {
+          Number: { value: 2 },
+        },
+      ),
+    ).toBeUndefined();
   });
 });
