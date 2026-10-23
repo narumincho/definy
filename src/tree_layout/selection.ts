@@ -270,6 +270,16 @@ export function applySelection(
         body: { Variable: { variable_id: variableId } },
       },
     };
+  } else if (selectionValue === "expr:match") {
+    // 対象の型はまだ分からないので `_ =>` だけにしておき,
+    // 対象を決めてから `_ =>` のパターンのメニューで足りないアームを足す
+    newSubExpr = {
+      Match: {
+        target: { Hole: {} },
+        arms: [],
+        default: { Hole: {} },
+      },
+    };
   } else if (selectionValue === "expr:match_boolean") {
     const arm = (tag: string) => ({
       tag,
@@ -336,6 +346,31 @@ export function findExpressionNode(
   }
   for (const child of node.children) {
     const found = findExpressionNode(child, path);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+/**
+ * 選んだパスのノードを探す. 式 1 つ分のノードを優先し, 無ければ式でないノード
+ * (関数の引数名・match のパターンや束縛する変数の名前) を探す
+ */
+export function findSelectedNode(
+  node: LayoutNode,
+  path: ReadonlyArray<PathStep>,
+): LayoutNode | null {
+  return findExpressionNode(node, path) ?? findNodeAtPath(node, path);
+}
+
+function findNodeAtPath(
+  node: LayoutNode,
+  path: ReadonlyArray<PathStep>,
+): LayoutNode | null {
+  if (isSamePath(node.path, path)) {
+    return node;
+  }
+  for (const child of node.children) {
+    const found = findNodeAtPath(child, path);
     if (found !== null) return found;
   }
   return null;

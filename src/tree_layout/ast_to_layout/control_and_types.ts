@@ -114,13 +114,31 @@ export function tryBuildControlOrTypeNode(
         armPath,
         armContext,
       );
-      const label = armVarName ? `${armTag}(${armVarName}) =>` : `${armTag} =>`;
+      // パターンのノード (タグ) を選ぶとタグを変えるメニュー, 束縛する変数の名前を選ぶとその場で名前を変えられる
+      const variableChildren: ReadonlyArray<LayoutNode> =
+        armVarName === undefined
+          ? []
+          : [
+              {
+                id: `${idPrefix}.arm_${idx}.variable`,
+                path: childPath(currentPath, {
+                  kind: "matchArmVariable",
+                  index: idx,
+                }),
+                label: armVarName,
+                kind: "parameterName",
+                children: [],
+                computedWidth: 0,
+                computedHeight: 0,
+                layoutMode: "inline",
+              },
+            ];
       armChildren.push({
         id: `${idPrefix}.arm_${idx}`,
-        path: armPath,
-        label,
+        path: childPath(currentPath, { kind: "matchArmPattern", index: idx }),
+        label: `${armTag} =>`,
         kind: "block",
-        children: [bodyChild],
+        children: [...variableChildren, bodyChild],
         computedWidth: 0,
         computedHeight: 0,
         layoutMode: "multiline",
@@ -137,7 +155,7 @@ export function tryBuildControlOrTypeNode(
       );
       armChildren.push({
         id: `${idPrefix}.default`,
-        path: defPath,
+        path: childPath(currentPath, "matchDefaultPattern"),
         label: "_ =>",
         kind: "block",
         children: [defBody],

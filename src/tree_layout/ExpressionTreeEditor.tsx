@@ -26,11 +26,24 @@ import {
   type ExpectedType,
 } from "./type_inference.ts";
 import { type NavKey } from "./keyboard.ts";
-import { collectNodeIndex, findExpressionNode } from "./selection.ts";
+import {
+  collectNodeIndex,
+  findExpressionNode,
+  findSelectedNode,
+} from "./selection.ts";
 import { useTreeKeyboard } from "./useTreeKeyboard.ts";
 import { useSelectorMenu } from "./useSelectorMenu.ts";
 import { ExpressionPopoverMenu } from "./ExpressionPopoverMenu.tsx";
 import { findTypeErrorPath } from "./type_error_location.ts";
+import {
+  applyPatternSelection,
+  isMatchPatternPath,
+  matchArmVariableIndex,
+  patternVariantsFromTypeAst,
+  probeMatchTargetType,
+  renameMatchArmVariable,
+  type PatternVariant,
+} from "./match_pattern.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
 
 /** 式に出す型エラー */
@@ -76,7 +89,8 @@ export function ExpressionTreeEditor({
   mode = "expression",
   typeError = null,
 }: ExpressionTreeEditorProps): JSX.Element {
-  const { language, parts, partNames, findExpectedType } = useDefiny();
+  const { language, parts, partNames, partsByIdHash, findExpectedType } =
+    useDefiny();
   const [selectedPath, setSelectedPath] =
     useState<ReadonlyArray<PathStep> | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -126,20 +140,39 @@ export function ExpressionTreeEditor({
     });
   }, []);
 
-  // 選んだ位置で期待する型は, その位置を未入力 (probe) にした式を definy 製の型チェッカーで検査して求める
+  // 選んだ位置で期待する型は, その位置を未入力 (probe) にした式を definy 製の型チェッカーで検査して求める.
+  // match のアームのパターンを選んだときは, 代わりに match の対象の型を聞いてパターンで選べるタグにする
   const [expectedType, setExpectedType] = useState<ExpectedType>("any");
+  const [patternVariants, setPatternVariants] =
+    useState<ReadonlyArray<PatternVariant> | null>(null);
   useEffect(() => {
     setExpectedType("any");
+    setPatternVariants(null);
     if (!selectedPath || mode === "type" || partType == null) {
       return;
     }
+    // 名前は式ではないので期待する型は無い
+    if (
+      functionParameterIndex(selectedPath) !== null ||
+      matchArmVariableIndex(selectedPath) !== null
+    ) {
+      return;
+    }
+    const isPattern = isMatchPatternPath(selectedPath);
     let cancelled = false;
     findExpectedType({
       partType,
-      expression: probeExpressionAt(expression, selectedPath),
+      expression: isPattern
+        ? probeMatchTargetType(expression, selectedPath)
+        : probeExpressionAt(expression, selectedPath),
     }).then(
       (type) => {
-        if (!cancelled) {
+        if (cancelled) {
+          return;
+        }
+        if (isPattern) {
+          setPatternVariants(patternVariantsFromTypeAst(type, partsByIdHash));
+        } else {
           setExpectedType(expectedTypeFromTypeAst(type));
         }
       },
@@ -150,7 +183,14 @@ export function ExpressionTreeEditor({
     return () => {
       cancelled = true;
     };
-  }, [expression, selectedPath, partType, mode, findExpectedType]);
+  }, [
+    expression,
+    selectedPath,
+    partType,
+    mode,
+    findExpectedType,
+    partsByIdHash,
+  ]);
 
   const menu = useSelectorMenu({
     mode,
@@ -161,12 +201,13 @@ export function ExpressionTreeEditor({
     parts,
     partNames,
     expectedType,
+    patternVariants,
     setSelectedPath,
     setInlineEdit,
   });
 
   const selectedLayoutNode = useMemo(
-    () => (selectedPath ? findExpressionNode(layoutRoot, selectedPath) : null),
+    () => (selectedPath ? findSelectedNode(layoutRoot, selectedPath) : null),
     [layoutRoot, selectedPath],
   );
 
@@ -186,11 +227,13 @@ export function ExpressionTreeEditor({
   const handleChangeString = useCallback(
     (path: ReadonlyArray<PathStep>, value: string) => {
       if (!onChange) return;
-      // 関数の引数名の入力欄も文字列と同じ入力欄を使う
+      // 関数の引数名・match で束縛する変数の名前の入力欄も文字列と同じ入力欄を使う
       onChange(
-        functionParameterIndex(path) === null
-          ? setStringValue(expression, path, value)
-          : renameFunctionParameter(expression, path, value),
+        functionParameterIndex(path) !== null
+          ? renameFunctionParameter(expression, path, value)
+          : matchArmVariableIndex(path) !== null
+            ? renameMatchArmVariable(expression, path, value)
+            : setStringValue(expression, path, value),
       );
     },
     [expression, onChange],
@@ -201,8 +244,14 @@ export function ExpressionTreeEditor({
    */
   const handleClear = useCallback(
     (path: ReadonlyArray<PathStep>): void => {
-      // 関数の引数名は式ではないので未入力にできない
-      if (!onChange || !editable || functionParameterIndex(path) !== null) {
+      // 関数の引数名・match のパターンは式ではないので未入力にできない
+      if (
+        !onChange ||
+        !editable ||
+        functionParameterIndex(path) !== null ||
+        isMatchPatternPath(path) ||
+        matchArmVariableIndex(path) !== null
+      ) {
         return;
       }
       onChange(clearExpressionAtPath(expression, path));
@@ -228,11 +277,27 @@ export function ExpressionTreeEditor({
       if (!selectedPath || !onChange) return;
       // 現在と同じ選択肢を選び直しても式を作り直さない (中身が初期値に戻ってしまうため)
       if (optionValue !== menu.currentOptionValue) {
-        onChange(applySelection(expression, selectedPath, optionValue));
+        onChange(
+          !isMatchPatternPath(selectedPath)
+            ? applySelection(expression, selectedPath, optionValue)
+            : applyPatternSelection(
+                expression,
+                selectedPath,
+                optionValue,
+                patternVariants,
+              ),
+        );
       }
       keyboard.returnToTree();
     },
-    [expression, keyboard, menu.currentOptionValue, onChange, selectedPath],
+    [
+      expression,
+      keyboard,
+      menu.currentOptionValue,
+      onChange,
+      patternVariants,
+      selectedPath,
+    ],
   );
 
   return (

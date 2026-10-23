@@ -5,6 +5,13 @@ import type { ExpectedType } from "./type_inference.ts";
 import { findExpressionNode } from "./selection.ts";
 import { functionParameterIndex } from "./mutation.ts";
 import {
+  currentPatternOptionValue,
+  isMatchPatternPath,
+  matchArmVariableIndex,
+  patternSelectorOptions,
+  type PatternVariant,
+} from "./match_pattern.ts";
+import {
   buildSelectorOptions,
   filterAndRankOptions,
   highlightIndex,
@@ -25,6 +32,8 @@ export type UseSelectorMenuParams = {
   readonly parts: ReadonlyArray<PartSnapshot>;
   readonly partNames: ReadonlyMap<string, string>;
   readonly expectedType: ExpectedType;
+  /** 選んだ match のアームのパターンで選べるタグ (match の対象の型のタグ). 分からなければ `null` */
+  readonly patternVariants: ReadonlyArray<PatternVariant> | null;
   readonly setSelectedPath: (path: ReadonlyArray<PathStep> | null) => void;
   readonly setInlineEdit: (inline: boolean) => void;
 };
@@ -58,6 +67,7 @@ export function useSelectorMenu({
   parts,
   partNames,
   expectedType,
+  patternVariants,
   setSelectedPath,
   setInlineEdit,
 }: UseSelectorMenuParams): SelectorMenuState {
@@ -77,13 +87,20 @@ export function useSelectorMenu({
 
   const selectorOptionsAt = useCallback(
     (path: ReadonlyArray<PathStep>): ReadonlyArray<SelectorOption> => {
+      if (isMatchPatternPath(path)) {
+        return patternSelectorOptions({
+          expression,
+          patternPath: path,
+          variants: patternVariants,
+        });
+      }
       const scopeVariables = findExpressionNode(
         layoutRoot,
         path,
       )?.scopeVariables;
       return buildSelectorOptions({ mode, scopeVariables, partOptions });
     },
-    [layoutRoot, mode, partOptions],
+    [expression, layoutRoot, mode, partOptions, patternVariants],
   );
 
   const currentOptionValueAt = useCallback(
@@ -91,13 +108,15 @@ export function useSelectorMenu({
       path: ReadonlyArray<PathStep>,
       options: ReadonlyArray<SelectorOption>,
     ): string | null =>
-      resolveCurrentOptionValue({
-        expression,
-        path,
-        options,
-        mode,
-        partNames,
-      }),
+      isMatchPatternPath(path)
+        ? currentPatternOptionValue(expression, path)
+        : resolveCurrentOptionValue({
+            expression,
+            path,
+            options,
+            mode,
+            partNames,
+          }),
     [expression, mode, partNames],
   );
 
@@ -121,8 +140,12 @@ export function useSelectorMenu({
     ): void => {
       setSelectedPath(path);
       setInlineEdit(true);
-      // 関数の引数名はその場で名前を変えるだけで, 置き換える式の選択肢は無い
-      if (!editable || functionParameterIndex(path) !== null) {
+      // 関数の引数名・match で束縛する変数の名前はその場で名前を変えるだけで, 置き換える式の選択肢は無い
+      if (
+        !editable ||
+        functionParameterIndex(path) !== null ||
+        matchArmVariableIndex(path) !== null
+      ) {
         setIsMenuOpen(false);
         return;
       }

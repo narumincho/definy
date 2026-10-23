@@ -205,8 +205,15 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "any",
   },
   {
-    value: "expr:match_boolean",
+    value: "expr:match",
     name: "match",
+    detail: "tag => ...",
+    category: "Syntax",
+    returnType: "any",
+  },
+  {
+    value: "expr:match_boolean",
+    name: "match-bool",
     detail: "true / false",
     category: "Syntax",
     returnType: "any",

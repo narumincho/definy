@@ -279,7 +279,9 @@
                   "value": 100
                 }
               },
-              "type_part_definition_event_hash": null
+              "type_part_definition_event_hash": {
+                "$part": "sample.option-number"
+              }
             }
           },
           "arms": [
