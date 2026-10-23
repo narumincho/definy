@@ -21,7 +21,7 @@ import {
 } from "../src/self_hosted_type_check.ts";
 import { pickLatestCommitPerModule } from "../src/latest_commits.ts";
 import {
-  BUILTIN_FUNCTIONS,
+  BUILTIN_PARAMETERS,
   compilerBuiltinName,
 } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
@@ -61,7 +61,7 @@ let builtinExpressionsPromise:
 
 /**
  * コンパイラ組み込みの式 (`{"Compiler": "plus"}` など) の content hash から式を引く表.
- * 組み込みのパーツの呼び出しを `core.expression` のバリアントにするには, 型環境のパーツが組み込みかを知る必要がある.
+ * 型環境では組み込みのパーツの型を `builtin` にする (型チェッカーが呼び出しを名前で検査する) ので, パーツが組み込みかを知る必要がある.
  * CAS に預けた組み込みのパーツの式を読まなくても content hash で分かるようにする
  */
 function builtinExpressionsByContentHash(): Promise<
@@ -70,12 +70,20 @@ function builtinExpressionsByContentHash(): Promise<
   builtinExpressionsPromise ??= (async () =>
     new Map(
       await Promise.all(
-        [...BUILTIN_FUNCTIONS.keys()].map(
-          async (name): Promise<readonly [string, unknown]> => {
-            const expression = { Compiler: name };
-            return [await expressionContentHashAsync(expression), expression];
-          },
-        ),
+        [
+          ...BUILTIN_PARAMETERS.keys(),
+          // 引数名の表に無い (definy 側でまだ扱っていない) 組み込み
+          "let",
+          "number_literal",
+          "bit_and",
+          "bit_or",
+          "bit_xor",
+          "shift_left",
+          "shift_right",
+        ].map(async (name): Promise<readonly [string, unknown]> => {
+          const expression = { Compiler: name };
+          return [await expressionContentHashAsync(expression), expression];
+        }),
       ),
     ))();
   return builtinExpressionsPromise;

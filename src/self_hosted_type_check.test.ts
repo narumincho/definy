@@ -210,6 +210,55 @@ describe("self-hosted type check (stage1)", () => {
     ]);
   }, 600_000);
 
+  it("コンパイラ組み込みの呼び出しの引数を definy 側で検査する", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const numberPart = (expression: unknown): PartToCheck => ({
+      expression,
+      partType: "number",
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // 引数の順番が組み込みの引数名の順と違う
+        numberPart(
+          await coreCall("minus", {
+            right: { Number: { value: 1 } },
+            left: { Number: { value: 2 } },
+          }),
+        ),
+        // 引数名が組み込みの引数名と違う
+        numberPart(
+          await coreCall("plus", {
+            a: { Number: { value: 1 } },
+            b: { Number: { value: 2 } },
+          }),
+        ),
+        // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める
+        numberPart(
+          await coreCall("list-get", {
+            list: { ListLiteral: { items: [{ Number: { value: 1 } }] } },
+            index: { Number: { value: 0 } },
+          }),
+        ),
+        numberPart(
+          await coreCall("list-get", {
+            list: { ListLiteral: { items: [{ String: { value: "a" } }] } },
+            index: { Number: { value: 0 } },
+          }),
+        ),
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "type_error",
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[0]).toMatchObject({ tag: "invalid_type_declaration" });
+    expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
+  }, 600_000);
+
   it("未入力 (probe) の位置で期待する型を返す", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);

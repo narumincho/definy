@@ -10,7 +10,6 @@
  */
 import {
   instantiateCompiledFunction,
-  type BuiltinResolver,
   type CompiledFunctionInstance,
   collectReferencedParts,
   compilerBuiltinName,
@@ -49,7 +48,7 @@ export type PartTypeEntry = {
   readonly typeDeclaration?: unknown;
   /**
    * コンパイラ組み込みのパーツ (`core.plus` など) なら組み込みの名前 ({@link compilerBuiltinName}).
-   * 組み込みのパーツの呼び出しは `core.expression` のバリアントにしてから検査する
+   * 型環境ではパーツの型を `core.type-ast` の `builtin` にし, 型チェッカーが呼び出しを名前で検査する
    */
   readonly builtin?: string | undefined;
 };
@@ -276,18 +275,24 @@ export function typeDeclarationToSelfHostedAst(expression: unknown): unknown {
 function partCheckArguments(
   part: PartToCheck,
   allowHoles: boolean,
-  builtinOf: BuiltinResolver,
 ): {
   readonly expression: unknown;
   readonly expectedType: unknown;
 } {
+  const builtin = compilerBuiltinName(part.expression);
+  if (builtin !== undefined) {
+    // 組み込みの式 (`builtin`) の型は宣言した関数の型でなく `builtin` なので, 宣言型と比べられない
+    throw new SelfHostedAstConversionError(
+      `compiler built-in part (${builtin}) cannot be type-checked`,
+    );
+  }
   return {
     expression:
       part.partType === "type"
         ? typeDeclarationToSelfHostedAst(part.expression)
         : allowHoles
-          ? definyAstWithHolesToSelfHostedAst(part.expression, builtinOf)
-          : definyAstToSelfHostedAst(part.expression, builtinOf),
+          ? definyAstWithHolesToSelfHostedAst(part.expression)
+          : definyAstToSelfHostedAst(part.expression),
     expectedType: partTypeToSelfHostedAst(part.partType),
   };
 }
@@ -317,7 +322,8 @@ const NO_MODULE = "#";
 /**
  * `core.type-checker` に渡すパーツの一覧
  * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression }]` を作る式.
- * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする
+ * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする.
+ * コンパイラ組み込みのパーツの型は `builtin` (名前) にする
  */
 function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
   return list(
@@ -325,7 +331,12 @@ function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
       record([
         ["part_id", string(entry.partId)],
         ["module_id", string(entry.moduleId)],
-        ["part_type", partTypeOption(entry.partType)],
+        [
+          "part_type",
+          entry.builtin === undefined
+            ? partTypeOption(entry.partType)
+            : variant("some", variant("builtin", string(entry.builtin))),
+        ],
         ["type_declaration", typeDeclarationOption(entry.typeDeclaration)],
         [
           "expression_key",
@@ -517,15 +528,6 @@ function createModuleCommitSession(options: {
   const latest = moduleEntriesExpression(options.latest);
   const committed = moduleEntriesExpression(options.committed);
   const moduleId = string(options.moduleId);
-  const builtins = new Map<string, string>();
-  for (const entry of [...options.latest, ...options.committed]) {
-    if (entry.builtin === undefined) {
-      builtins.delete(entry.partId);
-    } else {
-      builtins.set(entry.partId, entry.builtin);
-    }
-  }
-  const builtinOf: BuiltinResolver = (id) => builtins.get(id);
   // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで definy 側で型環境を作り,
   // その環境で検査する関数 (`core.type-checker` が返すレコードの `check`) を使い回す.
   // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
@@ -568,7 +570,7 @@ function createModuleCommitSession(options: {
   ): SelfHostedTypeCheckOutcome => {
     let args: ReturnType<typeof partCheckArguments>;
     try {
-      args = partCheckArguments(part, allowHoles, builtinOf);
+      args = partCheckArguments(part, allowHoles);
     } catch (e) {
       if (e instanceof SelfHostedAstConversionError) {
         return { kind: "unsupported", message: e.message };
@@ -698,6 +700,8 @@ export function formatTypeAst(
       const partId = String(fieldOf(value.payload, "part_hash"));
       return resolveName(partId) ?? partId.slice(0, 8);
     }
+    case "builtin":
+      return `builtin(${String(value.payload)})`;
     default:
       return null;
   }
@@ -771,7 +775,7 @@ export type LatestPart = {
 
 /**
  * 最新のパーツを型環境にする (型の無いパーツは入れない. 型パーツは宣言式も入れる).
- * コンパイラ組み込みのパーツは, 呼び出しを `core.expression` のバリアントにするために型が無くても入れる
+ * コンパイラ組み込みのパーツは, 型が `builtin` になるので型が無くても入れる
  */
 export function typeEnvFromParts(
   parts: Iterable<LatestPart>,

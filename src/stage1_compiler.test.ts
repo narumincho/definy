@@ -66,6 +66,42 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     expect(evaluated).toBe(42);
   });
 
+  it("compiles a call to a compiler built-in whose arguments are in another order", async () => {
+    const compiler = createStage1Compiler(
+      new WebAssembly.Module(fs.readFileSync("wasm/stage1.wasm")),
+    );
+    /** `(fn(x) => x * factor)(x: value)`. 引数に関数を入れて, 関数の番号の数え方を確かめる */
+    const scaled = (id: number, factor: number, value: number): unknown => ({
+      Call: {
+        function: {
+          Function: {
+            parameters: [{ parameter_id: id, parameter_name: "x" }],
+            body: builtinCall("multiply", {
+              left: { Variable: { variable_id: id } },
+              right: { Number: { value: factor } },
+            }),
+          },
+        },
+        arguments: [{ name: "x", value: { Number: { value } } }],
+      },
+    });
+    // minus(right: 1 * 3, left: 5 * 10) = 50 - 3
+    const ast = builtinCall("minus", {
+      right: scaled(1, 3, 1),
+      left: scaled(2, 10, 5),
+    });
+    expect(
+      await evaluateCompiledWasm(compiler.compile(ast, builtinParts)),
+    ).toBe(47);
+    // core.expression では組み込みのパーツの式は builtin, 呼び出しは他のパーツと同じ call
+    expect(definyAstToSelfHostedAst({ Compiler: "minus" })).toEqual({
+      Variant: {
+        tag: "builtin",
+        payload: { String: { value: "minus" } },
+      },
+    });
+  });
+
   it("compiles and evaluates definy JSON AST triangle area ((10 * 5) / 2 = 25)", async () => {
     const wasmBytes = fs.readFileSync("wasm/stage1.wasm");
     const stage1Module = new WebAssembly.Module(wasmBytes);
@@ -145,12 +181,12 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const { parts, unresolved } = collectReferencedParts(expression, (id) =>
       partExpressions.get(id),
     );
-    // 呼び出しているコンパイラ組み込みのパーツは最後に入る
+    // コンパイラ組み込みのパーツも他のパーツと同じ順 (後に現れた参照から) で入る
     expect(parts.map((part) => part.id)).toEqual([
       "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
       "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc",
-      "plus",
       "multiply",
+      "plus",
     ]);
     expect(unresolved).toEqual([]);
 
@@ -166,37 +202,21 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const { parts, unresolved } = collectReferencedParts(expression, (id) =>
       id === "builtin" || id === "plus" ? { Compiler: id } : undefined,
     );
-    // 呼び出さずに参照しているコンパイラ組み込みのパーツは渡せない
-    expect(parts).toEqual([{ id: "plus", expression: { Compiler: "plus" } }]);
-    // 旧 Rust 版と同じく後に現れた参照から調べる
-    expect(unresolved).toEqual(["builtin", "missing"]);
+    // コンパイラ組み込みのパーツは呼び出さずに参照していても渡す. 旧 Rust 版と同じく後に現れた参照から調べる
+    expect(parts).toEqual([
+      { id: "builtin", expression: { Compiler: "builtin" } },
+      { id: "plus", expression: { Compiler: "plus" } },
+    ]);
+    expect(unresolved).toEqual(["missing"]);
   });
 
   it("rejects expressions that core.expression cannot represent", () => {
     expect(() => definyAstToSelfHostedAst({ Hole: null })).toThrow(
       SelfHostedAstConversionError,
     );
-    const builtinOf = (id: string) => id;
-    // core.expression にバリアントの無い組み込み
-    expect(() =>
-      definyAstToSelfHostedAst(
-        builtinCall("bit_and", {
-          left: { Number: { value: 1 } },
-          right: { Number: { value: 1 } },
-        }),
-        builtinOf,
-      ),
-    ).toThrow(SelfHostedAstConversionError);
-    // 引数名が組み込みと合わない
-    expect(() =>
-      definyAstToSelfHostedAst(
-        builtinCall("plus", {
-          a: { Number: { value: 1 } },
-          b: { Number: { value: 1 } },
-        }),
-        builtinOf,
-      ),
-    ).toThrow(SelfHostedAstConversionError);
+    expect(() => definyAstToSelfHostedAst("TypeNumber")).toThrow(
+      SelfHostedAstConversionError,
+    );
   });
 
   it("compiles tail calls to return_call_indirect so that deep tail recursion does not overflow the stack", async () => {

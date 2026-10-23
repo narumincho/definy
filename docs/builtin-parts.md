@@ -26,43 +26,57 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 ## 組み込みのパーツ
 
 - 式が `{"Compiler": "plus"}` のパーツがコンパイラ組み込み. 組み込みかどうかはパーツ名ではなく式で決まる (`compilerBuiltinName`)
-- 引数名は下の表のとおり. 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は `part_type` を持つ.
-  `core.equal` `core.not-equal` `core.list-length` `core.list-concat` `core.list-get` `core.list-append` は
-  どの型の値にも使えて今の `PartType` (型引数が無い) では書けないので, 型を持たない
+- 引数名は下の表のとおり (順番どおりに書く). 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は
+  `part_type` を持つ. `core.equal` `core.not-equal` `core.list-length` `core.list-concat` `core.list-get` `core.list-append` は
+  どの型の値にも使えて今の `PartType` (型引数が無い) では書けないので, 型を持たない (型チェッカーは名前で検査する)
 
-| 組み込み (`Compiler`)                                                                                                                                                | パーツ                            | 引数                    | `core.expression`  |
-| :------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------- | :---------------------- | :----------------- |
-| `plus` / `minus`                                                                                                                                                     | `core.plus` / `core.minus`        | `left`, `right`         | `add` / `subtract` |
-| `multiply` `divide` `remainder` `equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal` `and` `or` `string_concat` `list_concat` | `core.multiply` など (`_` は `-`) | `left`, `right`         | 同じ名前           |
-| `not` `string_length` `string_to_bytes` `list_length`                                                                                                                | `core.not` など                   | `value`                 | 同じ名前           |
-| `string_slice`                                                                                                                                                       | `core.string-slice`               | `value`, `start`, `end` | `string_slice`     |
-| `list_get`                                                                                                                                                           | `core.list-get`                   | `list`, `index`         | `list_get`         |
-| `list_append`                                                                                                                                                        | `core.list-append`                | `list`, `item`          | `list_append`      |
+| 組み込み (`Compiler`)                                                                                                                                                               | パーツ                        | 引数                    |
+| :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------- | :---------------------- |
+| `plus` `minus` `multiply` `divide` `remainder` `equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal` `and` `or` `string_concat` `list_concat` | `core.plus` など (`_` は `-`) | `left`, `right`         |
+| `not` `string_length` `string_to_bytes` `list_length`                                                                                                                               | `core.not` など               | `value`                 |
+| `string_slice`                                                                                                                                                                      | `core.string-slice`           | `value`, `start`, `end` |
+| `list_get`                                                                                                                                                                          | `core.list-get`               | `list`, `index`         |
+| `list_append`                                                                                                                                                                       | `core.list-append`            | `list`, `item`          |
 
-`bit_and` などのビット演算は `core.expression` に対応するバリアントが無いので, 呼び出すと `SelfHostedAstConversionError` になる.
+`bit_and` などのビット演算はまだ definy 製のコンパイラ・型チェッカー・評価器が扱わない
+(型検査では引数名が合わないエラー, コンパイルすると unreachable, 評価すると `unit`).
 
-## stage1・型チェッカーに渡すとき
+## definy 製のコンパイラ・型チェッカー・評価器での扱い
 
-definy 製のコンパイラ・型チェッカー・評価器が受け取る `core.expression` には, まだ `add` などの専用のバリアントがある.
-そのため TypeScript 側の変換 (`definyAstToSelfHostedAst`, `src/stage1_compiler.ts`) で,
-組み込みのパーツの呼び出しを `BUILTIN_FUNCTIONS` の表のバリアントにする (引数名がそのままバリアントのフィールド名).
-変換の結果は以前の `Add` などと同じなので, seed を書き換えても `wasm/stage1.wasm` はバイト単位で変わらなかった.
+`core.expression` (stage1 などが受け取る式) にも演算子のバリアントは無い.
+組み込みのパーツの式は `builtin("plus")` (名前の文字列) になり, その呼び出しは他のパーツの呼び出しと同じ
+`call({function: part_reference(...), arguments})` のまま渡す (`definyAstToSelfHostedAst`, `src/stage1_compiler.ts`).
+`call({function: builtin("plus"), ...})` のように組み込みそのものを呼ぶ式も書ける (`sample.sample-ast-calc` などのデモのデータ).
+引数は `core.call-argument(arguments, name)` で名前で取り出す (無ければ未入力 `hole`).
 
-変換には「その ID のパーツが組み込みか」を知る `BuiltinResolver` が要る. パーツ ID は内容から決まらないので, パーツの式から求めて渡す.
+- コンパイル (`core.compile-expr-instructions`): `call` の関数が組み込みか (`core.compile-builtin-name` が `parts` から
+  参照先のパーツの式を引いて `builtin` か調べる) を見て, 組み込みなら `core.compile-builtin-call` が名前で分岐して
+  以前の `add` などと同じ Wasm の命令列を出す. 引数の中の関数の番号 (`fn_base`) は `core.collect-functions` と同じく
+  書いた順の引数の関数を数える (`core.call-argument-fn-base`) ので, 引数の順番が違ってもずれない.
+  末尾位置の組み込みの呼び出しは末尾呼び出し (`return_call_indirect`) にしない (`core.compile-tail-instructions`)
+- 型検査: 型環境では組み込みのパーツの型を `core.type-ast` の `builtin(name)` にする (TypeScript 側の `moduleEntriesExpression`).
+  `core.type-check-unlocated` は関数の型が `builtin` の呼び出しを, 引数名が `core.builtin-parameters` と順番どおり一致するか
+  (`core.call-argument-names-match`, 違えば `invalid_type_declaration`) を見てから `core.type-check-builtin-call` で名前ごとに検査する.
+  期待する型があるとき (`core.list-concat` の左辺が `[]` など) は `core.type-check-against-builtin-call` を使う.
+  組み込みのパーツ自身の式 (`builtin`) は宣言した関数の型と比べられないので検査しない (`unsupported`).
+  サーバー (`worker/type_check.ts`) は型パーツ以外の式を読まないので, CAS に預けた式でも `{"Compiler": name}` の
+  content hash から組み込みと分かるようにしている
+- 評価 (`core.eval-value`): `builtin(name)` は値 `core.value` の `builtin(name)` になり, それを呼ぶと `core.eval-builtin-call` が名前で評価する
+- `core.expression-to-source` は `plus(left: …, right: …)` のように出す. `core.optimize-expression` は組み込みそのものを呼ぶ
+  `plus` `minus` `multiply` の引数が両方数値なら畳み込む
 
-- コンパイル: `collectReferencedParts` は呼び出している組み込みのパーツも `parts` の最後に (式 `{"Compiler": ...}` のまま) 入れる.
-  `Stage1CompilerInstance.compile` はそこから `builtinResolverOf` で組み込みを引き, stage1 には組み込み以外のパーツだけを渡す
-  (`stage1PartsExpression`). 呼ばずに参照している組み込みのパーツは今までどおり `unresolved`
-- 型検査: 型環境のエントリ (`PartTypeEntry` / 型チェッカーの `ModuleEntry`) に `builtin` (組み込みの名前) を持たせる.
-  `typeEnvFromParts` は型の無い組み込みのパーツも型環境に入れる.
-  サーバー (`worker/type_check.ts`) は型パーツ以外の式を読まないので, CAS に預けた式でも `{"Compiler": name}` の content hash から組み込みと分かるようにしている
-- UI の型エラーの位置 (`findTypeErrorPath`) も同じ `BuiltinResolver` で変換して型チェッカーの式と比べる
+TypeScript 側に残る組み込みの表は, 型の無い組み込みの引数名を UI で出すための `BUILTIN_PARAMETERS` だけ.
 
-### 残っていること
+### ブートストラップ (2026-10-23)
 
-`core.expression` から `add` などのバリアントをなくし, definy 製のコンパイラ・型チェッカー・評価器が
-組み込みのパーツの呼び出しを直接扱うようにすれば, TypeScript 側の変換の表 (`BUILTIN_FUNCTIONS`) は要らなくなる.
-コンパイラ自身のソースも組み込みのパーツを呼んでいるので, 今の stage1 で一度コンパイルし直す自己ホストのブートストラップが要る.
+コンパイラ自身のソースも組み込みのパーツを呼んでいるので, `core.expression` を変えたときは次のように stage1 を作り直した.
+
+1. 変更前の `src/stage1_compiler.ts` (呼び出しを `add` などのバリアントにする変換) と変更前の `wasm/stage1.wasm` で,
+   新しい seeds の `core.compile-to-wasm` をコンパイルする (新しい `core.expression` を受け取るコンパイラができる)
+2. それを `wasm/stage1.wasm` に置き, 新しい変換で `npm run build:stage1 -- --bootstrap`
+
+組み込みの呼び出しの命令列を以前と同じにしたので, 1 の結果がそのまま不動点だった (92468 bytes).
+seed の書き換えは, 演算子のアームの本体を, 組み込みの引数から作ったペイロードを束縛して名前の分岐に移す機械的な変換だった.
 
 ## 式エディタ
 

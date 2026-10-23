@@ -263,104 +263,53 @@ export function compilerBuiltinName(expression: unknown): string | undefined {
   return typeof name === "string" ? name : undefined;
 }
 
-/** パーツ ID (URL-safe Base64) から, そのパーツがコンパイラ組み込みなら名前 ({@link compilerBuiltinName}) を返す */
-export type BuiltinResolver = (partId: string) => string | undefined;
-
-const noBuiltins: BuiltinResolver = () => undefined;
-
-/** コンパイラ組み込みのパーツの呼び出しがなる `core.expression` のバリアントの名前と, 引数名 (= フィールド名) */
-export type BuiltinFunction = {
-  readonly tag: string;
-  readonly parameters: ReadonlyArray<string>;
-};
-
-function binaryBuiltins(
-  entries: ReadonlyArray<readonly [string, string]>,
-): ReadonlyArray<readonly [string, BuiltinFunction]> {
-  return entries.map(([name, tag]) => [
-    name,
-    { tag, parameters: ["left", "right"] },
-  ]);
-}
-
 /**
- * 呼び出すと `core.expression` のバリアントになるコンパイラ組み込みのパーツ.
- * definy の式には演算子は無く, `core.plus` なども他のパーツと同じく `Call` で呼ぶ.
- * `core.expression` (stage1 が受け取る式) ではまだ専用のバリアントで表すので, 組み込みのパーツの呼び出しを
- * 名前 (`{"Compiler": "plus"}` の `plus`) で引いたバリアントにする. 引数名がそのままバリアントのフィールド名になる
+ * コンパイラ組み込みのパーツの名前 (`{"Compiler": "plus"}` の `plus`) と引数名 (順番どおり).
+ * 呼び出しの検査・コンパイル・評価は definy 側 (`core.builtin-parameters`, `core.compile-builtin-call` など) がする.
+ * TypeScript 側では型の無い組み込み (`core.equal` など) の引数名を UI で出すのに使う
  */
-export const BUILTIN_FUNCTIONS: ReadonlyMap<string, BuiltinFunction> = new Map<
+export const BUILTIN_PARAMETERS: ReadonlyMap<
   string,
-  BuiltinFunction
->([
-  ...binaryBuiltins([
-    ["plus", "add"],
-    ["minus", "subtract"],
-    ["multiply", "multiply"],
-    ["divide", "divide"],
-    ["remainder", "remainder"],
-    ["equal", "equal"],
-    ["not_equal", "not_equal"],
-    ["less_than", "less_than"],
-    ["less_than_or_equal", "less_than_or_equal"],
-    ["greater_than", "greater_than"],
-    ["greater_than_or_equal", "greater_than_or_equal"],
-    ["and", "and"],
-    ["or", "or"],
-    ["string_concat", "string_concat"],
-    ["list_concat", "list_concat"],
+  ReadonlyArray<string>
+> = new Map<string, ReadonlyArray<string>>([
+  ...[
+    "plus",
+    "minus",
+    "multiply",
+    "divide",
+    "remainder",
+    "equal",
+    "not_equal",
+    "less_than",
+    "less_than_or_equal",
+    "greater_than",
+    "greater_than_or_equal",
+    "and",
+    "or",
+    "string_concat",
+    "list_concat",
+  ].map((name): readonly [string, ReadonlyArray<string>] => [
+    name,
+    ["left", "right"],
   ]),
   ...["not", "string_length", "string_to_bytes", "list_length"].map(
-    (name): readonly [string, BuiltinFunction] => [
-      name,
-      { tag: name, parameters: ["value"] },
-    ],
+    (name): readonly [string, ReadonlyArray<string>] => [name, ["value"]],
   ),
-  [
-    "string_slice",
-    { tag: "string_slice", parameters: ["value", "start", "end"] },
-  ],
-  ["list_get", { tag: "list_get", parameters: ["list", "index"] }],
-  ["list_append", { tag: "list_append", parameters: ["list", "item"] }],
+  ["string_slice", ["value", "start", "end"]],
+  ["list_get", ["list", "index"]],
+  ["list_append", ["list", "item"]],
 ]);
-
-/** 関数の式がコンパイラ組み込みのパーツの参照なら, その組み込み */
-function builtinFunctionOf(
-  functionExpression: unknown,
-  builtinOf: BuiltinResolver,
-): (BuiltinFunction & { readonly name: string }) | undefined {
-  const name = builtinNameOf(functionExpression, builtinOf);
-  const builtin = name === undefined ? undefined : BUILTIN_FUNCTIONS.get(name);
-  return name === undefined || builtin === undefined
-    ? undefined
-    : { name, ...builtin };
-}
-
-/** 式がコンパイラ組み込みのパーツの参照なら, 組み込みの名前 */
-function builtinNameOf(
-  expression: unknown,
-  builtinOf: BuiltinResolver,
-): string | undefined {
-  const reference = (expression as { readonly PartReference?: unknown } | null)
-    ?.PartReference as { readonly part_definition_event_hash?: unknown } | null;
-  return typeof reference === "object" && reference !== null
-    ? builtinOf(partReferenceId(reference.part_definition_event_hash))
-    : undefined;
-}
 
 /**
  * definy の JSON AST (`{"Call": {...}}` など) を, stage1 (`core.compile-to-wasm`) が受け取る
  * `core.expression` の値 (`Variant` / `TypeLiteral` / `ListLiteral` などのリテラルの木) に変換する.
  * 旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植.
- * コンパイラ組み込みのパーツの呼び出しは `builtinOf` で組み込みと分かれば {@link BUILTIN_FUNCTIONS} のバリアントにする.
- * `core.expression` で表せない式 (ビット演算などのバリアントの無い組み込みの呼び出し・型の式・コンパイラ組み込み・
- * 未入力) は `SelfHostedAstConversionError` を投げる
+ * コンパイラ組み込みのパーツの式 (`{"Compiler": "plus"}`) は `builtin("plus")` にし, その呼び出しは他のパーツの呼び出しと
+ * 同じく `call` にする (組み込みの扱いは definy 側). `core.expression` で表せない式 (型の式・未入力) は
+ * `SelfHostedAstConversionError` を投げる
  */
-export function definyAstToSelfHostedAst(
-  ast: unknown,
-  builtinOf: BuiltinResolver = noBuiltins,
-): unknown {
-  return toSelfHostedAst(ast, false, builtinOf);
+export function definyAstToSelfHostedAst(ast: unknown): unknown {
+  return toSelfHostedAst(ast, false);
 }
 
 /**
@@ -369,11 +318,8 @@ export function definyAstToSelfHostedAst(
  * `hole_expected_type` のエラーで返す (`findExpectedType`, `src/self_hosted_type_check.ts`).
  * 未入力のある式はコンパイルできないので, 型検査で期待する型を調べるときにだけ使う
  */
-export function definyAstWithHolesToSelfHostedAst(
-  ast: unknown,
-  builtinOf: BuiltinResolver = noBuiltins,
-): unknown {
-  return toSelfHostedAst(ast, true, builtinOf);
+export function definyAstWithHolesToSelfHostedAst(ast: unknown): unknown {
+  return toSelfHostedAst(ast, true);
 }
 
 function holeToSelfHostedAst(hole: unknown, allowHoles: boolean): unknown {
@@ -390,11 +336,7 @@ function holeToSelfHostedAst(hole: unknown, allowHoles: boolean): unknown {
   );
 }
 
-function toSelfHostedAst(
-  ast: unknown,
-  allowHoles: boolean,
-  builtinOf: BuiltinResolver,
-): unknown {
+function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
   if (ast === "Hole") {
     return holeToSelfHostedAst(undefined, allowHoles);
   }
@@ -407,7 +349,7 @@ function toSelfHostedAst(
   const key = Object.keys(obj)[0] ?? "";
   const node = obj[key] as Record<string, unknown>;
   const convert = (child: unknown): unknown =>
-    toSelfHostedAst(child, allowHoles, builtinOf);
+    toSelfHostedAst(child, allowHoles);
 
   switch (key) {
     case "Number":
@@ -520,36 +462,6 @@ function toSelfHostedAst(
         readonly name: string;
         readonly value: unknown;
       }>;
-      const builtinName = builtinNameOf(node.function, builtinOf);
-      const builtin = builtinFunctionOf(node.function, builtinOf);
-      if (builtinName !== undefined && builtin === undefined) {
-        throw new SelfHostedAstConversionError(
-          `core.expression cannot represent a call to the compiler built-in ${builtinName}`,
-        );
-      }
-      if (builtin !== undefined) {
-        const names = callArguments.map((argument) => argument.name);
-        if (
-          names.length !== builtin.parameters.length ||
-          builtin.parameters.some((parameter) => !names.includes(parameter))
-        ) {
-          throw new SelfHostedAstConversionError(
-            `compiler built-in ${builtin.name} takes arguments (${builtin.parameters.join(", ")}), but got (${names.join(", ")})`,
-          );
-        }
-        return selfHostedVariant(
-          builtin.tag,
-          selfHostedRecord(
-            builtin.parameters.map((parameter) => [
-              parameter,
-              convert(
-                callArguments.find((argument) => argument.name === parameter)
-                  ?.value,
-              ),
-            ]),
-          ),
-        );
-      }
       return selfHostedVariant(
         "call",
         selfHostedRecord([
@@ -624,25 +536,18 @@ function toSelfHostedAst(
     }
     case "Hole":
       return holeToSelfHostedAst(node, allowHoles);
+    case "Compiler":
+      // コンパイラ組み込みのパーツの式. 呼び出しは definy 側 (`core.compile-builtin-call` など) が名前で扱う
+      return selfHostedVariant("builtin", selfHostedString(String(obj[key])));
   }
   throw new SelfHostedAstConversionError(
     `core.expression cannot represent ${key || JSON.stringify(ast)}`,
   );
 }
 
-/**
- * 式の中の `PartReference` の ID を出現順に集める.
- * コンパイラ組み込みのパーツの呼び出し ({@link BUILTIN_FUNCTIONS}) の関数の参照は `builtinCalls` に分ける
- */
-function collectPartReferenceIds(
-  expression: unknown,
-  builtinOf: BuiltinResolver,
-): {
-  readonly references: ReadonlyArray<string>;
-  readonly builtinCalls: ReadonlyArray<string>;
-} {
+/** 式の中の `PartReference` の ID を出現順に集める */
+function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
   const references: string[] = [];
-  const builtinCalls: string[] = [];
   const walk = (value: unknown): void => {
     if (Array.isArray(value)) {
       value.forEach(walk);
@@ -657,30 +562,10 @@ function collectPartReferenceIds(
     if (reference && typeof reference === "object") {
       references.push(partReferenceId(reference.part_definition_event_hash));
     }
-    const call = obj.Call as
-      { readonly function?: unknown; readonly arguments?: unknown } | undefined;
-    if (
-      call &&
-      typeof call === "object" &&
-      builtinFunctionOf(call.function, builtinOf) !== undefined
-    ) {
-      const id = (
-        call.function as {
-          readonly PartReference: {
-            readonly part_definition_event_hash: unknown;
-          };
-        }
-      ).PartReference.part_definition_event_hash;
-      builtinCalls.push(partReferenceId(id));
-      Object.entries(obj).forEach(([key, child]) =>
-        key === "Call" ? walk(call.arguments) : walk(child),
-      );
-      return;
-    }
     Object.values(obj).forEach(walk);
   };
   walk(expression);
-  return { references, builtinCalls };
+  return references;
 }
 
 /**
@@ -689,8 +574,7 @@ function collectPartReferenceIds(
  * `resolve` は ID からパーツの式 (definy の JSON AST) を返す. 見つからない・式を持たないときは `undefined`.
  * 見つからない・式を持たない・`core.expression` で表せないパーツの ID は `unresolved` に入れる
  * (stage1 はその参照を unreachable にコンパイルする).
- * 呼び出しているコンパイラ組み込みのパーツ (`core.plus` など) は式 (`{"Compiler": "plus"}`) のまま `parts` の最後に入れる.
- * `Stage1CompilerInstance.compile` はそれで呼び出しを `core.expression` のバリアントにする ({@link builtinResolverOf})
+ * コンパイラ組み込みのパーツ (`core.plus` など) も式 (`core.expression` の `builtin`) のまま入れる
  */
 export function collectReferencedParts(
   expression: unknown,
@@ -699,10 +583,7 @@ export function collectReferencedParts(
   readonly parts: ReadonlyArray<Stage1ReferencedPart>;
   readonly unresolved: ReadonlyArray<string>;
 } {
-  const builtinOf: BuiltinResolver = (id) => compilerBuiltinName(resolve(id));
-  const root = collectPartReferenceIds(expression, builtinOf);
-  let queue: ReadonlyArray<string> = root.references;
-  const builtinCalls = new Set<string>(root.builtinCalls);
+  let queue: ReadonlyArray<string> = collectPartReferenceIds(expression);
   const seen = new Set<string>();
   const parts: Stage1ReferencedPart[] = [];
   const unresolved: string[] = [];
@@ -719,61 +600,31 @@ export function collectReferencedParts(
       continue;
     }
     try {
-      definyAstToSelfHostedAst(partExpression, builtinOf);
+      definyAstToSelfHostedAst(partExpression);
     } catch (e) {
-      // コンパイラ組み込み (`{"Compiler": ...}`) を呼ばずに参照しているなど, core.expression で表せないパーツは渡さない
+      // 型の式など, core.expression で表せないパーツは渡さない
       if (e instanceof SelfHostedAstConversionError) {
         unresolved.push(id);
         continue;
       }
       throw e;
     }
-    const ids = collectPartReferenceIds(partExpression, builtinOf);
-    ids.builtinCalls.forEach((builtinId) => builtinCalls.add(builtinId));
-    queue = [...queue, ...ids.references];
+    queue = [...queue, ...collectPartReferenceIds(partExpression)];
     parts.push({ id, expression: partExpression });
-  }
-  for (const id of builtinCalls) {
-    parts.push({ id, expression: resolve(id) });
   }
   return { parts, unresolved };
 }
 
-/** {@link collectReferencedParts} の `parts` のうちコンパイラ組み込みのパーツから, 組み込みを引く関数を作る */
-export function builtinResolverOf(
-  parts: Iterable<Stage1ReferencedPart>,
-): BuiltinResolver {
-  const builtins = new Map<string, string>();
-  for (const part of parts) {
-    const name = compilerBuiltinName(part.expression);
-    if (name !== undefined) {
-      builtins.set(part.id, name);
-    }
-  }
-  return (id) => builtins.get(id);
-}
-
-/**
- * stage1 (`core.compile-to-wasm`) に渡すパーツの一覧 `[{ id, expression }]` を作る式.
- * コンパイラ組み込みのパーツは渡さない (呼び出しは `core.expression` のバリアントになっている)
- */
+/** stage1 (`core.compile-to-wasm`) に渡すパーツの一覧 `[{ id, expression }]` を作る式 */
 export function stage1PartsExpression(
   parts: ReadonlyArray<Stage1ReferencedPart>,
 ): unknown {
-  const builtinOf = builtinResolverOf(parts);
   return selfHostedList(
-    parts.flatMap((part) =>
-      compilerBuiltinName(part.expression) === undefined
-        ? [
-            selfHostedRecord([
-              ["id", selfHostedString(part.id)],
-              [
-                "expression",
-                definyAstToSelfHostedAst(part.expression, builtinOf),
-              ],
-            ]),
-          ]
-        : [],
+    parts.map((part) =>
+      selfHostedRecord([
+        ["id", selfHostedString(part.id)],
+        ["expression", definyAstToSelfHostedAst(part.expression)],
+      ]),
     ),
   );
 }
@@ -879,10 +730,7 @@ export function createStage1Compiler(
       expressionAst: unknown,
       referencedParts: ReadonlyArray<Stage1ReferencedPart> = [],
     ): Uint8Array {
-      const effectiveExpr = definyAstToSelfHostedAst(
-        expressionAst,
-        builtinResolverOf(referencedParts),
-      );
+      const effectiveExpr = definyAstToSelfHostedAst(expressionAst);
       const partsNode = stage1PartsExpression(referencedParts);
 
       const instance = instantiateCompiledFunction(stage1Module);

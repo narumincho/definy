@@ -15,7 +15,6 @@ import {
 } from "./seed_parts.ts";
 import { selfHostedList } from "./self_hosted_ast.ts";
 import {
-  builtinResolverOf,
   collectReferencedParts,
   createStage1Compiler,
   type DefinyValue,
@@ -99,10 +98,7 @@ describe("eval conformance (core.eval-value)", () => {
           arguments: [
             {
               name: "expr",
-              value: definyAstToSelfHostedAst(
-                expression,
-                builtinResolverOf(referenced.parts),
-              ),
+              value: definyAstToSelfHostedAst(expression),
             },
             { name: "env", value: selfHostedList([]) },
             {

@@ -45,11 +45,7 @@ import {
   renameMatchArmVariable,
   type PatternVariant,
 } from "./match_pattern.ts";
-import {
-  type BuiltinResolver,
-  compilerBuiltinName,
-  type DefinyValue,
-} from "../stage1_compiler.ts";
+import { type DefinyValue } from "../stage1_compiler.ts";
 
 /** 式に出す型エラー */
 export type ExpressionTypeError = {
@@ -113,11 +109,6 @@ export function ExpressionTreeEditor({
   // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
   const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const builtinOf = useCallback<BuiltinResolver>(
-    (id) => compilerBuiltinName(partsByIdHash.get(id)?.expression),
-    [partsByIdHash],
-  );
-
   const layoutRoot = useMemo(() => {
     const rawTree = expressionToLayoutNode(expression, "root", { partNames });
     return computeLayout(rawTree, { maxWidth });
@@ -128,17 +119,12 @@ export function ExpressionTreeEditor({
     const path =
       typeError.expression === null
         ? null
-        : findTypeErrorPath(
-            layoutRoot,
-            expression,
-            typeError.expression,
-            builtinOf,
-          );
+        : findTypeErrorPath(layoutRoot, expression, typeError.expression);
     return (
       (path === null ? null : findExpressionNode(layoutRoot, path))?.id ??
       layoutRoot.id
     );
-  }, [typeError, layoutRoot, expression, builtinOf]);
+  }, [typeError, layoutRoot, expression]);
 
   // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
   const nodeIndex = useMemo(() => collectNodeIndex(layoutRoot), [layoutRoot]);

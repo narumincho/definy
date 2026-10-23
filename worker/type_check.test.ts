@@ -188,8 +188,9 @@ describe("SubmitEvent の型検査", () => {
     const parts = await Promise.all(
       seed.parts.map(async (seedPart) =>
         part(
-          // 組み込みかどうかは式 ({"Compiler": "string_concat"}) で決まり, 名前によらない
-          seedPart.name === "string-concat" ? "joined-text" : seedPart.name,
+          // 組み込みかどうかは式 ({"Compiler": "bit_and"}) で決まり, 名前によらない.
+          // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
+          seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
           await resolvePartPlaceholders(
             seedPart.part_type ?? null,
             accountBytes,
@@ -201,8 +202,8 @@ describe("SubmitEvent の型検査", () => {
         ),
       ),
     );
-    expect(parts.find((p) => p.name === "joined-text")?.expression).toEqual({
-      Compiler: "string_concat",
+    expect(parts.find((p) => p.name === "bitwise-and")?.expression).toEqual({
+      Compiler: "bit_and",
     });
     expect(await submitCommit(store, env, system, "core", parts)).toEqual({
       status: 200,

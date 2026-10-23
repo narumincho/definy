@@ -1,7 +1,7 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { base64ToBytes } from "../cbor.ts";
 import { updateExpressionAtPath } from "./path.ts";
-import { BUILTIN_FUNCTIONS, compilerBuiltinName } from "../stage1_compiler.ts";
+import { BUILTIN_PARAMETERS, compilerBuiltinName } from "../stage1_compiler.ts";
 
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
@@ -45,9 +45,7 @@ export function partParameterNames(part: {
     return (fn.parameters ?? []).map((parameter) => String(parameter.name));
   }
   const builtin = compilerBuiltinName(part.expression);
-  return builtin === undefined
-    ? undefined
-    : BUILTIN_FUNCTIONS.get(builtin)?.parameters;
+  return builtin === undefined ? undefined : BUILTIN_PARAMETERS.get(builtin);
 }
 
 /**

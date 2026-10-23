@@ -39,14 +39,14 @@ npx vitest run src/stage1_conformance.test.ts
 
 stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取らず, 次の 2 つを引数に取ります。
 
-1. **式**: `core.expression` の値。`core.plus` の呼び出しは `Variant("add", {left, right})` のように,
+1. **式**: `core.expression` の値。`core.plus` の呼び出しは `Variant("call", {function: Variant("part_reference", ...), arguments})` のように,
    リテラル (`Variant` / `TypeLiteral` / `ListLiteral` / `Number` / `String` / `Boolean`) だけの木で表します。
    変換は `definyAstToSelfHostedAst` (旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植) が行います。
    - `Match` の束縛しないアームの `variable_id` は `-1`, `default` はワイルドカードアーム `_` にします。
    - `Variant` の payload は `some(式)` / `none` で包みます。
    - `PartReference` の ID (CBOR 由来のバイト列, seed 由来の数値配列) は URL-safe Base64 の文字列にします。
-   - コンパイラ組み込みのパーツ (`core.plus` など) の呼び出しは, 組み込みに対応するバリアントにします ([builtin-parts.md](builtin-parts.md))。
-   - ビット演算の組み込みの呼び出し・型の式・`Compiler` 組み込み・`Hole` は `core.expression` で表せないので `SelfHostedAstConversionError` になります。
+   - コンパイラ組み込みのパーツの式 `{"Compiler": "plus"}` は `Variant("builtin", "plus")` にします。呼び出しは他のパーツと同じ `call` です ([builtin-parts.md](builtin-parts.md))。
+   - 型の式・`Hole` は `core.expression` で表せないので `SelfHostedAstConversionError` になります。
 2. **参照するパーツ**: `list<{ id: string, expression: core.expression }>`。式から `PartReference` を
    参照先までたどって集めます (`collectReferencedParts`)。`id` は 1 の `part_reference` の文字列と同じ形式でなければなりません。
    見つからない・式を持たない・変換できないパーツは渡さず `unresolved` として返します。
@@ -76,8 +76,9 @@ stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取
 
 ## `core.eval-value` の意味論
 
-- 演算は評価した値に同じ演算子を当てて求めます (メタ循環)。そのため文字列の扱いや範囲外の添字などは stage1 の出力と同じになります
-- `equal` / `not_equal` は `core.value-equals` で値を構造的に比べます。`core.value` に `Equal` を直接当てると
+- 組み込みのパーツの呼び出しは `core.eval-builtin-call` が, 評価した値に同じ組み込みのパーツを当てて求めます (メタ循環)。
+  そのため文字列の扱いや範囲外の添字などは stage1 の出力と同じになります
+- `core.equal` / `core.not-equal` は `core.value-equals` で値を構造的に比べます。`core.value` に `Equal` を直接当てると
   バリアントの比較が構造的にならず, `std.list-is-empty` などが誤った値になりました
 - `part_reference` は `parts` から ID の一致するパーツを探し (`core.eval-part-reference`), その式を空の環境で評価します。
   見つからなければ `unit` です。パーツの式は参照されるたびに評価し直します

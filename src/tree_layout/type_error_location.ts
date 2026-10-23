@@ -1,7 +1,6 @@
 import type { LayoutNode, PathStep } from "./types.ts";
 import { getExpressionAtPath } from "./mutation.ts";
 import {
-  type BuiltinResolver,
   definyAstToSelfHostedAst,
   type DefinyValue,
 } from "../stage1_compiler.ts";
@@ -65,16 +64,12 @@ function canonicalKey(value: DefinyValue | undefined): string {
   return JSON.stringify(value);
 }
 
-/**
- * 式 (エディタの形) を型チェッカーが受け取る `core.expression` の値にする. 表せなければ `undefined`.
- * `builtinOf` は型チェッカーと同じく, コンパイラ組み込みのパーツの呼び出しをバリアントにするのに使う
- */
+/** 式 (エディタの形) を型チェッカーが受け取る `core.expression` の値にする. 表せなければ `undefined` */
 export function expressionToSelfHostedValue(
   expression: unknown,
-  builtinOf?: BuiltinResolver,
 ): DefinyValue | undefined {
   try {
-    return constructorAstValue(definyAstToSelfHostedAst(expression, builtinOf));
+    return constructorAstValue(definyAstToSelfHostedAst(expression));
   } catch {
     return undefined;
   }
@@ -88,7 +83,6 @@ export function findTypeErrorPath(
   layoutRoot: LayoutNode,
   expression: unknown,
   errorExpression: DefinyValue,
-  builtinOf?: BuiltinResolver,
 ): ReadonlyArray<PathStep> | null {
   const target = canonicalKey(errorExpression);
   const targetTag =
@@ -101,7 +95,6 @@ export function findTypeErrorPath(
     if (node.scopeVariables !== undefined) {
       const value = expressionToSelfHostedValue(
         getExpressionAtPath(expression, node.path),
-        builtinOf,
       );
       // 全体を文字列にする前にタグで絞る (大きな式で何度も文字列にしないため)
       if (
