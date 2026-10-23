@@ -32,3 +32,9 @@ npm audit --package-lock-only
 
 - `overrides` を追加しただけで `npm install` すると、lock ファイルに残っている古いネストした依存 (`node_modules/@esbuild-kit/core-utils/node_modules/esbuild` など) が残り、`npm ls` が `invalid` エラーになる。lock ファイルから該当するネストしたエントリを消し、`node_modules` 側の同じディレクトリも消してから `npm install` し直すと解消する。
 - 更新後は `npm audit` と `npm ls <パッケージ名>` で、上書きが効いて重複 (deduped) になっていることを確認する。
+
+### 上流の状況 (2026-10-23 時点)
+
+- drizzle-kit: [#4861](https://github.com/drizzle-team/drizzle-orm/issues/4861) でメンテナーが「beta タグで修正済み」と回答している。1.0.0-rc.5 は依存なしで @esbuild-kit を使っていない。安定版 0.31 系は未修正 ([#5481](https://github.com/drizzle-team/drizzle-orm/issues/5481) など)。
+- void: 1.2.1 も `drizzle-kit ^0.31.11` に依存している。関連する issue は見つからなかった。
+- void が drizzle-kit 1.0 に上がったら、この overrides は消してよい。
