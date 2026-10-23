@@ -7,7 +7,7 @@ export type NodeKind =
   | "literalString"
   | "literalBoolean"
   | "identifier"
-  /** 関数の引数名. 選ぶとその場で名前を変えられる */
+  /** 関数の引数名・match で束縛する変数の名前. 選ぶとその場で名前を変えられる */
   | "parameterName"
   | "keyword"
   | "operator"
@@ -45,6 +45,10 @@ export type PathStep =
   | "variantPayload"
   | "matchTarget"
   | { readonly kind: "matchArmBody"; readonly index: number }
+  /** match のアームのパターン (タグ). 式ではない */
+  | { readonly kind: "matchArmPattern"; readonly index: number }
+  /** match のアームで束縛する変数の名前. 式ではない */
+  | { readonly kind: "matchArmVariable"; readonly index: number }
   | "matchDefault"
   | { readonly kind: "typeUnionVariant"; readonly index: number }
   | "record";

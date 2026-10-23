@@ -25,6 +25,11 @@ import {
   expressionToSelfHostedValue,
   findTypeErrorPath,
 } from "./tree_layout/type_error_location.ts";
+import {
+  patternVariantsFromTypeAst,
+  probeMatchTargetType,
+} from "./tree_layout/match_pattern.ts";
+import type { PartSnapshot } from "./types.ts";
 
 type SeedPart = {
   readonly id: string;
@@ -233,6 +238,69 @@ describe("self-hosted type check (stage1)", () => {
         partType: "boolean",
       }),
     ).toBeNull();
+  }, 600_000);
+
+  it("match の対象の型を聞いてパターンで選べるタグを求める", async () => {
+    const parts = await loadSeedParts();
+    const { typeChecker, env } = compileSeedTypeChecker(parts);
+    const session = createTypeCheckSession({ typeChecker, env });
+    const optionSample = parts.find(
+      (part) => part.name === "sample.match-option-sample",
+    );
+    expect(
+      session.findExpectedType({
+        expression: probeMatchTargetType(optionSample?.expression, [
+          { kind: "matchArmPattern", index: 0 },
+        ]),
+        partType: optionSample?.partType,
+      }),
+    ).toMatchObject({ tag: "union", payload: [{ tag: "some" }] });
+    // 型パーツ (core.expression) の値の match は, 型パーツの型宣言のタグ
+    const expressionPart = parts.find(
+      (part) => part.name === "core.expression",
+    );
+    const type = session.findExpectedType({
+      expression: probeMatchTargetType(
+        {
+          Function: {
+            parameters: [{ parameter_id: 0, parameter_name: "e" }],
+            body: {
+              Match: {
+                target: { Variable: { variable_id: 0 } },
+                arms: [
+                  {
+                    tag: "number",
+                    variable_id: 1,
+                    variable_name: "n",
+                    body: { Variable: { variable_id: 1 } },
+                  },
+                ],
+                default: { Number: { value: 0 } },
+              },
+            },
+          },
+        },
+        ["functionBody", { kind: "matchArmPattern", index: 0 }],
+      ),
+      partType: {
+        function: {
+          parameters: [{ name: "e", type: { type_part: expressionPart?.id } }],
+          return_type: "number",
+        },
+      },
+    });
+    const variants = patternVariantsFromTypeAst(
+      type,
+      parts.map(
+        (part) =>
+          ({
+            partIdHash: part.id,
+            expression: part.expression,
+          }) as unknown as PartSnapshot,
+      ),
+    );
+    expect(variants).toContainEqual({ tag: "number", hasPayload: true });
+    expect(variants).toContainEqual({ tag: "type_number", hasPayload: false });
   }, 600_000);
 
   it("型エラーの型を読める形にする", () => {

@@ -171,6 +171,51 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
   });
 
+  test("expression tree editor edits match patterns with the tags of the target type", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.is-even-sample");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const pattern = (tag: string) =>
+      valueTree.locator(".tree-badge", { hasText: new RegExp(`^${tag} =>$`) });
+    const option = (name: string) =>
+      page.locator(".dropdown-option", {
+        has: page.locator(".dropdown-option-name", {
+          hasText: new RegExp(`^${name}$`),
+        }),
+      });
+
+    // パターン true を選ぶと, 型チェッカーに聞いた対象の型 (Bool) のタグが選択肢に出る
+    await pattern("true").click();
+    await expect(option("false")).toBeVisible({ timeout: 15000 });
+    await page.keyboard.press("Escape");
+
+    // false のアームを消すと, 足りないアームを足す選択肢が出る
+    await pattern("false").click();
+    await option("delete-arm").locator("button").first().click();
+    await expect(pattern("false")).toHaveCount(0);
+    await pattern("true").click();
+    await option("add-missing-arms").locator("button").first().click();
+    await expect(pattern("false")).toHaveCount(1);
+
+    // 束縛する変数の名前はその場で変えられ, 本体の変数の表示も変わる
+    await page.goto("/part/sample.match-option-sample");
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await valueTree
+      .locator(".tree-badge", { hasText: /^val$/ })
+      .first()
+      .click();
+    const input = valueTree.locator(".tree-badge input[type=text]");
+    await expect(input).toBeVisible();
+    await input.fill("n");
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^n$/ }),
+    ).toHaveCount(1);
+  });
+
   test("icons have bounded and non-zero dimensions across views", async ({
     page,
   }) => {
