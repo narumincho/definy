@@ -608,6 +608,11 @@ export type CompiledFunctionInstance = {
     closurePointer: number,
     argumentPointers: ReadonlyArray<number>,
   ) => number;
+  /**
+   * レコードの値のポインタから, フィールド `key` の値のポインタを返す (関数の値のフィールドを
+   * `callClosure` で呼ぶときなど). レコードでないかフィールドが無ければ例外を投げる
+   */
+  readonly recordField: (recordPointer: number, key: string) => number;
   /** 結果のポインタを JavaScript の値として読む */
   readonly read: (pointer: number) => DefinyValue;
 };
@@ -658,6 +663,21 @@ export function instantiateCompiledFunction(
     writeArgument: (literal) => writeLiteral(exports, literal),
     call: (argumentPointers) => callClosure(closurePtr, argumentPointers),
     callClosure,
+    recordField: (recordPtr, key) => {
+      const mem = new Uint8Array(exports.memory.buffer);
+      const view = new DataView(exports.memory.buffer);
+      if (mem[recordPtr] !== 4) {
+        throw new Error(`the value is not a record (tag: ${mem[recordPtr]})`);
+      }
+      const count = view.getUint32(recordPtr + 4, true);
+      for (let i = 0; i < count; i++) {
+        const itemBase = recordPtr + 8 + i * 8;
+        if (readDefinyValue(mem, view.getUint32(itemBase, true)) === key) {
+          return view.getUint32(itemBase + 4, true);
+        }
+      }
+      throw new Error(`the record has no field '${key}'`);
+    },
     read: (pointer) =>
       readDefinyValue(new Uint8Array(exports.memory.buffer), pointer),
   };

@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "型環境づくりを core.build-type-env に移し, 型チェッカーの入口を core.type-checker-with-entries にする",
+  "message": "モジュールコミットの検査の計画を core.type-checker に移し, core.validate-module を core.build-type-env に乗せ換える",
   "parts": [
     {
       "name": "let",
@@ -69347,272 +69347,6 @@
       }
     },
     {
-      "name": "collect-part-type-env-inner",
-      "part_type": {
-        "function": {
-          "parameters": [
-            {
-              "name": "parts",
-              "type": {
-                "list": {
-                  "type_part": {
-                    "$part": "core.part-definition"
-                  }
-                }
-              }
-            },
-            {
-              "name": "index",
-              "type": "number"
-            }
-          ],
-          "return_type": {
-            "type_part": {
-              "$part": "core.part-type-env"
-            }
-          }
-        }
-      },
-      "description": [
-        {
-          "language": "en",
-          "text": "Inner recursive helper to collect part type environment from part definitions"
-        },
-        {
-          "language": "ja",
-          "text": "パーツ定義リストからパーツ型環境を再帰構築する内部ヘルパー"
-        }
-      ],
-      "expression": {
-        "Function": {
-          "parameters": [
-            {
-              "parameter_id": 0,
-              "parameter_name": "parts"
-            },
-            {
-              "parameter_id": 1,
-              "parameter_name": "index"
-            }
-          ],
-          "body": {
-            "Match": {
-              "target": {
-                "LessThan": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
-                    }
-                  },
-                  "right": {
-                    "Number": {
-                      "value": 0
-                    }
-                  }
-                }
-              },
-              "arms": [
-                {
-                  "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
-                  "body": {
-                    "ListLiteral": {
-                      "items": []
-                    }
-                  }
-                },
-                {
-                  "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
-                  "body": {
-                    "ListAppend": {
-                      "list": {
-                        "Call": {
-                          "function": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.collect-part-type-env-inner"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "parts",
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 0
-                                }
-                              }
-                            },
-                            {
-                              "name": "index",
-                              "value": {
-                                "Subtract": {
-                                  "left": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 1
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "item": {
-                        "TypeLiteral": {
-                          "items": [
-                            {
-                              "key": "part_definition_event_hash",
-                              "value": {
-                                "RecordGet": {
-                                  "record": {
-                                    "ListGet": {
-                                      "list": {
-                                        "Variable": {
-                                          "variable_id": 0
-                                        }
-                                      },
-                                      "index": {
-                                        "Variable": {
-                                          "variable_id": 1
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "key": "part_definition_event_hash"
-                                }
-                              }
-                            },
-                            {
-                              "key": "part_type",
-                              "value": {
-                                "RecordGet": {
-                                  "record": {
-                                    "ListGet": {
-                                      "list": {
-                                        "Variable": {
-                                          "variable_id": 0
-                                        }
-                                      },
-                                      "index": {
-                                        "Variable": {
-                                          "variable_id": 1
-                                        }
-                                      }
-                                    }
-                                  },
-                                  "key": "part_type"
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    }
-                  }
-                }
-              ],
-              "default": null
-            }
-          }
-        }
-      }
-    },
-    {
-      "name": "collect-part-type-env",
-      "part_type": {
-        "function": {
-          "parameters": [
-            {
-              "name": "parts",
-              "type": {
-                "list": {
-                  "type_part": {
-                    "$part": "core.part-definition"
-                  }
-                }
-              }
-            }
-          ],
-          "return_type": {
-            "type_part": {
-              "$part": "core.part-type-env"
-            }
-          }
-        }
-      },
-      "description": [
-        {
-          "language": "en",
-          "text": "Collects module part type environment from part definitions list"
-        },
-        {
-          "language": "ja",
-          "text": "パーツ定義リストからモジュール型環境を構築する関数"
-        }
-      ],
-      "expression": {
-        "Function": {
-          "parameters": [
-            {
-              "parameter_id": 0,
-              "parameter_name": "parts"
-            }
-          ],
-          "body": {
-            "Call": {
-              "function": {
-                "PartReference": {
-                  "part_definition_event_hash": {
-                    "$part": "core.collect-part-type-env-inner"
-                  }
-                }
-              },
-              "arguments": [
-                {
-                  "name": "parts",
-                  "value": {
-                    "Variable": {
-                      "variable_id": 0
-                    }
-                  }
-                },
-                {
-                  "name": "index",
-                  "value": {
-                    "Subtract": {
-                      "left": {
-                        "ListLength": {
-                          "value": {
-                            "Variable": {
-                              "variable_id": 0
-                            }
-                          }
-                        }
-                      },
-                      "right": {
-                        "Number": {
-                          "value": 1
-                        }
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    {
       "name": "type-declaration-to-type-ast",
       "part_type": {
         "function": {
@@ -71747,12 +71481,26 @@
       }
     },
     {
-      "name": "type-checker-with-entries",
+      "name": "part-definitions-to-type-env-entries",
       "part_type": {
         "function": {
           "parameters": [
             {
-              "name": "entries",
+              "name": "parts",
+              "type": {
+                "list": {
+                  "type_part": {
+                    "$part": "core.part-definition"
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": "number"
+            },
+            {
+              "name": "accum",
               "type": {
                 "list": {
                   "record": [
@@ -71793,6 +71541,3376 @@
             }
           ],
           "return_type": {
+            "list": {
+              "record": [
+                {
+                  "key": "part_definition_event_hash",
+                  "value": "string"
+                },
+                {
+                  "key": "part_type",
+                  "value": {
+                    "type_part": {
+                      "$part": "core.type-ast"
+                    }
+                  }
+                },
+                {
+                  "key": "type_declaration",
+                  "value": {
+                    "union": [
+                      {
+                        "tag": "none",
+                        "payload": null
+                      },
+                      {
+                        "tag": "some",
+                        "payload": {
+                          "type_part": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Turn part definitions into entries for core.build-type-env (a type part also passes its expression as the type declaration)"
+        },
+        {
+          "language": "ja",
+          "text": "パーツ定義を core.build-type-env に渡すパーツの一覧にする (型パーツは式を型の宣言として渡す)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "parts"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "accum"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 3,
+                          "variable_name": "part",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.part-definitions-to-type-env-entries"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "Add": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 1
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "name": "accum",
+                              "value": {
+                                "ListAppend": {
+                                  "list": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  },
+                                  "item": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "part_definition_event_hash",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              },
+                                              "key": "part_definition_event_hash"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "part_type",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              },
+                                              "key": "part_type"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "type_declaration",
+                                          "value": {
+                                            "Match": {
+                                              "target": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  },
+                                                  "key": "part_type"
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "tag": "type",
+                                                  "variable_id": null,
+                                                  "variable_name": null,
+                                                  "body": {
+                                                    "Variant": {
+                                                      "tag": "some",
+                                                      "payload": {
+                                                        "RecordGet": {
+                                                          "record": {
+                                                            "Variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          },
+                                                          "key": "expression"
+                                                        }
+                                                      },
+                                                      "type_part_definition_event_hash": null
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "_",
+                                                  "variable_id": 99,
+                                                  "variable_name": "_",
+                                                  "body": {
+                                                    "Variant": {
+                                                      "tag": "none",
+                                                      "payload": null,
+                                                      "type_part_definition_event_hash": null
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "default": null
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "module-entries-in-module",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "entries",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "module_id",
+              "type": "string"
+            },
+            {
+              "name": "same",
+              "type": "boolean"
+            },
+            {
+              "name": "index",
+              "type": "number"
+            },
+            {
+              "name": "accum",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "list": {
+              "record": [
+                {
+                  "key": "part_id",
+                  "value": "string"
+                },
+                {
+                  "key": "module_id",
+                  "value": "string"
+                },
+                {
+                  "key": "part_type",
+                  "value": {
+                    "union": [
+                      {
+                        "tag": "none",
+                        "payload": null
+                      },
+                      {
+                        "tag": "some",
+                        "payload": {
+                          "type_part": {
+                            "$part": "core.type-ast"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": "type_declaration",
+                  "value": {
+                    "union": [
+                      {
+                        "tag": "none",
+                        "payload": null
+                      },
+                      {
+                        "tag": "some",
+                        "payload": {
+                          "type_part": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": "expression_key",
+                  "value": {
+                    "union": [
+                      {
+                        "tag": "none",
+                        "payload": null
+                      },
+                      {
+                        "tag": "some",
+                        "payload": "string"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": "has_expression",
+                  "value": "boolean"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Keep the entries in the module (same is true) or in the other modules (same is false)"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのパーツ (same が true) か, 他のモジュールのパーツ (same が false) だけを残す"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "entries"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "module_id"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "same"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "accum"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 3
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 5,
+                          "variable_name": "entry",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.module-entries-in-module"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "entries",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "module_id",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "same",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "Add": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 1
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "name": "accum",
+                              "value": {
+                                "Match": {
+                                  "target": {
+                                    "Equal": {
+                                      "left": {
+                                        "Equal": {
+                                          "left": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 5
+                                                }
+                                              },
+                                              "key": "module_id"
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "right": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "ListAppend": {
+                                          "list": {
+                                            "Variable": {
+                                              "variable_id": 4
+                                            }
+                                          },
+                                          "item": {
+                                            "Variable": {
+                                              "variable_id": 5
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "default": null
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 4
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "module-entries-to-type-env-entries",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "entries",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": "number"
+            },
+            {
+              "name": "accum",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_definition_event_hash",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.type-ast"
+                        }
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "list": {
+              "record": [
+                {
+                  "key": "part_definition_event_hash",
+                  "value": "string"
+                },
+                {
+                  "key": "part_type",
+                  "value": {
+                    "type_part": {
+                      "$part": "core.type-ast"
+                    }
+                  }
+                },
+                {
+                  "key": "type_declaration",
+                  "value": {
+                    "union": [
+                      {
+                        "tag": "none",
+                        "payload": null
+                      },
+                      {
+                        "tag": "some",
+                        "payload": {
+                          "type_part": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Turn the entries with a declared type into entries for core.build-type-env (entries without a type are left out)"
+        },
+        {
+          "language": "ja",
+          "text": "宣言型のあるパーツを core.build-type-env に渡す形にする (型の無いパーツは入れない)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "entries"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "accum"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 3,
+                          "variable_name": "entry",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.module-entries-to-type-env-entries"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "entries",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "Add": {
+                                  "left": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "right": {
+                                    "Number": {
+                                      "value": 1
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            {
+                              "name": "accum",
+                              "value": {
+                                "Match": {
+                                  "target": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      },
+                                      "key": "part_type"
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "none",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "some",
+                                      "variable_id": 4,
+                                      "variable_name": "part_type",
+                                      "body": {
+                                        "ListAppend": {
+                                          "list": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          },
+                                          "item": {
+                                            "TypeLiteral": {
+                                              "items": [
+                                                {
+                                                  "key": "part_definition_event_hash",
+                                                  "value": {
+                                                    "RecordGet": {
+                                                      "record": {
+                                                        "Variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      },
+                                                      "key": "part_id"
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "key": "part_type",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 4
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "key": "type_declaration",
+                                                  "value": {
+                                                    "RecordGet": {
+                                                      "record": {
+                                                        "Variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      },
+                                                      "key": "type_declaration"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "default": null
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "module-entry-lookup",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "entries",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "part_id",
+              "type": "string"
+            },
+            {
+              "name": "index",
+              "type": "number"
+            }
+          ],
+          "return_type": {
+            "union": [
+              {
+                "tag": "none",
+                "payload": null
+              },
+              {
+                "tag": "some",
+                "payload": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Find the entry of part_id"
+        },
+        {
+          "language": "ja",
+          "text": "part_id のパーツを探す"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "entries"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "part_id"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 3,
+                          "variable_name": "entry",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Match": {
+                          "target": {
+                            "Equal": {
+                              "left": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "key": "part_id"
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.module-entry-lookup"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "entries",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "part_id",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "Add": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ],
+                          "default": null
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variant": {
+                      "tag": "none",
+                      "payload": null,
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "option-type-equals",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "union": [
+                  {
+                    "tag": "none",
+                    "payload": null
+                  },
+                  {
+                    "tag": "some",
+                    "payload": {
+                      "type_part": {
+                        "$part": "core.type-ast"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "union": [
+                  {
+                    "tag": "none",
+                    "payload": null
+                  },
+                  {
+                    "tag": "some",
+                    "payload": {
+                      "type_part": {
+                        "$part": "core.type-ast"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether two optional types are equal (both none, or both some and core.type-equals)"
+        },
+        {
+          "language": "ja",
+          "text": "省略できる型 2 つが等しいか (どちらも none, またはどちらも some で core.type-equals)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "a"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "b"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "none",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "none",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Boolean": {
+                              "value": true
+                            }
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "variable_id": 3,
+                          "variable_name": "_",
+                          "body": {
+                            "Boolean": {
+                              "value": false
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "some",
+                  "variable_id": 2,
+                  "variable_name": "ta",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "none",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Boolean": {
+                              "value": false
+                            }
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "variable_id": 3,
+                          "variable_name": "tb",
+                          "body": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.type-equals"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "t1",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "t2",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "option-string-equals",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "union": [
+                  {
+                    "tag": "none",
+                    "payload": null
+                  },
+                  {
+                    "tag": "some",
+                    "payload": "string"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "union": [
+                  {
+                    "tag": "none",
+                    "payload": null
+                  },
+                  {
+                    "tag": "some",
+                    "payload": "string"
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether both are some and equal (none is never equal, since it means the value cannot be compared)"
+        },
+        {
+          "language": "ja",
+          "text": "どちらも some で等しいか (none は比べられないという意味なので等しくない)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "a"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "b"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "Variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "none",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Boolean": {
+                      "value": false
+                    }
+                  }
+                },
+                {
+                  "tag": "some",
+                  "variable_id": 2,
+                  "variable_name": "sa",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "none",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Boolean": {
+                              "value": false
+                            }
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "variable_id": 3,
+                          "variable_name": "sb",
+                          "body": {
+                            "Equal": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "module-entries-types-changed",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "previous",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "committed",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": "number"
+            }
+          ],
+          "return_type": "boolean"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether a committed part is new or its declared type differs from the previous commit"
+        },
+        {
+          "language": "ja",
+          "text": "コミットするパーツに, 新しいパーツか宣言型が前のコミットと違うパーツがあるか"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "previous"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "committed"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 3,
+                          "variable_name": "entry",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Match": {
+                          "target": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.module-entry-lookup"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "entries",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "part_id",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      },
+                                      "key": "part_id"
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "Number": {
+                                      "value": 0
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "none",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Boolean": {
+                                  "value": true
+                                }
+                              }
+                            },
+                            {
+                              "tag": "some",
+                              "variable_id": 4,
+                              "variable_name": "before",
+                              "body": {
+                                "Match": {
+                                  "target": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.option-type-equals"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "a",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 4
+                                                }
+                                              },
+                                              "key": "part_type"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "b",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              },
+                                              "key": "part_type"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.module-entries-types-changed"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "previous",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "committed",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "index",
+                                              "value": {
+                                                "Add": {
+                                                  "left": {
+                                                    "Variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  },
+                                                  "right": {
+                                                    "Number": {
+                                                      "value": 1
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Boolean": {
+                                          "value": true
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "default": null
+                                }
+                              }
+                            }
+                          ],
+                          "default": null
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Boolean": {
+                      "value": false
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "module-commit-classify",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "previous",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "committed",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "types_changed",
+              "type": "boolean"
+            },
+            {
+              "name": "index",
+              "type": "number"
+            },
+            {
+              "name": "to_check",
+              "type": {
+                "list": "string"
+              }
+            },
+            {
+              "name": "without_expression",
+              "type": {
+                "list": "string"
+              }
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "to_check",
+                "value": {
+                  "list": "string"
+                }
+              },
+              {
+                "key": "without_expression",
+                "value": {
+                  "list": "string"
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Decide which committed parts to check: unchanged parts are skipped unless a type changed, and parts without an expression or a type are listed separately"
+        },
+        {
+          "language": "ja",
+          "text": "コミットするパーツのうち検査するものを決める. 型が 1 つも変わらなければ式の変わらないパーツは飛ばし, 式か型の無いパーツは別に挙げる"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "previous"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "committed"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "types_changed"
+            },
+            {
+              "parameter_id": 3,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 4,
+              "parameter_name": "to_check"
+            },
+            {
+              "parameter_id": 5,
+              "parameter_name": "without_expression"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 3
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 6,
+                          "variable_name": "entry",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 3
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Let": {
+                          "bindings": [
+                            {
+                              "variable_id": 7,
+                              "variable_name": "unchanged",
+                              "value": {
+                                "Match": {
+                                  "target": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.module-entry-lookup"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "entries",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "part_id",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 6
+                                                }
+                                              },
+                                              "key": "part_id"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "none",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Boolean": {
+                                          "value": false
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "some",
+                                      "variable_id": 8,
+                                      "variable_name": "before",
+                                      "body": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.option-string-equals"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "a",
+                                              "value": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 8
+                                                    }
+                                                  },
+                                                  "key": "expression_key"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "b",
+                                              "value": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 6
+                                                    }
+                                                  },
+                                                  "key": "expression_key"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "default": null
+                                }
+                              }
+                            }
+                          ],
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "Match": {
+                                      "target": {
+                                        "Variable": {
+                                          "variable_id": 7
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "true",
+                                          "variable_id": null,
+                                          "variable_name": null,
+                                          "body": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.module-commit-classify"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "previous",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "committed",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "types_changed",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "Add": {
+                                                      "left": {
+                                                        "Variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "Number": {
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "to_check",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 4
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "without_expression",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "tag": "false",
+                                          "variable_id": null,
+                                          "variable_name": null,
+                                          "body": {
+                                            "Match": {
+                                              "target": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 6
+                                                    }
+                                                  },
+                                                  "key": "part_type"
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "tag": "none",
+                                                  "variable_id": null,
+                                                  "variable_name": null,
+                                                  "body": {
+                                                    "Call": {
+                                                      "function": {
+                                                        "PartReference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.module-commit-classify"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "previous",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "committed",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "types_changed",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "Add": {
+                                                              "left": {
+                                                                "Variable": {
+                                                                  "variable_id": 3
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "Number": {
+                                                                  "value": 1
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "to_check",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "without_expression",
+                                                          "value": {
+                                                            "ListAppend": {
+                                                              "list": {
+                                                                "Variable": {
+                                                                  "variable_id": 5
+                                                                }
+                                                              },
+                                                              "item": {
+                                                                "RecordGet": {
+                                                                  "record": {
+                                                                    "Variable": {
+                                                                      "variable_id": 6
+                                                                    }
+                                                                  },
+                                                                  "key": "part_id"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "some",
+                                                  "variable_id": 9,
+                                                  "variable_name": "_",
+                                                  "body": {
+                                                    "Match": {
+                                                      "target": {
+                                                        "RecordGet": {
+                                                          "record": {
+                                                            "Variable": {
+                                                              "variable_id": 6
+                                                            }
+                                                          },
+                                                          "key": "has_expression"
+                                                        }
+                                                      },
+                                                      "arms": [
+                                                        {
+                                                          "tag": "true",
+                                                          "variable_id": null,
+                                                          "variable_name": null,
+                                                          "body": {
+                                                            "Call": {
+                                                              "function": {
+                                                                "PartReference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.module-commit-classify"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "previous",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 0
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "committed",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 1
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "types_changed",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 2
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "index",
+                                                                  "value": {
+                                                                    "Add": {
+                                                                      "left": {
+                                                                        "Variable": {
+                                                                          "variable_id": 3
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "Number": {
+                                                                          "value": 1
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "to_check",
+                                                                  "value": {
+                                                                    "ListAppend": {
+                                                                      "list": {
+                                                                        "Variable": {
+                                                                          "variable_id": 4
+                                                                        }
+                                                                      },
+                                                                      "item": {
+                                                                        "RecordGet": {
+                                                                          "record": {
+                                                                            "Variable": {
+                                                                              "variable_id": 6
+                                                                            }
+                                                                          },
+                                                                          "key": "part_id"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "without_expression",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 5
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "tag": "false",
+                                                          "variable_id": null,
+                                                          "variable_name": null,
+                                                          "body": {
+                                                            "Call": {
+                                                              "function": {
+                                                                "PartReference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.module-commit-classify"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "previous",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 0
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "committed",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 1
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "types_changed",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 2
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "index",
+                                                                  "value": {
+                                                                    "Add": {
+                                                                      "left": {
+                                                                        "Variable": {
+                                                                          "variable_id": 3
+                                                                        }
+                                                                      },
+                                                                      "right": {
+                                                                        "Number": {
+                                                                          "value": 1
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "to_check",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 4
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "without_expression",
+                                                                  "value": {
+                                                                    "ListAppend": {
+                                                                      "list": {
+                                                                        "Variable": {
+                                                                          "variable_id": 5
+                                                                        }
+                                                                      },
+                                                                      "item": {
+                                                                        "RecordGet": {
+                                                                          "record": {
+                                                                            "Variable": {
+                                                                              "variable_id": 6
+                                                                            }
+                                                                          },
+                                                                          "key": "part_id"
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ],
+                                                      "default": null
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "default": null
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "default": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "Match": {
+                                      "target": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 6
+                                            }
+                                          },
+                                          "key": "part_type"
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "none",
+                                          "variable_id": null,
+                                          "variable_name": null,
+                                          "body": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.module-commit-classify"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "previous",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "committed",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "types_changed",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "Add": {
+                                                      "left": {
+                                                        "Variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      },
+                                                      "right": {
+                                                        "Number": {
+                                                          "value": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "to_check",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 4
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "without_expression",
+                                                  "value": {
+                                                    "ListAppend": {
+                                                      "list": {
+                                                        "Variable": {
+                                                          "variable_id": 5
+                                                        }
+                                                      },
+                                                      "item": {
+                                                        "RecordGet": {
+                                                          "record": {
+                                                            "Variable": {
+                                                              "variable_id": 6
+                                                            }
+                                                          },
+                                                          "key": "part_id"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "tag": "some",
+                                          "variable_id": 9,
+                                          "variable_name": "_",
+                                          "body": {
+                                            "Match": {
+                                              "target": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 6
+                                                    }
+                                                  },
+                                                  "key": "has_expression"
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "tag": "true",
+                                                  "variable_id": null,
+                                                  "variable_name": null,
+                                                  "body": {
+                                                    "Call": {
+                                                      "function": {
+                                                        "PartReference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.module-commit-classify"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "previous",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "committed",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "types_changed",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "Add": {
+                                                              "left": {
+                                                                "Variable": {
+                                                                  "variable_id": 3
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "Number": {
+                                                                  "value": 1
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "to_check",
+                                                          "value": {
+                                                            "ListAppend": {
+                                                              "list": {
+                                                                "Variable": {
+                                                                  "variable_id": 4
+                                                                }
+                                                              },
+                                                              "item": {
+                                                                "RecordGet": {
+                                                                  "record": {
+                                                                    "Variable": {
+                                                                      "variable_id": 6
+                                                                    }
+                                                                  },
+                                                                  "key": "part_id"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "without_expression",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 5
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "false",
+                                                  "variable_id": null,
+                                                  "variable_name": null,
+                                                  "body": {
+                                                    "Call": {
+                                                      "function": {
+                                                        "PartReference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.module-commit-classify"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "previous",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "committed",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "types_changed",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "Add": {
+                                                              "left": {
+                                                                "Variable": {
+                                                                  "variable_id": 3
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "Number": {
+                                                                  "value": 1
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "to_check",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 4
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "without_expression",
+                                                          "value": {
+                                                            "ListAppend": {
+                                                              "list": {
+                                                                "Variable": {
+                                                                  "variable_id": 5
+                                                                }
+                                                              },
+                                                              "item": {
+                                                                "RecordGet": {
+                                                                  "record": {
+                                                                    "Variable": {
+                                                                      "variable_id": 6
+                                                                    }
+                                                                  },
+                                                                  "key": "part_id"
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ],
+                                              "default": null
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "default": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "TypeLiteral": {
+                      "items": [
+                        {
+                          "key": "to_check",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 4
+                            }
+                          }
+                        },
+                        {
+                          "key": "without_expression",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 5
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-checker-in-env",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "env",
+              "type": {
+                "type_part": {
+                  "$part": "core.type-env"
+                }
+              }
+            }
+          ],
+          "return_type": {
             "function": {
               "parameters": [
                 {
@@ -71824,11 +74942,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Build the type environment once from entries and return a function that checks an expression against an expected type in it"
+          "text": "Return a function that checks an expression against an expected type in env"
         },
         {
           "language": "ja",
-          "text": "entries から型環境を 1 度だけ作り, その環境で式を期待する型に対して検査する関数を返す"
+          "text": "env のもとで式を期待する型に対して検査する関数を返す"
         }
       ],
       "expression": {
@@ -71836,21 +74954,307 @@
           "parameters": [
             {
               "parameter_id": 0,
-              "parameter_name": "entries"
+              "parameter_name": "env"
+            }
+          ],
+          "body": {
+            "Function": {
+              "parameters": [
+                {
+                  "parameter_id": 1,
+                  "parameter_name": "expr"
+                },
+                {
+                  "parameter_id": 2,
+                  "parameter_name": "expected_type"
+                }
+              ],
+              "body": {
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.type-check-against"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "expr",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "env",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    },
+                    {
+                      "name": "expected_type",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "type-checker",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "latest",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "committed",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "module_id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "expression_key",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": "string"
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "key": "has_expression",
+                      "value": "boolean"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "module_id",
+              "type": "string"
+            }
+          ],
+          "return_type": {
+            "record": [
+              {
+                "key": "to_check",
+                "value": {
+                  "list": "string"
+                }
+              },
+              {
+                "key": "without_expression",
+                "value": {
+                  "list": "string"
+                }
+              },
+              {
+                "key": "check",
+                "value": {
+                  "function": {
+                    "parameters": [
+                      {
+                        "name": "expr",
+                        "type": {
+                          "type_part": {
+                            "$part": "core.expression"
+                          }
+                        }
+                      },
+                      {
+                        "name": "expected_type",
+                        "type": {
+                          "type_part": {
+                            "$part": "core.type-ast"
+                          }
+                        }
+                      }
+                    ],
+                    "return_type": {
+                      "type_part": {
+                        "$part": "core.type-result"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Plan the check of a module commit: overlay the committed parts on the latest parts of all modules to build the type environment, and decide which committed parts to check (all of them if a declared type changed). Returns the parts to check, the parts without an expression or a type, and the checker for that environment. With no committed parts it is the checker for the latest parts"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのコミットの検査を決める. 全モジュールの最新のパーツにコミットするパーツを重ねて型環境を作り, コミットするパーツのうち検査するもの (宣言型が 1 つでも変われば全部) を決める. 検査するパーツ, 式か型の無いパーツ, その型環境で検査する関数を返す. コミットするパーツが無ければ最新のパーツの型環境で検査する関数になる"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "latest"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "committed"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "module_id"
             }
           ],
           "body": {
             "Let": {
               "bindings": [
                 {
-                  "variable_id": 1,
-                  "variable_name": "env",
+                  "variable_id": 3,
+                  "variable_name": "previous",
                   "value": {
                     "Call": {
                       "function": {
                         "PartReference": {
                           "part_definition_event_hash": {
-                            "$part": "core.build-type-env"
+                            "$part": "core.module-entries-in-module"
                           }
                         }
                       },
@@ -71862,36 +75266,9 @@
                               "variable_id": 0
                             }
                           }
-                        }
-                      ]
-                    }
-                  }
-                }
-              ],
-              "body": {
-                "Function": {
-                  "parameters": [
-                    {
-                      "parameter_id": 2,
-                      "parameter_name": "expr"
-                    },
-                    {
-                      "parameter_id": 3,
-                      "parameter_name": "expected_type"
-                    }
-                  ],
-                  "body": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.type-check-against"
-                          }
-                        }
-                      },
-                      "arguments": [
+                        },
                         {
-                          "name": "expr",
+                          "name": "module_id",
                           "value": {
                             "Variable": {
                               "variable_id": 2
@@ -71899,22 +75276,368 @@
                           }
                         },
                         {
-                          "name": "env",
+                          "name": "same",
                           "value": {
-                            "Variable": {
-                              "variable_id": 1
+                            "Boolean": {
+                              "value": true
                             }
                           }
                         },
                         {
-                          "name": "expected_type",
+                          "name": "index",
                           "value": {
-                            "Variable": {
-                              "variable_id": 3
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "accum",
+                          "value": {
+                            "ListLiteral": {
+                              "items": []
                             }
                           }
                         }
                       ]
+                    }
+                  }
+                }
+              ],
+              "body": {
+                "Let": {
+                  "bindings": [
+                    {
+                      "variable_id": 4,
+                      "variable_name": "others",
+                      "value": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.module-entries-in-module"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "entries",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "module_id",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "same",
+                              "value": {
+                                "Boolean": {
+                                  "value": false
+                                }
+                              }
+                            },
+                            {
+                              "name": "index",
+                              "value": {
+                                "Number": {
+                                  "value": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "accum",
+                              "value": {
+                                "ListLiteral": {
+                                  "items": []
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 5,
+                          "variable_name": "types_changed",
+                          "value": {
+                            "Match": {
+                              "target": {
+                                "Equal": {
+                                  "left": {
+                                    "ListLength": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "ListLength": {
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.module-entries-types-changed"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "previous",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "committed",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "index",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": null,
+                                  "variable_name": null,
+                                  "body": {
+                                    "Boolean": {
+                                      "value": true
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Let": {
+                          "bindings": [
+                            {
+                              "variable_id": 6,
+                              "variable_name": "plan",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.module-commit-classify"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "previous",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "committed",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "types_changed",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "Number": {
+                                          "value": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "to_check",
+                                      "value": {
+                                        "ListLiteral": {
+                                          "items": []
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "without_expression",
+                                      "value": {
+                                        "ListLiteral": {
+                                          "items": []
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ],
+                          "body": {
+                            "TypeLiteral": {
+                              "items": [
+                                {
+                                  "key": "to_check",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 6
+                                        }
+                                      },
+                                      "key": "to_check"
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "without_expression",
+                                  "value": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 6
+                                        }
+                                      },
+                                      "key": "without_expression"
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "check",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.type-checker-in-env"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.build-type-env"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "entries",
+                                                  "value": {
+                                                    "Call": {
+                                                      "function": {
+                                                        "PartReference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.module-entries-to-type-env-entries"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "entries",
+                                                          "value": {
+                                                            "ListConcat": {
+                                                              "left": {
+                                                                "Variable": {
+                                                                  "variable_id": 4
+                                                                }
+                                                              },
+                                                              "right": {
+                                                                "Variable": {
+                                                                  "variable_id": 1
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "Number": {
+                                                              "value": 0
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "accum",
+                                                          "value": {
+                                                            "ListLiteral": {
+                                                              "items": []
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
                     }
                   }
                 }
@@ -72462,6 +76185,46 @@
                   "$part": "core.module-definition"
                 }
               }
+            },
+            {
+              "name": "external",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "part_definition_event_hash",
+                      "value": "string"
+                    },
+                    {
+                      "key": "part_type",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.type-ast"
+                        }
+                      }
+                    },
+                    {
+                      "key": "type_declaration",
+                      "value": {
+                        "union": [
+                          {
+                            "tag": "none",
+                            "payload": null
+                          },
+                          {
+                            "tag": "some",
+                            "payload": {
+                              "type_part": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": "boolean"
@@ -72470,11 +76233,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Validates a module definition ensuring non-empty module name and mutually valid member parts"
+          "text": "Check that the module name is non-empty and every part satisfies its declared type in the type environment of the module's parts and the external parts (parts of other modules)"
         },
         {
           "language": "ja",
-          "text": "モジュール名が非空であり構成パーツがモジュール型環境のもとで相互型検証を満たすかを検証する関数"
+          "text": "モジュール名が空でなく, 構成パーツが, モジュールのパーツと外部のパーツ (他のモジュールのパーツ) から作った型環境のもとで宣言型を満たすかを検証する関数"
         }
       ],
       "expression": {
@@ -72483,6 +76246,10 @@
             {
               "parameter_id": 0,
               "parameter_name": "mod_def"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "external"
             }
           ],
           "body": {
@@ -72541,42 +76308,66 @@
                         {
                           "name": "env",
                           "value": {
-                            "TypeLiteral": {
-                              "items": [
-                                {
-                                  "key": "variables",
-                                  "value": {
-                                    "ListLiteral": {
-                                      "items": []
-                                    }
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.build-type-env"
                                   }
-                                },
+                                }
+                              },
+                              "arguments": [
                                 {
-                                  "key": "parts",
+                                  "name": "entries",
                                   "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.collect-part-type-env"
-                                          }
+                                    "ListConcat": {
+                                      "left": {
+                                        "Variable": {
+                                          "variable_id": 1
                                         }
                                       },
-                                      "arguments": [
-                                        {
-                                          "name": "parts",
-                                          "value": {
-                                            "RecordGet": {
-                                              "record": {
-                                                "Variable": {
-                                                  "variable_id": 0
-                                                }
-                                              },
-                                              "key": "parts"
+                                      "right": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.part-definitions-to-type-env-entries"
+                                              }
                                             }
-                                          }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "parts",
+                                              "value": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 0
+                                                    }
+                                                  },
+                                                  "key": "parts"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "index",
+                                              "value": {
+                                                "Number": {
+                                                  "value": 0
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "accum",
+                                              "value": {
+                                                "ListLiteral": {
+                                                  "items": []
+                                                }
+                                              }
+                                            }
+                                          ]
                                         }
-                                      ]
+                                      }
                                     }
                                   }
                                 }
