@@ -418,9 +418,9 @@ export async function generateTypeCheckerWasm(): Promise<Uint8Array> {
       new WebAssembly.Module(await readFile(resolve("wasm/stage1.wasm"))),
     ),
     core: {
-      typeCheckAgainst: await deriveModulePartId(
+      typeChecker: await deriveModulePartId(
         await deriveModuleIdBytes(accountBytes, "core"),
-        "type-check-against",
+        "type-checker",
       ),
     },
     resolvePart: (id) => partExpressions.get(id),

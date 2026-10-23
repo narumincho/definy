@@ -680,6 +680,51 @@ export function setStringValue(
   }));
 }
 
+/** `path` の最後が関数の引数名 ({@link PathStep} の `functionParameter`) なら, その引数の番号 */
+export function functionParameterIndex(
+  path: ReadonlyArray<PathStep>,
+): number | null {
+  const last = path[path.length - 1];
+  return typeof last === "object" && last.kind === "functionParameter"
+    ? last.index
+    : null;
+}
+
+/**
+ * 関数の引数 (`path` は `functionParameter` で終わる) の名前を変える.
+ * 本体の変数は ID で引数を参照しているので, 名前だけを変えればよい
+ */
+export function renameFunctionParameter(
+  expr: unknown,
+  path: ReadonlyArray<PathStep>,
+  name: string,
+): unknown {
+  const index = functionParameterIndex(path);
+  if (index === null) {
+    return expr;
+  }
+  return updateExpressionAtPath(expr, path.slice(0, -1), (target) => {
+    const fn = (target as { readonly Function?: unknown } | null)?.Function as
+      | {
+          readonly parameters?: ReadonlyArray<
+            Readonly<Record<string, unknown>>
+          >;
+        }
+      | undefined;
+    if (fn === undefined) {
+      return target;
+    }
+    return {
+      Function: {
+        ...fn,
+        parameters: (fn.parameters ?? []).map((parameter, i) =>
+          i === index ? { ...parameter, parameter_name: name } : parameter,
+        ),
+      },
+    };
+  });
+}
+
 export function clearExpressionAtPath(
   expr: unknown,
   path: ReadonlyArray<PathStep>,

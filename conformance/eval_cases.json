@@ -1,5 +1,5 @@
 {
-  "$comment": "Rust (definy-core の Wasm コンパイラ経由評価) と TypeScript (worker/cbor_eval.ts) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID（システムアカウントから導出）に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。 文字列の長さ・添字は UTF-8 のバイト単位で、範囲外の添字は文字列の範囲に丸める。",
+  "$comment": "definy 製コンパイラ (stage1.wasm でコンパイルして実行) と definy 製評価器 (core.eval-value) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID（システムアカウントから導出）に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。 文字列の長さ・添字は UTF-8 のバイト単位で、範囲外の添字は文字列の範囲に丸める。",
   "cases": [
     {
       "name": "number literal",

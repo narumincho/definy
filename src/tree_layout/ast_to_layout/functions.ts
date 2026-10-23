@@ -146,11 +146,11 @@ export function tryBuildFunctionNode(
       return {
         id: `${idPrefix}.param_${idx}`,
         path: childPath(currentPath, {
-          kind: "typeFunctionParameter",
+          kind: "functionParameter",
           index: idx,
         }),
         label: pName,
-        kind: "identifier",
+        kind: "parameterName",
         children: [],
         computedWidth: 0,
         computedHeight: 0,

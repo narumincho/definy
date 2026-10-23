@@ -7,6 +7,8 @@ export type NodeKind =
   | "literalString"
   | "literalBoolean"
   | "identifier"
+  /** 関数の引数名. 選ぶとその場で名前を変えられる */
+  | "parameterName"
   | "keyword"
   | "operator"
   | "delimiter"
@@ -37,6 +39,8 @@ export type PathStep =
   | "callFunction"
   | { readonly kind: "callArgument"; readonly index: number }
   | { readonly kind: "typeFunctionParameter"; readonly index: number }
+  /** 関数 (`Function`) の引数の名前. 式ではない */
+  | { readonly kind: "functionParameter"; readonly index: number }
   | "typeFunctionReturn"
   | "variantPayload"
   | "matchTarget"

@@ -78,19 +78,18 @@ definy
   型チェッカーが拒否した場合は `400` を返し, メッセージにパーツ名と型エラーを入れます。
   (以前は `core.validate-module` で全パーツを一括検証していましたが, 型パーツの展開ができず
   core のように大きなモジュールでは重すぎたため置き換えました)
-- `core.validate-module` は、モジュール内のパーツリスト（`parts`）から
-  `core.collect-part-type-env`
-  によりモジュール型環境（`part-type-env`）を自動構築し、
+- `core.validate-module(mod_def, external)` は、モジュール内のパーツリスト（`parts`）と外部のパーツ
+  (`external`, 他のモジュールのパーツ) から `core.build-type-env` で型環境を作り、
   `core.validate-parts-in-env`
   を呼び出して全パーツを共通の型環境のもとで検査します。
-  これにより、モジュール内の他パーツ参照（`part_reference`）や相互依存関係を含むパーツ群の
-  セルフホスト一括妥当性検証が実現されています。
+  モジュール内外の他パーツ参照（`part_reference`）と型パーツの展開を含めて検証します (`src/validate_module.test.ts`)。
 
 モジュール内パーツ参照の解決と、リスト・直和型構築・レコード・パターンマッチを含む式検査は
 自己記述型チェッカー（`core.type-check` /
 `core.type-check-against`）において検証・実証されています。
-外部モジュールへのパーツ参照は, Rust 側で作る型環境 (全モジュールの最新のパーツ) を通じて解決しています。
-`core.validate-module` 自体での外部モジュール参照解決や、型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
+外部モジュールへのパーツ参照は, definy 製の `core.build-type-env` が全モジュールの最新のパーツから作る型環境を通じて解決しています
+(下の「型環境を definy で作る」)。
+型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
 
 Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash
 衝突や既存 bytes と異なる内容は拒否します。ModuleCommit
@@ -115,14 +114,16 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 1. **[済] 型宣言の意味検査**: record field 名と union tag の重複、空 variant
    集合を `invalid_type_declaration` として拒否し、型パーツ同士の相互参照も解決します（Phase 9〜10）。
    型定義パーツ自体の再帰参照（循環）の規則は未決定です。
-2. **[済] module type environment**: `core.collect-part-type-env` が
-   `ModuleCommitEvent` の全パーツの hash と宣言型から環境を作り、
+2. **[済] module type environment**: `core.build-type-env` が
+   全パーツの hash と宣言型 (型パーツは宣言した型も) から環境を作り、
    `PartReference`・構築子・相互参照を解決します。
-   サーバー・UI・seed の検証で使う型環境 (`definy_core::self_hosted_type_check::check_module_commit_parts`)
-   は全モジュールの最新のパーツから作るので, 他のモジュールのパーツ参照 (ユーザーのモジュールから
-   `core.list-contains-string` を呼ぶなど) も引数の型まで検査します (`commit_check_tests.rs` で確認)。
-   definy 製の `core.validate-module` はモジュール内のパーツだけで環境を作るため外部モジュールを参照できませんが,
-   こちらはテストでだけ使っています。型環境を作る部分を definy に移すのは今後の課題です。
+   サーバー・UI・seed の検証で使う型環境 (`checkModuleCommitParts`, `src/self_hosted_type_check.ts`)
+   は全モジュールの最新のパーツから definy 製の `core.build-type-env` で作るので, 他のモジュールのパーツ参照
+   (ユーザーのモジュールから `core.list-contains-string` を呼ぶなど) も引数の型まで検査します (`worker/type_check.test.ts` で確認)。
+   最新のパーツにコミットするパーツを重ねること, 型が変わったかの判定, 検査するパーツの選択も
+   definy 製の `core.type-checker` が行います (下の「型環境を definy で作る」)。
+   TypeScript 側に残っているのは, イベントから全モジュールの最新のパーツを集めること (署名の検証・CAS の読み込み) と,
+   データの形の変換 (`PartType` → `core.type-ast`) だけです。
 3. **[済] 式検査の拡張**: list/record の構築と field access、union constructor、match
    の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
    （[ui.md](ui.md) の「型エラー表示」を参照）。
@@ -492,10 +493,10 @@ Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024
 TypeScript への移行で一度なくなっていた definy 製型チェッカーの実行を, stage1 の上に作り直した
 (`src/self_hosted_type_check.ts`。旧 Rust 版 `definy_core::self_hosted_type_check` の移植)。
 
-- **1 度だけコンパイルして何度も呼ぶ**: `compileTypeChecker` が `core.type-check-against` への
+- **1 度だけコンパイルして何度も呼ぶ**: `compileTypeChecker` が `core.type-checker` への
   `PartReference` を stage1 でコンパイルする (関数を返す式の Wasm になる)。`checkParts` は
-  `instantiateCompiledFunction` (`src/stage1_compiler.ts`) でインスタンスを作り, 型環境を 1 度だけ線形メモリに
-  書き込んで, パーツごとに `expr`・`expected_type` を書き込んで呼ぶ。seed の 169 パーツで, コンパイル 335ms・検査 600ms ほど
+  `instantiateCompiledFunction` (`src/stage1_compiler.ts`) でインスタンスを作り, 型環境に入れるパーツを 1 度だけ線形メモリに
+  書き込んで呼ぶ。返った「その型環境で検査する関数」を `callClosure` で, パーツごとに `expr`・`expected_type` を書き込んで呼ぶ。seed の 169 パーツで, コンパイル 335ms・検査 600ms ほど
   (パーツごとに `let env = ... in [check(a), ...]` の式をコンパイルし直していたときは 73 秒かかった)。
   線形メモリは解放しないので 32 パーツごとにインスタンスを作り直し, trap したときも作り直す
 - **値の書き込み** (`writeLiteral`): 型環境のような大きな値を線形メモリに書くので, 1 度だけ走査して JavaScript 側の
@@ -518,6 +519,51 @@ TypeScript への移行で一度なくなっていた definy 製型チェッカ�
   が型エラーなしで通ることを確かめる。作り直したときに `core.compile-call-arguments-range` が
   `core.count-functions-in-values-range` (`{key, value}` のリストを取る) に呼び出しの引数 (`{name, value}` のリスト) を
   渡している型エラーが見つかり, `core.count-functions-in-arguments-range` を分けて直した
+
+### 型環境を definy で作る (2026-10-23)
+
+以前は TypeScript (`typeEnvExpression`) が `core.type-env` の値を組み立てていた (型パーツの宣言式を
+`expressionToPartType` で型にして `{hash}#definition` のキーで入れるところまで)。いまは次の core のパーツが行う。
+
+- `core.type-checker(latest, committed, module_id) -> { to_check, without_expression, check }`: サーバー・UI・seed の検査は
+  これをコンパイルして使う (`createModuleCommitSession`)。`latest` は全モジュールの最新のパーツ, `committed` はモジュール
+  `module_id` にコミットするパーツで, どちらも
+  `list<{ part_id, module_id, part_type: option<type-ast>, type_declaration: option<expression>, expression_key: option<string>, has_expression }>`。
+  - 型環境: `latest` から `module_id` のパーツを除き (`core.module-entries-in-module`), `committed` を足して
+    `core.build-type-env` で作る。型の無いパーツは入れない (`core.module-entries-to-type-env-entries`)
+  - 型が変わったか (`core.module-entries-types-changed`): パーツの数が変わったか, 新しいパーツか宣言型の違うパーツ
+    (`core.option-type-equals`) があれば変わった
+  - 検査するパーツ (`core.module-commit-classify`): 型が変わっていなければ, `expression_key` が前のコミットと同じパーツを
+    飛ばす (`none` は比べられないので飛ばさない)。式か型の無いパーツは `without_expression` に入れる
+    (TypeScript 側がシステムアカウント以外なら拒否する)
+  - `check`: その型環境で `core.type-check-against` を呼ぶ関数 (`core.type-checker-in-env`)。TypeScript からは
+    `recordField` でレコードのフィールドのポインタを取り, `callClosure` で呼ぶ
+  - コミットせずに型環境だけ欲しいとき (UI の裏の検査, パーツ詳細) は `committed` を空にし, `module_id` に
+    どのモジュール ID とも一致しない `#` を渡す (`createTypeCheckSession`)
+- `core.build-type-env(entries) -> type-env`: `entries` は `list<{ part_definition_event_hash, part_type: type-ast, type_declaration: option<expression> }>`。
+  各パーツの宣言型を入れ, `type_declaration` が `some` (型パーツ) なら宣言している型も `{hash}#definition` で入れる
+  (`core.build-type-env-parts`)
+- `core.type-declaration-to-type-ast(expr) -> option<type-ast>`: 型パーツの宣言式 (`type_number`・`type_list`・`type_function`・
+  `type_record`・`type_union`・`part_reference`) を宣言している型にする。型の式でないか, 中に変換できないものがあれば `none`
+  (`core.type-declaration-parameters-to-type-ast` などがリストの要素を変換する)
+
+TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の値にし, 型パーツの宣言式を
+`typeDeclarationToSelfHostedAst` で `core.expression` の値にして渡すだけになった。
+
+書き方の注意: `option` を返す補助パーツで, 変換した要素を `let` などで受けてから `some` で包むと, `match` のアームの型
+(`union[none]` と `union[some(...)]`) が推論で揃わず型エラーになる。要素を変換したらそのまま再帰呼び出しに渡し,
+戻り値の位置 (期待型のある位置) でだけ `some` / `none` を返すようにした。
+
+### 未入力 (`hole`) と期待する型 (2026-10-23)
+
+`core.expression` に `hole({ probe: boolean })` を足した。UI の式エディタが選んだ位置の期待する型を
+型チェッカーに聞くためのもので ([dynamic-layout.md](dynamic-layout.md)), サーバーや評価には渡さない。
+
+- `core.type-check-against-unlocated`: `probe` なら `error(hole_expected_type { expected: some(期待する型) })`,
+  そうでなければ `ok(期待する型)` (未入力はどの型にもなれる)
+- `core.type-check-unlocated` (推論): `probe` なら `error(hole_expected_type { expected: none })`,
+  そうでなければ `error(unfilled_hole)`
+- 型チェッカーは最初に見つけたエラーを返すので, probe より先に別の型エラーや推論する位置の未入力があると期待する型は分からない
 
 ### 次に進める順番の案
 
@@ -691,8 +737,11 @@ TypeScript への移行で一度なくなっていた definy 製型チェッカ�
 #### 3. 完全動的値評価器: `core.eval-value`
 
 ```definy
-eval-value: expression -> env -> value
+eval-value: expression -> env -> list<{ id: string, expression: expression }> -> value
 ```
+
+3 つ目の引数 `parts` は式が参照するパーツで, `core.compile-to-wasm` の `parts` と同じ形です。
+評価器の適合テストの全 67 ケースを stage1 と同じ値に評価します ([eval-conformance.md](eval-conformance.md))。
 
 - リテラル（数値・文字列・真偽値）、算術演算（`add`, `subtract`, `multiply`,
   `divide`, `remainder`）、等価比較（`equal`）、小なり比較（`less_than`）
@@ -700,6 +749,10 @@ eval-value: expression -> env -> value
 - 条件分岐（Bool に対する `match`。対象が `boolean` のときタグ `"true"` / `"false"` のアームを選ぶ）
 - 関数定義時における環境キャプチャ（クロージャ生成）
 - 関数呼び出し（`call`）時におけるキャプチャ環境の復元と引数束縛
+- 比較 (`not_equal`, `less_than_or_equal`, `greater_than`, `greater_than_or_equal`)、文字列操作
+  (`string_concat`, `string_length`, `string_slice`, `string_to_bytes`)、リスト操作
+  (`list_length`, `list_concat`, `list_get`, `list_append`)
+- パーツ参照（`part_reference`）。`parts` から探して空の環境で評価する（`core.eval-part-reference`）
 
 ---
 
@@ -938,24 +991,23 @@ Elimination）を行う純粋な最適化パーツ。
 #### 2. モジュール妥当性自己検証器: `core.validate-module`
 
 ```definy
-collect-part-type-env-inner: list<part-definition> -> list<{ part_definition_event_hash: string, part_type: type-ast }> -> number -> list<{ part_definition_event_hash: string, part_type: type-ast }>
-collect-part-type-env: list<part-definition> -> list<{ part_definition_event_hash: string, part_type: type-ast }>
+part-definitions-to-type-env-entries: list<part-definition> -> number -> list<entry> -> list<entry>
 validate-part-in-env: part-definition -> type-env -> boolean
 validate-parts-in-env: list<part-definition> -> type-env -> number -> boolean
-validate-module: module-definition -> boolean
+validate-module: module-definition -> list<entry> -> boolean
+-- entry = { part_definition_event_hash: string, part_type: type-ast, type_declaration: option<expression> } (core.build-type-env の入力)
 ```
 
 モジュール定義（`core.module-definition`）を受け取り、以下の手順でモジュール全体を自己一括検証します：
 
 1. **モジュール名検証**:
    モジュール名が非空文字（`string-length > 0`）であることを確認。
-2. **モジュール型環境の自動収集 (`core.collect-part-type-env`)**:
-   パーツ定義リスト（`parts`）の各要素から `part_definition_event_hash` と
-   `part_type` を抽出し、モジュール型環境
-   `list<{ part_definition_event_hash, part_type }>` を構築。
-3. **型環境構築と全パーツ一括検査 (`core.validate-parts-in-env`)**:
-   収集したパーツ型環境を持つ
-   `type-env`（`{ variables: [], parts: collected_parts }`）を生成し、全パーツを
+2. **型環境の構築 (`core.build-type-env`)**:
+   パーツ定義リスト（`parts`）の各要素を `core.part-definitions-to-type-env-entries` で `build-type-env` の入力にし
+   (型パーツは式を型の宣言として渡す), 外部のパーツ (`external`) と合わせて型環境を作る。
+   以前の `core.collect-part-type-env` は型パーツの宣言した型 (`{hash}#definition`) を入れず外部のパーツも参照できなかったので削除した。
+3. **全パーツ一括検査 (`core.validate-parts-in-env`)**:
+   作った `type-env` のもとで全パーツを
    `core.validate-part-in-env`
    で順次検証。モジュール内のパーツ参照（`part_reference`）や相互呼び出しが共通の型環境を通じて自己解決され、すべてのパーツが宣言型に適合する場合に
    `true` を返却します。

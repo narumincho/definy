@@ -285,8 +285,36 @@ const unaryOperators: ReadonlyArray<readonly [string, string]> = [
  * `SelfHostedAstConversionError` を投げる
  */
 export function definyAstToSelfHostedAst(ast: unknown): unknown {
-  if (ast === "Hole") {
+  return toSelfHostedAst(ast, false);
+}
+
+/**
+ * {@link definyAstToSelfHostedAst} と同じだが, 未入力 (`Hole`) を `core.expression` の `hole({ probe: false })` にする.
+ * `{"Hole": {"probe": true}}` は `hole({ probe: true })` になり, 型チェッカーはその位置で期待する型を
+ * `hole_expected_type` のエラーで返す (`findExpectedType`, `src/self_hosted_type_check.ts`).
+ * 未入力のある式はコンパイルできないので, 型検査で期待する型を調べるときにだけ使う
+ */
+export function definyAstWithHolesToSelfHostedAst(ast: unknown): unknown {
+  return toSelfHostedAst(ast, true);
+}
+
+function holeToSelfHostedAst(hole: unknown, allowHoles: boolean): unknown {
+  if (!allowHoles) {
     throw new SelfHostedAstConversionError("Expression has an unfilled hole");
+  }
+  const probe =
+    typeof hole === "object" &&
+    hole !== null &&
+    (hole as { readonly probe?: unknown }).probe === true;
+  return selfHostedVariant(
+    "hole",
+    selfHostedRecord([["probe", { Boolean: { value: probe } }]]),
+  );
+}
+
+function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
+  if (ast === "Hole") {
+    return holeToSelfHostedAst(undefined, allowHoles);
   }
   if (!ast || typeof ast !== "object") {
     throw new SelfHostedAstConversionError(
@@ -296,7 +324,8 @@ export function definyAstToSelfHostedAst(ast: unknown): unknown {
   const obj = ast as Record<string, unknown>;
   const key = Object.keys(obj)[0] ?? "";
   const node = obj[key] as Record<string, unknown>;
-  const convert = definyAstToSelfHostedAst;
+  const convert = (child: unknown): unknown =>
+    toSelfHostedAst(child, allowHoles);
 
   for (const [astKey, tag] of binaryOperators) {
     if (key === astKey) {
@@ -515,7 +544,7 @@ export function definyAstToSelfHostedAst(ast: unknown): unknown {
         ]),
       );
     case "Hole":
-      throw new SelfHostedAstConversionError("Expression has an unfilled hole");
+      return holeToSelfHostedAst(node, allowHoles);
   }
   throw new SelfHostedAstConversionError(
     `core.expression cannot represent ${key || JSON.stringify(ast)}`,
@@ -600,6 +629,19 @@ export type CompiledFunctionInstance = {
   readonly writeArgument: (literal: unknown) => number;
   /** 関数を引数の順に並べたポインタで呼び, 結果のポインタを返す */
   readonly call: (argumentPointers: ReadonlyArray<number>) => number;
+  /**
+   * 関数の値 (`call` が返した関数など) のポインタを, 引数の順に並べたポインタで呼び, 結果のポインタを返す.
+   * 関数でなければ例外を投げる
+   */
+  readonly callClosure: (
+    closurePointer: number,
+    argumentPointers: ReadonlyArray<number>,
+  ) => number;
+  /**
+   * レコードの値のポインタから, フィールド `key` の値のポインタを返す (関数の値のフィールドを
+   * `callClosure` で呼ぶときなど). レコードでないかフィールドが無ければ例外を投げる
+   */
+  readonly recordField: (recordPointer: number, key: string) => number;
   /** 結果のポインタを JavaScript の値として読む */
   readonly read: (pointer: number) => DefinyValue;
 };
@@ -615,30 +657,55 @@ export function instantiateCompiledFunction(
   const instance = new WebAssembly.Instance(module, {});
   const exports = instance.exports as unknown as WasmExports;
 
+  const callClosure = (
+    closurePtr: number,
+    argumentPointers: ReadonlyArray<number>,
+  ): number => {
+    const view = new DataView(exports.memory.buffer);
+    const tag = view.getUint8(closurePtr);
+    if (tag !== 5) {
+      throw new Error(`the value is not a function closure (tag: ${tag})`);
+    }
+    const fn = exports.table.get(view.getUint32(closurePtr + 4, true)) as (
+      env: number,
+      args: number,
+    ) => number;
+    const envPtr = view.getInt32(closurePtr + 8, true);
+    const argsPtr = exports.alloc(Math.max(4 * argumentPointers.length, 8));
+    const argsView = new DataView(exports.memory.buffer);
+    argumentPointers.forEach((ptr, i) => {
+      argsView.setUint32(argsPtr + 4 * i, ptr, true);
+    });
+    return fn(envPtr, argsPtr);
+  };
+
   const closurePtr = exports.evaluate();
-  const view = new DataView(exports.memory.buffer);
-  const tag = view.getUint8(closurePtr);
+  const tag = new DataView(exports.memory.buffer).getUint8(closurePtr);
   if (tag !== 5) {
     throw new Error(
       `compiled wasm evaluate() did not return a function closure (tag: ${tag})`,
     );
   }
-  const fn = exports.table.get(view.getUint32(closurePtr + 4, true)) as (
-    env: number,
-    args: number,
-  ) => number;
-  const envPtr = view.getInt32(closurePtr + 8, true);
 
   return {
     exports,
     writeArgument: (literal) => writeLiteral(exports, literal),
-    call: (argumentPointers) => {
-      const argsPtr = exports.alloc(Math.max(4 * argumentPointers.length, 8));
-      const argsView = new DataView(exports.memory.buffer);
-      argumentPointers.forEach((ptr, i) => {
-        argsView.setUint32(argsPtr + 4 * i, ptr, true);
-      });
-      return fn(envPtr, argsPtr);
+    call: (argumentPointers) => callClosure(closurePtr, argumentPointers),
+    callClosure,
+    recordField: (recordPtr, key) => {
+      const mem = new Uint8Array(exports.memory.buffer);
+      const view = new DataView(exports.memory.buffer);
+      if (mem[recordPtr] !== 4) {
+        throw new Error(`the value is not a record (tag: ${mem[recordPtr]})`);
+      }
+      const count = view.getUint32(recordPtr + 4, true);
+      for (let i = 0; i < count; i++) {
+        const itemBase = recordPtr + 8 + i * 8;
+        if (readDefinyValue(mem, view.getUint32(itemBase, true)) === key) {
+          return view.getUint32(itemBase + 4, true);
+        }
+      }
+      throw new Error(`the record has no field '${key}'`);
     },
     read: (pointer) =>
       readDefinyValue(new Uint8Array(exports.memory.buffer), pointer),

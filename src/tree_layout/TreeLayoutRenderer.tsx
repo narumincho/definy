@@ -74,6 +74,7 @@ export function nodeBadgeColors(kind: NodeKind): {
         border: "1px solid var(--pink-border)",
       };
     case "identifier":
+    case "parameterName":
       return {
         bg: "var(--overlay-3)",
         color: "var(--text)",
@@ -592,7 +593,10 @@ function LeafNodeRenderer({
         }}
       />
     );
-  } else if (isEditing && node.kind === "literalString") {
+  } else if (
+    isEditing &&
+    (node.kind === "literalString" || node.kind === "parameterName")
+  ) {
     content = (
       <input
         type="text"

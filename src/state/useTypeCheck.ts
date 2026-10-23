@@ -16,7 +16,9 @@ import {
   typeEnvKey,
   type LatestPart,
   type SelfHostedTypeCheckOutcome,
+  type TypeCheckSession,
 } from "../self_hosted_type_check.ts";
+import type { DefinyValue } from "../stage1_compiler.ts";
 import { loadTypeChecker } from "../type_checker_browser.ts";
 
 /** コミット前の型検査で見つかった問題 (1 パーツ 1 件) */
@@ -64,6 +66,10 @@ export type TypeCheckOperations = {
   readonly checkCommitTypes: (
     moduleName: string,
   ) => Promise<ReadonlyArray<CommitTypeError>>;
+  readonly findExpectedType: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<DefinyValue | null>;
   readonly typeCheckMessage: (
     partName: string | null,
     outcome: SelfHostedTypeCheckOutcome,
@@ -192,6 +198,32 @@ export function useTypeCheck({
     [committedParts],
   );
 
+  // 式エディタで選んだ位置の期待する型を聞くセッション. 選択を変えるたびに呼ばれるので,
+  // 型環境 (コミット済みの全パーツ) が同じ間は使い回す
+  const expectedTypeSession = useRef<{
+    readonly parts: ReadonlyMap<string, LatestPart>;
+    readonly session: TypeCheckSession;
+  } | null>(null);
+  const findExpectedType = useCallback(
+    async (part: {
+      readonly partType: unknown;
+      readonly expression: unknown;
+    }): Promise<DefinyValue | null> => {
+      const typeChecker = await loadTypeChecker();
+      if (expectedTypeSession.current?.parts !== committedParts) {
+        expectedTypeSession.current = {
+          parts: committedParts,
+          session: createTypeCheckSession({
+            typeChecker,
+            env: typeEnvFromParts(committedParts.values()),
+          }),
+        };
+      }
+      return expectedTypeSession.current.session.findExpectedType(part);
+    },
+    [committedParts],
+  );
+
   const checkCommitTypes = useCallback(
     async (moduleName: string): Promise<ReadonlyArray<CommitTypeError>> => {
       if (!currentAccount) {
@@ -236,6 +268,7 @@ export function useTypeCheck({
     partTypeCheckResults,
     checkPartType,
     checkCommitTypes,
+    findExpectedType,
     typeCheckMessage,
   };
 }

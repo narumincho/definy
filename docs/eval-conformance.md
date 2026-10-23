@@ -2,14 +2,17 @@
 
 definy の式評価について、共有テストケース `conformance/eval_cases.json`（67 件）を用いて実装間の適合性を検証しています。
 
-現在の TypeScript 実装では、次の 2 つのバックエンドに対して Vitest で検証を行っています。
+次の 2 つのバックエンドに対して Vitest で検証を行っています。どちらも definy で書かれた実装です
+(以前あった TypeScript 製評価器 `worker/cbor_eval.ts` は, 言語の意味を TypeScript で二重に定義していたので削除しました)。
 
-1. **TypeScript 製評価器 (`worker/cbor_eval.ts`)**:
-   `worker/eval_conformance.test.ts` で 67 件すべてがパスします。
-2. **自己記述コンパイラ (`wasm/stage1.wasm` + `src/stage1_compiler.ts`)**:
-   `src/stage1_conformance.test.ts` で 67 件すべてがパスします。
+1. **自己記述コンパイラ (`wasm/stage1.wasm` + `src/stage1_compiler.ts`)**:
+   式を stage1 で Wasm にコンパイルして実行します。`src/stage1_conformance.test.ts` で 67 件すべてがパスします。
+2. **自己記述評価器 (`core.eval-value`)**:
+   式を `core.expression` の値にして, 式が参照するパーツ (`list<{ id, expression }>`, `core.compile-to-wasm` の
+   `parts` と同じ形) と一緒に `core.eval-value(expr, [], parts)` に渡し, その呼び出しを stage1 でコンパイルして実行します。
+   返った `core.value` を正規化表現に直して比べます。`src/eval_value_conformance.test.ts` で 67 件すべてがパスします。
 
-> **歴史的注記（旧 Rust 実装・廃止済み）**: 移行前は Rust サーバー（wasmtime、wasmi ネイティブ、wasmi wasm32 の `definy-worker-runtime`）との比較にも使用されていました。
+> **歴史的注記（旧 Rust 実装・廃止済み）**: 移行前は TypeScript 製評価器や Rust サーバー（wasmtime、wasmi ネイティブ、wasmi wasm32 の `definy-worker-runtime`）との比較にも使用されていました。
 
 ## テストケース
 
@@ -25,8 +28,8 @@ definy の式評価について、共有テストケース `conformance/eval_cas
 # 全テスト実行（Wasm 実行テスト、D1 永続化、適合テスト等）
 npm test
 
-# TypeScript 評価器適合テスト
-npx vitest run worker/eval_conformance.test.ts
+# core.eval-value 適合テスト
+npx vitest run src/eval_value_conformance.test.ts
 
 # stage1.wasm 適合テスト
 npx vitest run src/stage1_conformance.test.ts
@@ -69,3 +72,12 @@ stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取
 - `StringSlice` の `start` / `end` は UTF-8 のバイト位置。範囲外の値は `0..=長さ` に丸め、`end < start` のときは空文字列になる。
 - `StringToBytes` は UTF-8 のバイト列（0〜255 の数値のリスト）を返す。
 - 文字の途中で切ったときの結果は未定義。
+
+## `core.eval-value` の意味論
+
+- 演算は評価した値に同じ演算子を当てて求めます (メタ循環)。そのため文字列の扱いや範囲外の添字などは stage1 の出力と同じになります
+- `equal` / `not_equal` は `core.value-equals` で値を構造的に比べます。`core.value` に `Equal` を直接当てると
+  バリアントの比較が構造的にならず, `std.list-is-empty` などが誤った値になりました
+- `part_reference` は `parts` から ID の一致するパーツを探し (`core.eval-part-reference`), その式を空の環境で評価します。
+  見つからなければ `unit` です。パーツの式は参照されるたびに評価し直します
+- 型が合わない (数値でない値を足すなど) ときや未対応の式は `unit` になります

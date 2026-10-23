@@ -13,8 +13,6 @@ Cloudflare Worker (`definy`) 内で definy のパーツを Wasm にコンパイ�
 | `src/deploy_target.ts`             | 式の中の `definy.deploy({ cloudflareWorkerName, cloudflareToken, handler })` の検出と, コンパイル結果のキャッシュキー |
 | `src/stage1_compiler.ts`           | `stage1.wasm` を動かして式をコンパイルする (ブラウザ・Worker・Node.js 共通)                                           |
 | `scripts/stage1_compile_worker.ts` | 大きなスタックの worker thread で stage1 を動かす (seed バンドル生成時の事前コンパイル)                               |
-| `worker/cbor_eval.ts`              | definy 式の純粋 TypeScript 評価器 (AST / CBOR 評価)                                                                   |
-| `worker/definy_runtime.ts`         | ModuleCommit のパーツを読み込んで `cbor_eval.ts` で式を評価する (評価器の適合テストで使う)                            |
 | `worker/cbor.ts`                   | CBOR デコード、URL-safe Base64、SHA-256、Module ID / Part ID 導出                                                     |
 | `wasm/stage1.wasm`                 | definy 自己記述コンパイラ (68KB)。再生成は `npm run build:stage1` ([self-hosting.md](self-hosting.md))                |
 

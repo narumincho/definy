@@ -1,203 +1,36 @@
 import type { PathStep } from "./types.ts";
-import { getExpressionAtPath } from "./mutation.ts";
+import { updateExpressionAtPath } from "./path.ts";
 import { bytesToUrlSafeBase64NoPad, toUint8Array } from "../cbor.ts";
+import type { DefinyValue } from "../stage1_compiler.ts";
 
 export type ExpectedType = "number" | "string" | "boolean" | "list" | "any";
 
-/**
- * 式ノード単体からその評価結果の型を推論する
- */
-export function inferExpressionType(node: unknown): ExpectedType {
-  if (!node || typeof node !== "object") {
-    return "any";
-  }
-  const obj = node as Record<string, unknown>;
+/** 型チェッカーに期待する型を聞く位置に置く未入力 (`definyAstWithHolesToSelfHostedAst` が `hole({ probe: true })` にする) */
+export const EXPECTED_TYPE_PROBE = { Hole: { probe: true } } as const;
 
-  if ("Number" in obj) return "number";
-  if ("String" in obj) return "string";
-  if ("Boolean" in obj) return "boolean";
-  if ("ListLiteral" in obj) return "list";
-
-  if (
-    "Add" in obj ||
-    "Subtract" in obj ||
-    "Multiply" in obj ||
-    "Divide" in obj ||
-    "Remainder" in obj
-  ) {
-    return "number";
-  }
-
-  if (
-    "Equal" in obj ||
-    "NotEqual" in obj ||
-    "LessThan" in obj ||
-    "LessThanOrEqual" in obj ||
-    "GreaterThan" in obj ||
-    "GreaterThanOrEqual" in obj ||
-    "And" in obj ||
-    "Or" in obj ||
-    "Not" in obj
-  ) {
-    return "boolean";
-  }
-
-  if (
-    "BitAnd" in obj ||
-    "BitOr" in obj ||
-    "BitXor" in obj ||
-    "ShiftLeft" in obj ||
-    "ShiftRight" in obj
-  ) {
-    return "number";
-  }
-
-  if ("ListLength" in obj || "StringLength" in obj) return "number";
-  if ("StringConcat" in obj || "StringSlice" in obj) return "string";
-  if ("ListConcat" in obj || "ListAppend" in obj || "StringToBytes" in obj) {
-    return "list";
-  }
-
-  return "any";
-}
-
-/**
- * 定義の partType から期待される型を抽出する
- */
-function typeFromPartType(partType: unknown): ExpectedType {
-  if (!partType) return "any";
-  if (typeof partType === "string") {
-    if (partType === "number") return "number";
-    if (partType === "string") return "string";
-    if (partType === "boolean") return "boolean";
-    if (partType === "list") return "list";
-  }
-  if (typeof partType === "object") {
-    const obj = partType as Record<string, unknown>;
-    if ("function" in obj) {
-      const fn = obj.function as { return_type?: unknown };
-      return typeFromPartType(fn.return_type);
-    }
-  }
-  return "any";
-}
-
-/**
- * 式の木構造と選択中パスから、その位置で期待される型 (ExpectedType) を推論する
- */
-export function inferExpectedType(
+/** 式の `path` の位置を {@link EXPECTED_TYPE_PROBE} に置き換える */
+export function probeExpressionAt(
   rootExpr: unknown,
   path: ReadonlyArray<PathStep>,
-  partType?: unknown,
+): unknown {
+  return updateExpressionAtPath(rootExpr, path, () => EXPECTED_TYPE_PROBE);
+}
+
+/**
+ * 型チェッカーが返した期待する型 (`core.type-ast` の値) を, 選択肢の並び替えに使う大まかな型にする.
+ * 関数・レコード・直和型・型パーツの参照などは区別しない ("any")
+ */
+export function expectedTypeFromTypeAst(
+  type: DefinyValue | null,
 ): ExpectedType {
-  if (path.length === 0) {
-    return typeFromPartType(partType);
+  const tag = (type as { readonly tag?: unknown } | null)?.tag;
+  switch (tag) {
+    case "number":
+    case "string":
+    case "boolean":
+    case "list":
+      return tag;
   }
-
-  const parentPath = path.slice(0, -1);
-  const lastStep = path[path.length - 1];
-  const parentNode = getExpressionAtPath(rootExpr, parentPath);
-
-  if (!parentNode || typeof parentNode !== "object") {
-    return "any";
-  }
-  const parent = parentNode as Record<string, unknown>;
-
-  // list-get, string-slice などの子の式
-  const fieldTypes: ReadonlyArray<readonly [string, PathStep, ExpectedType]> = [
-    ["ListGet", "left", "list"],
-    ["ListGet", "index", "number"],
-    ["ListAppend", "left", "list"],
-    ["ListLength", "condition", "list"],
-    ["StringLength", "condition", "string"],
-    ["StringToBytes", "condition", "string"],
-    ["StringSlice", "condition", "string"],
-    ["StringSlice", "start", "number"],
-    ["StringSlice", "end", "number"],
-  ];
-  for (const [key, step, type] of fieldTypes) {
-    if (key in parent && lastStep === step) {
-      return type;
-    }
-  }
-
-  if (lastStep === "left" || lastStep === "right") {
-    if (
-      "Add" in parent ||
-      "Subtract" in parent ||
-      "Multiply" in parent ||
-      "Divide" in parent ||
-      "Remainder" in parent ||
-      "LessThan" in parent ||
-      "LessThanOrEqual" in parent ||
-      "GreaterThan" in parent ||
-      "GreaterThanOrEqual" in parent ||
-      "BitAnd" in parent ||
-      "BitOr" in parent ||
-      "BitXor" in parent ||
-      "ShiftLeft" in parent ||
-      "ShiftRight" in parent
-    ) {
-      return "number";
-    }
-
-    if ("And" in parent || "Or" in parent) {
-      return "boolean";
-    }
-
-    if ("StringConcat" in parent) {
-      return "string";
-    }
-
-    if ("ListConcat" in parent) {
-      return "list";
-    }
-
-    if ("Equal" in parent || "NotEqual" in parent) {
-      const op = (parent.Equal ?? parent.NotEqual) as {
-        left?: unknown;
-        right?: unknown;
-      };
-      const sibling = lastStep === "left" ? op?.right : op?.left;
-      const siblingType = inferExpressionType(sibling);
-      if (siblingType !== "any") {
-        return siblingType;
-      }
-    }
-  }
-
-  if (lastStep === "condition") {
-    return "boolean";
-  }
-
-  if (lastStep === "then" || lastStep === "else") {
-    if ("If" in parent) {
-      const ifNode = parent.If as {
-        then_expr?: unknown;
-        then?: unknown;
-        else_expr?: unknown;
-        else?: unknown;
-      };
-      const sibling =
-        lastStep === "then"
-          ? (ifNode.else_expr ?? ifNode.else)
-          : (ifNode.then_expr ?? ifNode.then);
-      const siblingType = inferExpressionType(sibling);
-      if (siblingType !== "any") {
-        return siblingType;
-      }
-      return inferExpectedType(rootExpr, parentPath, partType);
-    }
-  }
-
-  if (lastStep === "letBody") {
-    return inferExpectedType(rootExpr, parentPath, partType);
-  }
-
-  if (lastStep === "functionBody") {
-    return typeFromPartType(partType);
-  }
-
   return "any";
 }
 

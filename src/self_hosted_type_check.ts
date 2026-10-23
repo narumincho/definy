@@ -2,8 +2,9 @@
  * definy 製の型チェッカー (`core.type-check-against`) でパーツの式を型検査する.
  * 旧 Rust 版 `definy_core::self_hosted_type_check` の移植.
  *
- * 型チェッカー本体は stage1 で 1 度だけ Wasm にコンパイルし (`compileTypeChecker`), パーツごとに
- * 検査する式・型環境・期待する型を線形メモリに書き込んで呼ぶ (`checkParts`).
+ * 型チェッカー本体は stage1 で 1 度だけ Wasm にコンパイルし (`compileTypeChecker`), 全モジュールの最新のパーツと
+ * コミットするパーツを書き込んで definy 製の `core.type-checker` で型環境と検査するパーツを決めてから,
+ * パーツごとに検査する式と期待する型を書き込んで呼ぶ (`createTypeCheckSession`).
  * サーバーの `SubmitEvent` の検査と UI の型エラー表示が同じ関数を使う
  * (docs/self-hosting.md の「definy 製型チェッカーの実行 (TypeScript 版)」).
  */
@@ -12,6 +13,7 @@ import {
   type CompiledFunctionInstance,
   collectReferencedParts,
   definyAstToSelfHostedAst,
+  definyAstWithHolesToSelfHostedAst,
   partReferenceId,
   SelfHostedAstConversionError,
   type DefinyValue,
@@ -22,12 +24,15 @@ import {
   encodeCborItem,
   sha256BytesSync,
 } from "./cbor.ts";
-import { expressionToPartType } from "./tree_layout/part_type.ts";
 import { list, record, string, variant } from "./self_hosted_ast.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
-  readonly typeCheckAgainst: string;
+  /**
+   * `core.type-checker`. 全モジュールの最新のパーツとコミットするパーツから型環境と検査するパーツを決め,
+   * その環境のもとで `core.type-check-against` で検査する関数と一緒に返す
+   */
+  readonly typeChecker: string;
 };
 
 /** 型環境に入れるパーツ (パーツ参照の型を解決するために使う) */
@@ -41,9 +46,6 @@ export type PartTypeEntry = {
    */
   readonly typeDeclaration?: unknown;
 };
-
-/** 型パーツの定義を型環境に入れるときのキーの接尾辞. `core.type-resolve` と揃える */
-export const TYPE_DEFINITION_KEY_SUFFIX = "#definition";
 
 /** 検査するパーツ */
 export type PartToCheck = {
@@ -264,7 +266,10 @@ export function typeDeclarationToSelfHostedAst(expression: unknown): unknown {
 }
 
 /** `core.type-check-against` に渡す `expr` と `expected_type` の値を作る式 */
-function partCheckArguments(part: PartToCheck): {
+function partCheckArguments(
+  part: PartToCheck,
+  allowHoles = false,
+): {
   readonly expression: unknown;
   readonly expectedType: unknown;
 } {
@@ -272,46 +277,97 @@ function partCheckArguments(part: PartToCheck): {
     expression:
       part.partType === "type"
         ? typeDeclarationToSelfHostedAst(part.expression)
-        : definyAstToSelfHostedAst(part.expression),
+        : allowHoles
+          ? definyAstWithHolesToSelfHostedAst(part.expression)
+          : definyAstToSelfHostedAst(part.expression),
     expectedType: partTypeToSelfHostedAst(part.partType),
   };
 }
 
+/** `core.type-checker` に渡すパーツ */
+type ModuleEntry = {
+  readonly partId: string;
+  /** パーツが属するモジュールの ID. 型環境だけを作るときは空文字列 */
+  readonly moduleId: string;
+  /** 宣言型. 無ければ `null` */
+  readonly partType: unknown;
+  /** 型パーツの宣言式 */
+  readonly typeDeclaration?: unknown;
+  /** {@link LatestPart.expressionKey} */
+  readonly expressionKey: string | null;
+  readonly hasExpression: boolean;
+};
+
 /**
- * `core.type-env` の値 `{ variables: [], parts: [{ part_definition_event_hash, part_type }] }` を作る式.
- * 型パーツは, 宣言した型を `{id}#definition` のキーでも入れる.
- * `core.type-ast` で表せない型のパーツは環境に入れない (参照すると `part_not_found` になる)
+ * 型環境だけを作るときにコミット先として渡すモジュール ID. URL-safe Base64 のモジュール ID には `#` が入らないので,
+ * どのパーツのモジュールとも一致せず, 全パーツが型環境に入る
  */
-function typeEnvExpression(env: ReadonlyArray<PartTypeEntry>): unknown {
-  const entryRecord = (key: string, partType: unknown): unknown => {
-    try {
-      return record([
-        ["part_definition_event_hash", string(key)],
-        ["part_type", partTypeToSelfHostedAst(partType)],
-      ]);
-    } catch (e) {
-      if (e instanceof SelfHostedAstConversionError) {
-        return null;
-      }
-      throw e;
+const NO_MODULE = "#";
+
+/**
+ * `core.type-checker` に渡すパーツの一覧
+ * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression }]` を作る式.
+ * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする
+ */
+function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
+  return list(
+    entries.map((entry) =>
+      record([
+        ["part_id", string(entry.partId)],
+        ["module_id", string(entry.moduleId)],
+        ["part_type", partTypeOption(entry.partType)],
+        ["type_declaration", typeDeclarationOption(entry.typeDeclaration)],
+        [
+          "expression_key",
+          entry.expressionKey === null
+            ? variant("none")
+            : variant("some", string(entry.expressionKey)),
+        ],
+        ["has_expression", { Boolean: { value: entry.hasExpression } }],
+      ]),
+    ),
+  );
+}
+
+/** 宣言型を `core.type-ast` の値の `some` にする. 無いか表せなければ `none` */
+function partTypeOption(partType: unknown): unknown {
+  if (partType == null) {
+    return variant("none");
+  }
+  try {
+    return variant("some", partTypeToSelfHostedAst(partType));
+  } catch (e) {
+    if (e instanceof SelfHostedAstConversionError) {
+      return variant("none");
     }
+    throw e;
+  }
+}
+
+function latestPartToModuleEntry(part: LatestPart): ModuleEntry {
+  return {
+    partId: part.partId,
+    moduleId: part.moduleId,
+    partType: part.partType,
+    typeDeclaration: part.partType === "type" ? part.expression : undefined,
+    expressionKey: part.expressionKey,
+    hasExpression: part.expression != null,
   };
-  const parts = env.flatMap((entry) => {
-    const declared =
-      entry.typeDeclaration == null
-        ? null
-        : expressionToPartType(entry.typeDeclaration);
-    return [
-      entryRecord(entry.partId, entry.partType),
-      declared == null
-        ? null
-        : entryRecord(`${entry.partId}${TYPE_DEFINITION_KEY_SUFFIX}`, declared),
-    ].filter((item) => item !== null);
-  });
-  return record([
-    ["variables", list([])],
-    ["parts", list(parts)],
-  ]);
+}
+
+/** 型パーツの宣言式を `core.expression` の値の `some` にする. 無いか表せなければ `none` */
+function typeDeclarationOption(declaration: unknown): unknown {
+  if (declaration == null) {
+    return variant("none");
+  }
+  try {
+    return variant("some", typeDeclarationToSelfHostedAst(declaration));
+  } catch (e) {
+    if (e instanceof SelfHostedAstConversionError) {
+      return variant("none");
+    }
+    throw e;
+  }
 }
 
 function typeResultToOutcome(result: DefinyValue): SelfHostedTypeCheckOutcome {
@@ -372,7 +428,7 @@ function errorMessage(e: unknown): string {
 }
 
 /**
- * `core.type-check-against` を stage1 で Wasm にコンパイルする. 結果は関数を返す式の Wasm で,
+ * `core.type-checker` を stage1 で Wasm にコンパイルする. 結果は関数を返す式の Wasm で,
  * `new WebAssembly.Module` にして `checkParts` に渡す.
  * `resolvePart` はパーツ ID (URL-safe Base64) から式を返す (型チェッカーが参照するパーツを集めるのに使う)
  */
@@ -383,7 +439,7 @@ export function compileTypeChecker(options: {
 }): Uint8Array {
   const expression = {
     PartReference: {
-      part_definition_event_hash: options.core.typeCheckAgainst,
+      part_definition_event_hash: options.core.typeChecker,
     },
   };
   const { parts, unresolved } = collectReferencedParts(
@@ -398,6 +454,16 @@ export function compileTypeChecker(options: {
   return options.compiler.compile(expression, parts);
 }
 
+export type TypeCheckSession = {
+  readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome;
+  /**
+   * 式の中の `{"Hole": {"probe": true}}` の位置で期待する型 (`core.type-ast` の値) を型チェッカーに聞く.
+   * 他の未入力はその位置の期待する型として受け入れる. 推論する位置 (`==` の左辺など) や,
+   * それより先に別の型エラーが見つかったときは `null`
+   */
+  readonly findExpectedType: (part: PartToCheck) => DefinyValue | null;
+};
+
 /**
  * 型環境を決めて, パーツを 1 つずつ検査できるようにする. 型チェッカーのインスタンスと線形メモリに書いた型環境を
  * 呼び出しの間で使い回すので, 裏で少しずつ検査するときにも使う
@@ -405,48 +471,123 @@ export function compileTypeChecker(options: {
 export function createTypeCheckSession(options: {
   readonly typeChecker: WebAssembly.Module;
   readonly env: ReadonlyArray<PartTypeEntry>;
-}): { readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome } {
-  const env = typeEnvExpression(options.env);
-  // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで使い回す.
+}): TypeCheckSession {
+  return createModuleCommitSession({
+    typeChecker: options.typeChecker,
+    latest: options.env.map((entry) => ({
+      partId: entry.partId,
+      moduleId: "",
+      partType: entry.partType,
+      typeDeclaration: entry.typeDeclaration,
+      expressionKey: null,
+      hasExpression: false,
+    })),
+    committed: [],
+    moduleId: NO_MODULE,
+  });
+}
+
+/**
+ * `core.type-checker` で, モジュール `moduleId` に `committed` をコミットしたときの型環境と検査するパーツを決め,
+ * その環境でパーツを 1 つずつ検査できるようにする
+ */
+function createModuleCommitSession(options: {
+  readonly typeChecker: WebAssembly.Module;
+  readonly latest: ReadonlyArray<ModuleEntry>;
+  readonly committed: ReadonlyArray<ModuleEntry>;
+  readonly moduleId: string;
+}): {
+  /** 検査するパーツ (型が 1 つも変わらなければ, 式が変わったパーツと新しいパーツ) の ID */
+  readonly toCheck: () => ReadonlyArray<string>;
+  /** 式か型の無いパーツの ID */
+  readonly withoutExpression: () => ReadonlyArray<string>;
+} & TypeCheckSession {
+  const latest = moduleEntriesExpression(options.latest);
+  const committed = moduleEntriesExpression(options.committed);
+  const moduleId = string(options.moduleId);
+  // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで definy 側で型環境を作り,
+  // その環境で検査する関数 (`core.type-checker` が返すレコードの `check`) を使い回す.
   // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
   let current:
     | {
         readonly instance: CompiledFunctionInstance;
-        readonly envPtr: number;
+        readonly planPtr: number;
+        readonly checkerPtr: number;
         calls: number;
       }
     | undefined;
-  return {
-    check: (part) => {
-      let args: ReturnType<typeof partCheckArguments>;
-      try {
-        args = partCheckArguments(part);
-      } catch (e) {
-        if (e instanceof SelfHostedAstConversionError) {
-          return { kind: "unsupported", message: e.message };
-        }
-        throw e;
+  const ensureInstance = (): NonNullable<typeof current> => {
+    if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
+      const instance = instantiateCompiledFunction(options.typeChecker);
+      const planPtr = instance.call([
+        instance.writeArgument(latest),
+        instance.writeArgument(committed),
+        instance.writeArgument(moduleId),
+      ]);
+      current = {
+        instance,
+        planPtr,
+        checkerPtr: instance.recordField(planPtr, "check"),
+        calls: 0,
+      };
+    }
+    return current;
+  };
+  const readIds = (key: string): ReadonlyArray<string> => {
+    const { instance, planPtr } = ensureInstance();
+    const ids = instance.read(instance.recordField(planPtr, key));
+    if (!Array.isArray(ids)) {
+      throw new Error(`core.type-checker returned a non-list ${key}`);
+    }
+    return ids.map(String);
+  };
+  const run = (
+    part: PartToCheck,
+    allowHoles: boolean,
+  ): SelfHostedTypeCheckOutcome => {
+    let args: ReturnType<typeof partCheckArguments>;
+    try {
+      args = partCheckArguments(part, allowHoles);
+    } catch (e) {
+      if (e instanceof SelfHostedAstConversionError) {
+        return { kind: "unsupported", message: e.message };
       }
-      try {
-        if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
-          const instance = instantiateCompiledFunction(options.typeChecker);
-          current = { instance, envPtr: instance.writeArgument(env), calls: 0 };
-        }
-        const { instance, envPtr } = current;
+      throw e;
+    }
+    try {
+      const { instance, checkerPtr } = ensureInstance();
+      if (current !== undefined) {
         current.calls += 1;
-        return typeResultToOutcome(
-          instance.read(
-            instance.call([
-              instance.writeArgument(args.expression),
-              envPtr,
-              instance.writeArgument(args.expectedType),
-            ]),
-          ),
-        );
-      } catch (e) {
-        current = undefined;
-        return { kind: "checker_failed", message: errorMessage(e) };
       }
+      return typeResultToOutcome(
+        instance.read(
+          instance.callClosure(checkerPtr, [
+            instance.writeArgument(args.expression),
+            instance.writeArgument(args.expectedType),
+          ]),
+        ),
+      );
+    } catch (e) {
+      current = undefined;
+      return { kind: "checker_failed", message: errorMessage(e) };
+    }
+  };
+  return {
+    toCheck: () => readIds("to_check"),
+    withoutExpression: () => readIds("without_expression"),
+    check: (part) => run(part, false),
+    findExpectedType: (part) => {
+      const outcome = run(part, true);
+      if (
+        outcome.kind !== "type_error" ||
+        outcome.tag !== "hole_expected_type"
+      ) {
+        return null;
+      }
+      const expected = (
+        outcome.detail as { readonly expected?: DefinyValue } | null
+      )?.expected as { readonly tag?: unknown; readonly payload?: DefinyValue };
+      return expected?.tag === "some" ? (expected.payload ?? null) : null;
     },
   };
 }
@@ -667,64 +808,53 @@ export function checkModuleCommitParts(options: {
   readonly name: string;
   readonly outcome: SelfHostedTypeCheckOutcome;
 }> {
-  const previous = new Map(
-    [...options.latestParts].filter(
-      ([, part]) => part.moduleId === options.moduleId,
-    ),
-  );
-  const parts = new Map(
-    [...options.latestParts].filter(
-      ([, part]) => part.moduleId !== options.moduleId,
-    ),
-  );
-  for (const part of options.committed) {
-    parts.set(part.partId, part);
-  }
-
-  const typesChanged =
-    previous.size !== options.committed.length ||
-    options.committed.some((part) => {
-      const before = previous.get(part.partId);
-      return (
-        before === undefined ||
-        partTypeKey(before.partType) !== partTypeKey(part.partType)
-      );
+  const session = createModuleCommitSession({
+    typeChecker: options.typeChecker,
+    latest: [...options.latestParts.values()].map(latestPartToModuleEntry),
+    committed: options.committed.map(latestPartToModuleEntry),
+    moduleId: options.moduleId,
+  });
+  const byId = new Map(options.committed.map((part) => [part.partId, part]));
+  const partsOf = (ids: ReadonlyArray<string>): ReadonlyArray<LatestPart> =>
+    ids.flatMap((id) => {
+      const part = byId.get(id);
+      return part === undefined ? [] : [part];
     });
   const results: Array<{
     readonly name: string;
     readonly outcome: SelfHostedTypeCheckOutcome;
   }> = [];
-  const toCheck: Array<LatestPart> = [];
-  for (const part of options.committed) {
-    const before = previous.get(part.partId);
-    const unchanged =
-      before !== undefined &&
-      part.expressionKey !== null &&
-      before.expressionKey === part.expressionKey;
-    if (!typesChanged && unchanged) {
-      continue;
+  let toCheck: ReadonlyArray<LatestPart>;
+  try {
+    if (!options.allowBuiltinParts) {
+      for (const part of partsOf(session.withoutExpression())) {
+        results.push({
+          name: part.name,
+          outcome: {
+            kind: "unsupported",
+            message: "part has no expression or type",
+          },
+        });
+      }
     }
-    if (part.expression != null && part.partType != null) {
-      toCheck.push(part);
-    } else if (!options.allowBuiltinParts) {
-      results.push({
+    toCheck = partsOf(session.toCheck());
+  } catch (e) {
+    return [
+      ...results,
+      ...options.committed.map((part) => ({
         name: part.name,
         outcome: {
-          kind: "unsupported",
-          message: "part has no expression or type",
+          kind: "checker_failed" as const,
+          message: errorMessage(e),
         },
-      });
-    }
+      })),
+    ];
   }
   if (toCheck.length === 0) {
     return results;
   }
 
-  const outcomes = checkParts({
-    typeChecker: options.typeChecker,
-    parts: toCheck,
-    env: typeEnvFromParts(parts.values()),
-  });
+  const outcomes = toCheck.map((part) => session.check(part));
   toCheck.forEach((part, i) => {
     const outcome = outcomes[i];
     if (
