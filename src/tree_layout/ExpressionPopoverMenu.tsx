@@ -186,9 +186,9 @@ export function ExpressionPopoverMenu({
           className="dropdown-search-input"
           placeholder={label(
             language,
-            "Search expression, operator or part...",
-            "式・演算子・パーツを検索...",
-            "Serĉi esprimon...",
+            "Search expression or part...",
+            "式・パーツを検索...",
+            "Serĉi esprimon aŭ parton...",
           )}
           value={searchQuery}
           onFocus={(e) => {

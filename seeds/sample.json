@@ -49,26 +49,56 @@
             }
           ],
           "body": {
-            "Divide": {
-              "left": {
-                "Multiply": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
-                    }
-                  },
-                  "right": {
-                    "Variable": {
-                      "variable_id": 2
-                    }
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.divide"
                   }
                 }
               },
-              "right": {
-                "Number": {
-                  "value": 2
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.multiply"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -88,17 +118,32 @@
         }
       ],
       "expression": {
-        "StringConcat": {
-          "left": {
-            "String": {
-              "value": "Hello, "
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-concat"
+              }
             }
           },
-          "right": {
-            "String": {
-              "value": "definy!"
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "String": {
+                  "value": "Hello, "
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "String": {
+                  "value": "definy!"
+                }
+              }
             }
-          }
+          ]
         }
       }
     },
@@ -131,26 +176,56 @@
           "body": {
             "Match": {
               "target": {
-                "Equal": {
-                  "left": {
-                    "Remainder": {
-                      "left": {
-                        "Variable": {
-                          "variable_id": 1
-                        }
-                      },
-                      "right": {
-                        "Number": {
-                          "value": 2
-                        }
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.equal"
                       }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 0
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.remainder"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "Number": {
+                                  "value": 2
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               },
               "arms": [
@@ -290,17 +365,32 @@
               "variable_id": 1,
               "variable_name": "val",
               "body": {
-                "Add": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 23
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 23
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             },
@@ -1180,111 +1270,288 @@
                                   "value": {
                                     "Match": {
                                       "target": {
-                                        "And": {
-                                          "left": {
-                                            "And": {
-                                              "left": {
-                                                "And": {
-                                                  "left": {
-                                                    "And": {
-                                                      "left": {
-                                                        "Equal": {
-                                                          "left": {
-                                                            "Variable": {
-                                                              "variable_id": 14
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "Number": {
-                                                              "value": 42
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      "right": {
-                                                        "Equal": {
-                                                          "left": {
-                                                            "Variable": {
-                                                              "variable_id": 15
-                                                            }
-                                                          },
-                                                          "right": {
-                                                            "Number": {
-                                                              "value": 42
-                                                            }
-                                                          }
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  "right": {
-                                                    "GreaterThan": {
-                                                      "left": {
-                                                        "ListLength": {
-                                                          "value": {
-                                                            "Variable": {
-                                                              "variable_id": 18
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      "right": {
-                                                        "Number": {
-                                                          "value": 8
-                                                        }
-                                                      }
-                                                    }
-                                                  }
-                                                }
-                                              },
-                                              "right": {
-                                                "Equal": {
-                                                  "left": {
-                                                    "ListGet": {
-                                                      "list": {
-                                                        "Variable": {
-                                                          "variable_id": 18
-                                                        }
-                                                      },
-                                                      "index": {
-                                                        "Number": {
-                                                          "value": 0
-                                                        }
-                                                      }
-                                                    }
-                                                  },
-                                                  "right": {
-                                                    "Number": {
-                                                      "value": 0
-                                                    }
-                                                  }
-                                                }
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.and"
                                               }
                                             }
                                           },
-                                          "right": {
-                                            "Equal": {
-                                              "left": {
-                                                "ListGet": {
-                                                  "list": {
-                                                    "Variable": {
-                                                      "variable_id": 18
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.and"
+                                                      }
                                                     }
                                                   },
-                                                  "index": {
-                                                    "Number": {
-                                                      "value": 1
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.and"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "Call": {
+                                                                  "function": {
+                                                                    "PartReference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.and"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.equal"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 14
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "Number": {
+                                                                                  "value": 42
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.equal"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 15
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "Number": {
+                                                                                  "value": 42
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "Call": {
+                                                                  "function": {
+                                                                    "PartReference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.greater-than"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.list-length"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "value",
+                                                                              "value": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 18
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "Number": {
+                                                                          "value": 8
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.equal"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "Call": {
+                                                                  "function": {
+                                                                    "PartReference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.list-get"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "list",
+                                                                      "value": {
+                                                                        "Variable": {
+                                                                          "variable_id": 18
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "index",
+                                                                      "value": {
+                                                                        "Number": {
+                                                                          "value": 0
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "Number": {
+                                                                  "value": 0
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
                                                     }
-                                                  }
+                                                  ]
                                                 }
-                                              },
-                                              "right": {
-                                                "Number": {
-                                                  "value": 97
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "Call": {
+                                                  "function": {
+                                                    "PartReference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.equal"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.list-get"
+                                                              }
+                                                            }
+                                                          },
+                                                          "arguments": [
+                                                            {
+                                                              "name": "list",
+                                                              "value": {
+                                                                "Variable": {
+                                                                  "variable_id": 18
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "index",
+                                                              "value": {
+                                                                "Number": {
+                                                                  "value": 1
+                                                                }
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "Number": {
+                                                          "value": 97
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
                                                 }
                                               }
                                             }
-                                          }
+                                          ]
                                         }
                                       },
                                       "arms": [
@@ -1317,17 +1584,32 @@
                               "body": {
                                 "Match": {
                                   "target": {
-                                    "Equal": {
-                                      "left": {
-                                        "Variable": {
-                                          "variable_id": 2
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.equal"
+                                          }
                                         }
                                       },
-                                      "right": {
-                                        "String": {
-                                          "value": "/healthz"
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "String": {
+                                              "value": "/healthz"
+                                            }
+                                          }
                                         }
-                                      }
+                                      ]
                                     }
                                   },
                                   "arms": [
@@ -1414,44 +1696,104 @@
                                                     {
                                                       "name": "text",
                                                       "value": {
-                                                        "StringConcat": {
-                                                          "left": {
-                                                            "StringConcat": {
-                                                              "left": {
-                                                                "StringConcat": {
-                                                                  "left": {
-                                                                    "StringConcat": {
-                                                                      "left": {
-                                                                        "String": {
-                                                                          "value": "{\"status\":\"ok\",\"service\":\"self-hosted-definy-server\",\"selfHostingPipelineVerified\":"
-                                                                        }
-                                                                      },
-                                                                      "right": {
-                                                                        "Variable": {
-                                                                          "variable_id": 19
-                                                                        }
-                                                                      }
-                                                                    }
-                                                                  },
-                                                                  "right": {
-                                                                    "String": {
-                                                                      "value": ",\"typeCheck\":\""
-                                                                    }
-                                                                  }
-                                                                }
-                                                              },
-                                                              "right": {
-                                                                "Variable": {
-                                                                  "variable_id": 17
-                                                                }
+                                                        "Call": {
+                                                          "function": {
+                                                            "PartReference": {
+                                                              "part_definition_event_hash": {
+                                                                "$part": "core.string-concat"
                                                               }
                                                             }
                                                           },
-                                                          "right": {
-                                                            "String": {
-                                                              "value": "\"}"
+                                                          "arguments": [
+                                                            {
+                                                              "name": "left",
+                                                              "value": {
+                                                                "Call": {
+                                                                  "function": {
+                                                                    "PartReference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.string-concat"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.string-concat"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "Call": {
+                                                                                  "function": {
+                                                                                    "PartReference": {
+                                                                                      "part_definition_event_hash": {
+                                                                                        "$part": "core.string-concat"
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "arguments": [
+                                                                                    {
+                                                                                      "name": "left",
+                                                                                      "value": {
+                                                                                        "String": {
+                                                                                          "value": "{\"status\":\"ok\",\"service\":\"self-hosted-definy-server\",\"selfHostingPipelineVerified\":"
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "name": "right",
+                                                                                      "value": {
+                                                                                        "Variable": {
+                                                                                          "variable_id": 19
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "String": {
+                                                                                  "value": ",\"typeCheck\":\""
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "Variable": {
+                                                                          "variable_id": 17
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "name": "right",
+                                                              "value": {
+                                                                "String": {
+                                                                  "value": "\"}"
+                                                                }
+                                                              }
                                                             }
-                                                          }
+                                                          ]
                                                         }
                                                       }
                                                     }
@@ -1470,17 +1812,32 @@
                                       "body": {
                                         "Match": {
                                           "target": {
-                                            "Equal": {
-                                              "left": {
-                                                "Variable": {
-                                                  "variable_id": 2
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.equal"
+                                                  }
                                                 }
                                               },
-                                              "right": {
-                                                "String": {
-                                                  "value": "/api/self-host"
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "String": {
+                                                      "value": "/api/self-host"
+                                                    }
+                                                  }
                                                 }
-                                              }
+                                              ]
                                             }
                                           },
                                           "arms": [
@@ -1567,134 +1924,344 @@
                                                             {
                                                               "name": "text",
                                                               "value": {
-                                                                "StringConcat": {
-                                                                  "left": {
-                                                                    "StringConcat": {
-                                                                      "left": {
-                                                                        "StringConcat": {
-                                                                          "left": {
-                                                                            "StringConcat": {
-                                                                              "left": {
-                                                                                "StringConcat": {
-                                                                                  "left": {
-                                                                                    "StringConcat": {
-                                                                                      "left": {
-                                                                                        "StringConcat": {
-                                                                                          "left": {
-                                                                                            "StringConcat": {
-                                                                                              "left": {
-                                                                                                "StringConcat": {
-                                                                                                  "left": {
-                                                                                                    "StringConcat": {
-                                                                                                      "left": {
-                                                                                                        "StringConcat": {
-                                                                                                          "left": {
-                                                                                                            "StringConcat": {
-                                                                                                              "left": {
-                                                                                                                "StringConcat": {
-                                                                                                                  "left": {
-                                                                                                                    "StringConcat": {
-                                                                                                                      "left": {
-                                                                                                                        "String": {
-                                                                                                                          "value": "{\"engine\":\"definy-self-hosted\",\"method\":\""
-                                                                                                                        }
-                                                                                                                      },
-                                                                                                                      "right": {
-                                                                                                                        "Variable": {
-                                                                                                                          "variable_id": 3
-                                                                                                                        }
-                                                                                                                      }
-                                                                                                                    }
-                                                                                                                  },
-                                                                                                                  "right": {
-                                                                                                                    "String": {
-                                                                                                                      "value": "\",\"path\":\""
-                                                                                                                    }
-                                                                                                                  }
-                                                                                                                }
-                                                                                                              },
-                                                                                                              "right": {
-                                                                                                                "Variable": {
-                                                                                                                  "variable_id": 2
-                                                                                                                }
-                                                                                                              }
-                                                                                                            }
-                                                                                                          },
-                                                                                                          "right": {
-                                                                                                            "String": {
-                                                                                                              "value": "\",\"query\":\""
-                                                                                                            }
-                                                                                                          }
-                                                                                                        }
-                                                                                                      },
-                                                                                                      "right": {
-                                                                                                        "Variable": {
-                                                                                                          "variable_id": 5
-                                                                                                        }
-                                                                                                      }
-                                                                                                    }
-                                                                                                  },
-                                                                                                  "right": {
-                                                                                                    "String": {
-                                                                                                      "value": "\",\"sourceBefore\":\""
-                                                                                                    }
-                                                                                                  }
-                                                                                                }
-                                                                                              },
-                                                                                              "right": {
-                                                                                                "Variable": {
-                                                                                                  "variable_id": 11
-                                                                                                }
-                                                                                              }
-                                                                                            }
-                                                                                          },
-                                                                                          "right": {
-                                                                                            "String": {
-                                                                                              "value": "\",\"sourceAfter\":\""
-                                                                                            }
-                                                                                          }
-                                                                                        }
-                                                                                      },
-                                                                                      "right": {
-                                                                                        "Variable": {
-                                                                                          "variable_id": 13
-                                                                                        }
-                                                                                      }
-                                                                                    }
-                                                                                  },
-                                                                                  "right": {
-                                                                                    "String": {
-                                                                                      "value": "\",\"typeCheck\":\""
-                                                                                    }
-                                                                                  }
-                                                                                }
-                                                                              },
-                                                                              "right": {
-                                                                                "Variable": {
-                                                                                  "variable_id": 17
-                                                                                }
-                                                                              }
-                                                                            }
-                                                                          },
-                                                                          "right": {
-                                                                            "String": {
-                                                                              "value": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
-                                                                            }
-                                                                          }
-                                                                        }
-                                                                      },
-                                                                      "right": {
-                                                                        "Variable": {
-                                                                          "variable_id": 19
-                                                                        }
+                                                                "Call": {
+                                                                  "function": {
+                                                                    "PartReference": {
+                                                                      "part_definition_event_hash": {
+                                                                        "$part": "core.string-concat"
                                                                       }
                                                                     }
                                                                   },
-                                                                  "right": {
-                                                                    "String": {
-                                                                      "value": "}"
+                                                                  "arguments": [
+                                                                    {
+                                                                      "name": "left",
+                                                                      "value": {
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.string-concat"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "Call": {
+                                                                                  "function": {
+                                                                                    "PartReference": {
+                                                                                      "part_definition_event_hash": {
+                                                                                        "$part": "core.string-concat"
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "arguments": [
+                                                                                    {
+                                                                                      "name": "left",
+                                                                                      "value": {
+                                                                                        "Call": {
+                                                                                          "function": {
+                                                                                            "PartReference": {
+                                                                                              "part_definition_event_hash": {
+                                                                                                "$part": "core.string-concat"
+                                                                                              }
+                                                                                            }
+                                                                                          },
+                                                                                          "arguments": [
+                                                                                            {
+                                                                                              "name": "left",
+                                                                                              "value": {
+                                                                                                "Call": {
+                                                                                                  "function": {
+                                                                                                    "PartReference": {
+                                                                                                      "part_definition_event_hash": {
+                                                                                                        "$part": "core.string-concat"
+                                                                                                      }
+                                                                                                    }
+                                                                                                  },
+                                                                                                  "arguments": [
+                                                                                                    {
+                                                                                                      "name": "left",
+                                                                                                      "value": {
+                                                                                                        "Call": {
+                                                                                                          "function": {
+                                                                                                            "PartReference": {
+                                                                                                              "part_definition_event_hash": {
+                                                                                                                "$part": "core.string-concat"
+                                                                                                              }
+                                                                                                            }
+                                                                                                          },
+                                                                                                          "arguments": [
+                                                                                                            {
+                                                                                                              "name": "left",
+                                                                                                              "value": {
+                                                                                                                "Call": {
+                                                                                                                  "function": {
+                                                                                                                    "PartReference": {
+                                                                                                                      "part_definition_event_hash": {
+                                                                                                                        "$part": "core.string-concat"
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  },
+                                                                                                                  "arguments": [
+                                                                                                                    {
+                                                                                                                      "name": "left",
+                                                                                                                      "value": {
+                                                                                                                        "Call": {
+                                                                                                                          "function": {
+                                                                                                                            "PartReference": {
+                                                                                                                              "part_definition_event_hash": {
+                                                                                                                                "$part": "core.string-concat"
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          "arguments": [
+                                                                                                                            {
+                                                                                                                              "name": "left",
+                                                                                                                              "value": {
+                                                                                                                                "Call": {
+                                                                                                                                  "function": {
+                                                                                                                                    "PartReference": {
+                                                                                                                                      "part_definition_event_hash": {
+                                                                                                                                        "$part": "core.string-concat"
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  "arguments": [
+                                                                                                                                    {
+                                                                                                                                      "name": "left",
+                                                                                                                                      "value": {
+                                                                                                                                        "Call": {
+                                                                                                                                          "function": {
+                                                                                                                                            "PartReference": {
+                                                                                                                                              "part_definition_event_hash": {
+                                                                                                                                                "$part": "core.string-concat"
+                                                                                                                                              }
+                                                                                                                                            }
+                                                                                                                                          },
+                                                                                                                                          "arguments": [
+                                                                                                                                            {
+                                                                                                                                              "name": "left",
+                                                                                                                                              "value": {
+                                                                                                                                                "Call": {
+                                                                                                                                                  "function": {
+                                                                                                                                                    "PartReference": {
+                                                                                                                                                      "part_definition_event_hash": {
+                                                                                                                                                        "$part": "core.string-concat"
+                                                                                                                                                      }
+                                                                                                                                                    }
+                                                                                                                                                  },
+                                                                                                                                                  "arguments": [
+                                                                                                                                                    {
+                                                                                                                                                      "name": "left",
+                                                                                                                                                      "value": {
+                                                                                                                                                        "Call": {
+                                                                                                                                                          "function": {
+                                                                                                                                                            "PartReference": {
+                                                                                                                                                              "part_definition_event_hash": {
+                                                                                                                                                                "$part": "core.string-concat"
+                                                                                                                                                              }
+                                                                                                                                                            }
+                                                                                                                                                          },
+                                                                                                                                                          "arguments": [
+                                                                                                                                                            {
+                                                                                                                                                              "name": "left",
+                                                                                                                                                              "value": {
+                                                                                                                                                                "Call": {
+                                                                                                                                                                  "function": {
+                                                                                                                                                                    "PartReference": {
+                                                                                                                                                                      "part_definition_event_hash": {
+                                                                                                                                                                        "$part": "core.string-concat"
+                                                                                                                                                                      }
+                                                                                                                                                                    }
+                                                                                                                                                                  },
+                                                                                                                                                                  "arguments": [
+                                                                                                                                                                    {
+                                                                                                                                                                      "name": "left",
+                                                                                                                                                                      "value": {
+                                                                                                                                                                        "Call": {
+                                                                                                                                                                          "function": {
+                                                                                                                                                                            "PartReference": {
+                                                                                                                                                                              "part_definition_event_hash": {
+                                                                                                                                                                                "$part": "core.string-concat"
+                                                                                                                                                                              }
+                                                                                                                                                                            }
+                                                                                                                                                                          },
+                                                                                                                                                                          "arguments": [
+                                                                                                                                                                            {
+                                                                                                                                                                              "name": "left",
+                                                                                                                                                                              "value": {
+                                                                                                                                                                                "String": {
+                                                                                                                                                                                  "value": "{\"engine\":\"definy-self-hosted\",\"method\":\""
+                                                                                                                                                                                }
+                                                                                                                                                                              }
+                                                                                                                                                                            },
+                                                                                                                                                                            {
+                                                                                                                                                                              "name": "right",
+                                                                                                                                                                              "value": {
+                                                                                                                                                                                "Variable": {
+                                                                                                                                                                                  "variable_id": 3
+                                                                                                                                                                                }
+                                                                                                                                                                              }
+                                                                                                                                                                            }
+                                                                                                                                                                          ]
+                                                                                                                                                                        }
+                                                                                                                                                                      }
+                                                                                                                                                                    },
+                                                                                                                                                                    {
+                                                                                                                                                                      "name": "right",
+                                                                                                                                                                      "value": {
+                                                                                                                                                                        "String": {
+                                                                                                                                                                          "value": "\",\"path\":\""
+                                                                                                                                                                        }
+                                                                                                                                                                      }
+                                                                                                                                                                    }
+                                                                                                                                                                  ]
+                                                                                                                                                                }
+                                                                                                                                                              }
+                                                                                                                                                            },
+                                                                                                                                                            {
+                                                                                                                                                              "name": "right",
+                                                                                                                                                              "value": {
+                                                                                                                                                                "Variable": {
+                                                                                                                                                                  "variable_id": 2
+                                                                                                                                                                }
+                                                                                                                                                              }
+                                                                                                                                                            }
+                                                                                                                                                          ]
+                                                                                                                                                        }
+                                                                                                                                                      }
+                                                                                                                                                    },
+                                                                                                                                                    {
+                                                                                                                                                      "name": "right",
+                                                                                                                                                      "value": {
+                                                                                                                                                        "String": {
+                                                                                                                                                          "value": "\",\"query\":\""
+                                                                                                                                                        }
+                                                                                                                                                      }
+                                                                                                                                                    }
+                                                                                                                                                  ]
+                                                                                                                                                }
+                                                                                                                                              }
+                                                                                                                                            },
+                                                                                                                                            {
+                                                                                                                                              "name": "right",
+                                                                                                                                              "value": {
+                                                                                                                                                "Variable": {
+                                                                                                                                                  "variable_id": 5
+                                                                                                                                                }
+                                                                                                                                              }
+                                                                                                                                            }
+                                                                                                                                          ]
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                      "name": "right",
+                                                                                                                                      "value": {
+                                                                                                                                        "String": {
+                                                                                                                                          "value": "\",\"sourceBefore\":\""
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  ]
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            },
+                                                                                                                            {
+                                                                                                                              "name": "right",
+                                                                                                                              "value": {
+                                                                                                                                "Variable": {
+                                                                                                                                  "variable_id": 11
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          ]
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                      "name": "right",
+                                                                                                                      "value": {
+                                                                                                                        "String": {
+                                                                                                                          "value": "\",\"sourceAfter\":\""
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  ]
+                                                                                                                }
+                                                                                                              }
+                                                                                                            },
+                                                                                                            {
+                                                                                                              "name": "right",
+                                                                                                              "value": {
+                                                                                                                "Variable": {
+                                                                                                                  "variable_id": 13
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      }
+                                                                                                    },
+                                                                                                    {
+                                                                                                      "name": "right",
+                                                                                                      "value": {
+                                                                                                        "String": {
+                                                                                                          "value": "\",\"typeCheck\":\""
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              }
+                                                                                            },
+                                                                                            {
+                                                                                              "name": "right",
+                                                                                              "value": {
+                                                                                                "Variable": {
+                                                                                                  "variable_id": 17
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "name": "right",
+                                                                                      "value": {
+                                                                                        "String": {
+                                                                                          "value": "\",\"evaluatedValue\":42,\"selfHostingPipelineVerified\":"
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 19
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      }
+                                                                    },
+                                                                    {
+                                                                      "name": "right",
+                                                                      "value": {
+                                                                        "String": {
+                                                                          "value": "}"
+                                                                        }
+                                                                      }
                                                                     }
-                                                                  }
+                                                                  ]
                                                                 }
                                                               }
                                                             }

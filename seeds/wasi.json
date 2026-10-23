@@ -414,32 +414,47 @@
             }
           ],
           "body": {
-            "GreaterThanOrEqual": {
-              "left": {
-                "RecordGet": {
-                  "record": {
-                    "Call": {
-                      "function": {
-                        "RecordGet": {
-                          "record": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          },
-                          "key": "now"
-                        }
-                      },
-                      "arguments": []
-                    }
-                  },
-                  "key": "seconds"
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.greater-than-or-equal"
+                  }
                 }
               },
-              "right": {
-                "Variable": {
-                  "variable_id": 2
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "RecordGet": {
+                      "record": {
+                        "Call": {
+                          "function": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "key": "now"
+                            }
+                          },
+                          "arguments": []
+                        }
+                      },
+                      "key": "seconds"
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }

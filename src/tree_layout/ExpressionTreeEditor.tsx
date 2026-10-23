@@ -12,6 +12,7 @@ import {
   applySelection,
   clearExpressionAtPath,
   functionParameterIndex,
+  partParameterNames,
   renameFunctionParameter,
   setNumberValue,
   setStringValue,
@@ -44,7 +45,11 @@ import {
   renameMatchArmVariable,
   type PatternVariant,
 } from "./match_pattern.ts";
-import type { DefinyValue } from "../stage1_compiler.ts";
+import {
+  type BuiltinResolver,
+  compilerBuiltinName,
+  type DefinyValue,
+} from "../stage1_compiler.ts";
 
 /** 式に出す型エラー */
 export type ExpressionTypeError = {
@@ -108,6 +113,11 @@ export function ExpressionTreeEditor({
   // useId の値は `:` などを含むので, CSS の dashed-ident に使える文字だけにする
   const selectionAnchorName = `--expression-selection-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
+  const builtinOf = useCallback<BuiltinResolver>(
+    (id) => compilerBuiltinName(partsByIdHash.get(id)?.expression),
+    [partsByIdHash],
+  );
+
   const layoutRoot = useMemo(() => {
     const rawTree = expressionToLayoutNode(expression, "root", { partNames });
     return computeLayout(rawTree, { maxWidth });
@@ -118,12 +128,17 @@ export function ExpressionTreeEditor({
     const path =
       typeError.expression === null
         ? null
-        : findTypeErrorPath(layoutRoot, expression, typeError.expression);
+        : findTypeErrorPath(
+            layoutRoot,
+            expression,
+            typeError.expression,
+            builtinOf,
+          );
     return (
       (path === null ? null : findExpressionNode(layoutRoot, path))?.id ??
       layoutRoot.id
     );
-  }, [typeError, layoutRoot, expression]);
+  }, [typeError, layoutRoot, expression, builtinOf]);
 
   // キーボード移動用: 表示順 (行きがけ順) のノード ID とパス
   const nodeIndex = useMemo(() => collectNodeIndex(layoutRoot), [layoutRoot]);
@@ -279,7 +294,12 @@ export function ExpressionTreeEditor({
       if (optionValue !== menu.currentOptionValue) {
         onChange(
           !isMatchPatternPath(selectedPath)
-            ? applySelection(expression, selectedPath, optionValue)
+            ? applySelection(expression, selectedPath, optionValue, (hash) => {
+                const part = partsByIdHash.get(hash);
+                return part === undefined
+                  ? undefined
+                  : partParameterNames(part);
+              })
             : applyPatternSelection(
                 expression,
                 selectedPath,
@@ -295,6 +315,7 @@ export function ExpressionTreeEditor({
       keyboard,
       menu.currentOptionValue,
       onChange,
+      partsByIdHash,
       patternVariants,
       selectedPath,
     ],

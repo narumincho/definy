@@ -477,7 +477,8 @@ Rust 製コンパイラ (`wasm_emitter/function_ops.rs`) と同じ形です。
   (`core.compile-assign-part-bases` で各パーツの最初の番号を求める)。
   関数のパーツへの参照は, その番号のクロージャ (環境なし) になる。関数でないパーツへの参照は, 参照した場所でパーツの式をコンパイルする
   (パーツの中の関数の番号はパーツの最初の番号から数えるので, どこでコンパイルしても同じ)。インライン化中のパーツを再び参照したら `unreachable`
-- 式を持たないパーツ (コンパイラ組み込み) や `core.expression` で表せないパーツは渡さないので, 参照すると `unreachable`
+- 式を持たないパーツ (コンパイラ組み込み) や `core.expression` で表せないパーツは渡さないので, 参照すると `unreachable`.
+  コンパイラ組み込みのパーツの呼び出しは TypeScript 側で `add` などのバリアントにしてから渡す ([builtin-parts.md](builtin-parts.md))
 - 引数は名前ではなく書いた順に渡す (Rust 製と同じ)
 
 ### Rust 製コンパイラの修正: 静的データが 64KB を超えるとヒープが上書きしていた
@@ -773,7 +774,7 @@ eval-value: expression -> env -> list<{ id: string, expression: expression }> ->
   `core.type-check-against-unlocated`) を呼んで, `located` でないエラーを今検査している式と組にして返すだけのパーツ.
   本体の中の再帰呼び出しはこの包むほうを呼ぶので, 一番内側でエラーを返した呼び出しの式が付く.
   - 式の型を推論してから `type-equals` で比べると, エラーはその親の式に付いてしまう.
-    `add` などの演算子のオペランドは `type-check-against` で期待する型 (`number` など) に照らして検査し,
+    `add` など組み込みの演算 (`core.plus` などの呼び出し) の引数は `type-check-against` で期待する型 (`number` など) に照らして検査し,
     オペランドの式にエラーが付くようにしている
   - UI (パーツ詳細) は `located` の `expression` と同じ値になるツリーの式 (`findTypeErrorPath`,
     `src/tree_layout/type_error_location.ts`) の横に警告を出す. 同じ式が何か所にもあれば表示順で最初のもの
@@ -847,7 +848,7 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   `_` アームは何も束縛せず, `find-tag-in-arms` ではすべてのタグに一致します。
   対象の型に無いタグでペイロードを束縛しないアーム (`variable_id` が負) は到達しないアームとして許します
   (`core.match-arm-env`)。
-- **演算子**: 比較 (`<=` など)・文字列 (`string_concat` など)・リスト (`list_length` など) の式も
+- **組み込みの演算**: 比較 (`less_than_or_equal` など)・文字列 (`string_concat` など)・リスト (`list_length` など) の式も
   `core.expression` のバリアントと `core.type-check-binary` で検査します。
 
 ノウハウ:

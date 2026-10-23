@@ -148,7 +148,7 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 選択肢と検索・ハイライトの規則は [src/tree_layout/selector_options.ts](../src/tree_layout/selector_options.ts) (単体テストあり).
 旧 Rust 版 (`definy-ui/src/dropdown.rs` の `SearchableDropdownPanel`) の操作感に合わせている. キー操作は [key.md](key.md).
 
-- 開くと検索欄に選択中の式の名前 (`core.eval-ast`, `plus` など) が全選択で入る. 打てば置き換わり, 打つまでは絞り込まずに全部の選択肢を出す.
+- 開くと検索欄に選択中の式の名前 (`core.eval-ast`, `core.plus` など) が全選択で入る. 打てば置き換わり, 打つまでは絞り込まずに全部の選択肢を出す.
   現在の選択肢には ✓ を付け, リストの中央に来るようにスクロールする. 未入力にした直後は検索欄を空にする
 - 見出しに選択中の式の名前と期待する型を出す. ⌫ で未入力に, ✕ で選択解除
 - その位置から参照できる変数 (関数のパラメーター, let の束縛, match のアームの束縛) を先頭に出す.
@@ -163,11 +163,11 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   ツリーの外をクリックするとメニューを閉じる
 - 参照しているパーツ ID と選択肢の ID (`partIdHash`) が違う場合 (同じ名前のモジュールを別のアカウントがコミットしたときなど) でも,
   `partNames` で名前に直して現在の選択肢とみなす
-- `less-than` を `less-than-or-equal` にするなど, 二項演算を別の二項演算に差し替えるときは左右の式を引き継ぐ
-  (`mutation.ts` の `keepBinaryOperands`)
+- 演算子の候補は無い. `core.plus` `core.less-than` `core.list-get` などはパーツの候補として出し,
+  関数のパーツを選ぶと引数を未入力にした呼び出しにする. `core.less-than` を `core.less-than-or-equal` にするなど,
+  呼び出しを別のパーツに差し替えるときは同じ名前の引数の式を引き継ぐ ([builtin-parts.md](builtin-parts.md))
 - 構文の候補として `let` (式全体で使われていない変数 ID で `x = 0` の束縛を作り, 本体はその変数) と
-  `match (true / false)` を出す. 組み込みの `list-get` `list-length` `list-append` `list-concat` `string-length` `string-slice`
-  `less-than-or-equal` `greater-than-or-equal` も候補にある
+  `match (true / false)` を出す
 - パーツの候補には型 (`number`, `function → number` など) を名前の横に出す
 
 ### パーツの型の行 (型のツリーエディタ)
@@ -189,10 +189,10 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 
 ### ツリーに表示する組み込みの式
 
-`ListGet` `ListAppend` `ListLength` `StringLength` `StringToBytes` `StringSlice` `TypeList` は,
-子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`TypeList` は, 子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`core.list-get` などの組み込みのパーツの呼び出しは, 他のパーツの呼び出し (`Call`) と同じく表示する.
 `TypeUnion` はバリアントごとに行を分け, ペイロードの型を子の式にする (ペイロードのないバリアントを選ぶと union 全体を選ぶ).
-表の対応がない式は, 子を持たないキーワード (`ListGet` のようなキー名) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
+表の対応がない式は, 子を持たないキーワード (式のキー名) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
 
 コンパイラ組み込みのパーツ (`core.string-concat` などの式 `{"Compiler": "string_concat"}`) は,
 式の直下に組み込みが入っているものとして `builtin string-concat` と表示する (`ast_to_layout/literals.ts`).

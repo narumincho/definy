@@ -47,17 +47,32 @@
           "body": {
             "Match": {
               "target": {
-                "LessThan": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 0
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               },
               "arms": [
@@ -66,17 +81,32 @@
                   "variable_id": null,
                   "variable_name": null,
                   "body": {
-                    "Subtract": {
-                      "left": {
-                        "Number": {
-                          "value": 0
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.minus"
+                          }
                         }
                       },
-                      "right": {
-                        "Variable": {
-                          "variable_id": 1
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   }
                 },
@@ -139,17 +169,32 @@
           "body": {
             "Match": {
               "target": {
-                "LessThan": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
                     }
                   },
-                  "right": {
-                    "Variable": {
-                      "variable_id": 2
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               },
               "arms": [
@@ -222,17 +267,32 @@
           "body": {
             "Match": {
               "target": {
-                "GreaterThan": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.greater-than"
+                      }
                     }
                   },
-                  "right": {
-                    "Variable": {
-                      "variable_id": 2
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 2
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               },
               "arms": [
@@ -297,17 +357,32 @@
           "body": {
             "Match": {
               "target": {
-                "GreaterThan": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.greater-than"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 0
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 0
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               },
               "arms": [
@@ -328,17 +403,32 @@
                   "body": {
                     "Match": {
                       "target": {
-                        "LessThan": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 1
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.less-than"
+                              }
                             }
                           },
-                          "right": {
-                            "Number": {
-                              "value": 0
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "Number": {
+                                  "value": 0
+                                }
+                              }
                             }
-                          }
+                          ]
                         }
                       },
                       "arms": [
@@ -474,21 +564,48 @@
             }
           ],
           "body": {
-            "Equal": {
-              "left": {
-                "ListLength": {
-                  "value": {
-                    "Variable": {
-                      "variable_id": 1
-                    }
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.equal"
                   }
                 }
               },
-              "right": {
-                "Number": {
-                  "value": 0
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-length"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "value",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -528,17 +645,32 @@
             }
           ],
           "body": {
-            "ListGet": {
-              "list": {
-                "Variable": {
-                  "variable_id": 1
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.list-get"
+                  }
                 }
               },
-              "index": {
-                "Number": {
-                  "value": 0
+              "arguments": [
+                {
+                  "name": "list",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "index",
+                  "value": {
+                    "Number": {
+                      "value": 0
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -578,12 +710,24 @@
             }
           ],
           "body": {
-            "StringToBytes": {
-              "value": {
-                "Variable": {
-                  "variable_id": 1
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.string-to-bytes"
+                  }
                 }
-              }
+              },
+              "arguments": [
+                {
+                  "name": "value",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                }
+              ]
             }
           }
         }
@@ -691,39 +835,96 @@
                       "body": {
                         "Match": {
                           "target": {
-                            "And": {
-                              "left": {
-                                "Equal": {
-                                  "left": {
-                                    "Variable": {
-                                      "variable_id": 2
-                                    }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 0
-                                    }
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.and"
                                   }
                                 }
                               },
-                              "right": {
-                                "GreaterThan": {
-                                  "left": {
-                                    "ListLength": {
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 1
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.equal"
+                                          }
                                         }
-                                      }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 0
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.greater-than"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.list-length"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
                                   }
                                 }
-                              }
+                              ]
                             }
                           },
                           "arms": [
@@ -885,39 +1086,96 @@
                       "body": {
                         "Match": {
                           "target": {
-                            "And": {
-                              "left": {
-                                "Equal": {
-                                  "left": {
-                                    "Variable": {
-                                      "variable_id": 2
-                                    }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 0
-                                    }
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.and"
                                   }
                                 }
                               },
-                              "right": {
-                                "GreaterThan": {
-                                  "left": {
-                                    "StringLength": {
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 1
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.equal"
+                                          }
                                         }
-                                      }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
-                                  },
-                                  "right": {
-                                    "Number": {
-                                      "value": 0
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.greater-than"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-length"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
                                   }
                                 }
-                              }
+                              ]
                             }
                           },
                           "arms": [
@@ -934,12 +1192,24 @@
                                         {
                                           "key": "chunk",
                                           "value": {
-                                            "StringToBytes": {
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-to-bytes"
+                                                  }
                                                 }
-                                              }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                }
+                                              ]
                                             }
                                           }
                                         },
@@ -1085,21 +1355,48 @@
                       "body": {
                         "Match": {
                           "target": {
-                            "LessThan": {
-                              "left": {
-                                "Variable": {
-                                  "variable_id": 2
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.less-than"
+                                  }
                                 }
                               },
-                              "right": {
-                                "ListLength": {
+                              "arguments": [
+                                {
+                                  "name": "left",
                                   "value": {
                                     "Variable": {
-                                      "variable_id": 1
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-length"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      ]
                                     }
                                   }
                                 }
-                              }
+                              ]
                             }
                           },
                           "arms": [
@@ -1116,38 +1413,80 @@
                                         {
                                           "key": "chunk",
                                           "value": {
-                                            "StringToBytes": {
-                                              "value": {
-                                                "ListGet": {
-                                                  "list": {
-                                                    "Variable": {
-                                                      "variable_id": 1
-                                                    }
-                                                  },
-                                                  "index": {
-                                                    "Variable": {
-                                                      "variable_id": 2
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-to-bytes"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "Call": {
+                                                      "function": {
+                                                        "PartReference": {
+                                                          "part_definition_event_hash": {
+                                                            "$part": "core.list-get"
+                                                          }
+                                                        }
+                                                      },
+                                                      "arguments": [
+                                                        {
+                                                          "name": "list",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          }
+                                                        },
+                                                        {
+                                                          "name": "index",
+                                                          "value": {
+                                                            "Variable": {
+                                                              "variable_id": 2
+                                                            }
+                                                          }
+                                                        }
+                                                      ]
                                                     }
                                                   }
                                                 }
-                                              }
+                                              ]
                                             }
                                           }
                                         },
                                         {
                                           "key": "nextState",
                                           "value": {
-                                            "Add": {
-                                              "left": {
-                                                "Variable": {
-                                                  "variable_id": 2
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.plus"
+                                                  }
                                                 }
                                               },
-                                              "right": {
-                                                "Number": {
-                                                  "value": 1
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "Number": {
+                                                      "value": 1
+                                                    }
+                                                  }
                                                 }
-                                              }
+                                              ]
                                             }
                                           }
                                         }
@@ -1237,12 +1576,24 @@
                   "variable_id": 4,
                   "variable_name": "textLen",
                   "value": {
-                    "StringLength": {
-                      "value": {
-                        "Variable": {
-                          "variable_id": 1
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.string-length"
+                          }
                         }
-                      }
+                      },
+                      "arguments": [
+                        {
+                          "name": "value",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 },
@@ -1250,12 +1601,24 @@
                   "variable_id": 5,
                   "variable_name": "targetLen",
                   "value": {
-                    "StringLength": {
-                      "value": {
-                        "Variable": {
-                          "variable_id": 2
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.string-length"
+                          }
                         }
-                      }
+                      },
+                      "arguments": [
+                        {
+                          "name": "value",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 }
@@ -1263,26 +1626,56 @@
               "body": {
                 "Match": {
                   "target": {
-                    "GreaterThan": {
-                      "left": {
-                        "Add": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 3
-                            }
-                          },
-                          "right": {
-                            "Variable": {
-                              "variable_id": 5
-                            }
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.greater-than"
                           }
                         }
                       },
-                      "right": {
-                        "Variable": {
-                          "variable_id": 4
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 5
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 4
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   },
                   "arms": [
@@ -1303,40 +1696,88 @@
                       "body": {
                         "Match": {
                           "target": {
-                            "Equal": {
-                              "left": {
-                                "StringSlice": {
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  },
-                                  "start": {
-                                    "Variable": {
-                                      "variable_id": 3
-                                    }
-                                  },
-                                  "end": {
-                                    "Add": {
-                                      "left": {
-                                        "Variable": {
-                                          "variable_id": 3
-                                        }
-                                      },
-                                      "right": {
-                                        "Variable": {
-                                          "variable_id": 5
-                                        }
-                                      }
-                                    }
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.equal"
                                   }
                                 }
                               },
-                              "right": {
-                                "Variable": {
-                                  "variable_id": 2
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.string-slice"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "start",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 3
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "end",
+                                          "value": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.plus"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
                                 }
-                              }
+                              ]
                             }
                           },
                           "arms": [
@@ -1383,17 +1824,32 @@
                                     {
                                       "name": "startIndex",
                                       "value": {
-                                        "Add": {
-                                          "left": {
-                                            "Variable": {
-                                              "variable_id": 3
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
                                             }
                                           },
-                                          "right": {
-                                            "Number": {
-                                              "value": 1
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "Number": {
+                                                  "value": 1
+                                                }
+                                              }
                                             }
-                                          }
+                                          ]
                                         }
                                       }
                                     }
@@ -1496,17 +1952,32 @@
                   "value": {
                     "Match": {
                       "target": {
-                        "GreaterThanOrEqual": {
-                          "left": {
-                            "Variable": {
-                              "variable_id": 2
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.greater-than-or-equal"
+                              }
                             }
                           },
-                          "right": {
-                            "Number": {
-                              "value": 0
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "Number": {
+                                  "value": 0
+                                }
+                              }
                             }
-                          }
+                          ]
                         }
                       },
                       "arms": [
@@ -1515,17 +1986,32 @@
                           "variable_id": null,
                           "variable_name": null,
                           "body": {
-                            "Add": {
-                              "left": {
-                                "Variable": {
-                                  "variable_id": 2
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.plus"
+                                  }
                                 }
                               },
-                              "right": {
-                                "Number": {
-                                  "value": 3
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "Number": {
+                                      "value": 3
+                                    }
+                                  }
                                 }
-                              }
+                              ]
                             }
                           }
                         },
@@ -1630,17 +2116,32 @@
               "body": {
                 "Match": {
                   "target": {
-                    "LessThan": {
-                      "left": {
-                        "Variable": {
-                          "variable_id": 4
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
                         }
                       },
-                      "right": {
-                        "Number": {
-                          "value": 0
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 4
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   },
                   "arms": [
@@ -1667,17 +2168,32 @@
                               "value": {
                                 "Match": {
                                   "target": {
-                                    "GreaterThanOrEqual": {
-                                      "left": {
-                                        "Variable": {
-                                          "variable_id": 5
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.greater-than-or-equal"
+                                          }
                                         }
                                       },
-                                      "right": {
-                                        "Number": {
-                                          "value": 0
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 5
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "Number": {
+                                              "value": 0
+                                            }
+                                          }
                                         }
-                                      }
+                                      ]
                                     }
                                   },
                                   "arms": [
@@ -1696,12 +2212,24 @@
                                       "variable_id": null,
                                       "variable_name": null,
                                       "body": {
-                                        "StringLength": {
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-length"
+                                              }
                                             }
-                                          }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            }
+                                          ]
                                         }
                                       }
                                     }
@@ -1714,17 +2242,32 @@
                           "body": {
                             "Match": {
                               "target": {
-                                "LessThanOrEqual": {
-                                  "left": {
-                                    "Variable": {
-                                      "variable_id": 6
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.less-than-or-equal"
+                                      }
                                     }
                                   },
-                                  "right": {
-                                    "Variable": {
-                                      "variable_id": 4
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 6
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 4
+                                        }
+                                      }
                                     }
-                                  }
+                                  ]
                                 }
                               },
                               "arms": [
@@ -1743,22 +2286,40 @@
                                   "variable_id": null,
                                   "variable_name": null,
                                   "body": {
-                                    "StringSlice": {
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 1
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.string-slice"
+                                          }
                                         }
                                       },
-                                      "start": {
-                                        "Variable": {
-                                          "variable_id": 4
+                                      "arguments": [
+                                        {
+                                          "name": "value",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "start",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 4
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "end",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 6
+                                            }
+                                          }
                                         }
-                                      },
-                                      "end": {
-                                        "Variable": {
-                                          "variable_id": 6
-                                        }
-                                      }
+                                      ]
                                     }
                                   }
                                 }
@@ -1857,17 +2418,32 @@
               "body": {
                 "Match": {
                   "target": {
-                    "LessThan": {
-                      "left": {
-                        "Variable": {
-                          "variable_id": 2
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.less-than"
+                          }
                         }
                       },
-                      "right": {
-                        "Number": {
-                          "value": 0
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   },
                   "arms": [
@@ -1886,35 +2462,80 @@
                       "variable_id": null,
                       "variable_name": null,
                       "body": {
-                        "StringSlice": {
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          },
-                          "start": {
-                            "Add": {
-                              "left": {
-                                "Variable": {
-                                  "variable_id": 2
-                                }
-                              },
-                              "right": {
-                                "Number": {
-                                  "value": 1
-                                }
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.string-slice"
                               }
                             }
                           },
-                          "end": {
-                            "StringLength": {
+                          "arguments": [
+                            {
+                              "name": "value",
                               "value": {
                                 "Variable": {
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "start",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.plus"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "Number": {
+                                          "value": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "end",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-length"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "value",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
                             }
-                          }
+                          ]
                         }
                       }
                     }

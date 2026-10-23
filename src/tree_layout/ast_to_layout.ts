@@ -1,7 +1,6 @@
 import type { LayoutNode, PathStep } from "./types.ts";
 import type { ScopeContext } from "./ast_to_layout/types.ts";
 import { tryBuildLiteralNode } from "./ast_to_layout/literals.ts";
-import { tryBuildOperatorNode } from "./ast_to_layout/operators.ts";
 import { tryBuildFunctionNode } from "./ast_to_layout/functions.ts";
 import { tryBuildCollectionNode } from "./ast_to_layout/collections.ts";
 import { tryBuildControlOrTypeNode } from "./ast_to_layout/control_and_types.ts";
@@ -45,17 +44,6 @@ function buildExpressionLayoutNode(
   }
 
   const node = expr as Record<string, unknown>;
-
-  const operatorNode = tryBuildOperatorNode(
-    node,
-    idPrefix,
-    currentPath,
-    context,
-    buildLayoutNode,
-  );
-  if (operatorNode !== null) {
-    return operatorNode;
-  }
 
   const functionNode = tryBuildFunctionNode(
     node,

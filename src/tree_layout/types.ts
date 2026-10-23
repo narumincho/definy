@@ -10,7 +10,8 @@ export type NodeKind =
   /** 関数の引数名・match で束縛する変数の名前. 選ぶとその場で名前を変えられる */
   | "parameterName"
   | "keyword"
-  | "operator"
+  /** `=` (let の束縛) や `→` (関数の型) などの記号 */
+  | "symbol"
   | "delimiter"
   | "group"
   | "block"
@@ -19,8 +20,6 @@ export type NodeKind =
 export type LayoutMode = "inline" | "multiline";
 
 export type PathStep =
-  | "left"
-  | "right"
   | "condition"
   | "then"
   | "else"
@@ -31,10 +30,6 @@ export type PathStep =
   | { readonly kind: "recordItemValue"; readonly index: number }
   | "constructorValue"
   | "typeListItem"
-  | "start"
-  | "end"
-  | "index"
-  | "item"
   | "functionBody"
   | "callFunction"
   | { readonly kind: "callArgument"; readonly index: number }

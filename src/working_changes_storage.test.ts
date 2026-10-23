@@ -27,13 +27,15 @@ describe("working_changes_storage", () => {
               If: {
                 condition: { Boolean: { value: true } },
                 then_expr: {
-                  Add: {
-                    left: { Number: { value: 1 } },
-                    right: {
+                  Call: {
+                    function: {
                       PartReference: {
                         part_definition_event_hash: sampleBytes,
                       },
                     },
+                    arguments: [
+                      { name: "left", value: { Number: { value: 1 } } },
+                    ],
                   },
                 },
                 else_expr: { Number: { value: 0 } },
@@ -55,8 +57,8 @@ describe("working_changes_storage", () => {
     const restoredExpr = restoredPart?.expression as {
       readonly If?: {
         readonly then_expr?: {
-          readonly Add?: {
-            readonly right?: {
+          readonly Call?: {
+            readonly function?: {
               readonly PartReference?: {
                 readonly part_definition_event_hash?: unknown;
               };
@@ -67,7 +69,7 @@ describe("working_changes_storage", () => {
     };
 
     const targetHash =
-      restoredExpr.If?.then_expr?.Add?.right?.PartReference
+      restoredExpr.If?.then_expr?.Call?.function?.PartReference
         ?.part_definition_event_hash;
     expect(targetHash).toBeInstanceOf(Uint8Array);
     expect(targetHash).toEqual(sampleBytes);

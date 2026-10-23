@@ -109,7 +109,7 @@ test.describe("definy UI E2E", () => {
     const defTree = page.locator(".part-definition-tree");
     await expect(defTree).toBeVisible({ timeout: 15000 });
 
-    // AST ツリー内のキーワード・演算子バッジが表示されていることを確認
+    // AST ツリー内のキーワードと, 呼び出しているパーツ (core.divide) のバッジが表示されていることを確認
     const letBadge = defTree.locator(".tree-badge", { hasText: "let" });
     await expect(letBadge.first()).toBeVisible();
 
@@ -141,9 +141,10 @@ test.describe("definy UI E2E", () => {
       .first();
     await expect(valueTree).toBeVisible({ timeout: 15000 });
 
-    // 0 - x の 0 (数値の位置) を選ぶと, 型が合わない選択肢の区切りが出る (期待する型が number と分かる)
-    const subtract = valueTree.locator(".tree-badge", { hasText: /^minus$/ });
-    await subtract.first().click();
+    // core.minus(left: 0, right: x) の呼び出し (数値の位置) を選ぶと, 型が合わない選択肢の区切りが出る
+    // (期待する型が number と分かる). 1 つ目の呼び出しは match の対象の core.less-than
+    const subtract = valueTree.locator(".tree-badge", { hasText: /^call$/ });
+    await subtract.nth(1).click();
     // 検索欄には今の式の名前が入っているので, 空にして全ての選択肢を出す
     await page.locator(".dropdown-search-input").fill("");
     await expect(

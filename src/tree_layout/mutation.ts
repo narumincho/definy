@@ -10,9 +10,8 @@ export {
 } from "./path.ts";
 
 export {
-  BINARY_KEYS,
   TYPE_SELECTIONS,
   applySelection,
-  keepBinaryOperands,
   nextVariableId,
+  partParameterNames,
 } from "./selection.ts";

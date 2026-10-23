@@ -8,6 +8,31 @@ import {
   SelfHostedAstConversionError,
 } from "./stage1_compiler.ts";
 
+/** テスト用のコンパイラ組み込みのパーツ. ID は組み込みの名前にする */
+const builtinParts = [
+  "plus",
+  "minus",
+  "multiply",
+  "divide",
+  "less_than_or_equal",
+].map((name) => ({ id: name, expression: { Compiler: name } }));
+
+/** コンパイラ組み込みのパーツ (ID は {@link builtinParts}) の呼び出し */
+function builtinCall(
+  name: string,
+  args: Readonly<Record<string, unknown>>,
+): unknown {
+  return {
+    Call: {
+      function: { PartReference: { part_definition_event_hash: name } },
+      arguments: Object.entries(args).map(([argName, value]) => ({
+        name: argName,
+        value,
+      })),
+    },
+  };
+}
+
 describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
   it("compiles and evaluates number literal (42)", async () => {
     const wasmBytes = fs.readFileSync("wasm/stage1.wasm");
@@ -31,14 +56,12 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const stage1Module = new WebAssembly.Module(wasmBytes);
     const compiler = createStage1Compiler(stage1Module);
 
-    const ast = {
-      Add: {
-        left: { Number: { value: 15 } },
-        right: { Number: { value: 27 } },
-      },
-    };
+    const ast = builtinCall("plus", {
+      left: { Number: { value: 15 } },
+      right: { Number: { value: 27 } },
+    });
 
-    const compiledWasm = compiler.compile(ast);
+    const compiledWasm = compiler.compile(ast, builtinParts);
     const evaluated = await evaluateCompiledWasm(compiledWasm);
     expect(evaluated).toBe(42);
   });
@@ -62,21 +85,17 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
             value: { Number: { value: 5 } },
           },
         ],
-        body: {
-          Divide: {
-            left: {
-              Multiply: {
-                left: { Variable: { variable_id: 1 } },
-                right: { Variable: { variable_id: 2 } },
-              },
-            },
-            right: { Number: { value: 2 } },
-          },
-        },
+        body: builtinCall("divide", {
+          left: builtinCall("multiply", {
+            left: { Variable: { variable_id: 1 } },
+            right: { Variable: { variable_id: 2 } },
+          }),
+          right: { Number: { value: 2 } },
+        }),
       },
     };
 
-    const compiledWasm = compiler.compile(triangleAst);
+    const compiledWasm = compiler.compile(triangleAst, builtinParts);
     expect(compiledWasm[0]).toBe(0x00);
     expect(compiledWasm[1]).toBe(0x61);
     expect(compiledWasm[2]).toBe(0x73);
@@ -100,24 +119,21 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
         {
           Function: {
             parameters: [{ parameter_id: 1, parameter_name: "x" }],
-            body: {
-              Add: {
-                left: {
-                  Multiply: {
-                    left: { Variable: { variable_id: 1 } },
-                    right: { Number: { value: 2 } },
-                  },
-                },
-                right: {
-                  PartReference: { part_definition_event_hash: offsetId },
-                },
+            body: builtinCall("plus", {
+              left: builtinCall("multiply", {
+                left: { Variable: { variable_id: 1 } },
+                right: { Number: { value: 2 } },
+              }),
+              right: {
+                PartReference: { part_definition_event_hash: offsetId },
               },
-            },
+            }),
           },
         },
       ],
       // offset = 2
       ["BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc", { Number: { value: 2 } }],
+      ...builtinParts.map((part) => [part.id, part.expression] as const),
     ]);
     const expression = {
       Call: {
@@ -129,9 +145,12 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     const { parts, unresolved } = collectReferencedParts(expression, (id) =>
       partExpressions.get(id),
     );
+    // 呼び出しているコンパイラ組み込みのパーツは最後に入る
     expect(parts.map((part) => part.id)).toEqual([
       "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
       "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc",
+      "plus",
+      "multiply",
     ]);
     expect(unresolved).toEqual([]);
 
@@ -140,16 +159,15 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
   });
 
   it("reports parts that cannot be passed to stage1 as unresolved", () => {
-    const expression = {
-      Add: {
-        left: { PartReference: { part_definition_event_hash: "missing" } },
-        right: { PartReference: { part_definition_event_hash: "builtin" } },
-      },
-    };
+    const expression = builtinCall("plus", {
+      left: { PartReference: { part_definition_event_hash: "missing" } },
+      right: { PartReference: { part_definition_event_hash: "builtin" } },
+    });
     const { parts, unresolved } = collectReferencedParts(expression, (id) =>
-      id === "builtin" ? { Compiler: "let" } : undefined,
+      id === "builtin" || id === "plus" ? { Compiler: id } : undefined,
     );
-    expect(parts).toEqual([]);
+    // 呼び出さずに参照しているコンパイラ組み込みのパーツは渡せない
+    expect(parts).toEqual([{ id: "plus", expression: { Compiler: "plus" } }]);
     // 旧 Rust 版と同じく後に現れた参照から調べる
     expect(unresolved).toEqual(["builtin", "missing"]);
   });
@@ -158,13 +176,26 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     expect(() => definyAstToSelfHostedAst({ Hole: null })).toThrow(
       SelfHostedAstConversionError,
     );
+    const builtinOf = (id: string) => id;
+    // core.expression にバリアントの無い組み込み
     expect(() =>
-      definyAstToSelfHostedAst({
-        BitAnd: {
+      definyAstToSelfHostedAst(
+        builtinCall("bit_and", {
           left: { Number: { value: 1 } },
           right: { Number: { value: 1 } },
-        },
-      }),
+        }),
+        builtinOf,
+      ),
+    ).toThrow(SelfHostedAstConversionError);
+    // 引数名が組み込みと合わない
+    expect(() =>
+      definyAstToSelfHostedAst(
+        builtinCall("plus", {
+          a: { Number: { value: 1 } },
+          b: { Number: { value: 1 } },
+        }),
+        builtinOf,
+      ),
     ).toThrow(SelfHostedAstConversionError);
   });
 
@@ -191,12 +222,10 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
         ],
         body: {
           Match: {
-            target: {
-              LessThanOrEqual: {
-                left: variable(0),
-                right: { Number: { value: 0 } },
-              },
-            },
+            target: builtinCall("less_than_or_equal", {
+              left: variable(0),
+              right: { Number: { value: 0 } },
+            }),
             arms: [
               {
                 tag: "true",
@@ -209,15 +238,14 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
                 variable_id: null,
                 variable_name: null,
                 body: callLoop(
-                  {
-                    Subtract: {
-                      left: variable(0),
-                      right: { Number: { value: 1 } },
-                    },
-                  },
-                  {
-                    Add: { left: variable(1), right: { Number: { value: 2 } } },
-                  },
+                  builtinCall("minus", {
+                    left: variable(0),
+                    right: { Number: { value: 1 } },
+                  }),
+                  builtinCall("plus", {
+                    left: variable(1),
+                    right: { Number: { value: 2 } },
+                  }),
                 ),
               },
             ],
@@ -228,7 +256,7 @@ describe("stage1 compiler in pure TypeScript / WebAssembly", () => {
     };
     const compiledWasm = compiler.compile(
       callLoop({ Number: { value: 1_000_000 } }, { Number: { value: 0 } }),
-      [{ id: "loop", expression: loop }],
+      [{ id: "loop", expression: loop }, ...builtinParts],
     );
     expect(await evaluateCompiledWasm(compiledWasm)).toBe(2_000_000);
   });

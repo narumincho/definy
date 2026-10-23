@@ -11,7 +11,10 @@ import {
   bytesToUrlSafeBase64NoPad,
   type DecodedPart,
 } from "../src/cbor.ts";
-import { resolvePartPlaceholders } from "../src/seed_parts.ts";
+import {
+  devSystemAccountBytes,
+  resolvePartPlaceholders,
+} from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
@@ -139,9 +142,22 @@ describe("SubmitEvent の型検査", () => {
     const user = await generateAccountCredentials("user");
     const base = part("base", "number", { Number: { value: 1 } });
     const double = part("double", "number", {
-      Add: {
-        left: await partReference(user.accountId, "app", "base"),
-        right: { Number: { value: 1 } },
+      Call: {
+        function: await resolvePartPlaceholders(
+          {
+            PartReference: {
+              part_definition_event_hash: { $part: "core.plus" },
+            },
+          },
+          await devSystemAccountBytes(),
+        ),
+        arguments: [
+          {
+            name: "left",
+            value: await partReference(user.accountId, "app", "base"),
+          },
+          { name: "right", value: { Number: { value: 1 } } },
+        ],
       },
     });
     expect(

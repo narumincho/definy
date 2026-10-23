@@ -52,9 +52,14 @@ const matchExpression = {
             variable_id: 2,
             variable_name: "val",
             body: {
-              Add: {
-                left: { Variable: { variable_id: 2 } },
-                right: { Number: { value: 23 } },
+              Call: {
+                function: {
+                  PartReference: { part_definition_event_hash: "core.plus" },
+                },
+                arguments: [
+                  { name: "left", value: { Variable: { variable_id: 2 } } },
+                  { name: "right", value: { Number: { value: 23 } } },
+                ],
               },
             },
           },
@@ -286,7 +291,7 @@ describe("match のパターンの編集", () => {
     });
     const arm = findNode(expressionToLayoutNode(renamed), "root.body.arm_0");
     expect(
-      findNode(arm as LayoutNode, "root.body.arm_0.body.left")?.label,
+      findNode(arm as LayoutNode, "root.body.arm_0.body.arg_0.val")?.label,
     ).toBe("n");
   });
 

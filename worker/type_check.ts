@@ -20,6 +20,10 @@ import {
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
 import { pickLatestCommitPerModule } from "../src/latest_commits.ts";
+import {
+  BUILTIN_FUNCTIONS,
+  compilerBuiltinName,
+} from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { systemAccountBytes, type PartStoreReader } from "./part_compiler.ts";
@@ -52,7 +56,32 @@ async function expressionContentHashAsync(
   );
 }
 
-/** モジュールのコミットのパーツを `LatestPart` にする (CAS に預けた式はまだ読まない) */
+let builtinExpressionsPromise:
+  Promise<ReadonlyMap<string, unknown>> | undefined;
+
+/**
+ * コンパイラ組み込みの式 (`{"Compiler": "plus"}` など) の content hash から式を引く表.
+ * 組み込みのパーツの呼び出しを `core.expression` のバリアントにするには, 型環境のパーツが組み込みかを知る必要がある.
+ * CAS に預けた組み込みのパーツの式を読まなくても content hash で分かるようにする
+ */
+function builtinExpressionsByContentHash(): Promise<
+  ReadonlyMap<string, unknown>
+> {
+  builtinExpressionsPromise ??= (async () =>
+    new Map(
+      await Promise.all(
+        [...BUILTIN_FUNCTIONS.keys()].map(
+          async (name): Promise<readonly [string, unknown]> => {
+            const expression = { Compiler: name };
+            return [await expressionContentHashAsync(expression), expression];
+          },
+        ),
+      ),
+    ))();
+  return builtinExpressionsPromise;
+}
+
+/** モジュールのコミットのパーツを `LatestPart` にする (CAS に預けた式はまだ読まない. コンパイラ組み込みの式は埋める) */
 async function commitParts(
   commit: ModuleCommitContent,
   moduleIdBytes: Uint8Array,
@@ -66,7 +95,11 @@ async function commitParts(
       continue;
     }
     const contentHash = partContentHash(part);
-    const expression = part.expression ?? null;
+    const expression =
+      part.expression ??
+      (contentHash === null
+        ? null
+        : ((await builtinExpressionsByContentHash()).get(contentHash) ?? null));
     parts.push({
       partId: await deriveModulePartId(moduleIdBytes, part.name),
       moduleId,
@@ -87,7 +120,7 @@ async function commitParts(
 type CachedCommit = {
   readonly moduleId: string;
   readonly timeMs: number;
-  /** 型環境に使う形のパーツ. 式は型パーツのものだけ持つ (メモリを節約する) */
+  /** 型環境に使う形のパーツ. 式は型パーツとコンパイラ組み込みのものだけ持つ (メモリを節約する) */
   readonly parts: ReadonlyArray<
     LatestPart & { readonly contentHash: string | null }
   >;
@@ -125,8 +158,12 @@ async function decodeCommit(item: {
     result = {
       moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
       timeMs: decoded.meta.timeMs,
+      // 型パーツの宣言式と, コンパイラ組み込みの式 (小さい) だけ持つ
       parts: (await commitParts(commit, moduleIdBytes)).map((part) =>
-        part.partType === "type" ? part : { ...part, expression: null },
+        part.partType === "type" ||
+        compilerBuiltinName(part.expression) !== undefined
+          ? part
+          : { ...part, expression: null },
       ),
     };
   }

@@ -86,7 +86,7 @@ export function nodeBadgeColors(kind: NodeKind): {
         color: "var(--purple)",
         border: "1px solid var(--purple-border)",
       };
-    case "operator":
+    case "symbol":
       return {
         bg: "var(--yellow-bg-strong)",
         color: "var(--yellow)",

@@ -39,13 +39,14 @@ npx vitest run src/stage1_conformance.test.ts
 
 stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取らず, 次の 2 つを引数に取ります。
 
-1. **式**: `core.expression` の値。`{"Add": {...}}` は `Variant("add", {left, right})` のように,
+1. **式**: `core.expression` の値。`core.plus` の呼び出しは `Variant("add", {left, right})` のように,
    リテラル (`Variant` / `TypeLiteral` / `ListLiteral` / `Number` / `String` / `Boolean`) だけの木で表します。
    変換は `definyAstToSelfHostedAst` (旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植) が行います。
    - `Match` の束縛しないアームの `variable_id` は `-1`, `default` はワイルドカードアーム `_` にします。
    - `Variant` の payload は `some(式)` / `none` で包みます。
    - `PartReference` の ID (CBOR 由来のバイト列, seed 由来の数値配列) は URL-safe Base64 の文字列にします。
-   - ビット演算・型の式・`Compiler` 組み込み・`Hole` は `core.expression` で表せないので `SelfHostedAstConversionError` になります。
+   - コンパイラ組み込みのパーツ (`core.plus` など) の呼び出しは, 組み込みに対応するバリアントにします ([builtin-parts.md](builtin-parts.md))。
+   - ビット演算の組み込みの呼び出し・型の式・`Compiler` 組み込み・`Hole` は `core.expression` で表せないので `SelfHostedAstConversionError` になります。
 2. **参照するパーツ**: `list<{ id: string, expression: core.expression }>`。式から `PartReference` を
    参照先までたどって集めます (`collectReferencedParts`)。`id` は 1 の `part_reference` の文字列と同じ形式でなければなりません。
    見つからない・式を持たない・変換できないパーツは渡さず `unresolved` として返します。

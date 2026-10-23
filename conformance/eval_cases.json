@@ -13,17 +13,32 @@
     {
       "name": "add",
       "expression": {
-        "Add": {
-          "left": {
-            "Number": {
-              "value": 40
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.plus"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 40
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": 42
@@ -31,17 +46,32 @@
     {
       "name": "subtract negative",
       "expression": {
-        "Subtract": {
-          "left": {
-            "Number": {
-              "value": 3
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.minus"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 10
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 10
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": -7
@@ -49,17 +79,32 @@
     {
       "name": "multiply",
       "expression": {
-        "Multiply": {
-          "left": {
-            "Number": {
-              "value": 6
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.multiply"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 7
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 6
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 7
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": 42
@@ -67,17 +112,32 @@
     {
       "name": "divide",
       "expression": {
-        "Divide": {
-          "left": {
-            "Number": {
-              "value": 17
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 5
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 17
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": 3
@@ -85,17 +145,32 @@
     {
       "name": "divide negative truncates toward zero",
       "expression": {
-        "Divide": {
-          "left": {
-            "Number": {
-              "value": -7
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.divide"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": -7
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": -3
@@ -103,17 +178,32 @@
     {
       "name": "remainder",
       "expression": {
-        "Remainder": {
-          "left": {
-            "Number": {
-              "value": 17
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.remainder"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 5
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 17
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": 2
@@ -121,17 +211,32 @@
     {
       "name": "remainder negative",
       "expression": {
-        "Remainder": {
-          "left": {
-            "Number": {
-              "value": -7
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.remainder"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": -7
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": -1
@@ -139,17 +244,32 @@
     {
       "name": "less than",
       "expression": {
-        "LessThan": {
-          "left": {
-            "Number": {
-              "value": 1
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.less-than"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -157,17 +277,32 @@
     {
       "name": "less than or equal",
       "expression": {
-        "LessThanOrEqual": {
-          "left": {
-            "Number": {
-              "value": 2
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.less-than-or-equal"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -175,17 +310,32 @@
     {
       "name": "greater than",
       "expression": {
-        "GreaterThan": {
-          "left": {
-            "Number": {
-              "value": 1
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.greater-than"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 1
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": false
@@ -193,17 +343,32 @@
     {
       "name": "greater than or equal",
       "expression": {
-        "GreaterThanOrEqual": {
-          "left": {
-            "Number": {
-              "value": 3
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.greater-than-or-equal"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -211,17 +376,32 @@
     {
       "name": "equal numbers",
       "expression": {
-        "Equal": {
-          "left": {
-            "Number": {
-              "value": 5
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 5
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -229,17 +409,32 @@
     {
       "name": "not equal numbers",
       "expression": {
-        "NotEqual": {
-          "left": {
-            "Number": {
-              "value": 5
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.not-equal"
+              }
             }
           },
-          "right": {
-            "Number": {
-              "value": 6
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Number": {
+                  "value": 6
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -247,17 +442,32 @@
     {
       "name": "equal strings",
       "expression": {
-        "Equal": {
-          "left": {
-            "String": {
-              "value": "abc"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
             }
           },
-          "right": {
-            "String": {
-              "value": "abc"
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "String": {
+                  "value": "abc"
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "String": {
+                  "value": "abc"
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -265,12 +475,24 @@
     {
       "name": "not",
       "expression": {
-        "Not": {
-          "value": {
-            "Boolean": {
-              "value": false
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.not"
+              }
             }
-          }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "Boolean": {
+                  "value": false
+                }
+              }
+            }
+          ]
         }
       },
       "expected": true
@@ -278,17 +500,32 @@
     {
       "name": "and",
       "expression": {
-        "And": {
-          "left": {
-            "Boolean": {
-              "value": true
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.and"
+              }
             }
           },
-          "right": {
-            "Boolean": {
-              "value": false
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Boolean": {
+                  "value": true
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Boolean": {
+                  "value": false
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": false
@@ -296,17 +533,32 @@
     {
       "name": "or",
       "expression": {
-        "Or": {
-          "left": {
-            "Boolean": {
-              "value": false
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.or"
+              }
             }
           },
-          "right": {
-            "Boolean": {
-              "value": true
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "Boolean": {
+                  "value": false
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "Boolean": {
+                  "value": true
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -323,17 +575,32 @@
     {
       "name": "string concat",
       "expression": {
-        "StringConcat": {
-          "left": {
-            "String": {
-              "value": "Hello, "
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-concat"
+              }
             }
           },
-          "right": {
-            "String": {
-              "value": "definy!"
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "String": {
+                  "value": "Hello, "
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "String": {
+                  "value": "definy!"
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": "Hello, definy!"
@@ -341,12 +608,24 @@
     {
       "name": "string length ascii",
       "expression": {
-        "StringLength": {
-          "value": {
-            "String": {
-              "value": "definy"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-length"
+              }
             }
-          }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "definy"
+                }
+              }
+            }
+          ]
         }
       },
       "expected": 6
@@ -354,22 +633,40 @@
     {
       "name": "string slice",
       "expression": {
-        "StringSlice": {
-          "value": {
-            "String": {
-              "value": "definy"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-slice"
+              }
             }
           },
-          "start": {
-            "Number": {
-              "value": 2
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "definy"
+                }
+              }
+            },
+            {
+              "name": "start",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
+            },
+            {
+              "name": "end",
+              "value": {
+                "Number": {
+                  "value": 5
+                }
+              }
             }
-          },
-          "end": {
-            "Number": {
-              "value": 5
-            }
-          }
+          ]
         }
       },
       "expected": "fin"
@@ -379,17 +676,32 @@
       "expression": {
         "Match": {
           "target": {
-            "LessThan": {
-              "left": {
-                "Number": {
-                  "value": 1
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.less-than"
+                  }
                 }
               },
-              "right": {
-                "Number": {
-                  "value": 2
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Number": {
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
                 }
-              }
+              ]
             }
           },
           "arms": [
@@ -471,17 +783,32 @@
             }
           ],
           "body": {
-            "Add": {
-              "left": {
-                "Variable": {
-                  "variable_id": 1
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.plus"
+                  }
                 }
               },
-              "right": {
-                "Variable": {
-                  "variable_id": 1
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -513,26 +840,56 @@
             }
           ],
           "body": {
-            "Divide": {
-              "left": {
-                "Multiply": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
-                    }
-                  },
-                  "right": {
-                    "Variable": {
-                      "variable_id": 2
-                    }
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.divide"
                   }
                 }
               },
-              "right": {
-                "Number": {
-                  "value": 2
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.multiply"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -557,33 +914,63 @@
               "variable_id": 2,
               "variable_name": "b",
               "value": {
-                "Multiply": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.multiply"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 4
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 4
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
           ],
           "body": {
-            "Add": {
-              "left": {
-                "Variable": {
-                  "variable_id": 1
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.plus"
+                  }
                 }
               },
-              "right": {
-                "Variable": {
-                  "variable_id": 2
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -599,17 +986,32 @@
               "variable_id": 1,
               "variable_name": "x",
               "value": {
-                "LessThan": {
-                  "left": {
-                    "Number": {
-                      "value": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 2
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Number": {
+                          "value": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 2
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -655,28 +1057,40 @@
     {
       "name": "list length",
       "expression": {
-        "ListLength": {
-          "value": {
-            "ListLiteral": {
-              "items": [
-                {
-                  "Number": {
-                    "value": 1
-                  }
-                },
-                {
-                  "Number": {
-                    "value": 2
-                  }
-                },
-                {
-                  "Number": {
-                    "value": 3
-                  }
-                }
-              ]
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-length"
+              }
             }
-          }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "ListLiteral": {
+                  "items": [
+                    {
+                      "Number": {
+                        "value": 1
+                      }
+                    },
+                    {
+                      "Number": {
+                        "value": 2
+                      }
+                    },
+                    {
+                      "Number": {
+                        "value": 3
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
         }
       },
       "expected": 3
@@ -684,33 +1098,48 @@
     {
       "name": "list get",
       "expression": {
-        "ListGet": {
-          "list": {
-            "ListLiteral": {
-              "items": [
-                {
-                  "Number": {
-                    "value": 10
-                  }
-                },
-                {
-                  "Number": {
-                    "value": 20
-                  }
-                },
-                {
-                  "Number": {
-                    "value": 30
-                  }
-                }
-              ]
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-get"
+              }
             }
           },
-          "index": {
-            "Number": {
-              "value": 1
+          "arguments": [
+            {
+              "name": "list",
+              "value": {
+                "ListLiteral": {
+                  "items": [
+                    {
+                      "Number": {
+                        "value": 10
+                      }
+                    },
+                    {
+                      "Number": {
+                        "value": 20
+                      }
+                    },
+                    {
+                      "Number": {
+                        "value": 30
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "index",
+              "value": {
+                "Number": {
+                  "value": 1
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": 20
@@ -718,34 +1147,49 @@
     {
       "name": "list concat",
       "expression": {
-        "ListConcat": {
-          "left": {
-            "ListLiteral": {
-              "items": [
-                {
-                  "Number": {
-                    "value": 1
-                  }
-                }
-              ]
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-concat"
+              }
             }
           },
-          "right": {
-            "ListLiteral": {
-              "items": [
-                {
-                  "Number": {
-                    "value": 2
-                  }
-                },
-                {
-                  "Number": {
-                    "value": 3
-                  }
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "ListLiteral": {
+                  "items": [
+                    {
+                      "Number": {
+                        "value": 1
+                      }
+                    }
+                  ]
                 }
-              ]
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "ListLiteral": {
+                  "items": [
+                    {
+                      "Number": {
+                        "value": 2
+                      }
+                    },
+                    {
+                      "Number": {
+                        "value": 3
+                      }
+                    }
+                  ]
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": [
@@ -757,28 +1201,43 @@
     {
       "name": "list append",
       "expression": {
-        "ListAppend": {
-          "list": {
-            "ListLiteral": {
-              "items": [
-                {
-                  "Number": {
-                    "value": 1
-                  }
-                },
-                {
-                  "Number": {
-                    "value": 2
-                  }
-                }
-              ]
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.list-append"
+              }
             }
           },
-          "item": {
-            "Number": {
-              "value": 3
+          "arguments": [
+            {
+              "name": "list",
+              "value": {
+                "ListLiteral": {
+                  "items": [
+                    {
+                      "Number": {
+                        "value": 1
+                      }
+                    },
+                    {
+                      "Number": {
+                        "value": 2
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "item",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": [
@@ -893,17 +1352,32 @@
             {
               "key": "a",
               "value": {
-                "Add": {
-                  "left": {
-                    "Number": {
-                      "value": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 2
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Number": {
+                          "value": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 2
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -1065,17 +1539,32 @@
         "Variant": {
           "tag": "some",
           "payload": {
-            "Add": {
-              "left": {
-                "Number": {
-                  "value": 1
+            "Call": {
+              "function": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.plus"
+                  }
                 }
               },
-              "right": {
-                "Number": {
-                  "value": 2
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "Number": {
+                      "value": 1
+                    }
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "Number": {
+                      "value": 2
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }
@@ -1115,17 +1604,32 @@
               "variable_id": 1,
               "variable_name": "v",
               "body": {
-                "Multiply": {
-                  "left": {
-                    "Variable": {
-                      "variable_id": 1
+                "Call": {
+                  "function": {
+                    "PartReference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.multiply"
+                      }
                     }
                   },
-                  "right": {
-                    "Number": {
-                      "value": 2
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "Number": {
+                          "value": 2
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -1493,12 +1997,24 @@
     {
       "name": "string length counts UTF-8 bytes",
       "expression": {
-        "StringLength": {
-          "value": {
-            "String": {
-              "value": "こんにちは"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-length"
+              }
             }
-          }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "こんにちは"
+                }
+              }
+            }
+          ]
         }
       },
       "expected": 15
@@ -1506,12 +2022,24 @@
     {
       "name": "string length mixed",
       "expression": {
-        "StringLength": {
-          "value": {
-            "String": {
-              "value": "aé🎉"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-length"
+              }
             }
-          }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "aé🎉"
+                }
+              }
+            }
+          ]
         }
       },
       "expected": 7
@@ -1519,22 +2047,40 @@
     {
       "name": "string slice by UTF-8 byte offsets",
       "expression": {
-        "StringSlice": {
-          "value": {
-            "String": {
-              "value": "こんにちは"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-slice"
+              }
             }
           },
-          "start": {
-            "Number": {
-              "value": 3
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "こんにちは"
+                }
+              }
+            },
+            {
+              "name": "start",
+              "value": {
+                "Number": {
+                  "value": 3
+                }
+              }
+            },
+            {
+              "name": "end",
+              "value": {
+                "Number": {
+                  "value": 9
+                }
+              }
             }
-          },
-          "end": {
-            "Number": {
-              "value": 9
-            }
-          }
+          ]
         }
       },
       "expected": "んに"
@@ -1542,22 +2088,40 @@
     {
       "name": "string slice clamps out of range",
       "expression": {
-        "StringSlice": {
-          "value": {
-            "String": {
-              "value": "definy"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-slice"
+              }
             }
           },
-          "start": {
-            "Number": {
-              "value": -3
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "definy"
+                }
+              }
+            },
+            {
+              "name": "start",
+              "value": {
+                "Number": {
+                  "value": -3
+                }
+              }
+            },
+            {
+              "name": "end",
+              "value": {
+                "Number": {
+                  "value": 100
+                }
+              }
             }
-          },
-          "end": {
-            "Number": {
-              "value": 100
-            }
-          }
+          ]
         }
       },
       "expected": "definy"
@@ -1565,22 +2129,40 @@
     {
       "name": "string slice end before start is empty",
       "expression": {
-        "StringSlice": {
-          "value": {
-            "String": {
-              "value": "definy"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-slice"
+              }
             }
           },
-          "start": {
-            "Number": {
-              "value": 4
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "definy"
+                }
+              }
+            },
+            {
+              "name": "start",
+              "value": {
+                "Number": {
+                  "value": 4
+                }
+              }
+            },
+            {
+              "name": "end",
+              "value": {
+                "Number": {
+                  "value": 2
+                }
+              }
             }
-          },
-          "end": {
-            "Number": {
-              "value": 2
-            }
-          }
+          ]
         }
       },
       "expected": ""
@@ -1588,12 +2170,24 @@
     {
       "name": "string to bytes is UTF-8",
       "expression": {
-        "StringToBytes": {
-          "value": {
-            "String": {
-              "value": "aé"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-to-bytes"
+              }
             }
-          }
+          },
+          "arguments": [
+            {
+              "name": "value",
+              "value": {
+                "String": {
+                  "value": "aé"
+                }
+              }
+            }
+          ]
         }
       },
       "expected": [
@@ -1605,17 +2199,32 @@
     {
       "name": "equal non-ascii strings",
       "expression": {
-        "Equal": {
-          "left": {
-            "String": {
-              "value": "定義"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.equal"
+              }
             }
           },
-          "right": {
-            "String": {
-              "value": "定義"
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "String": {
+                  "value": "定義"
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "String": {
+                  "value": "定義"
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": true
@@ -1623,17 +2232,32 @@
     {
       "name": "string concat non-ascii",
       "expression": {
-        "StringConcat": {
-          "left": {
-            "String": {
-              "value": "でふぃ"
+        "Call": {
+          "function": {
+            "PartReference": {
+              "part_definition_event_hash": {
+                "$part": "core.string-concat"
+              }
             }
           },
-          "right": {
-            "String": {
-              "value": "にー"
+          "arguments": [
+            {
+              "name": "left",
+              "value": {
+                "String": {
+                  "value": "でふぃ"
+                }
+              }
+            },
+            {
+              "name": "right",
+              "value": {
+                "String": {
+                  "value": "にー"
+                }
+              }
             }
-          }
+          ]
         }
       },
       "expected": "でふぃにー"

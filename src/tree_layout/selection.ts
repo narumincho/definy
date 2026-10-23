@@ -1,6 +1,7 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { base64ToBytes } from "../cbor.ts";
 import { updateExpressionAtPath } from "./path.ts";
+import { BUILTIN_FUNCTIONS, compilerBuiltinName } from "../stage1_compiler.ts";
 
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
@@ -28,54 +29,58 @@ export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   },
 };
 
-/** 左右 2 つの式を取る演算の式のキー */
-export const BINARY_KEYS: ReadonlyArray<string> = [
-  "Add",
-  "Subtract",
-  "Multiply",
-  "Divide",
-  "Remainder",
-  "Equal",
-  "NotEqual",
-  "LessThan",
-  "LessThanOrEqual",
-  "GreaterThan",
-  "GreaterThanOrEqual",
-  "And",
-  "Or",
-  "StringConcat",
-  "ListConcat",
-  "BitAnd",
-  "BitOr",
-  "BitXor",
-  "ShiftLeft",
-  "ShiftRight",
-];
-
-function binaryOperands(expr: unknown): {
-  readonly key: string;
-  readonly left: unknown;
-  readonly right: unknown;
-} | null {
-  if (!expr || typeof expr !== "object") return null;
-  const node = expr as Record<string, unknown>;
-  const key = BINARY_KEYS.find((k) => k in node);
-  if (key === undefined) return null;
-  const inner = node[key] as { left?: unknown; right?: unknown } | null;
-  return { key, left: inner?.left, right: inner?.right };
+/**
+ * パーツの引数名. 関数の型のパーツは型の引数名, 型の無いコンパイラ組み込みのパーツ (`core.equal` など,
+ * 引数の型が決まらないもの) は組み込みの引数名. 関数でなければ `undefined`
+ */
+export function partParameterNames(part: {
+  readonly partType: unknown;
+  readonly expression: unknown;
+}): ReadonlyArray<string> | undefined {
+  const fn = (part.partType as { readonly function?: unknown } | null)
+    ?.function as
+    | { readonly parameters?: ReadonlyArray<{ readonly name?: unknown }> }
+    | undefined;
+  if (fn !== undefined) {
+    return (fn.parameters ?? []).map((parameter) => String(parameter.name));
+  }
+  const builtin = compilerBuiltinName(part.expression);
+  return builtin === undefined
+    ? undefined
+    : BUILTIN_FUNCTIONS.get(builtin)?.parameters;
 }
 
-/** 新しい式も元の式も二項演算なら, 元の左右の式を新しい式に移す */
-export function keepBinaryOperands(next: unknown, current: unknown): unknown {
-  const nextOperands = binaryOperands(next);
-  const currentOperands = binaryOperands(current);
-  if (nextOperands === null || currentOperands === null) {
-    return next;
+/**
+ * パーツを選んだときの式. 関数のパーツ (`parameterNames` がある) はそのパーツの呼び出しにする.
+ * 選んだ位置がすでにパーツの呼び出しなら, 同じ名前の引数の式を引き継ぐ (例: `core.less-than` → `core.less-than-or-equal`)
+ */
+function partSelection(
+  reference: unknown,
+  parameterNames: ReadonlyArray<string> | undefined,
+  current: unknown,
+): unknown {
+  if (parameterNames === undefined) {
+    return reference;
   }
+  const currentArguments =
+    (
+      current as {
+        readonly Call?: {
+          readonly arguments?: ReadonlyArray<{
+            readonly name?: unknown;
+            readonly value?: unknown;
+          }>;
+        };
+      } | null
+    )?.Call?.arguments ?? [];
   return {
-    [nextOperands.key]: {
-      left: currentOperands.left,
-      right: currentOperands.right,
+    Call: {
+      function: reference,
+      arguments: parameterNames.map((name) => ({
+        name,
+        value: currentArguments.find((argument) => argument.name === name)
+          ?.value ?? { Hole: {} },
+      })),
     },
   };
 }
@@ -106,10 +111,18 @@ export function nextVariableId(expr: unknown): number {
   return max + 1;
 }
 
+/**
+ * 置換メニューで選んだ選択肢 (`selectionValue`) の式に, `path` の位置の式を置き換える.
+ * `parameterNamesOf` はパーツ ID (Base64URL) からそのパーツの引数名 ({@link partParameterNames}) を返す.
+ * 関数のパーツを選ぶと, そのパーツの呼び出しにする (呼び出しの関数の位置で選んだときは参照だけ置き換える)
+ */
 export function applySelection(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
   selectionValue: string,
+  parameterNamesOf: (
+    partHash: string,
+  ) => ReadonlyArray<string> | undefined = () => undefined,
 ): unknown {
   let newSubExpr: unknown;
 
@@ -123,138 +136,8 @@ export function applySelection(
     newSubExpr = { Boolean: { value: false } };
   } else if (selectionValue === "expr:hole") {
     newSubExpr = { Hole: {} };
-  } else if (selectionValue === "expr:add") {
-    newSubExpr = {
-      Add: { left: { Number: { value: 0 } }, right: { Number: { value: 0 } } },
-    };
-  } else if (selectionValue === "expr:subtract") {
-    newSubExpr = {
-      Subtract: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:multiply") {
-    newSubExpr = {
-      Multiply: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:divide") {
-    newSubExpr = {
-      Divide: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 1 } },
-      },
-    };
-  } else if (selectionValue === "expr:remainder") {
-    newSubExpr = {
-      Remainder: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 1 } },
-      },
-    };
-  } else if (selectionValue === "expr:equal") {
-    newSubExpr = {
-      Equal: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:not_equal") {
-    newSubExpr = {
-      NotEqual: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:less_than") {
-    newSubExpr = {
-      LessThan: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:greater_than") {
-    newSubExpr = {
-      GreaterThan: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:and") {
-    newSubExpr = {
-      And: {
-        left: { Boolean: { value: true } },
-        right: { Boolean: { value: true } },
-      },
-    };
-  } else if (selectionValue === "expr:or") {
-    newSubExpr = {
-      Or: {
-        left: { Boolean: { value: false } },
-        right: { Boolean: { value: false } },
-      },
-    };
-  } else if (selectionValue === "expr:not") {
-    newSubExpr = {
-      Not: { value: { Boolean: { value: false } } },
-    };
-  } else if (selectionValue === "expr:string_concat") {
-    newSubExpr = {
-      StringConcat: {
-        left: { String: { value: "" } },
-        right: { String: { value: "" } },
-      },
-    };
   } else if (selectionValue === "expr:list") {
     newSubExpr = { ListLiteral: { items: [] } };
-  } else if (
-    selectionValue === "expr:less_than_or_equal" ||
-    selectionValue === "expr:greater_than_or_equal"
-  ) {
-    newSubExpr = {
-      [selectionValue === "expr:less_than_or_equal"
-        ? "LessThanOrEqual"
-        : "GreaterThanOrEqual"]: {
-        left: { Number: { value: 0 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:list_concat") {
-    newSubExpr = {
-      ListConcat: {
-        left: { ListLiteral: { items: [] } },
-        right: { ListLiteral: { items: [] } },
-      },
-    };
-  } else if (selectionValue === "expr:list_get") {
-    newSubExpr = {
-      ListGet: {
-        list: { ListLiteral: { items: [] } },
-        index: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:list_length") {
-    newSubExpr = { ListLength: { value: { ListLiteral: { items: [] } } } };
-  } else if (selectionValue === "expr:list_append") {
-    newSubExpr = {
-      ListAppend: {
-        list: { ListLiteral: { items: [] } },
-        item: { Number: { value: 0 } },
-      },
-    };
-  } else if (selectionValue === "expr:string_length") {
-    newSubExpr = { StringLength: { value: { String: { value: "" } } } };
-  } else if (selectionValue === "expr:string_slice") {
-    newSubExpr = {
-      StringSlice: {
-        value: { String: { value: "" } },
-        start: { Number: { value: 0 } },
-        end: { Number: { value: 0 } },
-      },
-    };
   } else if (selectionValue === "expr:let") {
     // 新しい変数は式全体で使われていない ID にし, 本体はその変数を参照しておく
     const variableId = nextVariableId(expr);
@@ -309,20 +192,21 @@ export function applySelection(
     newSubExpr = { Variable: { variable_id: varId } };
   } else if (selectionValue.startsWith("ref:part:")) {
     const partHash = selectionValue.replace("ref:part:", "");
-    newSubExpr = {
+    const reference = {
       PartReference: {
         part_definition_event_hash: base64ToBytes(partHash),
       },
     };
+    const parameterNames =
+      path.at(-1) === "callFunction" ? undefined : parameterNamesOf(partHash);
+    return updateExpressionAtPath(expr, path, (current) =>
+      partSelection(reference, parameterNames, current),
+    );
   } else {
     return expr;
   }
 
-  // 二項演算を別の二項演算に差し替えるときは, 既定値で上書きせず元の左右の式を引き継ぐ
-  // (例: `index < 0` → `index <= 0`)
-  return updateExpressionAtPath(expr, path, (current) =>
-    keepBinaryOperands(newSubExpr, current),
-  );
+  return updateExpressionAtPath(expr, path, () => newSubExpr);
 }
 
 /** 表示順 (行きがけ順) にノード ID とパスを集める */
