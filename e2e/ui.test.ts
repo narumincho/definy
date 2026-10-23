@@ -201,9 +201,21 @@ test.describe("definy UI E2E", () => {
     await option("add-missing-arms").locator("button").first().click();
     await expect(pattern("false")).toHaveCount(1);
 
+    // `_ =>` (default) のアームを足して消す
+    await pattern("true").click();
+    await option("add-default").locator("button").first().click();
+    await expect(pattern("_")).toHaveCount(1);
+    await pattern("_").click();
+    await option("delete-default").locator("button").first().click();
+    await expect(pattern("_")).toHaveCount(0);
+
     // 束縛する変数の名前はその場で変えられ, 本体の変数の表示も変わる
     await page.goto("/part/sample.match-option-sample");
     await expect(valueTree).toBeVisible({ timeout: 15000 });
+    // 型パーツ (sample.option-number) を指定した Variant が対象なので, 型パーツのタグ none も選択肢に出る
+    await pattern("some").click();
+    await expect(option("none")).toBeVisible({ timeout: 15000 });
+    await page.keyboard.press("Escape");
     await valueTree
       .locator(".tree-badge", { hasText: /^val$/ })
       .first()

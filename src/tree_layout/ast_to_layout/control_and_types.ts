@@ -155,7 +155,7 @@ export function tryBuildControlOrTypeNode(
       );
       armChildren.push({
         id: `${idPrefix}.default`,
-        path: defPath,
+        path: childPath(currentPath, "matchDefaultPattern"),
         label: "_ =>",
         kind: "block",
         children: [defBody],

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { PartSnapshot } from "../types.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import {
   PATTERN_ADD_ARM,
@@ -7,6 +6,9 @@ import {
   PATTERN_BIND,
   PATTERN_DELETE_ARM,
   PATTERN_UNBIND,
+  PATTERN_ADD_DEFAULT,
+  PATTERN_DEFAULT,
+  PATTERN_DELETE_DEFAULT,
   applyPatternSelection,
   currentPatternOptionValue,
   patternSelectorOptions,
@@ -17,6 +19,8 @@ import {
 } from "./match_pattern.ts";
 import { EXPECTED_TYPE_PROBE } from "./type_inference.ts";
 import type { LayoutNode, PathStep } from "./types.ts";
+import { applySelection, findSelectedNode } from "./selection.ts";
+import { getOptionValueForExpression } from "./type_inference.ts";
 
 const optionVariants: ReadonlyArray<PatternVariant> = [
   { tag: "none", hasPayload: false },
@@ -108,7 +112,7 @@ describe("match のパターンの編集", () => {
   });
 
   it("型チェッカーが返した型からタグを求める", () => {
-    expect(patternVariantsFromTypeAst({ tag: "boolean" }, [])).toEqual([
+    expect(patternVariantsFromTypeAst({ tag: "boolean" }, new Map())).toEqual([
       { tag: "true", hasPayload: false },
       { tag: "false", hasPayload: false },
     ]);
@@ -124,11 +128,10 @@ describe("match のパターンの編集", () => {
             },
           ],
         },
-        [],
+        new Map(),
       ),
     ).toEqual(optionVariants);
     const typePart = {
-      partIdHash: "option-id",
       expression: {
         TypeUnion: {
           variants: [
@@ -137,15 +140,15 @@ describe("match のパターンの編集", () => {
           ],
         },
       },
-    } as unknown as PartSnapshot;
+    };
     expect(
       patternVariantsFromTypeAst(
         { tag: "reference", payload: { part_hash: "option-id" } },
-        [typePart],
+        new Map([["option-id", typePart]]),
       ),
     ).toEqual(optionVariants);
-    expect(patternVariantsFromTypeAst({ tag: "number" }, [])).toBeNull();
-    expect(patternVariantsFromTypeAst(null, [])).toBeNull();
+    expect(patternVariantsFromTypeAst({ tag: "number" }, new Map())).toBeNull();
+    expect(patternVariantsFromTypeAst(null, new Map())).toBeNull();
   });
 
   it("タグ・束縛・アームの追加と削除の選択肢を出す", () => {
@@ -160,6 +163,7 @@ describe("match のパターンの編集", () => {
       PATTERN_UNBIND,
       PATTERN_ADD_ARM,
       PATTERN_ADD_MISSING_ARMS,
+      PATTERN_ADD_DEFAULT,
     ]);
     expect(currentPatternOptionValue(matchExpression, pattern(0))).toBe(
       "pattern:tag:some",
@@ -171,7 +175,12 @@ describe("match のパターンの編集", () => {
         patternPath: pattern(0),
         variants: null,
       }).map((o) => o.value),
-    ).toEqual(["pattern:tag:some", PATTERN_UNBIND, PATTERN_ADD_ARM]);
+    ).toEqual([
+      "pattern:tag:some",
+      PATTERN_UNBIND,
+      PATTERN_ADD_ARM,
+      PATTERN_ADD_DEFAULT,
+    ]);
   });
 
   it("値を持たないタグに変えると束縛をやめ, 値を持つタグに変えると新しい変数に束縛する", () => {
@@ -250,6 +259,7 @@ describe("match のパターンの編集", () => {
       "pattern:tag:none",
       "pattern:tag:some",
       PATTERN_BIND,
+      PATTERN_ADD_DEFAULT,
       PATTERN_DELETE_ARM,
     ]);
     expect(
@@ -278,5 +288,86 @@ describe("match のパターンの編集", () => {
     expect(
       findNode(arm as LayoutNode, "root.body.arm_0.body.left")?.label,
     ).toBe("n");
+  });
+
+  it("`_ =>` (default) のアームを足し, パターンのメニューから足りないアームを足して消す", () => {
+    const withDefault = applyPatternSelection(
+      matchExpression,
+      pattern(0),
+      PATTERN_ADD_DEFAULT,
+      optionVariants,
+    ) as { Let: { body: { Match: { default: unknown } } } };
+    expect(withDefault.Let.body.Match.default).toEqual({ Hole: {} });
+    const root = expressionToLayoutNode(withDefault);
+    expect(findNode(root, "root.body.default")).toMatchObject({
+      label: "_ =>",
+      path: ["letBody", "matchDefaultPattern"],
+    });
+    const defaultPattern: ReadonlyArray<PathStep> = [
+      "letBody",
+      "matchDefaultPattern",
+    ];
+    expect(currentPatternOptionValue(withDefault, defaultPattern)).toBe(
+      PATTERN_DEFAULT,
+    );
+    expect(
+      patternSelectorOptions({
+        expression: withDefault,
+        patternPath: defaultPattern,
+        variants: optionVariants,
+      }).map((o) => o.value),
+    ).toEqual([
+      PATTERN_DEFAULT,
+      PATTERN_ADD_MISSING_ARMS,
+      PATTERN_DELETE_DEFAULT,
+    ]);
+    const filled = applyPatternSelection(
+      withDefault,
+      defaultPattern,
+      PATTERN_ADD_MISSING_ARMS,
+      optionVariants,
+    );
+    expect(armsOf(filled).map((arm) => arm.tag)).toEqual(["some", "none"]);
+    const withoutDefault = applyPatternSelection(
+      filled,
+      defaultPattern,
+      PATTERN_DELETE_DEFAULT,
+      optionVariants,
+    ) as { Let: { body: { Match: { default: unknown } } } };
+    expect(withoutDefault.Let.body.Match.default).toBeNull();
+  });
+
+  it("対象の型を問わない match は `_ =>` だけで作り, アームが無ければ `_ =>` は消せない", () => {
+    const created = applySelection({ Hole: {} }, [], "expr:match");
+    expect(created).toEqual({
+      Match: { target: { Hole: {} }, arms: [], default: { Hole: {} } },
+    });
+    expect(getOptionValueForExpression(created)).toBe("expr:match");
+    expect(
+      patternSelectorOptions({
+        expression: created,
+        patternPath: ["matchDefaultPattern"],
+        variants: optionVariants,
+      }).map((o) => o.value),
+    ).toEqual([PATTERN_DEFAULT, PATTERN_ADD_MISSING_ARMS]);
+    expect(
+      applyPatternSelection(
+        created,
+        ["matchDefaultPattern"],
+        PATTERN_DELETE_DEFAULT,
+        optionVariants,
+      ),
+    ).toEqual(created);
+  });
+
+  it("式でない名前のノードも選んだノードとして見つける", () => {
+    const root = expressionToLayoutNode(matchExpression);
+    const variablePath: ReadonlyArray<PathStep> = [
+      "letBody",
+      { kind: "matchArmVariable", index: 0 },
+    ];
+    expect(findSelectedNode(root, variablePath)?.kind).toBe("parameterName");
+    // 式のノードはパスが同じ式でないノードより優先する
+    expect(findSelectedNode(root, ["letBody"])?.label).toBe("match");
   });
 });

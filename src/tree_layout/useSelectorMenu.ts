@@ -6,7 +6,7 @@ import { findExpressionNode } from "./selection.ts";
 import { functionParameterIndex } from "./mutation.ts";
 import {
   currentPatternOptionValue,
-  matchArmPatternIndex,
+  isMatchPatternPath,
   matchArmVariableIndex,
   patternSelectorOptions,
   type PatternVariant,
@@ -87,7 +87,7 @@ export function useSelectorMenu({
 
   const selectorOptionsAt = useCallback(
     (path: ReadonlyArray<PathStep>): ReadonlyArray<SelectorOption> => {
-      if (matchArmPatternIndex(path) !== null) {
+      if (isMatchPatternPath(path)) {
         return patternSelectorOptions({
           expression,
           patternPath: path,
@@ -108,7 +108,7 @@ export function useSelectorMenu({
       path: ReadonlyArray<PathStep>,
       options: ReadonlyArray<SelectorOption>,
     ): string | null =>
-      matchArmPatternIndex(path) !== null
+      isMatchPatternPath(path)
         ? currentPatternOptionValue(expression, path)
         : resolveCurrentOptionValue({
             expression,

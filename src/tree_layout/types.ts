@@ -50,6 +50,8 @@ export type PathStep =
   /** match のアームで束縛する変数の名前. 式ではない */
   | { readonly kind: "matchArmVariable"; readonly index: number }
   | "matchDefault"
+  /** match の `_ =>` (default) のパターン. 式ではない */
+  | "matchDefaultPattern"
   | { readonly kind: "typeUnionVariant"; readonly index: number }
   | "record";
 

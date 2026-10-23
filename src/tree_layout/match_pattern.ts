@@ -37,6 +37,10 @@ export const PATTERN_UNBIND = "pattern:unbind";
 export const PATTERN_ADD_ARM = "pattern:add-arm";
 export const PATTERN_ADD_MISSING_ARMS = "pattern:add-missing-arms";
 export const PATTERN_DELETE_ARM = "pattern:delete-arm";
+/** `_ =>` (default) のパターンそのものの選択肢 */
+export const PATTERN_DEFAULT = "pattern:default";
+export const PATTERN_ADD_DEFAULT = "pattern:add-default";
+export const PATTERN_DELETE_DEFAULT = "pattern:delete-default";
 
 /** 束縛する変数の既定の名前 */
 const DEFAULT_VARIABLE_NAME = "value";
@@ -54,6 +58,18 @@ export function matchArmPatternIndex(
   path: ReadonlyArray<PathStep>,
 ): number | null {
   return lastStepIndex(path, "matchArmPattern");
+}
+
+/** `path` の最後が `_ =>` (default) のパターン (`matchDefaultPattern`) か */
+export function isMatchDefaultPatternPath(
+  path: ReadonlyArray<PathStep>,
+): boolean {
+  return path[path.length - 1] === "matchDefaultPattern";
+}
+
+/** `path` の最後が match のパターン (タグのアームか `_ =>`) か. 選ぶとパターンの置換メニューを開く */
+export function isMatchPatternPath(path: ReadonlyArray<PathStep>): boolean {
+  return matchArmPatternIndex(path) !== null || isMatchDefaultPatternPath(path);
 }
 
 /** `path` の最後がアームで束縛する変数の名前 (`matchArmVariable`) なら, そのアームの番号 */
@@ -104,11 +120,11 @@ export function probeMatchTargetType(
 
 /**
  * 型チェッカーが返した match の対象の型 (`core.type-ast` の値) の取りうるタグ.
- * 型パーツの参照は `parts` の型宣言 (`TypeUnion`) から求める. 直和型でなければ `null`
+ * 型パーツの参照は `partsByIdHash` (パーツ ID → パーツ) の型宣言 (`TypeUnion`) から求める. 直和型でなければ `null`
  */
 export function patternVariantsFromTypeAst(
   type: DefinyValue | null,
-  parts: ReadonlyArray<PartSnapshot>,
+  partsByIdHash: ReadonlyMap<string, Pick<PartSnapshot, "expression">>,
 ): ReadonlyArray<PatternVariant> | null {
   const { tag, payload } = (type ?? {}) as {
     readonly tag?: unknown;
@@ -134,8 +150,7 @@ export function patternVariantsFromTypeAst(
   if (tag === "reference") {
     const partHash = (payload as { readonly part_hash?: unknown } | null)
       ?.part_hash;
-    const declaration = parts.find((part) => part.partIdHash === partHash)
-      ?.expression as {
+    const declaration = partsByIdHash.get(String(partHash))?.expression as {
       readonly TypeUnion?: {
         readonly variants?: ReadonlyArray<{
           readonly tag?: unknown;
@@ -154,7 +169,19 @@ export function patternVariantsFromTypeAst(
   return null;
 }
 
-/** アームのパターンを選んだときの置換メニューの選択肢 */
+const armAction = (
+  value: string,
+  name: string,
+  detail?: string,
+): SelectorOption => ({
+  value,
+  name,
+  detail,
+  category: "Arm",
+  returnType: "any",
+});
+
+/** アームのパターン (`_ =>` を含む) を選んだときの置換メニューの選択肢 */
 export function patternSelectorOptions({
   expression,
   patternPath,
@@ -165,13 +192,47 @@ export function patternSelectorOptions({
   /** match の対象の型のタグ. 分からなければ `null` */
   readonly variants: ReadonlyArray<PatternVariant> | null;
 }): ReadonlyArray<SelectorOption> {
-  const index = matchArmPatternIndex(patternPath);
   const match = matchAt(expression, patternPath.slice(0, -1));
-  const arm = index === null ? undefined : match?.arms?.[index];
-  if (index === null || match === null || arm === undefined) {
+  if (match === null) {
     return [];
   }
-  const usedTags = new Set((match.arms ?? []).map((a) => String(a.tag)));
+  const arms = match.arms ?? [];
+  const missing = missingVariants(match, variants);
+  const missingArmsOption =
+    missing.length > 0
+      ? [
+          armAction(
+            PATTERN_ADD_MISSING_ARMS,
+            "add-missing-arms",
+            missing.map((v) => v.tag).join(", "),
+          ),
+        ]
+      : [];
+  if (isMatchDefaultPatternPath(patternPath)) {
+    if (match.default == null) {
+      return [];
+    }
+    return [
+      {
+        value: PATTERN_DEFAULT,
+        name: "_",
+        detail: "other tags",
+        category: "Pattern",
+        returnType: "any",
+      },
+      ...missingArmsOption,
+      // アームが 1 つも無い match は作れないので, そのときは消せない
+      ...(arms.length > 0
+        ? [armAction(PATTERN_DELETE_DEFAULT, "delete-default")]
+        : []),
+    ];
+  }
+  const index = matchArmPatternIndex(patternPath);
+  const arm = index === null ? undefined : arms[index];
+  if (arm === undefined) {
+    return [];
+  }
+  const usedTags = new Set(arms.map((a) => String(a.tag)));
   const tagOptions = (variants ?? []).map((variant): SelectorOption => ({
     value: `${TAG_PREFIX}${variant.tag}`,
     name: variant.tag,
@@ -196,55 +257,20 @@ export function patternSelectorOptions({
       returnType: "any",
     });
   }
-  const missing = missingVariants(match, variants);
   const actions: SelectorOption[] = [
     arm.variable_id == null
-      ? {
-          value: PATTERN_BIND,
-          name: "bind",
-          detail: "tag(value)",
-          category: "Arm",
-          returnType: "any",
-        }
-      : {
-          value: PATTERN_UNBIND,
-          name: "unbind",
-          detail: "tag",
-          category: "Arm",
-          returnType: "any",
-        },
+      ? armAction(PATTERN_BIND, "bind", "tag(value)")
+      : armAction(PATTERN_UNBIND, "unbind", "tag"),
     // 型のタグが分かっていて全てのアームがあるときは, 足すアームが無い
     ...(variants === null || missing.length > 0
-      ? [
-          {
-            value: PATTERN_ADD_ARM,
-            name: "add-arm",
-            detail: missing[0]?.tag,
-            category: "Arm",
-            returnType: "any" as const,
-          },
-        ]
+      ? [armAction(PATTERN_ADD_ARM, "add-arm", missing[0]?.tag)]
       : []),
-    ...(missing.length > 0
-      ? [
-          {
-            value: PATTERN_ADD_MISSING_ARMS,
-            name: "add-missing-arms",
-            detail: missing.map((v) => v.tag).join(", "),
-            category: "Arm",
-            returnType: "any" as const,
-          },
-        ]
+    ...missingArmsOption,
+    ...(match.default == null
+      ? [armAction(PATTERN_ADD_DEFAULT, "add-default", "_ =>")]
       : []),
-    ...((match.arms ?? []).length > 1
-      ? [
-          {
-            value: PATTERN_DELETE_ARM,
-            name: "delete-arm",
-            category: "Arm",
-            returnType: "any" as const,
-          },
-        ]
+    ...(arms.length > 1 || match.default != null
+      ? [armAction(PATTERN_DELETE_ARM, "delete-arm")]
       : []),
   ];
   return [...tagOptions, ...actions];
@@ -255,11 +281,12 @@ export function currentPatternOptionValue(
   expression: unknown,
   patternPath: ReadonlyArray<PathStep>,
 ): string | null {
+  const match = matchAt(expression, patternPath.slice(0, -1));
+  if (isMatchDefaultPatternPath(patternPath)) {
+    return match?.default == null ? null : PATTERN_DEFAULT;
+  }
   const index = matchArmPatternIndex(patternPath);
-  const arm =
-    index === null
-      ? undefined
-      : matchAt(expression, patternPath.slice(0, -1))?.arms?.[index];
+  const arm = index === null ? undefined : match?.arms?.[index];
   return arm === undefined ? null : `${TAG_PREFIX}${String(arm.tag)}`;
 }
 
@@ -293,10 +320,10 @@ export function applyPatternSelection(
   value: string,
   variants: ReadonlyArray<PatternVariant> | null,
 ): unknown {
-  const index = matchArmPatternIndex(patternPath);
-  if (index === null) {
+  if (!isMatchPatternPath(patternPath)) {
     return expr;
   }
+  const index = matchArmPatternIndex(patternPath) ?? -1;
   const variableId = nextVariableId(expr);
   const bind = (arm: MatchArm): MatchArm =>
     arm.variable_id == null
@@ -339,12 +366,14 @@ export function applyPatternSelection(
         tag: String(arms[index]?.tag ?? ""),
         hasPayload: false,
       };
+      // `_ =>` からは最後に足す
+      const at = index >= 0 ? index + 1 : arms.length;
       return {
         ...match,
         arms: [
-          ...arms.slice(0, index + 1),
+          ...arms.slice(0, at),
           newArm(variant, variableId),
-          ...arms.slice(index + 1),
+          ...arms.slice(at),
         ],
       };
     }
@@ -359,8 +388,18 @@ export function applyPatternSelection(
         ],
       };
     }
-    if (value === PATTERN_DELETE_ARM && arms.length > 1) {
+    if (value === PATTERN_ADD_DEFAULT && match.default == null) {
+      return { ...match, default: { Hole: {} } };
+    }
+    if (
+      value === PATTERN_DELETE_ARM &&
+      index >= 0 &&
+      (arms.length > 1 || match.default != null)
+    ) {
       return { ...match, arms: arms.filter((_, i) => i !== index) };
+    }
+    if (value === PATTERN_DELETE_DEFAULT && arms.length > 0) {
+      return { ...match, default: null };
     }
     return match;
   });

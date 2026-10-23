@@ -406,6 +406,18 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
               ? selfHostedVariant("none")
               : selfHostedVariant("some", convert(node.payload)),
           ],
+          // 型パーツを指定した Variant は, 型チェッカーがその型パーツの型と推論する
+          [
+            "type_part",
+            node.type_part_definition_event_hash == null
+              ? selfHostedVariant("none")
+              : selfHostedVariant(
+                  "some",
+                  selfHostedString(
+                    partReferenceId(node.type_part_definition_event_hash),
+                  ),
+                ),
+          ],
         ]),
       );
     case "Match": {

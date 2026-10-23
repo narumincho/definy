@@ -1087,6 +1087,23 @@
                           ]
                         }
                       }
+                    },
+                    {
+                      "key": "type_part",
+                      "value": {
+                        "TypeUnion": {
+                          "variants": [
+                            {
+                              "tag": "none",
+                              "payload_type": null
+                            },
+                            {
+                              "tag": "some",
+                              "payload_type": "TypeString"
+                            }
+                          ]
+                        }
+                      }
                     }
                   ]
                 }
@@ -25298,66 +25315,14 @@
                               "variable_id": 70
                             }
                           },
-                          "key": "payload"
+                          "key": "type_part"
                         }
                       },
                       "arms": [
                         {
-                          "tag": "none",
-                          "variable_id": null,
-                          "variable_name": null,
-                          "body": {
-                            "Variant": {
-                              "tag": "ok",
-                              "payload": {
-                                "Variant": {
-                                  "tag": "union",
-                                  "payload": {
-                                    "ListLiteral": {
-                                      "items": [
-                                        {
-                                          "TypeLiteral": {
-                                            "items": [
-                                              {
-                                                "key": "tag",
-                                                "value": {
-                                                  "RecordGet": {
-                                                    "record": {
-                                                      "Variable": {
-                                                        "variable_id": 70
-                                                      }
-                                                    },
-                                                    "key": "tag"
-                                                  }
-                                                }
-                                              },
-                                              {
-                                                "key": "payload_type",
-                                                "value": {
-                                                  "Variant": {
-                                                    "tag": "none",
-                                                    "payload": null,
-                                                    "type_part_definition_event_hash": null
-                                                  }
-                                                }
-                                              }
-                                            ]
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "type_part_definition_event_hash": null
-                                }
-                              },
-                              "type_part_definition_event_hash": null
-                            }
-                          }
-                        },
-                        {
                           "tag": "some",
-                          "variable_id": 72,
-                          "variable_name": "sub_expr",
+                          "variable_id": 471,
+                          "variable_name": "type_part",
                           "body": {
                             "Match": {
                               "target": {
@@ -25365,16 +25330,33 @@
                                   "function": {
                                     "PartReference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.type-check"
+                                        "$part": "core.type-resolve"
                                       }
                                     }
                                   },
                                   "arguments": [
                                     {
-                                      "name": "expr",
+                                      "name": "type",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 72
+                                        "Variant": {
+                                          "tag": "reference",
+                                          "payload": {
+                                            "TypeLiteral": {
+                                              "items": [
+                                                {
+                                                  "key": "part_hash",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 471
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "type_part_definition_event_hash": {
+                                            "$part": "core.type-ast"
+                                          }
                                         }
                                       }
                                     },
@@ -25391,84 +25373,433 @@
                               },
                               "arms": [
                                 {
-                                  "tag": "ok",
-                                  "variable_id": 73,
-                                  "variable_name": "p_type",
+                                  "tag": "union",
+                                  "variable_id": 472,
+                                  "variable_name": "variants",
                                   "body": {
-                                    "Variant": {
-                                      "tag": "ok",
-                                      "payload": {
-                                        "Variant": {
-                                          "tag": "union",
-                                          "payload": {
-                                            "ListLiteral": {
-                                              "items": [
-                                                {
-                                                  "TypeLiteral": {
-                                                    "items": [
-                                                      {
-                                                        "key": "tag",
-                                                        "value": {
-                                                          "RecordGet": {
-                                                            "record": {
-                                                              "Variable": {
-                                                                "variable_id": 70
-                                                              }
-                                                            },
-                                                            "key": "tag"
-                                                          }
-                                                        }
-                                                      },
-                                                      {
-                                                        "key": "payload_type",
-                                                        "value": {
-                                                          "Variant": {
-                                                            "tag": "some",
-                                                            "payload": {
-                                                              "Variable": {
-                                                                "variable_id": 73
-                                                              }
-                                                            },
-                                                            "type_part_definition_event_hash": null
-                                                          }
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.type-check-against"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 0
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "expected_type",
+                                          "value": {
+                                            "Variant": {
+                                              "tag": "reference",
+                                              "payload": {
+                                                "TypeLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "key": "part_hash",
+                                                      "value": {
+                                                        "Variable": {
+                                                          "variable_id": 471
                                                         }
                                                       }
-                                                    ]
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "type_part_definition_event_hash": {
+                                                "$part": "core.type-ast"
+                                              }
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": {
+                                "Match": {
+                                  "target": {
+                                    "RecordGet": {
+                                      "record": {
+                                        "Variable": {
+                                          "variable_id": 70
+                                        }
+                                      },
+                                      "key": "payload"
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "none",
+                                      "variable_id": null,
+                                      "variable_name": null,
+                                      "body": {
+                                        "Variant": {
+                                          "tag": "ok",
+                                          "payload": {
+                                            "Variant": {
+                                              "tag": "union",
+                                              "payload": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "TypeLiteral": {
+                                                        "items": [
+                                                          {
+                                                            "key": "tag",
+                                                            "value": {
+                                                              "RecordGet": {
+                                                                "record": {
+                                                                  "Variable": {
+                                                                    "variable_id": 70
+                                                                  }
+                                                                },
+                                                                "key": "tag"
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "key": "payload_type",
+                                                            "value": {
+                                                              "Variant": {
+                                                                "tag": "none",
+                                                                "payload": null,
+                                                                "type_part_definition_event_hash": null
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          },
+                                          "type_part_definition_event_hash": null
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "some",
+                                      "variable_id": 72,
+                                      "variable_name": "sub_expr",
+                                      "body": {
+                                        "Match": {
+                                          "target": {
+                                            "Call": {
+                                              "function": {
+                                                "PartReference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.type-check"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "expr",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 72
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "env",
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 1
+                                                    }
                                                   }
                                                 }
                                               ]
                                             }
                                           },
-                                          "type_part_definition_event_hash": null
+                                          "arms": [
+                                            {
+                                              "tag": "ok",
+                                              "variable_id": 73,
+                                              "variable_name": "p_type",
+                                              "body": {
+                                                "Variant": {
+                                                  "tag": "ok",
+                                                  "payload": {
+                                                    "Variant": {
+                                                      "tag": "union",
+                                                      "payload": {
+                                                        "ListLiteral": {
+                                                          "items": [
+                                                            {
+                                                              "TypeLiteral": {
+                                                                "items": [
+                                                                  {
+                                                                    "key": "tag",
+                                                                    "value": {
+                                                                      "RecordGet": {
+                                                                        "record": {
+                                                                          "Variable": {
+                                                                            "variable_id": 70
+                                                                          }
+                                                                        },
+                                                                        "key": "tag"
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  {
+                                                                    "key": "payload_type",
+                                                                    "value": {
+                                                                      "Variant": {
+                                                                        "tag": "some",
+                                                                        "payload": {
+                                                                          "Variable": {
+                                                                            "variable_id": 73
+                                                                          }
+                                                                        },
+                                                                        "type_part_definition_event_hash": null
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                ]
+                                                              }
+                                                            }
+                                                          ]
+                                                        }
+                                                      },
+                                                      "type_part_definition_event_hash": null
+                                                    }
+                                                  },
+                                                  "type_part_definition_event_hash": null
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "tag": "error",
+                                              "variable_id": 74,
+                                              "variable_name": "err",
+                                              "body": {
+                                                "Variant": {
+                                                  "tag": "error",
+                                                  "payload": {
+                                                    "Variable": {
+                                                      "variable_id": 74
+                                                    }
+                                                  },
+                                                  "type_part_definition_event_hash": null
+                                                }
+                                              }
+                                            }
+                                          ],
+                                          "default": null
                                         }
-                                      },
-                                      "type_part_definition_event_hash": null
+                                      }
                                     }
-                                  }
-                                },
-                                {
-                                  "tag": "error",
-                                  "variable_id": 74,
-                                  "variable_name": "err",
-                                  "body": {
-                                    "Variant": {
-                                      "tag": "error",
-                                      "payload": {
-                                        "Variable": {
-                                          "variable_id": 74
-                                        }
-                                      },
-                                      "type_part_definition_event_hash": null
-                                    }
-                                  }
+                                  ],
+                                  "default": null
                                 }
-                              ],
-                              "default": null
+                              }
                             }
                           }
                         }
                       ],
-                      "default": null
+                      "default": {
+                        "Match": {
+                          "target": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 70
+                                }
+                              },
+                              "key": "payload"
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "none",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Variant": {
+                                  "tag": "ok",
+                                  "payload": {
+                                    "Variant": {
+                                      "tag": "union",
+                                      "payload": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "TypeLiteral": {
+                                                "items": [
+                                                  {
+                                                    "key": "tag",
+                                                    "value": {
+                                                      "RecordGet": {
+                                                        "record": {
+                                                          "Variable": {
+                                                            "variable_id": 70
+                                                          }
+                                                        },
+                                                        "key": "tag"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "payload_type",
+                                                    "value": {
+                                                      "Variant": {
+                                                        "tag": "none",
+                                                        "payload": null,
+                                                        "type_part_definition_event_hash": null
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            },
+                            {
+                              "tag": "some",
+                              "variable_id": 72,
+                              "variable_name": "sub_expr",
+                              "body": {
+                                "Match": {
+                                  "target": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.type-check"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 72
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "ok",
+                                      "variable_id": 73,
+                                      "variable_name": "p_type",
+                                      "body": {
+                                        "Variant": {
+                                          "tag": "ok",
+                                          "payload": {
+                                            "Variant": {
+                                              "tag": "union",
+                                              "payload": {
+                                                "ListLiteral": {
+                                                  "items": [
+                                                    {
+                                                      "TypeLiteral": {
+                                                        "items": [
+                                                          {
+                                                            "key": "tag",
+                                                            "value": {
+                                                              "RecordGet": {
+                                                                "record": {
+                                                                  "Variable": {
+                                                                    "variable_id": 70
+                                                                  }
+                                                                },
+                                                                "key": "tag"
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "key": "payload_type",
+                                                            "value": {
+                                                              "Variant": {
+                                                                "tag": "some",
+                                                                "payload": {
+                                                                  "Variable": {
+                                                                    "variable_id": 73
+                                                                  }
+                                                                },
+                                                                "type_part_definition_event_hash": null
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          },
+                                          "type_part_definition_event_hash": null
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "tag": "error",
+                                      "variable_id": 74,
+                                      "variable_name": "err",
+                                      "body": {
+                                        "Variant": {
+                                          "tag": "error",
+                                          "payload": {
+                                            "Variable": {
+                                              "variable_id": 74
+                                            }
+                                          },
+                                          "type_part_definition_event_hash": null
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "default": null
+                                }
+                              }
+                            }
+                          ],
+                          "default": null
+                        }
+                      }
                     }
                   }
                 },

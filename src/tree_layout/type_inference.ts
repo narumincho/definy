@@ -84,7 +84,9 @@ export function getOptionValueForExpression(node: unknown): string | null {
   if ("StringLength" in obj) return "expr:string_length";
   if ("StringSlice" in obj) return "expr:string_slice";
   if ("Let" in obj) return "expr:let";
-  if ("Match" in obj && isBooleanMatch(obj.Match)) return "expr:match_boolean";
+  if ("Match" in obj) {
+    return isBooleanMatch(obj.Match) ? "expr:match_boolean" : "expr:match";
+  }
   if ("If" in obj) return "expr:if";
   if ("Hole" in obj) return "expr:hole";
   if ("Variable" in obj) {

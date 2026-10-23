@@ -14,7 +14,7 @@ import {
   type PartTypeEntry,
   type PartToCheck,
 } from "./self_hosted_type_check.ts";
-import { createStage1Compiler } from "./stage1_compiler.ts";
+import { createStage1Compiler, type DefinyValue } from "./stage1_compiler.ts";
 import { expressionToLayoutNode } from "./tree_layout/ast_to_layout.ts";
 import {
   EXPECTED_TYPE_PROBE,
@@ -29,7 +29,6 @@ import {
   patternVariantsFromTypeAst,
   probeMatchTargetType,
 } from "./tree_layout/match_pattern.ts";
-import type { PartSnapshot } from "./types.ts";
 
 type SeedPart = {
   readonly id: string;
@@ -247,14 +246,103 @@ describe("self-hosted type check (stage1)", () => {
     const optionSample = parts.find(
       (part) => part.name === "sample.match-option-sample",
     );
+    const optionNumber = parts.find(
+      (part) => part.name === "sample.option-number",
+    );
+    const toVariants = (type: DefinyValue | null) =>
+      patternVariantsFromTypeAst(
+        type,
+        new Map(parts.map((part) => [part.id, part])),
+      );
+    // 型パーツ (sample.option-number) を指定した Variant は, その型パーツの型と推論する
+    const optionType = session.findExpectedType({
+      expression: probeMatchTargetType(optionSample?.expression, [
+        { kind: "matchArmPattern", index: 0 },
+      ]),
+      partType: optionSample?.partType,
+    });
+    expect(optionType).toEqual({
+      tag: "reference",
+      payload: { part_hash: optionNumber?.id },
+    });
+    expect(toVariants(optionType)).toEqual([
+      { tag: "none", hasPayload: false },
+      { tag: "some", hasPayload: true },
+    ]);
+    const variant = (
+      tag: string,
+      payload: unknown,
+      typePart: unknown,
+    ): unknown => ({
+      Variant: { tag, payload, type_part_definition_event_hash: typePart },
+    });
+    // 型パーツを指定しない Variant は, そのタグだけの直和型 (== の左辺は推論する位置)
     expect(
       session.findExpectedType({
-        expression: probeMatchTargetType(optionSample?.expression, [
-          { kind: "matchArmPattern", index: 0 },
-        ]),
-        partType: optionSample?.partType,
+        expression: {
+          Equal: {
+            left: {
+              ListLiteral: {
+                items: [
+                  variant("some", { Number: { value: 1 } }, null),
+                  EXPECTED_TYPE_PROBE,
+                ],
+              },
+            },
+            right: { Hole: {} },
+          },
+        },
+        partType: "boolean",
       }),
     ).toMatchObject({ tag: "union", payload: [{ tag: "some" }] });
+    // 型パーツにないタグや合わない値は型エラー
+    const checkVariant = (expression: unknown) =>
+      checkParts({
+        typeChecker,
+        parts: [{ expression, partType: { type_part: optionNumber?.id } }],
+        env,
+      })[0]?.kind;
+    expect(
+      checkVariant(variant("some", { Number: { value: 1 } }, optionNumber?.id)),
+    ).toBe("ok");
+    expect(
+      checkParts({
+        typeChecker,
+        parts: [
+          {
+            expression: {
+              Equal: {
+                left: variant("other", null, optionNumber?.id),
+                right: variant("none", null, optionNumber?.id),
+              },
+            },
+            partType: "boolean",
+          },
+        ],
+        env,
+      })[0]?.kind,
+    ).toBe("type_error");
+    expect(
+      checkParts({
+        typeChecker,
+        parts: [
+          {
+            expression: {
+              Equal: {
+                left: variant(
+                  "some",
+                  { String: { value: "x" } },
+                  optionNumber?.id,
+                ),
+                right: variant("none", null, optionNumber?.id),
+              },
+            },
+            partType: "boolean",
+          },
+        ],
+        env,
+      })[0]?.kind,
+    ).toBe("type_error");
     // 型パーツ (core.expression) の値の match は, 型パーツの型宣言のタグ
     const expressionPart = parts.find(
       (part) => part.name === "core.expression",
@@ -289,16 +377,7 @@ describe("self-hosted type check (stage1)", () => {
         },
       },
     });
-    const variants = patternVariantsFromTypeAst(
-      type,
-      parts.map(
-        (part) =>
-          ({
-            partIdHash: part.id,
-            expression: part.expression,
-          }) as unknown as PartSnapshot,
-      ),
-    );
+    const variants = toVariants(type);
     expect(variants).toContainEqual({ tag: "number", hasPayload: true });
     expect(variants).toContainEqual({ tag: "type_number", hasPayload: false });
   }, 600_000);

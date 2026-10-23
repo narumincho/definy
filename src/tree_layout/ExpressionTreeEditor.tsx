@@ -26,14 +26,18 @@ import {
   type ExpectedType,
 } from "./type_inference.ts";
 import { type NavKey } from "./keyboard.ts";
-import { collectNodeIndex, findExpressionNode } from "./selection.ts";
+import {
+  collectNodeIndex,
+  findExpressionNode,
+  findSelectedNode,
+} from "./selection.ts";
 import { useTreeKeyboard } from "./useTreeKeyboard.ts";
 import { useSelectorMenu } from "./useSelectorMenu.ts";
 import { ExpressionPopoverMenu } from "./ExpressionPopoverMenu.tsx";
 import { findTypeErrorPath } from "./type_error_location.ts";
 import {
   applyPatternSelection,
-  matchArmPatternIndex,
+  isMatchPatternPath,
   matchArmVariableIndex,
   patternVariantsFromTypeAst,
   probeMatchTargetType,
@@ -85,7 +89,8 @@ export function ExpressionTreeEditor({
   mode = "expression",
   typeError = null,
 }: ExpressionTreeEditorProps): JSX.Element {
-  const { language, parts, partNames, findExpectedType } = useDefiny();
+  const { language, parts, partNames, partsByIdHash, findExpectedType } =
+    useDefiny();
   const [selectedPath, setSelectedPath] =
     useState<ReadonlyArray<PathStep> | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -153,7 +158,7 @@ export function ExpressionTreeEditor({
     ) {
       return;
     }
-    const isPattern = matchArmPatternIndex(selectedPath) !== null;
+    const isPattern = isMatchPatternPath(selectedPath);
     let cancelled = false;
     findExpectedType({
       partType,
@@ -166,7 +171,7 @@ export function ExpressionTreeEditor({
           return;
         }
         if (isPattern) {
-          setPatternVariants(patternVariantsFromTypeAst(type, parts));
+          setPatternVariants(patternVariantsFromTypeAst(type, partsByIdHash));
         } else {
           setExpectedType(expectedTypeFromTypeAst(type));
         }
@@ -178,7 +183,14 @@ export function ExpressionTreeEditor({
     return () => {
       cancelled = true;
     };
-  }, [expression, selectedPath, partType, mode, findExpectedType, parts]);
+  }, [
+    expression,
+    selectedPath,
+    partType,
+    mode,
+    findExpectedType,
+    partsByIdHash,
+  ]);
 
   const menu = useSelectorMenu({
     mode,
@@ -195,7 +207,7 @@ export function ExpressionTreeEditor({
   });
 
   const selectedLayoutNode = useMemo(
-    () => (selectedPath ? findExpressionNode(layoutRoot, selectedPath) : null),
+    () => (selectedPath ? findSelectedNode(layoutRoot, selectedPath) : null),
     [layoutRoot, selectedPath],
   );
 
@@ -237,7 +249,7 @@ export function ExpressionTreeEditor({
         !onChange ||
         !editable ||
         functionParameterIndex(path) !== null ||
-        matchArmPatternIndex(path) !== null ||
+        isMatchPatternPath(path) ||
         matchArmVariableIndex(path) !== null
       ) {
         return;
@@ -266,7 +278,7 @@ export function ExpressionTreeEditor({
       // 現在と同じ選択肢を選び直しても式を作り直さない (中身が初期値に戻ってしまうため)
       if (optionValue !== menu.currentOptionValue) {
         onChange(
-          matchArmPatternIndex(selectedPath) === null
+          !isMatchPatternPath(selectedPath)
             ? applySelection(expression, selectedPath, optionValue)
             : applyPatternSelection(
                 expression,
