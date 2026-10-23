@@ -57,32 +57,6 @@ export function getOptionValueForExpression(node: unknown): string | null {
     return b.value === false ? "expr:boolean:false" : "expr:boolean:true";
   }
   if ("ListLiteral" in obj) return "expr:list";
-  if ("Add" in obj) return "expr:add";
-  if ("Subtract" in obj) return "expr:subtract";
-  if ("Multiply" in obj) return "expr:multiply";
-  if ("Divide" in obj) return "expr:divide";
-  if ("Remainder" in obj) return "expr:remainder";
-  if ("Equal" in obj) return "expr:equal";
-  if ("NotEqual" in obj) return "expr:not_equal";
-  if ("LessThan" in obj) return "expr:less_than";
-  if ("LessThanOrEqual" in obj) return "expr:less_than_or_equal";
-  if ("GreaterThan" in obj) return "expr:greater_than";
-  if ("GreaterThanOrEqual" in obj) return "expr:greater_than_or_equal";
-  if ("BitAnd" in obj) return "expr:bit_and";
-  if ("BitOr" in obj) return "expr:bit_or";
-  if ("BitXor" in obj) return "expr:bit_xor";
-  if ("ShiftLeft" in obj) return "expr:shift_left";
-  if ("ShiftRight" in obj) return "expr:shift_right";
-  if ("And" in obj) return "expr:and";
-  if ("Or" in obj) return "expr:or";
-  if ("Not" in obj) return "expr:not";
-  if ("StringConcat" in obj) return "expr:string_concat";
-  if ("ListConcat" in obj) return "expr:list_concat";
-  if ("ListGet" in obj) return "expr:list_get";
-  if ("ListLength" in obj) return "expr:list_length";
-  if ("ListAppend" in obj) return "expr:list_append";
-  if ("StringLength" in obj) return "expr:string_length";
-  if ("StringSlice" in obj) return "expr:string_slice";
   if ("Let" in obj) return "expr:let";
   if ("Match" in obj) {
     return isBooleanMatch(obj.Match) ? "expr:match_boolean" : "expr:match";
@@ -98,6 +72,13 @@ export function getOptionValueForExpression(node: unknown): string | null {
     if (typeof id === "number" || typeof id === "bigint") {
       return `ref:local:${id}`;
     }
+  }
+
+  // パーツの呼び出しは, 呼び出しているパーツの選択肢 (選び直すと同じ名前の引数の式を引き継ぐ)
+  if ("Call" in obj) {
+    const fn = (obj.Call as { readonly function?: unknown } | null)?.function;
+    const value = getOptionValueForExpression(fn);
+    return value?.startsWith("ref:part:") ? value : null;
   }
 
   if ("PartReference" in obj) {

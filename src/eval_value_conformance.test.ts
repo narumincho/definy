@@ -13,17 +13,14 @@ import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
-import {
-  selfHostedList,
-  selfHostedRecord,
-  selfHostedString,
-} from "./self_hosted_ast.ts";
+import { selfHostedList } from "./self_hosted_ast.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
   type DefinyValue,
   definyAstToSelfHostedAst,
   evaluateCompiledWasm,
+  stage1PartsExpression,
 } from "./stage1_compiler.ts";
 
 /** `core.value` を適合テストの正規化表現にする */
@@ -99,18 +96,14 @@ describe("eval conformance (core.eval-value)", () => {
         Call: {
           function: evalValueReference,
           arguments: [
-            { name: "expr", value: definyAstToSelfHostedAst(expression) },
+            {
+              name: "expr",
+              value: definyAstToSelfHostedAst(expression),
+            },
             { name: "env", value: selfHostedList([]) },
             {
               name: "parts",
-              value: selfHostedList(
-                referenced.parts.map((part) =>
-                  selfHostedRecord([
-                    ["id", selfHostedString(part.id)],
-                    ["expression", definyAstToSelfHostedAst(part.expression)],
-                  ]),
-                ),
-              ),
+              value: stage1PartsExpression(referenced.parts),
             },
           ],
         },

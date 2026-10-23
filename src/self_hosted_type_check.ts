@@ -12,6 +12,7 @@ import {
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
   collectReferencedParts,
+  compilerBuiltinName,
   definyAstToSelfHostedAst,
   definyAstWithHolesToSelfHostedAst,
   partReferenceId,
@@ -45,6 +46,11 @@ export type PartTypeEntry = {
    * `reference` 型を中身の型に展開するために使う
    */
   readonly typeDeclaration?: unknown;
+  /**
+   * コンパイラ組み込みのパーツ (`core.plus` など) なら組み込みの名前 ({@link compilerBuiltinName}).
+   * 型環境ではパーツの型を `core.type-ast` の `builtin` にし, 型チェッカーが呼び出しを名前で検査する
+   */
+  readonly builtin?: string | undefined;
 };
 
 /** 検査するパーツ */
@@ -268,11 +274,18 @@ export function typeDeclarationToSelfHostedAst(expression: unknown): unknown {
 /** `core.type-check-against` に渡す `expr` と `expected_type` の値を作る式 */
 function partCheckArguments(
   part: PartToCheck,
-  allowHoles = false,
+  allowHoles: boolean,
 ): {
   readonly expression: unknown;
   readonly expectedType: unknown;
 } {
+  const builtin = compilerBuiltinName(part.expression);
+  if (builtin !== undefined) {
+    // 組み込みの式 (`builtin`) の型は宣言した関数の型でなく `builtin` なので, 宣言型と比べられない
+    throw new SelfHostedAstConversionError(
+      `compiler built-in part (${builtin}) cannot be type-checked`,
+    );
+  }
   return {
     expression:
       part.partType === "type"
@@ -296,6 +309,8 @@ type ModuleEntry = {
   /** {@link LatestPart.expressionKey} */
   readonly expressionKey: string | null;
   readonly hasExpression: boolean;
+  /** {@link PartTypeEntry.builtin} */
+  readonly builtin?: string | undefined;
 };
 
 /**
@@ -307,7 +322,8 @@ const NO_MODULE = "#";
 /**
  * `core.type-checker` に渡すパーツの一覧
  * `[{ part_id, module_id, part_type, type_declaration, expression_key, has_expression }]` を作る式.
- * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする
+ * `core.type-ast` で表せない型は `none` (型の無いパーツと同じく型環境に入らない) にする.
+ * コンパイラ組み込みのパーツの型は `builtin` (名前) にする
  */
 function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
   return list(
@@ -315,7 +331,12 @@ function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
       record([
         ["part_id", string(entry.partId)],
         ["module_id", string(entry.moduleId)],
-        ["part_type", partTypeOption(entry.partType)],
+        [
+          "part_type",
+          entry.builtin === undefined
+            ? partTypeOption(entry.partType)
+            : variant("some", variant("builtin", string(entry.builtin))),
+        ],
         ["type_declaration", typeDeclarationOption(entry.typeDeclaration)],
         [
           "expression_key",
@@ -352,6 +373,7 @@ function latestPartToModuleEntry(part: LatestPart): ModuleEntry {
     typeDeclaration: part.partType === "type" ? part.expression : undefined,
     expressionKey: part.expressionKey,
     hasExpression: part.expression != null,
+    builtin: compilerBuiltinName(part.expression),
   };
 }
 
@@ -481,6 +503,7 @@ export function createTypeCheckSession(options: {
       typeDeclaration: entry.typeDeclaration,
       expressionKey: null,
       hasExpression: false,
+      builtin: entry.builtin,
     })),
     committed: [],
     moduleId: NO_MODULE,
@@ -677,6 +700,8 @@ export function formatTypeAst(
       const partId = String(fieldOf(value.payload, "part_hash"));
       return resolveName(partId) ?? partId.slice(0, 8);
     }
+    case "builtin":
+      return `builtin(${String(value.payload)})`;
     default:
       return null;
   }
@@ -748,20 +773,30 @@ export type LatestPart = {
   readonly expressionKey: string | null;
 };
 
-/** 最新のパーツを型環境にする (型の無いパーツは入れない. 型パーツは宣言式も入れる) */
+/**
+ * 最新のパーツを型環境にする (型の無いパーツは入れない. 型パーツは宣言式も入れる).
+ * コンパイラ組み込みのパーツは, 型が `builtin` になるので型が無くても入れる
+ */
 export function typeEnvFromParts(
   parts: Iterable<LatestPart>,
 ): ReadonlyArray<PartTypeEntry> {
-  return [...parts]
-    .filter((part) => part.partType != null)
-    .map((part) => ({
-      partId: part.partId,
-      partType: part.partType,
-      typeDeclaration: part.partType === "type" ? part.expression : undefined,
-    }));
+  return [...parts].flatMap((part) => {
+    const builtin = compilerBuiltinName(part.expression);
+    return part.partType != null || builtin !== undefined
+      ? [
+          {
+            partId: part.partId,
+            partType: part.partType,
+            typeDeclaration:
+              part.partType === "type" ? part.expression : undefined,
+            builtin,
+          },
+        ]
+      : [];
+  });
 }
 
-/** 型環境が変わったかを比べるキー (全パーツの ID と型, 型パーツの宣言式から決まる) */
+/** 型環境が変わったかを比べるキー (全パーツの ID と型, 型パーツの宣言式, コンパイラ組み込みの名前から決まる) */
 export function typeEnvKey(parts: Iterable<LatestPart>): string {
   return expressionContentHashSync(
     [...parts]
@@ -769,7 +804,7 @@ export function typeEnvKey(parts: Iterable<LatestPart>): string {
         (part) =>
           `${part.partId}:${partTypeKey(part.partType)}:${
             part.partType === "type" ? (part.expressionKey ?? "") : ""
-          }`,
+          }:${compilerBuiltinName(part.expression) ?? ""}`,
       )
       .sort(),
   );

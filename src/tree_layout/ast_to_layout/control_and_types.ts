@@ -8,12 +8,6 @@ import { FIELD_STEPS } from "../mutation.ts";
 
 /** FIELD_STEPS の式の表示名 */
 const FIELD_STEP_LABELS: Readonly<Record<string, string>> = {
-  ListGet: "list-get",
-  ListAppend: "list-append",
-  ListLength: "list-length",
-  StringLength: "string-length",
-  StringToBytes: "string-to-bytes",
-  StringSlice: "string-slice",
   TypeList: "List",
 };
 
@@ -222,7 +216,7 @@ export function tryBuildControlOrTypeNode(
           id: `${idPrefix}.return`,
           path: returnPath,
           label: "→",
-          kind: "operator",
+          kind: "symbol",
           children: [
             buildLayoutNode(
               fn.return_type,
@@ -242,7 +236,7 @@ export function tryBuildControlOrTypeNode(
     };
   }
 
-  // list-get, string-slice など, 子の式をフィールドに持つ組み込みの式
+  // List<T> など, 子の式をフィールドに持つ式
   for (const [key, steps] of Object.entries(FIELD_STEPS)) {
     if (key in node) {
       const inner = (node[key] ?? {}) as Record<string, unknown>;
@@ -250,7 +244,7 @@ export function tryBuildControlOrTypeNode(
         id: idPrefix,
         path: currentPath,
         label: FIELD_STEP_LABELS[key] ?? key,
-        kind: key === "TypeList" ? "keyword" : "operator",
+        kind: "keyword",
         children: steps.map(({ step, field }) =>
           buildLayoutNode(
             inner[field],

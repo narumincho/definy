@@ -1,7 +1,7 @@
 import type { PathStep } from "./types.ts";
 
 /**
- * 子の式をフィールド 1 つに持つ組み込みの式の, パスの段とフィールド名の対応.
+ * 子の式をフィールド 1 つに持つ式の, パスの段とフィールド名の対応.
  * ast_to_layout.ts の表示とここでの取得・更新で同じ対応を使う
  */
 export const FIELD_STEPS: Readonly<
@@ -10,22 +10,6 @@ export const FIELD_STEPS: Readonly<
     ReadonlyArray<{ readonly step: string; readonly field: string }>
   >
 > = {
-  ListGet: [
-    { step: "left", field: "list" },
-    { step: "index", field: "index" },
-  ],
-  ListAppend: [
-    { step: "left", field: "list" },
-    { step: "item", field: "item" },
-  ],
-  ListLength: [{ step: "condition", field: "value" }],
-  StringLength: [{ step: "condition", field: "value" }],
-  StringToBytes: [{ step: "condition", field: "value" }],
-  StringSlice: [
-    { step: "condition", field: "value" },
-    { step: "start", field: "start" },
-    { step: "end", field: "end" },
-  ],
   TypeList: [{ step: "typeListItem", field: "item_type" }],
 };
 
@@ -94,37 +78,11 @@ export function getExpressionAtPath(
     }
   }
 
-  if (head === "left") {
-    for (const key of Object.keys(node)) {
-      const inner = node[key] as { left?: unknown };
-      if (inner && "left" in inner) {
-        return getExpressionAtPath(inner.left, tail);
-      }
-    }
-  }
-
-  if (head === "right") {
-    for (const key of Object.keys(node)) {
-      const inner = node[key] as { right?: unknown };
-      if (inner && "right" in inner) {
-        return getExpressionAtPath(inner.right, tail);
-      }
-    }
-  }
-
-  if (head === "condition") {
-    if ("Not" in node) {
-      return getExpressionAtPath(
-        (node.Not as { value?: unknown })?.value,
-        tail,
-      );
-    }
-    if ("If" in node) {
-      return getExpressionAtPath(
-        (node.If as { condition?: unknown })?.condition,
-        tail,
-      );
-    }
+  if (head === "condition" && "If" in node) {
+    return getExpressionAtPath(
+      (node.If as { condition?: unknown })?.condition,
+      tail,
+    );
   }
 
   if (head === "then" && "If" in node) {
@@ -345,57 +303,15 @@ export function updateExpressionAtPath(
     };
   }
 
-  if (head === "left") {
-    for (const key of Object.keys(node)) {
-      const inner = node[key] as { left?: unknown; right?: unknown };
-      if (inner && "left" in inner) {
-        return {
-          ...node,
-          [key]: {
-            ...inner,
-            left: updateExpressionAtPath(inner.left, tail, updater),
-          },
-        };
-      }
-    }
-  }
-
-  if (head === "right") {
-    for (const key of Object.keys(node)) {
-      const inner = node[key] as { left?: unknown; right?: unknown };
-      if (inner && "right" in inner) {
-        return {
-          ...node,
-          [key]: {
-            ...inner,
-            right: updateExpressionAtPath(inner.right, tail, updater),
-          },
-        };
-      }
-    }
-  }
-
-  if (head === "condition") {
-    if ("Not" in node) {
-      const notInner = node.Not as { value?: unknown };
-      return {
-        ...node,
-        Not: {
-          ...notInner,
-          value: updateExpressionAtPath(notInner.value, tail, updater),
-        },
-      };
-    }
-    if ("If" in node) {
-      const ifInner = node.If as { condition?: unknown };
-      return {
-        ...node,
-        If: {
-          ...ifInner,
-          condition: updateExpressionAtPath(ifInner.condition, tail, updater),
-        },
-      };
-    }
+  if (head === "condition" && "If" in node) {
+    const ifInner = node.If as { condition?: unknown };
+    return {
+      ...node,
+      If: {
+        ...ifInner,
+        condition: updateExpressionAtPath(ifInner.condition, tail, updater),
+      },
+    };
   }
 
   if (head === "then" && "If" in node) {

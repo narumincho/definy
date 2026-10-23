@@ -252,36 +252,60 @@ export function partReferenceId(hash: unknown): string {
   return bytesToUrlSafeBase64NoPad(bytes);
 }
 
-const binaryOperators: ReadonlyArray<readonly [string, string]> = [
-  ["Add", "add"],
-  ["Subtract", "subtract"],
-  ["Multiply", "multiply"],
-  ["Divide", "divide"],
-  ["Remainder", "remainder"],
-  ["Equal", "equal"],
-  ["NotEqual", "not_equal"],
-  ["LessThan", "less_than"],
-  ["LessThanOrEqual", "less_than_or_equal"],
-  ["GreaterThan", "greater_than"],
-  ["GreaterThanOrEqual", "greater_than_or_equal"],
-  ["And", "and"],
-  ["Or", "or"],
-  ["StringConcat", "string_concat"],
-  ["ListConcat", "list_concat"],
-];
-
-const unaryOperators: ReadonlyArray<readonly [string, string]> = [
-  ["Not", "not"],
-  ["StringLength", "string_length"],
-  ["StringToBytes", "string_to_bytes"],
-  ["ListLength", "list_length"],
-];
+/**
+ * コンパイラ組み込みのパーツの式 (`{"Compiler": "plus"}`) の名前 (`plus`). 組み込みでなければ `undefined`
+ */
+export function compilerBuiltinName(expression: unknown): string | undefined {
+  if (typeof expression !== "object" || expression === null) {
+    return undefined;
+  }
+  const name = (expression as { readonly Compiler?: unknown }).Compiler;
+  return typeof name === "string" ? name : undefined;
+}
 
 /**
- * definy の JSON AST (`{"Add": {...}}` など) を, stage1 (`core.compile-to-wasm`) が受け取る
+ * コンパイラ組み込みのパーツの名前 (`{"Compiler": "plus"}` の `plus`) と引数名 (順番どおり).
+ * 呼び出しの検査・コンパイル・評価は definy 側 (`core.builtin-parameters`, `core.compile-builtin-call` など) がする.
+ * TypeScript 側では型の無い組み込み (`core.equal` など) の引数名を UI で出すのに使う
+ */
+export const BUILTIN_PARAMETERS: ReadonlyMap<
+  string,
+  ReadonlyArray<string>
+> = new Map<string, ReadonlyArray<string>>([
+  ...[
+    "plus",
+    "minus",
+    "multiply",
+    "divide",
+    "remainder",
+    "equal",
+    "not_equal",
+    "less_than",
+    "less_than_or_equal",
+    "greater_than",
+    "greater_than_or_equal",
+    "and",
+    "or",
+    "string_concat",
+    "list_concat",
+  ].map((name): readonly [string, ReadonlyArray<string>] => [
+    name,
+    ["left", "right"],
+  ]),
+  ...["not", "string_length", "string_to_bytes", "list_length"].map(
+    (name): readonly [string, ReadonlyArray<string>] => [name, ["value"]],
+  ),
+  ["string_slice", ["value", "start", "end"]],
+  ["list_get", ["list", "index"]],
+  ["list_append", ["list", "item"]],
+]);
+
+/**
+ * definy の JSON AST (`{"Call": {...}}` など) を, stage1 (`core.compile-to-wasm`) が受け取る
  * `core.expression` の値 (`Variant` / `TypeLiteral` / `ListLiteral` などのリテラルの木) に変換する.
  * 旧 Rust 版 `definy_core::self_hosted_ast::expression_to_self_hosted_ast` の移植.
- * `core.expression` で表せない式 (ビット演算・型の式・コンパイラ組み込み・未入力) は
+ * コンパイラ組み込みのパーツの式 (`{"Compiler": "plus"}`) は `builtin("plus")` にし, その呼び出しは他のパーツの呼び出しと
+ * 同じく `call` にする (組み込みの扱いは definy 側). `core.expression` で表せない式 (型の式・未入力) は
  * `SelfHostedAstConversionError` を投げる
  */
 export function definyAstToSelfHostedAst(ast: unknown): unknown {
@@ -326,26 +350,6 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
   const node = obj[key] as Record<string, unknown>;
   const convert = (child: unknown): unknown =>
     toSelfHostedAst(child, allowHoles);
-
-  for (const [astKey, tag] of binaryOperators) {
-    if (key === astKey) {
-      return selfHostedVariant(
-        tag,
-        selfHostedRecord([
-          ["left", convert(node.left)],
-          ["right", convert(node.right)],
-        ]),
-      );
-    }
-  }
-  for (const [astKey, tag] of unaryOperators) {
-    if (key === astKey) {
-      return selfHostedVariant(
-        tag,
-        selfHostedRecord([["value", convert(node.value)]]),
-      );
-    }
-  }
 
   switch (key) {
     case "Number":
@@ -453,7 +457,11 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
         ]),
       );
     }
-    case "Call":
+    case "Call": {
+      const callArguments = node.arguments as ReadonlyArray<{
+        readonly name: string;
+        readonly value: unknown;
+      }>;
       return selfHostedVariant(
         "call",
         selfHostedRecord([
@@ -461,12 +469,7 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
           [
             "arguments",
             selfHostedList(
-              (
-                node.arguments as ReadonlyArray<{
-                  readonly name: string;
-                  readonly value: unknown;
-                }>
-              ).map((argument) =>
+              callArguments.map((argument) =>
                 selfHostedRecord([
                   ["name", selfHostedString(argument.name)],
                   ["value", convert(argument.value)],
@@ -476,6 +479,7 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
           ],
         ]),
       );
+    }
     case "Function":
       return selfHostedVariant(
         "function",
@@ -530,33 +534,11 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
         convert(node.body),
       );
     }
-    case "StringSlice":
-      return selfHostedVariant(
-        "string_slice",
-        selfHostedRecord([
-          ["value", convert(node.value)],
-          ["start", convert(node.start)],
-          ["end", convert(node.end)],
-        ]),
-      );
-    case "ListGet":
-      return selfHostedVariant(
-        "list_get",
-        selfHostedRecord([
-          ["list", convert(node.list)],
-          ["index", convert(node.index)],
-        ]),
-      );
-    case "ListAppend":
-      return selfHostedVariant(
-        "list_append",
-        selfHostedRecord([
-          ["list", convert(node.list)],
-          ["item", convert(node.item)],
-        ]),
-      );
     case "Hole":
       return holeToSelfHostedAst(node, allowHoles);
+    case "Compiler":
+      // コンパイラ組み込みのパーツの式. 呼び出しは definy 側 (`core.compile-builtin-call` など) が名前で扱う
+      return selfHostedVariant("builtin", selfHostedString(String(obj[key])));
   }
   throw new SelfHostedAstConversionError(
     `core.expression cannot represent ${key || JSON.stringify(ast)}`,
@@ -565,24 +547,25 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
 
 /** 式の中の `PartReference` の ID を出現順に集める */
 function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
-  if (Array.isArray(expression)) {
-    return expression.flatMap(collectPartReferenceIds);
-  }
-  if (!expression || typeof expression !== "object") {
-    return [];
-  }
-  if (expression instanceof Uint8Array) {
-    return [];
-  }
-  const obj = expression as Record<string, unknown>;
-  const reference = obj.PartReference as
-    { readonly part_definition_event_hash?: unknown } | undefined;
-  const selfId =
-    reference && typeof reference === "object"
-      ? [partReferenceId(reference.part_definition_event_hash)]
-      : [];
-  const childIds = Object.values(obj).flatMap(collectPartReferenceIds);
-  return [...selfId, ...childIds];
+  const references: string[] = [];
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      value.forEach(walk);
+      return;
+    }
+    if (!value || typeof value !== "object" || value instanceof Uint8Array) {
+      return;
+    }
+    const obj = value as Record<string, unknown>;
+    const reference = obj.PartReference as
+      { readonly part_definition_event_hash?: unknown } | undefined;
+    if (reference && typeof reference === "object") {
+      references.push(partReferenceId(reference.part_definition_event_hash));
+    }
+    Object.values(obj).forEach(walk);
+  };
+  walk(expression);
+  return references;
 }
 
 /**
@@ -590,7 +573,8 @@ function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
  * 旧 Rust 版と同じ順序 (末尾から取り出す LIFO)。`wasm/stage1.wasm` の再生成でバイト一致させるために必要。
  * `resolve` は ID からパーツの式 (definy の JSON AST) を返す. 見つからない・式を持たないときは `undefined`.
  * 見つからない・式を持たない・`core.expression` で表せないパーツの ID は `unresolved` に入れる
- * (stage1 はその参照を unreachable にコンパイルする)
+ * (stage1 はその参照を unreachable にコンパイルする).
+ * コンパイラ組み込みのパーツ (`core.plus` など) も式 (`core.expression` の `builtin`) のまま入れる
  */
 export function collectReferencedParts(
   expression: unknown,
@@ -618,7 +602,7 @@ export function collectReferencedParts(
     try {
       definyAstToSelfHostedAst(partExpression);
     } catch (e) {
-      // コンパイラ組み込み (`{"Compiler": ...}`) など core.expression で表せないパーツは渡さない
+      // 型の式など, core.expression で表せないパーツは渡さない
       if (e instanceof SelfHostedAstConversionError) {
         unresolved.push(id);
         continue;
@@ -629,6 +613,20 @@ export function collectReferencedParts(
     parts.push({ id, expression: partExpression });
   }
   return { parts, unresolved };
+}
+
+/** stage1 (`core.compile-to-wasm`) に渡すパーツの一覧 `[{ id, expression }]` を作る式 */
+export function stage1PartsExpression(
+  parts: ReadonlyArray<Stage1ReferencedPart>,
+): unknown {
+  return selfHostedList(
+    parts.map((part) =>
+      selfHostedRecord([
+        ["id", selfHostedString(part.id)],
+        ["expression", definyAstToSelfHostedAst(part.expression)],
+      ]),
+    ),
+  );
 }
 
 /** stage1 でコンパイルした「関数を返す式」の Wasm のインスタンスと, 返った関数 */
@@ -733,14 +731,7 @@ export function createStage1Compiler(
       referencedParts: ReadonlyArray<Stage1ReferencedPart> = [],
     ): Uint8Array {
       const effectiveExpr = definyAstToSelfHostedAst(expressionAst);
-      const partsNode = selfHostedList(
-        referencedParts.map((part) =>
-          selfHostedRecord([
-            ["id", selfHostedString(part.id)],
-            ["expression", definyAstToSelfHostedAst(part.expression)],
-          ]),
-        ),
-      );
+      const partsNode = stage1PartsExpression(referencedParts);
 
       const instance = instantiateCompiledFunction(stage1Module);
       const { exports } = instance;

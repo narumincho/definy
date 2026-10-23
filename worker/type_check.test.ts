@@ -11,7 +11,10 @@ import {
   bytesToUrlSafeBase64NoPad,
   type DecodedPart,
 } from "../src/cbor.ts";
-import { resolvePartPlaceholders } from "../src/seed_parts.ts";
+import {
+  devSystemAccountBytes,
+  resolvePartPlaceholders,
+} from "../src/seed_parts.ts";
 import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
@@ -139,9 +142,22 @@ describe("SubmitEvent の型検査", () => {
     const user = await generateAccountCredentials("user");
     const base = part("base", "number", { Number: { value: 1 } });
     const double = part("double", "number", {
-      Add: {
-        left: await partReference(user.accountId, "app", "base"),
-        right: { Number: { value: 1 } },
+      Call: {
+        function: await resolvePartPlaceholders(
+          {
+            PartReference: {
+              part_definition_event_hash: { $part: "core.plus" },
+            },
+          },
+          await devSystemAccountBytes(),
+        ),
+        arguments: [
+          {
+            name: "left",
+            value: await partReference(user.accountId, "app", "base"),
+          },
+          { name: "right", value: { Number: { value: 1 } } },
+        ],
       },
     });
     expect(
@@ -172,8 +188,9 @@ describe("SubmitEvent の型検査", () => {
     const parts = await Promise.all(
       seed.parts.map(async (seedPart) =>
         part(
-          // 組み込みかどうかは式 ({"Compiler": "string_concat"}) で決まり, 名前によらない
-          seedPart.name === "string-concat" ? "joined-text" : seedPart.name,
+          // 組み込みかどうかは式 ({"Compiler": "bit_and"}) で決まり, 名前によらない.
+          // 他のパーツが呼んでいる組み込みの名前を変えると, 呼んでいるパーツがパーツを見つけられなくなる
+          seedPart.name === "bit-and" ? "bitwise-and" : seedPart.name,
           await resolvePartPlaceholders(
             seedPart.part_type ?? null,
             accountBytes,
@@ -185,8 +202,8 @@ describe("SubmitEvent の型検査", () => {
         ),
       ),
     );
-    expect(parts.find((p) => p.name === "joined-text")?.expression).toEqual({
-      Compiler: "string_concat",
+    expect(parts.find((p) => p.name === "bitwise-and")?.expression).toEqual({
+      Compiler: "bit_and",
     });
     expect(await submitCommit(store, env, system, "core", parts)).toEqual({
       status: 200,

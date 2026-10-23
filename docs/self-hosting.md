@@ -477,7 +477,8 @@ Rust 製コンパイラ (`wasm_emitter/function_ops.rs`) と同じ形です。
   (`core.compile-assign-part-bases` で各パーツの最初の番号を求める)。
   関数のパーツへの参照は, その番号のクロージャ (環境なし) になる。関数でないパーツへの参照は, 参照した場所でパーツの式をコンパイルする
   (パーツの中の関数の番号はパーツの最初の番号から数えるので, どこでコンパイルしても同じ)。インライン化中のパーツを再び参照したら `unreachable`
-- 式を持たないパーツ (コンパイラ組み込み) や `core.expression` で表せないパーツは渡さないので, 参照すると `unreachable`
+- 式を持たないパーツや `core.expression` で表せないパーツは渡さないので, 参照すると `unreachable`.
+  コンパイラ組み込みのパーツは式 `builtin(name)` のまま渡し, その呼び出しは `core.compile-builtin-call` が名前で命令列にする ([builtin-parts.md](builtin-parts.md))
 - 引数は名前ではなく書いた順に渡す (Rust 製と同じ)
 
 ### Rust 製コンパイラの修正: 静的データが 64KB を超えるとヒープが上書きしていた
@@ -760,15 +761,13 @@ eval-value: expression -> env -> list<{ id: string, expression: expression }> ->
 3 つ目の引数 `parts` は式が参照するパーツで, `core.compile-to-wasm` の `parts` と同じ形です。
 評価器の適合テストの全 67 ケースを stage1 と同じ値に評価します ([eval-conformance.md](eval-conformance.md))。
 
-- リテラル（数値・文字列・真偽値）、算術演算（`add`, `subtract`, `multiply`,
-  `divide`, `remainder`）、等価比較（`equal`）、小なり比較（`less_than`）
+- リテラル（数値・文字列・真偽値）
 - レキシカルスコープ環境による変数解決（`variable`）
 - 条件分岐（Bool に対する `match`。対象が `boolean` のときタグ `"true"` / `"false"` のアームを選ぶ）
 - 関数定義時における環境キャプチャ（クロージャ生成）
 - 関数呼び出し（`call`）時におけるキャプチャ環境の復元と引数束縛
-- 比較 (`not_equal`, `less_than_or_equal`, `greater_than`, `greater_than_or_equal`)、文字列操作
-  (`string_concat`, `string_length`, `string_slice`, `string_to_bytes`)、リスト操作
-  (`list_length`, `list_concat`, `list_get`, `list_append`)
+- コンパイラ組み込みのパーツ (`core.plus` `core.string-concat` `core.list-get` など) の呼び出し.
+  `builtin(name)` は値 `builtin(name)` になり, それを呼ぶと `core.eval-builtin-call` が名前ごとに評価する
 - パーツ参照（`part_reference`）。`parts` から探して空の環境で評価する（`core.eval-part-reference`）
 
 ---
@@ -790,8 +789,8 @@ eval-value: expression -> env -> list<{ id: string, expression: expression }> ->
   `core.type-check-against-unlocated`) を呼んで, `located` でないエラーを今検査している式と組にして返すだけのパーツ.
   本体の中の再帰呼び出しはこの包むほうを呼ぶので, 一番内側でエラーを返した呼び出しの式が付く.
   - 式の型を推論してから `type-equals` で比べると, エラーはその親の式に付いてしまう.
-    `add` などの演算子のオペランドは `type-check-against` で期待する型 (`number` など) に照らして検査し,
-    オペランドの式にエラーが付くようにしている
+    組み込みのパーツ (`core.plus` など) の呼び出しの引数は `core.type-check-builtin-call` が `type-check-against` で
+    期待する型 (`number` など) に照らして検査し, 引数の式にエラーが付くようにしている
   - UI (パーツ詳細) は `located` の `expression` と同じ値になるツリーの式 (`findTypeErrorPath`,
     `src/tree_layout/type_error_location.ts`) の横に警告を出す. 同じ式が何か所にもあれば表示順で最初のもの
 
@@ -855,8 +854,8 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   `call`・`record_get`・`match` の対象, `type-check-against` の期待型は展開してから見ます。
   `core.type-assignable` 系は `env` 引数を取り, 片方だけが `reference` のときは展開して比べます。
   両方 `reference` ならハッシュが同じときだけ代入できます (名前的型付け)。
-- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`list_append`・`list_concat`・
-  `list_get`・`record` も期待型で検査します (`type-check-record-fields-against` など)。
+- **双方向検査**: `type-check-against` は `variant`・`match`・`let`・`record` と, `core.list-append`・`core.list-concat`・
+  `core.list-get` の呼び出し (`core.type-check-against-builtin-call`) も期待型で検査します (`type-check-record-fields-against` など)。
   空リストや `none` を期待型から決められるのはこのためです。
 - **match の推論は 2 段階**: `core.type-check-match-arms-infer` が推論できるアームから型を求め
   (アームごとに広い方の型を採る), 推論できなかったアーム (空リストなど) を
@@ -864,8 +863,8 @@ seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外�
   `_` アームは何も束縛せず, `find-tag-in-arms` ではすべてのタグに一致します。
   対象の型に無いタグでペイロードを束縛しないアーム (`variable_id` が負) は到達しないアームとして許します
   (`core.match-arm-env`)。
-- **演算子**: 比較 (`<=` など)・文字列 (`string_concat` など)・リスト (`list_length` など) の式も
-  `core.expression` のバリアントと `core.type-check-binary` で検査します。
+- **組み込みのパーツ**: 型環境では組み込みのパーツの型を `builtin(name)` にし, その呼び出しを `core.type-check-builtin-call` が
+  名前ごとに検査します (比較・文字列・リストの操作など. 引数名は `core.builtin-parameters` と順番どおり一致させる)。
 
 ノウハウ:
 
@@ -893,12 +892,13 @@ compile-expr-instructions: expression -> list<number>
 のバイトコード命令列（`list<number>`）へ再帰的に変換します。
 
 - `number`: `i64.const` (`0x42`) + LEB128 エンコードバイト列
-- `add`: 左辺命令列 + 右辺命令列 + `i64.add` (`0x7c`)
-- `subtract`: 左辺命令列 + 右辺命令列 + `i64.sub` (`0x7d`)
-- `multiply`: 左辺命令列 + 右辺命令列 + `i64.mul` (`0x7e`)
-- `divide`: 左辺命令列 + 右辺命令列 + `i64.div_s` (`0x7f`)
-- `equal`: 左辺命令列 + 右辺命令列 + `i64.eq` (`0x51`)
-- `less_than`: 左辺命令列 + 右辺命令列 + `i64.lt_s` (`0x53`)
+- 組み込みのパーツの呼び出し (`core.compile-builtin-call`):
+  - `core.plus`: 左辺命令列 + 右辺命令列 + `i64.add` (`0x7c`)
+  - `core.minus`: 左辺命令列 + 右辺命令列 + `i64.sub` (`0x7d`)
+  - `core.multiply`: 左辺命令列 + 右辺命令列 + `i64.mul` (`0x7e`)
+  - `core.divide`: 左辺命令列 + 右辺命令列 + `i64.div_s` (`0x7f`)
+  - `core.less-than`: 左辺命令列 + 右辺命令列 + `i64.lt_s` (`0x53`)
+  - (数値は箱に入っているので, 各辺のあとに `i64.load offset=8` で取り出し, 結果を箱に入れる)
 
 #### 2. 完全 Wasm モジュール生成器: `core.compile-to-wasm`
 
@@ -939,13 +939,9 @@ definy パーツ。
 - `number`: `"<number>"`
 - `string`: 文字列リテラルそのもの
 - `boolean`: `"true"` または `"false"`
-- `add`, `subtract`, `multiply`, `divide`, `remainder`:
-  括弧と二項演算子記号付き文字列（例: `"((a + b) * c)"`）
-- `equal`, `less_than`: 比較式文字列（例: `"(a < b)"`）
-- `and`, `or`: 論理結合文字列（例: `"(a && b)"`）
-- `not`: 単項否定文字列（例: `"!a"`）
+- `builtin`: 組み込みの名前 (例: `"plus"`)
 - `match`: `"match (target) { ... }"`
-- `call`: `"fn(arg)"`
+- `call`: 関数と引数 (例: `"plus(left: <number>, right: <number>)"`)
 - `variable`: 変数参照文字列
 
 #### 2. メタ循環評価 (Meta-Circular Evaluation) 実証
@@ -994,10 +990,7 @@ AST（`core.expression`）を受け取り、定数同士の計算を事前に計
 Folding）」および不要な分岐の枝刈り（Dead Code
 Elimination）を行う純粋な最適化パーツ。
 
-- `add(number(a), number(b))` => `number(a + b)`
-- `subtract(number(a), number(b))` => `number(a - b)`
-- `multiply(number(a), number(b))` => `number(a * b)`
-- `not(boolean(b))` => `boolean(!b)`
+- `call(builtin("plus"), left: number(a), right: number(b))` => `number(a + b)` (`minus` `multiply` も同じ. `core.optimize-binary-call`)
 - `match({ target: boolean(true), arms })` => `optimize(true アームの本体)`
 - `match({ target: boolean(false), arms })` => `optimize(false アームの本体)`
 

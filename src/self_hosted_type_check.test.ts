@@ -14,7 +14,11 @@ import {
   type PartTypeEntry,
   type PartToCheck,
 } from "./self_hosted_type_check.ts";
-import { createStage1Compiler, type DefinyValue } from "./stage1_compiler.ts";
+import {
+  compilerBuiltinName,
+  createStage1Compiler,
+  type DefinyValue,
+} from "./stage1_compiler.ts";
 import { expressionToLayoutNode } from "./tree_layout/ast_to_layout.ts";
 import {
   EXPECTED_TYPE_PROBE,
@@ -68,6 +72,34 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
   return parts;
 }
 
+const coreModuleId = await deriveModuleIdBytes(
+  await devSystemAccountBytes(),
+  "core",
+);
+
+/** seed の core のパーツ (`core.plus` などのコンパイラ組み込み) の呼び出し */
+async function coreCall(
+  name: string,
+  args: Readonly<Record<string, unknown>>,
+): Promise<unknown> {
+  return {
+    Call: {
+      function: {
+        PartReference: {
+          part_definition_event_hash: await deriveModulePartId(
+            coreModuleId,
+            name,
+          ),
+        },
+      },
+      arguments: Object.entries(args).map(([argName, value]) => ({
+        name: argName,
+        value,
+      })),
+    },
+  };
+}
+
 /** seed の `core.type-checker` を stage1 でコンパイルし, seed の全パーツを型環境にする */
 function compileSeedTypeChecker(parts: ReadonlyArray<SeedPart>): {
   readonly typeChecker: WebAssembly.Module;
@@ -82,6 +114,7 @@ function compileSeedTypeChecker(parts: ReadonlyArray<SeedPart>): {
     partId: part.id,
     partType: part.partType,
     typeDeclaration: part.partType === "type" ? part.expression : undefined,
+    builtin: compilerBuiltinName(part.expression),
   }));
   const compileStarted = performance.now();
   const typeChecker = new WebAssembly.Module(
@@ -133,12 +166,13 @@ describe("self-hosted type check (stage1)", () => {
     const expression = {
       Function: {
         parameters: [{ parameter_id: 0, parameter_name: "n" }],
-        body: {
-          Add: {
-            left: { Variable: { variable_id: 0 } },
-            right: { Multiply: { left: { Number: { value: 2 } }, right: bad } },
-          },
-        },
+        body: await coreCall("plus", {
+          left: { Variable: { variable_id: 0 } },
+          right: await coreCall("multiply", {
+            left: { Number: { value: 2 } },
+            right: bad,
+          }),
+        }),
       },
     };
     const [outcome] = checkParts({
@@ -169,7 +203,60 @@ describe("self-hosted type check (stage1)", () => {
             outcome.expression,
           )
         : null,
-    ).toEqual(["functionBody", "right", "right"]);
+    ).toEqual([
+      "functionBody",
+      { kind: "callArgument", index: 1 },
+      { kind: "callArgument", index: 1 },
+    ]);
+  }, 600_000);
+
+  it("コンパイラ組み込みの呼び出しの引数を definy 側で検査する", async () => {
+    const { typeChecker, env } = compileSeedTypeChecker(await loadSeedParts());
+    const numberPart = (expression: unknown): PartToCheck => ({
+      expression,
+      partType: "number",
+    });
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        // 引数の順番が組み込みの引数名の順と違う
+        numberPart(
+          await coreCall("minus", {
+            right: { Number: { value: 1 } },
+            left: { Number: { value: 2 } },
+          }),
+        ),
+        // 引数名が組み込みの引数名と違う
+        numberPart(
+          await coreCall("plus", {
+            a: { Number: { value: 1 } },
+            b: { Number: { value: 2 } },
+          }),
+        ),
+        // 型の無い組み込み (core.list-get) も型チェッカーが要素の型を求める
+        numberPart(
+          await coreCall("list-get", {
+            list: { ListLiteral: { items: [{ Number: { value: 1 } }] } },
+            index: { Number: { value: 0 } },
+          }),
+        ),
+        numberPart(
+          await coreCall("list-get", {
+            list: { ListLiteral: { items: [{ String: { value: "a" } }] } },
+            index: { Number: { value: 0 } },
+          }),
+        ),
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "type_error",
+      "type_error",
+      "ok",
+      "type_error",
+    ]);
+    expect(outcomes[0]).toMatchObject({ tag: "invalid_type_declaration" });
+    expect(outcomes[1]).toMatchObject({ tag: "invalid_type_declaration" });
   }, 600_000);
 
   it("未入力 (probe) の位置で期待する型を返す", async () => {
@@ -200,8 +287,10 @@ describe("self-hosted type check (stage1)", () => {
     expect(
       expectedAt(
         probeExpressionAt(
-          inBody({ Add: { left: { Hole: {} }, right: { Hole: {} } } }),
-          ["functionBody", "right"],
+          inBody(
+            await coreCall("plus", { left: { Hole: {} }, right: { Hole: {} } }),
+          ),
+          ["functionBody", { kind: "callArgument", index: 1 }],
         ),
       ),
     ).toBe("number");
@@ -220,7 +309,10 @@ describe("self-hosted type check (stage1)", () => {
     ).toBe("number");
     expect(
       expectedAt(
-        { StringConcat: { left: EXPECTED_TYPE_PROBE, right: { Hole: {} } } },
+        await coreCall("string-concat", {
+          left: EXPECTED_TYPE_PROBE,
+          right: { Hole: {} },
+        }),
         "string",
       ),
     ).toBe("string");
@@ -231,9 +323,10 @@ describe("self-hosted type check (stage1)", () => {
     // 推論する位置 (== の左辺) では分からない
     expect(
       session.findExpectedType({
-        expression: {
-          Equal: { left: EXPECTED_TYPE_PROBE, right: { Number: { value: 1 } } },
-        },
+        expression: await coreCall("equal", {
+          left: EXPECTED_TYPE_PROBE,
+          right: { Number: { value: 1 } },
+        }),
         partType: "boolean",
       }),
     ).toBeNull();
@@ -279,19 +372,17 @@ describe("self-hosted type check (stage1)", () => {
     // 型パーツを指定しない Variant は, そのタグだけの直和型 (== の左辺は推論する位置)
     expect(
       session.findExpectedType({
-        expression: {
-          Equal: {
-            left: {
-              ListLiteral: {
-                items: [
-                  variant("some", { Number: { value: 1 } }, null),
-                  EXPECTED_TYPE_PROBE,
-                ],
-              },
+        expression: await coreCall("equal", {
+          left: {
+            ListLiteral: {
+              items: [
+                variant("some", { Number: { value: 1 } }, null),
+                EXPECTED_TYPE_PROBE,
+              ],
             },
-            right: { Hole: {} },
           },
-        },
+          right: { Hole: {} },
+        }),
         partType: "boolean",
       }),
     ).toMatchObject({ tag: "union", payload: [{ tag: "some" }] });
@@ -310,12 +401,10 @@ describe("self-hosted type check (stage1)", () => {
         typeChecker,
         parts: [
           {
-            expression: {
-              Equal: {
-                left: variant("other", null, optionNumber?.id),
-                right: variant("none", null, optionNumber?.id),
-              },
-            },
+            expression: await coreCall("equal", {
+              left: variant("other", null, optionNumber?.id),
+              right: variant("none", null, optionNumber?.id),
+            }),
             partType: "boolean",
           },
         ],
@@ -327,16 +416,14 @@ describe("self-hosted type check (stage1)", () => {
         typeChecker,
         parts: [
           {
-            expression: {
-              Equal: {
-                left: variant(
-                  "some",
-                  { String: { value: "x" } },
-                  optionNumber?.id,
-                ),
-                right: variant("none", null, optionNumber?.id),
-              },
-            },
+            expression: await coreCall("equal", {
+              left: variant(
+                "some",
+                { String: { value: "x" } },
+                optionNumber?.id,
+              ),
+              right: variant("none", null, optionNumber?.id),
+            }),
             partType: "boolean",
           },
         ],

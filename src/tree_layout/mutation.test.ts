@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   applySelection,
-  getExpressionAtPath,
   nextVariableId,
+  partParameterNames,
   renameFunctionParameter,
-  updateExpressionAtPath,
 } from "./mutation.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
-import { bytesToUrlSafeBase64NoPad } from "../cbor.ts";
+import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "../cbor.ts";
 
 describe("tree layout mutation and selection", () => {
   it("applies part reference selection with 32-byte Uint8Array hash and resolves option value", () => {
@@ -40,26 +39,73 @@ describe("tree layout mutation and selection", () => {
   });
 });
 
-describe("applySelection の旧版の挙動", () => {
-  it("二項演算を別の二項演算に差し替えるときは左右の式を引き継ぐ", () => {
-    const expr = {
-      LessThan: {
-        left: { Variable: { variable_id: 3 } },
-        right: { Number: { value: 0 } },
-      },
-    };
-    expect(applySelection(expr, [], "expr:less_than_or_equal")).toEqual({
-      LessThanOrEqual: {
-        left: { Variable: { variable_id: 3 } },
-        right: { Number: { value: 0 } },
+describe("applySelection", () => {
+  const plusHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(1));
+  const lessThanHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(2));
+  const lessThanOrEqualHash = bytesToUrlSafeBase64NoPad(
+    new Uint8Array(32).fill(3),
+  );
+  const reference = (hash: string) => ({
+    PartReference: { part_definition_event_hash: base64ToBytes(hash) },
+  });
+  const parameterNamesOf = (hash: string) =>
+    hash === plusHash || hash === lessThanHash || hash === lessThanOrEqualHash
+      ? ["left", "right"]
+      : undefined;
+
+  it("関数のパーツを選ぶと, 引数が未入力のパーツの呼び出しにする", () => {
+    expect(
+      applySelection(
+        { Number: { value: 5 } },
+        [],
+        `ref:part:${plusHash}`,
+        parameterNamesOf,
+      ),
+    ).toEqual({
+      Call: {
+        function: reference(plusHash),
+        arguments: [
+          { name: "left", value: { Hole: {} } },
+          { name: "right", value: { Hole: {} } },
+        ],
       },
     });
   });
 
-  it("二項演算でない式から選んだときは既定の左右の式にする", () => {
-    expect(applySelection({ Number: { value: 5 } }, [], "expr:add")).toEqual({
-      Add: { left: { Number: { value: 0 } }, right: { Number: { value: 0 } } },
-    });
+  it("パーツの呼び出しを別のパーツに差し替えるときは同じ名前の引数の式を引き継ぐ", () => {
+    const expr = {
+      Call: {
+        function: reference(lessThanHash),
+        arguments: [
+          { name: "left", value: { Variable: { variable_id: 3 } } },
+          { name: "right", value: { Number: { value: 0 } } },
+        ],
+      },
+    };
+    const expected = {
+      Call: {
+        function: reference(lessThanOrEqualHash),
+        arguments: expr.Call.arguments,
+      },
+    };
+    expect(getOptionValueForExpression(expr)).toBe(`ref:part:${lessThanHash}`);
+    expect(
+      applySelection(
+        expr,
+        [],
+        `ref:part:${lessThanOrEqualHash}`,
+        parameterNamesOf,
+      ),
+    ).toEqual(expected);
+    // 呼び出しの関数の位置で選んだときは参照だけを置き換える
+    expect(
+      applySelection(
+        expr,
+        ["callFunction"],
+        `ref:part:${lessThanOrEqualHash}`,
+        parameterNamesOf,
+      ),
+    ).toEqual(expected);
   });
 
   it("let は式全体で使われていない変数 ID で作る", () => {
@@ -90,29 +136,62 @@ describe("applySelection の旧版の挙動", () => {
   });
 });
 
-describe("list-get などの子の式", () => {
-  const listGet = {
-    ListGet: {
-      list: { Variable: { variable_id: 0 } },
-      index: { Number: { value: 2 } },
-    },
-  };
-
-  it("パスで取得・更新できる", () => {
-    expect(getExpressionAtPath(listGet, ["index"])).toEqual({
-      Number: { value: 2 },
-    });
+describe("partParameterNames", () => {
+  it("関数の型のパーツは型の引数名", () => {
     expect(
-      updateExpressionAtPath(listGet, ["left"], () => ({ Hole: {} })),
-    ).toEqual({
-      ListGet: { list: { Hole: {} }, index: { Number: { value: 2 } } },
-    });
+      partParameterNames({
+        partType: {
+          function: {
+            parameters: [{ name: "x", type: "number" }],
+            return_type: "number",
+          },
+        },
+        expression: null,
+      }),
+    ).toEqual(["x"]);
   });
 
-  it("ツリーに子の式として表示する", () => {
-    const node = expressionToLayoutNode(listGet);
-    expect(node.label).toBe("list-get");
-    expect(node.children.map((c) => c.path)).toEqual([["left"], ["index"]]);
+  it("型の無いコンパイラ組み込みのパーツは組み込みの引数名", () => {
+    expect(
+      partParameterNames({
+        partType: null,
+        expression: { Compiler: "list_get" },
+      }),
+    ).toEqual(["list", "index"]);
+    expect(
+      partParameterNames({
+        partType: "number",
+        expression: { Number: { value: 1 } },
+      }),
+    ).toBeUndefined();
+  });
+});
+
+describe("パーツの呼び出しの表示", () => {
+  it("呼び出すパーツと引数名ごとの式を子に持つ", () => {
+    const node = expressionToLayoutNode({
+      Call: {
+        function: {
+          PartReference: {
+            part_definition_event_hash: { $part: "core.list-get" },
+          },
+        },
+        arguments: [
+          { name: "list", value: { Variable: { variable_id: 0 } } },
+          { name: "index", value: { Number: { value: 2 } } },
+        ],
+      },
+    });
+    expect(node.children.map((c) => c.label)).toEqual([
+      "core.list-get",
+      "list:",
+      "index:",
+    ]);
+    expect(node.children.map((c) => c.path)).toEqual([
+      ["callFunction"],
+      [{ kind: "callArgument", index: 0 }],
+      [{ kind: "callArgument", index: 1 }],
+    ]);
   });
 });
 

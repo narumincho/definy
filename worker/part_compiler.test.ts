@@ -159,15 +159,14 @@ describe("compilePartToWasm", () => {
   });
 
   it("スタックが足りないほど深い式は resource_exhausted", async () => {
-    // Add の右に 5000 段入れ子にした式. テスト側で溢れないように CBOR を再帰せずに組み立てる
+    // リストの要素に 5000 段入れ子にした式. テスト側で溢れないように CBOR を再帰せずに組み立てる
     const depth = 5000;
     const prefix = [
       0xa1,
-      ...encodeCborItem("Add"),
-      0xa2,
-      ...encodeCborItem("left"),
-      ...encodeCborItem({ Number: { value: 1 } }),
-      ...encodeCborItem("right"),
+      ...encodeCborItem("ListLiteral"),
+      0xa1,
+      ...encodeCborItem("items"),
+      0x81,
     ];
     const leaf = encodeCborItem({ Number: { value: 1 } });
     const bytes = new Uint8Array(prefix.length * depth + leaf.length);

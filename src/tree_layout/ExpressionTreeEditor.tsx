@@ -12,6 +12,7 @@ import {
   applySelection,
   clearExpressionAtPath,
   functionParameterIndex,
+  partParameterNames,
   renameFunctionParameter,
   setNumberValue,
   setStringValue,
@@ -44,7 +45,7 @@ import {
   renameMatchArmVariable,
   type PatternVariant,
 } from "./match_pattern.ts";
-import type { DefinyValue } from "../stage1_compiler.ts";
+import { type DefinyValue } from "../stage1_compiler.ts";
 
 /** 式に出す型エラー */
 export type ExpressionTypeError = {
@@ -279,7 +280,12 @@ export function ExpressionTreeEditor({
       if (optionValue !== menu.currentOptionValue) {
         onChange(
           !isMatchPatternPath(selectedPath)
-            ? applySelection(expression, selectedPath, optionValue)
+            ? applySelection(expression, selectedPath, optionValue, (hash) => {
+                const part = partsByIdHash.get(hash);
+                return part === undefined
+                  ? undefined
+                  : partParameterNames(part);
+              })
             : applyPatternSelection(
                 expression,
                 selectedPath,
@@ -295,6 +301,7 @@ export function ExpressionTreeEditor({
       keyboard,
       menu.currentOptionValue,
       onChange,
+      partsByIdHash,
       patternVariants,
       selectedPath,
     ],

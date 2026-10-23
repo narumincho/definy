@@ -15,7 +15,7 @@ describe("selection helpers", () => {
     children: [
       {
         id: "child-1",
-        path: ["left"],
+        path: ["then"],
         kind: "literalNumber",
         layoutMode: "inline",
         computedWidth: 40,
@@ -26,7 +26,7 @@ describe("selection helpers", () => {
       },
       {
         id: "child-2",
-        path: ["right"],
+        path: ["else"],
         kind: "literalNumber",
         layoutMode: "inline",
         computedWidth: 40,
@@ -41,13 +41,13 @@ describe("selection helpers", () => {
     const index = collectNodeIndex(sampleTree);
     expect(index).toEqual([
       { id: "root", path: [] },
-      { id: "child-1", path: ["left"] },
-      { id: "child-2", path: ["right"] },
+      { id: "child-1", path: ["then"] },
+      { id: "child-2", path: ["else"] },
     ]);
   });
 
   it("findExpressionNode finds expression node with scopeVariables", () => {
-    const found = findExpressionNode(sampleTree, ["left"]);
+    const found = findExpressionNode(sampleTree, ["then"]);
     expect(found?.id).toBe("child-1");
   });
 

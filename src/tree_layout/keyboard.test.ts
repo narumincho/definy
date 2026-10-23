@@ -12,20 +12,25 @@ function rect(left: number, top: number, right: number, bottom: number): Rect {
   return { left, top, right, bottom };
 }
 
+/** 呼び出しの 1 番目の引数 */
+const L = { kind: "callArgument", index: 0 } as const;
+/** 呼び出しの 2 番目の引数 */
+const R = { kind: "callArgument", index: 1 } as const;
+
 /**
- * `add(1, mul(2, 3))` を 1 行に並べた配置
- * root:        [0, 0]-[300, 20]
- * left (1):    [10, 0]-[30, 20]
- * right (mul): [40, 0]-[290, 20]
- * right.left:  [50, 0]-[70, 20]
- * right.right: [80, 0]-[100, 20]
+ * `core.plus(left: 1, right: core.multiply(left: 2, right: 3))` を 1 行に並べた配置
+ * root:       [0, 0]-[300, 20]
+ * L (1):      [10, 0]-[30, 20]
+ * R (multiply): [40, 0]-[290, 20]
+ * R.L:        [50, 0]-[70, 20]
+ * R.R:        [80, 0]-[100, 20]
  */
 const inlineNodes: ReadonlyArray<NavNode> = [
   { path: [], rect: rect(0, 0, 300, 20) },
-  { path: ["left"], rect: rect(10, 0, 30, 20) },
-  { path: ["right"], rect: rect(40, 0, 290, 20) },
-  { path: ["right", "left"], rect: rect(50, 0, 70, 20) },
-  { path: ["right", "right"], rect: rect(80, 0, 100, 20) },
+  { path: [L], rect: rect(10, 0, 30, 20) },
+  { path: [R], rect: rect(40, 0, 290, 20) },
+  { path: [R, L], rect: rect(50, 0, 70, 20) },
+  { path: [R, R], rect: rect(80, 0, 100, 20) },
 ];
 
 describe("navigate", () => {
@@ -35,10 +40,8 @@ describe("navigate", () => {
   });
 
   it("親とルートへ移動する", () => {
-    expect(navigate(inlineNodes, ["right", "left"], "parent")).toEqual([
-      "right",
-    ]);
-    expect(navigate(inlineNodes, ["right", "left"], "root")).toEqual([]);
+    expect(navigate(inlineNodes, [R, L], "parent")).toEqual([R]);
+    expect(navigate(inlineNodes, [R, L], "root")).toEqual([]);
     expect(navigate(inlineNodes, [], "parent")).toBeNull();
     expect(navigate(inlineNodes, [], "root")).toBeNull();
   });
@@ -46,15 +49,15 @@ describe("navigate", () => {
   it("画面上の式がない中間のパスは飛ばして親へ移動する", () => {
     const nodes: ReadonlyArray<NavNode> = [
       { path: [], rect: rect(0, 0, 100, 40) },
-      { path: ["left", "right"], rect: rect(10, 0, 30, 20) },
+      { path: [L, R], rect: rect(10, 0, 30, 20) },
     ];
-    expect(navigate(nodes, ["left", "right"], "parent")).toEqual([]);
+    expect(navigate(nodes, [L, R], "parent")).toEqual([]);
   });
 
   it("子の先頭と末尾へ移動する", () => {
-    expect(navigate(inlineNodes, [], "firstChild")).toEqual(["left"]);
-    expect(navigate(inlineNodes, [], "lastChild")).toEqual(["right"]);
-    expect(navigate(inlineNodes, ["left"], "firstChild")).toBeNull();
+    expect(navigate(inlineNodes, [], "firstChild")).toEqual([L]);
+    expect(navigate(inlineNodes, [], "lastChild")).toEqual([R]);
+    expect(navigate(inlineNodes, [L], "firstChild")).toBeNull();
   });
 
   it("オブジェクトのパスの子も比較できる", () => {
@@ -72,26 +75,23 @@ describe("navigate", () => {
   });
 
   it("左右の移動は兄弟を優先する", () => {
-    expect(navigate(inlineNodes, ["left"], "right")).toEqual(["right"]);
-    expect(navigate(inlineNodes, ["right", "left"], "right")).toEqual([
-      "right",
-      "right",
-    ]);
+    expect(navigate(inlineNodes, [L], "right")).toEqual([R]);
+    expect(navigate(inlineNodes, [R, L], "right")).toEqual([R, R]);
     // 兄弟が左になければ, 画面上で左にある別の式へ移る
-    expect(navigate(inlineNodes, ["right", "left"], "left")).toEqual(["left"]);
-    expect(navigate(inlineNodes, ["left"], "left")).toBeNull();
+    expect(navigate(inlineNodes, [R, L], "left")).toEqual([L]);
+    expect(navigate(inlineNodes, [L], "left")).toBeNull();
   });
 
   it("上下の移動は行をたどる", () => {
-    // 複数行に展開された配置: left が 1 行目, right が 2 行目
+    // 複数行に展開された配置: L が 1 行目, R が 2 行目
     const nodes: ReadonlyArray<NavNode> = [
       { path: [], rect: rect(0, 0, 200, 60) },
-      { path: ["left"], rect: rect(20, 5, 120, 25) },
-      { path: ["right"], rect: rect(20, 35, 80, 55) },
+      { path: [L], rect: rect(20, 5, 120, 25) },
+      { path: [R], rect: rect(20, 35, 80, 55) },
     ];
-    expect(navigate(nodes, ["left"], "down")).toEqual(["right"]);
-    expect(navigate(nodes, ["right"], "up")).toEqual(["left"]);
-    expect(navigate(nodes, ["right"], "down")).toBeNull();
+    expect(navigate(nodes, [L], "down")).toEqual([R]);
+    expect(navigate(nodes, [R], "up")).toEqual([L]);
+    expect(navigate(nodes, [R], "down")).toBeNull();
   });
 });
 
