@@ -564,6 +564,23 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
 - `core.type-check-unlocated` (推論): `probe` なら `error(hole_expected_type { expected: none })`,
   そうでなければ `error(unfilled_hole)`
 - 型チェッカーは最初に見つけたエラーを返すので, probe より先に別の型エラーや推論する位置の未入力があると期待する型は分からない
+- 推論する位置の式 `t` の型を聞きたいときは `[t, probe]` のリストにする. リストは最初の要素の型を推論し,
+  残りの要素ではその型を期待するので, probe の期待する型が `t` の型になる (match の対象の型, `probeMatchTargetType`).
+  `==` の右辺は左辺の型を期待せず推論するので使えない
+
+### 型パーツを指定した Variant の型 (2026-10-23)
+
+`core.expression` の `variant` に `type_part: option<string>` を足した. JSON AST の
+`Variant.type_part_definition_event_hash` (型パーツの ID) を `definyAstToSelfHostedAst` が URL-safe Base64 にして入れる.
+
+- `core.type-check-unlocated` (推論): `type_part` が `some(id)` で, `core.type-resolve` した型パーツが直和型なら,
+  `core.type-check-against` でタグと値を検査して `reference(id)` と推論する. それ以外は今までどおり,
+  そのタグだけの直和型 (`union [{ tag, payload_type }]`) と推論する
+- 検査する位置 (`core.type-check-against-unlocated`) は今までどおり期待する型でタグと値を検査する
+- `type_part` は型検査だけが使い, コンパイル (`core.compile-expr-instructions`) と評価 (`core.eval-value`) は見ないので,
+  足しても `wasm/stage1.wasm` は変わらない (`npm run check:stage1` が通る)
+- `core.expression` のレコードにフィールドを足すと, そのレコードを組み立てる definy のコードは全てのフィールドを書く必要がある
+  (型チェッカーが必須フィールドを検査する). 今は `variant` の式を組み立てるのは TypeScript の変換だけ
 
 ### 次に進める順番の案
 
