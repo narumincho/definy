@@ -8,6 +8,7 @@ import {
 import {
   checkParts,
   compileTypeChecker,
+  createTypeCheckSession,
   formatTypeAst,
   outcomeErrorMessage,
   type PartTypeEntry,
@@ -15,6 +16,11 @@ import {
 } from "./self_hosted_type_check.ts";
 import { createStage1Compiler } from "./stage1_compiler.ts";
 import { expressionToLayoutNode } from "./tree_layout/ast_to_layout.ts";
+import {
+  EXPECTED_TYPE_PROBE,
+  expectedTypeFromTypeAst,
+  probeExpressionAt,
+} from "./tree_layout/type_inference.ts";
 import {
   expressionToSelfHostedValue,
   findTypeErrorPath,
@@ -160,6 +166,73 @@ describe("self-hosted type check (stage1)", () => {
           )
         : null,
     ).toEqual(["functionBody", "right", "right"]);
+  }, 600_000);
+
+  it("未入力 (probe) の位置で期待する型を返す", async () => {
+    const parts = await loadSeedParts();
+    const { typeChecker, env } = compileSeedTypeChecker(parts);
+    const session = createTypeCheckSession({ typeChecker, env });
+    const stdAbs = parts.find((part) => part.name === "std.abs");
+    const numberFunction = {
+      function: {
+        parameters: [{ name: "n", type: "number" }],
+        return_type: "number",
+      },
+    };
+    const inBody = (body: unknown): unknown => ({
+      Function: {
+        parameters: [{ parameter_id: 0, parameter_name: "n" }],
+        body,
+      },
+    });
+    const expectedAt = (
+      expression: unknown,
+      partType: unknown = numberFunction,
+    ) =>
+      expectedTypeFromTypeAst(
+        session.findExpectedType({ expression, partType }),
+      );
+    // 演算の右辺 (ほかの未入力はその位置の型として受け入れる)
+    expect(
+      expectedAt(
+        probeExpressionAt(
+          inBody({ Add: { left: { Hole: {} }, right: { Hole: {} } } }),
+          ["functionBody", "right"],
+        ),
+      ),
+    ).toBe("number");
+    // パーツの呼び出しの引数は呼び出し先の引数の型
+    expect(
+      expectedAt(
+        inBody({
+          Call: {
+            function: {
+              PartReference: { part_definition_event_hash: stdAbs?.id },
+            },
+            arguments: [{ name: "x", value: EXPECTED_TYPE_PROBE }],
+          },
+        }),
+      ),
+    ).toBe("number");
+    expect(
+      expectedAt(
+        { StringConcat: { left: EXPECTED_TYPE_PROBE, right: { Hole: {} } } },
+        "string",
+      ),
+    ).toBe("string");
+    // 関数の本体はパーツの型の戻り値の型
+    expect(
+      expectedAt(probeExpressionAt(inBody({ Hole: {} }), ["functionBody"])),
+    ).toBe("number");
+    // 推論する位置 (== の左辺) では分からない
+    expect(
+      session.findExpectedType({
+        expression: {
+          Equal: { left: EXPECTED_TYPE_PROBE, right: { Number: { value: 1 } } },
+        },
+        partType: "boolean",
+      }),
+    ).toBeNull();
   }, 600_000);
 
   it("型エラーの型を読める形にする", () => {

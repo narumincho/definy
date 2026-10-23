@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "モジュールコミットの検査の計画を core.type-checker に移し, core.validate-module を core.build-type-env に乗せ換える",
+  "message": "core.expression に未入力 (hole) を足し, 型チェッカーがその位置の期待する型を返せるようにする",
   "parts": [
     {
       "name": "let",
@@ -1588,6 +1588,19 @@
                           }
                         }
                       }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "hole",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "probe",
+                      "value": "TypeBoolean"
                     }
                   ]
                 }
@@ -10881,6 +10894,42 @@
             {
               "tag": "unknown_error",
               "payload_type": null
+            },
+            {
+              "tag": "unfilled_hole",
+              "payload_type": null
+            },
+            {
+              "tag": "hole_expected_type",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "expected",
+                      "value": {
+                        "TypeUnion": {
+                          "variants": [
+                            {
+                              "tag": "none",
+                              "payload_type": null
+                            },
+                            {
+                              "tag": "some",
+                              "payload_type": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.type-ast"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             },
             {
               "tag": "located",
@@ -27747,6 +27796,79 @@
                   }
                 },
                 {
+                  "tag": "hole",
+                  "variable_id": 470,
+                  "variable_name": "hole",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "RecordGet": {
+                          "record": {
+                            "Variable": {
+                              "variable_id": 470
+                            }
+                          },
+                          "key": "probe"
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "hole_expected_type",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "expected",
+                                          "value": {
+                                            "Variant": {
+                                              "tag": "none",
+                                              "payload": null,
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "unfilled_hole",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
                   "tag": "_",
                   "variable_id": 99,
                   "variable_name": "_",
@@ -34250,6 +34372,81 @@
                           }
                         }
                       }
+                    }
+                  }
+                },
+                {
+                  "tag": "hole",
+                  "variable_id": 470,
+                  "variable_name": "hole",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "RecordGet": {
+                          "record": {
+                            "Variable": {
+                              "variable_id": 470
+                            }
+                          },
+                          "key": "probe"
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "hole_expected_type",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "expected",
+                                          "value": {
+                                            "Variant": {
+                                              "tag": "some",
+                                              "payload": {
+                                                "Variable": {
+                                                  "variable_id": 2
+                                                }
+                                              },
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variant": {
+                              "tag": "ok",
+                              "payload": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
                     }
                   }
                 }

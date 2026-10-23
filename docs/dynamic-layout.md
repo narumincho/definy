@@ -75,6 +75,15 @@ data = [
     「その他 (型が合わない)」の区切りの下に薄く表示する
     (`SearchableDropdownPanel` の `secondary_values` / `secondary_heading`).
     期待型が無い位置では区切りを出さない.
+  - 期待型は definy 製の型チェッカーに聞く (`findExpectedType`, `src/state/useTypeCheck.ts`).
+    選んだ位置を `{"Hole": {"probe": true}}` (`EXPECTED_TYPE_PROBE`, `src/tree_layout/type_inference.ts`) に
+    置き換えた式を, `definyAstWithHolesToSelfHostedAst` で `core.expression` の `hole` にして
+    `core.type-check-against` で検査する. 型チェッカーは probe の位置で `hole_expected_type { expected }`
+    のエラーを返し (期待する型のある位置なら `some(型)`, 推論する位置なら `none`),
+    他の未入力 (`hole({ probe: false })`) はその位置の期待する型として受け入れる.
+    以前は TypeScript の独自推論 (`inferExpectedType`) で数値・文字列・真偽値・リストだけを見分けていた.
+    未入力はコンパイルできないので, コミットの検査や評価では今までどおり未入力を受け付けない
+    (`definyAstToSelfHostedAst` は未入力で `SelfHostedAstConversionError` を投げる)
   - 型宣言のない組み込みパーツ (`plus` など) は,
     選択肢のメタ情報に推定した型を型宣言と同じ小文字表記で表示する.
   - メニューを開いたときは, 現在の値の選択肢 (`data-selected="true"`)

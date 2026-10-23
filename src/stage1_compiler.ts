@@ -285,8 +285,36 @@ const unaryOperators: ReadonlyArray<readonly [string, string]> = [
  * `SelfHostedAstConversionError` を投げる
  */
 export function definyAstToSelfHostedAst(ast: unknown): unknown {
-  if (ast === "Hole") {
+  return toSelfHostedAst(ast, false);
+}
+
+/**
+ * {@link definyAstToSelfHostedAst} と同じだが, 未入力 (`Hole`) を `core.expression` の `hole({ probe: false })` にする.
+ * `{"Hole": {"probe": true}}` は `hole({ probe: true })` になり, 型チェッカーはその位置で期待する型を
+ * `hole_expected_type` のエラーで返す (`findExpectedType`, `src/self_hosted_type_check.ts`).
+ * 未入力のある式はコンパイルできないので, 型検査で期待する型を調べるときにだけ使う
+ */
+export function definyAstWithHolesToSelfHostedAst(ast: unknown): unknown {
+  return toSelfHostedAst(ast, true);
+}
+
+function holeToSelfHostedAst(hole: unknown, allowHoles: boolean): unknown {
+  if (!allowHoles) {
     throw new SelfHostedAstConversionError("Expression has an unfilled hole");
+  }
+  const probe =
+    typeof hole === "object" &&
+    hole !== null &&
+    (hole as { readonly probe?: unknown }).probe === true;
+  return selfHostedVariant(
+    "hole",
+    selfHostedRecord([["probe", { Boolean: { value: probe } }]]),
+  );
+}
+
+function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
+  if (ast === "Hole") {
+    return holeToSelfHostedAst(undefined, allowHoles);
   }
   if (!ast || typeof ast !== "object") {
     throw new SelfHostedAstConversionError(
@@ -296,7 +324,8 @@ export function definyAstToSelfHostedAst(ast: unknown): unknown {
   const obj = ast as Record<string, unknown>;
   const key = Object.keys(obj)[0] ?? "";
   const node = obj[key] as Record<string, unknown>;
-  const convert = definyAstToSelfHostedAst;
+  const convert = (child: unknown): unknown =>
+    toSelfHostedAst(child, allowHoles);
 
   for (const [astKey, tag] of binaryOperators) {
     if (key === astKey) {
@@ -515,7 +544,7 @@ export function definyAstToSelfHostedAst(ast: unknown): unknown {
         ]),
       );
     case "Hole":
-      throw new SelfHostedAstConversionError("Expression has an unfilled hole");
+      return holeToSelfHostedAst(node, allowHoles);
   }
   throw new SelfHostedAstConversionError(
     `core.expression cannot represent ${key || JSON.stringify(ast)}`,

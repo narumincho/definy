@@ -554,6 +554,17 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
 (`union[none]` と `union[some(...)]`) が推論で揃わず型エラーになる。要素を変換したらそのまま再帰呼び出しに渡し,
 戻り値の位置 (期待型のある位置) でだけ `some` / `none` を返すようにした。
 
+### 未入力 (`hole`) と期待する型 (2026-10-23)
+
+`core.expression` に `hole({ probe: boolean })` を足した。UI の式エディタが選んだ位置の期待する型を
+型チェッカーに聞くためのもので ([dynamic-layout.md](dynamic-layout.md)), サーバーや評価には渡さない。
+
+- `core.type-check-against-unlocated`: `probe` なら `error(hole_expected_type { expected: some(期待する型) })`,
+  そうでなければ `ok(期待する型)` (未入力はどの型にもなれる)
+- `core.type-check-unlocated` (推論): `probe` なら `error(hole_expected_type { expected: none })`,
+  そうでなければ `error(unfilled_hole)`
+- 型チェッカーは最初に見つけたエラーを返すので, probe より先に別の型エラーや推論する位置の未入力があると期待する型は分からない
+
 ### 次に進める順番の案
 
 1. ~~stage1 の Wasm を content hash をキーにキャッシュし, `compile_expression_to_wasm` で stage0 の代わりに使う~~ (済み: 上の「サーバーの本番のコンパイルで stage1 を使う」)。次はプレビュー (上の「HTTP アプリとプレビュー」)

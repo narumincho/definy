@@ -13,6 +13,7 @@ import {
   type CompiledFunctionInstance,
   collectReferencedParts,
   definyAstToSelfHostedAst,
+  definyAstWithHolesToSelfHostedAst,
   partReferenceId,
   SelfHostedAstConversionError,
   type DefinyValue,
@@ -265,7 +266,10 @@ export function typeDeclarationToSelfHostedAst(expression: unknown): unknown {
 }
 
 /** `core.type-check-against` に渡す `expr` と `expected_type` の値を作る式 */
-function partCheckArguments(part: PartToCheck): {
+function partCheckArguments(
+  part: PartToCheck,
+  allowHoles = false,
+): {
   readonly expression: unknown;
   readonly expectedType: unknown;
 } {
@@ -273,7 +277,9 @@ function partCheckArguments(part: PartToCheck): {
     expression:
       part.partType === "type"
         ? typeDeclarationToSelfHostedAst(part.expression)
-        : definyAstToSelfHostedAst(part.expression),
+        : allowHoles
+          ? definyAstWithHolesToSelfHostedAst(part.expression)
+          : definyAstToSelfHostedAst(part.expression),
     expectedType: partTypeToSelfHostedAst(part.partType),
   };
 }
@@ -448,6 +454,16 @@ export function compileTypeChecker(options: {
   return options.compiler.compile(expression, parts);
 }
 
+export type TypeCheckSession = {
+  readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome;
+  /**
+   * 式の中の `{"Hole": {"probe": true}}` の位置で期待する型 (`core.type-ast` の値) を型チェッカーに聞く.
+   * 他の未入力はその位置の期待する型として受け入れる. 推論する位置 (`==` の左辺など) や,
+   * それより先に別の型エラーが見つかったときは `null`
+   */
+  readonly findExpectedType: (part: PartToCheck) => DefinyValue | null;
+};
+
 /**
  * 型環境を決めて, パーツを 1 つずつ検査できるようにする. 型チェッカーのインスタンスと線形メモリに書いた型環境を
  * 呼び出しの間で使い回すので, 裏で少しずつ検査するときにも使う
@@ -455,7 +471,7 @@ export function compileTypeChecker(options: {
 export function createTypeCheckSession(options: {
   readonly typeChecker: WebAssembly.Module;
   readonly env: ReadonlyArray<PartTypeEntry>;
-}): { readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome } {
+}): TypeCheckSession {
   return createModuleCommitSession({
     typeChecker: options.typeChecker,
     latest: options.env.map((entry) => ({
@@ -485,8 +501,7 @@ function createModuleCommitSession(options: {
   readonly toCheck: () => ReadonlyArray<string>;
   /** 式か型の無いパーツの ID */
   readonly withoutExpression: () => ReadonlyArray<string>;
-  readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome;
-} {
+} & TypeCheckSession {
   const latest = moduleEntriesExpression(options.latest);
   const committed = moduleEntriesExpression(options.committed);
   const moduleId = string(options.moduleId);
@@ -526,36 +541,53 @@ function createModuleCommitSession(options: {
     }
     return ids.map(String);
   };
+  const run = (
+    part: PartToCheck,
+    allowHoles: boolean,
+  ): SelfHostedTypeCheckOutcome => {
+    let args: ReturnType<typeof partCheckArguments>;
+    try {
+      args = partCheckArguments(part, allowHoles);
+    } catch (e) {
+      if (e instanceof SelfHostedAstConversionError) {
+        return { kind: "unsupported", message: e.message };
+      }
+      throw e;
+    }
+    try {
+      const { instance, checkerPtr } = ensureInstance();
+      if (current !== undefined) {
+        current.calls += 1;
+      }
+      return typeResultToOutcome(
+        instance.read(
+          instance.callClosure(checkerPtr, [
+            instance.writeArgument(args.expression),
+            instance.writeArgument(args.expectedType),
+          ]),
+        ),
+      );
+    } catch (e) {
+      current = undefined;
+      return { kind: "checker_failed", message: errorMessage(e) };
+    }
+  };
   return {
     toCheck: () => readIds("to_check"),
     withoutExpression: () => readIds("without_expression"),
-    check: (part) => {
-      let args: ReturnType<typeof partCheckArguments>;
-      try {
-        args = partCheckArguments(part);
-      } catch (e) {
-        if (e instanceof SelfHostedAstConversionError) {
-          return { kind: "unsupported", message: e.message };
-        }
-        throw e;
+    check: (part) => run(part, false),
+    findExpectedType: (part) => {
+      const outcome = run(part, true);
+      if (
+        outcome.kind !== "type_error" ||
+        outcome.tag !== "hole_expected_type"
+      ) {
+        return null;
       }
-      try {
-        const { instance, checkerPtr } = ensureInstance();
-        if (current !== undefined) {
-          current.calls += 1;
-        }
-        return typeResultToOutcome(
-          instance.read(
-            instance.callClosure(checkerPtr, [
-              instance.writeArgument(args.expression),
-              instance.writeArgument(args.expectedType),
-            ]),
-          ),
-        );
-      } catch (e) {
-        current = undefined;
-        return { kind: "checker_failed", message: errorMessage(e) };
-      }
+      const expected = (
+        outcome.detail as { readonly expected?: DefinyValue } | null
+      )?.expected as { readonly tag?: unknown; readonly payload?: DefinyValue };
+      return expected?.tag === "some" ? (expected.payload ?? null) : null;
     },
   };
 }

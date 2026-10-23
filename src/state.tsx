@@ -16,6 +16,7 @@ import type {
   WorkingChanges,
 } from "./types.ts";
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
+import type { DefinyValue } from "./stage1_compiler.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState } from "./state/useUiState.ts";
 import { useEvents } from "./state/useEvents.ts";
@@ -88,6 +89,14 @@ export type DefinyContextValue = {
     readonly expression: unknown;
   }) => Promise<SelfHostedTypeCheckOutcome>;
   /**
+   * 式 (`{"Hole": {"probe": true}}` を 1 つ含む) のその位置で期待する型 (`core.type-ast` の値) を,
+   * コミット済みのパーツの型環境で definy 製の型チェッカーに聞く. 分からなければ `null`
+   */
+  readonly findExpectedType: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => Promise<DefinyValue | null>;
+  /**
    * 型エラーの理由を 1 行にする (型の中のパーツ参照はパーツ名にする). 問題なければ `null`.
    * `partName` が `null` ならパーツ名を付けない
    */
@@ -154,6 +163,7 @@ export function DefinyProvider({
       checkCommitTypes: typeCheck.checkCommitTypes,
       partTypeCheckResults: typeCheck.partTypeCheckResults,
       checkPartType: typeCheck.checkPartType,
+      findExpectedType: typeCheck.findExpectedType,
       typeCheckMessage: typeCheck.typeCheckMessage,
       sidebarOpen: ui.sidebarOpen,
       toggleSidebar: ui.toggleSidebar,
@@ -192,6 +202,7 @@ export function DefinyProvider({
       typeCheck.checkCommitTypes,
       typeCheck.partTypeCheckResults,
       typeCheck.checkPartType,
+      typeCheck.findExpectedType,
       typeCheck.typeCheckMessage,
     ],
   );

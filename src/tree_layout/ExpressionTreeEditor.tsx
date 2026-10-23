@@ -1,4 +1,12 @@
-import { useState, useMemo, useCallback, useRef, useId, type JSX } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  useId,
+  type JSX,
+} from "react";
 import { computeLayout, expressionToLayoutNode } from "./engine.ts";
 import {
   applySelection,
@@ -10,7 +18,11 @@ import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
 import { type PathStep } from "./types.ts";
 import { useDefiny } from "../state.tsx";
 import { label } from "../language.ts";
-import { inferExpectedType, type ExpectedType } from "./type_inference.ts";
+import {
+  expectedTypeFromTypeAst,
+  probeExpressionAt,
+  type ExpectedType,
+} from "./type_inference.ts";
 import { type NavKey } from "./keyboard.ts";
 import { collectNodeIndex, findExpressionNode } from "./selection.ts";
 import { useTreeKeyboard } from "./useTreeKeyboard.ts";
@@ -62,7 +74,7 @@ export function ExpressionTreeEditor({
   mode = "expression",
   typeError = null,
 }: ExpressionTreeEditorProps): JSX.Element {
-  const { language, parts, partNames } = useDefiny();
+  const { language, parts, partNames, findExpectedType } = useDefiny();
   const [selectedPath, setSelectedPath] =
     useState<ReadonlyArray<PathStep> | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -112,10 +124,31 @@ export function ExpressionTreeEditor({
     });
   }, []);
 
-  const expectedType = useMemo<ExpectedType>(() => {
-    if (!selectedPath || mode === "type") return "any";
-    return inferExpectedType(expression, selectedPath, partType);
-  }, [expression, selectedPath, partType, mode]);
+  // 選んだ位置で期待する型は, その位置を未入力 (probe) にした式を definy 製の型チェッカーで検査して求める
+  const [expectedType, setExpectedType] = useState<ExpectedType>("any");
+  useEffect(() => {
+    setExpectedType("any");
+    if (!selectedPath || mode === "type" || partType == null) {
+      return;
+    }
+    let cancelled = false;
+    findExpectedType({
+      partType,
+      expression: probeExpressionAt(expression, selectedPath),
+    }).then(
+      (type) => {
+        if (!cancelled) {
+          setExpectedType(expectedTypeFromTypeAst(type));
+        }
+      },
+      (e: unknown) => {
+        console.error("failed to find the expected type", e);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [expression, selectedPath, partType, mode, findExpectedType]);
 
   const menu = useSelectorMenu({
     mode,
