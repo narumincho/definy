@@ -89,7 +89,8 @@ definy
 モジュール内パーツ参照の解決と、リスト・直和型構築・レコード・パターンマッチを含む式検査は
 自己記述型チェッカー（`core.type-check` /
 `core.type-check-against`）において検証・実証されています。
-外部モジュールへのパーツ参照は, Rust 側で作る型環境 (全モジュールの最新のパーツ) を通じて解決しています。
+外部モジュールへのパーツ参照は, definy 製の `core.build-type-env` が全モジュールの最新のパーツから作る型環境を通じて解決しています
+(下の「型環境を definy で作る」)。
 `core.validate-module` 自体での外部モジュール参照解決や、型定義パーツ自体の自己ホスト循環参照解決などが今後の拡張対象です。
 
 Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱いし、hash
@@ -118,11 +119,13 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
 2. **[済] module type environment**: `core.collect-part-type-env` が
    `ModuleCommitEvent` の全パーツの hash と宣言型から環境を作り、
    `PartReference`・構築子・相互参照を解決します。
-   サーバー・UI・seed の検証で使う型環境 (`definy_core::self_hosted_type_check::check_module_commit_parts`)
-   は全モジュールの最新のパーツから作るので, 他のモジュールのパーツ参照 (ユーザーのモジュールから
-   `core.list-contains-string` を呼ぶなど) も引数の型まで検査します (`commit_check_tests.rs` で確認)。
+   サーバー・UI・seed の検証で使う型環境 (`checkModuleCommitParts`, `src/self_hosted_type_check.ts`)
+   は全モジュールの最新のパーツから definy 製の `core.build-type-env` で作るので, 他のモジュールのパーツ参照
+   (ユーザーのモジュールから `core.list-contains-string` を呼ぶなど) も引数の型まで検査します (`worker/type_check.test.ts` で確認)。
+   TypeScript 側に残っているのは, イベントからどのパーツを型環境に入れるか (モジュールごとに最新のコミット,
+   検査するコミットのパーツを重ねる) を決めることと, データの形の変換 (`PartType` → `core.type-ast`) だけです。
    definy 製の `core.validate-module` はモジュール内のパーツだけで環境を作るため外部モジュールを参照できませんが,
-   こちらはテストでだけ使っています。型環境を作る部分を definy に移すのは今後の課題です。
+   こちらはテストでだけ使っています。
 3. **[済] 式検査の拡張**: list/record の構築と field access、union constructor、match
    の網羅性を `core.type-check` に追加済みです。UI の型エラー表示も自己ホスト型チェッカーを使います
    （[ui.md](ui.md) の「型エラー表示」を参照）。
@@ -492,10 +495,10 @@ Rust 製コンパイラはリテラル (数値・真偽値・文字列) を 1024
 TypeScript への移行で一度なくなっていた definy 製型チェッカーの実行を, stage1 の上に作り直した
 (`src/self_hosted_type_check.ts`。旧 Rust 版 `definy_core::self_hosted_type_check` の移植)。
 
-- **1 度だけコンパイルして何度も呼ぶ**: `compileTypeChecker` が `core.type-check-against` への
+- **1 度だけコンパイルして何度も呼ぶ**: `compileTypeChecker` が `core.type-checker-with-entries` への
   `PartReference` を stage1 でコンパイルする (関数を返す式の Wasm になる)。`checkParts` は
-  `instantiateCompiledFunction` (`src/stage1_compiler.ts`) でインスタンスを作り, 型環境を 1 度だけ線形メモリに
-  書き込んで, パーツごとに `expr`・`expected_type` を書き込んで呼ぶ。seed の 169 パーツで, コンパイル 335ms・検査 600ms ほど
+  `instantiateCompiledFunction` (`src/stage1_compiler.ts`) でインスタンスを作り, 型環境に入れるパーツを 1 度だけ線形メモリに
+  書き込んで呼ぶ。返った「その型環境で検査する関数」を `callClosure` で, パーツごとに `expr`・`expected_type` を書き込んで呼ぶ。seed の 169 パーツで, コンパイル 335ms・検査 600ms ほど
   (パーツごとに `let env = ... in [check(a), ...]` の式をコンパイルし直していたときは 73 秒かかった)。
   線形メモリは解放しないので 32 パーツごとにインスタンスを作り直し, trap したときも作り直す
 - **値の書き込み** (`writeLiteral`): 型環境のような大きな値を線形メモリに書くので, 1 度だけ走査して JavaScript 側の
@@ -518,6 +521,27 @@ TypeScript への移行で一度なくなっていた definy 製型チェッカ�
   が型エラーなしで通ることを確かめる。作り直したときに `core.compile-call-arguments-range` が
   `core.count-functions-in-values-range` (`{key, value}` のリストを取る) に呼び出しの引数 (`{name, value}` のリスト) を
   渡している型エラーが見つかり, `core.count-functions-in-arguments-range` を分けて直した
+
+### 型環境を definy で作る (2026-10-23)
+
+以前は TypeScript (`typeEnvExpression`) が `core.type-env` の値を組み立てていた (型パーツの宣言式を
+`expressionToPartType` で型にして `{hash}#definition` のキーで入れるところまで)。いまは次の core のパーツが行う。
+
+- `core.type-checker-with-entries(entries) -> (expr, expected_type) -> type-result`: `entries` から型環境を 1 度だけ作り,
+  その環境で `core.type-check-against` を呼ぶ関数を返す。サーバー・UI・seed の検査はこれをコンパイルして使う
+- `core.build-type-env(entries) -> type-env`: `entries` は `list<{ part_definition_event_hash, part_type: type-ast, type_declaration: option<expression> }>`。
+  各パーツの宣言型を入れ, `type_declaration` が `some` (型パーツ) なら宣言している型も `{hash}#definition` で入れる
+  (`core.build-type-env-parts`)
+- `core.type-declaration-to-type-ast(expr) -> option<type-ast>`: 型パーツの宣言式 (`type_number`・`type_list`・`type_function`・
+  `type_record`・`type_union`・`part_reference`) を宣言している型にする。型の式でないか, 中に変換できないものがあれば `none`
+  (`core.type-declaration-parameters-to-type-ast` などがリストの要素を変換する)
+
+TypeScript 側 (`typeEnvEntriesExpression`) は, 宣言型を `core.type-ast` の値にし, 型パーツの宣言式を
+`typeDeclarationToSelfHostedAst` で `core.expression` の値にして渡すだけになった。
+
+書き方の注意: `option` を返す補助パーツで, 変換した要素を `let` などで受けてから `some` で包むと, `match` のアームの型
+(`union[none]` と `union[some(...)]`) が推論で揃わず型エラーになる。要素を変換したらそのまま再帰呼び出しに渡し,
+戻り値の位置 (期待型のある位置) でだけ `some` / `none` を返すようにした。
 
 ### 次に進める順番の案
 

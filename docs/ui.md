@@ -69,7 +69,7 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
 
 ### 型エラー表示
 
-型エラーの判定は, サーバーの `SubmitEvent` と同じ definy 製の型チェッカー (`core.type-check-against`) で行う
+型エラーの判定は, サーバーの `SubmitEvent` と同じ definy 製の型チェッカー (`core.type-check-against`. 型環境も definy 製の `core.build-type-env` で作る) で行う
 (`src/self_hosted_type_check.ts`. [self-hosting.md](self-hosting.md) の「definy 製型チェッカーの実行 (TypeScript 版)」).
 
 - 型チェッカーは `npm run build:seeds` が作る `wasm/type_checker.wasm` を `src/type_checker_browser.ts` が

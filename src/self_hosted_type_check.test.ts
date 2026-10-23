@@ -58,16 +58,16 @@ async function loadSeedParts(): Promise<ReadonlyArray<SeedPart>> {
   return parts;
 }
 
-/** seed の `core.type-check-against` を stage1 でコンパイルし, seed の全パーツを型環境にする */
+/** seed の `core.type-checker-with-entries` を stage1 でコンパイルし, seed の全パーツを型環境にする */
 function compileSeedTypeChecker(parts: ReadonlyArray<SeedPart>): {
   readonly typeChecker: WebAssembly.Module;
   readonly env: ReadonlyArray<PartTypeEntry>;
 } {
   const byId = new Map(parts.map((part) => [part.id, part]));
-  const typeCheckAgainst = parts.find(
-    (part) => part.name === "core.type-check-against",
+  const typeCheckerWithEntries = parts.find(
+    (part) => part.name === "core.type-checker-with-entries",
   );
-  expect(typeCheckAgainst).toBeDefined();
+  expect(typeCheckerWithEntries).toBeDefined();
   const env: ReadonlyArray<PartTypeEntry> = parts.map((part) => ({
     partId: part.id,
     partType: part.partType,
@@ -79,7 +79,7 @@ function compileSeedTypeChecker(parts: ReadonlyArray<SeedPart>): {
       compiler: createStage1Compiler(
         new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
       ),
-      core: { typeCheckAgainst: typeCheckAgainst?.id ?? "" },
+      core: { typeCheckerWithEntries: typeCheckerWithEntries?.id ?? "" },
       resolvePart: (id) => byId.get(id)?.expression ?? undefined,
     }) as unknown as BufferSource,
   );

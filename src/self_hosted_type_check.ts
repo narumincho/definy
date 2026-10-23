@@ -2,8 +2,9 @@
  * definy 製の型チェッカー (`core.type-check-against`) でパーツの式を型検査する.
  * 旧 Rust 版 `definy_core::self_hosted_type_check` の移植.
  *
- * 型チェッカー本体は stage1 で 1 度だけ Wasm にコンパイルし (`compileTypeChecker`), パーツごとに
- * 検査する式・型環境・期待する型を線形メモリに書き込んで呼ぶ (`checkParts`).
+ * 型チェッカー本体は stage1 で 1 度だけ Wasm にコンパイルし (`compileTypeChecker`), 型環境に入れるパーツを
+ * 書き込んで definy 製の `core.build-type-env` で型環境を作ってから, パーツごとに検査する式と期待する型を
+ * 書き込んで呼ぶ (`checkParts`).
  * サーバーの `SubmitEvent` の検査と UI の型エラー表示が同じ関数を使う
  * (docs/self-hosting.md の「definy 製型チェッカーの実行 (TypeScript 版)」).
  */
@@ -22,12 +23,15 @@ import {
   encodeCborItem,
   sha256BytesSync,
 } from "./cbor.ts";
-import { expressionToPartType } from "./tree_layout/part_type.ts";
 import { list, record, string, variant } from "./self_hosted_ast.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
-  readonly typeCheckAgainst: string;
+  /**
+   * `core.type-checker-with-entries`. 型環境に入れるパーツを受け取って型環境を作り,
+   * `core.type-check-against` でその環境のもとで検査する関数を返す
+   */
+  readonly typeCheckerWithEntries: string;
 };
 
 /** 型環境に入れるパーツ (パーツ参照の型を解決するために使う) */
@@ -41,9 +45,6 @@ export type PartTypeEntry = {
    */
   readonly typeDeclaration?: unknown;
 };
-
-/** 型パーツの定義を型環境に入れるときのキーの接尾辞. `core.type-resolve` と揃える */
-export const TYPE_DEFINITION_KEY_SUFFIX = "#definition";
 
 /** 検査するパーツ */
 export type PartToCheck = {
@@ -278,40 +279,47 @@ function partCheckArguments(part: PartToCheck): {
 }
 
 /**
- * `core.type-env` の値 `{ variables: [], parts: [{ part_definition_event_hash, part_type }] }` を作る式.
- * 型パーツは, 宣言した型を `{id}#definition` のキーでも入れる.
- * `core.type-ast` で表せない型のパーツは環境に入れない (参照すると `part_not_found` になる)
+ * `core.build-type-env` に渡すパーツの一覧 `[{ part_definition_event_hash, part_type, type_declaration }]` を作る式.
+ * 型パーツは宣言式も `type_declaration` に入れ, 宣言した型を `{id}#definition` のキーで型環境に入れるのは
+ * definy 側 (`core.build-type-env-parts`) が行う.
+ * `core.type-ast` で表せない型のパーツは入れない (参照すると `part_not_found` になる)
  */
-function typeEnvExpression(env: ReadonlyArray<PartTypeEntry>): unknown {
-  const entryRecord = (key: string, partType: unknown): unknown => {
-    try {
-      return record([
-        ["part_definition_event_hash", string(key)],
-        ["part_type", partTypeToSelfHostedAst(partType)],
-      ]);
-    } catch (e) {
-      if (e instanceof SelfHostedAstConversionError) {
-        return null;
+function typeEnvEntriesExpression(env: ReadonlyArray<PartTypeEntry>): unknown {
+  return list(
+    env.flatMap((entry) => {
+      let partType: unknown;
+      try {
+        partType = partTypeToSelfHostedAst(entry.partType);
+      } catch (e) {
+        if (e instanceof SelfHostedAstConversionError) {
+          return [];
+        }
+        throw e;
       }
-      throw e;
+      return [
+        record([
+          ["part_definition_event_hash", string(entry.partId)],
+          ["part_type", partType],
+          ["type_declaration", typeDeclarationOption(entry.typeDeclaration)],
+        ]),
+      ];
+    }),
+  );
+}
+
+/** 型パーツの宣言式を `core.expression` の値の `some` にする. 無いか表せなければ `none` */
+function typeDeclarationOption(declaration: unknown): unknown {
+  if (declaration == null) {
+    return variant("none");
+  }
+  try {
+    return variant("some", typeDeclarationToSelfHostedAst(declaration));
+  } catch (e) {
+    if (e instanceof SelfHostedAstConversionError) {
+      return variant("none");
     }
-  };
-  const parts = env.flatMap((entry) => {
-    const declared =
-      entry.typeDeclaration == null
-        ? null
-        : expressionToPartType(entry.typeDeclaration);
-    return [
-      entryRecord(entry.partId, entry.partType),
-      declared == null
-        ? null
-        : entryRecord(`${entry.partId}${TYPE_DEFINITION_KEY_SUFFIX}`, declared),
-    ].filter((item) => item !== null);
-  });
-  return record([
-    ["variables", list([])],
-    ["parts", list(parts)],
-  ]);
+    throw e;
+  }
 }
 
 function typeResultToOutcome(result: DefinyValue): SelfHostedTypeCheckOutcome {
@@ -372,7 +380,7 @@ function errorMessage(e: unknown): string {
 }
 
 /**
- * `core.type-check-against` を stage1 で Wasm にコンパイルする. 結果は関数を返す式の Wasm で,
+ * `core.type-checker-with-entries` を stage1 で Wasm にコンパイルする. 結果は関数を返す式の Wasm で,
  * `new WebAssembly.Module` にして `checkParts` に渡す.
  * `resolvePart` はパーツ ID (URL-safe Base64) から式を返す (型チェッカーが参照するパーツを集めるのに使う)
  */
@@ -383,7 +391,7 @@ export function compileTypeChecker(options: {
 }): Uint8Array {
   const expression = {
     PartReference: {
-      part_definition_event_hash: options.core.typeCheckAgainst,
+      part_definition_event_hash: options.core.typeCheckerWithEntries,
     },
   };
   const { parts, unresolved } = collectReferencedParts(
@@ -406,13 +414,14 @@ export function createTypeCheckSession(options: {
   readonly typeChecker: WebAssembly.Module;
   readonly env: ReadonlyArray<PartTypeEntry>;
 }): { readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome } {
-  const env = typeEnvExpression(options.env);
-  // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで使い回す.
+  const entries = typeEnvEntriesExpression(options.env);
+  // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで definy 側で型環境を作り,
+  // その環境で検査する関数 (`core.type-checker-with-entries` が返す関数) を使い回す.
   // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
   let current:
     | {
         readonly instance: CompiledFunctionInstance;
-        readonly envPtr: number;
+        readonly checkerPtr: number;
         calls: number;
       }
     | undefined;
@@ -430,15 +439,18 @@ export function createTypeCheckSession(options: {
       try {
         if (current === undefined || current.calls >= CALLS_PER_INSTANCE) {
           const instance = instantiateCompiledFunction(options.typeChecker);
-          current = { instance, envPtr: instance.writeArgument(env), calls: 0 };
+          current = {
+            instance,
+            checkerPtr: instance.call([instance.writeArgument(entries)]),
+            calls: 0,
+          };
         }
-        const { instance, envPtr } = current;
+        const { instance, checkerPtr } = current;
         current.calls += 1;
         return typeResultToOutcome(
           instance.read(
-            instance.call([
+            instance.callClosure(checkerPtr, [
               instance.writeArgument(args.expression),
-              envPtr,
               instance.writeArgument(args.expectedType),
             ]),
           ),
