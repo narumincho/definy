@@ -691,8 +691,11 @@ TypeScript への移行で一度なくなっていた definy 製型チェッカ�
 #### 3. 完全動的値評価器: `core.eval-value`
 
 ```definy
-eval-value: expression -> env -> value
+eval-value: expression -> env -> list<{ id: string, expression: expression }> -> value
 ```
+
+3 つ目の引数 `parts` は式が参照するパーツで, `core.compile-to-wasm` の `parts` と同じ形です。
+評価器の適合テストの全 67 ケースを stage1 と同じ値に評価します ([eval-conformance.md](eval-conformance.md))。
 
 - リテラル（数値・文字列・真偽値）、算術演算（`add`, `subtract`, `multiply`,
   `divide`, `remainder`）、等価比較（`equal`）、小なり比較（`less_than`）
@@ -700,6 +703,10 @@ eval-value: expression -> env -> value
 - 条件分岐（Bool に対する `match`。対象が `boolean` のときタグ `"true"` / `"false"` のアームを選ぶ）
 - 関数定義時における環境キャプチャ（クロージャ生成）
 - 関数呼び出し（`call`）時におけるキャプチャ環境の復元と引数束縛
+- 比較 (`not_equal`, `less_than_or_equal`, `greater_than`, `greater_than_or_equal`)、文字列操作
+  (`string_concat`, `string_length`, `string_slice`, `string_to_bytes`)、リスト操作
+  (`list_length`, `list_concat`, `list_get`, `list_append`)
+- パーツ参照（`part_reference`）。`parts` から探して空の環境で評価する（`core.eval-part-reference`）
 
 ---
 

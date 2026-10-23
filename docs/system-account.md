@@ -1,7 +1,7 @@
 # システムアカウントと seed の編集フロー
 
 ビルトインモジュール（`definy`, `core`, `std`, `wasi`, `sample`）は **システムアカウント** が所有します。
-現在の TypeScript 実装では `src/auth.ts` / `worker/store.ts` / `worker/eval_conformance.test.ts` にてシステムアカウント鍵シードを扱います。
+現在の TypeScript 実装では `src/auth.ts` / `worker/store.ts` / `src/seed_parts.ts` にてシステムアカウント鍵シードを扱います。
 
 ## 鍵の設定
 

@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "呼び出しの引数の関数の数え上げを count-functions-in-arguments-range に分け, 型エラーを直す",
+  "message": "core.eval-value にパーツ参照と残りの演算を足し, 評価器の適合テストを全て通るようにする",
   "parts": [
     {
       "name": "let",
@@ -4179,6 +4179,27 @@
                   "$part": "core.env"
                 }
               }
+            },
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": {
@@ -4208,6 +4229,10 @@
             {
               "parameter_id": 1,
               "parameter_name": "env"
+            },
+            {
+              "parameter_id": 900,
+              "parameter_name": "parts"
             }
           ],
           "body": {
@@ -4302,6 +4327,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -4341,6 +4374,14 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
                                         }
                                       }
                                     }
@@ -4443,6 +4484,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -4482,6 +4531,14 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
                                         }
                                       }
                                     }
@@ -4584,6 +4641,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -4623,6 +4688,14 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
                                         }
                                       }
                                     }
@@ -4725,6 +4798,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -4764,6 +4845,14 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
                                         }
                                       }
                                     }
@@ -4866,6 +4955,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -4905,6 +5002,14 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
                                         }
                                       }
                                     }
@@ -4979,75 +5084,106 @@
                     "Variant": {
                       "tag": "boolean",
                       "payload": {
-                        "Equal": {
-                          "left": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.eval-value"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 18
-                                        }
-                                      },
-                                      "key": "left"
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "env",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  }
-                                }
-                              ]
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.value-equals"
+                              }
                             }
                           },
-                          "right": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.eval-value"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "expr",
-                                  "value": {
-                                    "RecordGet": {
-                                      "record": {
-                                        "Variable": {
-                                          "variable_id": 18
+                          "arguments": [
+                            {
+                              "name": "val_a",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 18
+                                            }
+                                          },
+                                          "key": "left"
                                         }
-                                      },
-                                      "key": "right"
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
                                     }
-                                  }
-                                },
-                                {
-                                  "name": "env",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  }
+                                  ]
                                 }
-                              ]
+                              }
+                            },
+                            {
+                              "name": "val_b",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 18
+                                            }
+                                          },
+                                          "key": "right"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
                             }
-                          }
+                          ]
                         }
                       },
                       "type_part_definition_event_hash": null
@@ -5090,6 +5226,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -5129,6 +5273,14 @@
                                       "value": {
                                         "Variable": {
                                           "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
                                         }
                                       }
                                     }
@@ -5321,6 +5473,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -5419,8 +5579,24 @@
                                               "value": 0
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
                                         }
                                       ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "parts",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 900
                                     }
                                   }
                                 }
@@ -5537,12 +5713,28 @@
                                               "variable_id": 1
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
                                         }
                                       ]
                                     }
                                   }
                                 }
                               ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "parts",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 900
                             }
                           }
                         }
@@ -5657,6 +5849,14 @@
                                                   "variable_id": 1
                                                 }
                                               }
+                                            },
+                                            {
+                                              "name": "parts",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 900
+                                                }
+                                              }
                                             }
                                           ]
                                         }
@@ -5722,6 +5922,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -5785,6 +5993,14 @@
                                   "value": {
                                     "Variable": {
                                       "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "parts",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 900
                                     }
                                   }
                                 }
@@ -5871,6 +6087,14 @@
                                       "variable_id": 1
                                     }
                                   }
+                                },
+                                {
+                                  "name": "parts",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 900
+                                    }
+                                  }
                                 }
                               ]
                             }
@@ -5927,6 +6151,14 @@
                               "value": {
                                 "Variable": {
                                   "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
                                 }
                               }
                             }
@@ -6030,6 +6262,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -6079,6 +6319,14 @@
                                           "value": {
                                             "Variable": {
                                               "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
                                             }
                                           }
                                         }
@@ -6160,6 +6408,14 @@
                                   "variable_id": 1
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -6227,6 +6483,14 @@
                                               "variable_id": 1
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
                                         }
                                       ]
                                     }
@@ -6288,6 +6552,14 @@
                               "value": {
                                 "Variable": {
                                   "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
                                 }
                               }
                             }
@@ -6407,6 +6679,14 @@
                                   "items": []
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
@@ -6463,11 +6743,1766 @@
                                   "items": []
                                 }
                               }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
                             }
                           ]
                         }
                       },
                       "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "not_equal",
+                  "variable_id": 110,
+                  "variable_name": "ne",
+                  "body": {
+                    "Variant": {
+                      "tag": "boolean",
+                      "payload": {
+                        "Not": {
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.value-equals"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "val_a",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.eval-value"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 110
+                                                }
+                                              },
+                                              "key": "left"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "val_b",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.eval-value"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 110
+                                                }
+                                              },
+                                              "key": "right"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
+                  "tag": "less_than_or_equal",
+                  "variable_id": 111,
+                  "variable_name": "bin",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 111
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "number",
+                          "variable_id": 10,
+                          "variable_name": "l",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 111
+                                            }
+                                          },
+                                          "key": "right"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "number",
+                                  "variable_id": 11,
+                                  "variable_name": "r",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "boolean",
+                                      "payload": {
+                                        "LessThanOrEqual": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 10
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 11
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 99,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 98,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "greater_than",
+                  "variable_id": 112,
+                  "variable_name": "bin",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 112
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "number",
+                          "variable_id": 10,
+                          "variable_name": "l",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 112
+                                            }
+                                          },
+                                          "key": "right"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "number",
+                                  "variable_id": 11,
+                                  "variable_name": "r",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "boolean",
+                                      "payload": {
+                                        "GreaterThan": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 10
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 11
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 99,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 98,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "greater_than_or_equal",
+                  "variable_id": 113,
+                  "variable_name": "bin",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 113
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "number",
+                          "variable_id": 10,
+                          "variable_name": "l",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 113
+                                            }
+                                          },
+                                          "key": "right"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "number",
+                                  "variable_id": 11,
+                                  "variable_name": "r",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "boolean",
+                                      "payload": {
+                                        "GreaterThanOrEqual": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 10
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 11
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 99,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 98,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "string_concat",
+                  "variable_id": 114,
+                  "variable_name": "bin",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 114
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "string",
+                          "variable_id": 10,
+                          "variable_name": "l",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 114
+                                            }
+                                          },
+                                          "key": "right"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "string",
+                                  "variable_id": 11,
+                                  "variable_name": "r",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "string",
+                                      "payload": {
+                                        "StringConcat": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 10
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 11
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 99,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 98,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "string_length",
+                  "variable_id": 115,
+                  "variable_name": "un",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 115
+                                    }
+                                  },
+                                  "key": "value"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "string",
+                          "variable_id": 10,
+                          "variable_name": "v",
+                          "body": {
+                            "Variant": {
+                              "tag": "number",
+                              "payload": {
+                                "StringLength": {
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 10
+                                    }
+                                  }
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 99,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "string_to_bytes",
+                  "variable_id": 117,
+                  "variable_name": "un",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 117
+                                    }
+                                  },
+                                  "key": "value"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "string",
+                          "variable_id": 10,
+                          "variable_name": "v",
+                          "body": {
+                            "Variant": {
+                              "tag": "list",
+                              "payload": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-numbers-to-values"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "numbers",
+                                      "value": {
+                                        "StringToBytes": {
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 10
+                                            }
+                                          }
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "Number": {
+                                          "value": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "accum",
+                                      "value": {
+                                        "ListLiteral": {
+                                          "items": []
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 99,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "list_length",
+                  "variable_id": 118,
+                  "variable_name": "un",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 118
+                                    }
+                                  },
+                                  "key": "value"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "list",
+                          "variable_id": 10,
+                          "variable_name": "v",
+                          "body": {
+                            "Variant": {
+                              "tag": "number",
+                              "payload": {
+                                "ListLength": {
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 10
+                                    }
+                                  }
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 99,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "list_concat",
+                  "variable_id": 119,
+                  "variable_name": "bin",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 119
+                                    }
+                                  },
+                                  "key": "left"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "list",
+                          "variable_id": 10,
+                          "variable_name": "l",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 119
+                                            }
+                                          },
+                                          "key": "right"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "list",
+                                  "variable_id": 11,
+                                  "variable_name": "r",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "list",
+                                      "payload": {
+                                        "ListConcat": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 10
+                                            }
+                                          },
+                                          "right": {
+                                            "Variable": {
+                                              "variable_id": 11
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 99,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 98,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "string_slice",
+                  "variable_id": 116,
+                  "variable_name": "slice",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 116
+                                    }
+                                  },
+                                  "key": "value"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "string",
+                          "variable_id": 10,
+                          "variable_name": "s",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 116
+                                            }
+                                          },
+                                          "key": "start"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "number",
+                                  "variable_id": 11,
+                                  "variable_name": "start",
+                                  "body": {
+                                    "Match": {
+                                      "target": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.eval-value"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "expr",
+                                              "value": {
+                                                "RecordGet": {
+                                                  "record": {
+                                                    "Variable": {
+                                                      "variable_id": 116
+                                                    }
+                                                  },
+                                                  "key": "end"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "env",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "parts",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 900
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "number",
+                                          "variable_id": 12,
+                                          "variable_name": "end",
+                                          "body": {
+                                            "Variant": {
+                                              "tag": "string",
+                                              "payload": {
+                                                "StringSlice": {
+                                                  "value": {
+                                                    "Variable": {
+                                                      "variable_id": 10
+                                                    }
+                                                  },
+                                                  "start": {
+                                                    "Variable": {
+                                                      "variable_id": 11
+                                                    }
+                                                  },
+                                                  "end": {
+                                                    "Variable": {
+                                                      "variable_id": 12
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "tag": "_",
+                                          "variable_id": 97,
+                                          "variable_name": "_",
+                                          "body": {
+                                            "Variant": {
+                                              "tag": "unit",
+                                              "payload": null,
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          }
+                                        }
+                                      ],
+                                      "default": null
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 98,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 99,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "list_get",
+                  "variable_id": 120,
+                  "variable_name": "lg",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 120
+                                    }
+                                  },
+                                  "key": "list"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "list",
+                          "variable_id": 10,
+                          "variable_name": "items",
+                          "body": {
+                            "Match": {
+                              "target": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 120
+                                            }
+                                          },
+                                          "key": "index"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "number",
+                                  "variable_id": 11,
+                                  "variable_name": "i",
+                                  "body": {
+                                    "ListGet": {
+                                      "list": {
+                                        "Variable": {
+                                          "variable_id": 10
+                                        }
+                                      },
+                                      "index": {
+                                        "Variable": {
+                                          "variable_id": 11
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "tag": "_",
+                                  "variable_id": 98,
+                                  "variable_name": "_",
+                                  "body": {
+                                    "Variant": {
+                                      "tag": "unit",
+                                      "payload": null,
+                                      "type_part_definition_event_hash": null
+                                    }
+                                  }
+                                }
+                              ],
+                              "default": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 99,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "list_append",
+                  "variable_id": 121,
+                  "variable_name": "la",
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.eval-value"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "expr",
+                              "value": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 121
+                                    }
+                                  },
+                                  "key": "list"
+                                }
+                              }
+                            },
+                            {
+                              "name": "env",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "parts",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 900
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "list",
+                          "variable_id": 10,
+                          "variable_name": "items",
+                          "body": {
+                            "Variant": {
+                              "tag": "list",
+                              "payload": {
+                                "ListAppend": {
+                                  "list": {
+                                    "Variable": {
+                                      "variable_id": 10
+                                    }
+                                  },
+                                  "item": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.eval-value"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "expr",
+                                          "value": {
+                                            "RecordGet": {
+                                              "record": {
+                                                "Variable": {
+                                                  "variable_id": 121
+                                                }
+                                              },
+                                              "key": "item"
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "env",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 99,
+                          "variable_name": "_",
+                          "body": {
+                            "Variant": {
+                              "tag": "unit",
+                              "payload": null,
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "part_reference",
+                  "variable_id": 122,
+                  "variable_name": "pr",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.eval-part-reference"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "parts",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 900
+                            }
+                          }
+                        },
+                        {
+                          "name": "id",
+                          "value": {
+                            "RecordGet": {
+                              "record": {
+                                "Variable": {
+                                  "variable_id": 122
+                                }
+                              },
+                              "key": "part_definition_event_hash"
+                            }
+                          }
+                        },
+                        {
+                          "name": "index",
+                          "value": {
+                            "Number": {
+                              "value": 0
+                            }
+                          }
+                        }
+                      ]
                     }
                   }
                 },
@@ -6771,6 +8806,27 @@
                   ]
                 }
               }
+            },
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": {
@@ -6821,6 +8877,10 @@
             {
               "parameter_id": 3,
               "parameter_name": "accum"
+            },
+            {
+              "parameter_id": 900,
+              "parameter_name": "parts"
             }
           ],
           "body": {
@@ -6976,6 +9036,14 @@
                                                   "variable_id": 1
                                                 }
                                               }
+                                            },
+                                            {
+                                              "name": "parts",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 900
+                                                }
+                                              }
                                             }
                                           ]
                                         }
@@ -6984,6 +9052,14 @@
                                   ]
                                 }
                               }
+                            }
+                          }
+                        },
+                        {
+                          "name": "parts",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 900
                             }
                           }
                         }
@@ -7034,6 +9110,27 @@
                   }
                 }
               }
+            },
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": {
@@ -7073,6 +9170,10 @@
             {
               "parameter_id": 3,
               "parameter_name": "accum"
+            },
+            {
+              "parameter_id": 900,
+              "parameter_name": "parts"
             }
           ],
           "body": {
@@ -7196,10 +9297,26 @@
                                           "variable_id": 1
                                         }
                                       }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 900
+                                        }
+                                      }
                                     }
                                   ]
                                 }
                               }
+                            }
+                          }
+                        },
+                        {
+                          "name": "parts",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 900
                             }
                           }
                         }
@@ -7276,6 +9393,27 @@
             {
               "name": "index",
               "type": "number"
+            },
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": {
@@ -7317,6 +9455,10 @@
             {
               "parameter_id": 4,
               "parameter_name": "index"
+            },
+            {
+              "parameter_id": 900,
+              "parameter_name": "parts"
             }
           ],
           "body": {
@@ -7471,6 +9613,14 @@
                                               "variable_id": 2
                                             }
                                           }
+                                        },
+                                        {
+                                          "name": "parts",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 900
+                                            }
+                                          }
                                         }
                                       ]
                                     }
@@ -7494,6 +9644,14 @@
                                   "value": 1
                                 }
                               }
+                            }
+                          }
+                        },
+                        {
+                          "name": "parts",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 900
                             }
                           }
                         }
@@ -7557,6 +9715,27 @@
                   "$part": "core.env"
                 }
               }
+            },
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": {
@@ -7594,6 +9773,10 @@
             {
               "parameter_id": 3,
               "parameter_name": "env"
+            },
+            {
+              "parameter_id": 900,
+              "parameter_name": "parts"
             }
           ],
           "body": {
@@ -7643,6 +9826,14 @@
                   "value": {
                     "Number": {
                       "value": 0
+                    }
+                  }
+                },
+                {
+                  "name": "parts",
+                  "value": {
+                    "Variable": {
+                      "variable_id": 900
                     }
                   }
                 }
@@ -7705,6 +9896,27 @@
             {
               "name": "idx",
               "type": "number"
+            },
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
             }
           ],
           "return_type": {
@@ -7746,6 +9958,10 @@
             {
               "parameter_id": 4,
               "parameter_name": "idx"
+            },
+            {
+              "parameter_id": 900,
+              "parameter_name": "parts"
             }
           ],
           "body": {
@@ -7905,6 +10121,14 @@
                                       ]
                                     }
                                   }
+                                },
+                                {
+                                  "name": "parts",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 900
+                                    }
+                                  }
                                 }
                               ]
                             }
@@ -7972,6 +10196,14 @@
                                       }
                                     }
                                   }
+                                },
+                                {
+                                  "name": "parts",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 900
+                                    }
+                                  }
                                 }
                               ]
                             }
@@ -7979,6 +10211,441 @@
                         }
                       ],
                       "default": null
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "eval-numbers-to-values",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "numbers",
+              "type": {
+                "list": "number"
+              }
+            },
+            {
+              "name": "index",
+              "type": "number"
+            },
+            {
+              "name": "accum",
+              "type": {
+                "list": {
+                  "type_part": {
+                    "$part": "core.value"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "list": {
+              "type_part": {
+                "$part": "core.value"
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Wrap each number of the list in the number value"
+        },
+        {
+          "language": "ja",
+          "text": "数値のリストの各要素を number の値で包む"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "numbers"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "index"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "accum"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 1
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.eval-numbers-to-values"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "numbers",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "index",
+                          "value": {
+                            "Add": {
+                              "left": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              },
+                              "right": {
+                                "Number": {
+                                  "value": 1
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "name": "accum",
+                          "value": {
+                            "ListAppend": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              },
+                              "item": {
+                                "Variant": {
+                                  "tag": "number",
+                                  "payload": {
+                                    "ListGet": {
+                                      "list": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      },
+                                      "index": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  }
+                }
+              ],
+              "default": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "eval-part-reference",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "parts",
+              "type": {
+                "list": {
+                  "record": [
+                    {
+                      "key": "id",
+                      "value": "string"
+                    },
+                    {
+                      "key": "expression",
+                      "value": {
+                        "type_part": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "id",
+              "type": "string"
+            },
+            {
+              "name": "index",
+              "type": "number"
+            }
+          ],
+          "return_type": {
+            "type_part": {
+              "$part": "core.value"
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Find the part with the given id in parts and evaluate its expression in an empty environment (unit when not found)"
+        },
+        {
+          "language": "ja",
+          "text": "parts から id のパーツを探し, その式を空の環境で評価する (見つからなければ unit)"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "parts"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "id"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "Match": {
+              "target": {
+                "LessThan": {
+                  "left": {
+                    "Variable": {
+                      "variable_id": 2
+                    }
+                  },
+                  "right": {
+                    "ListLength": {
+                      "value": {
+                        "Variable": {
+                          "variable_id": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Let": {
+                      "bindings": [
+                        {
+                          "variable_id": 3,
+                          "variable_name": "part",
+                          "value": {
+                            "ListGet": {
+                              "list": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              },
+                              "index": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ],
+                      "body": {
+                        "Match": {
+                          "target": {
+                            "Equal": {
+                              "left": {
+                                "RecordGet": {
+                                  "record": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  },
+                                  "key": "id"
+                                }
+                              },
+                              "right": {
+                                "Variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            }
+                          },
+                          "arms": [
+                            {
+                              "tag": "true",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-value"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "expr",
+                                      "value": {
+                                        "RecordGet": {
+                                          "record": {
+                                            "Variable": {
+                                              "variable_id": 3
+                                            }
+                                          },
+                                          "key": "expression"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "env",
+                                      "value": {
+                                        "ListLiteral": {
+                                          "items": []
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "tag": "false",
+                              "variable_id": null,
+                              "variable_name": null,
+                              "body": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.eval-part-reference"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "id",
+                                      "value": {
+                                        "Variable": {
+                                          "variable_id": 1
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "Add": {
+                                          "left": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          },
+                                          "right": {
+                                            "Number": {
+                                              "value": 1
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ],
+                          "default": null
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variant": {
+                      "tag": "unit",
+                      "payload": null,
+                      "type_part_definition_event_hash": null
                     }
                   }
                 }
