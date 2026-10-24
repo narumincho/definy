@@ -47,12 +47,13 @@ async function compilePart(name: string): Promise<WebAssembly.Module> {
   );
 }
 
+/** Cloudflare の API と同じく整形した JSON (`"key": "value"`) で返す */
 function jsonResponse(body: unknown): WasiHttpResult {
   return {
     ok: {
       status: 200,
       headers: [{ name: "content-type", value: "application/json" }],
-      body: new TextEncoder().encode(JSON.stringify(body)),
+      body: new TextEncoder().encode(JSON.stringify(body, null, 2)),
     },
   };
 }

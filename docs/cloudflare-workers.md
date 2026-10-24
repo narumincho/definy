@@ -103,3 +103,9 @@ D1 の `deployments` テーブルに残し, `/deployments` 画面で見ていた
      `GET /accounts/{account_id}/workers/subdomain`
      で取得でき、`https://{script_name}.{subdomain}.workers.dev`
      として決定的に解決されます。
+4. **API のレスポンスは整形された JSON**:
+   - `api.cloudflare.com` のレスポンスは `"subdomain": "narumincho"` のように `:` の後に空白が入る。
+     `definy.json-string-field` は `"key":"value"` と `"key": "value"` のどちらも読む
+     (以前は空白なしだけを探していたので, 本番で「サブドメインは分かりませんでした」になった)。
+   - 2026-10-24 に本番 (definy.narumincho.workers.dev) から CORS の仲介を使って `sample.deploy-hello-worker` をデプロイし,
+     `https://definy-hello.narumincho.workers.dev/` が応答することを確かめた。
