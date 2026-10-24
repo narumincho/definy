@@ -350,15 +350,38 @@ test.describe("definy UI E2E", () => {
     await expect(card).toContainText("core.minus", { timeout: 15000 });
     await expect(card).toContainText("数値の減算");
     await expect(card.locator(".tree-hover-card-type")).toContainText("number");
+    // 型は式と同じツリー表示エンジンで描く
+    await expect(
+      card.locator(".tree-hover-card-type .type-tree-view .tree-badge"),
+    ).toHaveText("number");
 
     // 変数は名前と型 (definy 製の型チェッカーが推論した型)
     await valueTree.locator(".tree-badge", { hasText: /^x$/ }).nth(1).hover();
     await expect(card.locator(".tree-hover-card-title")).toContainText("x");
     await expect(card.locator(".tree-hover-card-type")).toContainText("number");
 
-    // 置換メニューを開いている間は出さない
+    // カードは top layer に出すので, ツリーの枠の中にスクロールバーを出さず, 画面の中に収まる
+    const container = page.locator("#part-def-value-tree");
+    expect(
+      await container.evaluate(
+        (element) => element.scrollHeight <= element.clientHeight,
+      ),
+    ).toBe(true);
+    const cardBox = await card.boundingBox();
+    const viewport = page.viewportSize();
+    expect(cardBox).not.toBeNull();
+    expect(viewport).not.toBeNull();
+    if (cardBox !== null && viewport !== null) {
+      expect(cardBox.y).toBeGreaterThanOrEqual(0);
+      expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(viewport.height);
+    }
+
+    // 置換メニューを開いている間は出さない. メニューには期待する型をツリーで出す
     await valueTree.locator(".tree-badge", { hasText: /^x$/ }).nth(1).click();
     await expect(card).toHaveCount(0);
+    await expect(
+      page.locator(".dropdown-expected-type .type-tree-view"),
+    ).toHaveText("number");
   });
 
   test("expression tree editor edits match patterns with the tags of the target type", async ({

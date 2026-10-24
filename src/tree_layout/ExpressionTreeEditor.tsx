@@ -30,7 +30,6 @@ import {
 } from "./type_inference.ts";
 import { findHoverTarget, type HoverTarget } from "./hover_info.ts";
 import { ExpressionHoverCard } from "./ExpressionHoverCard.tsx";
-import { formatTypeAst } from "../self_hosted_type_check.ts";
 import { isTextInput, type NavKey } from "./keyboard.ts";
 import {
   collectNodeIndex,
@@ -184,12 +183,16 @@ export function ExpressionTreeEditor({
   // 選んだ位置で期待する型は, その位置を未入力 (probe) にした式を definy 製の型チェッカーで検査して求める.
   // match のアームのパターンを選んだときは, 代わりに match の対象の型を聞いてパターンで選べるタグにする
   const [expectedType, setExpectedType] = useState<ExpectedType>("any");
+  const [expectedTypeAst, setExpectedTypeAst] = useState<DefinyValue | null>(
+    null,
+  );
   const [patternVariants, setPatternVariants] =
     useState<ReadonlyArray<PatternVariant> | null>(null);
   const [expectedVariants, setExpectedVariants] =
     useState(NO_EXPECTED_VARIANTS);
   useEffect(() => {
     setExpectedType("any");
+    setExpectedTypeAst(null);
     setPatternVariants(null);
     setExpectedVariants(NO_EXPECTED_VARIANTS);
     if (!selectedPath || mode === "type" || partType == null) {
@@ -215,6 +218,7 @@ export function ExpressionTreeEditor({
           setPatternVariants(patternVariantsFromTypeAst(type, partsByIdHash));
         } else {
           setExpectedType(expectedTypeFromTypeAst(type));
+          setExpectedTypeAst(type);
           setExpectedVariants(expectedVariantsFromTypeAst(type));
         }
       },
@@ -326,17 +330,13 @@ export function ExpressionTreeEditor({
     const typeQueried = mode !== "type" && partType != null;
     const typeAt =
       hoverType !== null && hoverType.key === hoverKey ? hoverType.type : null;
-    const typeText =
-      typeAt === null
-        ? null
-        : formatTypeAst(typeAt.type, (partId) => partNames.get(partId));
     const type = !typeQueried
       ? null
       : hoverType?.key !== hoverKey
         ? ("loading" as const)
-        : typeAt === null || typeText === null
+        : typeAt === null
           ? null
-          : { kind: typeAt.kind, text: typeText };
+          : { kind: typeAt.kind, type: typeAt.type };
     const description =
       part === undefined ? "" : localizedText(part.description, language);
     if (title === null && type === null && description.length === 0) {
@@ -359,7 +359,6 @@ export function ExpressionTreeEditor({
     hoverKey,
     hoverType,
     partsByIdHash,
-    partNames,
     mode,
     partType,
     language,
@@ -753,6 +752,7 @@ export function ExpressionTreeEditor({
           selectionAnchorName={selectionAnchorName}
           currentName={menu.currentName}
           expectedType={expectedType}
+          expectedTypeAst={expectedTypeAst}
           searchQuery={menu.searchQuery}
           setSearchQuery={menu.setSearchQuery}
           setQueryEdited={menu.setQueryEdited}

@@ -52,6 +52,14 @@ describe("partType と型の式の相互変換", () => {
     });
   });
 
+  it("組み込みの関数の型 (型チェッカーが返す) も往復できる", () => {
+    const builtin = { "#builtin": "less_than" };
+    expect(partTypeToExpression(builtin)).toEqual({ "#builtin": "less_than" });
+    expect(expressionToPartType(partTypeToExpression(builtin))).toEqual(
+      builtin,
+    );
+  });
+
   it("未入力は型指定なしに戻す", () => {
     expect(expressionToPartType({ "#hole": { probe: false } })).toBeNull();
     expect(

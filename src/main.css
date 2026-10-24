@@ -3180,14 +3180,21 @@ a.account-card {
   }
 }
 
-/* 式をホバーしたときの型とパーツのドキュメント (ExpressionHoverCard) */
+/*
+ * 式をホバーしたときの型とパーツのドキュメント (ExpressionHoverCard).
+ * ツリーの枠で切れないよう popover (top layer) の position: fixed にし, 位置は JS で画面の座標で決める
+ */
 .tree-hover-card {
-  position: absolute;
+  position: fixed;
+  inset: auto;
   z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  max-width: min(32rem, calc(100% - 1rem));
+  max-width: min(32rem, calc(100vw - 1rem));
+  max-height: calc(100vh - 1rem);
+  overflow: hidden;
+  margin: 0;
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -3212,6 +3219,20 @@ a.account-card {
   font-family: inherit;
 }
 
+/* 型の表示 (TypeTreeView). 式と同じツリー表示エンジンで描く */
+.type-tree-view {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tree-hover-card-type {
+  align-items: flex-start;
+}
+
+.tree-hover-card-type .tree-hover-card-kind {
+  padding-top: 0.3rem;
+}
+
 .tree-hover-card-kind {
   flex-shrink: 0;
   color: var(--text-muted);
@@ -3223,4 +3244,23 @@ a.account-card {
   margin: 0;
   color: var(--text-secondary);
   white-space: pre-wrap;
+}
+
+/* 置換メニューの期待する型 (ExpressionPopoverMenu). 型は TypeTreeView で式と同じツリー表示にする */
+.dropdown-expected-type {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.76rem;
+  max-height: 6rem;
+  overflow: auto;
+}
+
+.dropdown-expected-type-label {
+  flex-shrink: 0;
+  padding-top: 0.3rem;
+  color: var(--text-secondary);
 }
