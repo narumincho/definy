@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { Link } from "@void/react";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 
@@ -69,7 +70,11 @@ export default function AccountsPage(): JSX.Element {
             const initial = (resolvedName ?? acc).slice(0, 2).toUpperCase();
 
             return (
-              <div key={acc} className="card account-card">
+              <Link
+                key={acc}
+                href={`/account/${acc}`}
+                className="card account-card"
+              >
                 <div className="account-avatar-large">{initial}</div>
                 <div className="account-info">
                   <div
@@ -107,7 +112,7 @@ export default function AccountsPage(): JSX.Element {
                     {label(language, "events", "件のイベント", "eventoj")}
                   </span>
                 </div>
-              </div>
+              </Link>
             );
           })
         )}
