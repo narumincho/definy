@@ -3,11 +3,9 @@ import type { PartSnapshot } from "../types.ts";
 import type { LayoutNode, PathStep } from "./types.ts";
 import type { ExpectedType } from "./type_inference.ts";
 import { findExpressionNode } from "./selection.ts";
-import { functionParameterIndex } from "./mutation.ts";
 import {
   currentPatternOptionValue,
   isMatchPatternPath,
-  matchArmVariableIndex,
   patternSelectorOptions,
   type PatternVariant,
 } from "./match_pattern.ts";
@@ -22,6 +20,8 @@ import {
   type Highlight,
   type SelectorOption,
 } from "./selector_options.ts";
+import { goToDefinitionOption, isVariableNamePath } from "./local_variable.ts";
+import { listItemSelectorOptions } from "./list_items.ts";
 
 export type UseSelectorMenuParams = {
   readonly mode: "expression" | "type";
@@ -98,7 +98,20 @@ export function useSelectorMenu({
         layoutRoot,
         path,
       )?.scopeVariables;
-      return buildSelectorOptions({ mode, scopeVariables, partOptions });
+      const options = buildSelectorOptions({
+        mode,
+        scopeVariables,
+        partOptions,
+      });
+      if (mode === "type") {
+        return options;
+      }
+      // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す
+      return [
+        ...goToDefinitionOption(expression, path),
+        ...listItemSelectorOptions(expression, path),
+        ...options,
+      ];
     },
     [expression, layoutRoot, mode, partOptions, patternVariants],
   );
@@ -140,12 +153,8 @@ export function useSelectorMenu({
     ): void => {
       setSelectedPath(path);
       setInlineEdit(true);
-      // 関数の引数名・match で束縛する変数の名前はその場で名前を変えるだけで, 置き換える式の選択肢は無い
-      if (
-        !editable ||
-        functionParameterIndex(path) !== null ||
-        matchArmVariableIndex(path) !== null
-      ) {
+      // 関数の引数名・let や match で束縛する変数の名前はその場で名前を変えるだけで, 置き換える式の選択肢は無い
+      if (!editable || isVariableNamePath(path)) {
         setIsMenuOpen(false);
         return;
       }

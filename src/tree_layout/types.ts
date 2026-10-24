@@ -7,7 +7,7 @@ export type NodeKind =
   | "literalString"
   | "literalBoolean"
   | "identifier"
-  /** 関数の引数名・match で束縛する変数の名前. 選ぶとその場で名前を変えられる */
+  /** 関数の引数名・let や match で束縛する変数の名前. 選ぶとその場で名前を変えられる */
   | "parameterName"
   | "keyword"
   /** `=` (let の束縛) や `→` (関数の型) などの記号 */
@@ -25,6 +25,8 @@ export type PathStep =
   | "else"
   | "letValue"
   | { readonly kind: "letBindingValue"; readonly index: number }
+  /** let の i 番目の束縛の変数名. 式ではない */
+  | { readonly kind: "letBindingName"; readonly index: number }
   | "letBody"
   | { readonly kind: "listItemValue"; readonly index: number }
   | { readonly kind: "recordItemValue"; readonly index: number }

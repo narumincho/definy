@@ -11,10 +11,8 @@ import { computeLayout, expressionToLayoutNode } from "./engine.ts";
 import {
   applySelection,
   clearExpressionAtPath,
-  functionParameterIndex,
   functionParameterTypes,
   partParameterNames,
-  renameFunctionParameter,
   setNumberValue,
   setStringValue,
   variableParameterNames,
@@ -46,12 +44,17 @@ import { findTypeErrorPath } from "./type_error_location.ts";
 import {
   applyPatternSelection,
   isMatchPatternPath,
-  matchArmVariableIndex,
   patternVariantsFromTypeAst,
   probeMatchTargetType,
-  renameMatchArmVariable,
   type PatternVariant,
 } from "./match_pattern.ts";
+import {
+  findVariableDefinitionPath,
+  GO_TO_DEFINITION,
+  isVariableNamePath,
+  renameVariableAt,
+} from "./local_variable.ts";
+import { applyListAction, isListAction } from "./list_items.ts";
 import { type DefinyValue } from "../stage1_compiler.ts";
 
 /** 式にマウスを置いてからホバーの表示を出すまでの時間 */
@@ -174,10 +177,7 @@ export function ExpressionTreeEditor({
       return;
     }
     // 名前は式ではないので期待する型は無い
-    if (
-      functionParameterIndex(selectedPath) !== null ||
-      matchArmVariableIndex(selectedPath) !== null
-    ) {
+    if (isVariableNamePath(selectedPath)) {
       return;
     }
     const isPattern = isMatchPatternPath(selectedPath);
@@ -365,13 +365,11 @@ export function ExpressionTreeEditor({
   const handleChangeString = useCallback(
     (path: ReadonlyArray<PathStep>, value: string) => {
       if (!onChange) return;
-      // 関数の引数名・match で束縛する変数の名前の入力欄も文字列と同じ入力欄を使う
+      // 関数の引数名・let や match で束縛する変数の名前の入力欄も文字列と同じ入力欄を使う
       onChange(
-        functionParameterIndex(path) !== null
-          ? renameFunctionParameter(expression, path, value)
-          : matchArmVariableIndex(path) !== null
-            ? renameMatchArmVariable(expression, path, value)
-            : setStringValue(expression, path, value),
+        isVariableNamePath(path)
+          ? renameVariableAt(expression, path, value)
+          : setStringValue(expression, path, value),
       );
     },
     [expression, onChange],
@@ -382,13 +380,12 @@ export function ExpressionTreeEditor({
    */
   const handleClear = useCallback(
     (path: ReadonlyArray<PathStep>): void => {
-      // 関数の引数名・match のパターンは式ではないので未入力にできない
+      // 変数の名前・match のパターンは式ではないので未入力にできない
       if (
         !onChange ||
         !editable ||
-        functionParameterIndex(path) !== null ||
-        isMatchPatternPath(path) ||
-        matchArmVariableIndex(path) !== null
+        isVariableNamePath(path) ||
+        isMatchPatternPath(path)
       ) {
         return;
       }
@@ -396,6 +393,12 @@ export function ExpressionTreeEditor({
       menu.openMenu(path, "");
     },
     [editable, menu, onChange, expression],
+  );
+
+  const findDefinition = useCallback(
+    (path: ReadonlyArray<PathStep>) =>
+      findVariableDefinitionPath(expression, path),
+    [expression],
   );
 
   const keyboard = useTreeKeyboard({
@@ -408,11 +411,29 @@ export function ExpressionTreeEditor({
     closeMenu: menu.closeMenu,
     handleClear,
     setInlineEdit,
+    findDefinition,
   });
 
   const applyOption = useCallback(
     (optionValue: string): void => {
       if (!selectedPath || !onChange) return;
+      if (optionValue === GO_TO_DEFINITION) {
+        const definition = findVariableDefinitionPath(expression, selectedPath);
+        if (definition !== null) {
+          keyboard.selectInTree(definition);
+        }
+        return;
+      }
+      if (isListAction(optionValue)) {
+        const result = applyListAction(expression, selectedPath, optionValue);
+        if (result !== null) {
+          onChange(result.expression);
+          keyboard.selectInTree(result.selectedPath);
+        } else {
+          keyboard.returnToTree();
+        }
+        return;
+      }
       // 現在と同じ選択肢を選び直しても式を作り直さない (中身が初期値に戻ってしまうため)
       if (optionValue !== menu.currentOptionValue) {
         onChange(

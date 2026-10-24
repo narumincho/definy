@@ -42,11 +42,12 @@ export function tryBuildFunctionNode(
           bindingPath,
           { ...context, scopeVariables: nextScopeVars },
         );
+        // 変数名を選ぶとその場で名前を変えられる (関数の引数名と同じ)
         const nameChild: LayoutNode = {
           id: `${idPrefix}.b_${idx}.name`,
-          path: bindingPath,
+          path: childPath(currentPath, { kind: "letBindingName", index: idx }),
           label: varName,
-          kind: "identifier",
+          kind: "parameterName",
           children: [],
           computedWidth: 0,
           computedHeight: 0,

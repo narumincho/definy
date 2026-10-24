@@ -22,6 +22,10 @@ export type UseTreeKeyboardParams = {
   readonly closeMenu: () => void;
   readonly handleClear: (path: ReadonlyArray<PathStep>) => void;
   readonly setInlineEdit: (inline: boolean) => void;
+  /** 選んだ式が参照する変数の定義 (変数名) のパス. F12 で移動する. 無ければ `null` */
+  readonly findDefinition: (
+    path: ReadonlyArray<PathStep>,
+  ) => ReadonlyArray<PathStep> | null;
 };
 
 export type TreeKeyboardOperations = {
@@ -29,6 +33,8 @@ export type TreeKeyboardOperations = {
   readonly returnToTree: () => void;
   readonly handleContainerKeyDown: (e: KeyboardEvent<HTMLDivElement>) => void;
   readonly scrollNodeIntoView: (path: ReadonlyArray<PathStep>) => void;
+  /** メニュー・入力欄を閉じて `path` を選び, ツリーにフォーカスを戻して見える位置までスクロールする */
+  readonly selectInTree: (path: ReadonlyArray<PathStep>) => void;
 };
 
 export function useTreeKeyboard({
@@ -41,6 +47,7 @@ export function useTreeKeyboard({
   closeMenu,
   handleClear,
   setInlineEdit,
+  findDefinition,
 }: UseTreeKeyboardParams): TreeKeyboardOperations {
   const focusContainer = useCallback((): void => {
     containerRef.current?.focus({ preventScroll: true });
@@ -61,6 +68,15 @@ export function useTreeKeyboard({
         ?.scrollIntoView({ block: "nearest", inline: "nearest" });
     },
     [containerRef, nodeIndex],
+  );
+
+  const selectInTree = useCallback(
+    (path: ReadonlyArray<PathStep>): void => {
+      returnToTree();
+      setSelectedPath(path);
+      scrollNodeIntoView(path);
+    },
+    [returnToTree, scrollNodeIntoView, setSelectedPath],
   );
 
   const collectNavNodes = useCallback((): ReadonlyArray<NavNode> => {
@@ -128,6 +144,15 @@ export function useTreeKeyboard({
         }
         return;
       }
+      if (e.key === "F12") {
+        e.preventDefault();
+        const definition =
+          selectedPath === null ? null : findDefinition(selectedPath);
+        if (definition !== null) {
+          selectInTree(definition);
+        }
+        return;
+      }
       if ((e.key === "Delete" || e.key === "Backspace") && selectedPath) {
         e.preventDefault();
         handleClear(selectedPath);
@@ -158,12 +183,14 @@ export function useTreeKeyboard({
       closeMenu,
       collectNavNodes,
       exitTree,
+      findDefinition,
       handleClear,
       nodeIndex,
       onExit,
       openMenu,
       returnToTree,
       scrollNodeIntoView,
+      selectInTree,
       selectedPath,
       setInlineEdit,
       setSelectedPath,
@@ -175,5 +202,6 @@ export function useTreeKeyboard({
     returnToTree,
     handleContainerKeyDown,
     scrollNodeIntoView,
+    selectInTree,
   };
 }
