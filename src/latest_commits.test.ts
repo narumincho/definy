@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  latestOwnCommitHash,
   pickLatestCommitPerModule,
   type TimedModuleCommit,
 } from "./latest_commits.ts";
@@ -45,5 +46,24 @@ describe("pickLatestCommitPerModule", () => {
 
     const result = pickLatestCommitPerModule(commits);
     expect(result.get("modA")?.id).toBe("first");
+  });
+});
+
+describe("latestOwnCommitHash", () => {
+  const commits = [
+    { accountId: "alice", moduleName: "sample", eventHash: "a1", timeMs: 100 },
+    { accountId: "alice", moduleName: "sample", eventHash: "a2", timeMs: 200 },
+    // 他のアカウントの同じ名前のモジュールは別のモジュール
+    { accountId: "system", moduleName: "sample", eventHash: "s1", timeMs: 300 },
+    { accountId: "alice", moduleName: "other", eventHash: "o1", timeMs: 400 },
+  ];
+
+  it("そのアカウントのそのモジュールの最新のコミットを返す", () => {
+    expect(latestOwnCommitHash(commits, "alice", "sample")).toBe("a2");
+    expect(latestOwnCommitHash(commits, "system", "sample")).toBe("s1");
+  });
+
+  it("まだコミットしていなければ null", () => {
+    expect(latestOwnCommitHash(commits, "bob", "sample")).toBeNull();
   });
 });

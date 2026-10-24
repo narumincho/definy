@@ -132,6 +132,7 @@ async function commitParts(
 }
 
 type CachedCommit = {
+  readonly eventHash: string;
   readonly moduleId: string;
   readonly timeMs: number;
   /** 型環境に使う形のパーツ. 式は型パーツとコンパイラ組み込みのものだけ持つ (メモリを節約する) */
@@ -165,6 +166,7 @@ async function decodeCommit(item: {
       commit.moduleName,
     );
     result = {
+      eventHash: item.eventHash,
       moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
       timeMs: decoded.meta.timeMs,
       // 型パーツの宣言式と, コンパイラ組み込みの式 (小さい) だけ持つ
@@ -180,16 +182,11 @@ async function decodeCommit(item: {
   return result;
 }
 
-/**
- * ストアの署名の正しいモジュールコミットから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
- * 型パーツ以外の式は持たない
- */
-async function loadLatestParts(
+/** ストアの署名の正しいモジュールコミットの, モジュールごとに最新のもの (キーはモジュール ID) */
+async function loadLatestCommits(
   store: PartStoreReader,
   env: Env | undefined,
-): Promise<
-  ReadonlyMap<string, LatestPart & { readonly contentHash: string | null }>
-> {
+): Promise<ReadonlyMap<string, CachedCommit>> {
   const commits: Array<CachedCommit> = [];
   for (let offset = 0; ; offset += EVENTS_PAGE_SIZE) {
     const page = await store.getEvents(
@@ -206,7 +203,33 @@ async function loadLatestParts(
       break;
     }
   }
-  const latestCommits = pickLatestCommitPerModule(commits);
+  return pickLatestCommitPerModule(commits);
+}
+
+/** モジュール (`moduleIdBytes`) の最新のコミットのイベントハッシュ. コミットが無ければ `null` */
+export async function latestCommitHashOf(
+  moduleIdBytes: Uint8Array,
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<string | null> {
+  return (
+    (await loadLatestCommits(store, env)).get(
+      bytesToUrlSafeBase64NoPad(moduleIdBytes),
+    )?.eventHash ?? null
+  );
+}
+
+/**
+ * ストアの署名の正しいモジュールコミットから, モジュールごとに最新のコミットのパーツを集める (キーはパーツ ID).
+ * 型パーツ以外の式は持たない
+ */
+async function loadLatestParts(
+  store: PartStoreReader,
+  env: Env | undefined,
+): Promise<
+  ReadonlyMap<string, LatestPart & { readonly contentHash: string | null }>
+> {
+  const latestCommits = await loadLatestCommits(store, env);
   const parts = new Map<
     string,
     LatestPart & { readonly contentHash: string | null }

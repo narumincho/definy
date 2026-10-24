@@ -115773,6 +115773,1243 @@
           }
         }
       }
+    },
+    {
+      "name": "event-rejection",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Why a signed event is rejected (core.check-event). See docs/event.md"
+        },
+        {
+          "language": "ja",
+          "text": "署名済みイベントを受け付けない理由 (core.check-event). docs/event.md を参照"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "account_already_created",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "account_not_created",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "empty_account_name",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "empty_module_name",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "parent_commit_mismatch",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "empty_part_name",
+            "payload_type": {
+              "#none": null
+            }
+          },
+          {
+            "tag": "duplicate_part_name",
+            "payload_type": {
+              "#some": {
+                "#type_string": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "event-check-state",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "What the server knows before accepting an event: whether the account has been created, and the latest commit of the module the event commits to"
+        },
+        {
+          "language": "ja",
+          "text": "イベントを受け付ける前にサーバーが知っていること: アカウントを作ったか, コミット先のモジュールの最新のコミット"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "account_created",
+            "value": {
+              "#type_boolean": null
+            }
+          },
+          {
+            "key": "latest_commit_hash",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "option-string-same",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "a",
+              "type": {
+                "#union": [
+                  {
+                    "tag": "none",
+                    "payload_type": {
+                      "#none": null
+                    }
+                  },
+                  {
+                    "tag": "some",
+                    "payload_type": {
+                      "#some": {
+                        "#string": null
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "#union": [
+                  {
+                    "tag": "none",
+                    "payload_type": {
+                      "#none": null
+                    }
+                  },
+                  {
+                    "tag": "some",
+                    "payload_type": {
+                      "#some": {
+                        "#string": null
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          "return_type": {
+            "#boolean": null
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Whether both are none, or both are some with the same string"
+        },
+        {
+          "language": "ja",
+          "text": "どちらも none か, どちらも some で同じ文字列か"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "a"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "b"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "none",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "none",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#boolean": true
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "variable_id": 3,
+                          "variable_name": "sb",
+                          "body": {
+                            "#boolean": false
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "some",
+                  "variable_id": 2,
+                  "variable_name": "sa",
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "none",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#boolean": false
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "variable_id": 4,
+                          "variable_name": "sb",
+                          "body": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.equal"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "check-event-part-names",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "parts",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#reference": {
+                      "part_hash": {
+                        "$part": "core.module-commit-part"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "seen",
+              "type": {
+                "#list": {
+                  "item_type": {
+                    "#string": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "index",
+              "type": {
+                "#number": null
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-rejection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Rejects empty or duplicated part names in a module commit, from index. seen is the names before index"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのコミットのパーツ名が空・重複していないかを index から調べる. seen は index より前の名前"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "parts"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "seen"
+            },
+            {
+              "parameter_id": 2,
+              "parameter_name": "index"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.less-than-or-equal"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-length"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "value",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "arms": [
+                {
+                  "tag": "true",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#list": []
+                  }
+                },
+                {
+                  "tag": "false",
+                  "variable_id": -1,
+                  "variable_name": "",
+                  "body": {
+                    "#let": {
+                      "variable_id": 3,
+                      "variable_name": "name",
+                      "value": {
+                        "#record_get": {
+                          "record": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-get"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "list",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 0
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "index",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "key": "name"
+                        }
+                      },
+                      "body": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.list-concat"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#match": {
+                                  "target": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.equal"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.string-length"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "value",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#number": 0
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "arms": [
+                                    {
+                                      "tag": "true",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#list": [
+                                          {
+                                            "#variant": {
+                                              "tag": "empty_part_name",
+                                              "payload": {
+                                                "#none": null
+                                              },
+                                              "type_part": {
+                                                "#some": {
+                                                  "$part": "core.event-rejection"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "tag": "false",
+                                      "variable_id": -1,
+                                      "variable_name": "",
+                                      "body": {
+                                        "#match": {
+                                          "target": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.list-contains-string"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "list",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 1
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "target",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 3
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#number": 0
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "arms": [
+                                            {
+                                              "tag": "true",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#list": [
+                                                  {
+                                                    "#variant": {
+                                                      "tag": "duplicate_part_name",
+                                                      "payload": {
+                                                        "#some": {
+                                                          "#variable": {
+                                                            "variable_id": 3
+                                                          }
+                                                        }
+                                                      },
+                                                      "type_part": {
+                                                        "#some": {
+                                                          "$part": "core.event-rejection"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "tag": "false",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#list": []
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.check-event-part-names"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "parts",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 0
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "seen",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.list-append"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "list",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "item",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "index",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.plus"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 2
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 1
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "check-event",
+      "part_type": {
+        "#function": {
+          "parameters": [
+            {
+              "name": "content",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-content"
+                  }
+                }
+              }
+            },
+            {
+              "name": "state",
+              "type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-check-state"
+                  }
+                }
+              }
+            }
+          ],
+          "return_type": {
+            "#list": {
+              "item_type": {
+                "#reference": {
+                  "part_hash": {
+                    "$part": "core.event-rejection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Rules for accepting a signed event (after the signature is verified). Returns the reasons to reject it (empty means accept). The server runs this on SubmitEvent. See docs/event.md"
+        },
+        {
+          "language": "ja",
+          "text": "署名を確かめた後のイベントを受け付けるかの規則. 受け付けない理由を返す (空なら受け付ける). サーバーの SubmitEvent が実行する. docs/event.md を参照"
+        }
+      ],
+      "expression": {
+        "#function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "content"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "state"
+            }
+          ],
+          "body": {
+            "#match": {
+              "target": {
+                "#variable": {
+                  "variable_id": 0
+                }
+              },
+              "arms": [
+                {
+                  "tag": "create_account",
+                  "variable_id": 2,
+                  "variable_name": "account",
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#record_get": {
+                          "record": {
+                            "#variable": {
+                              "variable_id": 1
+                            }
+                          },
+                          "key": "account_created"
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#list": [
+                              {
+                                "#variant": {
+                                  "tag": "account_already_created",
+                                  "payload": {
+                                    "#none": null
+                                  },
+                                  "type_part": {
+                                    "#some": {
+                                      "$part": "core.event-rejection"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.equal"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-length"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#record_get": {
+                                                  "record": {
+                                                    "#variable": {
+                                                      "variable_id": 2
+                                                    }
+                                                  },
+                                                  "key": "account_name"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#number": 0
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": [
+                                      {
+                                        "#variant": {
+                                          "tag": "empty_account_name",
+                                          "payload": {
+                                            "#none": null
+                                          },
+                                          "type_part": {
+                                            "#some": {
+                                              "$part": "core.event-rejection"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": []
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "module_commit",
+                  "variable_id": 3,
+                  "variable_name": "commit",
+                  "body": {
+                    "#call": {
+                      "function": {
+                        "#part_reference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.list-concat"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "#match": {
+                              "target": {
+                                "#record_get": {
+                                  "record": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  },
+                                  "key": "account_created"
+                                }
+                              },
+                              "arms": [
+                                {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": []
+                                  }
+                                },
+                                {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#list": [
+                                      {
+                                        "#variant": {
+                                          "tag": "account_not_created",
+                                          "payload": {
+                                            "#none": null
+                                          },
+                                          "type_part": {
+                                            "#some": {
+                                              "$part": "core.event-rejection"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.list-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "#match": {
+                                      "target": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.equal"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.string-length"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "value",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          },
+                                                          "key": "module_name"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "#number": 0
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "arms": [
+                                        {
+                                          "tag": "true",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": [
+                                              {
+                                                "#variant": {
+                                                  "tag": "empty_module_name",
+                                                  "payload": {
+                                                    "#none": null
+                                                  },
+                                                  "type_part": {
+                                                    "#some": {
+                                                      "$part": "core.event-rejection"
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        },
+                                        {
+                                          "tag": "false",
+                                          "variable_id": -1,
+                                          "variable_name": "",
+                                          "body": {
+                                            "#list": []
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "#call": {
+                                      "function": {
+                                        "#part_reference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.list-concat"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "#match": {
+                                              "target": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.option-string-same"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "a",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 3
+                                                            }
+                                                          },
+                                                          "key": "parent_commit_hash"
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "b",
+                                                      "value": {
+                                                        "#record_get": {
+                                                          "record": {
+                                                            "#variable": {
+                                                              "variable_id": 1
+                                                            }
+                                                          },
+                                                          "key": "latest_commit_hash"
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "tag": "true",
+                                                  "variable_id": -1,
+                                                  "variable_name": "",
+                                                  "body": {
+                                                    "#list": []
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "false",
+                                                  "variable_id": -1,
+                                                  "variable_name": "",
+                                                  "body": {
+                                                    "#list": [
+                                                      {
+                                                        "#variant": {
+                                                          "tag": "parent_commit_mismatch",
+                                                          "payload": {
+                                                            "#none": null
+                                                          },
+                                                          "type_part": {
+                                                            "#some": {
+                                                              "$part": "core.event-rejection"
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.check-event-part-names"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "parts",
+                                                  "value": {
+                                                    "#record_get": {
+                                                      "record": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      },
+                                                      "key": "parts"
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "seen",
+                                                  "value": {
+                                                    "#list": []
+                                                  }
+                                                },
+                                                {
+                                                  "name": "index",
+                                                  "value": {
+                                                    "#number": 0
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     }
   ]
 }

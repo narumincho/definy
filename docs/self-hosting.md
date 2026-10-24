@@ -139,7 +139,8 @@ Content-addressed storage は同一 hash・同一 bytes の再保存を成功扱
    capability-limited host API として公開し、 サーバーの純粋な業務ロジックから
    Definy へ移します（WASI 0.3 スタイルの能力注入設計仕様は
    [wasi-capability-io.md](wasi-capability-io.md)
-   を参照）。サービス自身のデプロイ・運用ブートストラップ構想（現在は Cloudflare Workers が対象）は
+   を参照）。イベントを受け付ける規則は definy 製の `core.check-event` にした ([event.md](event.md) の「受け付ける規則」)。
+   サービス自身のデプロイ・運用ブートストラップ構想（現在は Cloudflare Workers が対象）は
    [deployment-bootstrapping.md](deployment-bootstrapping.md)
    を参照。IO を持つサービス全体の移行は言語 runtime の拡張後です。
 

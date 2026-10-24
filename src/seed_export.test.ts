@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  createSignedAccountEvent,
   createSignedModuleCommitEvent,
   generateAccountCredentials,
   importAccountCredentials,
@@ -22,6 +23,7 @@ import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "../worker/index.ts";
 import { createSqliteD1Database } from "../worker/test_helpers.ts";
 import { loadTestSeedBundle } from "../worker/test_runtime.ts";
+import { latestCommitHashOf } from "../worker/type_check.ts";
 import type { Env, SeedBundle } from "../worker/types.ts";
 
 async function createTestServer(bundle: SeedBundle): Promise<{
@@ -109,6 +111,19 @@ describe("exportSeeds", () => {
 
       // 他アカウント (攻撃者/一般ユーザー) のコミットを作成
       const attackerCreds = await generateAccountCredentials("attacker");
+      const attackerAccountRes = await handleWorkerRequest(
+        new Request("https://definy.local/definy.v1.EventService/SubmitEvent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            signedEventBytes: (await createSignedAccountEvent(attackerCreds))
+              .signedEventBytes,
+          }),
+        }),
+        env,
+        store,
+      );
+      expect(attackerAccountRes.status).toBe(200);
       const attackerCommit = await createSignedModuleCommitEvent({
         credentials: attackerCreds,
         moduleName: "sample",
@@ -217,6 +232,12 @@ describe("exportSeeds", () => {
         moduleName: "sample",
         moduleDescription: currentSampleSeed.module_description,
         message: "Add test-new-sample-part referencing core.eval-ast",
+        // 親はシステムアカウントの sample の最新のコミット (seed のコミット)
+        parentCommitHash: await latestCommitHashOf(
+          await deriveModuleIdBytes(systemAccountBytes, "sample"),
+          store,
+          env,
+        ),
         parts: [...resolvedExistingParts, newPart],
       });
 
@@ -336,6 +357,14 @@ describe("exportSeeds", () => {
           { language: "en", text: "Sample with CAS content" },
         ],
         message: "Commit with CAS hydrated expression",
+        parentCommitHash: await latestCommitHashOf(
+          await deriveModuleIdBytes(
+            base64ToBytes(sysCreds.accountId),
+            "sample",
+          ),
+          store,
+          env,
+        ),
         parts: [
           {
             name: "cas-part",

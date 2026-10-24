@@ -11,6 +11,8 @@ import {
 } from "../working_changes_storage.ts";
 import { createSignedModuleCommitEvent, submitSignedEvent } from "../auth.ts";
 import type { DecodedPart } from "../cbor.ts";
+import { latestOwnCommitHash } from "../latest_commits.ts";
+import type { DecodedCommitEvent } from "./useEvents.ts";
 
 const STORAGE_KEY_CHANGES = "definy.working_changes.v4";
 
@@ -38,6 +40,8 @@ export type CommitWorkingChangesParams = {
 export type WorkingChangesParams = {
   readonly currentAccount: AccountState | null;
   readonly modules: ReadonlyArray<ModuleSnapshot>;
+  /** 署名の正しいモジュールのコミット. コミットの親 (自分のモジュールの最新のコミット) を決めるのに使う */
+  readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
   readonly refreshEvents: () => Promise<void>;
 };
 
@@ -59,6 +63,7 @@ export type WorkingChangesOperations = {
 export function useWorkingChanges({
   currentAccount,
   modules,
+  decodedCommits,
   refreshEvents,
 }: WorkingChangesParams): WorkingChangesOperations {
   const [workingChanges, setWorkingChanges] = useState<WorkingChanges>(() => ({
@@ -166,7 +171,18 @@ export function useWorkingChanges({
       if (partsList.length === 0) {
         throw new Error(`No parts found to commit for module '${moduleName}'`);
       }
-      const parentCommitHash = existingModule?.latestEventHash ?? null;
+      // 親は自分のアカウントのこのモジュールの最新のコミット. 他のアカウントの同じ名前のモジュールは
+      // サーバーでは別のモジュールなので親にしない (docs/event.md「受け付ける規則」)
+      const parentCommitHash = latestOwnCommitHash(
+        decodedCommits.map(({ event, commit }) => ({
+          accountId: event.accountId,
+          moduleName: commit.moduleName,
+          eventHash: event.eventHash,
+          timeMs: event.timeMs,
+        })),
+        currentAccount.accountId,
+        moduleName,
+      );
 
       const { signedEventBytes, eventHash } =
         await createSignedModuleCommitEvent({
@@ -200,7 +216,7 @@ export function useWorkingChanges({
       await refreshEvents();
       return eventHash;
     },
-    [currentAccount, buildCommitParts, refreshEvents],
+    [currentAccount, buildCommitParts, decodedCommits, refreshEvents],
   );
 
   return {
