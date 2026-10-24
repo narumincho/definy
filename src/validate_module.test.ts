@@ -1,7 +1,3 @@
-/**
- * definy 製の `core.validate-module` (モジュールの全パーツを, モジュールのパーツと外部のパーツから
- * `core.build-type-env` で作った型環境のもとで検査する) を stage1 でコンパイルして確かめる
- */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
@@ -9,17 +5,11 @@ import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
-import { list, record, string, variant } from "./self_hosted_ast.ts";
-import {
-  partTypeToSelfHostedAst,
-  typeDeclarationToSelfHostedAst,
-} from "./self_hosted_type_check.ts";
+import { literalExpression, variant } from "./definy_value.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
-  definyAstToSelfHostedAst,
   evaluateCompiledWasm,
-  partReferenceId,
 } from "./stage1_compiler.ts";
 
 const compiler = createStage1Compiler(
@@ -28,21 +18,18 @@ const compiler = createStage1Compiler(
 const accountBytes = await devSystemAccountBytes();
 const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
 
-async function partReference(name: string): Promise<{
-  readonly PartReference: { readonly part_definition_event_hash: unknown };
-}> {
-  return (await resolvePartPlaceholders(
-    { PartReference: { part_definition_event_hash: { $part: name } } },
+async function partReference(name: string): Promise<unknown> {
+  return await resolvePartPlaceholders(
+    { "#part_reference": { part_definition_event_hash: { $part: name } } },
     accountBytes,
-  )) as {
-    readonly PartReference: { readonly part_definition_event_hash: unknown };
-  };
+  );
 }
 
 const stdAbs = await partReference("std.abs");
-const stdAbsId = partReferenceId(
-  stdAbs.PartReference.part_definition_event_hash,
-);
+const stdAbsId = (await resolvePartPlaceholders(
+  { $part: "std.abs" },
+  accountBytes,
+)) as string;
 
 type TestPart = {
   readonly id: string;
@@ -50,20 +37,15 @@ type TestPart = {
   readonly expression: unknown;
 };
 
-/** `core.part-definition` の値を作る式 */
+/** `core.part-definition` の値 */
 function partDefinition(part: TestPart): unknown {
-  return record([
-    ["name", string(part.id)],
-    ["description", string("")],
-    ["part_definition_event_hash", string(part.id)],
-    ["part_type", partTypeToSelfHostedAst(part.partType)],
-    [
-      "expression",
-      part.partType === "type"
-        ? typeDeclarationToSelfHostedAst(part.expression)
-        : definyAstToSelfHostedAst(part.expression),
-    ],
-  ]);
+  return {
+    name: part.id,
+    description: "",
+    part_definition_event_hash: part.id,
+    part_type: part.partType,
+    expression: part.expression,
+  };
 }
 
 /** `core.validate-module(mod_def, external)` を評価する */
@@ -72,27 +54,25 @@ async function validateModule(
   external: ReadonlyArray<{ readonly id: string; readonly partType: unknown }>,
 ): Promise<unknown> {
   const expression = {
-    Call: {
+    "#call": {
       function: await partReference("core.validate-module"),
       arguments: [
         {
           name: "mod_def",
-          value: record([
-            ["name", string("test")],
-            ["description", string("")],
-            ["parts", list(parts.map(partDefinition))],
-          ]),
+          value: literalExpression({
+            name: "test",
+            description: "",
+            parts: parts.map(partDefinition),
+          }),
         },
         {
           name: "external",
-          value: list(
-            external.map((entry) =>
-              record([
-                ["part_definition_event_hash", string(entry.id)],
-                ["part_type", partTypeToSelfHostedAst(entry.partType)],
-                ["type_declaration", variant("none")],
-              ]),
-            ),
+          value: literalExpression(
+            external.map((entry) => ({
+              part_definition_event_hash: entry.id,
+              part_type: entry.partType,
+              type_declaration: variant("none"),
+            })),
           ),
         },
       ],
@@ -108,18 +88,18 @@ async function validateModule(
 
 const callAbs: TestPart = {
   id: "use-abs",
-  partType: "number",
+  partType: { "#number": null },
   expression: {
-    Call: {
+    "#call": {
       function: stdAbs,
-      arguments: [{ name: "x", value: { Number: { value: -3 } } }],
+      arguments: [{ name: "x", value: { "#number": -3 } }],
     },
   },
 };
 const stdAbsType = {
-  function: {
-    parameters: [{ name: "x", type: "number" }],
-    return_type: "number",
+  "#function": {
+    parameters: [{ name: "x", type: { "#number": null } }],
+    return_type: { "#number": null },
   },
 };
 
@@ -141,9 +121,9 @@ describe("core.validate-module", () => {
           {
             ...callAbs,
             expression: {
-              Call: {
+              "#call": {
                 function: stdAbs,
-                arguments: [{ name: "x", value: { String: { value: "a" } } }],
+                arguments: [{ name: "x", value: { "#string": "a" } }],
               },
             },
           },
@@ -156,21 +136,21 @@ describe("core.validate-module", () => {
   it("モジュールの型パーツの宣言した型で検査する", async () => {
     const point: TestPart = {
       id: "point",
-      partType: "type",
+      partType: { "#type": null },
       expression: {
-        TypeLiteral: { items: [{ key: "x", value: "TypeNumber" }] },
+        "#type_record": [{ key: "x", value: { "#type_number": null } }],
       },
     };
     const origin = (value: unknown): TestPart => ({
       id: "origin",
-      partType: { type_part: "point" },
-      expression: { TypeLiteral: { items: [{ key: "x", value }] } },
+      partType: { "#reference": { part_hash: "point" } },
+      expression: { "#record": [{ key: "x", value }] },
     });
-    expect(
-      await validateModule([point, origin({ Number: { value: 0 } })], []),
-    ).toBe(true);
-    expect(
-      await validateModule([point, origin({ String: { value: "0" } })], []),
-    ).toBe(false);
+    expect(await validateModule([point, origin({ "#number": 0 })], [])).toBe(
+      true,
+    );
+    expect(await validateModule([point, origin({ "#string": "0" })], [])).toBe(
+      false,
+    );
   });
 });

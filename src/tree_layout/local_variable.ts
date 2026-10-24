@@ -14,6 +14,15 @@ import {
 } from "./match_pattern.ts";
 import type { SelectorOption } from "./selector_options.ts";
 import type { PathStep } from "./types.ts";
+import { field, variantPayload } from "../definy_value.ts";
+import {
+  armBindsVariable,
+  callOf,
+  letChain,
+  letChainOf,
+  matchOf,
+  variableIdOf,
+} from "./expression.ts";
 
 /** `path` の最後が let の束縛の変数名 ({@link PathStep} の `letBindingName`) なら, その束縛の番号 */
 export function letBindingNameIndex(
@@ -48,22 +57,16 @@ export function renameLetBinding(
     return expr;
   }
   return updateExpressionAtPath(expr, path.slice(0, -1), (target) => {
-    const letNode = (target as { readonly Let?: unknown } | null)?.Let as
-      | {
-          readonly bindings?: ReadonlyArray<Readonly<Record<string, unknown>>>;
-        }
-      | undefined;
-    if (letNode === undefined || !Array.isArray(letNode.bindings)) {
+    const chain = letChainOf(target);
+    if (chain === undefined) {
       return target;
     }
-    return {
-      Let: {
-        ...letNode,
-        bindings: letNode.bindings.map((binding, i) =>
-          i === index ? { ...binding, variable_name: name } : binding,
-        ),
-      },
-    };
+    return letChain(
+      chain.bindings.map((binding, i) =>
+        i === index ? { ...binding, variable_name: name } : binding,
+      ),
+      chain.body,
+    );
   });
 }
 
@@ -85,18 +88,6 @@ export function renameVariableAt(
   return expr;
 }
 
-function variableIdOf(value: unknown): number | null {
-  const raw = (value as { readonly Variable?: unknown } | null)?.Variable;
-  if (raw === undefined) {
-    return null;
-  }
-  const id =
-    typeof raw === "number"
-      ? raw
-      : Number((raw as { readonly variable_id?: unknown } | null)?.variable_id);
-  return Number.isInteger(id) ? id : null;
-}
-
 /**
  * その位置の式が参照する変数の ID. 変数そのもののほか, 関数型の変数の呼び出し (`f(x: 1)`) も変数を参照しているとみなす
  */
@@ -105,10 +96,8 @@ export function referencedVariableId(
   path: ReadonlyArray<PathStep>,
 ): number | null {
   const target = getExpressionAtPath(expr, path);
-  const callee = (
-    target as { readonly Call?: { readonly function?: unknown } } | null
-  )?.Call?.function;
-  return variableIdOf(callee !== undefined ? callee : target);
+  const call = callOf(target);
+  return variableIdOf(call !== undefined ? call.callee : target);
 }
 
 /**
@@ -129,47 +118,33 @@ function definitionsInScope(
       continue;
     }
     const prefix = path.slice(0, depth);
-    const node = getExpressionAtPath(expr, prefix) as Record<
-      string,
-      unknown
-    > | null;
-    if (node === null || typeof node !== "object") {
-      continue;
-    }
-    if ("Let" in node) {
-      const bindings = (node.Let as { readonly bindings?: unknown } | null)
-        ?.bindings;
-      if (!Array.isArray(bindings)) {
-        continue;
-      }
+    const node = getExpressionAtPath(expr, prefix);
+    const chain = letChainOf(node);
+    const fn = variantPayload(node, "function");
+    const match = matchOf(node);
+    if (chain !== undefined) {
       // 束縛の値からは, それより前の束縛を参照できる
       const count =
         step === "letBody"
-          ? bindings.length
+          ? chain.bindings.length
           : typeof step === "object" && step.kind === "letBindingValue"
             ? step.index
             : 0;
-      for (const [index, binding] of bindings.slice(0, count).entries()) {
-        const id = Number(
-          (binding as { readonly variable_id?: unknown } | null)?.variable_id,
-        );
-        if (Number.isInteger(id)) {
-          definitions.set(id, [...prefix, { kind: "letBindingName", index }]);
+      for (const [index, binding] of chain.bindings.slice(0, count).entries()) {
+        if (Number.isInteger(binding.variable_id)) {
+          definitions.set(binding.variable_id, [
+            ...prefix,
+            { kind: "letBindingName", index },
+          ]);
         }
       }
-    } else if ("Function" in node && step === "functionBody") {
-      const parameters = (
-        node.Function as { readonly parameters?: unknown } | null
-      )?.parameters;
+    } else if (fn !== undefined && step === "functionBody") {
+      const parameters = field(fn, "parameters");
       for (const [index, parameter] of (Array.isArray(parameters)
         ? parameters
         : []
       ).entries()) {
-        const p = parameter as {
-          readonly parameter_id?: unknown;
-          readonly variable_id?: unknown;
-        } | null;
-        const id = Number(p?.parameter_id ?? p?.variable_id);
+        const id = Number(field(parameter, "parameter_id"));
         if (Number.isInteger(id)) {
           definitions.set(id, [
             ...prefix,
@@ -178,14 +153,12 @@ function definitionsInScope(
         }
       }
     } else if (
-      "Match" in node &&
+      match !== undefined &&
       typeof step === "object" &&
       step.kind === "matchArmBody"
     ) {
-      const arm = (
-        node.Match as { readonly arms?: ReadonlyArray<unknown> } | null
-      )?.arms?.[step.index] as { readonly variable_id?: unknown } | undefined;
-      if (typeof arm?.variable_id === "number") {
+      const arm = match.arms[step.index];
+      if (arm !== undefined && armBindsVariable(arm)) {
         definitions.set(arm.variable_id, [
           ...prefix,
           { kind: "matchArmVariable", index: step.index },

@@ -106,7 +106,7 @@ describe("buildSelectorOptions and resolveCurrentOptionValue", () => {
 
   it("resolves current option value for literals and types", () => {
     const val = resolveCurrentOptionValue({
-      expression: { Number: { value: 42 } },
+      expression: { "#number": 42 },
       path: [],
       options: [option("expr:number", "number")],
       mode: "expression",

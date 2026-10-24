@@ -1,4 +1,6 @@
 import type { LayoutNode, PathStep } from "../types.ts";
+import { variantPayload } from "../../definy_value.ts";
+import { callOf, letChainOf } from "../expression.ts";
 import {
   type BuildLayoutNodeFn,
   childPath,
@@ -6,97 +8,50 @@ import {
 } from "./types.ts";
 
 export function tryBuildFunctionNode(
-  node: Record<string, unknown>,
+  node: unknown,
   idPrefix: string,
   currentPath: ReadonlyArray<PathStep>,
   context: ScopeContext,
   buildLayoutNode: BuildLayoutNodeFn,
 ): LayoutNode | null {
-  if ("Let" in node) {
-    const letNode = node.Let as {
-      readonly bindings?: ReadonlyArray<{
-        readonly variable_id?: unknown;
-        readonly variable_name?: unknown;
-        readonly value?: unknown;
-      }>;
-      readonly variable_id?: unknown;
-      readonly variable_name?: unknown;
-      readonly value?: unknown;
-      readonly body?: unknown;
-    };
-
-    let nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
+  const letChainNode = letChainOf(node);
+  if (letChainNode !== undefined) {
+    const nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
     const bindingNodes: LayoutNode[] = [];
 
-    if (Array.isArray(letNode.bindings)) {
-      for (const [idx, b] of letNode.bindings.entries()) {
-        const varId = Number(b.variable_id ?? 0);
-        const varName = String(b.variable_name ?? `v${varId}`);
-        const bindingPath = childPath(currentPath, {
-          kind: "letBindingValue",
-          index: idx,
-        });
-        const valChild = buildLayoutNode(
-          b.value,
-          `${idPrefix}.b_${idx}.val`,
-          bindingPath,
-          { ...context, scopeVariables: nextScopeVars },
-        );
-        // 変数名を選ぶとその場で名前を変えられる (関数の引数名と同じ)
-        const nameChild: LayoutNode = {
-          id: `${idPrefix}.b_${idx}.name`,
-          path: childPath(currentPath, { kind: "letBindingName", index: idx }),
-          label: varName,
-          kind: "parameterName",
-          children: [],
-          computedWidth: 0,
-          computedHeight: 0,
-          layoutMode: "inline",
-        };
-        bindingNodes.push({
-          id: `${idPrefix}.b_${idx}`,
-          path: bindingPath,
-          label: "",
-          kind: "group",
-          children: [
-            nameChild,
-            letEqualSign(`${idPrefix}.b_${idx}.eq`, bindingPath),
-            valChild,
-          ],
-          computedWidth: 0,
-          computedHeight: 0,
-          layoutMode: "inline",
-        });
-        nextScopeVars.set(varId, varName);
-      }
-    } else if (letNode.value !== undefined) {
-      const varId = Number(letNode.variable_id ?? 0);
-      const varName = String(letNode.variable_name ?? `v${varId}`);
-      const bindingPath = childPath(currentPath, "letValue");
+    for (const [idx, b] of letChainNode.bindings.entries()) {
+      const varId = b.variable_id;
+      const varName =
+        b.variable_name.length > 0 ? b.variable_name : `v${varId}`;
+      const bindingPath = childPath(currentPath, {
+        kind: "letBindingValue",
+        index: idx,
+      });
       const valChild = buildLayoutNode(
-        letNode.value,
-        `${idPrefix}.b_0.val`,
+        b.value,
+        `${idPrefix}.b_${idx}.val`,
         bindingPath,
-        context,
+        { ...context, scopeVariables: nextScopeVars },
       );
+      // 変数名を選ぶとその場で名前を変えられる (関数の引数名と同じ)
       const nameChild: LayoutNode = {
-        id: `${idPrefix}.b_0.name`,
-        path: bindingPath,
+        id: `${idPrefix}.b_${idx}.name`,
+        path: childPath(currentPath, { kind: "letBindingName", index: idx }),
         label: varName,
-        kind: "identifier",
+        kind: "parameterName",
         children: [],
         computedWidth: 0,
         computedHeight: 0,
         layoutMode: "inline",
       };
       bindingNodes.push({
-        id: `${idPrefix}.b_0`,
+        id: `${idPrefix}.b_${idx}`,
         path: bindingPath,
         label: "",
         kind: "group",
         children: [
           nameChild,
-          letEqualSign(`${idPrefix}.b_0.eq`, bindingPath),
+          letEqualSign(`${idPrefix}.b_${idx}.eq`, bindingPath),
           valChild,
         ],
         computedWidth: 0,
@@ -107,7 +62,7 @@ export function tryBuildFunctionNode(
     }
 
     const bodyChild = buildLayoutNode(
-      letNode.body,
+      letChainNode.body,
       `${idPrefix}.body`,
       childPath(currentPath, "letBody"),
       { ...context, scopeVariables: nextScopeVars },
@@ -126,21 +81,21 @@ export function tryBuildFunctionNode(
     };
   }
 
-  if ("Function" in node) {
-    const fnNode = node.Function as {
-      readonly parameters?: ReadonlyArray<{
-        readonly parameter_id?: unknown;
-        readonly parameter_name?: unknown;
-        readonly name?: unknown;
-        readonly variable_id?: unknown;
-      }>;
-      readonly body?: unknown;
-    };
+  const fnNode = variantPayload(node, "function") as
+    | {
+        readonly parameters?: ReadonlyArray<{
+          readonly parameter_id?: unknown;
+          readonly parameter_name?: unknown;
+        }>;
+        readonly body?: unknown;
+      }
+    | undefined;
+  if (fnNode !== undefined) {
     const params = fnNode.parameters ?? [];
-    let nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
+    const nextScopeVars = new Map<number, string>(context.scopeVariables ?? []);
     const paramChildren: ReadonlyArray<LayoutNode> = params.map((p, idx) => {
-      const pId = Number(p.parameter_id ?? p.variable_id ?? 0);
-      const pName = String(p.parameter_name ?? p.name ?? `arg${idx}`);
+      const pId = Number(p.parameter_id ?? 0);
+      const pName = String(p.parameter_name ?? `arg${idx}`);
       nextScopeVars.set(pId, pName);
       return {
         id: `${idPrefix}.param_${idx}`,
@@ -176,24 +131,21 @@ export function tryBuildFunctionNode(
     };
   }
 
-  if ("Call" in node) {
-    const callNode = node.Call as {
-      function?: unknown;
-      arguments?: ReadonlyArray<{ name?: unknown; value?: unknown }>;
-    };
+  const callNode = callOf(node);
+  if (callNode !== undefined) {
     // 呼び出す関数は式ではなく呼び出しの一部 (呼び出しは必ずパーツ名か関数型の引数で始まる).
     // 名前のノードは呼び出しと同じパスにして, 名前を選ぶと呼び出し全体を選ぶ
     const fnChild: LayoutNode = {
       id: `${idPrefix}.fn`,
       path: currentPath,
-      label: calleeLabel(callNode.function, idPrefix, context, buildLayoutNode),
+      label: calleeLabel(callNode.callee, idPrefix, context, buildLayoutNode),
       kind: "identifier",
       children: [],
       computedWidth: 0,
       computedHeight: 0,
       layoutMode: "inline",
     };
-    const args = callNode.arguments ?? [];
+    const args = callNode.arguments;
     const argChildren: ReadonlyArray<LayoutNode> = args.map((arg, idx) => {
       const argPath = childPath(currentPath, {
         kind: "callArgument",
@@ -265,14 +217,12 @@ function calleeLabel(
   context: ScopeContext,
   buildLayoutNode: BuildLayoutNodeFn,
 ): string {
-  const recordGet = (
-    callee as {
-      readonly RecordGet?: {
+  const recordGet = variantPayload(callee, "record_get") as
+    | {
         readonly record?: unknown;
         readonly key?: unknown;
-      };
-    } | null
-  )?.RecordGet;
+      }
+    | undefined;
   if (recordGet !== undefined) {
     return `${calleeLabel(recordGet.record, idPrefix, context, buildLayoutNode)}.${String(recordGet.key ?? "")}`;
   }

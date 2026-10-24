@@ -57,8 +57,8 @@ const SAMPLE_PARTS: ReadonlyArray<DecodedPart> = [
         text: "このパーツが見えていたら、ブラウザが不正な署名のイベントを受け入れている",
       },
     ],
-    partType: "number",
-    expression: { Number: { value: 42 } },
+    partType: { "#number": null },
+    expression: { "#number": 42 },
   },
 ];
 

@@ -381,7 +381,7 @@ test.describe("definy UI E2E", () => {
     await option("add-default").locator("button").first().click();
     await expect(pattern("_")).toHaveCount(1);
     await pattern("_").click();
-    await option("delete-default").locator("button").first().click();
+    await option("delete-arm").locator("button").first().click();
     await expect(pattern("_")).toHaveCount(0);
 
     // 束縛する変数の名前はその場で変えられ, 本体の変数の表示も変わる
@@ -578,7 +578,7 @@ test.describe("definy UI E2E", () => {
     const copied = await page.evaluate(() => navigator.clipboard.readText());
     expect(JSON.parse(copied)).toMatchObject({
       format: "definy.expression",
-      expression: { Number: { value: 5 } },
+      expression: { "#number": 5 },
     });
 
     // 11 に Ctrl+V で貼り付ける
@@ -873,13 +873,13 @@ test.describe("definy UI E2E", () => {
             partDefinitionEventHash: "sample.e2e-part",
             name: "e2e-part",
             description: [{ language: "en", text: "Part created in E2E test" }],
-            partType: "number",
-            expression: { Number: { value: 999 } },
+            partType: { "#number": null },
+            expression: { "#number": 999 },
           },
         },
       };
       localStorage.setItem(
-        "definy.working_changes.v3",
+        "definy.working_changes.v4",
         JSON.stringify(changes),
       );
     });

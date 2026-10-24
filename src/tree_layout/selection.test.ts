@@ -15,7 +15,7 @@ describe("selection helpers", () => {
     children: [
       {
         id: "child-1",
-        path: ["then"],
+        path: ["functionBody"],
         kind: "literalNumber",
         layoutMode: "inline",
         computedWidth: 40,
@@ -26,7 +26,7 @@ describe("selection helpers", () => {
       },
       {
         id: "child-2",
-        path: ["else"],
+        path: ["letBody"],
         kind: "literalNumber",
         layoutMode: "inline",
         computedWidth: 40,
@@ -41,18 +41,18 @@ describe("selection helpers", () => {
     const index = collectNodeIndex(sampleTree);
     expect(index).toEqual([
       { id: "root", path: [] },
-      { id: "child-1", path: ["then"] },
-      { id: "child-2", path: ["else"] },
+      { id: "child-1", path: ["functionBody"] },
+      { id: "child-2", path: ["letBody"] },
     ]);
   });
 
   it("findExpressionNode finds expression node with scopeVariables", () => {
-    const found = findExpressionNode(sampleTree, ["then"]);
+    const found = findExpressionNode(sampleTree, ["functionBody"]);
     expect(found?.id).toBe("child-1");
   });
 
   it("findExpressionNode returns null for non-expression node or missing path", () => {
-    const missing = findExpressionNode(sampleTree, ["condition"]);
+    const missing = findExpressionNode(sampleTree, ["matchTarget"]);
     expect(missing).toBeNull();
   });
 });

@@ -1,7 +1,8 @@
 /**
- * シークレットリテラル (`{ Secret: { id, label, allowed_url_prefixes } }`) を扱う.
+ * シークレットリテラル (`{"#secret": { id, label, allowed_url_prefixes }}`) を扱う.
  * 値はパーツに入れず, ブラウザに保存する (src/wasi_io_browser.ts, docs/secret.md)
  */
+import { variantOf } from "./definy_value.ts";
 import { collectPartReferenceIds } from "./stage1_compiler.ts";
 import type { PartSnapshot } from "./types.ts";
 
@@ -13,14 +14,11 @@ export type SecretLiteral = {
 
 /** 式がシークレットリテラルならその中身 */
 export function secretLiteralOf(expression: unknown): SecretLiteral | null {
-  if (
-    expression === null ||
-    typeof expression !== "object" ||
-    !("Secret" in expression)
-  ) {
+  const tagged = variantOf(expression);
+  if (tagged?.tag !== "secret") {
     return null;
   }
-  const secret = (expression as { readonly Secret: unknown }).Secret as {
+  const secret = tagged.payload as {
     readonly id?: unknown;
     readonly label?: unknown;
     readonly allowed_url_prefixes?: unknown;

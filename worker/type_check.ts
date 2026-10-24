@@ -14,8 +14,10 @@ import {
   sha256Bytes,
   toUint8Array,
 } from "../src/cbor.ts";
+import { variant } from "../src/definy_value.ts";
 import {
   checkModuleCommitParts,
+  isTypePartType,
   outcomeErrorMessage,
   type LatestPart,
 } from "../src/self_hosted_type_check.ts";
@@ -78,7 +80,7 @@ let builtinExpressionsPromise:
   Promise<ReadonlyMap<string, unknown>> | undefined;
 
 /**
- * コンパイラ組み込みの式 (`{"Compiler": "plus"}` など) の content hash から式を引く表.
+ * コンパイラ組み込みの式 (`{"#builtin": "plus"}` など) の content hash から式を引く表.
  * 型環境では組み込みのパーツの型を `builtin` にする (型チェッカーが呼び出しを名前で検査する) ので, パーツが組み込みかを知る必要がある.
  * CAS に預けた組み込みのパーツの式を読まなくても content hash で分かるようにする
  */
@@ -99,7 +101,7 @@ function builtinExpressionsByContentHash(): Promise<
           "shift_left",
           "shift_right",
         ].map(async (name): Promise<readonly [string, unknown]> => {
-          const expression = { Compiler: name };
+          const expression = variant("builtin", name);
           return [await expressionContentHashAsync(expression), expression];
         }),
       ),
@@ -186,7 +188,7 @@ async function decodeCommit(item: {
       timeMs: decoded.meta.timeMs,
       // 型パーツの宣言式と, コンパイラ組み込みの式 (小さい) だけ持つ
       parts: (await commitParts(commit, moduleIdBytes)).map((part) =>
-        part.partType === "type" ||
+        isTypePartType(part.partType) ||
         compilerBuiltinName(part.expression) !== undefined
           ? part
           : { ...part, expression: null },
@@ -298,7 +300,9 @@ export async function checkSubmittedModuleCommit(
     // 型環境で中身を使うのは型パーツの宣言式だけ
     latestParts.set(
       partId,
-      part.partType === "type" ? await withExpression(part, store, env) : part,
+      isTypePartType(part.partType)
+        ? await withExpression(part, store, env)
+        : part,
     );
   }
   // コンパイラ組み込みのパーツを置けるのはシステムアカウントのモジュールだけ

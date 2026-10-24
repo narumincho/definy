@@ -11,19 +11,23 @@
       "text": "definy の標準ユーティリティ関数群 (数学・論理・リスト・UTF-8ストリーム・URL操作)"
     }
   ],
-  "message": "Initial commit for std module",
+  "message": "式とパーツの型の保存形式を core.expression / core.type-ast の値 ({\"#tag\": payload}) にする",
   "parts": [
     {
       "name": "abs",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "x",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             }
           ],
-          "return_type": "number"
+          "return_type": {
+            "#number": null
+          }
         }
       },
       "description": [
@@ -37,7 +41,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -45,11 +49,11 @@
             }
           ],
           "body": {
-            "Match": {
+            "#match": {
               "target": {
-                "Call": {
+                "#call": {
                   "function": {
-                    "PartReference": {
+                    "#part_reference": {
                       "part_definition_event_hash": {
                         "$part": "core.less-than"
                       }
@@ -59,7 +63,7 @@
                     {
                       "name": "left",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 1
                         }
                       }
@@ -67,9 +71,7 @@
                     {
                       "name": "right",
                       "value": {
-                        "Number": {
-                          "value": 0
-                        }
+                        "#number": 0
                       }
                     }
                   ]
@@ -78,12 +80,12 @@
               "arms": [
                 {
                   "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Call": {
+                    "#call": {
                       "function": {
-                        "PartReference": {
+                        "#part_reference": {
                           "part_definition_event_hash": {
                             "$part": "core.minus"
                           }
@@ -93,15 +95,13 @@
                         {
                           "name": "left",
                           "value": {
-                            "Number": {
-                              "value": 0
-                            }
+                            "#number": 0
                           }
                         },
                         {
                           "name": "right",
                           "value": {
-                            "Variable": {
+                            "#variable": {
                               "variable_id": 1
                             }
                           }
@@ -112,16 +112,15 @@
                 },
                 {
                   "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
                 }
-              ],
-              "default": null
+              ]
             }
           }
         }
@@ -130,18 +129,24 @@
     {
       "name": "min",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "a",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             },
             {
               "name": "b",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             }
           ],
-          "return_type": "number"
+          "return_type": {
+            "#number": null
+          }
         }
       },
       "description": [
@@ -155,7 +160,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -167,11 +172,11 @@
             }
           ],
           "body": {
-            "Match": {
+            "#match": {
               "target": {
-                "Call": {
+                "#call": {
                   "function": {
-                    "PartReference": {
+                    "#part_reference": {
                       "part_definition_event_hash": {
                         "$part": "core.less-than"
                       }
@@ -181,7 +186,7 @@
                     {
                       "name": "left",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 1
                         }
                       }
@@ -189,7 +194,7 @@
                     {
                       "name": "right",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 2
                         }
                       }
@@ -200,26 +205,25 @@
               "arms": [
                 {
                   "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
                 },
                 {
                   "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 2
                     }
                   }
                 }
-              ],
-              "default": null
+              ]
             }
           }
         }
@@ -228,18 +232,24 @@
     {
       "name": "max",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "a",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             },
             {
               "name": "b",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             }
           ],
-          "return_type": "number"
+          "return_type": {
+            "#number": null
+          }
         }
       },
       "description": [
@@ -253,7 +263,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -265,11 +275,11 @@
             }
           ],
           "body": {
-            "Match": {
+            "#match": {
               "target": {
-                "Call": {
+                "#call": {
                   "function": {
-                    "PartReference": {
+                    "#part_reference": {
                       "part_definition_event_hash": {
                         "$part": "core.greater-than"
                       }
@@ -279,7 +289,7 @@
                     {
                       "name": "left",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 1
                         }
                       }
@@ -287,7 +297,7 @@
                     {
                       "name": "right",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 2
                         }
                       }
@@ -298,26 +308,25 @@
               "arms": [
                 {
                   "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
                 },
                 {
                   "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 2
                     }
                   }
                 }
-              ],
-              "default": null
+              ]
             }
           }
         }
@@ -326,14 +335,18 @@
     {
       "name": "sign",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "x",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             }
           ],
-          "return_type": "number"
+          "return_type": {
+            "#number": null
+          }
         }
       },
       "description": [
@@ -347,7 +360,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -355,11 +368,11 @@
             }
           ],
           "body": {
-            "Match": {
+            "#match": {
               "target": {
-                "Call": {
+                "#call": {
                   "function": {
-                    "PartReference": {
+                    "#part_reference": {
                       "part_definition_event_hash": {
                         "$part": "core.greater-than"
                       }
@@ -369,7 +382,7 @@
                     {
                       "name": "left",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 1
                         }
                       }
@@ -377,9 +390,7 @@
                     {
                       "name": "right",
                       "value": {
-                        "Number": {
-                          "value": 0
-                        }
+                        "#number": 0
                       }
                     }
                   ]
@@ -388,24 +399,22 @@
               "arms": [
                 {
                   "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Number": {
-                      "value": 1
-                    }
+                    "#number": 1
                   }
                 },
                 {
                   "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "Match": {
+                    "#match": {
                       "target": {
-                        "Call": {
+                        "#call": {
                           "function": {
-                            "PartReference": {
+                            "#part_reference": {
                               "part_definition_event_hash": {
                                 "$part": "core.less-than"
                               }
@@ -415,7 +424,7 @@
                             {
                               "name": "left",
                               "value": {
-                                "Variable": {
+                                "#variable": {
                                   "variable_id": 1
                                 }
                               }
@@ -423,9 +432,7 @@
                             {
                               "name": "right",
                               "value": {
-                                "Number": {
-                                  "value": 0
-                                }
+                                "#number": 0
                               }
                             }
                           ]
@@ -434,31 +441,25 @@
                       "arms": [
                         {
                           "tag": "true",
-                          "variable_id": null,
-                          "variable_name": null,
+                          "variable_id": -1,
+                          "variable_name": "",
                           "body": {
-                            "Number": {
-                              "value": -1
-                            }
+                            "#number": -1
                           }
                         },
                         {
                           "tag": "false",
-                          "variable_id": null,
-                          "variable_name": null,
+                          "variable_id": -1,
+                          "variable_name": "",
                           "body": {
-                            "Number": {
-                              "value": 0
-                            }
+                            "#number": 0
                           }
                         }
-                      ],
-                      "default": null
+                      ]
                     }
                   }
                 }
-              ],
-              "default": null
+              ]
             }
           }
         }
@@ -467,14 +468,18 @@
     {
       "name": "bool-to-string",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "b",
-              "type": "boolean"
+              "type": {
+                "#boolean": null
+              }
             }
           ],
-          "return_type": "string"
+          "return_type": {
+            "#string": null
+          }
         }
       },
       "description": [
@@ -488,7 +493,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -496,35 +501,30 @@
             }
           ],
           "body": {
-            "Match": {
+            "#match": {
               "target": {
-                "Variable": {
+                "#variable": {
                   "variable_id": 1
                 }
               },
               "arms": [
                 {
                   "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "String": {
-                      "value": "true"
-                    }
+                    "#string": "true"
                   }
                 },
                 {
                   "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
+                  "variable_id": -1,
+                  "variable_name": "",
                   "body": {
-                    "String": {
-                      "value": "false"
-                    }
+                    "#string": "false"
                   }
                 }
-              ],
-              "default": null
+              ]
             }
           }
         }
@@ -533,16 +533,22 @@
     {
       "name": "list-is-empty",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "xs",
               "type": {
-                "list": "number"
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
               }
             }
           ],
-          "return_type": "boolean"
+          "return_type": {
+            "#boolean": null
+          }
         }
       },
       "description": [
@@ -556,7 +562,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -564,9 +570,9 @@
             }
           ],
           "body": {
-            "Call": {
+            "#call": {
               "function": {
-                "PartReference": {
+                "#part_reference": {
                   "part_definition_event_hash": {
                     "$part": "core.equal"
                   }
@@ -576,9 +582,9 @@
                 {
                   "name": "left",
                   "value": {
-                    "Call": {
+                    "#call": {
                       "function": {
-                        "PartReference": {
+                        "#part_reference": {
                           "part_definition_event_hash": {
                             "$part": "core.list-length"
                           }
@@ -588,7 +594,7 @@
                         {
                           "name": "value",
                           "value": {
-                            "Variable": {
+                            "#variable": {
                               "variable_id": 1
                             }
                           }
@@ -600,9 +606,7 @@
                 {
                   "name": "right",
                   "value": {
-                    "Number": {
-                      "value": 0
-                    }
+                    "#number": 0
                   }
                 }
               ]
@@ -614,16 +618,22 @@
     {
       "name": "list-head",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "xs",
               "type": {
-                "list": "number"
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
               }
             }
           ],
-          "return_type": "number"
+          "return_type": {
+            "#number": null
+          }
         }
       },
       "description": [
@@ -637,7 +647,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -645,9 +655,9 @@
             }
           ],
           "body": {
-            "Call": {
+            "#call": {
               "function": {
-                "PartReference": {
+                "#part_reference": {
                   "part_definition_event_hash": {
                     "$part": "core.list-get"
                   }
@@ -657,7 +667,7 @@
                 {
                   "name": "list",
                   "value": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
@@ -665,9 +675,7 @@
                 {
                   "name": "index",
                   "value": {
-                    "Number": {
-                      "value": 0
-                    }
+                    "#number": 0
                   }
                 }
               ]
@@ -679,15 +687,21 @@
     {
       "name": "string-to-utf8-bytes",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "text",
-              "type": "string"
+              "type": {
+                "#string": null
+              }
             }
           ],
           "return_type": {
-            "list": "number"
+            "#list": {
+              "item_type": {
+                "#number": null
+              }
+            }
           }
         }
       },
@@ -702,7 +716,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -710,9 +724,9 @@
             }
           ],
           "body": {
-            "Call": {
+            "#call": {
               "function": {
-                "PartReference": {
+                "#part_reference": {
                   "part_definition_event_hash": {
                     "$part": "core.string-to-bytes"
                   }
@@ -722,7 +736,7 @@
                 {
                   "name": "value",
                   "value": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
@@ -736,53 +750,71 @@
     {
       "name": "bytes-to-stream",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "bytes",
               "type": {
-                "list": "number"
+                "#list": {
+                  "item_type": {
+                    "#number": null
+                  }
+                }
               }
             }
           ],
           "return_type": {
-            "record": [
+            "#record": [
               {
                 "key": "initialState",
-                "value": "number"
+                "field_type": {
+                  "#number": null
+                }
               },
               {
                 "key": "next",
-                "value": {
-                  "function": {
+                "field_type": {
+                  "#function": {
                     "parameters": [
                       {
                         "name": "state",
-                        "type": "number"
+                        "type": {
+                          "#number": null
+                        }
                       }
                     ],
                     "return_type": {
-                      "union": [
+                      "#union": [
                         {
                           "tag": "yield",
-                          "payload": {
-                            "record": [
-                              {
-                                "key": "chunk",
-                                "value": {
-                                  "list": "number"
+                          "payload_type": {
+                            "#some": {
+                              "#record": [
+                                {
+                                  "key": "chunk",
+                                  "field_type": {
+                                    "#list": {
+                                      "item_type": {
+                                        "#number": null
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "nextState",
+                                  "field_type": {
+                                    "#number": null
+                                  }
                                 }
-                              },
-                              {
-                                "key": "nextState",
-                                "value": "number"
-                              }
-                            ]
+                              ]
+                            }
                           }
                         },
                         {
                           "tag": "done",
-                          "payload": null
+                          "payload_type": {
+                            "#none": null
+                          }
                         }
                       ]
                     }
@@ -804,7 +836,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -812,176 +844,171 @@
             }
           ],
           "body": {
-            "TypeLiteral": {
-              "items": [
-                {
-                  "key": "initialState",
-                  "value": {
-                    "Number": {
-                      "value": 0
-                    }
-                  }
-                },
-                {
-                  "key": "next",
-                  "value": {
-                    "Function": {
-                      "parameters": [
-                        {
-                          "parameter_id": 2,
-                          "parameter_name": "state"
-                        }
-                      ],
-                      "body": {
-                        "Match": {
-                          "target": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.and"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "left",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.equal"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "right",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.greater-than"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.list-length"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "value",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 1
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          },
-                          "arms": [
-                            {
-                              "tag": "true",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variant": {
-                                  "tag": "yield",
-                                  "payload": {
-                                    "TypeLiteral": {
-                                      "items": [
-                                        {
-                                          "key": "chunk",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "key": "nextState",
-                                          "value": {
-                                            "Number": {
-                                              "value": 1
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "type_part_definition_event_hash": null
+            "#record": [
+              {
+                "key": "initialState",
+                "value": {
+                  "#number": 0
+                }
+              },
+              {
+                "key": "next",
+                "value": {
+                  "#function": {
+                    "parameters": [
+                      {
+                        "parameter_id": 2,
+                        "parameter_name": "state"
+                      }
+                    ],
+                    "body": {
+                      "#match": {
+                        "target": {
+                          "#call": {
+                            "function": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "core.and"
                                 }
                               }
                             },
-                            {
-                              "tag": "false",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variant": {
-                                  "tag": "done",
-                                  "payload": null,
-                                  "type_part_definition_event_hash": null
+                            "arguments": [
+                              {
+                                "name": "left",
+                                "value": {
+                                  "#call": {
+                                    "function": {
+                                      "#part_reference": {
+                                        "part_definition_event_hash": {
+                                          "$part": "core.equal"
+                                        }
+                                      }
+                                    },
+                                    "arguments": [
+                                      {
+                                        "name": "left",
+                                        "value": {
+                                          "#variable": {
+                                            "variable_id": 2
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "name": "right",
+                                        "value": {
+                                          "#number": 0
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "name": "right",
+                                "value": {
+                                  "#call": {
+                                    "function": {
+                                      "#part_reference": {
+                                        "part_definition_event_hash": {
+                                          "$part": "core.greater-than"
+                                        }
+                                      }
+                                    },
+                                    "arguments": [
+                                      {
+                                        "name": "left",
+                                        "value": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.list-length"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "value",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 1
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "name": "right",
+                                        "value": {
+                                          "#number": 0
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "arms": [
+                          {
+                            "tag": "true",
+                            "variable_id": -1,
+                            "variable_name": "",
+                            "body": {
+                              "#variant": {
+                                "tag": "yield",
+                                "payload": {
+                                  "#some": {
+                                    "#record": [
+                                      {
+                                        "key": "chunk",
+                                        "value": {
+                                          "#variable": {
+                                            "variable_id": 1
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": "nextState",
+                                        "value": {
+                                          "#number": 1
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "type_part": {
+                                  "#none": null
                                 }
                               }
                             }
-                          ],
-                          "default": null
-                        }
+                          },
+                          {
+                            "tag": "false",
+                            "variable_id": -1,
+                            "variable_name": "",
+                            "body": {
+                              "#variant": {
+                                "tag": "done",
+                                "payload": {
+                                  "#none": null
+                                },
+                                "type_part": {
+                                  "#none": null
+                                }
+                              }
+                            }
+                          }
+                        ]
                       }
                     }
                   }
                 }
-              ]
-            }
+              }
+            ]
           }
         }
       }
@@ -989,51 +1016,67 @@
     {
       "name": "string-to-utf8-stream",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "text",
-              "type": "string"
+              "type": {
+                "#string": null
+              }
             }
           ],
           "return_type": {
-            "record": [
+            "#record": [
               {
                 "key": "initialState",
-                "value": "number"
+                "field_type": {
+                  "#number": null
+                }
               },
               {
                 "key": "next",
-                "value": {
-                  "function": {
+                "field_type": {
+                  "#function": {
                     "parameters": [
                       {
                         "name": "state",
-                        "type": "number"
+                        "type": {
+                          "#number": null
+                        }
                       }
                     ],
                     "return_type": {
-                      "union": [
+                      "#union": [
                         {
                           "tag": "yield",
-                          "payload": {
-                            "record": [
-                              {
-                                "key": "chunk",
-                                "value": {
-                                  "list": "number"
+                          "payload_type": {
+                            "#some": {
+                              "#record": [
+                                {
+                                  "key": "chunk",
+                                  "field_type": {
+                                    "#list": {
+                                      "item_type": {
+                                        "#number": null
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "nextState",
+                                  "field_type": {
+                                    "#number": null
+                                  }
                                 }
-                              },
-                              {
-                                "key": "nextState",
-                                "value": "number"
-                              }
-                            ]
+                              ]
+                            }
                           }
                         },
                         {
                           "tag": "done",
-                          "payload": null
+                          "payload_type": {
+                            "#none": null
+                          }
                         }
                       ]
                     }
@@ -1055,7 +1098,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -1063,192 +1106,187 @@
             }
           ],
           "body": {
-            "TypeLiteral": {
-              "items": [
-                {
-                  "key": "initialState",
-                  "value": {
-                    "Number": {
-                      "value": 0
-                    }
-                  }
-                },
-                {
-                  "key": "next",
-                  "value": {
-                    "Function": {
-                      "parameters": [
-                        {
-                          "parameter_id": 2,
-                          "parameter_name": "state"
-                        }
-                      ],
-                      "body": {
-                        "Match": {
-                          "target": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.and"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "left",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.equal"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "right",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.greater-than"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.string-length"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "value",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 1
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          },
-                          "arms": [
-                            {
-                              "tag": "true",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variant": {
-                                  "tag": "yield",
-                                  "payload": {
-                                    "TypeLiteral": {
-                                      "items": [
-                                        {
-                                          "key": "chunk",
-                                          "value": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.string-to-bytes"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "value",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 1
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "key": "nextState",
-                                          "value": {
-                                            "Number": {
-                                              "value": 1
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "type_part_definition_event_hash": null
+            "#record": [
+              {
+                "key": "initialState",
+                "value": {
+                  "#number": 0
+                }
+              },
+              {
+                "key": "next",
+                "value": {
+                  "#function": {
+                    "parameters": [
+                      {
+                        "parameter_id": 2,
+                        "parameter_name": "state"
+                      }
+                    ],
+                    "body": {
+                      "#match": {
+                        "target": {
+                          "#call": {
+                            "function": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "core.and"
                                 }
                               }
                             },
-                            {
-                              "tag": "false",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variant": {
-                                  "tag": "done",
-                                  "payload": null,
-                                  "type_part_definition_event_hash": null
+                            "arguments": [
+                              {
+                                "name": "left",
+                                "value": {
+                                  "#call": {
+                                    "function": {
+                                      "#part_reference": {
+                                        "part_definition_event_hash": {
+                                          "$part": "core.equal"
+                                        }
+                                      }
+                                    },
+                                    "arguments": [
+                                      {
+                                        "name": "left",
+                                        "value": {
+                                          "#variable": {
+                                            "variable_id": 2
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "name": "right",
+                                        "value": {
+                                          "#number": 0
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "name": "right",
+                                "value": {
+                                  "#call": {
+                                    "function": {
+                                      "#part_reference": {
+                                        "part_definition_event_hash": {
+                                          "$part": "core.greater-than"
+                                        }
+                                      }
+                                    },
+                                    "arguments": [
+                                      {
+                                        "name": "left",
+                                        "value": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.string-length"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "value",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 1
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "name": "right",
+                                        "value": {
+                                          "#number": 0
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "arms": [
+                          {
+                            "tag": "true",
+                            "variable_id": -1,
+                            "variable_name": "",
+                            "body": {
+                              "#variant": {
+                                "tag": "yield",
+                                "payload": {
+                                  "#some": {
+                                    "#record": [
+                                      {
+                                        "key": "chunk",
+                                        "value": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.string-to-bytes"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "value",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 1
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": "nextState",
+                                        "value": {
+                                          "#number": 1
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "type_part": {
+                                  "#none": null
                                 }
                               }
                             }
-                          ],
-                          "default": null
-                        }
+                          },
+                          {
+                            "tag": "false",
+                            "variable_id": -1,
+                            "variable_name": "",
+                            "body": {
+                              "#variant": {
+                                "tag": "done",
+                                "payload": {
+                                  "#none": null
+                                },
+                                "type_part": {
+                                  "#none": null
+                                }
+                              }
+                            }
+                          }
+                        ]
                       }
                     }
                   }
                 }
-              ]
-            }
+              }
+            ]
           }
         }
       }
@@ -1256,53 +1294,71 @@
     {
       "name": "string-list-to-utf8-stream",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "chunks",
               "type": {
-                "list": "string"
+                "#list": {
+                  "item_type": {
+                    "#string": null
+                  }
+                }
               }
             }
           ],
           "return_type": {
-            "record": [
+            "#record": [
               {
                 "key": "initialState",
-                "value": "number"
+                "field_type": {
+                  "#number": null
+                }
               },
               {
                 "key": "next",
-                "value": {
-                  "function": {
+                "field_type": {
+                  "#function": {
                     "parameters": [
                       {
                         "name": "state",
-                        "type": "number"
+                        "type": {
+                          "#number": null
+                        }
                       }
                     ],
                     "return_type": {
-                      "union": [
+                      "#union": [
                         {
                           "tag": "yield",
-                          "payload": {
-                            "record": [
-                              {
-                                "key": "chunk",
-                                "value": {
-                                  "list": "number"
+                          "payload_type": {
+                            "#some": {
+                              "#record": [
+                                {
+                                  "key": "chunk",
+                                  "field_type": {
+                                    "#list": {
+                                      "item_type": {
+                                        "#number": null
+                                      }
+                                    }
+                                  }
+                                },
+                                {
+                                  "key": "nextState",
+                                  "field_type": {
+                                    "#number": null
+                                  }
                                 }
-                              },
-                              {
-                                "key": "nextState",
-                                "value": "number"
-                              }
-                            ]
+                              ]
+                            }
                           }
                         },
                         {
                           "tag": "done",
-                          "payload": null
+                          "payload_type": {
+                            "#none": null
+                          }
                         }
                       ]
                     }
@@ -1324,7 +1380,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -1332,192 +1388,191 @@
             }
           ],
           "body": {
-            "TypeLiteral": {
-              "items": [
-                {
-                  "key": "initialState",
-                  "value": {
-                    "Number": {
-                      "value": 0
-                    }
-                  }
-                },
-                {
-                  "key": "next",
-                  "value": {
-                    "Function": {
-                      "parameters": [
-                        {
-                          "parameter_id": 2,
-                          "parameter_name": "state"
-                        }
-                      ],
-                      "body": {
-                        "Match": {
-                          "target": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.less-than"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "left",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 2
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "right",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.list-length"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "value",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          },
-                          "arms": [
-                            {
-                              "tag": "true",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variant": {
-                                  "tag": "yield",
-                                  "payload": {
-                                    "TypeLiteral": {
-                                      "items": [
-                                        {
-                                          "key": "chunk",
-                                          "value": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.string-to-bytes"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "value",
-                                                  "value": {
-                                                    "Call": {
-                                                      "function": {
-                                                        "PartReference": {
-                                                          "part_definition_event_hash": {
-                                                            "$part": "core.list-get"
-                                                          }
-                                                        }
-                                                      },
-                                                      "arguments": [
-                                                        {
-                                                          "name": "list",
-                                                          "value": {
-                                                            "Variable": {
-                                                              "variable_id": 1
-                                                            }
-                                                          }
-                                                        },
-                                                        {
-                                                          "name": "index",
-                                                          "value": {
-                                                            "Variable": {
-                                                              "variable_id": 2
-                                                            }
-                                                          }
-                                                        }
-                                                      ]
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "key": "nextState",
-                                          "value": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.plus"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "left",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 2
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "name": "right",
-                                                  "value": {
-                                                    "Number": {
-                                                      "value": 1
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "type_part_definition_event_hash": null
+            "#record": [
+              {
+                "key": "initialState",
+                "value": {
+                  "#number": 0
+                }
+              },
+              {
+                "key": "next",
+                "value": {
+                  "#function": {
+                    "parameters": [
+                      {
+                        "parameter_id": 2,
+                        "parameter_name": "state"
+                      }
+                    ],
+                    "body": {
+                      "#match": {
+                        "target": {
+                          "#call": {
+                            "function": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "core.less-than"
                                 }
                               }
                             },
-                            {
-                              "tag": "false",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variant": {
-                                  "tag": "done",
-                                  "payload": null,
-                                  "type_part_definition_event_hash": null
+                            "arguments": [
+                              {
+                                "name": "left",
+                                "value": {
+                                  "#variable": {
+                                    "variable_id": 2
+                                  }
+                                }
+                              },
+                              {
+                                "name": "right",
+                                "value": {
+                                  "#call": {
+                                    "function": {
+                                      "#part_reference": {
+                                        "part_definition_event_hash": {
+                                          "$part": "core.list-length"
+                                        }
+                                      }
+                                    },
+                                    "arguments": [
+                                      {
+                                        "name": "value",
+                                        "value": {
+                                          "#variable": {
+                                            "variable_id": 1
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "arms": [
+                          {
+                            "tag": "true",
+                            "variable_id": -1,
+                            "variable_name": "",
+                            "body": {
+                              "#variant": {
+                                "tag": "yield",
+                                "payload": {
+                                  "#some": {
+                                    "#record": [
+                                      {
+                                        "key": "chunk",
+                                        "value": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.string-to-bytes"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "value",
+                                                "value": {
+                                                  "#call": {
+                                                    "function": {
+                                                      "#part_reference": {
+                                                        "part_definition_event_hash": {
+                                                          "$part": "core.list-get"
+                                                        }
+                                                      }
+                                                    },
+                                                    "arguments": [
+                                                      {
+                                                        "name": "list",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 1
+                                                          }
+                                                        }
+                                                      },
+                                                      {
+                                                        "name": "index",
+                                                        "value": {
+                                                          "#variable": {
+                                                            "variable_id": 2
+                                                          }
+                                                        }
+                                                      }
+                                                    ]
+                                                  }
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "key": "nextState",
+                                        "value": {
+                                          "#call": {
+                                            "function": {
+                                              "#part_reference": {
+                                                "part_definition_event_hash": {
+                                                  "$part": "core.plus"
+                                                }
+                                              }
+                                            },
+                                            "arguments": [
+                                              {
+                                                "name": "left",
+                                                "value": {
+                                                  "#variable": {
+                                                    "variable_id": 2
+                                                  }
+                                                }
+                                              },
+                                              {
+                                                "name": "right",
+                                                "value": {
+                                                  "#number": 1
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "type_part": {
+                                  "#none": null
                                 }
                               }
                             }
-                          ],
-                          "default": null
-                        }
+                          },
+                          {
+                            "tag": "false",
+                            "variable_id": -1,
+                            "variable_name": "",
+                            "body": {
+                              "#variant": {
+                                "tag": "done",
+                                "payload": {
+                                  "#none": null
+                                },
+                                "type_part": {
+                                  "#none": null
+                                }
+                              }
+                            }
+                          }
+                        ]
                       }
                     }
                   }
                 }
-              ]
-            }
+              }
+            ]
           }
         }
       }
@@ -1525,22 +1580,30 @@
     {
       "name": "string-index-of",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "text",
-              "type": "string"
+              "type": {
+                "#string": null
+              }
             },
             {
               "name": "target",
-              "type": "string"
+              "type": {
+                "#string": null
+              }
             },
             {
               "name": "startIndex",
-              "type": "number"
+              "type": {
+                "#number": null
+              }
             }
           ],
-          "return_type": "number"
+          "return_type": {
+            "#number": null
+          }
         }
       },
       "description": [
@@ -1554,7 +1617,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -1570,40 +1633,38 @@
             }
           ],
           "body": {
-            "Let": {
-              "bindings": [
-                {
-                  "variable_id": 4,
-                  "variable_name": "textLen",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.string-length"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "value",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          }
-                        }
-                      ]
+            "#let": {
+              "variable_id": 4,
+              "variable_name": "textLen",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.string-length"
+                      }
                     }
-                  }
-                },
-                {
+                  },
+                  "arguments": [
+                    {
+                      "name": "value",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#let": {
                   "variable_id": 5,
                   "variable_name": "targetLen",
                   "value": {
-                    "Call": {
+                    "#call": {
                       "function": {
-                        "PartReference": {
+                        "#part_reference": {
                           "part_definition_event_hash": {
                             "$part": "core.string-length"
                           }
@@ -1613,132 +1674,216 @@
                         {
                           "name": "value",
                           "value": {
-                            "Variable": {
+                            "#variable": {
                               "variable_id": 2
                             }
                           }
                         }
                       ]
                     }
-                  }
-                }
-              ],
-              "body": {
-                "Match": {
-                  "target": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.greater-than"
-                          }
+                  },
+                  "body": {
+                    "#match": {
+                      "target": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.greater-than"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.plus"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 3
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 5
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 4
+                                }
+                              }
+                            }
+                          ]
                         }
                       },
-                      "arguments": [
+                      "arms": [
                         {
-                          "name": "left",
-                          "value": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.plus"
-                                  }
+                          "tag": "true",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#number": -1
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": -1,
+                          "variable_name": "",
+                          "body": {
+                            "#match": {
+                              "target": {
+                                "#call": {
+                                  "function": {
+                                    "#part_reference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.equal"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "#call": {
+                                          "function": {
+                                            "#part_reference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-slice"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "value",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "start",
+                                              "value": {
+                                                "#variable": {
+                                                  "variable_id": 3
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "end",
+                                              "value": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.plus"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "left",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 3
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "right",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 5
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "#variable": {
+                                          "variable_id": 2
+                                        }
+                                      }
+                                    }
+                                  ]
                                 }
                               },
-                              "arguments": [
+                              "arms": [
                                 {
-                                  "name": "left",
-                                  "value": {
-                                    "Variable": {
+                                  "tag": "true",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#variable": {
                                       "variable_id": 3
                                     }
                                   }
                                 },
                                 {
-                                  "name": "right",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 5
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        },
-                        {
-                          "name": "right",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 4
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "arms": [
-                    {
-                      "tag": "true",
-                      "variable_id": null,
-                      "variable_name": null,
-                      "body": {
-                        "Number": {
-                          "value": -1
-                        }
-                      }
-                    },
-                    {
-                      "tag": "false",
-                      "variable_id": null,
-                      "variable_name": null,
-                      "body": {
-                        "Match": {
-                          "target": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.equal"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "left",
-                                  "value": {
-                                    "Call": {
+                                  "tag": "false",
+                                  "variable_id": -1,
+                                  "variable_name": "",
+                                  "body": {
+                                    "#call": {
                                       "function": {
-                                        "PartReference": {
+                                        "#part_reference": {
                                           "part_definition_event_hash": {
-                                            "$part": "core.string-slice"
+                                            "$part": "std.string-index-of"
                                           }
                                         }
                                       },
                                       "arguments": [
                                         {
-                                          "name": "value",
+                                          "name": "text",
                                           "value": {
-                                            "Variable": {
+                                            "#variable": {
                                               "variable_id": 1
                                             }
                                           }
                                         },
                                         {
-                                          "name": "start",
+                                          "name": "target",
                                           "value": {
-                                            "Variable": {
-                                              "variable_id": 3
+                                            "#variable": {
+                                              "variable_id": 2
                                             }
                                           }
                                         },
                                         {
-                                          "name": "end",
+                                          "name": "startIndex",
                                           "value": {
-                                            "Call": {
+                                            "#call": {
                                               "function": {
-                                                "PartReference": {
+                                                "#part_reference": {
                                                   "part_definition_event_hash": {
                                                     "$part": "core.plus"
                                                   }
@@ -1748,7 +1893,7 @@
                                                 {
                                                   "name": "left",
                                                   "value": {
-                                                    "Variable": {
+                                                    "#variable": {
                                                       "variable_id": 3
                                                     }
                                                   }
@@ -1756,9 +1901,7 @@
                                                 {
                                                   "name": "right",
                                                   "value": {
-                                                    "Variable": {
-                                                      "variable_id": 5
-                                                    }
+                                                    "#number": 1
                                                   }
                                                 }
                                               ]
@@ -1768,102 +1911,14 @@
                                       ]
                                     }
                                   }
-                                },
-                                {
-                                  "name": "right",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 2
-                                    }
-                                  }
                                 }
                               ]
                             }
-                          },
-                          "arms": [
-                            {
-                              "tag": "true",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Variable": {
-                                  "variable_id": 3
-                                }
-                              }
-                            },
-                            {
-                              "tag": "false",
-                              "variable_id": null,
-                              "variable_name": null,
-                              "body": {
-                                "Call": {
-                                  "function": {
-                                    "PartReference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "std.string-index-of"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "text",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 1
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "target",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 2
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "startIndex",
-                                      "value": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.plus"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "left",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 3
-                                                }
-                                              }
-                                            },
-                                            {
-                                              "name": "right",
-                                              "value": {
-                                                "Number": {
-                                                  "value": 1
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          ],
-                          "default": null
+                          }
                         }
-                      }
+                      ]
                     }
-                  ],
-                  "default": null
+                  }
                 }
               }
             }
@@ -1874,14 +1929,18 @@
     {
       "name": "url-path",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "url",
-              "type": "string"
+              "type": {
+                "#string": null
+              }
             }
           ],
-          "return_type": "string"
+          "return_type": {
+            "#string": null
+          }
         }
       },
       "description": [
@@ -1895,7 +1954,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -1903,58 +1962,52 @@
             }
           ],
           "body": {
-            "Let": {
-              "bindings": [
-                {
-                  "variable_id": 2,
-                  "variable_name": "schemeIdx",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "std.string-index-of"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "text",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          }
-                        },
-                        {
-                          "name": "target",
-                          "value": {
-                            "String": {
-                              "value": "://"
-                            }
-                          }
-                        },
-                        {
-                          "name": "startIndex",
-                          "value": {
-                            "Number": {
-                              "value": 0
-                            }
-                          }
-                        }
-                      ]
+            "#let": {
+              "variable_id": 2,
+              "variable_name": "schemeIdx",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "std.string-index-of"
+                      }
                     }
-                  }
-                },
-                {
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "target",
+                      "value": {
+                        "#string": "://"
+                      }
+                    },
+                    {
+                      "name": "startIndex",
+                      "value": {
+                        "#number": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#let": {
                   "variable_id": 3,
                   "variable_name": "searchStart",
                   "value": {
-                    "Match": {
+                    "#match": {
                       "target": {
-                        "Call": {
+                        "#call": {
                           "function": {
-                            "PartReference": {
+                            "#part_reference": {
                               "part_definition_event_hash": {
                                 "$part": "core.greater-than-or-equal"
                               }
@@ -1964,7 +2017,7 @@
                             {
                               "name": "left",
                               "value": {
-                                "Variable": {
+                                "#variable": {
                                   "variable_id": 2
                                 }
                               }
@@ -1972,9 +2025,7 @@
                             {
                               "name": "right",
                               "value": {
-                                "Number": {
-                                  "value": 0
-                                }
+                                "#number": 0
                               }
                             }
                           ]
@@ -1983,12 +2034,12 @@
                       "arms": [
                         {
                           "tag": "true",
-                          "variable_id": null,
-                          "variable_name": null,
+                          "variable_id": -1,
+                          "variable_name": "",
                           "body": {
-                            "Call": {
+                            "#call": {
                               "function": {
-                                "PartReference": {
+                                "#part_reference": {
                                   "part_definition_event_hash": {
                                     "$part": "core.plus"
                                   }
@@ -1998,7 +2049,7 @@
                                 {
                                   "name": "left",
                                   "value": {
-                                    "Variable": {
+                                    "#variable": {
                                       "variable_id": 2
                                     }
                                   }
@@ -2006,9 +2057,7 @@
                                 {
                                   "name": "right",
                                   "value": {
-                                    "Number": {
-                                      "value": 3
-                                    }
+                                    "#number": 3
                                   }
                                 }
                               ]
@@ -2017,236 +2066,101 @@
                         },
                         {
                           "tag": "false",
-                          "variable_id": null,
-                          "variable_name": null,
+                          "variable_id": -1,
+                          "variable_name": "",
                           "body": {
-                            "Number": {
-                              "value": 0
-                            }
-                          }
-                        }
-                      ],
-                      "default": null
-                    }
-                  }
-                },
-                {
-                  "variable_id": 4,
-                  "variable_name": "slashIdx",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "std.string-index-of"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "text",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          }
-                        },
-                        {
-                          "name": "target",
-                          "value": {
-                            "String": {
-                              "value": "/"
-                            }
-                          }
-                        },
-                        {
-                          "name": "startIndex",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 3
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "variable_id": 5,
-                  "variable_name": "queryIdx",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "std.string-index-of"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "text",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          }
-                        },
-                        {
-                          "name": "target",
-                          "value": {
-                            "String": {
-                              "value": "?"
-                            }
-                          }
-                        },
-                        {
-                          "name": "startIndex",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 3
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                }
-              ],
-              "body": {
-                "Match": {
-                  "target": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.less-than"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "left",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 4
-                            }
-                          }
-                        },
-                        {
-                          "name": "right",
-                          "value": {
-                            "Number": {
-                              "value": 0
-                            }
+                            "#number": 0
                           }
                         }
                       ]
                     }
                   },
-                  "arms": [
-                    {
-                      "tag": "true",
-                      "variable_id": null,
-                      "variable_name": null,
-                      "body": {
-                        "String": {
-                          "value": "/"
-                        }
-                      }
-                    },
-                    {
-                      "tag": "false",
-                      "variable_id": null,
-                      "variable_name": null,
-                      "body": {
-                        "Let": {
-                          "bindings": [
+                  "body": {
+                    "#let": {
+                      "variable_id": 4,
+                      "variable_name": "slashIdx",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "std.string-index-of"
+                              }
+                            }
+                          },
+                          "arguments": [
                             {
-                              "variable_id": 6,
-                              "variable_name": "endIdx",
+                              "name": "text",
                               "value": {
-                                "Match": {
-                                  "target": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.greater-than-or-equal"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 5
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "arms": [
-                                    {
-                                      "tag": "true",
-                                      "variable_id": null,
-                                      "variable_name": null,
-                                      "body": {
-                                        "Variable": {
-                                          "variable_id": 5
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "tag": "false",
-                                      "variable_id": null,
-                                      "variable_name": null,
-                                      "body": {
-                                        "Call": {
-                                          "function": {
-                                            "PartReference": {
-                                              "part_definition_event_hash": {
-                                                "$part": "core.string-length"
-                                              }
-                                            }
-                                          },
-                                          "arguments": [
-                                            {
-                                              "name": "value",
-                                              "value": {
-                                                "Variable": {
-                                                  "variable_id": 1
-                                                }
-                                              }
-                                            }
-                                          ]
-                                        }
-                                      }
-                                    }
-                                  ],
-                                  "default": null
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "target",
+                              "value": {
+                                "#string": "/"
+                              }
+                            },
+                            {
+                              "name": "startIndex",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 3
                                 }
                               }
                             }
-                          ],
+                          ]
+                        }
+                      },
+                      "body": {
+                        "#let": {
+                          "variable_id": 5,
+                          "variable_name": "queryIdx",
+                          "value": {
+                            "#call": {
+                              "function": {
+                                "#part_reference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "std.string-index-of"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "text",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "target",
+                                  "value": {
+                                    "#string": "?"
+                                  }
+                                },
+                                {
+                                  "name": "startIndex",
+                                  "value": {
+                                    "#variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
                           "body": {
-                            "Match": {
+                            "#match": {
                               "target": {
-                                "Call": {
+                                "#call": {
                                   "function": {
-                                    "PartReference": {
+                                    "#part_reference": {
                                       "part_definition_event_hash": {
-                                        "$part": "core.less-than-or-equal"
+                                        "$part": "core.less-than"
                                       }
                                     }
                                   },
@@ -2254,17 +2168,15 @@
                                     {
                                       "name": "left",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 6
+                                        "#variable": {
+                                          "variable_id": 4
                                         }
                                       }
                                     },
                                     {
                                       "name": "right",
                                       "value": {
-                                        "Variable": {
-                                          "variable_id": 4
-                                        }
+                                        "#number": 0
                                       }
                                     }
                                   ]
@@ -2273,65 +2185,184 @@
                               "arms": [
                                 {
                                   "tag": "true",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "variable_id": -1,
+                                  "variable_name": "",
                                   "body": {
-                                    "String": {
-                                      "value": "/"
-                                    }
+                                    "#string": "/"
                                   }
                                 },
                                 {
                                   "tag": "false",
-                                  "variable_id": null,
-                                  "variable_name": null,
+                                  "variable_id": -1,
+                                  "variable_name": "",
                                   "body": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.string-slice"
-                                          }
+                                    "#let": {
+                                      "variable_id": 6,
+                                      "variable_name": "endIdx",
+                                      "value": {
+                                        "#match": {
+                                          "target": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.greater-than-or-equal"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 5
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#number": 0
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          },
+                                          "arms": [
+                                            {
+                                              "tag": "true",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#variable": {
+                                                  "variable_id": 5
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "tag": "false",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.string-length"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "value",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            }
+                                          ]
                                         }
                                       },
-                                      "arguments": [
-                                        {
-                                          "name": "value",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 1
+                                      "body": {
+                                        "#match": {
+                                          "target": {
+                                            "#call": {
+                                              "function": {
+                                                "#part_reference": {
+                                                  "part_definition_event_hash": {
+                                                    "$part": "core.less-than-or-equal"
+                                                  }
+                                                }
+                                              },
+                                              "arguments": [
+                                                {
+                                                  "name": "left",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 6
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "name": "right",
+                                                  "value": {
+                                                    "#variable": {
+                                                      "variable_id": 4
+                                                    }
+                                                  }
+                                                }
+                                              ]
                                             }
-                                          }
-                                        },
-                                        {
-                                          "name": "start",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 4
+                                          },
+                                          "arms": [
+                                            {
+                                              "tag": "true",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#string": "/"
+                                              }
+                                            },
+                                            {
+                                              "tag": "false",
+                                              "variable_id": -1,
+                                              "variable_name": "",
+                                              "body": {
+                                                "#call": {
+                                                  "function": {
+                                                    "#part_reference": {
+                                                      "part_definition_event_hash": {
+                                                        "$part": "core.string-slice"
+                                                      }
+                                                    }
+                                                  },
+                                                  "arguments": [
+                                                    {
+                                                      "name": "value",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 1
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "start",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 4
+                                                        }
+                                                      }
+                                                    },
+                                                    {
+                                                      "name": "end",
+                                                      "value": {
+                                                        "#variable": {
+                                                          "variable_id": 6
+                                                        }
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
                                             }
-                                          }
-                                        },
-                                        {
-                                          "name": "end",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 6
-                                            }
-                                          }
+                                          ]
                                         }
-                                      ]
+                                      }
                                     }
                                   }
                                 }
-                              ],
-                              "default": null
+                              ]
                             }
                           }
                         }
                       }
                     }
-                  ],
-                  "default": null
+                  }
                 }
               }
             }
@@ -2342,14 +2373,18 @@
     {
       "name": "url-query",
       "part_type": {
-        "function": {
+        "#function": {
           "parameters": [
             {
               "name": "url",
-              "type": "string"
+              "type": {
+                "#string": null
+              }
             }
           ],
-          "return_type": "string"
+          "return_type": {
+            "#string": null
+          }
         }
       },
       "description": [
@@ -2363,7 +2398,7 @@
         }
       ],
       "expression": {
-        "Function": {
+        "#function": {
           "parameters": [
             {
               "parameter_id": 1,
@@ -2371,56 +2406,48 @@
             }
           ],
           "body": {
-            "Let": {
-              "bindings": [
-                {
-                  "variable_id": 2,
-                  "variable_name": "queryIdx",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "std.string-index-of"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "text",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          }
-                        },
-                        {
-                          "name": "target",
-                          "value": {
-                            "String": {
-                              "value": "?"
-                            }
-                          }
-                        },
-                        {
-                          "name": "startIndex",
-                          "value": {
-                            "Number": {
-                              "value": 0
-                            }
-                          }
-                        }
-                      ]
+            "#let": {
+              "variable_id": 2,
+              "variable_name": "queryIdx",
+              "value": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "std.string-index-of"
+                      }
                     }
-                  }
+                  },
+                  "arguments": [
+                    {
+                      "name": "text",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "target",
+                      "value": {
+                        "#string": "?"
+                      }
+                    },
+                    {
+                      "name": "startIndex",
+                      "value": {
+                        "#number": 0
+                      }
+                    }
+                  ]
                 }
-              ],
+              },
               "body": {
-                "Match": {
+                "#match": {
                   "target": {
-                    "Call": {
+                    "#call": {
                       "function": {
-                        "PartReference": {
+                        "#part_reference": {
                           "part_definition_event_hash": {
                             "$part": "core.less-than"
                           }
@@ -2430,7 +2457,7 @@
                         {
                           "name": "left",
                           "value": {
-                            "Variable": {
+                            "#variable": {
                               "variable_id": 2
                             }
                           }
@@ -2438,9 +2465,7 @@
                         {
                           "name": "right",
                           "value": {
-                            "Number": {
-                              "value": 0
-                            }
+                            "#number": 0
                           }
                         }
                       ]
@@ -2449,22 +2474,20 @@
                   "arms": [
                     {
                       "tag": "true",
-                      "variable_id": null,
-                      "variable_name": null,
+                      "variable_id": -1,
+                      "variable_name": "",
                       "body": {
-                        "String": {
-                          "value": ""
-                        }
+                        "#string": ""
                       }
                     },
                     {
                       "tag": "false",
-                      "variable_id": null,
-                      "variable_name": null,
+                      "variable_id": -1,
+                      "variable_name": "",
                       "body": {
-                        "Call": {
+                        "#call": {
                           "function": {
-                            "PartReference": {
+                            "#part_reference": {
                               "part_definition_event_hash": {
                                 "$part": "core.string-slice"
                               }
@@ -2474,7 +2497,7 @@
                             {
                               "name": "value",
                               "value": {
-                                "Variable": {
+                                "#variable": {
                                   "variable_id": 1
                                 }
                               }
@@ -2482,9 +2505,9 @@
                             {
                               "name": "start",
                               "value": {
-                                "Call": {
+                                "#call": {
                                   "function": {
-                                    "PartReference": {
+                                    "#part_reference": {
                                       "part_definition_event_hash": {
                                         "$part": "core.plus"
                                       }
@@ -2494,7 +2517,7 @@
                                     {
                                       "name": "left",
                                       "value": {
-                                        "Variable": {
+                                        "#variable": {
                                           "variable_id": 2
                                         }
                                       }
@@ -2502,9 +2525,7 @@
                                     {
                                       "name": "right",
                                       "value": {
-                                        "Number": {
-                                          "value": 1
-                                        }
+                                        "#number": 1
                                       }
                                     }
                                   ]
@@ -2514,9 +2535,9 @@
                             {
                               "name": "end",
                               "value": {
-                                "Call": {
+                                "#call": {
                                   "function": {
-                                    "PartReference": {
+                                    "#part_reference": {
                                       "part_definition_event_hash": {
                                         "$part": "core.string-length"
                                       }
@@ -2526,7 +2547,7 @@
                                     {
                                       "name": "value",
                                       "value": {
-                                        "Variable": {
+                                        "#variable": {
                                           "variable_id": 1
                                         }
                                       }
@@ -2539,8 +2560,7 @@
                         }
                       }
                     }
-                  ],
-                  "default": null
+                  ]
                 }
               }
             }

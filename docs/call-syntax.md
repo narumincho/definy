@@ -13,20 +13,22 @@ core.type-checker(...)(...)                     // 書けない (呼び出しの
 
 ## 呼び出せるもの (`core.callee`)
 
-呼び出し式 (`Call`) の `function` は任意の式ではなく, 次のどれか (`core.callee`) に限る.
+呼び出し式 (`call`) の `function` は任意の式ではなく, 次のどれか (`core.callee`) に限る.
 
-| JSON AST (`Call.function`) | `core.callee`                                  | 意味                                                                                            |
-| :------------------------- | :--------------------------------------------- | :---------------------------------------------------------------------------------------------- |
-| `PartReference`            | `part_reference({part_definition_event_hash})` | 関数のパーツ・コンパイラ組み込みのパーツ (`core.plus` など)                                     |
-| `Variable`                 | `variable({variable_id})`                      | 関数型の引数 (`core.list-map-inner` の `f` など)                                                |
-| `RecordGet`                | `record_get({record, key})`                    | レコードの関数のフィールド (WASI の能力 `clock.now()`, ストリームの `next`)                     |
-| (なし)                     | `builtin(name)`                                | コンパイラ組み込みそのもの. `core.expression` のデータとしてだけ書く (`sample.sample-ast-calc`) |
+| `core.callee`                                  | 意味                                                                                            |
+| :--------------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| `part_reference({part_definition_event_hash})` | 関数のパーツ・コンパイラ組み込みのパーツ (`core.plus` など)                                     |
+| `variable({variable_id})`                      | 関数型の引数 (`core.list-map-inner` の `f` など)                                                |
+| `record_get({record, key})`                    | レコードの関数のフィールド (WASI の能力 `clock.now()`, ストリームの `next`)                     |
+| `builtin(name)`                                | コンパイラ組み込みそのもの. `core.expression` のデータとしてだけ書く (`sample.sample-ast-calc`) |
 
 - `core.callee` の各バリアントは `core.expression` の同じ名前のバリアントと同じ形なので, 値のメモリ上の表現は変わらない.
   そのため変更前の `wasm/stage1.wasm` のまま新しい seeds をコンパイルでき, `npm run build:stage1 -- --bootstrap` の 1 回目で不動点になった (93547 bytes)
-- seed の JSON スキーマでも `Call.function` は `Callee` (上の 3 つ) に限る
-- TypeScript の変換 (`definyAstToSelfHostedAst`, `src/stage1_compiler.ts`) は, 他の式が `Call.function` にあると
-  `SelfHostedAstConversionError` を投げる
+- seed の JSON スキーマ (`core.callee` の宣言から作る, [value-encoding.md](value-encoding.md)) でも `call.function` は上の 4 つに限る.
+  seed の全パーツがこの形であることは `src/seed_schema.test.ts` で確かめる
+- 以前は TypeScript の変換 (`definyAstToSelfHostedAst`) が他の式を `Call.function` に書くと `SelfHostedAstConversionError` を投げていた.
+  式を `core.expression` の値のまま保存するようにして変換を消したので, 今は TypeScript では検査しない
+  (UI は `core.callee` の形でしか呼び出しを作らない)
 - 評価器・コンパイラなど呼び出す関数を式として扱いたいところは `core.callee-to-expression` で式にしてから使う
   (`core.eval-value`, `core.compile-call`, `core.expression-children`, `core.expression-to-source`)
 

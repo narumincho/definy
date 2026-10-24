@@ -77,13 +77,13 @@ data = [
     期待型が無い位置では区切りを出さない.
   - 期待型は definy 製の型チェッカーに聞く (`findExpectedType`, `src/state/useTypeCheck.ts`).
     選んだ位置を `{"Hole": {"probe": true}}` (`EXPECTED_TYPE_PROBE`, `src/tree_layout/type_inference.ts`) に
-    置き換えた式を, `definyAstWithHolesToSelfHostedAst` で `core.expression` の `hole` にして
+    置き換えた式を (式は `core.expression` の値のままなので変換せずに)
     `core.type-check-against` で検査する. 型チェッカーは probe の位置で `hole_expected_type { expected }`
     のエラーを返し (期待する型のある位置なら `some(型)`, 推論する位置なら `none`),
     他の未入力 (`hole({ probe: false })`) はその位置の期待する型として受け入れる.
     以前は TypeScript の独自推論 (`inferExpectedType`) で数値・文字列・真偽値・リストだけを見分けていた.
     未入力はコンパイルできないので, コミットの検査や評価では今までどおり未入力を受け付けない
-    (`definyAstToSelfHostedAst` は未入力で `SelfHostedAstConversionError` を投げる)
+    (`compile()` は未入力を含む式で `SelfHostedAstConversionError` を投げ, 型検査は `allowHoles` のときだけ未入力を渡す)
   - 関数の引数名 (`parameterName` のノード, パスの最後が `functionParameter`) は式ではないので置換メニューを開かず,
     選ぶと文字列リテラルと同じ入力欄でその場で名前を変える (`renameFunctionParameter`).
     本体の変数は ID で引数を参照しているので名前だけを変えればよく, 表示はスコープどおりに新しい名前になる.
@@ -195,12 +195,11 @@ let
   見つからないときは `@part:` とハッシュの先頭 6 文字を出す
 - ホバーで出す型 (`formatTypeAst`) も, 型パーツの参照を `partNames` でパーツ名にして書く
 - **パーツ参照の実データと UI 選択肢・永続化の整合性**:
-  - 式の AST におけるパーツ参照の実データは `{ PartReference: { part_definition_event_hash: <32 バイトの Uint8Array> } }` であり,
-    CBOR のバイト列 (major type 2) にエンコードされる. パーツ名文字列や数値配列を直接格納してはならない.
+  - 式のパーツ参照の実データは `{"#part_reference": {"part_definition_event_hash": "<パーツ ID (URL-safe Base64)>"}}` で,
+    CBOR でも文字列 ([value-encoding.md](value-encoding.md)). 以前は 32 バイトの `Uint8Array` (CBOR のバイト列) だった.
   - ツリーエディタの選択肢 (`SelectorOption.value`) は `ref:part:<partIdHash (URL-safe Base64)>` をキーとし,
-    `partIdHash` がないパーツは候補から除外する. 適用時 (`applySelection`) に `base64ToBytes` で `Uint8Array` に戻し,
-    選択値の判定時 (`getOptionValueForExpression`) は `toUint8Array` → `bytesToUrlSafeBase64NoPad` で Base64URL を生成して照合する.
-  - 作業中の変更 (`WorkingChanges`) を `localStorage` に保存する際, 素朴な `JSON.stringify` では `Uint8Array` が
-    `{"0": 12, ...}` のオブジェクトに分解され CBOR の map として壊れてしまう. そのため `serializeWorkingChanges` /
-    `deserializeWorkingChanges` を通し, 任意の深さの `Uint8Array` を `{"$bytes": "<Base64URL>"}` 形式で安全にシリアライズ・復元する
-    (保存キーは `definy.working_changes.v3`).
+    `partIdHash` がないパーツは候補から除外する. 適用時 (`applySelection`) も判定時 (`getOptionValueForExpression`) も
+    パーツ ID の文字列をそのまま使う.
+  - 作業中の変更 (`WorkingChanges`) は `serializeWorkingChanges` / `deserializeWorkingChanges` で `localStorage` に JSON のまま保存する
+    (保存キーは `definy.working_changes.v4`). 以前はパーツ ID が `Uint8Array` だったので `{"$bytes": "<Base64URL>"}` にしていたが,
+    式に `Uint8Array` が出てこなくなったのでやめた.

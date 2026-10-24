@@ -1,21 +1,19 @@
 {
-  "$comment": "definy 製コンパイラ (stage1.wasm でコンパイルして実行) と definy 製評価器 (core.eval-value) の評価結果が一致することを検証する共有テストケース。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID（システムアカウントから導出）に置き換えられる。期待値の record は {\"$record\": [[key, value], ...]}、variant は {\"$variant\": tag, \"payload\": value | null} で表す。 文字列の長さ・添字は UTF-8 のバイト単位で、範囲外の添字は文字列の範囲に丸める。",
+  "$comment": "definy 製コンパイラ (stage1.wasm でコンパイルして実行) と definy 製評価器 (core.eval-value) の評価結果が一致することを検証する共有テストケース。式 (expression) は core.expression の値、期待値 (expected) は definy の値で、どちらも docs/value-encoding.md の JSON の形 (タグ付きの値は {\"#tag\": payload}) で書く。{\"$part\": \"module.name\"} は seed と同じくビルトインパーツの ID の文字列（システムアカウントから導出）に置き換えられる。 文字列の長さ・添字は UTF-8 のバイト単位で、範囲外の添字は文字列の範囲に丸める。",
   "cases": [
     {
       "name": "number literal",
       "expression": {
-        "Number": {
-          "value": 42
-        }
+        "#number": 42
       },
       "expected": 42
     },
     {
       "name": "add",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.plus"
               }
@@ -25,17 +23,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 40
-                }
+                "#number": 40
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -46,9 +40,9 @@
     {
       "name": "subtract negative",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.minus"
               }
@@ -58,17 +52,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 3
-                }
+                "#number": 3
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 10
-                }
+                "#number": 10
               }
             }
           ]
@@ -79,9 +69,9 @@
     {
       "name": "multiply",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.multiply"
               }
@@ -91,17 +81,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 6
-                }
+                "#number": 6
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 7
-                }
+                "#number": 7
               }
             }
           ]
@@ -112,9 +98,9 @@
     {
       "name": "divide",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.divide"
               }
@@ -124,17 +110,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 17
-                }
+                "#number": 17
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 5
-                }
+                "#number": 5
               }
             }
           ]
@@ -145,9 +127,9 @@
     {
       "name": "divide negative truncates toward zero",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.divide"
               }
@@ -157,17 +139,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": -7
-                }
+                "#number": -7
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -178,9 +156,9 @@
     {
       "name": "remainder",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.remainder"
               }
@@ -190,17 +168,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 17
-                }
+                "#number": 17
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 5
-                }
+                "#number": 5
               }
             }
           ]
@@ -211,9 +185,9 @@
     {
       "name": "remainder negative",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.remainder"
               }
@@ -223,17 +197,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": -7
-                }
+                "#number": -7
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -244,9 +214,9 @@
     {
       "name": "less than",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.less-than"
               }
@@ -256,17 +226,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 1
-                }
+                "#number": 1
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -277,9 +243,9 @@
     {
       "name": "less than or equal",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.less-than-or-equal"
               }
@@ -289,17 +255,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -310,9 +272,9 @@
     {
       "name": "greater than",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.greater-than"
               }
@@ -322,17 +284,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 1
-                }
+                "#number": 1
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -343,9 +301,9 @@
     {
       "name": "greater than or equal",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.greater-than-or-equal"
               }
@@ -355,17 +313,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 3
-                }
+                "#number": 3
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -376,9 +330,9 @@
     {
       "name": "equal numbers",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.equal"
               }
@@ -388,17 +342,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 5
-                }
+                "#number": 5
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 5
-                }
+                "#number": 5
               }
             }
           ]
@@ -409,9 +359,9 @@
     {
       "name": "not equal numbers",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.not-equal"
               }
@@ -421,17 +371,13 @@
             {
               "name": "left",
               "value": {
-                "Number": {
-                  "value": 5
-                }
+                "#number": 5
               }
             },
             {
               "name": "right",
               "value": {
-                "Number": {
-                  "value": 6
-                }
+                "#number": 6
               }
             }
           ]
@@ -442,9 +388,9 @@
     {
       "name": "equal strings",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.equal"
               }
@@ -454,17 +400,13 @@
             {
               "name": "left",
               "value": {
-                "String": {
-                  "value": "abc"
-                }
+                "#string": "abc"
               }
             },
             {
               "name": "right",
               "value": {
-                "String": {
-                  "value": "abc"
-                }
+                "#string": "abc"
               }
             }
           ]
@@ -475,9 +417,9 @@
     {
       "name": "not",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.not"
               }
@@ -487,9 +429,7 @@
             {
               "name": "value",
               "value": {
-                "Boolean": {
-                  "value": false
-                }
+                "#boolean": false
               }
             }
           ]
@@ -500,9 +440,9 @@
     {
       "name": "and",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.and"
               }
@@ -512,17 +452,13 @@
             {
               "name": "left",
               "value": {
-                "Boolean": {
-                  "value": true
-                }
+                "#boolean": true
               }
             },
             {
               "name": "right",
               "value": {
-                "Boolean": {
-                  "value": false
-                }
+                "#boolean": false
               }
             }
           ]
@@ -533,9 +469,9 @@
     {
       "name": "or",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.or"
               }
@@ -545,17 +481,13 @@
             {
               "name": "left",
               "value": {
-                "Boolean": {
-                  "value": false
-                }
+                "#boolean": false
               }
             },
             {
               "name": "right",
               "value": {
-                "Boolean": {
-                  "value": true
-                }
+                "#boolean": true
               }
             }
           ]
@@ -566,18 +498,16 @@
     {
       "name": "string literal",
       "expression": {
-        "String": {
-          "value": "こんにちは"
-        }
+        "#string": "こんにちは"
       },
       "expected": "こんにちは"
     },
     {
       "name": "string concat",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-concat"
               }
@@ -587,17 +517,13 @@
             {
               "name": "left",
               "value": {
-                "String": {
-                  "value": "Hello, "
-                }
+                "#string": "Hello, "
               }
             },
             {
               "name": "right",
               "value": {
-                "String": {
-                  "value": "definy!"
-                }
+                "#string": "definy!"
               }
             }
           ]
@@ -608,9 +534,9 @@
     {
       "name": "string length ascii",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-length"
               }
@@ -620,9 +546,7 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "definy"
-                }
+                "#string": "definy"
               }
             }
           ]
@@ -633,9 +557,9 @@
     {
       "name": "string slice",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-slice"
               }
@@ -645,25 +569,19 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "definy"
-                }
+                "#string": "definy"
               }
             },
             {
               "name": "start",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             },
             {
               "name": "end",
               "value": {
-                "Number": {
-                  "value": 5
-                }
+                "#number": 5
               }
             }
           ]
@@ -674,11 +592,11 @@
     {
       "name": "boolean match true",
       "expression": {
-        "Match": {
+        "#match": {
           "target": {
-            "Call": {
+            "#call": {
               "function": {
-                "PartReference": {
+                "#part_reference": {
                   "part_definition_event_hash": {
                     "$part": "core.less-than"
                   }
@@ -688,17 +606,13 @@
                 {
                   "name": "left",
                   "value": {
-                    "Number": {
-                      "value": 1
-                    }
+                    "#number": 1
                   }
                 },
                 {
                   "name": "right",
                   "value": {
-                    "Number": {
-                      "value": 2
-                    }
+                    "#number": 2
                   }
                 }
               ]
@@ -707,26 +621,21 @@
           "arms": [
             {
               "tag": "true",
-              "variable_id": null,
-              "variable_name": null,
+              "variable_id": -1,
+              "variable_name": "",
               "body": {
-                "String": {
-                  "value": "yes"
-                }
+                "#string": "yes"
               }
             },
             {
               "tag": "false",
-              "variable_id": null,
-              "variable_name": null,
+              "variable_id": -1,
+              "variable_name": "",
               "body": {
-                "String": {
-                  "value": "no"
-                }
+                "#string": "no"
               }
             }
-          ],
-          "default": null
+          ]
         }
       },
       "expected": "yes"
@@ -734,35 +643,28 @@
     {
       "name": "boolean match false",
       "expression": {
-        "Match": {
+        "#match": {
           "target": {
-            "Boolean": {
-              "value": false
-            }
+            "#boolean": false
           },
           "arms": [
             {
               "tag": "true",
-              "variable_id": null,
-              "variable_name": null,
+              "variable_id": -1,
+              "variable_name": "",
               "body": {
-                "Number": {
-                  "value": 1
-                }
+                "#number": 1
               }
             },
             {
               "tag": "false",
-              "variable_id": null,
-              "variable_name": null,
+              "variable_id": -1,
+              "variable_name": "",
               "body": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
-          ],
-          "default": null
+          ]
         }
       },
       "expected": 2
@@ -770,22 +672,16 @@
     {
       "name": "let single",
       "expression": {
-        "Let": {
-          "bindings": [
-            {
-              "variable_id": 1,
-              "variable_name": "x",
-              "value": {
-                "Number": {
-                  "value": 20
-                }
-              }
-            }
-          ],
+        "#let": {
+          "variable_id": 1,
+          "variable_name": "x",
+          "value": {
+            "#number": 20
+          },
           "body": {
-            "Call": {
+            "#call": {
               "function": {
-                "PartReference": {
+                "#part_reference": {
                   "part_definition_event_hash": {
                     "$part": "core.plus"
                   }
@@ -795,7 +691,7 @@
                 {
                   "name": "left",
                   "value": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
@@ -803,7 +699,7 @@
                 {
                   "name": "right",
                   "value": {
-                    "Variable": {
+                    "#variable": {
                       "variable_id": 1
                     }
                   }
@@ -818,78 +714,70 @@
     {
       "name": "let multiple bindings",
       "expression": {
-        "Let": {
-          "bindings": [
-            {
-              "variable_id": 1,
-              "variable_name": "base",
-              "value": {
-                "Number": {
-                  "value": 10
-                }
-              }
-            },
-            {
+        "#let": {
+          "variable_id": 1,
+          "variable_name": "base",
+          "value": {
+            "#number": 10
+          },
+          "body": {
+            "#let": {
               "variable_id": 2,
               "variable_name": "height",
               "value": {
-                "Number": {
-                  "value": 5
+                "#number": 5
+              },
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.divide"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#call": {
+                          "function": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.multiply"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "left",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 1
+                                }
+                              }
+                            },
+                            {
+                              "name": "right",
+                              "value": {
+                                "#variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#number": 2
+                      }
+                    }
+                  ]
                 }
               }
-            }
-          ],
-          "body": {
-            "Call": {
-              "function": {
-                "PartReference": {
-                  "part_definition_event_hash": {
-                    "$part": "core.divide"
-                  }
-                }
-              },
-              "arguments": [
-                {
-                  "name": "left",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.multiply"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "left",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 1
-                            }
-                          }
-                        },
-                        {
-                          "name": "right",
-                          "value": {
-                            "Variable": {
-                              "variable_id": 2
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "name": "right",
-                  "value": {
-                    "Number": {
-                      "value": 2
-                    }
-                  }
-                }
-              ]
             }
           }
         }
@@ -899,24 +787,20 @@
     {
       "name": "let later binding refers earlier",
       "expression": {
-        "Let": {
-          "bindings": [
-            {
-              "variable_id": 1,
-              "variable_name": "a",
-              "value": {
-                "Number": {
-                  "value": 3
-                }
-              }
-            },
-            {
+        "#let": {
+          "variable_id": 1,
+          "variable_name": "a",
+          "value": {
+            "#number": 3
+          },
+          "body": {
+            "#let": {
               "variable_id": 2,
               "variable_name": "b",
               "value": {
-                "Call": {
+                "#call": {
                   "function": {
-                    "PartReference": {
+                    "#part_reference": {
                       "part_definition_event_hash": {
                         "$part": "core.multiply"
                       }
@@ -926,7 +810,7 @@
                     {
                       "name": "left",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 1
                         }
                       }
@@ -934,43 +818,41 @@
                     {
                       "name": "right",
                       "value": {
-                        "Number": {
-                          "value": 4
+                        "#number": 4
+                      }
+                    }
+                  ]
+                }
+              },
+              "body": {
+                "#call": {
+                  "function": {
+                    "#part_reference": {
+                      "part_definition_event_hash": {
+                        "$part": "core.plus"
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "name": "left",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 1
+                        }
+                      }
+                    },
+                    {
+                      "name": "right",
+                      "value": {
+                        "#variable": {
+                          "variable_id": 2
                         }
                       }
                     }
                   ]
                 }
               }
-            }
-          ],
-          "body": {
-            "Call": {
-              "function": {
-                "PartReference": {
-                  "part_definition_event_hash": {
-                    "$part": "core.plus"
-                  }
-                }
-              },
-              "arguments": [
-                {
-                  "name": "left",
-                  "value": {
-                    "Variable": {
-                      "variable_id": 1
-                    }
-                  }
-                },
-                {
-                  "name": "right",
-                  "value": {
-                    "Variable": {
-                      "variable_id": 2
-                    }
-                  }
-                }
-              ]
             }
           }
         }
@@ -980,44 +862,36 @@
     {
       "name": "let binds a comparison result",
       "expression": {
-        "Let": {
-          "bindings": [
-            {
-              "variable_id": 1,
-              "variable_name": "x",
-              "value": {
-                "Call": {
-                  "function": {
-                    "PartReference": {
-                      "part_definition_event_hash": {
-                        "$part": "core.less-than"
-                      }
-                    }
-                  },
-                  "arguments": [
-                    {
-                      "name": "left",
-                      "value": {
-                        "Number": {
-                          "value": 1
-                        }
-                      }
-                    },
-                    {
-                      "name": "right",
-                      "value": {
-                        "Number": {
-                          "value": 2
-                        }
-                      }
-                    }
-                  ]
+        "#let": {
+          "variable_id": 1,
+          "variable_name": "x",
+          "value": {
+            "#call": {
+              "function": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.less-than"
+                  }
                 }
-              }
+              },
+              "arguments": [
+                {
+                  "name": "left",
+                  "value": {
+                    "#number": 1
+                  }
+                },
+                {
+                  "name": "right",
+                  "value": {
+                    "#number": 2
+                  }
+                }
+              ]
             }
-          ],
+          },
           "body": {
-            "Variable": {
+            "#variable": {
               "variable_id": 1
             }
           }
@@ -1028,25 +902,17 @@
     {
       "name": "list literal",
       "expression": {
-        "ListLiteral": {
-          "items": [
-            {
-              "Number": {
-                "value": 1
-              }
-            },
-            {
-              "Number": {
-                "value": 2
-              }
-            },
-            {
-              "Number": {
-                "value": 3
-              }
-            }
-          ]
-        }
+        "#list": [
+          {
+            "#number": 1
+          },
+          {
+            "#number": 2
+          },
+          {
+            "#number": 3
+          }
+        ]
       },
       "expected": [
         1,
@@ -1057,9 +923,9 @@
     {
       "name": "list length",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.list-length"
               }
@@ -1069,25 +935,17 @@
             {
               "name": "value",
               "value": {
-                "ListLiteral": {
-                  "items": [
-                    {
-                      "Number": {
-                        "value": 1
-                      }
-                    },
-                    {
-                      "Number": {
-                        "value": 2
-                      }
-                    },
-                    {
-                      "Number": {
-                        "value": 3
-                      }
-                    }
-                  ]
-                }
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  },
+                  {
+                    "#number": 3
+                  }
+                ]
               }
             }
           ]
@@ -1098,9 +956,9 @@
     {
       "name": "list get",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.list-get"
               }
@@ -1110,33 +968,23 @@
             {
               "name": "list",
               "value": {
-                "ListLiteral": {
-                  "items": [
-                    {
-                      "Number": {
-                        "value": 10
-                      }
-                    },
-                    {
-                      "Number": {
-                        "value": 20
-                      }
-                    },
-                    {
-                      "Number": {
-                        "value": 30
-                      }
-                    }
-                  ]
-                }
+                "#list": [
+                  {
+                    "#number": 10
+                  },
+                  {
+                    "#number": 20
+                  },
+                  {
+                    "#number": 30
+                  }
+                ]
               }
             },
             {
               "name": "index",
               "value": {
-                "Number": {
-                  "value": 1
-                }
+                "#number": 1
               }
             }
           ]
@@ -1147,9 +995,9 @@
     {
       "name": "list concat",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.list-concat"
               }
@@ -1159,34 +1007,24 @@
             {
               "name": "left",
               "value": {
-                "ListLiteral": {
-                  "items": [
-                    {
-                      "Number": {
-                        "value": 1
-                      }
-                    }
-                  ]
-                }
+                "#list": [
+                  {
+                    "#number": 1
+                  }
+                ]
               }
             },
             {
               "name": "right",
               "value": {
-                "ListLiteral": {
-                  "items": [
-                    {
-                      "Number": {
-                        "value": 2
-                      }
-                    },
-                    {
-                      "Number": {
-                        "value": 3
-                      }
-                    }
-                  ]
-                }
+                "#list": [
+                  {
+                    "#number": 2
+                  },
+                  {
+                    "#number": 3
+                  }
+                ]
               }
             }
           ]
@@ -1201,9 +1039,9 @@
     {
       "name": "list append",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.list-append"
               }
@@ -1213,28 +1051,20 @@
             {
               "name": "list",
               "value": {
-                "ListLiteral": {
-                  "items": [
-                    {
-                      "Number": {
-                        "value": 1
-                      }
-                    },
-                    {
-                      "Number": {
-                        "value": 2
-                      }
-                    }
-                  ]
-                }
+                "#list": [
+                  {
+                    "#number": 1
+                  },
+                  {
+                    "#number": 2
+                  }
+                ]
               }
             },
             {
               "name": "item",
               "value": {
-                "Number": {
-                  "value": 3
-                }
+                "#number": 3
               }
             }
           ]
@@ -1249,65 +1079,45 @@
     {
       "name": "record literal",
       "expression": {
-        "TypeLiteral": {
-          "items": [
-            {
-              "key": "name",
-              "value": {
-                "String": {
-                  "value": "definy"
-                }
-              }
-            },
-            {
-              "key": "version",
-              "value": {
-                "Number": {
-                  "value": 1
-                }
-              }
+        "#record": [
+          {
+            "key": "name",
+            "value": {
+              "#string": "definy"
             }
-          ]
-        }
+          },
+          {
+            "key": "version",
+            "value": {
+              "#number": 1
+            }
+          }
+        ]
       },
       "expected": {
-        "$record": [
-          [
-            "name",
-            "definy"
-          ],
-          [
-            "version",
-            1
-          ]
-        ]
+        "name": "definy",
+        "version": 1
       }
     },
     {
       "name": "record get",
       "expression": {
-        "RecordGet": {
+        "#record_get": {
           "record": {
-            "TypeLiteral": {
-              "items": [
-                {
-                  "key": "a",
-                  "value": {
-                    "Number": {
-                      "value": 1
-                    }
-                  }
-                },
-                {
-                  "key": "b",
-                  "value": {
-                    "Number": {
-                      "value": 2
-                    }
-                  }
+            "#record": [
+              {
+                "key": "a",
+                "value": {
+                  "#number": 1
                 }
-              ]
-            }
+              },
+              {
+                "key": "b",
+                "value": {
+                  "#number": 2
+                }
+              }
+            ]
           },
           "key": "b"
         }
@@ -1317,286 +1127,229 @@
     {
       "name": "variant without payload",
       "expression": {
-        "Variant": {
+        "#variant": {
           "tag": "none",
-          "payload": null
+          "payload": {
+            "#none": null
+          },
+          "type_part": {
+            "#none": null
+          }
         }
       },
       "expected": {
-        "$variant": "none",
-        "payload": null
+        "#none": null
       }
     },
     {
       "name": "variant with payload",
       "expression": {
-        "Variant": {
+        "#variant": {
           "tag": "some",
           "payload": {
-            "Number": {
-              "value": 5
+            "#some": {
+              "#number": 5
             }
+          },
+          "type_part": {
+            "#none": null
           }
         }
       },
       "expected": {
-        "$variant": "some",
-        "payload": 5
+        "#some": 5
       }
     },
     {
       "name": "record with computed field",
       "expression": {
-        "TypeLiteral": {
-          "items": [
-            {
-              "key": "a",
-              "value": {
-                "Call": {
-                  "function": {
-                    "PartReference": {
-                      "part_definition_event_hash": {
-                        "$part": "core.plus"
-                      }
+        "#record": [
+          {
+            "key": "a",
+            "value": {
+              "#call": {
+                "function": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.plus"
+                    }
+                  }
+                },
+                "arguments": [
+                  {
+                    "name": "left",
+                    "value": {
+                      "#number": 1
                     }
                   },
-                  "arguments": [
-                    {
-                      "name": "left",
-                      "value": {
-                        "Number": {
-                          "value": 1
-                        }
-                      }
-                    },
-                    {
-                      "name": "right",
-                      "value": {
-                        "Number": {
-                          "value": 2
-                        }
-                      }
+                  {
+                    "name": "right",
+                    "value": {
+                      "#number": 2
                     }
-                  ]
-                }
+                  }
+                ]
               }
             }
-          ]
-        }
+          }
+        ]
       },
       "expected": {
-        "$record": [
-          [
-            "a",
-            3
-          ]
-        ]
+        "a": 3
       }
     },
     {
       "name": "record with large number",
       "expression": {
-        "TypeLiteral": {
-          "items": [
-            {
-              "key": "a",
-              "value": {
-                "Number": {
-                  "value": 70000
-                }
-              }
+        "#record": [
+          {
+            "key": "a",
+            "value": {
+              "#number": 70000
             }
-          ]
-        }
+          }
+        ]
       },
       "expected": {
-        "$record": [
-          [
-            "a",
-            70000
-          ]
-        ]
+        "a": 70000
       }
     },
     {
       "name": "record with negative number",
       "expression": {
-        "TypeLiteral": {
-          "items": [
-            {
-              "key": "a",
-              "value": {
-                "Number": {
-                  "value": -1
-                }
-              }
+        "#record": [
+          {
+            "key": "a",
+            "value": {
+              "#number": -1
             }
-          ]
-        }
+          }
+        ]
       },
       "expected": {
-        "$record": [
-          [
-            "a",
-            -1
-          ]
-        ]
+        "a": -1
       }
     },
     {
       "name": "record with three fields",
       "expression": {
-        "TypeLiteral": {
-          "items": [
-            {
-              "key": "a",
-              "value": {
-                "Number": {
-                  "value": 1
-                }
-              }
-            },
-            {
-              "key": "b",
-              "value": {
-                "Number": {
-                  "value": 2
-                }
-              }
-            },
-            {
-              "key": "c",
-              "value": {
-                "Number": {
-                  "value": 3
-                }
-              }
+        "#record": [
+          {
+            "key": "a",
+            "value": {
+              "#number": 1
             }
-          ]
-        }
+          },
+          {
+            "key": "b",
+            "value": {
+              "#number": 2
+            }
+          },
+          {
+            "key": "c",
+            "value": {
+              "#number": 3
+            }
+          }
+        ]
       },
       "expected": {
-        "$record": [
-          [
-            "a",
-            1
-          ],
-          [
-            "b",
-            2
-          ],
-          [
-            "c",
-            3
-          ]
-        ]
+        "a": 1,
+        "b": 2,
+        "c": 3
       }
     },
     {
       "name": "nested record",
       "expression": {
-        "TypeLiteral": {
-          "items": [
-            {
-              "key": "a",
-              "value": {
-                "TypeLiteral": {
-                  "items": [
-                    {
-                      "key": "b",
-                      "value": {
-                        "Number": {
-                          "value": 1
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          ]
-        }
-      },
-      "expected": {
-        "$record": [
-          [
-            "a",
-            {
-              "$record": [
-                [
-                  "b",
-                  1
-                ]
-              ]
-            }
-          ]
-        ]
-      }
-    },
-    {
-      "name": "variant with computed payload",
-      "expression": {
-        "Variant": {
-          "tag": "some",
-          "payload": {
-            "Call": {
-              "function": {
-                "PartReference": {
-                  "part_definition_event_hash": {
-                    "$part": "core.plus"
-                  }
-                }
-              },
-              "arguments": [
+        "#record": [
+          {
+            "key": "a",
+            "value": {
+              "#record": [
                 {
-                  "name": "left",
+                  "key": "b",
                   "value": {
-                    "Number": {
-                      "value": 1
-                    }
-                  }
-                },
-                {
-                  "name": "right",
-                  "value": {
-                    "Number": {
-                      "value": 2
-                    }
+                    "#number": 1
                   }
                 }
               ]
             }
           }
+        ]
+      },
+      "expected": {
+        "a": {
+          "b": 1
+        }
+      }
+    },
+    {
+      "name": "variant with computed payload",
+      "expression": {
+        "#variant": {
+          "tag": "some",
+          "payload": {
+            "#some": {
+              "#call": {
+                "function": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.plus"
+                    }
+                  }
+                },
+                "arguments": [
+                  {
+                    "name": "left",
+                    "value": {
+                      "#number": 1
+                    }
+                  },
+                  {
+                    "name": "right",
+                    "value": {
+                      "#number": 2
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "type_part": {
+            "#none": null
+          }
         }
       },
       "expected": {
-        "$variant": "some",
-        "payload": 3
+        "#some": 3
       }
     },
     {
       "name": "match some",
       "expression": {
-        "Match": {
+        "#match": {
           "target": {
-            "Variant": {
+            "#variant": {
               "tag": "some",
               "payload": {
-                "Number": {
-                  "value": 5
+                "#some": {
+                  "#number": 5
                 }
+              },
+              "type_part": {
+                "#none": null
               }
             }
           },
           "arms": [
             {
               "tag": "none",
-              "variable_id": null,
-              "variable_name": null,
+              "variable_id": -1,
+              "variable_name": "",
               "body": {
-                "Number": {
-                  "value": 0
-                }
+                "#number": 0
               }
             },
             {
@@ -1604,9 +1357,9 @@
               "variable_id": 1,
               "variable_name": "v",
               "body": {
-                "Call": {
+                "#call": {
                   "function": {
-                    "PartReference": {
+                    "#part_reference": {
                       "part_definition_event_hash": {
                         "$part": "core.multiply"
                       }
@@ -1616,7 +1369,7 @@
                     {
                       "name": "left",
                       "value": {
-                        "Variable": {
+                        "#variable": {
                           "variable_id": 1
                         }
                       }
@@ -1624,17 +1377,14 @@
                     {
                       "name": "right",
                       "value": {
-                        "Number": {
-                          "value": 2
-                        }
+                        "#number": 2
                       }
                     }
                   ]
                 }
               }
             }
-          ],
-          "default": null
+          ]
         }
       },
       "expected": 10
@@ -1642,22 +1392,25 @@
     {
       "name": "match none",
       "expression": {
-        "Match": {
+        "#match": {
           "target": {
-            "Variant": {
+            "#variant": {
               "tag": "none",
-              "payload": null
+              "payload": {
+                "#none": null
+              },
+              "type_part": {
+                "#none": null
+              }
             }
           },
           "arms": [
             {
               "tag": "none",
-              "variable_id": null,
-              "variable_name": null,
+              "variable_id": -1,
+              "variable_name": "",
               "body": {
-                "Number": {
-                  "value": 0
-                }
+                "#number": 0
               }
             },
             {
@@ -1665,13 +1418,12 @@
               "variable_id": 1,
               "variable_name": "v",
               "body": {
-                "Variable": {
+                "#variable": {
                   "variable_id": 1
                 }
               }
             }
-          ],
-          "default": null
+          ]
         }
       },
       "expected": 0
@@ -1679,9 +1431,9 @@
     {
       "name": "call std.abs",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.abs"
               }
@@ -1691,9 +1443,7 @@
             {
               "name": "x",
               "value": {
-                "Number": {
-                  "value": -5
-                }
+                "#number": -5
               }
             }
           ]
@@ -1704,9 +1454,9 @@
     {
       "name": "call std.min",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.min"
               }
@@ -1716,17 +1466,13 @@
             {
               "name": "a",
               "value": {
-                "Number": {
-                  "value": 3
-                }
+                "#number": 3
               }
             },
             {
               "name": "b",
               "value": {
-                "Number": {
-                  "value": 8
-                }
+                "#number": 8
               }
             }
           ]
@@ -1737,9 +1483,9 @@
     {
       "name": "call std.max",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.max"
               }
@@ -1749,17 +1495,13 @@
             {
               "name": "a",
               "value": {
-                "Number": {
-                  "value": 3
-                }
+                "#number": 3
               }
             },
             {
               "name": "b",
               "value": {
-                "Number": {
-                  "value": 8
-                }
+                "#number": 8
               }
             }
           ]
@@ -1770,9 +1512,9 @@
     {
       "name": "call std.sign",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.sign"
               }
@@ -1782,9 +1524,7 @@
             {
               "name": "x",
               "value": {
-                "Number": {
-                  "value": -9
-                }
+                "#number": -9
               }
             }
           ]
@@ -1795,9 +1535,9 @@
     {
       "name": "call std.bool-to-string",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.bool-to-string"
               }
@@ -1807,9 +1547,7 @@
             {
               "name": "b",
               "value": {
-                "Boolean": {
-                  "value": true
-                }
+                "#boolean": true
               }
             }
           ]
@@ -1820,9 +1558,9 @@
     {
       "name": "call std.list-is-empty",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.list-is-empty"
               }
@@ -1832,9 +1570,7 @@
             {
               "name": "xs",
               "value": {
-                "ListLiteral": {
-                  "items": []
-                }
+                "#list": []
               }
             }
           ]
@@ -1845,9 +1581,9 @@
     {
       "name": "call std.string-index-of",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.string-index-of"
               }
@@ -1857,25 +1593,19 @@
             {
               "name": "text",
               "value": {
-                "String": {
-                  "value": "hello world"
-                }
+                "#string": "hello world"
               }
             },
             {
               "name": "target",
               "value": {
-                "String": {
-                  "value": "world"
-                }
+                "#string": "world"
               }
             },
             {
               "name": "startIndex",
               "value": {
-                "Number": {
-                  "value": 0
-                }
+                "#number": 0
               }
             }
           ]
@@ -1886,9 +1616,9 @@
     {
       "name": "call std.url-path",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.url-path"
               }
@@ -1898,9 +1628,7 @@
             {
               "name": "url",
               "value": {
-                "String": {
-                  "value": "https://example.com/a/b?q=1"
-                }
+                "#string": "https://example.com/a/b?q=1"
               }
             }
           ]
@@ -1911,9 +1639,9 @@
     {
       "name": "call std.url-query",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "std.url-query"
               }
@@ -1923,9 +1651,7 @@
             {
               "name": "url",
               "value": {
-                "String": {
-                  "value": "https://example.com/a/b?q=1"
-                }
+                "#string": "https://example.com/a/b?q=1"
               }
             }
           ]
@@ -1936,7 +1662,7 @@
     {
       "name": "sample.triangle-area",
       "expression": {
-        "PartReference": {
+        "#part_reference": {
           "part_definition_event_hash": {
             "$part": "sample.triangle-area"
           }
@@ -1947,7 +1673,7 @@
     {
       "name": "sample.is-even-sample",
       "expression": {
-        "PartReference": {
+        "#part_reference": {
           "part_definition_event_hash": {
             "$part": "sample.is-even-sample"
           }
@@ -1958,7 +1684,7 @@
     {
       "name": "sample.prime-numbers",
       "expression": {
-        "PartReference": {
+        "#part_reference": {
           "part_definition_event_hash": {
             "$part": "sample.prime-numbers"
           }
@@ -1975,7 +1701,7 @@
     {
       "name": "sample.greet",
       "expression": {
-        "PartReference": {
+        "#part_reference": {
           "part_definition_event_hash": {
             "$part": "sample.greet"
           }
@@ -1986,7 +1712,7 @@
     {
       "name": "sample.sample-ast-calc",
       "expression": {
-        "PartReference": {
+        "#part_reference": {
           "part_definition_event_hash": {
             "$part": "sample.sample-ast-calc"
           }
@@ -1997,9 +1723,9 @@
     {
       "name": "string length counts UTF-8 bytes",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-length"
               }
@@ -2009,9 +1735,7 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "こんにちは"
-                }
+                "#string": "こんにちは"
               }
             }
           ]
@@ -2022,9 +1746,9 @@
     {
       "name": "string length mixed",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-length"
               }
@@ -2034,9 +1758,7 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "aé🎉"
-                }
+                "#string": "aé🎉"
               }
             }
           ]
@@ -2047,9 +1769,9 @@
     {
       "name": "string slice by UTF-8 byte offsets",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-slice"
               }
@@ -2059,25 +1781,19 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "こんにちは"
-                }
+                "#string": "こんにちは"
               }
             },
             {
               "name": "start",
               "value": {
-                "Number": {
-                  "value": 3
-                }
+                "#number": 3
               }
             },
             {
               "name": "end",
               "value": {
-                "Number": {
-                  "value": 9
-                }
+                "#number": 9
               }
             }
           ]
@@ -2088,9 +1804,9 @@
     {
       "name": "string slice clamps out of range",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-slice"
               }
@@ -2100,25 +1816,19 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "definy"
-                }
+                "#string": "definy"
               }
             },
             {
               "name": "start",
               "value": {
-                "Number": {
-                  "value": -3
-                }
+                "#number": -3
               }
             },
             {
               "name": "end",
               "value": {
-                "Number": {
-                  "value": 100
-                }
+                "#number": 100
               }
             }
           ]
@@ -2129,9 +1839,9 @@
     {
       "name": "string slice end before start is empty",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-slice"
               }
@@ -2141,25 +1851,19 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "definy"
-                }
+                "#string": "definy"
               }
             },
             {
               "name": "start",
               "value": {
-                "Number": {
-                  "value": 4
-                }
+                "#number": 4
               }
             },
             {
               "name": "end",
               "value": {
-                "Number": {
-                  "value": 2
-                }
+                "#number": 2
               }
             }
           ]
@@ -2170,9 +1874,9 @@
     {
       "name": "string to bytes is UTF-8",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-to-bytes"
               }
@@ -2182,9 +1886,7 @@
             {
               "name": "value",
               "value": {
-                "String": {
-                  "value": "aé"
-                }
+                "#string": "aé"
               }
             }
           ]
@@ -2199,9 +1901,9 @@
     {
       "name": "equal non-ascii strings",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.equal"
               }
@@ -2211,17 +1913,13 @@
             {
               "name": "left",
               "value": {
-                "String": {
-                  "value": "定義"
-                }
+                "#string": "定義"
               }
             },
             {
               "name": "right",
               "value": {
-                "String": {
-                  "value": "定義"
-                }
+                "#string": "定義"
               }
             }
           ]
@@ -2232,9 +1930,9 @@
     {
       "name": "string concat non-ascii",
       "expression": {
-        "Call": {
+        "#call": {
           "function": {
-            "PartReference": {
+            "#part_reference": {
               "part_definition_event_hash": {
                 "$part": "core.string-concat"
               }
@@ -2244,17 +1942,13 @@
             {
               "name": "left",
               "value": {
-                "String": {
-                  "value": "でふぃ"
-                }
+                "#string": "でふぃ"
               }
             },
             {
               "name": "right",
               "value": {
-                "String": {
-                  "value": "にー"
-                }
+                "#string": "にー"
               }
             }
           ]

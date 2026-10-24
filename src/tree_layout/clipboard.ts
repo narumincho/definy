@@ -9,6 +9,13 @@ import { nextVariableId } from "./selection.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import type { PathStep } from "./types.ts";
 import type { SelectorOption } from "./selector_options.ts";
+import {
+  callOf,
+  hole,
+  NO_VARIABLE,
+  variableExpression,
+  variableIdOf,
+} from "./expression.ts";
 
 /** クリップボードの JSON の `format` の値. これが無い文字列は貼り付けない */
 export const EXPRESSION_CLIPBOARD_FORMAT = "definy.expression";
@@ -38,17 +45,16 @@ export type ExpressionClipboardData = {
   }>;
 };
 
-/** `{"Variable": {"variable_id": n}}` か `{"Variable": n}` なら, その変数 ID */
-function referencedId(value: unknown): number | null {
-  if (value === null || typeof value !== "object" || !("Variable" in value)) {
-    return null;
-  }
-  const raw = (value as { readonly Variable: unknown }).Variable;
-  const id =
-    typeof raw === "number"
-      ? raw
-      : (raw as { readonly variable_id?: unknown } | null)?.variable_id;
-  return typeof id === "number" && Number.isInteger(id) ? id : null;
+/** `{"#variable": {"variable_id": n}}` なら, その変数 ID */
+const referencedId = variableIdOf;
+
+/** 変数を定義するキー (let の束縛, 関数の引数, match の束縛) の変数 ID. 束縛しない match のアーム (-1) は除く */
+function definedVariableId(key: string, value: unknown): number | null {
+  return (key === "variable_id" || key === "parameter_id") &&
+    typeof value === "number" &&
+    value !== NO_VARIABLE
+    ? value
+    : null;
 }
 
 /** 式の中で定義している変数 ID (let の束縛, 関数の引数, match の束縛) と, 参照している変数 ID */
@@ -72,11 +78,9 @@ function collectVariableIds(expr: unknown): {
       return;
     }
     for (const [key, child] of Object.entries(value)) {
-      if (
-        (key === "variable_id" || key === "parameter_id") &&
-        typeof child === "number"
-      ) {
-        bound.add(child);
+      const defined = definedVariableId(key, child);
+      if (defined !== null) {
+        bound.add(defined);
       } else {
         walk(child);
       }
@@ -110,12 +114,8 @@ export function expressionToClipboardText(
       .filter((id) => !bound.has(id))
       .map((id) => ({ id, name: scopeVariables?.get(id) ?? "" })),
   };
-  // パーツの ID などのバイト列は JSON にできないので `{"$bytes": "<Base64URL>"}` にする
-  return JSON.stringify(data, (_key, value: unknown) =>
-    value instanceof Uint8Array
-      ? { $bytes: value.toBase64({ alphabet: "base64url", omitPadding: true }) }
-      : value,
-  );
+  // 式は definy の値 (docs/value-encoding.md) なので, そのまま JSON にできる
+  return JSON.stringify(data);
 }
 
 /** クリップボードの文字列を読む. definy の式でなければ `null` */
@@ -124,20 +124,7 @@ export function parseClipboardText(
 ): ExpressionClipboardData | null {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text, (_key, value: unknown) => {
-      if (
-        value !== null &&
-        typeof value === "object" &&
-        !Array.isArray(value) &&
-        Object.keys(value).length === 1 &&
-        typeof (value as { $bytes?: unknown }).$bytes === "string"
-      ) {
-        return Uint8Array.fromBase64((value as { $bytes: string }).$bytes, {
-          alphabet: "base64url",
-        });
-      }
-      return value;
-    });
+    parsed = JSON.parse(text);
   } catch {
     return null;
   }
@@ -176,7 +163,7 @@ export function parseClipboardText(
  *
  * - 式の中で定義する変数は, 貼り付け先の式全体で使われていない ID に振り直す (外側の変数と ID がぶつからないように)
  * - 式の外の変数は, 貼り付け先から参照できる同じ名前の変数に付け替える. 同じ ID で同じ名前ならそのまま.
- *   見つからなければ未入力 (`Hole`) にする (その変数の呼び出しなら呼び出しごと未入力にする)
+ *   見つからなければ未入力 (`hole`) にする (その変数の呼び出しなら呼び出しごと未入力にする)
  */
 export function remapPastedVariables(
   data: ExpressionClipboardData,
@@ -213,26 +200,24 @@ export function remapPastedVariables(
     if (ref !== null) {
       const mapped = idMap.has(ref) ? idMap.get(ref) : ref;
       return mapped === null || mapped === undefined
-        ? { Hole: {} }
-        : { Variable: { variable_id: mapped } };
+        ? hole()
+        : variableExpression(mapped);
     }
-    if ("Call" in value) {
-      const callee = (
-        value as { readonly Call?: { readonly function?: unknown } }
-      ).Call?.function;
-      const calleeId = referencedId(callee);
+    const call = callOf(value);
+    if (call !== undefined) {
+      const calleeId = referencedId(call.callee);
       if (calleeId !== null && idMap.get(calleeId) === null) {
-        return { Hole: {} };
+        return hole();
       }
     }
     return Object.fromEntries(
-      Object.entries(value).map(([key, child]) => [
-        key,
-        (key === "variable_id" || key === "parameter_id") &&
-        typeof child === "number"
-          ? (idMap.get(child) ?? child)
-          : rewrite(child),
-      ]),
+      Object.entries(value).map(([key, child]) => {
+        const defined = definedVariableId(key, child);
+        return [
+          key,
+          defined !== null ? (idMap.get(defined) ?? defined) : rewrite(child),
+        ];
+      }),
     );
   }
   return rewrite(data.expression);

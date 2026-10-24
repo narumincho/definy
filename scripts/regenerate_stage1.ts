@@ -32,7 +32,7 @@ const accountBytes = await devSystemAccountBytes();
 const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
 
 const compileToWasmPlaceholder = {
-  PartReference: {
+  "#part_reference": {
     part_definition_event_hash: {
       $part: "core.compile-to-wasm",
     },

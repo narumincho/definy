@@ -10,17 +10,22 @@ definy では「型も式である」という思想に基づき、パーツの�
 
 ## 対応する型と式
 
-パーツの型 (`partType`, `seeds/schemas` の `PartType`) と型の式は
+パーツの型 (`partType`) は `core.type-ast` の値 ([value-encoding.md](value-encoding.md)) で、
+型の式 (型パーツの宣言と同じ `core.expression` の `type_*` の値) と
 [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts) で相互変換できる。
 
-| `partType`                                  | 型の式                                            | 説明                                                                                       |
-| :------------------------------------------ | :------------------------------------------------ | :----------------------------------------------------------------------------------------- |
-| `"number"` / `"string"` / `"boolean"`       | `"TypeNumber"` / `"TypeString"` / `"TypeBoolean"` | 64 ビット数値型・文字列型・真偽値型                                                        |
-| `{ list: T }`                               | `{ TypeList: { item_type } }`                     | 要素型 T のリスト型                                                                        |
-| `{ function: { parameters, return_type } }` | `{ TypeFunction }`                                | 複数の名前付き引数型 `[(name, type)]` -> 戻り値型                                          |
-| `{ record: [{ key, value }] }`              | `{ TypeLiteral }`                                 | レコード型（直積型 `{ key: Type }`。余剰フィールドを許容する構造的幅サブタイピングに対応） |
-| `{ union: [{ tag, payload }] }`             | `{ TypeUnion }`                                   | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
-| `{ type_part: ID }`                         | `{ PartReference }`                               | 定義済み型パーツの参照                                                                     |
+| `partType` (`core.type-ast`)                                     | 型の式                                                                          | 説明                                                                                       |
+| :--------------------------------------------------------------- | :------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------- |
+| `{"#number": null}` / `{"#string": null}` / `{"#boolean": null}` | `{"#type_number": null}` / `{"#type_string": null}` / `{"#type_boolean": null}` | 64 ビット数値型・文字列型・真偽値型                                                        |
+| `{"#secret": null}`                                              | `{"#type_secret": null}`                                                        | シークレット ([secret.md](secret.md))                                                      |
+| `{"#list": {item_type: T}}`                                      | `{"#type_list": {item_type}}`                                                   | 要素型 T のリスト型                                                                        |
+| `{"#function": {parameters: [{name, type}], return_type}}`       | `{"#type_function": {parameters: [{name, type}], return_type}}`                 | 複数の名前付き引数型 `[(name, type)]` -> 戻り値型                                          |
+| `{"#record": [{key, field_type}]}`                               | `{"#type_record": [{key, value}]}`                                              | レコード型（直積型 `{ key: Type }`。余剰フィールドを許容する構造的幅サブタイピングに対応） |
+| `{"#union": [{tag, payload_type: option}]}`                      | `{"#type_union": [{tag, payload_type: option}]}`                                | 直和型（Enum `Tag(Type) \| Tag`）                                                          |
+| `{"#reference": {part_hash: ID}}`                                | `{"#part_reference": {part_definition_event_hash: ID}}`                         | 定義済み型パーツの参照                                                                     |
+| `{"#code": T}`                                                   | `{"#type_code": {value_type: T}}` (エディタの中だけ)                            | quote した式の型 `Code<T>` ([quote.md](quote.md))                                          |
+| `{"#type": null}`                                                | `{"#type_type": null}` (エディタの中だけ)                                       | 型パーツ (式が型の宣言)                                                                    |
+| `null`                                                           | `null`                                                                          | 型指定なし                                                                                 |
 
 パーツの型はモジュールコミット (`ModuleCommitEvent`) の各パーツ (`partType`) に入る。
 
@@ -31,18 +36,18 @@ definy
 
 ### 1. 型・式・呼び出しの構造
 
-- **関数型宣言 (`{ function }` / `TypeFunction`)**:
+- **関数型宣言 (`function` / `type_function`)**:
   ```
   (name_1: Type_1, name_2: Type_2, ...) -> ReturnType
   ```
   - 例:
     `list-contains-string: (list: List String, target: String, index: Number) -> Boolean`
   - ゼロ引数関数は空リスト `parameters: []` として表現されます。
-- **関数式 (`Function`)**:
+- **関数式 (`function`)**:
   - `parameters`: 各パラメーターは `{ parameter_id: number, parameter_name: string }`
   - `body`: 関数本体式
-- **関数呼び出し式 (`Call`)**:
-  - `function`: 呼び出し対象
+- **関数呼び出し式 (`call`)**:
+  - `function`: 呼び出し対象 (`core.callee`。[call-syntax.md](call-syntax.md))
   - `arguments`: 各実引数は `{ name: string, value: 式 }`
 
 ### 2. 型検査とサブタイピング仕様
@@ -52,31 +57,25 @@ definy
 - **パラメータの反変性・戻り値の共変性**:
   関数型同士の代入適合性（`type-assignable`）において、引数型は反変（$ExpectedParam \le ActualParam$）、戻り値型は共変（$ActualReturn \le ExpectedReturn$）として検査されます。
 
-## ローカル変数定義 (`Let`) の複数バインディング仕様
+## ローカル変数定義 (`let`)
 
-definy では従来、1つの `let` 式で1つのローカル変数しか束縛できなかったため、複数のローカル変数を定義する際に深い入れ子（ネスト）が発生していました。
+### 1. 構造
 
-これを解消し、1つの `let` 式で複数のローカル変数を順次定義できるように拡張しました。
-
-### 1. 構造と構文
-
-- **式構造 (`Let`)**:
-  - `bindings`: ローカル変数束縛のリスト
-    - `variable_id: number`: 一意のローカル変数ID
-    - `variable_name: string`: ローカルパーツ名（変数名）
-    - `value`: バインディングの評価式
-  - `body`: ローカル変数を利用する本体式
-- **擬似テキスト表現**:
-  ```
-  let [ (name_1 = val_1), (name_2 = val_2), ... ] in body
-  ```
-- **スコープと評価順序**:
-  リストの先頭から順に評価され、先行するバインディングで定義された変数は、後続のバインディングの値の計算式および `body` 内から参照可能です。
+- **式構造 (`let`)**: 束縛 1 つずつの入れ子 `{"#let": {variable_id, variable_name, value, body}}`。
+  - `variable_id: number`: 一意のローカル変数ID
+  - `variable_name: string`: 変数名
+  - `value`: 束縛する値の式
+  - `body`: 変数を使う本体の式。続けて束縛するときは本体をまた `let` にする
+- **擬似テキスト表現**: `let x = 1 in let y = x in body`
+- 以前は 1 つの `let` に束縛のリスト (`bindings`) を持たせていたが、`core.expression` の値そのものを保存する形
+  ([value-encoding.md](value-encoding.md)) にしたときに、`core.expression` と同じ束縛 1 つずつの形にした。
 
 ### 2. UI とツリーレイアウト
 
-- ツリーエディタ上では、`let` ノード直下に `list` ノード（各要素が `name = value`）と `body` ノードが配置され、視覚的にローカル変数のリストと本体式を編集できます。
-- パス表現として、各バインディングの値式には `{ kind: "letBindingValue", index }` (`src/tree_layout/path.ts`) でアクセス・編集します。
+- ツリーエディタでは、続けて書いた `let` を 1 つのブロックとして見せる。`let` ノード直下に `list` ノード
+  (各要素が `name = value`) と `body` ノードが並ぶ (`src/tree_layout/expression.ts` の `letChainOf`)。
+- パス表現として、各束縛の値の式には `{ kind: "letBindingValue", index }` (`src/tree_layout/path.ts`) で、
+  本体には `letBody` でアクセス・編集する。どちらもまとめたブロックの中の番号で、書き戻すと入れ子の `let` に戻す。
 
 ## 型パーツと union の代入可能性
 

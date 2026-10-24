@@ -6,7 +6,7 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
 
 ```json
 {
-  "Secret": {
+  "#secret": {
     "id": "cloudflare-api-token-6c1f0e3a9b2d4c58",
     "label": "Cloudflare API トークン",
     "allowed_url_prefixes": ["https://api.cloudflare.com/"]
@@ -22,7 +22,7 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
 
 ## 型
 
-- 型は `Secret` (`core.type-ast` の `secret`, パーツの型の JSON は `"secret"`, 型パーツの宣言の中では `"TypeSecret"` / `type_secret`)
+- 型は `Secret` (`core.type-ast` の `secret`, パーツの型の JSON は `{"#secret": null}`, 型パーツの宣言の中では `{"#type_secret": null}`)
 - 文字列とは別の型なので, 文字列連結や `done` のメッセージには使えない。値 (`{ id, label }` のレコード) のフィールドも読めない
 - 使えるのは `wasi.outgoing-request` の `secret_headers` (`{ name, prefix, secret }`) だけ。ホストが送信の直前に
   `prefix ++ 値` のヘッダーを足す ([wasi-io.md](wasi-io.md))
@@ -39,9 +39,10 @@ API トークンなどの秘密の値を, 環境変数の代わりに型安全�
 
 ## 実装
 
-- `seeds/core.json`: `core.expression` の `secret({ id, label })` と `type_secret`, `core.type-ast` の `secret`。
+- `seeds/core.json`: `core.expression` の `secret({ id, label, allowed_url_prefixes })` と `type_secret`, `core.type-ast` の `secret`。
   型チェック (`type-check-unlocated` は `Secret` を返す), コンパイル・評価 (`{ id, label }` のレコードにする), quote
-- `src/stage1_compiler.ts`: `Secret` を `secret` バリアントにする (`allowed_url_prefixes` は捨てる)
+- 式は保存した `core.expression` の値をそのまま stage1・型チェッカーに渡す ([value-encoding.md](value-encoding.md)).
+  以前は TypeScript の変換が `allowed_url_prefixes` を捨てていたが, 今は `core.expression` の `secret` が持つ (definy 側は読まない)
 - `src/wasi_io.ts`: `secret_headers` に値を入れる (`withSecretHeaders`)
 - `src/components/SecretPanel.tsx`: パーツのページの欄
 - テスト: `src/self_hosted_type_check.test.ts` (型), `src/wasi_io.test.ts` (値の挿入・宛先の制限), `src/secret.test.ts` (使用箇所),

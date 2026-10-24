@@ -10,18 +10,12 @@
  *
  * 詳細は docs/wasi-io.md
  */
+import { variant, variantOf } from "./definy_value.ts";
 import {
-  selfHostedList,
-  selfHostedNumber,
-  selfHostedRecord,
-  selfHostedString,
-  selfHostedVariant,
-} from "./self_hosted_ast.ts";
-import {
-  definyAstToSelfHostedAst,
+  containsHole,
   instantiateCompiledValue,
-  SelfHostedAstConversionError,
-  stage1PartsExpression,
+  isTypeDeclaration,
+  stage1PartsValue,
   type DefinyValue,
   type Stage1ReferencedPart,
 } from "./stage1_compiler.ts";
@@ -108,48 +102,25 @@ const MAX_STEPS = 1000;
 
 /** `wasi.io` の値か (タグが `done` / `outgoing_request` / `get_parts` の Variant か) */
 export function isWasiIoValue(value: DefinyValue): boolean {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    "tag" in value &&
-    "payload" in value &&
-    (value.tag === "done" ||
-      value.tag === "outgoing_request" ||
-      value.tag === "get_parts")
-  );
+  const tag = variantOf(value)?.tag;
+  return tag === "done" || tag === "outgoing_request" || tag === "get_parts";
 }
 
-function headersLiteral(headers: ReadonlyArray<WasiHttpHeader>): unknown {
-  return selfHostedList(
-    headers.map((header) =>
-      selfHostedRecord([
-        ["name", selfHostedString(header.name)],
-        ["value", selfHostedString(header.value)],
-      ]),
-    ),
-  );
-}
-
-function bytesLiteral(bytes: Uint8Array): unknown {
-  return selfHostedList(Array.from(bytes, (byte) => selfHostedNumber(byte)));
-}
-
-/** `wasi.http-result` の値を作るリテラル */
+/** `wasi.http-result` の値 */
 export function httpResultLiteral(result: WasiHttpResult): unknown {
   if ("error" in result) {
-    return selfHostedVariant("error", selfHostedString(result.error));
+    return variant("error", result.error);
   }
   const { status, headers, body } = result.ok;
-  return selfHostedVariant(
-    "ok",
-    selfHostedRecord([
-      ["status", selfHostedNumber(status)],
-      ["headers", headersLiteral(headers)],
-      ["body", bytesLiteral(body)],
-      ["text", selfHostedString(new TextDecoder().decode(body))],
-    ]),
-  );
+  return variant("ok", {
+    status,
+    headers: headers.map((header) => ({
+      name: header.name,
+      value: header.value,
+    })),
+    body: Array.from(body),
+    text: new TextDecoder().decode(body),
+  });
 }
 
 type SecretHeader = {
@@ -244,17 +215,9 @@ function withSecretHeaders(
   return { request: { ...request, headers } };
 }
 
-/** `core.expression` で表せる式か (型パーツの式などは表せないので渡さない) */
+/** stage1 でコンパイルできる式か (型パーツの宣言式・未入力のある式は渡さない) */
 function isCompilable(expression: unknown): boolean {
-  try {
-    definyAstToSelfHostedAst(expression);
-    return true;
-  } catch (e) {
-    if (e instanceof SelfHostedAstConversionError) {
-      return false;
-    }
-    throw e;
-  }
+  return !isTypeDeclaration(expression) && !containsHole(expression);
 }
 
 /**
@@ -315,7 +278,7 @@ export async function runWasiIo(
         }
         host.onStep?.({ kind: "get_parts", found: parts.length, missing });
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(stage1PartsExpression(parts)),
+          instance.writeArgument(stage1PartsValue(parts)),
         ]);
         break;
       }

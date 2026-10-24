@@ -1,209 +1,227 @@
 import type { PathStep } from "./types.ts";
+import {
+  field,
+  optionValue,
+  some,
+  variant,
+  variantOf,
+} from "../definy_value.ts";
+import {
+  hole,
+  letChain,
+  letChainOf,
+  numberExpression,
+  stringExpression,
+} from "./expression.ts";
 
 /**
- * 子の式をフィールド 1 つに持つ式の, パスの段とフィールド名の対応.
- * ast_to_layout.ts の表示とここでの取得・更新で同じ対応を使う
+ * 子の式をフィールド 1 つに持つ式 (タグ) の, パスの段とフィールド名の対応.
+ * ast_to_layout.ts の表示とここでの取得・更新で同じ対応を使う.
+ * フィールド名が `null` ならペイロードそのものが子の式
  */
 export const FIELD_STEPS: Readonly<
   Record<
     string,
-    ReadonlyArray<{ readonly step: string; readonly field: string }>
+    ReadonlyArray<{ readonly step: string; readonly field: string | null }>
   >
 > = {
-  TypeList: [{ step: "typeListItem", field: "item_type" }],
-  TypeCode: [{ step: "typeCodeValue", field: "value_type" }],
-  Quote: [{ step: "quoteExpression", field: "expression" }],
+  type_list: [{ step: "typeListItem", field: "item_type" }],
+  type_code: [{ step: "typeCodeValue", field: "value_type" }],
+  quote: [{ step: "quoteExpression", field: null }],
 };
 
-/** パスの段がフィールドの表にあれば, その式のキーとフィールド名 */
-function fieldForStep(
-  node: Record<string, unknown>,
-  head: PathStep,
-): { readonly key: string; readonly field: string } | null {
-  if (typeof head !== "string") return null;
-  for (const [key, steps] of Object.entries(FIELD_STEPS)) {
-    if (key in node) {
-      const found = steps.find((s) => s.step === head);
-      return found ? { key, field: found.field } : null;
-    }
-  }
-  return null;
+/** 子の式の読み書き. 読めなければ `get` は `undefined` を返す */
+type Lens = {
+  readonly get: () => unknown;
+  readonly set: (child: unknown) => unknown;
+};
+
+function indexOf(head: PathStep, kind: string): number | null {
+  return typeof head === "object" && head.kind === kind ? head.index : null;
 }
 
-/** union 型の i 番目のバリアントのペイロードの型 */
-function typeUnionVariants(
-  node: Record<string, unknown>,
-): ReadonlyArray<{ readonly payload_type?: unknown }> | null {
-  if (!("TypeUnion" in node)) return null;
-  const variants = (node.TypeUnion as { variants?: unknown } | null)?.variants;
-  return Array.isArray(variants) ? variants : null;
+function arrayAt(value: unknown): ReadonlyArray<unknown> {
+  return Array.isArray(value) ? value : [];
+}
+
+/** レコードのリスト `items` の `index` 番目のフィールド `key` の読み書き */
+function itemFieldLens(
+  items: ReadonlyArray<unknown>,
+  index: number,
+  key: string,
+  rebuild: (items: ReadonlyArray<unknown>) => unknown,
+  wrapGet: (value: unknown) => unknown = (value) => value,
+  wrapSet: (child: unknown) => unknown = (child) => child,
+): Lens | undefined {
+  const item = items[index];
+  if (item === undefined) {
+    return undefined;
+  }
+  return {
+    get: () => wrapGet(field(item, key)),
+    set: (child) =>
+      rebuild(
+        items.map((current, i) =>
+          i === index
+            ? { ...(current as object), [key]: wrapSet(child) }
+            : current,
+        ),
+      ),
+  };
+}
+
+/** 式 `expr` のパスの段 `head` の子の式の読み書き */
+function stepLens(expr: unknown, head: PathStep): Lens | undefined {
+  const tagged = variantOf(expr);
+  if (tagged === undefined) {
+    return undefined;
+  }
+  const { tag, payload } = tagged;
+  const withPayload = (next: unknown) => variant(tag, next);
+  const fieldLens = (key: string): Lens => ({
+    get: () => field(payload, key),
+    set: (child) => withPayload({ ...(payload as object), [key]: child }),
+  });
+
+  const fieldStep = FIELD_STEPS[tag]?.find((s) => s.step === head);
+  if (fieldStep !== undefined) {
+    if (fieldStep.field === null) {
+      return { get: () => payload, set: withPayload };
+    }
+    return fieldLens(fieldStep.field);
+  }
+
+  switch (tag) {
+    case "let": {
+      const chain = letChainOf(expr);
+      if (chain === undefined) {
+        return undefined;
+      }
+      if (head === "letBody") {
+        return {
+          get: () => chain.body,
+          set: (child) => letChain(chain.bindings, child),
+        };
+      }
+      const index = indexOf(head, "letBindingValue");
+      const binding = index === null ? undefined : chain.bindings[index];
+      if (binding === undefined) {
+        return undefined;
+      }
+      return {
+        get: () => binding.value,
+        set: (child) =>
+          letChain(
+            chain.bindings.map((b, i) =>
+              i === index ? { ...b, value: child } : b,
+            ),
+            chain.body,
+          ),
+      };
+    }
+    case "function":
+      return head === "functionBody" ? fieldLens("body") : undefined;
+    case "call": {
+      const index = indexOf(head, "callArgument");
+      return index === null
+        ? undefined
+        : itemFieldLens(
+            arrayAt(field(payload, "arguments")),
+            index,
+            "value",
+            (args) => withPayload({ ...(payload as object), arguments: args }),
+          );
+    }
+    case "list": {
+      const index = indexOf(head, "listItemValue");
+      const items = arrayAt(payload);
+      if (index === null || index >= items.length) {
+        return undefined;
+      }
+      return {
+        get: () => items[index],
+        set: (child) =>
+          withPayload(items.map((item, i) => (i === index ? child : item))),
+      };
+    }
+    case "record":
+    case "type_record": {
+      const index = indexOf(head, "recordItemValue");
+      return index === null
+        ? undefined
+        : itemFieldLens(arrayAt(payload), index, "value", withPayload);
+    }
+    case "record_get":
+      return head === "record" ? fieldLens("record") : undefined;
+    case "variant":
+      // ペイロードは option (`none` / `some(式)`)
+      if (head !== "variantPayload") {
+        return undefined;
+      }
+      return {
+        get: () => optionValue(field(payload, "payload")),
+        set: (child) =>
+          withPayload({ ...(payload as object), payload: some(child) }),
+      };
+    case "match": {
+      if (head === "matchTarget") {
+        return fieldLens("target");
+      }
+      const index = indexOf(head, "matchArmBody");
+      return index === null
+        ? undefined
+        : itemFieldLens(
+            arrayAt(field(payload, "arms")),
+            index,
+            "body",
+            (arms) => withPayload({ ...(payload as object), arms }),
+          );
+    }
+    case "type_function": {
+      if (head === "typeFunctionReturn") {
+        return fieldLens("return_type");
+      }
+      const index = indexOf(head, "typeFunctionParameter");
+      return index === null
+        ? undefined
+        : itemFieldLens(
+            arrayAt(field(payload, "parameters")),
+            index,
+            "type",
+            (parameters) => withPayload({ ...(payload as object), parameters }),
+          );
+    }
+    case "type_union": {
+      // バリアントのペイロードの型は option (`none` / `some(型)`)
+      const index = indexOf(head, "typeUnionVariant");
+      return index === null
+        ? undefined
+        : itemFieldLens(
+            arrayAt(payload),
+            index,
+            "payload_type",
+            withPayload,
+            optionValue,
+            some,
+          );
+    }
+  }
+  return undefined;
 }
 
 export function getExpressionAtPath(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
 ): unknown | undefined {
-  if (path.length === 0) {
-    return expr;
-  }
-  if (!expr || typeof expr !== "object") {
-    return undefined;
-  }
-
-  const node = expr as Record<string, unknown>;
-  const [head, ...tail] = path;
-  if (!head) return expr;
-
-  const fieldStep = fieldForStep(node, head);
-  if (fieldStep) {
-    const inner = node[fieldStep.key] as Record<string, unknown> | null;
-    return getExpressionAtPath(inner?.[fieldStep.field], tail);
-  }
-  const variants = typeUnionVariants(node);
-  if (
-    variants &&
-    typeof head === "object" &&
-    head.kind === "typeUnionVariant"
-  ) {
-    return getExpressionAtPath(variants[head.index]?.payload_type, tail);
-  }
-  if ("TypeFunction" in node) {
-    const fn = node.TypeFunction as {
-      parameters?: ReadonlyArray<{ type?: unknown }>;
-      return_type?: unknown;
-    } | null;
-    if (typeof head === "object" && head.kind === "typeFunctionParameter") {
-      return getExpressionAtPath(fn?.parameters?.[head.index]?.type, tail);
+  let current = expr;
+  for (const step of path) {
+    const lens = stepLens(current, step);
+    if (lens === undefined) {
+      return undefined;
     }
-    if (head === "typeFunctionReturn") {
-      return getExpressionAtPath(fn?.return_type, tail);
-    }
+    current = lens.get();
   }
-
-  if (head === "condition" && "If" in node) {
-    return getExpressionAtPath(
-      (node.If as { condition?: unknown })?.condition,
-      tail,
-    );
-  }
-
-  if (head === "then" && "If" in node) {
-    const ifNode = node.If as { then_expr?: unknown; then?: unknown };
-    return getExpressionAtPath(ifNode.then_expr ?? ifNode.then, tail);
-  }
-
-  if (head === "else" && "If" in node) {
-    const ifNode = node.If as { else_expr?: unknown; else?: unknown };
-    return getExpressionAtPath(ifNode.else_expr ?? ifNode.else, tail);
-  }
-
-  if (head === "letBody" && "Let" in node) {
-    return getExpressionAtPath((node.Let as { body?: unknown })?.body, tail);
-  }
-
-  if (head === "letValue" && "Let" in node) {
-    return getExpressionAtPath((node.Let as { value?: unknown })?.value, tail);
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "letBindingValue" &&
-    "Let" in node
-  ) {
-    const bindings = (
-      node.Let as { bindings?: ReadonlyArray<{ value?: unknown }> }
-    )?.bindings;
-    if (bindings && head.index < bindings.length) {
-      return getExpressionAtPath(bindings[head.index]?.value, tail);
-    }
-  }
-
-  if (head === "functionBody" && "Function" in node) {
-    return getExpressionAtPath(
-      (node.Function as { body?: unknown })?.body,
-      tail,
-    );
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "callArgument" &&
-    "Call" in node
-  ) {
-    const args = (
-      node.Call as { arguments?: ReadonlyArray<{ value?: unknown }> }
-    )?.arguments;
-    if (args && head.index < args.length) {
-      return getExpressionAtPath(args[head.index]?.value, tail);
-    }
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "listItemValue" &&
-    "ListLiteral" in node
-  ) {
-    const items = (node.ListLiteral as { items?: ReadonlyArray<unknown> })
-      ?.items;
-    if (items && head.index < items.length) {
-      return getExpressionAtPath(items[head.index], tail);
-    }
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "recordItemValue" &&
-    ("TypeLiteral" in node || "RecordLiteral" in node)
-  ) {
-    const inner = (node.TypeLiteral ?? node.RecordLiteral) as {
-      items?: ReadonlyArray<{ value?: unknown }>;
-    };
-    if (inner?.items && head.index < inner.items.length) {
-      return getExpressionAtPath(inner.items[head.index]?.value, tail);
-    }
-  }
-
-  if (head === "record" && "RecordGet" in node) {
-    return getExpressionAtPath(
-      (node.RecordGet as { record?: unknown })?.record,
-      tail,
-    );
-  }
-
-  if (head === "variantPayload" && "Variant" in node) {
-    return getExpressionAtPath(
-      (node.Variant as { payload?: unknown })?.payload,
-      tail,
-    );
-  }
-
-  if (head === "matchTarget" && "Match" in node) {
-    return getExpressionAtPath(
-      (node.Match as { target?: unknown })?.target,
-      tail,
-    );
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "matchArmBody" &&
-    "Match" in node
-  ) {
-    const arms = (node.Match as { arms?: ReadonlyArray<{ body?: unknown }> })
-      ?.arms;
-    if (arms && head.index < arms.length) {
-      return getExpressionAtPath(arms[head.index]?.body, tail);
-    }
-  }
-
-  if (head === "matchDefault" && "Match" in node) {
-    return getExpressionAtPath(
-      (node.Match as { default?: unknown })?.default,
-      tail,
-    );
-  }
-
-  return undefined;
+  return current;
 }
 
 export function updateExpressionAtPath(
@@ -211,335 +229,15 @@ export function updateExpressionAtPath(
   path: ReadonlyArray<PathStep>,
   updater: (target: unknown) => unknown,
 ): unknown {
-  if (path.length === 0) {
+  const [head, ...tail] = path;
+  if (head === undefined) {
     return updater(expr);
   }
-  if (!expr || typeof expr !== "object") {
+  const lens = stepLens(expr, head);
+  if (lens === undefined) {
     return expr;
   }
-
-  const node = expr as Record<string, unknown>;
-  const [head, ...tail] = path;
-  if (!head) return updater(expr);
-
-  const fieldStep = fieldForStep(node, head);
-  if (fieldStep) {
-    const inner = (node[fieldStep.key] ?? {}) as Record<string, unknown>;
-    return {
-      ...node,
-      [fieldStep.key]: {
-        ...inner,
-        [fieldStep.field]: updateExpressionAtPath(
-          inner[fieldStep.field],
-          tail,
-          updater,
-        ),
-      },
-    };
-  }
-  if ("TypeFunction" in node) {
-    const fn = (node.TypeFunction ?? {}) as {
-      parameters?: ReadonlyArray<{ type?: unknown }>;
-      return_type?: unknown;
-    };
-    if (typeof head === "object" && head.kind === "typeFunctionParameter") {
-      return {
-        ...node,
-        TypeFunction: {
-          ...fn,
-          parameters: (fn.parameters ?? []).map((p, i) =>
-            i === head.index
-              ? { ...p, type: updateExpressionAtPath(p.type, tail, updater) }
-              : p,
-          ),
-        },
-      };
-    }
-    if (head === "typeFunctionReturn") {
-      return {
-        ...node,
-        TypeFunction: {
-          ...fn,
-          return_type: updateExpressionAtPath(fn.return_type, tail, updater),
-        },
-      };
-    }
-  }
-  const variants = typeUnionVariants(node);
-  if (
-    variants &&
-    typeof head === "object" &&
-    head.kind === "typeUnionVariant"
-  ) {
-    return {
-      ...node,
-      TypeUnion: {
-        ...(node.TypeUnion as object),
-        variants: variants.map((v, i) =>
-          i === head.index
-            ? {
-                ...v,
-                payload_type: updateExpressionAtPath(
-                  v.payload_type,
-                  tail,
-                  updater,
-                ),
-              }
-            : v,
-        ),
-      },
-    };
-  }
-
-  if (head === "condition" && "If" in node) {
-    const ifInner = node.If as { condition?: unknown };
-    return {
-      ...node,
-      If: {
-        ...ifInner,
-        condition: updateExpressionAtPath(ifInner.condition, tail, updater),
-      },
-    };
-  }
-
-  if (head === "then" && "If" in node) {
-    const ifInner = node.If as Record<string, unknown>;
-    const thenKey = "then_expr" in ifInner ? "then_expr" : "then";
-    return {
-      ...node,
-      If: {
-        ...ifInner,
-        [thenKey]: updateExpressionAtPath(ifInner[thenKey], tail, updater),
-      },
-    };
-  }
-
-  if (head === "else" && "If" in node) {
-    const ifInner = node.If as Record<string, unknown>;
-    const elseKey = "else_expr" in ifInner ? "else_expr" : "else";
-    return {
-      ...node,
-      If: {
-        ...ifInner,
-        [elseKey]: updateExpressionAtPath(ifInner[elseKey], tail, updater),
-      },
-    };
-  }
-
-  if (head === "letBody" && "Let" in node) {
-    const letInner = node.Let as { body?: unknown };
-    return {
-      ...node,
-      Let: {
-        ...letInner,
-        body: updateExpressionAtPath(letInner.body, tail, updater),
-      },
-    };
-  }
-
-  if (head === "letValue" && "Let" in node) {
-    const letInner = node.Let as { value?: unknown };
-    return {
-      ...node,
-      Let: {
-        ...letInner,
-        value: updateExpressionAtPath(letInner.value, tail, updater),
-      },
-    };
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "letBindingValue" &&
-    "Let" in node
-  ) {
-    const letInner = node.Let as {
-      readonly bindings?: ReadonlyArray<{
-        readonly variable_id?: unknown;
-        readonly variable_name?: unknown;
-        readonly value?: unknown;
-      }>;
-    };
-    if (Array.isArray(letInner.bindings)) {
-      const updated = letInner.bindings.map((b, idx) =>
-        idx === head.index
-          ? {
-              ...b,
-              value: updateExpressionAtPath(b.value, tail, updater),
-            }
-          : b,
-      );
-      return {
-        ...node,
-        Let: {
-          ...letInner,
-          bindings: updated,
-        },
-      };
-    }
-  }
-
-  if (head === "functionBody" && "Function" in node) {
-    const fnInner = node.Function as { body?: unknown };
-    return {
-      ...node,
-      Function: {
-        ...fnInner,
-        body: updateExpressionAtPath(fnInner.body, tail, updater),
-      },
-    };
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "callArgument" &&
-    "Call" in node
-  ) {
-    const callInner = node.Call as {
-      arguments?: ReadonlyArray<{ name?: unknown; value?: unknown }>;
-    };
-    if (Array.isArray(callInner.arguments)) {
-      const updated = callInner.arguments.map((arg, idx) =>
-        idx === head.index
-          ? {
-              ...arg,
-              value: updateExpressionAtPath(arg.value, tail, updater),
-            }
-          : arg,
-      );
-      return {
-        ...node,
-        Call: {
-          ...callInner,
-          arguments: updated,
-        },
-      };
-    }
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "listItemValue" &&
-    "ListLiteral" in node
-  ) {
-    const listInner = node.ListLiteral as { items?: ReadonlyArray<unknown> };
-    if (Array.isArray(listInner.items)) {
-      const updated = listInner.items.map((item, idx) =>
-        idx === head.index ? updateExpressionAtPath(item, tail, updater) : item,
-      );
-      return {
-        ...node,
-        ListLiteral: {
-          ...listInner,
-          items: updated,
-        },
-      };
-    }
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "recordItemValue" &&
-    ("TypeLiteral" in node || "RecordLiteral" in node)
-  ) {
-    const wrapperKey = "TypeLiteral" in node ? "TypeLiteral" : "RecordLiteral";
-    const recInner = node[wrapperKey] as {
-      items?: ReadonlyArray<{ key?: unknown; name?: unknown; value?: unknown }>;
-    };
-    if (Array.isArray(recInner.items)) {
-      const updated = recInner.items.map((field, idx) =>
-        idx === head.index
-          ? {
-              ...field,
-              value: updateExpressionAtPath(field.value, tail, updater),
-            }
-          : field,
-      );
-      return {
-        ...node,
-        [wrapperKey]: {
-          ...recInner,
-          items: updated,
-        },
-      };
-    }
-  }
-
-  if (head === "record" && "RecordGet" in node) {
-    const rgInner = node.RecordGet as { record?: unknown };
-    return {
-      ...node,
-      RecordGet: {
-        ...rgInner,
-        record: updateExpressionAtPath(rgInner.record, tail, updater),
-      },
-    };
-  }
-
-  if (head === "variantPayload" && "Variant" in node) {
-    const vInner = node.Variant as { payload?: unknown };
-    return {
-      ...node,
-      Variant: {
-        ...vInner,
-        payload: updateExpressionAtPath(vInner.payload, tail, updater),
-      },
-    };
-  }
-
-  if (head === "matchTarget" && "Match" in node) {
-    const mInner = node.Match as { target?: unknown };
-    return {
-      ...node,
-      Match: {
-        ...mInner,
-        target: updateExpressionAtPath(mInner.target, tail, updater),
-      },
-    };
-  }
-
-  if (
-    typeof head === "object" &&
-    head.kind === "matchArmBody" &&
-    "Match" in node
-  ) {
-    const mInner = node.Match as {
-      readonly arms?: ReadonlyArray<{
-        readonly pattern?: unknown;
-        readonly body?: unknown;
-      }>;
-    };
-    if (Array.isArray(mInner.arms)) {
-      const updated = mInner.arms.map((arm, idx) =>
-        idx === head.index
-          ? {
-              ...arm,
-              body: updateExpressionAtPath(arm.body, tail, updater),
-            }
-          : arm,
-      );
-      return {
-        ...node,
-        Match: {
-          ...mInner,
-          arms: updated,
-        },
-      };
-    }
-  }
-
-  if (head === "matchDefault" && "Match" in node) {
-    const mInner = node.Match as { default?: unknown };
-    return {
-      ...node,
-      Match: {
-        ...mInner,
-        default: updateExpressionAtPath(mInner.default, tail, updater),
-      },
-    };
-  }
-
-  return expr;
+  return lens.set(updateExpressionAtPath(lens.get(), tail, updater));
 }
 
 export function setNumberValue(
@@ -547,9 +245,7 @@ export function setNumberValue(
   path: ReadonlyArray<PathStep>,
   value: number,
 ): unknown {
-  return updateExpressionAtPath(expr, path, () => ({
-    Number: { value },
-  }));
+  return updateExpressionAtPath(expr, path, () => numberExpression(value));
 }
 
 export function setStringValue(
@@ -557,9 +253,7 @@ export function setStringValue(
   path: ReadonlyArray<PathStep>,
   value: string,
 ): unknown {
-  return updateExpressionAtPath(expr, path, () => ({
-    String: { value },
-  }));
+  return updateExpressionAtPath(expr, path, () => stringExpression(value));
 }
 
 /** `path` の最後が関数の引数名 ({@link PathStep} の `functionParameter`) なら, その引数の番号 */
@@ -586,24 +280,19 @@ export function renameFunctionParameter(
     return expr;
   }
   return updateExpressionAtPath(expr, path.slice(0, -1), (target) => {
-    const fn = (target as { readonly Function?: unknown } | null)?.Function as
-      | {
-          readonly parameters?: ReadonlyArray<
-            Readonly<Record<string, unknown>>
-          >;
-        }
-      | undefined;
-    if (fn === undefined) {
+    const fn = variantOf(target);
+    if (fn?.tag !== "function") {
       return target;
     }
-    return {
-      Function: {
-        ...fn,
-        parameters: (fn.parameters ?? []).map((parameter, i) =>
-          i === index ? { ...parameter, parameter_name: name } : parameter,
-        ),
-      },
-    };
+    return variant("function", {
+      ...(fn.payload as object),
+      parameters: arrayAt(field(fn.payload, "parameters")).map(
+        (parameter, i) =>
+          i === index
+            ? { ...(parameter as object), parameter_name: name }
+            : parameter,
+      ),
+    });
   });
 }
 
@@ -611,7 +300,5 @@ export function clearExpressionAtPath(
   expr: unknown,
   path: ReadonlyArray<PathStep>,
 ): unknown {
-  return updateExpressionAtPath(expr, path, () => ({
-    Hole: {},
-  }));
+  return updateExpressionAtPath(expr, path, hole);
 }

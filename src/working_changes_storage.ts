@@ -1,40 +1,16 @@
 import type { PartChange, WorkingChanges } from "./types.ts";
-import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "./cbor.ts";
-
-/** `Uint8Array` を `{"$bytes": "<Base64URL>"}` にする (素の JSON.stringify は `{"0":..}` に壊す) */
-function serializeReplacer(_key: string, value: unknown): unknown {
-  if (value instanceof Uint8Array) {
-    return { $bytes: bytesToUrlSafeBase64NoPad(value) };
-  }
-  return value;
-}
-
-/** `{"$bytes": "<Base64URL>"}` を `Uint8Array` に戻す */
-function deserializeReviver(_key: string, value: unknown): unknown {
-  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-    const keys = Object.keys(value);
-    if (keys.length === 1 && keys[0] === "$bytes") {
-      const bytesStr = (value as { readonly $bytes?: unknown }).$bytes;
-      if (typeof bytesStr === "string") {
-        return base64ToBytes(bytesStr);
-      }
-    }
-  }
-  return value;
-}
-
-/** 作業中の変更を localStorage に保存できる JSON 文字列にする */
+/** 作業中の変更を localStorage に保存できる JSON 文字列にする. パーツの式と型は JSON の値そのもの (docs/value-encoding.md) */
 export function serializeWorkingChanges(changes: WorkingChanges): string {
   const plainParts: Record<string, PartChange> = Object.fromEntries(
     changes.parts,
   );
-  return JSON.stringify({ parts: plainParts }, serializeReplacer);
+  return JSON.stringify({ parts: plainParts });
 }
 
 /** `serializeWorkingChanges` の結果を復元する。壊れた JSON のときは空の WorkingChanges を返す */
 export function deserializeWorkingChanges(text: string): WorkingChanges {
   try {
-    const parsed = JSON.parse(text, deserializeReviver) as unknown;
+    const parsed = JSON.parse(text) as unknown;
     if (
       typeof parsed !== "object" ||
       parsed === null ||

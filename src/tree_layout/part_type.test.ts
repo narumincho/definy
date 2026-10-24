@@ -29,46 +29,56 @@ describe("partType と型の式の相互変換", () => {
   it("関数の型を式にする", () => {
     expect(
       partTypeToExpression({
-        function: {
-          parameters: [{ name: "x", type: { list: "number" } }],
-          return_type: "string",
+        "#function": {
+          parameters: [
+            {
+              name: "x",
+              type: { "#list": { item_type: { "#number": null } } },
+            },
+          ],
+          return_type: { "#string": null },
         },
       }),
     ).toEqual({
-      TypeFunction: {
+      "#type_function": {
         parameters: [
-          { name: "x", type: { TypeList: { item_type: "TypeNumber" } } },
+          {
+            name: "x",
+            type: { "#type_list": { item_type: { "#type_number": null } } },
+          },
         ],
-        return_type: "TypeString",
+        return_type: { "#type_string": null },
       },
     });
   });
 
   it("未入力は型指定なしに戻す", () => {
-    expect(expressionToPartType({ Hole: {} })).toBeNull();
+    expect(expressionToPartType({ "#hole": { probe: false } })).toBeNull();
     expect(
-      expressionToPartType({ TypeList: { item_type: { Hole: {} } } }),
-    ).toEqual({ list: null });
+      expressionToPartType({
+        "#type_list": { item_type: { "#hole": { probe: false } } },
+      }),
+    ).toEqual({ "#list": { item_type: null } });
   });
 });
 
 describe("syncPartTypeParameterNames", () => {
   const fn = (names: ReadonlyArray<string>): unknown => ({
-    Function: {
+    "#function": {
       parameters: names.map((name, i) => ({
         parameter_id: i,
         parameter_name: name,
       })),
-      body: { Variable: { variable_id: 0 } },
+      body: { "#variable": { variable_id: 0 } },
     },
   });
   const partType = {
-    function: {
+    "#function": {
       parameters: [
-        { name: "a", type: "number" },
-        { name: "b", type: "string" },
+        { name: "a", type: { "#number": null } },
+        { name: "b", type: { "#string": null } },
       ],
-      return_type: "number",
+      return_type: { "#number": null },
     },
   };
 
@@ -76,12 +86,12 @@ describe("syncPartTypeParameterNames", () => {
     expect(
       syncPartTypeParameterNames(partType, fn(["a", "b"]), fn(["a", "text"])),
     ).toEqual({
-      function: {
+      "#function": {
         parameters: [
-          { name: "a", type: "number" },
-          { name: "text", type: "string" },
+          { name: "a", type: { "#number": null } },
+          { name: "text", type: { "#string": null } },
         ],
-        return_type: "number",
+        return_type: { "#number": null },
       },
     });
   });
@@ -92,11 +102,9 @@ describe("syncPartTypeParameterNames", () => {
     ).toBeUndefined();
     expect(
       syncPartTypeParameterNames(
-        "number",
-        { Number: { value: 1 } },
-        {
-          Number: { value: 2 },
-        },
+        { "#number": null },
+        { "#number": 1 },
+        { "#number": 2 },
       ),
     ).toBeUndefined();
   });

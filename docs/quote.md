@@ -5,14 +5,12 @@
 
 ## 構文と型
 
-| 形                                      | 例                                                       |
-| --------------------------------------- | -------------------------------------------------------- |
-| JSON AST (seeds)                        | `{ "Quote": { "expression": e } }`                       |
-| self-hosted AST (`core.expression`)     | `quote(e)` (バリアント)                                  |
-| 型 (`core.type-ast`)                    | `code(T)`。表示は `Code<T>`                              |
-| パーツの型 (`part_type`, seeds/schemas) | `{ "code": T }`                                          |
-| ツリーエディタ (式)                     | `{ Quote: { expression } }`, パスの段 `quoteExpression`  |
-| ツリーエディタ (型の式)                 | `{ TypeCode: { value_type } }`, パスの段 `typeCodeValue` |
+| 形                                     | 例                                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------------- |
+| 式 (`core.expression`, seeds もこの形) | `{"#quote": e}`                                                                  |
+| 型 (`core.type-ast`)                   | `{"#code": T}`。表示は `Code<T>`                                                 |
+| ツリーエディタ (式)                    | `{"#quote": e}`, パスの段 `quoteExpression`                                      |
+| ツリーエディタ (型の式)                | `{"#type_code": {"value_type": T}}` (エディタの中だけ), パスの段 `typeCodeValue` |
 
 - `quote(e)` の型は `Code<e の型>`。`Code<T>` は型パーツ `core.code` (`{ expression: core.expression, part_ids: List<string> }`) として扱う
   (`core.type-resolve` が `code` を `core.code` の参照に解決する) ので, `.expression` や `.part_ids` でフィールドを読める
@@ -44,9 +42,9 @@ ID だけにしてからは 552KB の Wasm を 1.6 秒でコンパイルでき, 
 - `core.quote-part-ids` / `core.quote-part-ids-in-list` / `core.quote-find-part` が参照パーツを `parts` から辿って ID を集める
 - `core.quote-string-list` が ID のリストのリテラルを作る
 
-TypeScript 側 (`src/stage1_compiler.ts` の `definyAstToSelfHostedAst`) は `Quote` を `quote` バリアントにするだけ。
-seeds で `core.code` などのパーツ ID が要るときは `{"$partId": "core.code"}` と書く (`src/seed_parts.ts` が ID の文字列にし,
-`src/seed_export.ts` が戻す)。
+式は `{"#quote": 中の式}` で, TypeScript 側は何も変換しない ([value-encoding.md](value-encoding.md))。
+seeds で `core.code` などのパーツ ID が要るときは, ほかのパーツ ID と同じく `{"$part": "core.code"}` と書く
+(`src/seed_parts.ts` が ID の文字列にし, `src/seed_export.ts` が戻す。以前の `$partId` は `$part` にまとめた)。
 
 ## テスト
 

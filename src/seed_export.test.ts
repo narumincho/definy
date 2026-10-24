@@ -120,8 +120,8 @@ describe("exportSeeds", () => {
           {
             name: "malicious-part",
             description: [{ language: "en", text: "Malicious" }],
-            partType: "number",
-            expression: { Number: { value: 999 } },
+            partType: { "#number": null },
+            expression: { "#number": 999 },
           },
         ],
       });
@@ -179,7 +179,6 @@ describe("exportSeeds", () => {
       // core.eval-ast のパーツ ID を導出
       const coreModId = await deriveModuleIdBytes(systemAccountBytes, "core");
       const coreEvalAstIdStr = await deriveModulePartId(coreModId, "eval-ast");
-      const coreEvalAstBytes = Array.from(base64ToBytes(coreEvalAstIdStr));
 
       // 新パーツ: core.eval-ast を呼び出す式
       const newPart: DecodedPart = {
@@ -187,12 +186,12 @@ describe("exportSeeds", () => {
         description: [
           { language: "en", text: "New part referencing core.eval-ast" },
         ],
-        partType: "number",
+        partType: { "#number": null },
         expression: {
-          Call: {
+          "#call": {
             function: {
-              PartReference: {
-                part_definition_event_hash: coreEvalAstBytes,
+              "#part_reference": {
+                part_definition_event_hash: coreEvalAstIdStr,
               },
             },
             // 型チェッカーを通るように core.expression の値を渡す
@@ -200,7 +199,11 @@ describe("exportSeeds", () => {
               {
                 name: "e",
                 value: {
-                  Variant: { tag: "number", payload: { Number: { value: 1 } } },
+                  "#variant": {
+                    tag: "number",
+                    payload: { "#some": { "#number": 1 } },
+                    type_part: { "#none": null },
+                  },
                 },
               },
             ],
@@ -250,9 +253,9 @@ describe("exportSeeds", () => {
         readonly parts: ReadonlyArray<{
           readonly name: string;
           readonly expression?: {
-            readonly Call?: {
+            readonly "#call"?: {
               readonly function?: {
-                readonly PartReference?: {
+                readonly "#part_reference"?: {
                   readonly part_definition_event_hash?: unknown;
                 };
               };
@@ -279,7 +282,7 @@ describe("exportSeeds", () => {
 
       // 4. パーツ参照が {"$part": "core.eval-ast"} に記号化されている
       const ref =
-        foundNewPart?.expression?.Call?.function?.PartReference
+        foundNewPart?.expression?.["#call"]?.function?.["#part_reference"]
           ?.part_definition_event_hash;
       expect(ref).toEqual({ $part: "core.eval-ast" });
     } finally {
@@ -300,9 +303,7 @@ describe("exportSeeds", () => {
       const systemAccountBytes = base64ToBytes(sysCreds.accountId);
 
       // 式を CBOR エンコードして CAS にアップロード
-      const expressionToUpload = {
-        Number: { value: 42 },
-      };
+      const expressionToUpload = { "#number": 42 };
       const cborBytes = encodeCborItem(expressionToUpload);
       const contentHash = await sha256EventHashId(cborBytes);
 
@@ -381,7 +382,7 @@ describe("exportSeeds", () => {
 
       const casPart = parsedSample.parts.find((p) => p.name === "cas-part");
       expect(casPart).toBeDefined();
-      expect(casPart?.expression).toEqual({ Number: { value: 42 } });
+      expect(casPart?.expression).toEqual({ "#number": 42 });
       // content_hash は書き出されない
       expect(casPart?.content_hash).toBeUndefined();
     } finally {

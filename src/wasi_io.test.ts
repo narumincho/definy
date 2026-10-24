@@ -1,8 +1,3 @@
-/**
- * `wasi.io` のプログラムを stage1 でコンパイルし, モックの HTTP で動かして確かめる.
- * `sample.deploy-hello-worker` は quote したハンドラを definy 製のコンパイラでコンパイルし,
- * Cloudflare の API に multipart でアップロードする
- */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
@@ -10,11 +5,6 @@ import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
-import {
-  selfHostedList,
-  selfHostedRecord,
-  selfHostedString,
-} from "./self_hosted_ast.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
@@ -66,7 +56,7 @@ const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
 
 async function compilePart(name: string): Promise<WebAssembly.Module> {
   const expression = await resolvePartPlaceholders(
-    { PartReference: { part_definition_event_hash: { $part: name } } },
+    { "#part_reference": { part_definition_event_hash: { $part: name } } },
     accountBytes,
   );
   const { parts, unresolved } = collectReferencedParts(expression, (id) =>
@@ -162,13 +152,11 @@ describe("wasi.io", () => {
       ),
     );
     const responsePointer = handler.callClosure(handler.root, [
-      handler.writeArgument(
-        selfHostedRecord([
-          ["method", selfHostedString("GET")],
-          ["url", selfHostedString("https://definy-hello.example/")],
-          ["headers", selfHostedList([])],
-        ]),
-      ),
+      handler.writeArgument({
+        method: "GET",
+        url: "https://definy-hello.example/",
+        headers: [],
+      }),
     ]);
     expect(handler.read(handler.recordField(responsePointer, "status"))).toBe(
       200,

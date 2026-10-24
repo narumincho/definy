@@ -3,22 +3,15 @@
  * WebAssembly ランタイム上で直接実行し、definy の式から Wasm バイナリを動的に生成するパイプライン。
  */
 
-import { bytesToUrlSafeBase64NoPad, toUint8Array } from "./cbor.ts";
-import {
-  selfHostedList,
-  selfHostedNumber,
-  selfHostedRecord,
-  selfHostedString,
-  selfHostedVariant,
-} from "./self_hosted_ast.ts";
+import { variant, variantOf, variantPayload } from "./definy_value.ts";
 
 export type DefinyValue =
   | number
   | string
   | boolean
   | ReadonlyArray<DefinyValue>
+  /** レコード. タグ付きの値は `{"#tag": payload}` (docs/value-encoding.md) */
   | { readonly [key: string]: DefinyValue }
-  | { readonly tag: string; readonly payload: DefinyValue | null }
   | {
       readonly __closure: true;
       readonly tableIdx: number;
@@ -28,7 +21,7 @@ export type DefinyValue =
 
 export type Stage1CompilerInstance = {
   /**
-   * definy の JSON AST の式を Wasm にコンパイルする.
+   * 式 (`core.expression` の値) を Wasm にコンパイルする.
    * 式が参照するパーツは `referencedParts` に渡す (`collectReferencedParts` で集める)
    */
   readonly compile: (
@@ -45,7 +38,7 @@ export type WasmExports = {
 };
 
 /**
- * リテラルの式の木を, definy の値の形 (タグ付きの箱, 8 バイト境界) で線形メモリに書き込み, ポインタを返す.
+ * definy の値 (docs/value-encoding.md の JSON の形) を, definy の値の形 (タグ付きの箱, 8 バイト境界) で線形メモリに書き込み, ポインタを返す.
  * 1 度だけ走査して JavaScript 側のバッファに先頭 0 からの相対アドレスで書き, `alloc` した位置に合わせて
  * ポインタを直してからまとめて写す (型環境のような大きな値を書くので速さが要る)
  */
@@ -87,48 +80,22 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
   }
 
   function layout(n: unknown): number {
-    if (!n || typeof n !== "object") {
-      throw new Error(`Invalid AST node for layout: ${JSON.stringify(n)}`);
-    }
-    const obj = n as Record<string, unknown>;
-
-    if (obj.Variant) {
-      const v = obj.Variant as {
-        readonly tag: string;
-        readonly payload?: unknown;
-      };
-      const tagPtr = writeString(v.tag);
-      const payloadPtr = v.payload ? layout(v.payload) : null;
-      const at = reserve(12);
-      buffer[at] = 6;
-      setPointer(at + 4, tagPtr);
-      if (payloadPtr !== null) {
-        setPointer(at + 8, payloadPtr);
-      }
-      return at;
-    }
-    if (obj.Number) {
-      const num = obj.Number as { readonly value: number };
+    if (typeof n === "number") {
       const at = reserve(16);
-      view.setBigInt64(at + 8, BigInt(num.value), true);
+      view.setBigInt64(at + 8, BigInt(n), true);
       return at;
     }
-    if (obj.Boolean) {
-      const b = obj.Boolean as { readonly value: boolean };
+    if (typeof n === "boolean") {
       const at = reserve(9);
       buffer[at] = 1;
-      buffer[at + 8] = b.value ? 1 : 0;
+      buffer[at + 8] = n ? 1 : 0;
       return at;
     }
-    if (obj.String) {
-      const str = obj.String as { readonly value: string };
-      return writeString(str.value);
+    if (typeof n === "string") {
+      return writeString(n);
     }
-    if (obj.ListLiteral) {
-      const list = obj.ListLiteral as {
-        readonly items: ReadonlyArray<unknown>;
-      };
-      const itemPtrs = list.items.map((item) => layout(item));
+    if (Array.isArray(n)) {
+      const itemPtrs = n.map((item) => layout(item));
       const at = reserve(8 + 4 * itemPtrs.length);
       buffer[at] = 3;
       view.setUint32(at + 4, itemPtrs.length, true);
@@ -137,26 +104,33 @@ function writeLiteral(exports: WasmExports, node: unknown): number {
       });
       return at;
     }
-    if (obj.TypeLiteral) {
-      const record = obj.TypeLiteral as {
-        readonly items: ReadonlyArray<{
-          readonly key: string;
-          readonly value: unknown;
-        }>;
-      };
-      const fieldPairs = record.items.map(
-        (it) => [writeString(it.key), layout(it.value)] as const,
-      );
-      const at = reserve(8 + 8 * fieldPairs.length);
-      buffer[at] = 4;
-      view.setUint32(at + 4, fieldPairs.length, true);
-      fieldPairs.forEach(([keyPtr, valuePtr], i) => {
-        setPointer(at + 8 + 8 * i, keyPtr);
-        setPointer(at + 12 + 8 * i, valuePtr);
-      });
+    if (!n || typeof n !== "object") {
+      throw new Error(`Invalid definy value for layout: ${JSON.stringify(n)}`);
+    }
+    const tagged = variantOf(n);
+    if (tagged !== undefined) {
+      const tagPtr = writeString(tagged.tag);
+      const payloadPtr =
+        tagged.payload === null ? null : layout(tagged.payload);
+      const at = reserve(12);
+      buffer[at] = 6;
+      setPointer(at + 4, tagPtr);
+      if (payloadPtr !== null) {
+        setPointer(at + 8, payloadPtr);
+      }
       return at;
     }
-    throw new Error(`Unsupported literal node in layout: ${JSON.stringify(n)}`);
+    const fieldPairs = Object.entries(n as Record<string, unknown>).map(
+      ([key, value]) => [writeString(key), layout(value)] as const,
+    );
+    const at = reserve(8 + 8 * fieldPairs.length);
+    buffer[at] = 4;
+    view.setUint32(at + 4, fieldPairs.length, true);
+    fieldPairs.forEach(([keyPtr, valuePtr], i) => {
+      setPointer(at + 8 + 8 * i, keyPtr);
+      setPointer(at + 12 + 8 * i, valuePtr);
+    });
+    return at;
   }
 
   const root = layout(node);
@@ -216,55 +190,35 @@ export function readDefinyValue(mem: Uint8Array, ptr: number): DefinyValue {
     const tagName = readDefinyValue(mem, tagPtr);
     const payloadVal =
       payloadPtr !== 0 ? readDefinyValue(mem, payloadPtr) : null;
-    return { tag: String(tagName), payload: payloadVal };
+    return variant(String(tagName), payloadVal) as DefinyValue;
   }
   return null;
 }
 
 /**
  * `core.compile-to-wasm` に渡す, 式が参照するパーツ.
- * `id` は式の `PartReference` の ID (URL-safe Base64), `expression` は definy の JSON AST
+ * `id` は式の `part_reference` の ID (URL-safe Base64), `expression` は `core.expression` の値
  */
 export type Stage1ReferencedPart = {
   readonly id: string;
   readonly expression: unknown;
 };
 
-/** definy の式を `core.expression` の値で表せないときのエラー */
+/** 式を stage1 に渡せないときのエラー (未入力のある式・型パーツの宣言式など) */
 export class SelfHostedAstConversionError extends Error {
   override readonly name = "SelfHostedAstConversionError";
 }
 
 /**
- * `PartReference.part_definition_event_hash` (CBOR 由来のバイト列, seed 由来の数値配列, 文字列) を
- * stage1 が比較に使う文字列 ID (URL-safe Base64) にする
- */
-export function partReferenceId(hash: unknown): string {
-  if (typeof hash === "string") {
-    return hash;
-  }
-  const bytes = toUint8Array(hash);
-  if (bytes === undefined) {
-    throw new SelfHostedAstConversionError(
-      `Invalid part reference hash: ${JSON.stringify(hash)}`,
-    );
-  }
-  return bytesToUrlSafeBase64NoPad(bytes);
-}
-
-/**
- * コンパイラ組み込みのパーツの式 (`{"Compiler": "plus"}`) の名前 (`plus`). 組み込みでなければ `undefined`
+ * コンパイラ組み込みのパーツの式 (`{"#builtin": "plus"}`) の名前 (`plus`). 組み込みでなければ `undefined`
  */
 export function compilerBuiltinName(expression: unknown): string | undefined {
-  if (typeof expression !== "object" || expression === null) {
-    return undefined;
-  }
-  const name = (expression as { readonly Compiler?: unknown }).Compiler;
+  const name = variantPayload(expression, "builtin");
   return typeof name === "string" ? name : undefined;
 }
 
 /**
- * コンパイラ組み込みのパーツの名前 (`{"Compiler": "plus"}` の `plus`) と引数名 (順番どおり).
+ * コンパイラ組み込みのパーツの名前 (`{"#builtin": "plus"}` の `plus`) と引数名 (順番どおり).
  * 呼び出しの検査・コンパイル・評価は definy 側 (`core.builtin-parameters`, `core.compile-builtin-call` など) がする.
  * TypeScript 側では型の無い組み込み (`core.equal` など) の引数名を UI で出すのに使う
  */
@@ -300,283 +254,37 @@ export const BUILTIN_PARAMETERS: ReadonlyMap<
   ["list_append", ["list", "item"]],
 ]);
 
+/** 式 (`core.expression` の値) に未入力 (`hole`) があるか */
+export function containsHole(expression: unknown): boolean {
+  if (Array.isArray(expression)) {
+    return expression.some(containsHole);
+  }
+  if (!expression || typeof expression !== "object") {
+    return false;
+  }
+  if (variantOf(expression)?.tag === "hole") {
+    return true;
+  }
+  return Object.values(expression).some(containsHole);
+}
+
+/** 型パーツの宣言式 (`type_union` など, `type_` で始まるタグの式) か */
+export function isTypeDeclaration(expression: unknown): boolean {
+  return variantOf(expression)?.tag.startsWith("type_") === true;
+}
+
 /**
- * definy の JSON AST (`{"Call": {...}}` など) を, stage1 (`core.compile-to-wasm`) が受け取る
- * `core.expression` の値 (`Variant` / `TypeLiteral` / `ListLiteral` などのリテラルの木) に変換する.
- * コンパイラ組み込みのパーツの式 (`{"Compiler": "plus"}`) は `builtin("plus")` にし, その呼び出しは他のパーツの呼び出しと
- * 同じく `call` にする (組み込みの扱いは definy 側). `core.expression` で表せない式 (型の式・未入力) は
+ * 式を stage1 (`core.compile-to-wasm`) に渡せるか確かめる. 未入力のある式はコンパイルできないので
  * `SelfHostedAstConversionError` を投げる
  */
-export function definyAstToSelfHostedAst(ast: unknown): unknown {
-  return toSelfHostedAst(ast, false);
-}
-
-/**
- * {@link definyAstToSelfHostedAst} と同じだが, 未入力 (`Hole`) を `core.expression` の `hole({ probe: false })` にする.
- * `{"Hole": {"probe": true}}` は `hole({ probe: true })` になり, 型チェッカーはその位置で期待する型を
- * `hole_expected_type` のエラーで返す (`findExpectedType`, `src/self_hosted_type_check.ts`).
- * 未入力のある式はコンパイルできないので, 型検査で期待する型を調べるときにだけ使う
- */
-export function definyAstWithHolesToSelfHostedAst(ast: unknown): unknown {
-  return toSelfHostedAst(ast, true);
-}
-
-function holeToSelfHostedAst(hole: unknown, allowHoles: boolean): unknown {
-  if (!allowHoles) {
+function assertCompilable(expression: unknown): unknown {
+  if (containsHole(expression)) {
     throw new SelfHostedAstConversionError("Expression has an unfilled hole");
   }
-  const probe =
-    typeof hole === "object" &&
-    hole !== null &&
-    (hole as { readonly probe?: unknown }).probe === true;
-  return selfHostedVariant(
-    "hole",
-    selfHostedRecord([["probe", { Boolean: { value: probe } }]]),
-  );
+  return expression;
 }
 
-function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
-  if (ast === "Hole") {
-    return holeToSelfHostedAst(undefined, allowHoles);
-  }
-  if (!ast || typeof ast !== "object") {
-    throw new SelfHostedAstConversionError(
-      `Invalid expression: ${JSON.stringify(ast)}`,
-    );
-  }
-  const obj = ast as Record<string, unknown>;
-  const key = Object.keys(obj)[0] ?? "";
-  const node = obj[key] as Record<string, unknown>;
-  const convert = (child: unknown): unknown =>
-    toSelfHostedAst(child, allowHoles);
-
-  switch (key) {
-    case "Number":
-      return selfHostedVariant("number", selfHostedNumber(Number(node.value)));
-    case "String":
-      return selfHostedVariant("string", selfHostedString(String(node.value)));
-    case "Boolean":
-      return selfHostedVariant("boolean", {
-        Boolean: { value: node.value === true },
-      });
-    case "Variable":
-      return selfHostedVariant(
-        "variable",
-        selfHostedRecord([
-          ["variable_id", selfHostedNumber(Number(node.variable_id))],
-        ]),
-      );
-    case "ListLiteral":
-      return selfHostedVariant(
-        "list",
-        selfHostedList(
-          (node.items as ReadonlyArray<unknown>).map((item) => convert(item)),
-        ),
-      );
-    case "TypeLiteral":
-      return selfHostedVariant(
-        "record",
-        selfHostedList(
-          (
-            node.items as ReadonlyArray<{
-              readonly key: string;
-              readonly value: unknown;
-            }>
-          ).map((item) =>
-            selfHostedRecord([
-              ["key", selfHostedString(item.key)],
-              ["value", convert(item.value)],
-            ]),
-          ),
-        ),
-      );
-    case "RecordGet":
-      return selfHostedVariant(
-        "record_get",
-        selfHostedRecord([
-          ["record", convert(node.record)],
-          ["key", selfHostedString(String(node.key))],
-        ]),
-      );
-    case "Variant":
-      return selfHostedVariant(
-        "variant",
-        selfHostedRecord([
-          ["tag", selfHostedString(String(node.tag))],
-          [
-            "payload",
-            node.payload == null
-              ? selfHostedVariant("none")
-              : selfHostedVariant("some", convert(node.payload)),
-          ],
-          // 型パーツを指定した Variant は, 型チェッカーがその型パーツの型と推論する
-          [
-            "type_part",
-            node.type_part_definition_event_hash == null
-              ? selfHostedVariant("none")
-              : selfHostedVariant(
-                  "some",
-                  selfHostedString(
-                    partReferenceId(node.type_part_definition_event_hash),
-                  ),
-                ),
-          ],
-        ]),
-      );
-    case "Match": {
-      // ペイロードを束縛しないアーム (Bool の true / false など) は参照されない変数 ID として -1 を使う.
-      // default アームは, どのタグにも一致するワイルドカードアーム `_` として表す
-      const arms = (
-        node.arms as ReadonlyArray<{
-          readonly tag: string;
-          readonly variable_id?: number | null;
-          readonly body: unknown;
-        }>
-      ).map((arm) => [arm.tag, arm.variable_id ?? -1, arm.body] as const);
-      const allArms =
-        node.default == null
-          ? arms
-          : [...arms, ["_", -1, node.default] as const];
-      return selfHostedVariant(
-        "match",
-        selfHostedRecord([
-          ["target", convert(node.target)],
-          [
-            "arms",
-            selfHostedList(
-              allArms.map(([tag, variableId, body]) =>
-                selfHostedRecord([
-                  ["tag", selfHostedString(tag)],
-                  ["variable_id", selfHostedNumber(variableId)],
-                  ["body", convert(body)],
-                ]),
-              ),
-            ),
-          ],
-        ]),
-      );
-    }
-    case "Call": {
-      const callArguments = node.arguments as ReadonlyArray<{
-        readonly name: string;
-        readonly value: unknown;
-      }>;
-      return selfHostedVariant(
-        "call",
-        selfHostedRecord([
-          ["function", calleeToSelfHostedAst(node.function, convert)],
-          [
-            "arguments",
-            selfHostedList(
-              callArguments.map((argument) =>
-                selfHostedRecord([
-                  ["name", selfHostedString(argument.name)],
-                  ["value", convert(argument.value)],
-                ]),
-              ),
-            ),
-          ],
-        ]),
-      );
-    }
-    case "Function":
-      return selfHostedVariant(
-        "function",
-        selfHostedRecord([
-          [
-            "parameters",
-            selfHostedList(
-              (
-                node.parameters as ReadonlyArray<{
-                  readonly parameter_id: number;
-                  readonly parameter_name: string;
-                }>
-              ).map((parameter) =>
-                selfHostedRecord([
-                  ["parameter_id", selfHostedNumber(parameter.parameter_id)],
-                  [
-                    "parameter_name",
-                    selfHostedString(parameter.parameter_name),
-                  ],
-                ]),
-              ),
-            ),
-          ],
-          ["body", convert(node.body)],
-        ]),
-      );
-    case "PartReference":
-      return selfHostedVariant(
-        "part_reference",
-        selfHostedRecord([
-          [
-            "part_definition_event_hash",
-            selfHostedString(partReferenceId(node.part_definition_event_hash)),
-          ],
-        ]),
-      );
-    case "Let": {
-      const bindings = node.bindings as ReadonlyArray<{
-        readonly variable_id: number;
-        readonly value: unknown;
-      }>;
-      return bindings.reduceRight<unknown>(
-        (body, binding) =>
-          selfHostedVariant(
-            "let",
-            selfHostedRecord([
-              ["variable_id", selfHostedNumber(binding.variable_id)],
-              ["value", convert(binding.value)],
-              ["body", body],
-            ]),
-          ),
-        convert(node.body),
-      );
-    }
-    case "Quote":
-      // コードそのものを値にする式. 型は Code<中の式の型>, 値は core.code ({ expression, parts }) (docs/quote.md)
-      return selfHostedVariant("quote", convert(node.expression));
-    case "Secret":
-      // シークレットリテラル. 型は Secret, 値は { id, label } で, 実際の値はホストが送信の直前に入れる (docs/secret.md)
-      return selfHostedVariant(
-        "secret",
-        selfHostedRecord([
-          ["id", selfHostedString(String(node.id ?? ""))],
-          ["label", selfHostedString(String(node.label ?? ""))],
-        ]),
-      );
-    case "Hole":
-      return holeToSelfHostedAst(node, allowHoles);
-    case "Compiler":
-      // コンパイラ組み込みのパーツの式. 呼び出しは definy 側 (`core.compile-builtin-call` など) が名前で扱う
-      return selfHostedVariant("builtin", selfHostedString(String(obj[key])));
-  }
-  throw new SelfHostedAstConversionError(
-    `core.expression cannot represent ${key || JSON.stringify(ast)}`,
-  );
-}
-
-/**
- * 呼び出しの関数の位置 (`Call.function`) を `core.callee` の値にする.
- * 関数は呼び出すもので値として書けないので, 呼び出せるのはパーツ (`PartReference`), 関数型の引数 (`Variable`),
- * レコードの関数のフィールド (`RecordGet`) だけ. 他の式 (ラムダ式の即時呼び出し・呼び出しの結果の呼び出しなど) は
- * `SelfHostedAstConversionError` を投げる. `core.callee` のバリアントは `core.expression` の同じ名前のバリアントと同じ形
- */
-function calleeToSelfHostedAst(
-  callee: unknown,
-  convert: (child: unknown) => unknown,
-): unknown {
-  const key =
-    callee && typeof callee === "object" ? (Object.keys(callee)[0] ?? "") : "";
-  if (key === "PartReference" || key === "Variable" || key === "RecordGet") {
-    return convert(callee);
-  }
-  throw new SelfHostedAstConversionError(
-    `A call can only call a part, a function parameter or a function field of a record, not ${key || JSON.stringify(callee)}`,
-  );
-}
-
-/** 式の中の `PartReference` の ID を出現順に集める */
+/** 式の中の `part_reference` の ID を出現順に集める */
 export function collectPartReferenceIds(
   expression: unknown,
 ): ReadonlyArray<string> {
@@ -586,16 +294,19 @@ export function collectPartReferenceIds(
       value.forEach(walk);
       return;
     }
-    if (!value || typeof value !== "object" || value instanceof Uint8Array) {
+    if (!value || typeof value !== "object") {
       return;
     }
-    const obj = value as Record<string, unknown>;
-    const reference = obj.PartReference as
+    const reference = variantPayload(value, "part_reference") as
       { readonly part_definition_event_hash?: unknown } | undefined;
-    if (reference && typeof reference === "object") {
-      references.push(partReferenceId(reference.part_definition_event_hash));
+    if (
+      reference &&
+      typeof reference === "object" &&
+      typeof reference.part_definition_event_hash === "string"
+    ) {
+      references.push(reference.part_definition_event_hash);
     }
-    Object.values(obj).forEach(walk);
+    Object.values(value).forEach(walk);
   };
   walk(expression);
   return references;
@@ -604,8 +315,8 @@ export function collectPartReferenceIds(
 /**
  * 式が (参照先をたどって) 参照するパーツを集める.
  * 末尾から取り出す LIFO の順序。stage1 を作ったときと同じ順序で, `wasm/stage1.wasm` の再生成でバイト一致させるために必要。
- * `resolve` は ID からパーツの式 (definy の JSON AST) を返す. 見つからない・式を持たないときは `undefined`.
- * 見つからない・式を持たない・`core.expression` で表せないパーツの ID は `unresolved` に入れる
+ * `resolve` は ID からパーツの式 (`core.expression` の値) を返す. 見つからない・式を持たないときは `undefined`.
+ * 見つからない・式を持たない・型パーツの宣言式・未入力のあるパーツの ID は `unresolved` に入れる
  * (stage1 はその参照を unreachable にコンパイルする).
  * コンパイラ組み込みのパーツ (`core.plus` など) も式 (`core.expression` の `builtin`) のまま入れる
  */
@@ -628,19 +339,13 @@ export function collectReferencedParts(
     }
     seen.add(id);
     const partExpression = resolve(id);
-    if (partExpression == null) {
+    if (
+      partExpression == null ||
+      isTypeDeclaration(partExpression) ||
+      containsHole(partExpression)
+    ) {
       unresolved.push(id);
       continue;
-    }
-    try {
-      definyAstToSelfHostedAst(partExpression);
-    } catch (e) {
-      // 型の式など, core.expression で表せないパーツは渡さない
-      if (e instanceof SelfHostedAstConversionError) {
-        unresolved.push(id);
-        continue;
-      }
-      throw e;
     }
     queue = [...queue, ...collectPartReferenceIds(partExpression)];
     parts.push({ id, expression: partExpression });
@@ -648,18 +353,14 @@ export function collectReferencedParts(
   return { parts, unresolved };
 }
 
-/** stage1 (`core.compile-to-wasm`) に渡すパーツの一覧 `[{ id, expression }]` を作る式 */
-export function stage1PartsExpression(
+/** stage1 (`core.compile-to-wasm`) に渡すパーツの一覧 `[{ id, expression }]` */
+export function stage1PartsValue(
   parts: ReadonlyArray<Stage1ReferencedPart>,
 ): unknown {
-  return selfHostedList(
-    parts.map((part) =>
-      selfHostedRecord([
-        ["id", selfHostedString(part.id)],
-        ["expression", definyAstToSelfHostedAst(part.expression)],
-      ]),
-    ),
-  );
+  return parts.map((part) => ({
+    id: part.id,
+    expression: assertCompilable(part.expression),
+  }));
 }
 
 /** stage1 でコンパイルした式の Wasm のインスタンスと, `evaluate()` の結果の値 */
@@ -668,7 +369,7 @@ export type CompiledValueInstance = {
   /** `evaluate()` が返した値のポインタ */
   readonly root: number;
   /**
-   * リテラルの式 (`Variant` / `TypeLiteral` / `ListLiteral` / `String` / `Number` / `Boolean` の木) を
+   * definy の値 (docs/value-encoding.md の JSON の形) を
    * 線形メモリに書き込み, その値のポインタを返す. 同じ値を何度も渡すときは 1 度だけ書けばよい
    */
   readonly writeArgument: (literal: unknown) => number;
@@ -804,8 +505,8 @@ export function createStage1Compiler(
       expressionAst: unknown,
       referencedParts: ReadonlyArray<Stage1ReferencedPart> = [],
     ): Uint8Array {
-      const effectiveExpr = definyAstToSelfHostedAst(expressionAst);
-      const partsNode = stage1PartsExpression(referencedParts);
+      const effectiveExpr = assertCompilable(expressionAst);
+      const partsNode = stage1PartsValue(referencedParts);
 
       const instance = instantiateCompiledFunction(stage1Module);
       const { exports } = instance;

@@ -2,7 +2,7 @@
  * definy 製の評価器 `core.eval-value` が, 評価器の適合テスト (`conformance/eval_cases.json`) を
  * stage1 でコンパイルした式 (`src/stage1_conformance.test.ts`) と同じ値に評価することを確かめる。
  *
- * テストの式を `core.expression` の値にして, 式が参照するパーツと一緒に `core.eval-value` に渡す
+ * テストの式 (`core.expression` の値) を, 式が参照するパーツと一緒に `core.eval-value` に渡す
  * `core.eval-value(expr, [], parts)` を stage1 でコンパイルして実行する
  */
 import { readFileSync } from "node:fs";
@@ -13,26 +13,23 @@ import {
   loadSeedPartExpressions,
   resolvePartPlaceholders,
 } from "./seed_parts.ts";
-import { selfHostedList } from "./self_hosted_ast.ts";
+import { literalExpression, variant, variantOf } from "./definy_value.ts";
 import {
   collectReferencedParts,
   createStage1Compiler,
   type DefinyValue,
-  definyAstToSelfHostedAst,
   evaluateCompiledWasm,
-  stage1PartsExpression,
+  stage1PartsValue,
 } from "./stage1_compiler.ts";
 
-/** `core.value` を適合テストの正規化表現にする */
-function coreValueToConformanceValue(value: DefinyValue): unknown {
-  if (value === null || typeof value !== "object" || !("tag" in value)) {
+/** `core.value` を, それが表す値 (stage1 でコンパイルして評価した結果と同じ形) にする */
+function coreValueToConformanceValue(value: unknown): unknown {
+  const tagged = variantOf(value);
+  if (tagged === undefined) {
     throw new Error(`Not a core.value: ${JSON.stringify(value)}`);
   }
-  const { tag, payload } = value as {
-    readonly tag: string;
-    readonly payload: DefinyValue;
-  };
-  switch (tag) {
+  const payload = tagged.payload as DefinyValue;
+  switch (tagged.tag) {
     case "number":
     case "string":
     case "boolean":
@@ -42,27 +39,25 @@ function coreValueToConformanceValue(value: DefinyValue): unknown {
         coreValueToConformanceValue,
       );
     case "record":
-      return {
-        $record: (
+      return Object.fromEntries(
+        (
           payload as ReadonlyArray<{
             readonly key: string;
             readonly value: DefinyValue;
           }>
-        ).map((field) => [field.key, coreValueToConformanceValue(field.value)]),
-      };
+        ).map((item) => [item.key, coreValueToConformanceValue(item.value)]),
+      );
     case "variant": {
-      const variant = payload as {
+      const inner = payload as {
         readonly tag: string;
         readonly payload: DefinyValue;
       };
-      const inner = variant.payload as { readonly tag?: string } | null;
-      return {
-        $variant: variant.tag,
-        payload:
-          inner?.tag === "unit"
-            ? null
-            : coreValueToConformanceValue(variant.payload),
-      };
+      return variant(
+        inner.tag,
+        variantOf(inner.payload)?.tag === "unit"
+          ? null
+          : coreValueToConformanceValue(inner.payload),
+      );
     }
     case "unit":
       return null;
@@ -75,9 +70,9 @@ const compiler = createStage1Compiler(new WebAssembly.Module(wasmBytes));
 const accountBytes = await devSystemAccountBytes();
 const seedPartExpressions = await loadSeedPartExpressions(accountBytes);
 const evalValueReference = await resolvePartPlaceholders(
-  {
-    PartReference: { part_definition_event_hash: { $part: "core.eval-value" } },
-  },
+  variant("part_reference", {
+    part_definition_event_hash: { $part: "core.eval-value" },
+  }),
   accountBytes,
 );
 
@@ -92,22 +87,17 @@ describe("eval conformance (core.eval-value)", () => {
         seedPartExpressions.get(id),
       );
       expect(referenced.unresolved).toEqual([]);
-      const evalExpression = {
-        Call: {
-          function: evalValueReference,
-          arguments: [
-            {
-              name: "expr",
-              value: definyAstToSelfHostedAst(expression),
-            },
-            { name: "env", value: selfHostedList([]) },
-            {
-              name: "parts",
-              value: stage1PartsExpression(referenced.parts),
-            },
-          ],
-        },
-      };
+      const evalExpression = variant("call", {
+        function: evalValueReference,
+        arguments: [
+          { name: "expr", value: literalExpression(expression) },
+          { name: "env", value: literalExpression([]) },
+          {
+            name: "parts",
+            value: literalExpression(stage1PartsValue(referenced.parts)),
+          },
+        ],
+      });
       const { parts, unresolved } = collectReferencedParts(
         evalExpression,
         (id) => seedPartExpressions.get(id),

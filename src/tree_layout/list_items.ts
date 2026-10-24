@@ -1,10 +1,12 @@
 /**
- * リスト (`ListLiteral`) の要素の追加・削除・並び替え.
+ * リスト (`list`) の要素の追加・削除・並び替え.
  * 要素を選んだとき (またはリストそのものを選んだとき) の置換メニューに操作の選択肢を出す
  */
 import type { SelectorOption } from "./selector_options.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import type { PathStep } from "./types.ts";
+import { variant, variantPayload } from "../definy_value.ts";
+import { hole } from "./expression.ts";
 
 /** 置換メニューの選択肢の value */
 export const LIST_APPEND_ITEM = "list:append";
@@ -18,14 +20,8 @@ function listItemsAt(
   expr: unknown,
   listPath: ReadonlyArray<PathStep>,
 ): ReadonlyArray<unknown> | null {
-  const node = getExpressionAtPath(expr, listPath);
-  if (node === null || typeof node !== "object" || !("ListLiteral" in node)) {
-    return null;
-  }
-  const items = (
-    node as { readonly ListLiteral?: { readonly items?: unknown } }
-  ).ListLiteral?.items;
-  return Array.isArray(items) ? items : [];
+  const items = variantPayload(getExpressionAtPath(expr, listPath), "list");
+  return Array.isArray(items) ? items : null;
 }
 
 /** `path` の最後がリストの要素 (`listItemValue`) で, その親がリストなら, 要素の番号と要素の数 */
@@ -95,18 +91,12 @@ function updateListAt(
   updater: (items: ReadonlyArray<unknown>) => ReadonlyArray<unknown>,
 ): unknown {
   return updateExpressionAtPath(expr, listPath, (node) => {
-    const list = (
-      node as { readonly ListLiteral?: Record<string, unknown> } | null
-    )?.ListLiteral;
-    if (list === undefined) {
-      return node;
-    }
-    const items = Array.isArray(list.items) ? list.items : [];
-    return { ListLiteral: { ...list, items: updater(items) } };
+    const items = variantPayload(node, "list");
+    return Array.isArray(items) ? variant("list", updater(items)) : node;
   });
 }
 
-const HOLE = { Hole: {} };
+const HOLE = hole();
 
 /**
  * リストの操作 ({@link listItemSelectorOptions}) を適用する.

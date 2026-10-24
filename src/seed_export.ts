@@ -75,13 +75,8 @@ export async function resolveSystemAccountBytes(
   return await devSystemAccountBytes();
 }
 
-/** 32 バイト配列をマップのキー文字列に変換する */
-function bytesToKey(bytes: Uint8Array | ReadonlyArray<number>): string {
-  return bytes.join(",");
-}
-
 /**
- * 全モジュールの最新パーツ定義から「パーツ ID (32 バイト) → `module.name`」の対応表を作成する。
+ * 全モジュールの最新パーツ定義から「パーツ ID (URL-safe Base64) → `module.name`」の対応表を作成する。
  * ID の導出は `deriveModuleIdBytes` / `deriveModulePartId` を使う。
  */
 export async function buildPartReferenceTable(
@@ -92,24 +87,18 @@ export async function buildPartReferenceTable(
   for (const seed of seeds) {
     const moduleId = await deriveModuleIdBytes(accountBytes, seed.module_name);
     for (const part of seed.parts) {
-      const partIdBase64 = await deriveModulePartId(moduleId, part.name);
-      const partIdBytes = base64ToBytes(partIdBase64);
-      table.set(bytesToKey(partIdBytes), `${seed.module_name}.${part.name}`);
+      table.set(
+        await deriveModulePartId(moduleId, part.name),
+        `${seed.module_name}.${part.name}`,
+      );
     }
   }
   return table;
 }
 
-function is32ByteArray(val: ReadonlyArray<unknown>): boolean {
-  if (val.length !== 32) return false;
-  return val.every(
-    (n) => typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= 255,
-  );
-}
-
 /**
- * 式または型定義内のパーツ ID (32 バイト) を対応表に基づいて `{"$part": "module.name"}` に置き換える。
- * CBOR デコード時の特殊表現 (`Uint8Array`, `{__float64: ...}`, `{__tag: ...}`) を seed の素の JSON に戻す。
+ * 式または型の中のパーツ ID の文字列を対応表に基づいて `{"$part": "module.name"}` に置き換える。
+ * CBOR デコード時の特殊表現 (`{__float64: ...}`, `{__tag: ...}`) を seed の素の JSON に戻す。
  */
 export function symbolizePartReferences(
   value: unknown,
@@ -118,43 +107,17 @@ export function symbolizePartReferences(
   if (value == null) {
     return value;
   }
-  if (value instanceof Uint8Array) {
-    if (value.length === 32) {
-      const name = table.get(bytesToKey(value));
-      if (name) {
-        return { $part: name };
-      }
-    }
-    return Array.from(value);
+  if (typeof value === "string") {
+    const name = table.get(value);
+    return name === undefined ? value : { $part: name };
   }
   if (Array.isArray(value)) {
-    if (is32ByteArray(value)) {
-      const name = table.get(bytesToKey(value as ReadonlyArray<number>));
-      if (name) {
-        return { $part: name };
-      }
-      return value;
-    }
     return value.map((item) => symbolizePartReferences(item, table));
   }
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
-    if (typeof obj.$part === "string" || typeof obj.$partId === "string") {
+    if (typeof obj.$part === "string") {
       return obj;
-    }
-    // パーツ ID の文字列 (`{"$partId": "core.code"}` を解決したもの) の文字列リテラルを戻す
-    const stringLiteral = obj.String as
-      { readonly value?: unknown } | undefined;
-    if (
-      Object.keys(obj).length === 1 &&
-      stringLiteral &&
-      typeof stringLiteral.value === "string" &&
-      /^[A-Za-z0-9_-]{43}$/.test(stringLiteral.value)
-    ) {
-      const name = table.get(bytesToKey(base64ToBytes(stringLiteral.value)));
-      if (name) {
-        return { String: { value: { $partId: name } } };
-      }
     }
     if ("__float64" in obj && typeof obj.__float64 === "number") {
       return obj.__float64;

@@ -419,8 +419,8 @@ definy 製型チェッカーは stage1 でコンパイルして動かす (`src/s
   `type_record`・`type_union`・`part_reference`) を宣言している型にする。型の式でないか, 中に変換できないものがあれば `none`
   (`core.type-declaration-parameters-to-type-ast` などがリストの要素を変換する)
 
-TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の値にし, 型パーツの宣言式を
-`typeDeclarationToSelfHostedAst` で `core.expression` の値にして渡すだけになった。
+TypeScript 側 (`moduleEntriesExpression`) は, パーツの宣言型 (`core.type-ast` の値) と型パーツの宣言式
+(`core.expression` の値) を保存した形のまま渡すだけになった ([value-encoding.md](value-encoding.md))。
 
 書き方の注意: `option` を返す補助パーツで, 変換した要素を `let` などで受けてから `some` で包むと, `match` のアームの型
 (`union[none]` と `union[some(...)]`) が推論で揃わず型エラーになる。要素を変換したらそのまま再帰呼び出しに渡し,
@@ -445,8 +445,7 @@ TypeScript 側 (`moduleEntriesExpression`) は, 宣言型を `core.type-ast` の
 
 ### 型パーツを指定した Variant の型 (2026-10-23)
 
-`core.expression` の `variant` に `type_part: option<string>` を足した. JSON AST の
-`Variant.type_part_definition_event_hash` (型パーツの ID) を `definyAstToSelfHostedAst` が URL-safe Base64 にして入れる.
+`core.expression` の `variant` に `type_part: option<string>` (型パーツの ID) を足した.
 
 - `core.type-check-unlocated` (推論): `type_part` が `some(id)` で, `core.type-resolve` した型パーツが直和型なら,
   `core.type-check-against` でタグと値を検査して `reference(id)` と推論する. それ以外は今までどおり,
@@ -698,7 +697,7 @@ type-check-against: expression -> type-env -> type-ast -> type-result
 
 UI の型エラー表示・サーバーの `SubmitEvent`・seed の検証 (`src/self_hosted_type_check.test.ts`) は
 `core.type-checker` をコンパイルして `core.type-check-against` を呼びます (上の「definy 製型チェッカーの実行」)。
-JSON AST から `core.expression` の値への変換は `src/stage1_compiler.ts` の `definyAstToSelfHostedAst` です。
+パーツの式は `core.expression` の値のまま保存しているので, 変換せずに渡します ([value-encoding.md](value-encoding.md))。
 seed のパーツはコンパイラ組み込み (`core.number-literal`) 以外すべて型エラーなしで通ります。
 
 - **型パーツの展開**: 型パーツは `reference({ part_hash })` 型で表します。型環境には型パーツの

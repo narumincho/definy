@@ -5,19 +5,23 @@ import {
   type ScopeContext,
 } from "./types.ts";
 import { tryBuildTable } from "./table.ts";
+import { field, optionValue, variantOf } from "../../definy_value.ts";
 
 export function tryBuildCollectionNode(
-  node: Record<string, unknown>,
+  node: unknown,
   idPrefix: string,
   currentPath: ReadonlyArray<PathStep>,
   context: ScopeContext,
   buildLayoutNode: BuildLayoutNodeFn,
 ): LayoutNode | null {
-  if ("ListLiteral" in node) {
-    const listNode = node.ListLiteral as {
-      items?: ReadonlyArray<unknown>;
-    };
-    const items = listNode.items ?? [];
+  const tagged = variantOf(node);
+  if (tagged === undefined) {
+    return null;
+  }
+  const { tag, payload } = tagged;
+
+  if (tag === "list") {
+    const items: ReadonlyArray<unknown> = Array.isArray(payload) ? payload : [];
 
     // スプレッドシート型 (Table) の自動判定
     const tableInfo = tryBuildTable(
@@ -65,13 +69,14 @@ export function tryBuildCollectionNode(
     };
   }
 
-  if ("TypeLiteral" in node || "RecordLiteral" in node) {
-    const recNode = (node.TypeLiteral ?? node.RecordLiteral) as {
-      items?: ReadonlyArray<{ key?: unknown; name?: unknown; value?: unknown }>;
-    };
-    const items = recNode.items ?? [];
+  // レコードの式とレコード型の宣言 (型パーツ) は同じ形 `[{ key, value }]`
+  if (tag === "record" || tag === "type_record") {
+    const items: ReadonlyArray<{
+      readonly key?: unknown;
+      readonly value?: unknown;
+    }> = Array.isArray(payload) ? payload : [];
     const children = items.map((field, idx) => {
-      const k = String(field.key ?? field.name ?? "");
+      const k = String(field.key ?? "");
       const fPath = childPath(currentPath, {
         kind: "recordItemValue",
         index: idx,
@@ -106,11 +111,10 @@ export function tryBuildCollectionNode(
     };
   }
 
-  if ("RecordGet" in node) {
-    const getRec = node.RecordGet as {
-      record?: unknown;
-      key?: unknown;
-      field_name?: unknown;
+  if (tag === "record_get") {
+    const getRec = payload as {
+      readonly record?: unknown;
+      readonly key?: unknown;
     };
     const recChild = buildLayoutNode(
       getRec.record,
@@ -118,7 +122,7 @@ export function tryBuildCollectionNode(
       childPath(currentPath, "record"),
       context,
     );
-    const key = String(getRec.key ?? getRec.field_name ?? "");
+    const key = String(getRec.key ?? "");
     return {
       id: idPrefix,
       path: currentPath,
@@ -131,14 +135,14 @@ export function tryBuildCollectionNode(
     };
   }
 
-  if ("Variant" in node) {
-    const varNode = node.Variant as { tag?: unknown; payload?: unknown };
-    const tag = String(varNode.tag ?? "");
+  if (tag === "variant") {
+    const variantTag = String(field(payload, "tag") ?? "");
+    const variantPayloadExpression = optionValue(field(payload, "payload"));
     const children =
-      varNode.payload != null
+      variantPayloadExpression !== undefined
         ? [
             buildLayoutNode(
-              varNode.payload,
+              variantPayloadExpression,
               `${idPrefix}.payload`,
               childPath(currentPath, "variantPayload"),
               context,
@@ -148,7 +152,7 @@ export function tryBuildCollectionNode(
     return {
       id: idPrefix,
       path: currentPath,
-      label: tag,
+      label: variantTag,
       kind: "group",
       children,
       computedWidth: 0,

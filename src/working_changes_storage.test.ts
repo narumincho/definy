@@ -11,8 +11,7 @@ import {
 import { extractModuleCommit } from "./cbor.ts";
 
 describe("working_changes_storage", () => {
-  it("round-trips WorkingChanges preserving deeply nested Uint8Array instances", () => {
-    const sampleBytes = new Uint8Array([10, 20, 30, 40]);
+  it("パーツの式と型を JSON のまま保存して復元する", () => {
     const changes: WorkingChanges = {
       parts: new Map([
         [
@@ -22,88 +21,49 @@ describe("working_changes_storage", () => {
             partDefinitionEventHash: "part-hash",
             name: "test",
             description: [{ language: "en", text: "Test description" }],
-            partType: "number",
+            partType: { "#number": null },
             expression: {
-              If: {
-                condition: { Boolean: { value: true } },
-                then_expr: {
-                  Call: {
-                    function: {
-                      PartReference: {
-                        part_definition_event_hash: sampleBytes,
-                      },
-                    },
-                    arguments: [
-                      { name: "left", value: { Number: { value: 1 } } },
-                    ],
-                  },
+              "#call": {
+                function: {
+                  "#part_reference": { part_definition_event_hash: "AQID" },
                 },
-                else_expr: { Number: { value: 0 } },
+                arguments: [{ name: "left", value: { "#number": 1 } }],
               },
             },
           },
         ],
       ]),
     };
-
-    const serialized = serializeWorkingChanges(changes);
-    expect(serialized).toContain('"$bytes"');
-
-    const restored = deserializeWorkingChanges(serialized);
-    expect(restored.parts.size).toBe(1);
-    const restoredPart = restored.parts.get("math.test");
-    expect(restoredPart).toBeDefined();
-
-    const restoredExpr = restoredPart?.expression as {
-      readonly If?: {
-        readonly then_expr?: {
-          readonly Call?: {
-            readonly function?: {
-              readonly PartReference?: {
-                readonly part_definition_event_hash?: unknown;
-              };
-            };
-          };
-        };
-      };
-    };
-
-    const targetHash =
-      restoredExpr.If?.then_expr?.Call?.function?.PartReference
-        ?.part_definition_event_hash;
-    expect(targetHash).toBeInstanceOf(Uint8Array);
-    expect(targetHash).toEqual(sampleBytes);
+    const restored = deserializeWorkingChanges(
+      serializeWorkingChanges(changes),
+    );
+    expect(restored.parts.get("math.test")).toEqual(
+      changes.parts.get("math.test"),
+    );
   });
 
-  it("produces valid 32-byte Uint8Array part_definition_event_hash through signed module commit pipeline", async () => {
+  it("復元した式で署名したコミットからパーツ ID の文字列が戻る", async () => {
     const creds = await generateAccountCredentials("test-author");
-    const partHashBytes = new Uint8Array(32);
-    for (let i = 0; i < 32; i++) {
-      partHashBytes[i] = (i * 3 + 5) & 0xff;
-    }
-
-    const originalChanges: WorkingChanges = {
-      parts: new Map([
-        [
-          "sample.calc",
-          {
-            moduleDefinitionEventHash: "mod-hash",
-            partDefinitionEventHash: "part-hash",
-            name: "calc",
-            description: [{ language: "en", text: "Calc part" }],
-            partType: "number",
-            expression: {
-              PartReference: {
-                part_definition_event_hash: partHashBytes,
+    const partId = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA";
+    const restored = deserializeWorkingChanges(
+      serializeWorkingChanges({
+        parts: new Map([
+          [
+            "sample.calc",
+            {
+              moduleDefinitionEventHash: "mod-hash",
+              partDefinitionEventHash: "part-hash",
+              name: "calc",
+              description: [{ language: "en", text: "Calc part" }],
+              partType: { "#number": null },
+              expression: {
+                "#part_reference": { part_definition_event_hash: partId },
               },
             },
-          },
-        ],
-      ]),
-    };
-
-    const serialized = serializeWorkingChanges(originalChanges);
-    const restored = deserializeWorkingChanges(serialized);
+          ],
+        ]),
+      }),
+    );
     const restoredPart = restored.parts.get("sample.calc");
     expect(restoredPart).toBeDefined();
 
@@ -126,20 +86,12 @@ describe("working_changes_storage", () => {
     );
 
     const decodedCommit = extractModuleCommit(signedEventBytes);
-    expect(decodedCommit).not.toBeNull();
-    expect(decodedCommit?.parts.length).toBe(1);
-
-    const decodedExpr = decodedCommit?.parts[0]?.expression as {
-      readonly PartReference?: {
-        readonly part_definition_event_hash?: unknown;
-      };
-    };
-    expect(decodedExpr.PartReference).toBeDefined();
-
-    const decodedHash = decodedExpr.PartReference?.part_definition_event_hash;
-    expect(decodedHash).toBeInstanceOf(Uint8Array);
-    expect(decodedHash).toEqual(partHashBytes);
-    expect((decodedHash as Uint8Array).length).toBe(32);
+    expect(decodedCommit?.parts[0]).toMatchObject({
+      partType: { "#number": null },
+      expression: {
+        "#part_reference": { part_definition_event_hash: partId },
+      },
+    });
   });
 
   it("returns empty WorkingChanges on corrupted or invalid JSON", () => {

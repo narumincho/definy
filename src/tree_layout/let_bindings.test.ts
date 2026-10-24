@@ -10,25 +10,22 @@ import {
   letBindingSelectorOptions,
 } from "./let_bindings.ts";
 import type { PathStep } from "./types.ts";
+import { letChain, letChainOf } from "./expression.ts";
 
 const binding = (id: number, name: string, value: number) => ({
   variable_id: id,
   variable_name: name,
-  value: { Number: { value } },
+  value: { "#number": value },
 });
 
-/** `let a = 1, b = 2 in b` */
-const expression = {
-  Let: {
-    bindings: [binding(1, "a", 1), binding(2, "b", 2)],
-    body: { Variable: { variable_id: 2 } },
-  },
-};
+/** `let a = 1 in let b = 2 in b` */
+const expression = letChain([binding(1, "a", 1), binding(2, "b", 2)], {
+  "#variable": { variable_id: 2 },
+});
 const value = (index: number): ReadonlyArray<PathStep> => [
   { kind: "letBindingValue", index },
 ];
-const bindingsOf = (expr: unknown) =>
-  (expr as { Let: { bindings: ReadonlyArray<unknown> } }).Let.bindings;
+const bindingsOf = (expr: unknown) => letChainOf(expr)?.bindings ?? [];
 
 describe("letBindingSelectorOptions", () => {
   it("let そのものには末尾に足す操作だけ", () => {
@@ -63,24 +60,24 @@ describe("applyLetAction", () => {
     expect(bindingsOf(result?.expression)[2]).toEqual({
       variable_id: 3,
       variable_name: "x",
-      value: { Hole: {} },
+      value: { "#hole": { probe: false } },
     });
     expect(result?.selectedPath).toEqual(value(2));
     const before = applyLetAction(expression, value(1), LET_INSERT_BEFORE);
-    expect(
-      bindingsOf(before?.expression).map(
-        (b) => (b as { variable_name: string }).variable_name,
-      ),
-    ).toEqual(["a", "x", "b"]);
+    expect(bindingsOf(before?.expression).map((b) => b.variable_name)).toEqual([
+      "a",
+      "x",
+      "b",
+    ]);
     expect(before?.selectedPath).toEqual(value(1));
     const after = applyLetAction(expression, value(0), LET_INSERT_AFTER);
     expect(after?.selectedPath).toEqual(value(1));
   });
 
   it("名前が使われていれば x1, x2 ...", () => {
-    const withX = {
-      Let: { bindings: [binding(0, "x", 0)], body: { Hole: {} } },
-    };
+    const withX = letChain([binding(0, "x", 0)], {
+      "#hole": { probe: false },
+    });
     expect(
       bindingsOf(applyLetAction(withX, [], LET_APPEND_BINDING)?.expression)[1],
     ).toMatchObject({ variable_id: 1, variable_name: "x1" });
@@ -106,7 +103,7 @@ describe("applyLetAction", () => {
       LET_DELETE_BINDING,
     );
     expect(only).toEqual({
-      expression: { Variable: { variable_id: 2 } },
+      expression: { "#variable": { variable_id: 2 } },
       selectedPath: [],
     });
   });

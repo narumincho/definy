@@ -13,10 +13,7 @@ import {
   collectReferencedParts,
   BUILTIN_PARAMETERS,
   compilerBuiltinName,
-  definyAstToSelfHostedAst,
-  definyAstWithHolesToSelfHostedAst,
-  partReferenceId,
-  SelfHostedAstConversionError,
+  containsHole,
   type DefinyValue,
   type Stage1CompilerInstance,
 } from "./stage1_compiler.ts";
@@ -25,7 +22,15 @@ import {
   encodeCborItem,
   sha256BytesSync,
 } from "./cbor.ts";
-import { list, record, string, variant } from "./self_hosted_ast.ts";
+import {
+  field,
+  isVariant,
+  none,
+  optionValue,
+  some,
+  variant,
+  variantOf,
+} from "./definy_value.ts";
 
 /** 型チェッカーが使う `core` のパーツの ID (URL-safe Base64) */
 export type SelfHostedCoreParts = {
@@ -39,10 +44,10 @@ export type SelfHostedCoreParts = {
 /** 型環境に入れるパーツ (パーツ参照の型を解決するために使う) */
 export type PartTypeEntry = {
   readonly partId: string;
-  /** パーツの宣言型 (seeds/schemas の `PartType` の形) */
+  /** パーツの宣言型 (`core.type-ast` の値) */
   readonly partType: unknown;
   /**
-   * 型パーツ (`partType` が `"type"`) の宣言式. `core.type-resolve` が
+   * 型パーツ (`partType` が `core.type-ast` の `type`) の宣言式. `core.type-resolve` が
    * `reference` 型を中身の型に展開するために使う
    */
   readonly typeDeclaration?: unknown;
@@ -77,208 +82,17 @@ export type SelfHostedTypeCheckOutcome =
   /** 型チェッカーの実行に失敗した (Wasm の実行時エラーなど) */
   | { readonly kind: "checker_failed"; readonly message: string };
 
-function asRecord(value: unknown): Readonly<Record<string, unknown>> | null {
-  return typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !(value instanceof Uint8Array)
-    ? (value as Record<string, unknown>)
-    : null;
+/** 型パーツ (宣言型が `core.type-ast` の `type`) か */
+export function isTypePartType(partType: unknown): boolean {
+  return isVariant(partType, "type");
 }
 
-function arrayOf(
-  value: unknown,
-): ReadonlyArray<Readonly<Record<string, unknown>>> {
-  if (!Array.isArray(value)) {
-    throw new SelfHostedAstConversionError(
-      `expected a list: ${JSON.stringify(value)}`,
-    );
-  }
-  return value.map((item) => asRecord(item) ?? {});
+/** 検査できないパーツ (未入力のある式・型の無いパーツ・コンパイラ組み込み) */
+class UnsupportedPartError extends Error {
+  override readonly name = "UnsupportedPartError";
 }
 
-function optionalType(
-  payload: unknown,
-  convert: (value: unknown) => unknown,
-): unknown {
-  return payload == null ? variant("none") : variant("some", convert(payload));
-}
-
-/**
- * パーツの宣言型 (`PartType`) を, それを表す `core.type-ast` の値を作る式にする.
- * 表せない型 (型指定なしなど) は `SelfHostedAstConversionError` を投げる
- */
-export function partTypeToSelfHostedAst(partType: unknown): unknown {
-  if (
-    partType === "number" ||
-    partType === "string" ||
-    partType === "boolean" ||
-    partType === "type" ||
-    partType === "secret"
-  ) {
-    return variant(partType);
-  }
-  const obj = asRecord(partType);
-  if (obj === null) {
-    throw new SelfHostedAstConversionError(
-      `core.type-ast cannot represent part type ${JSON.stringify(partType)}`,
-    );
-  }
-  const convert = partTypeToSelfHostedAst;
-  if ("list" in obj) {
-    return variant("list", record([["item_type", convert(obj.list)]]));
-  }
-  if ("function" in obj) {
-    const fn = asRecord(obj.function) ?? {};
-    return variant(
-      "function",
-      record([
-        [
-          "parameters",
-          list(
-            arrayOf(fn.parameters).map((parameter) =>
-              record([
-                ["name", string(String(parameter.name ?? ""))],
-                ["type", convert(parameter.type)],
-              ]),
-            ),
-          ),
-        ],
-        ["return_type", convert(fn.return_type)],
-      ]),
-    );
-  }
-  if ("record" in obj) {
-    return variant(
-      "record",
-      list(
-        arrayOf(obj.record).map((field) =>
-          record([
-            ["key", string(String(field.key ?? ""))],
-            ["field_type", convert(field.value)],
-          ]),
-        ),
-      ),
-    );
-  }
-  if ("union" in obj) {
-    return variant(
-      "union",
-      list(
-        arrayOf(obj.union).map((item) =>
-          record([
-            ["tag", string(String(item.tag ?? ""))],
-            ["payload_type", optionalType(item.payload, convert)],
-          ]),
-        ),
-      ),
-    );
-  }
-  if ("code" in obj) {
-    return variant("code", convert(obj.code));
-  }
-  if ("type_part" in obj) {
-    return variant(
-      "reference",
-      record([["part_hash", string(partReferenceId(obj.type_part))]]),
-    );
-  }
-  throw new SelfHostedAstConversionError(
-    `core.type-ast cannot represent part type ${JSON.stringify(partType)}`,
-  );
-}
-
-/**
- * 型パーツの宣言式 (`TypeUnion` など) を, 型チェッカーが検査する `core.expression` の値を作る式にする
- */
-export function typeDeclarationToSelfHostedAst(expression: unknown): unknown {
-  const convert = typeDeclarationToSelfHostedAst;
-  if (expression === "TypeNumber") {
-    return variant("type_number");
-  }
-  if (expression === "TypeString") {
-    return variant("type_string");
-  }
-  if (expression === "TypeBoolean") {
-    return variant("type_boolean");
-  }
-  if (expression === "TypeSecret") {
-    return variant("type_secret");
-  }
-  const obj = asRecord(expression);
-  const typeList = asRecord(obj?.TypeList);
-  if (typeList !== null) {
-    return variant(
-      "type_list",
-      record([["item_type", convert(typeList.item_type)]]),
-    );
-  }
-  const typeFunction = asRecord(obj?.TypeFunction);
-  if (typeFunction !== null) {
-    return variant(
-      "type_function",
-      record([
-        [
-          "parameters",
-          list(
-            arrayOf(typeFunction.parameters).map((parameter) =>
-              record([
-                ["name", string(String(parameter.name ?? ""))],
-                ["type", convert(parameter.type)],
-              ]),
-            ),
-          ),
-        ],
-        ["return_type", convert(typeFunction.return_type)],
-      ]),
-    );
-  }
-  const typeLiteral = asRecord(obj?.TypeLiteral);
-  if (typeLiteral !== null) {
-    return variant(
-      "type_record",
-      list(
-        arrayOf(typeLiteral.items).map((field) =>
-          record([
-            ["key", string(String(field.key ?? ""))],
-            ["value", convert(field.value)],
-          ]),
-        ),
-      ),
-    );
-  }
-  const typeUnion = asRecord(obj?.TypeUnion);
-  if (typeUnion !== null) {
-    return variant(
-      "type_union",
-      list(
-        arrayOf(typeUnion.variants).map((item) =>
-          record([
-            ["tag", string(String(item.tag ?? ""))],
-            ["payload_type", optionalType(item.payload_type, convert)],
-          ]),
-        ),
-      ),
-    );
-  }
-  const partReference = asRecord(obj?.PartReference);
-  if (partReference !== null) {
-    return variant(
-      "part_reference",
-      record([
-        [
-          "part_definition_event_hash",
-          string(partReferenceId(partReference.part_definition_event_hash)),
-        ],
-      ]),
-    );
-  }
-  throw new SelfHostedAstConversionError(
-    "part_type 'type' requires a type declaration expression",
-  );
-}
-
-/** `core.type-check-against` に渡す `expr` と `expected_type` の値を作る式 */
+/** `core.type-check-against` に渡す `expr` と `expected_type` の値 */
 function partCheckArguments(
   part: PartToCheck,
   allowHoles: boolean,
@@ -289,19 +103,20 @@ function partCheckArguments(
   const builtin = compilerBuiltinName(part.expression);
   if (builtin !== undefined) {
     // 組み込みの式 (`builtin`) の型は宣言した関数の型でなく `builtin` なので, 宣言型と比べられない
-    throw new SelfHostedAstConversionError(
+    throw new UnsupportedPartError(
       `compiler built-in part (${builtin}) cannot be type-checked`,
     );
   }
-  return {
-    expression:
-      part.partType === "type"
-        ? typeDeclarationToSelfHostedAst(part.expression)
-        : allowHoles
-          ? definyAstWithHolesToSelfHostedAst(part.expression)
-          : definyAstToSelfHostedAst(part.expression),
-    expectedType: partTypeToSelfHostedAst(part.partType),
-  };
+  if (part.expression == null) {
+    throw new UnsupportedPartError("part has no expression");
+  }
+  if (part.partType == null) {
+    throw new UnsupportedPartError("part has no type");
+  }
+  if (!allowHoles && containsHole(part.expression)) {
+    throw new UnsupportedPartError("Expression has an unfilled hole");
+  }
+  return { expression: part.expression, expectedType: part.partType };
 }
 
 /** `core.type-checker` に渡すパーツ */
@@ -333,43 +148,21 @@ const NO_MODULE = "#";
  * コンパイラ組み込みのパーツの型は `builtin` (名前) にする
  */
 function moduleEntriesExpression(entries: ReadonlyArray<ModuleEntry>): unknown {
-  return list(
-    entries.map((entry) =>
-      record([
-        ["part_id", string(entry.partId)],
-        ["module_id", string(entry.moduleId)],
-        [
-          "part_type",
-          entry.builtin === undefined
-            ? partTypeOption(entry.partType)
-            : variant("some", variant("builtin", string(entry.builtin))),
-        ],
-        ["type_declaration", typeDeclarationOption(entry.typeDeclaration)],
-        [
-          "expression_key",
-          entry.expressionKey === null
-            ? variant("none")
-            : variant("some", string(entry.expressionKey)),
-        ],
-        ["has_expression", { Boolean: { value: entry.hasExpression } }],
-      ]),
-    ),
-  );
-}
-
-/** 宣言型を `core.type-ast` の値の `some` にする. 無いか表せなければ `none` */
-function partTypeOption(partType: unknown): unknown {
-  if (partType == null) {
-    return variant("none");
-  }
-  try {
-    return variant("some", partTypeToSelfHostedAst(partType));
-  } catch (e) {
-    if (e instanceof SelfHostedAstConversionError) {
-      return variant("none");
-    }
-    throw e;
-  }
+  return entries.map((entry) => ({
+    part_id: entry.partId,
+    module_id: entry.moduleId,
+    part_type:
+      entry.builtin === undefined
+        ? entry.partType == null
+          ? none()
+          : some(entry.partType)
+        : some(variant("builtin", entry.builtin)),
+    type_declaration:
+      entry.typeDeclaration == null ? none() : some(entry.typeDeclaration),
+    expression_key:
+      entry.expressionKey === null ? none() : some(entry.expressionKey),
+    has_expression: entry.hasExpression,
+  }));
 }
 
 function latestPartToModuleEntry(part: LatestPart): ModuleEntry {
@@ -377,42 +170,27 @@ function latestPartToModuleEntry(part: LatestPart): ModuleEntry {
     partId: part.partId,
     moduleId: part.moduleId,
     partType: part.partType,
-    typeDeclaration: part.partType === "type" ? part.expression : undefined,
+    typeDeclaration: isTypePartType(part.partType)
+      ? part.expression
+      : undefined,
     expressionKey: part.expressionKey,
     hasExpression: part.expression != null,
     builtin: compilerBuiltinName(part.expression),
   };
 }
 
-/** 型パーツの宣言式を `core.expression` の値の `some` にする. 無いか表せなければ `none` */
-function typeDeclarationOption(declaration: unknown): unknown {
-  if (declaration == null) {
-    return variant("none");
-  }
-  try {
-    return variant("some", typeDeclarationToSelfHostedAst(declaration));
-  } catch (e) {
-    if (e instanceof SelfHostedAstConversionError) {
-      return variant("none");
-    }
-    throw e;
-  }
-}
-
 function typeResultToOutcome(result: DefinyValue): SelfHostedTypeCheckOutcome {
-  const value = asRecord(result) as {
-    readonly tag?: unknown;
-    readonly payload?: DefinyValue;
-  } | null;
+  const value = variantOf(result);
   if (value?.tag === "ok") {
     return { kind: "ok" };
   }
-  const error = asRecord(value?.payload) as {
-    readonly tag?: unknown;
-    readonly payload?: DefinyValue;
-  } | null;
-  if (value?.tag === "error" && typeof error?.tag === "string") {
-    return typeErrorToOutcome(error.tag, error.payload ?? null, null);
+  const error = variantOf(value?.payload);
+  if (value?.tag === "error" && error !== undefined) {
+    return typeErrorToOutcome(
+      error.tag,
+      (error.payload ?? null) as DefinyValue,
+      null,
+    );
   }
   throw new Error(
     `unexpected core.type-result value: ${JSON.stringify(result)}`,
@@ -429,18 +207,12 @@ function typeErrorToOutcome(
   expression: DefinyValue,
 ): SelfHostedTypeCheckOutcome {
   if (tag === "located") {
-    const located = asRecord(payload) as {
-      readonly expression?: DefinyValue;
-      readonly error?: {
-        readonly tag?: unknown;
-        readonly payload?: DefinyValue;
-      };
-    } | null;
-    if (typeof located?.error?.tag === "string") {
+    const error = variantOf(field(payload, "error"));
+    if (error !== undefined) {
       return typeErrorToOutcome(
-        located.error.tag,
-        located.error.payload ?? null,
-        located.expression ?? null,
+        error.tag,
+        (error.payload ?? null) as DefinyValue,
+        (field(payload, "expression") ?? null) as DefinyValue,
       );
     }
   }
@@ -466,11 +238,9 @@ export function compileTypeChecker(options: {
   readonly core: SelfHostedCoreParts;
   readonly resolvePart: (id: string) => unknown;
 }): Uint8Array {
-  const expression = {
-    PartReference: {
-      part_definition_event_hash: options.core.typeChecker,
-    },
-  };
+  const expression = variant("part_reference", {
+    part_definition_event_hash: options.core.typeChecker,
+  });
   const { parts, unresolved } = collectReferencedParts(
     expression,
     options.resolvePart,
@@ -486,7 +256,7 @@ export function compileTypeChecker(options: {
 export type TypeCheckSession = {
   readonly check: (part: PartToCheck) => SelfHostedTypeCheckOutcome;
   /**
-   * 式の中の `{"Hole": {"probe": true}}` の位置で期待する型 (`core.type-ast` の値) を型チェッカーに聞く.
+   * 式の中の `{"#hole": {"probe": true}}` の位置で期待する型 (`core.type-ast` の値) を型チェッカーに聞く.
    * 他の未入力はその位置の期待する型として受け入れる. 推論する位置 (`==` の左辺など) や,
    * それより先に別の型エラーが見つかったときは `null`
    */
@@ -534,7 +304,7 @@ function createModuleCommitSession(options: {
 } & TypeCheckSession {
   const latest = moduleEntriesExpression(options.latest);
   const committed = moduleEntriesExpression(options.committed);
-  const moduleId = string(options.moduleId);
+  const moduleId = options.moduleId;
   // 型環境は大きいので, インスタンスごとに 1 度だけ線形メモリに書き込んで definy 側で型環境を作り,
   // その環境で検査する関数 (`core.type-checker` が返すレコードの `check`) を使い回す.
   // 型チェッカーが trap したら (スタック不足など) メモリの状態が分からないので作り直す
@@ -579,7 +349,7 @@ function createModuleCommitSession(options: {
     try {
       args = partCheckArguments(part, allowHoles);
     } catch (e) {
-      if (e instanceof SelfHostedAstConversionError) {
+      if (e instanceof UnsupportedPartError) {
         return { kind: "unsupported", message: e.message };
       }
       throw e;
@@ -614,10 +384,8 @@ function createModuleCommitSession(options: {
       ) {
         return null;
       }
-      const expected = (
-        outcome.detail as { readonly expected?: DefinyValue } | null
-      )?.expected as { readonly tag?: unknown; readonly payload?: DefinyValue };
-      return expected?.tag === "some" ? (expected.payload ?? null) : null;
+      return (optionValue(field(outcome.detail, "expected")) ??
+        null) as DefinyValue | null;
     },
   };
 }
@@ -635,85 +403,66 @@ export function checkParts(options: {
   return options.parts.map((part) => session.check(part));
 }
 
-function isTaggedValue(
-  value: DefinyValue,
-): value is { readonly tag: string; readonly payload: DefinyValue | null } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    typeof (value as { readonly tag?: unknown }).tag === "string" &&
-    "payload" in value
-  );
-}
-
-function fieldOf(value: DefinyValue | null, key: string): DefinyValue | null {
-  return typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !isTaggedValue(value)
-    ? ((value as { readonly [key: string]: DefinyValue })[key] ?? null)
-    : null;
-}
-
 /**
  * `core.type-ast` の値を `List<number>` のような文字列にする. 型でなければ `null`.
  * `reference` 型は `resolveName` でパーツ名にする (分からなければ ID の先頭)
  */
 export function formatTypeAst(
-  value: DefinyValue | null,
+  value: unknown,
   resolveName: (partId: string) => string | undefined = () => undefined,
 ): string | null {
-  if (value === null || !isTaggedValue(value)) {
+  const tagged = variantOf(value);
+  if (tagged === undefined) {
     return null;
   }
-  const format = (v: DefinyValue | null): string =>
+  const format = (v: unknown): string =>
     formatTypeAst(v, resolveName) ?? JSON.stringify(v);
-  const items = (v: DefinyValue | null): ReadonlyArray<DefinyValue> =>
+  const items = (v: unknown): ReadonlyArray<unknown> =>
     Array.isArray(v) ? v : [];
-  switch (value.tag) {
+  const { payload } = tagged;
+  switch (tagged.tag) {
     case "number":
     case "string":
     case "boolean":
     case "type":
-      return value.tag;
+      return tagged.tag;
     case "secret":
       return "Secret";
     case "list":
-      return `List<${format(fieldOf(value.payload, "item_type"))}>`;
+      return `List<${format(field(payload, "item_type"))}>`;
     case "code":
-      return `Code<${format(value.payload)}>`;
+      return `Code<${format(payload)}>`;
     case "function":
-      return `(${items(fieldOf(value.payload, "parameters"))
+      return `(${items(field(payload, "parameters"))
         .map(
           (parameter) =>
-            `${String(fieldOf(parameter, "name"))}: ${format(fieldOf(parameter, "type"))}`,
+            `${String(field(parameter, "name"))}: ${format(field(parameter, "type"))}`,
         )
-        .join(", ")}) -> ${format(fieldOf(value.payload, "return_type"))}`;
+        .join(", ")}) -> ${format(field(payload, "return_type"))}`;
     case "record":
-      return `{ ${items(value.payload)
+      return `{ ${items(payload)
         .map(
-          (field) =>
-            `${String(fieldOf(field, "key"))}: ${format(fieldOf(field, "field_type"))}`,
+          (item) =>
+            `${String(field(item, "key"))}: ${format(field(item, "field_type"))}`,
         )
         .join(", ")} }`;
     case "union":
-      return items(value.payload)
-        .map((variant) => {
-          const payloadType = fieldOf(variant, "payload_type");
-          const tag = String(fieldOf(variant, "tag"));
-          return isTaggedValue(payloadType) && payloadType.tag === "some"
-            ? `${tag}(${format(payloadType.payload)})`
+      return items(payload)
+        .map((item) => {
+          const payloadType = optionValue(field(item, "payload_type"));
+          const tag = String(field(item, "tag"));
+          return payloadType !== undefined
+            ? `${tag}(${format(payloadType)})`
             : tag;
         })
         .join(" | ");
     case "reference": {
-      const partId = String(fieldOf(value.payload, "part_hash"));
+      const partId = String(field(payload, "part_hash"));
       return resolveName(partId) ?? partId.slice(0, 8);
     }
     case "builtin": {
       // 組み込みの型は引数の型を持たないので, 引数名だけ出す (`builtin less_than(left, right)`)
-      const name = String(value.payload);
+      const name = String(payload);
       const parameters = BUILTIN_PARAMETERS.get(name);
       return parameters === undefined
         ? `builtin ${name}`
@@ -804,8 +553,9 @@ export function typeEnvFromParts(
           {
             partId: part.partId,
             partType: part.partType,
-            typeDeclaration:
-              part.partType === "type" ? part.expression : undefined,
+            typeDeclaration: isTypePartType(part.partType)
+              ? part.expression
+              : undefined,
             builtin,
           },
         ]
@@ -820,7 +570,7 @@ export function typeEnvKey(parts: Iterable<LatestPart>): string {
       .map(
         (part) =>
           `${part.partId}:${partTypeKey(part.partType)}:${
-            part.partType === "type" ? (part.expressionKey ?? "") : ""
+            isTypePartType(part.partType) ? (part.expressionKey ?? "") : ""
           }:${compilerBuiltinName(part.expression) ?? ""}`,
       )
       .sort(),
