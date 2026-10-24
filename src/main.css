@@ -1289,26 +1289,326 @@ button.card:hover {
   max-width: 680px;
 }
 
-.event-list {
+/*
+ * イベントタイムライン (/).
+ * 日付ごとの見出しの下に, 種別ごとの色のマーカーを縦線でつないだカードを並べる.
+ * 種別の色は .timeline-item[data-event-type] の --event-color 系で切り替える
+ */
+.event-list-view {
+  padding: 1.5rem 1.75rem 3rem;
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.view-heading {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.2rem;
+}
+
+.view-subtitle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.chip:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.chip.active {
+  background: var(--bg-selection);
+  border-color: var(--blue-border);
+  color: var(--text-primary);
+}
+
+.chip-count {
+  min-width: 1.3rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip.active .chip-count {
+  color: var(--blue-text);
+}
+
+.timeline,
+.timeline-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.timeline-day-label {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 0 0.6rem;
+  padding: 0.35rem 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  background: var(--background);
+}
+
+.timeline-items {
+  display: grid;
+  gap: 0.6rem;
+  position: relative;
+}
+
+.timeline-item {
+  --event-color: var(--text-muted);
+  --event-text: var(--text-secondary);
+  --event-bg: rgba(255, 255, 255, 0.04);
+  --event-border: var(--border-strong);
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: 0.75rem;
+  position: relative;
+}
+
+.timeline-item[data-event-type="module_commit"] {
+  --event-color: var(--blue);
+  --event-text: var(--blue-text);
+  --event-bg: var(--blue-bg-strong);
+  --event-border: var(--blue-border);
+}
+
+.timeline-item[data-event-type="create_account"] {
+  --event-color: var(--green);
+  --event-text: var(--green-text);
+  --event-bg: var(--green-bg-strong);
+  --event-border: var(--green-border);
+}
+
+.timeline-item[data-event-type="change_profile"] {
+  --event-color: var(--yellow);
+  --event-text: var(--yellow-text);
+  --event-bg: var(--yellow-bg-strong);
+  --event-border: var(--yellow-border);
+}
+
+.timeline-item.timeline-item-invalid {
+  --event-color: var(--red);
+  --event-text: var(--red-text);
+  --event-bg: var(--red-bg-strong);
+  --event-border: var(--red-border);
+}
+
+/* マーカー同士をつなぐ縦線. 最後の項目では線を伸ばさない */
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: calc(0.875rem - 1px);
+  top: 1.75rem;
+  bottom: -0.6rem;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-item:last-child::before {
+  display: none;
+}
+
+.timeline-marker {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 0.55rem;
+  border-radius: 50%;
+  background: var(--event-bg);
+  border: 1px solid var(--event-border);
+  color: var(--event-text);
+  position: relative;
+}
+
+.timeline-marker-icon {
+  display: block;
 }
 
 .event-card {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.75rem 1rem;
   background: var(--surface-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 0.85rem 1rem;
+  color: inherit;
+  text-decoration: none;
   transition:
     border-color 0.12s ease,
     background-color 0.12s ease;
-  position: relative;
-  overflow: hidden;
 }
 
 .event-card:hover {
   border-color: var(--border-strong);
   background: var(--surface-hover);
+}
+
+.event-card:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.event-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.event-type {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--event-text);
+}
+
+.event-time {
+  margin-left: auto;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.event-card-summary {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.event-summary-text {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.event-summary-subject {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.event-commit-message {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.event-summary-invalid {
+  display: grid;
+  gap: 0.15rem;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+.event-summary-reason {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--red-text);
+  overflow-wrap: anywhere;
+}
+
+.event-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.event-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+}
+
+.event-author-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: var(--blue-bg-strong);
+  color: var(--blue-text);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.event-hash {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.event-card-chevron {
+  margin-left: auto;
+  color: var(--text-muted);
+  transition:
+    color 0.12s ease,
+    transform 0.12s ease;
+}
+
+.event-card:hover .event-card-chevron {
+  color: var(--text-primary);
+  transform: translateX(2px);
+}
+
+/* タイムラインでは左のマーカーが赤くなるので, 共通の太い左線は付けない */
+.timeline-item .event-card.event-card-invalid {
+  border: 1px solid var(--red-border);
+}
+
+@media (max-width: 640px) {
+  .event-list-view {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .timeline-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timeline-marker,
+  .timeline-item::before {
+    display: none;
+  }
 }
 
 .event-detail-card {
@@ -2106,7 +2406,7 @@ button.card:hover {
 .commit-type-check ul {
   margin: 0.4rem 0 0;
   padding-left: 1.2rem;
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-mono);
   overflow-wrap: anywhere;
 }
 
