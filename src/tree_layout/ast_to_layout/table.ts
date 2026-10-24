@@ -1,4 +1,5 @@
 import type { LayoutNode, PathStep } from "../types.ts";
+import { variantPayload } from "../../definy_value.ts";
 import {
   type BuildLayoutNodeFn,
   childPath,
@@ -16,18 +17,12 @@ export function tryBuildTable(
 
   const allKeys: string[] = [];
   for (const item of items) {
-    if (!item || typeof item !== "object") return null;
-    const rec = item as Record<string, unknown>;
-    const inner = (rec.TypeLiteral ?? rec.RecordLiteral) as
-      | {
-          items?: ReadonlyArray<{ key?: unknown; name?: unknown }>;
-        }
-      | undefined;
-    if (!inner || !Array.isArray(inner.items) || inner.items.length === 0) {
+    const fields = variantPayload(item, "record");
+    if (!Array.isArray(fields) || fields.length === 0) {
       return null;
     }
-    for (const f of inner.items) {
-      const k = String(f.key ?? f.name ?? "");
+    for (const f of fields as ReadonlyArray<{ readonly key?: unknown }>) {
+      const k = String(f.key ?? "");
       if (!allKeys.includes(k)) {
         allKeys.push(k);
       }
@@ -37,15 +32,11 @@ export function tryBuildTable(
   if (allKeys.length === 0) return null;
 
   const rows: ReadonlyArray<LayoutNode> = items.map((item, rowIdx) => {
-    const rec =
-      (item as Record<string, unknown>).TypeLiteral ??
-      (item as Record<string, unknown>).RecordLiteral;
-    const fields =
-      (rec as { items?: ReadonlyArray<Record<string, unknown>> }).items ?? [];
+    const fields = variantPayload(item, "record") as ReadonlyArray<
+      Readonly<Record<string, unknown>>
+    >;
     const rowCells: ReadonlyArray<LayoutNode> = allKeys.map((key, colIdx) => {
-      const fieldIdx = fields.findIndex(
-        (f) => String(f.key ?? f.name ?? "") === key,
-      );
+      const fieldIdx = fields.findIndex((f) => String(f.key ?? "") === key);
       if (fieldIdx >= 0) {
         const field = fields[fieldIdx];
         const cellPath = childPath(

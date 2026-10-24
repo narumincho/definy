@@ -101,14 +101,14 @@ Enter は結果の `<a>` をクリックして開くので, 通常のリンク�
   モジュールコミットのデコード (`extractModuleCommit`) も `decodedCommits` で 1 度だけにしている
 - 型エラーのあるコミットはサーバーが拒否するので, 表示を確かめるには `DEFINY_ALLOW_UNVERIFIED_EVENTS=true` の dev サーバーで
   `DebugService/SubmitUnverifiedEvent` (型検査をしない) に, 正しく署名した型エラーのあるコミットを送る
-- 動作確認のノウハウ: 作業中の変更は localStorage の `definy.working_changes.v3` に
-  `{"parts": {"myapp.bad": {"name": "bad", "partType": "number", "expression": {"String": {"value": "x"}}, ...}}}`
+- 動作確認のノウハウ: 作業中の変更は localStorage の `definy.working_changes.v4` に
+  `{"parts": {"myapp.bad": {"name": "bad", "partType": {"#number": null}, "expression": {"#string": "x"}, ...}}}`
   の形 (`src/working_changes_storage.ts`) で入れて `/changes` を開けば再現できる
 
 ### 作業中の変更とまとめてコミット
 
 git の作業ツリーのように, パーツの編集はすぐにはコミットせず, ブラウザの localStorage
-(`definy.working_changes.v3`, JSON. バイト列は `{"$bytes": "<Base64URL>"}`) に記録しておき, 変更ページ (`/changes`) でまとめてコミットする.
+(`definy.working_changes.v4`, JSON. 式と型は [value-encoding.md](value-encoding.md) の形のまま) に記録しておき, 変更ページ (`/changes`) でまとめてコミットする.
 実装は [src/state/useWorkingChanges.ts](../src/state/useWorkingChanges.ts) (記録・コミット),
 [src/working_changes_storage.ts](../src/working_changes_storage.ts) (保存形式), [pages/changes.tsx](../pages/changes.tsx) (変更ページ).
 
@@ -162,7 +162,7 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   定義はルートから選んだ式までのパスを降りながら集め (`findVariableDefinitionPath`), 内側の定義が外側の同じ ID を隠す.
   let の束縛の値からはそれより前の束縛だけが見える. 定義が式の外 (未定義の変数) なら選択肢を出さない
 - リストの要素の操作 ([src/tree_layout/list_items.ts](../src/tree_layout/list_items.ts)):
-  リスト (`ListLiteral`) を選ぶと `add-item` (末尾に未入力の要素を足す), 要素を選ぶと
+  リスト (`list`) を選ぶと `add-item` (末尾に未入力の要素を足す), 要素を選ぶと
   `insert-item-before` / `insert-item-after` / `move-item-earlier` / `move-item-later` / `delete-item`.
   足した要素・動かした要素を選び, 消したときは同じ位置の次の要素 (末尾なら前の要素, 空になればリスト) を選ぶ
 - let の束縛の操作 ([src/tree_layout/let_bindings.ts](../src/tree_layout/let_bindings.ts)):
@@ -171,8 +171,8 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   (`nextVariableId`) と名前 (`x`, `x1`, ...) にし, 値を未入力にしてその値を選ぶ. 最後の束縛を消すと let をやめて本体だけにする.
   消した変数を参照している式・前へ動かして見えなくなった変数は, 型チェッカーが型エラーにする
 - Variant (タグ付きの値) の作成 ([src/tree_layout/variant.ts](../src/tree_layout/variant.ts)):
-  直和型の型パーツ (式が `TypeUnion` の型パーツ) のタグを `sample.option-number.some` のような名前の選択肢に出す
-  (`some` と打てば見つかる). 選ぶと型パーツを指定した Variant (`type_part_definition_event_hash`) にし,
+  直和型の型パーツ (式が `type_union` の型パーツ) のタグを `sample.option-number.some` のような名前の選択肢に出す
+  (`some` と打てば見つかる). 選ぶと型パーツを指定した Variant (`type_part: some(ID)`) にし,
   値を持つタグなら値を未入力にする. 値を持つタグ同士で変えると値を引き継ぐ.
   期待する型が型パーツならそのタグを先に並べ, 型パーツでない直和型ならそのタグ (型パーツなし) も出す.
   関数リテラルは選択肢に出さない (期待する型が関数なら関数リテラルにする方針)
@@ -229,12 +229,12 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
     "format": "definy.expression",
     "version": 1,
     "mode": "expression",
-    "expression": { "Number": { "value": 5 } },
+    "expression": { "#number": 5 },
     "freeVariables": [{ "id": 0, "name": "x" }]
   }
   ```
 
-  - パーツ ID などのバイト列 (`Uint8Array`) は `{"$bytes": "<Base64URL>"}` にする
+  - 式は [value-encoding.md](value-encoding.md) の形のまま (パーツ ID も文字列なので特別な書き方は無い)
   - `mode` は `expression` (式) か `type` (パーツの型). 違う種類のツリーには貼り付けない
   - `freeVariables` はコピーした式の中で定義されずに参照している変数 (外側の let・関数の引数・match の束縛) の ID と名前
 
@@ -254,27 +254,26 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
 パーツ詳細の `type` の行は, 型を式にして式のツリーエディタで編集する
 (`ExpressionTreeEditor` の `mode="type"`).
 
-- パーツの型 (`partType`, seeds/schemas の `PartType`) と型の式の相互変換は
+- パーツの型 (`partType`, `core.type-ast` の値) と型の式 (`core.expression` の `type_*` の値) の相互変換は
   [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts). seed の全パーツの型が往復で変わらないことをテストしている
-  - `"number"` ↔ `"TypeNumber"`, `{ list: T }` ↔ `{ TypeList: { item_type } }`, `{ function }` ↔ `{ TypeFunction }`,
-    `{ record }` ↔ `{ TypeLiteral }`, `{ union }` ↔ `{ TypeUnion }`, `{ type_part: ID }` ↔ `{ PartReference }`, 型指定なし ↔ `null`
-  - `"type"` (型そのもの) は内部だけの `"TypeType"` にする. 未入力 (`Hole`) は `null` に戻す
+  - 対応は [part-type.md](part-type.md) の表 (`number` ↔ `type_number`, `list` ↔ `type_list`, `reference` ↔ `part_reference` など)
+  - `type` (型そのもの) と `code` は型パーツの宣言に無いので, エディタの中だけの `type_type` / `type_code` にする. 未入力 (`hole`) は `null` に戻す
 - 型のメニューの候補は number / string / boolean / type / list / function / record / union / 型指定なしと,
-  型のパーツ (`partType` が `type` のパーツ, `{ type_part: ID }` で参照する). 期待型の推論はしない
+  型のパーツ (`partType` が `type` のパーツ, `reference` で参照する). 期待型の推論はしない
 - 行の右端の × で型指定をなくす
 - 変更は式と同じく作業中の変更 (`PartChange.partType`) に記録する. パーツ詳細は作業中の変更の型を優先して表示し,
   式のツリーの期待型の推論にもその型を使う
-- ツリーでは `TypeNumber` などは `number` のように型の名前で出す
+- ツリーでは `type_number` などは `number` のように型の名前で出す
 
 ### ツリーに表示する組み込みの式
 
-`TypeList` / `TypeCode` (`Code<T>` の型) / `Quote` (quote 式, [quote.md](quote.md)) は, 子の式をフィールドに持つ式として `mutation.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
-`Quote` の中は外の変数を使えないので, 中の式にはスコープの変数を渡さない.
-`core.list-get` などの組み込みのパーツの呼び出しは, 他のパーツの呼び出し (`Call`) と同じく表示する.
-`TypeUnion` はバリアントごとに行を分け, ペイロードの型を子の式にする (ペイロードのないバリアントを選ぶと union 全体を選ぶ).
-表の対応がない式は, 子を持たないキーワード (式のキー名) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
+`type_list` / `type_code` (`Code<T>` の型) / `quote` (quote 式, [quote.md](quote.md)) は, 子の式をフィールド (quote はペイロードそのもの) に持つ式として `path.ts` の `FIELD_STEPS` (パスの段とフィールド名の対応) で表示・取得・更新する.
+`quote` の中は外の変数を使えないので, 中の式にはスコープの変数を渡さない.
+`core.list-get` などの組み込みのパーツの呼び出しは, 他のパーツの呼び出し (`call`) と同じく表示する.
+`type_union` はバリアントごとに行を分け, ペイロードの型を子の式にする (ペイロードのないバリアントを選ぶと union 全体を選ぶ).
+表の対応がない式は, 子を持たないキーワード (式のタグ) として表示されるだけになるので, 新しい式の種類を足したら表にも足すこと
 
-コンパイラ組み込みのパーツ (`core.string-concat` などの式 `{"Compiler": "string_concat"}`) は,
+コンパイラ組み込みのパーツ (`core.string-concat` などの式 `{"#builtin": "string_concat"}`) は,
 式の直下に組み込みが入っているものとして `builtin string-concat` と表示する (`ast_to_layout/literals.ts`).
 表示は式の値 (`_` を `-` にしたもの) から作り, パーツ名は使わない. パーツ名を変えても表示は変わらず,
 組み込みかどうかも式で決まる (システムアカウントなら名前を変えたコミットも受け付ける. `worker/type_check.test.ts`)

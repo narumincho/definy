@@ -75,9 +75,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     name: id ? id.slice(0, 16) : "unknown",
     description: [],
     partType: null,
-    expression: {
-      Number: { value: 0 },
-    },
+    expression: { "#number": 0 },
     updatedAtMs: Date.now(),
   };
 
@@ -476,7 +474,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
             secret.id,
           )}
           onChange={(next) => {
-            editPart({ expression: { Secret: next } }, "secret");
+            editPart({ expression: { "#secret": next } }, "secret");
           }}
         />
       )}

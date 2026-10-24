@@ -6,14 +6,14 @@ import { collectNodeIndex } from "./selection.ts";
 const partIdHash = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8";
 
 const expression = {
-  Function: {
+  "#function": {
     parameters: [{ parameter_id: 0, parameter_name: "n" }],
     body: {
-      Call: {
+      "#call": {
         function: {
-          PartReference: { part_definition_event_hash: partIdHash },
+          "#part_reference": { part_definition_event_hash: partIdHash },
         },
-        arguments: [{ name: "x", value: { Variable: { variable_id: 0 } } }],
+        arguments: [{ name: "x", value: { "#variable": { variable_id: 0 } } }],
       },
     },
   },

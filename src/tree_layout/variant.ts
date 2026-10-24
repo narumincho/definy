@@ -1,10 +1,20 @@
 /**
  * Variant (タグ付きの値) を置換メニューで作る.
- * 選択肢は, 直和型の型パーツ (`partType` が `type` で式が `TypeUnion`) のタグと,
+ * 選択肢は, 直和型の型パーツ (`partType` が `type` で式が `type_union`) のタグと,
  * その位置で期待する型が型パーツでない直和型のときのそのタグ
  */
-import { base64ToBytes } from "../cbor.ts";
-import { partReferenceId, type DefinyValue } from "../stage1_compiler.ts";
+import type { DefinyValue } from "../stage1_compiler.ts";
+import {
+  field,
+  isVariant,
+  none,
+  optionValue,
+  some,
+  variant,
+  variantOf,
+  variantPayload,
+} from "../definy_value.ts";
+import { hole } from "./expression.ts";
 import type { PartSnapshot } from "../types.ts";
 import type { PatternVariant } from "./match_pattern.ts";
 import type { SelectorOption } from "./selector_options.ts";
@@ -43,29 +53,25 @@ function parseVariantOptionValue(value: string): {
   };
 }
 
-type TypeUnionVariant = {
-  readonly tag?: unknown;
-  readonly payload_type?: unknown;
-};
-
 /** 直和型の型パーツのタグ. 型パーツでなければ `null` */
 function typePartVariants(
   part: Pick<PartSnapshot, "partType" | "expression">,
 ): ReadonlyArray<PatternVariant> | null {
-  if (part.partType !== "type") {
+  if (!isVariant(part.partType, "type")) {
     return null;
   }
-  const variants = (
-    part.expression as {
-      readonly TypeUnion?: {
-        readonly variants?: ReadonlyArray<TypeUnionVariant>;
-      };
-    } | null
-  )?.TypeUnion?.variants;
+  return typeUnionDeclarationVariants(part.expression);
+}
+
+/** 型パーツの宣言式が直和型 (`type_union`) なら, そのタグ */
+export function typeUnionDeclarationVariants(
+  declaration: unknown,
+): ReadonlyArray<PatternVariant> | null {
+  const variants = variantPayload(declaration, "type_union");
   return Array.isArray(variants)
-    ? variants.map((variant) => ({
-        tag: String(variant.tag),
-        hasPayload: variant.payload_type != null,
+    ? variants.map((item) => ({
+        tag: String(field(item, "tag")),
+        hasPayload: optionValue(field(item, "payload_type")) !== undefined,
       }))
     : null;
 }
@@ -112,33 +118,31 @@ export function expectedVariantsFromTypeAst(type: DefinyValue | null): {
   readonly typePartIdHash: string | null;
   readonly unionVariants: ReadonlyArray<PatternVariant>;
 } {
-  const { tag, payload } = (type ?? {}) as {
-    readonly tag?: unknown;
-    readonly payload?: unknown;
-  };
-  if (tag === "reference") {
-    const partHash = (payload as { readonly part_hash?: unknown } | null)
-      ?.part_hash;
+  const tagged = variantOf(type);
+  if (tagged?.tag === "reference") {
+    const partHash = field(tagged.payload, "part_hash");
     return {
       typePartIdHash: partHash == null ? null : String(partHash),
       unionVariants: [],
     };
   }
-  if (tag === "union" && Array.isArray(payload)) {
+  if (tagged?.tag === "union" && Array.isArray(tagged.payload)) {
     return {
       typePartIdHash: null,
-      unionVariants: payload.map(
-        (variant: {
-          readonly tag?: unknown;
-          readonly payload_type?: { readonly tag?: unknown };
-        }) => ({
-          tag: String(variant.tag),
-          hasPayload: variant.payload_type?.tag === "some",
-        }),
-      ),
+      unionVariants: unionTypeVariants(tagged.payload),
     };
   }
   return { typePartIdHash: null, unionVariants: [] };
+}
+
+/** `core.type-ast` の `union` のペイロード (`[{ tag, payload_type }]`) のタグ */
+export function unionTypeVariants(
+  items: ReadonlyArray<unknown>,
+): ReadonlyArray<PatternVariant> {
+  return items.map((item) => ({
+    tag: String(field(item, "tag")),
+    hasPayload: optionValue(field(item, "payload_type")) !== undefined,
+  }));
 }
 
 /** 型パーツでない直和型のタグの選択肢 (期待する型が直和型のとき) */
@@ -156,30 +160,14 @@ export function unionVariantOptions(
 
 /** Variant の式に対応する選択肢の value */
 export function variantOptionValueForExpression(node: unknown): string | null {
-  const variant = (
-    node as {
-      readonly Variant?: {
-        readonly tag?: unknown;
-        readonly payload?: unknown;
-        readonly type_part_definition_event_hash?: unknown;
-      };
-    } | null
-  )?.Variant;
-  if (variant === undefined) {
+  const payload = variantPayload(node, "variant");
+  if (payload === undefined) {
     return null;
   }
-  let typePartIdHash: string | null = null;
-  try {
-    typePartIdHash =
-      variant.type_part_definition_event_hash == null
-        ? null
-        : partReferenceId(variant.type_part_definition_event_hash);
-  } catch {
-    typePartIdHash = null;
-  }
-  return variantOptionValue(typePartIdHash, {
-    tag: String(variant.tag ?? ""),
-    hasPayload: variant.payload != null,
+  const typePart = optionValue(field(payload, "type_part"));
+  return variantOptionValue(typeof typePart === "string" ? typePart : null, {
+    tag: String(field(payload, "tag") ?? ""),
+    hasPayload: optionValue(field(payload, "payload")) !== undefined,
   });
 }
 
@@ -195,19 +183,15 @@ export function variantFromOptionValue(
   if (parsed === null) {
     return undefined;
   }
-  const currentPayload = (
-    current as { readonly Variant?: { readonly payload?: unknown } } | null
-  )?.Variant?.payload;
-  return {
-    Variant: {
-      tag: parsed.tag,
-      payload: parsed.hasPayload ? (currentPayload ?? { Hole: {} }) : null,
-      type_part_definition_event_hash:
-        parsed.typePartIdHash === null
-          ? null
-          : base64ToBytes(parsed.typePartIdHash),
-    },
-  };
+  const currentPayload = optionValue(
+    field(variantPayload(current, "variant"), "payload"),
+  );
+  return variant("variant", {
+    tag: parsed.tag,
+    payload: parsed.hasPayload ? some(currentPayload ?? hole()) : none(),
+    type_part:
+      parsed.typePartIdHash === null ? none() : some(parsed.typePartIdHash),
+  });
 }
 
 /**

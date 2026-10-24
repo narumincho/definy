@@ -8,8 +8,9 @@ import {
 } from "./local_variable.ts";
 import { findSelectedNode } from "./selection.ts";
 import type { PathStep } from "./types.ts";
+import { letChain, letChainOf } from "./expression.ts";
 
-const variable = (id: number) => ({ Variable: { variable_id: id } });
+const variable = (id: number) => ({ "#variable": { variable_id: id } });
 
 /**
  * ```
@@ -20,45 +21,38 @@ const variable = (id: number) => ({ Variable: { variable_id: id } });
  * ```
  */
 const expression = {
-  Function: {
+  "#function": {
     parameters: [{ parameter_id: 0, parameter_name: "n" }],
-    body: {
-      Let: {
-        bindings: [
-          { variable_id: 1, variable_name: "a", value: variable(0) },
-          { variable_id: 2, variable_name: "b", value: variable(1) },
-        ],
-        body: {
-          Match: {
-            target: variable(2),
-            arms: [
-              {
-                tag: "some",
-                variable_id: 3,
-                variable_name: "v",
-                body: {
-                  ListLiteral: {
-                    items: [variable(3), variable(1), variable(0)],
-                  },
+    body: letChain(
+      [
+        { variable_id: 1, variable_name: "a", value: variable(0) },
+        { variable_id: 2, variable_name: "b", value: variable(1) },
+      ],
+      {
+        "#match": {
+          target: variable(2),
+          arms: [
+            {
+              tag: "some",
+              variable_id: 3,
+              variable_name: "v",
+              body: { "#list": [variable(3), variable(1), variable(0)] },
+            },
+            {
+              tag: "none",
+              variable_id: -1,
+              variable_name: "",
+              body: {
+                "#call": {
+                  function: variable(0),
+                  arguments: [{ name: "x", value: variable(0) }],
                 },
               },
-              {
-                tag: "none",
-                variable_id: null,
-                variable_name: null,
-                body: {
-                  Call: {
-                    function: variable(0),
-                    arguments: [{ name: "x", value: variable(0) }],
-                  },
-                },
-              },
-            ],
-            default: null,
-          },
+            },
+          ],
         },
       },
-    },
+    ),
   },
 };
 
@@ -89,9 +83,9 @@ describe("let の変数名の変更", () => {
 
   it("名前だけを変え, 参照する側の式 (ID) は変えない", () => {
     const renamed = renameVariableAt(expression, namePath, "count") as {
-      Function: { body: { Let: { bindings: ReadonlyArray<unknown> } } };
+      "#function": { body: unknown };
     };
-    expect(renamed.Function.body.Let.bindings).toEqual([
+    expect(letChainOf(renamed["#function"].body)?.bindings).toEqual([
       { variable_id: 1, variable_name: "a", value: variable(0) },
       { variable_id: 2, variable_name: "count", value: variable(1) },
     ]);
@@ -155,17 +149,15 @@ describe("findVariableDefinitionPath", () => {
   });
 
   it("内側の定義が外側の同じ ID の定義を隠す", () => {
-    const shadowed = {
-      Let: {
-        bindings: [{ variable_id: 0, variable_name: "x", value: variable(5) }],
-        body: {
-          Function: {
-            parameters: [{ parameter_id: 0, parameter_name: "x" }],
-            body: variable(0),
-          },
+    const shadowed = letChain(
+      [{ variable_id: 0, variable_name: "x", value: variable(5) }],
+      {
+        "#function": {
+          parameters: [{ parameter_id: 0, parameter_name: "x" }],
+          body: variable(0),
         },
       },
-    };
+    );
     expect(
       findVariableDefinitionPath(shadowed, ["letBody", "functionBody"]),
     ).toEqual(["letBody", { kind: "functionParameter", index: 0 }]);

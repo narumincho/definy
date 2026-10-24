@@ -6,6 +6,7 @@ import type { SelectorOption } from "./selector_options.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import { nextVariableId } from "./selection.ts";
 import type { PathStep } from "./types.ts";
+import { hole, type LetBinding, letChain, letChainOf } from "./expression.ts";
 
 /** 置換メニューの選択肢の value */
 export const LET_APPEND_BINDING = "let:append";
@@ -15,24 +16,16 @@ export const LET_MOVE_EARLIER = "let:move-earlier";
 export const LET_MOVE_LATER = "let:move-later";
 export const LET_DELETE_BINDING = "let:delete";
 
-type Binding = {
-  readonly variable_id?: unknown;
-  readonly variable_name?: unknown;
-  readonly value?: unknown;
-};
-
 type LetInner = {
-  readonly bindings?: ReadonlyArray<Binding>;
-  readonly body?: unknown;
+  readonly bindings: ReadonlyArray<LetBinding>;
+  readonly body: unknown;
 };
 
 function letAt(
   expr: unknown,
   letPath: ReadonlyArray<PathStep>,
 ): LetInner | null {
-  const node = getExpressionAtPath(expr, letPath);
-  const inner = (node as { readonly Let?: LetInner } | null)?.Let;
-  return inner !== undefined && Array.isArray(inner.bindings) ? inner : null;
+  return letChainOf(getExpressionAtPath(expr, letPath)) ?? null;
 }
 
 /** `path` の最後が let の束縛の値 (`letBindingValue`) なら, その束縛の番号と束縛の数 */
@@ -130,14 +123,14 @@ function newVariableName(expr: unknown): string {
 function updateBindingsAt(
   expr: unknown,
   letPath: ReadonlyArray<PathStep>,
-  updater: (bindings: ReadonlyArray<Binding>) => ReadonlyArray<Binding>,
+  updater: (bindings: ReadonlyArray<LetBinding>) => ReadonlyArray<LetBinding>,
 ): unknown {
   return updateExpressionAtPath(expr, letPath, (node) => {
-    const inner = (node as { readonly Let?: LetInner } | null)?.Let;
+    const inner = letChainOf(node);
     if (inner === undefined) {
       return node;
     }
-    return { Let: { ...inner, bindings: updater(inner.bindings ?? []) } };
+    return letChain(updater(inner.bindings), inner.body);
   });
 }
 
@@ -159,10 +152,10 @@ export function applyLetAction(
     ...letPath,
     { kind: "letBindingValue" as const, index },
   ];
-  const newBinding = (): Binding => ({
+  const newBinding = (): LetBinding => ({
     variable_id: nextVariableId(expr),
     variable_name: newVariableName(expr),
-    value: { Hole: {} },
+    value: hole(),
   });
   if (value === LET_APPEND_BINDING) {
     const inner = letAt(expr, path);
@@ -174,7 +167,7 @@ export function applyLetAction(
         ...bindings,
         newBinding(),
       ]),
-      selectedPath: valuePath(path, inner.bindings?.length ?? 0),
+      selectedPath: valuePath(path, inner.bindings.length),
     };
   }
   const binding = bindingAt(expr, path);
@@ -222,8 +215,7 @@ export function applyLetAction(
           expression: updateExpressionAtPath(
             expr,
             letPath,
-            (node) =>
-              (node as { readonly Let?: LetInner } | null)?.Let?.body ?? node,
+            (node) => letChainOf(node)?.body ?? node,
           ),
           selectedPath: letPath,
         };

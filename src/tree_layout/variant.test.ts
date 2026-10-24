@@ -24,10 +24,18 @@ function typePart(
     moduleName: "sample",
     name,
     description: {},
-    partType: "type",
+    partType: { "#type": null },
     contentHash: null,
     partIdHash,
-    expression: { TypeUnion: { variants } },
+    expression: {
+      "#type_union": variants.map(({ tag, payload_type }) => ({
+        tag,
+        payload_type:
+          payload_type === undefined
+            ? { "#none": null }
+            : { "#some": payload_type },
+      })),
+    },
     updatedAtMs: 0,
   } as PartSnapshot;
 }
@@ -36,7 +44,7 @@ const parts = [
   typePart("color", colorHash, [{ tag: "red" }, { tag: "blue" }]),
   typePart("option-number", optionHash, [
     { tag: "none" },
-    { tag: "some", payload_type: "TypeNumber" },
+    { tag: "some", payload_type: { "#type_number": null } },
   ]),
 ];
 
@@ -68,61 +76,64 @@ describe("Variant の作成", () => {
   )?.value as string;
 
   it("値を持つタグは値を未入力にし, 型パーツを指定する", () => {
-    const created = applySelection({ Hole: {} }, [], someValue) as {
-      Variant: {
-        tag: string;
-        payload: unknown;
-        type_part_definition_event_hash: Uint8Array;
-      };
-    };
-    expect(created.Variant.tag).toBe("some");
-    expect(created.Variant.payload).toEqual({ Hole: {} });
-    expect(
-      bytesToUrlSafeBase64NoPad(
-        created.Variant.type_part_definition_event_hash,
-      ),
-    ).toBe(optionHash);
+    const created = applySelection(
+      { "#hole": { probe: false } },
+      [],
+      someValue,
+    );
+    expect(created).toEqual({
+      "#variant": {
+        tag: "some",
+        payload: { "#some": { "#hole": { probe: false } } },
+        type_part: { "#some": optionHash },
+      },
+    });
     // 作った式の現在の選択肢は, 選んだ選択肢
     expect(getOptionValueForExpression(created)).toBe(someValue);
   });
 
   it("値を持つタグ同士で変えると値を引き継ぎ, 値を持たないタグにすると値を消す", () => {
-    const some = applySelection({ Hole: {} }, [], someValue);
+    const some = applySelection({ "#hole": { probe: false } }, [], someValue);
     const filled = {
-      Variant: {
-        ...(some as { Variant: object }).Variant,
-        payload: { Number: { value: 3 } },
+      "#variant": {
+        ...(some as { "#variant": object })["#variant"],
+        payload: { "#some": { "#number": 3 } },
       },
     };
     const none = applySelection(filled, [], noneValue) as {
-      Variant: { tag: string; payload: unknown };
+      "#variant": { tag: string; payload: unknown };
     };
-    expect(none.Variant).toMatchObject({ tag: "none", payload: null });
+    expect(none["#variant"]).toMatchObject({
+      tag: "none",
+      payload: { "#none": null },
+    });
     const again = applySelection(filled, [], someValue) as {
-      Variant: { payload: unknown };
+      "#variant": { payload: unknown };
     };
-    expect(again.Variant.payload).toEqual({ Number: { value: 3 } });
+    expect(again["#variant"].payload).toEqual({ "#some": { "#number": 3 } });
   });
 
   it("期待する型が型パーツでない直和型なら, そのタグを型パーツなしで作る", () => {
     const expected = expectedVariantsFromTypeAst({
-      tag: "union",
-      payload: [
-        {
-          tag: "ok",
-          payload_type: { tag: "some", payload: { tag: "number" } },
-        },
-        { tag: "error", payload_type: { tag: "none" } },
+      "#union": [
+        { tag: "ok", payload_type: { "#some": { "#number": null } } },
+        { tag: "error", payload_type: { "#none": null } },
       ],
     } as never);
     expect(expected.typePartIdHash).toBeNull();
     const options = unionVariantOptions(expected.unionVariants);
     expect(options.map((o) => o.name)).toEqual(["ok", "error"]);
-    expect(applySelection({ Hole: {} }, [], options[0]?.value ?? "")).toEqual({
-      Variant: {
+    expect(
+      applySelection(
+        { "#hole": { probe: false } },
+        [],
+        options[0]?.value ?? "",
+      ),
+    ).toEqual({
+      "#variant": {
         tag: "ok",
-        payload: { Hole: {} },
-        type_part_definition_event_hash: null,
+        payload: { "#some": { "#hole": { probe: false } } },
+        type_part: { "#none": null },
       },
     });
   });
@@ -130,8 +141,7 @@ describe("Variant の作成", () => {
   it("期待する型が型パーツなら, その ID", () => {
     expect(
       expectedVariantsFromTypeAst({
-        tag: "reference",
-        payload: { part_hash: optionHash },
+        "#reference": { part_hash: optionHash },
       } as never).typePartIdHash,
     ).toBe(optionHash);
   });
@@ -144,10 +154,10 @@ describe("今の Variant の選択肢", () => {
     expect(
       resolveCurrentOptionValue({
         expression: {
-          Variant: {
+          "#variant": {
             tag: "none",
-            payload: null,
-            type_part_definition_event_hash: otherHash,
+            payload: { "#none": null },
+            type_part: { "#some": otherHash },
           },
         },
         path: [],

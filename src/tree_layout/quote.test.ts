@@ -7,16 +7,20 @@ import { getOptionValueForExpression } from "./type_inference.ts";
 
 describe("quote 式と Code<T> 型のツリーエディタ", () => {
   it("quote を選ぶと中が未入力の quote 式になり, 中の式をパスで辿れる", () => {
-    const quote = applySelection({ Hole: {} }, [], "expr:quote");
-    expect(quote).toEqual({ Quote: { expression: { Hole: {} } } });
+    const quote = applySelection(
+      { "#hole": { probe: false } },
+      [],
+      "expr:quote",
+    );
+    expect(quote).toEqual({ "#quote": { "#hole": { probe: false } } });
     expect(getOptionValueForExpression(quote)).toBe("expr:quote");
 
     const filled = updateExpressionAtPath(quote, ["quoteExpression"], () => ({
-      Number: { value: 1 },
+      "#number": 1,
     }));
-    expect(filled).toEqual({ Quote: { expression: { Number: { value: 1 } } } });
+    expect(filled).toEqual({ "#quote": { "#number": 1 } });
     expect(getExpressionAtPath(filled, ["quoteExpression"])).toEqual({
-      Number: { value: 1 },
+      "#number": 1,
     });
 
     const node = expressionToLayoutNode(filled, "root");
@@ -26,18 +30,22 @@ describe("quote 式と Code<T> 型のツリーエディタ", () => {
 
   it("quote の中では外の変数の名前を出さない", () => {
     const node = expressionToLayoutNode(
-      { Quote: { expression: { Variable: { variable_id: 0 } } } },
+      { "#quote": { "#variable": { variable_id: 0 } } },
       "root",
       { scopeVariables: new Map([[0, "outer"]]) },
     );
     expect(JSON.stringify(node)).not.toContain("outer");
   });
 
-  it("Code<T> の型は TypeCode の式と往復する", () => {
-    const partType = { code: { list: "number" } };
+  it("Code<T> の型は type_code の式と往復する", () => {
+    const partType = {
+      "#code": { "#list": { item_type: { "#number": null } } },
+    };
     const expression = partTypeToExpression(partType);
     expect(expression).toEqual({
-      TypeCode: { value_type: { TypeList: { item_type: "TypeNumber" } } },
+      "#type_code": {
+        value_type: { "#type_list": { item_type: { "#type_number": null } } },
+      },
     });
     expect(expressionToPartType(expression)).toEqual(partType);
     expect(getOptionValueForExpression(expression)).toBe("expr:type:code");
@@ -46,14 +54,22 @@ describe("quote 式と Code<T> 型のツリーエディタ", () => {
 
 describe("シークレットリテラルのツリーエディタ", () => {
   it("secret を選ぶとランダムな ID のシークレットリテラルになり, 名前だけ表示する", () => {
-    const first = applySelection({ Hole: {} }, [], "expr:secret") as {
-      readonly Secret: { readonly id: string; readonly label: string };
+    const first = applySelection(
+      { "#hole": { probe: false } },
+      [],
+      "expr:secret",
+    ) as {
+      readonly "#secret": { readonly id: string; readonly label: string };
     };
-    const second = applySelection({ Hole: {} }, [], "expr:secret") as {
-      readonly Secret: { readonly id: string };
+    const second = applySelection(
+      { "#hole": { probe: false } },
+      [],
+      "expr:secret",
+    ) as {
+      readonly "#secret": { readonly id: string };
     };
-    expect(first.Secret.id).not.toBe(second.Secret.id);
-    expect(first.Secret).toMatchObject({
+    expect(first["#secret"].id).not.toBe(second["#secret"].id);
+    expect(first["#secret"]).toMatchObject({
       label: "secret",
       allowed_url_prefixes: [],
     });
@@ -61,8 +77,12 @@ describe("シークレットリテラルのツリーエディタ", () => {
     expect(expressionToLayoutNode(first, "root").label).toBe("secret secret");
   });
 
-  it("Secret 型は TypeSecret の式と往復する", () => {
-    expect(partTypeToExpression("secret")).toBe("TypeSecret");
-    expect(expressionToPartType("TypeSecret")).toBe("secret");
+  it("Secret 型は type_secret の式と往復する", () => {
+    expect(partTypeToExpression({ "#secret": null })).toEqual({
+      "#type_secret": null,
+    });
+    expect(expressionToPartType({ "#type_secret": null })).toEqual({
+      "#secret": null,
+    });
   });
 });

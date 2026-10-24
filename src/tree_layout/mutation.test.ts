@@ -9,10 +9,11 @@ import {
 } from "./mutation.ts";
 import { expressionToLayoutNode } from "./ast_to_layout.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
-import { base64ToBytes, bytesToUrlSafeBase64NoPad } from "../cbor.ts";
+import { getExpressionAtPath } from "./path.ts";
+import { bytesToUrlSafeBase64NoPad } from "../cbor.ts";
 
 describe("tree layout mutation and selection", () => {
-  it("applies part reference selection with 32-byte Uint8Array hash and resolves option value", () => {
+  it("パーツの参照を選ぶとパーツ ID の文字列で参照し, 選択肢の値に戻せる", () => {
     const rawBytes = new Uint8Array(32);
     for (let i = 0; i < 32; i++) {
       rawBytes[i] = (i * 7 + 11) & 0xff;
@@ -20,24 +21,15 @@ describe("tree layout mutation and selection", () => {
     const b64 = bytesToUrlSafeBase64NoPad(rawBytes);
     const selectionValue = `ref:part:${b64}`;
 
-    const holeExpr = { Hole: {} };
-    const updated = applySelection(holeExpr, [], selectionValue);
-
-    expect(updated).not.toBeNull();
-    const partRefNode = updated as {
-      readonly PartReference?: {
-        readonly part_definition_event_hash?: unknown;
-      };
-    };
-    expect(partRefNode.PartReference).toBeDefined();
-
-    const hash = partRefNode.PartReference?.part_definition_event_hash;
-    expect(hash).toBeInstanceOf(Uint8Array);
-    expect(hash).toEqual(rawBytes);
-    expect((hash as Uint8Array).length).toBe(32);
-
-    const resolvedOptionValue = getOptionValueForExpression(updated);
-    expect(resolvedOptionValue).toBe(selectionValue);
+    const updated = applySelection(
+      { "#hole": { probe: false } },
+      [],
+      selectionValue,
+    );
+    expect(updated).toEqual({
+      "#part_reference": { part_definition_event_hash: b64 },
+    });
+    expect(getOptionValueForExpression(updated)).toBe(selectionValue);
   });
 });
 
@@ -48,7 +40,7 @@ describe("applySelection", () => {
     new Uint8Array(32).fill(3),
   );
   const reference = (hash: string) => ({
-    PartReference: { part_definition_event_hash: base64ToBytes(hash) },
+    "#part_reference": { part_definition_event_hash: hash },
   });
   const parameterNamesOf = (hash: string) =>
     hash === plusHash || hash === lessThanHash || hash === lessThanOrEqualHash
@@ -58,17 +50,17 @@ describe("applySelection", () => {
   it("関数のパーツを選ぶと, 引数が未入力のパーツの呼び出しにする", () => {
     expect(
       applySelection(
-        { Number: { value: 5 } },
+        { "#number": 5 },
         [],
         `ref:part:${plusHash}`,
         parameterNamesOf,
       ),
     ).toEqual({
-      Call: {
+      "#call": {
         function: reference(plusHash),
         arguments: [
-          { name: "left", value: { Hole: {} } },
-          { name: "right", value: { Hole: {} } },
+          { name: "left", value: { "#hole": { probe: false } } },
+          { name: "right", value: { "#hole": { probe: false } } },
         ],
       },
     });
@@ -76,18 +68,18 @@ describe("applySelection", () => {
 
   it("パーツの呼び出しを別のパーツに差し替えるときは同じ名前の引数の式を引き継ぐ", () => {
     const expr = {
-      Call: {
+      "#call": {
         function: reference(lessThanHash),
         arguments: [
-          { name: "left", value: { Variable: { variable_id: 3 } } },
-          { name: "right", value: { Number: { value: 0 } } },
+          { name: "left", value: { "#variable": { variable_id: 3 } } },
+          { name: "right", value: { "#number": 0 } },
         ],
       },
     };
     const expected = {
-      Call: {
+      "#call": {
         function: reference(lessThanOrEqualHash),
-        arguments: expr.Call.arguments,
+        arguments: expr["#call"].arguments,
       },
     };
     expect(getOptionValueForExpression(expr)).toBe(`ref:part:${lessThanHash}`);
@@ -103,25 +95,21 @@ describe("applySelection", () => {
 
   it("let は式全体で使われていない変数 ID で作る", () => {
     const expr = {
-      Function: {
+      "#function": {
         parameters: [{ parameter_id: 4, parameter_name: "a" }],
-        body: { Hole: {} },
+        body: { "#hole": { probe: false } },
       },
     };
     expect(nextVariableId(expr)).toBe(5);
     expect(applySelection(expr, ["functionBody"], "expr:let")).toEqual({
-      Function: {
+      "#function": {
         parameters: [{ parameter_id: 4, parameter_name: "a" }],
         body: {
-          Let: {
-            bindings: [
-              {
-                variable_id: 5,
-                variable_name: "x",
-                value: { Number: { value: 0 } },
-              },
-            ],
-            body: { Variable: { variable_id: 5 } },
+          "#let": {
+            variable_id: 5,
+            variable_name: "x",
+            value: { "#number": 0 },
+            body: { "#variable": { variable_id: 5 } },
           },
         },
       },
@@ -132,35 +120,35 @@ describe("applySelection", () => {
 describe("関数型の変数を選ぶ", () => {
   const mapHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(7));
   const itemToNumber = {
-    function: {
-      parameters: [{ name: "item", type: "number" }],
-      return_type: "number",
+    "#function": {
+      parameters: [{ name: "item", type: { "#number": null } }],
+      return_type: { "#number": null },
     },
   };
   // (f: (item: number) -> number) => map(g: (x) => □, xs: □)
   const partType = {
-    function: {
+    "#function": {
       parameters: [{ name: "f", type: itemToNumber }],
-      return_type: "number",
+      return_type: { "#number": null },
     },
   };
   const expression = {
-    Function: {
+    "#function": {
       parameters: [{ parameter_id: 0, parameter_name: "f" }],
       body: {
-        Call: {
+        "#call": {
           function: {
-            PartReference: {
-              part_definition_event_hash: base64ToBytes(mapHash),
+            "#part_reference": {
+              part_definition_event_hash: mapHash,
             },
           },
           arguments: [
             {
               name: "g",
               value: {
-                Function: {
+                "#function": {
                   parameters: [{ parameter_id: 1, parameter_name: "x" }],
-                  body: { Hole: {} },
+                  body: { "#hole": { probe: false } },
                 },
               },
             },
@@ -172,19 +160,19 @@ describe("関数型の変数を選ぶ", () => {
   const types = functionParameterTypes(expression, partType, (hash) =>
     hash === mapHash
       ? {
-          function: {
+          "#function": {
             parameters: [
               {
                 name: "g",
                 type: {
-                  function: {
+                  "#function": {
                     parameters: [{ name: "x", type: itemToNumber }],
-                    return_type: "number",
+                    return_type: { "#number": null },
                   },
                 },
               },
             ],
-            return_type: "number",
+            return_type: { "#number": null },
           },
         }
       : undefined,
@@ -211,29 +199,23 @@ describe("関数型の変数を選ぶ", () => {
       (variableId) => variableParameterNames(types.get(variableId)),
     ) as typeof expression;
     const call = {
-      Call: {
-        function: { Variable: { variable_id: 0 } },
-        arguments: [{ name: "item", value: { Hole: {} } }],
+      "#call": {
+        function: { "#variable": { variable_id: 0 } },
+        arguments: [{ name: "item", value: { "#hole": { probe: false } } }],
       },
     };
-    expect(
-      (
-        selected.Function.body.Call.arguments[0]?.value as {
-          readonly Function: { readonly body: unknown };
-        }
-      ).Function.body,
-    ).toEqual(call);
+    expect(getExpressionAtPath(selected, bodyPath)).toEqual(call);
     expect(getOptionValueForExpression(call)).toBe("ref:local:0");
     // 関数でない変数はそのまま変数にする
     expect(
       applySelection(
-        { Hole: {} },
+        { "#hole": { probe: false } },
         [],
         "ref:local:3",
         () => undefined,
-        () => variableParameterNames("number"),
+        () => variableParameterNames({ "#number": null }),
       ),
-    ).toEqual({ Variable: { variable_id: 3 } });
+    ).toEqual({ "#variable": { variable_id: 3 } });
   });
 });
 
@@ -242,9 +224,9 @@ describe("partParameterNames", () => {
     expect(
       partParameterNames({
         partType: {
-          function: {
-            parameters: [{ name: "x", type: "number" }],
-            return_type: "number",
+          "#function": {
+            parameters: [{ name: "x", type: { "#number": null } }],
+            return_type: { "#number": null },
           },
         },
         expression: null,
@@ -256,13 +238,13 @@ describe("partParameterNames", () => {
     expect(
       partParameterNames({
         partType: null,
-        expression: { Compiler: "list_get" },
+        expression: { "#builtin": "list_get" },
       }),
     ).toEqual(["list", "index"]);
     expect(
       partParameterNames({
-        partType: "number",
-        expression: { Number: { value: 1 } },
+        partType: { "#number": null },
+        expression: { "#number": 1 },
       }),
     ).toBeUndefined();
   });
@@ -271,15 +253,15 @@ describe("partParameterNames", () => {
 describe("パーツの呼び出しの表示", () => {
   it("呼び出すパーツの名前と引数名ごとの式を子に持つ. 名前は呼び出しと同じパス (式ではない)", () => {
     const node = expressionToLayoutNode({
-      Call: {
+      "#call": {
         function: {
-          PartReference: {
+          "#part_reference": {
             part_definition_event_hash: { $part: "core.list-get" },
           },
         },
         arguments: [
-          { name: "list", value: { Variable: { variable_id: 0 } } },
-          { name: "index", value: { Number: { value: 2 } } },
+          { name: "list", value: { "#variable": { variable_id: 0 } } },
+          { name: "index", value: { "#number": 2 } },
         ],
       },
     });
@@ -298,33 +280,31 @@ describe("パーツの呼び出しの表示", () => {
 
   it("関数型の引数の呼び出し・レコードの関数のフィールドの呼び出しは名前で出す", () => {
     const node = expressionToLayoutNode({
-      Function: {
+      "#function": {
         parameters: [
           { parameter_id: 0, parameter_name: "f" },
           { parameter_id: 1, parameter_name: "clock" },
         ],
         body: {
-          ListLiteral: {
-            items: [
-              {
-                Call: {
-                  function: { Variable: { variable_id: 0 } },
-                  arguments: [],
-                },
+          "#list": [
+            {
+              "#call": {
+                function: { "#variable": { variable_id: 0 } },
+                arguments: [],
               },
-              {
-                Call: {
-                  function: {
-                    RecordGet: {
-                      record: { Variable: { variable_id: 1 } },
-                      key: "now",
-                    },
+            },
+            {
+              "#call": {
+                function: {
+                  "#record_get": {
+                    record: { "#variable": { variable_id: 1 } },
+                    key: "now",
                   },
-                  arguments: [],
                 },
+                arguments: [],
               },
-            ],
-          },
+            },
+          ],
         },
       },
     });
@@ -341,12 +321,12 @@ describe("パーツの呼び出しの表示", () => {
 describe("関数の引数名を変える", () => {
   it("functionParameter のパスで引数の名前だけを変える (本体は ID で参照するのでそのまま)", () => {
     const expression = {
-      Function: {
+      "#function": {
         parameters: [
           { parameter_id: 0, parameter_name: "x" },
           { parameter_id: 1, parameter_name: "y" },
         ],
-        body: { Variable: { variable_id: 1 } },
+        body: { "#variable": { variable_id: 1 } },
       },
     };
     const layout = expressionToLayoutNode(expression);
@@ -355,12 +335,12 @@ describe("関数の引数名を変える", () => {
     expect(
       renameFunctionParameter(expression, parameterNode?.path ?? [], "count"),
     ).toEqual({
-      Function: {
+      "#function": {
         parameters: [
           { parameter_id: 0, parameter_name: "x" },
           { parameter_id: 1, parameter_name: "count" },
         ],
-        body: { Variable: { variable_id: 1 } },
+        body: { "#variable": { variable_id: 1 } },
       },
     });
     expect(

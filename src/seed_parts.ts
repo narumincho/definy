@@ -1,9 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import {
-  base64ToBytes,
-  deriveModuleIdBytes,
-  deriveModulePartId,
-} from "../worker/cbor.ts";
+import { deriveModuleIdBytes, deriveModulePartId } from "../worker/cbor.ts";
 
 export {
   DEV_SYSTEM_KEY_SEED,
@@ -20,9 +16,8 @@ async function seedPartId(
 }
 
 /**
- * `{"$part": "module.name"}` をパーツ ID（バイト列）に, `{"$partId": "module.name"}` をパーツ ID の文字列
- * (URL-safe Base64. 型チェッカーなどが `core.type-ast` の `reference` で比べる形) に置き換える.
- * `$partId` は definy の式の中でパーツ ID を文字列として使うとき (`{"String": {"value": {"$partId": "core.code"}}}`) に書く
+ * `{"$part": "module.name"}` をパーツ ID の文字列 (URL-safe Base64) に置き換える.
+ * 式の `part_reference` も `core.type-ast` の `reference` もパーツ ID を文字列で持つ (docs/value-encoding.md)
  */
 export async function resolvePartPlaceholders(
   expr: unknown,
@@ -36,12 +31,7 @@ export async function resolvePartPlaceholders(
   if (expr && typeof expr === "object") {
     const obj = expr as Record<string, unknown>;
     if (typeof obj.$part === "string") {
-      return Array.from(
-        base64ToBytes(await seedPartId(obj.$part, accountBytes)),
-      );
-    }
-    if (typeof obj.$partId === "string") {
-      return await seedPartId(obj.$partId, accountBytes);
+      return await seedPartId(obj.$part, accountBytes);
     }
     const entries = await Promise.all(
       Object.entries(obj).map(async ([key, value]) => [

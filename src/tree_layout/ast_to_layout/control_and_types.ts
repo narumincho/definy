@@ -5,70 +5,31 @@ import {
   type ScopeContext,
 } from "./types.ts";
 import { FIELD_STEPS } from "../mutation.ts";
+import { field, optionValue, variantOf } from "../../definy_value.ts";
+import { armBindsVariable, matchOf } from "../expression.ts";
 
 /** FIELD_STEPS の式の表示名 */
 const FIELD_STEP_LABELS: Readonly<Record<string, string>> = {
-  TypeList: "List",
-  TypeCode: "Code",
-  Quote: "quote",
+  type_list: "List",
+  type_code: "Code",
+  quote: "quote",
 };
 
 export function tryBuildControlOrTypeNode(
-  node: Record<string, unknown>,
+  node: unknown,
   idPrefix: string,
   currentPath: ReadonlyArray<PathStep>,
   context: ScopeContext,
   buildLayoutNode: BuildLayoutNodeFn,
 ): LayoutNode | null {
-  if ("If" in node) {
-    const ifNode = node.If as {
-      condition?: unknown;
-      then_expr?: unknown;
-      then?: unknown;
-      else_expr?: unknown;
-      else?: unknown;
-    };
-    const condChild = buildLayoutNode(
-      ifNode.condition,
-      `${idPrefix}.cond`,
-      childPath(currentPath, "condition"),
-      context,
-    );
-    const thenChild = buildLayoutNode(
-      ifNode.then_expr ?? ifNode.then,
-      `${idPrefix}.then`,
-      childPath(currentPath, "then"),
-      context,
-    );
-    const elseChild = buildLayoutNode(
-      ifNode.else_expr ?? ifNode.else,
-      `${idPrefix}.else`,
-      childPath(currentPath, "else"),
-      context,
-    );
-    return {
-      id: idPrefix,
-      path: currentPath,
-      label: "if",
-      kind: "block",
-      children: [condChild, thenChild, elseChild],
-      computedWidth: 0,
-      computedHeight: 0,
-      layoutMode: "multiline",
-    };
+  const tagged = variantOf(node);
+  if (tagged === undefined) {
+    return null;
   }
+  const { tag, payload } = tagged;
 
-  if ("Match" in node) {
-    const matchNode = node.Match as {
-      readonly target?: unknown;
-      readonly arms?: ReadonlyArray<{
-        readonly tag?: unknown;
-        readonly variable_id?: unknown;
-        readonly variable_name?: unknown;
-        readonly body?: unknown;
-      }>;
-      readonly default?: unknown;
-    };
+  const matchNode = matchOf(node);
+  if (matchNode !== undefined) {
     const targetChild = buildLayoutNode(
       matchNode.target,
       `${idPrefix}.target`,
@@ -76,29 +37,23 @@ export function tryBuildControlOrTypeNode(
       context,
     );
     const armChildren: LayoutNode[] = [];
-    const arms = matchNode.arms ?? [];
 
-    for (const [idx, arm] of arms.entries()) {
+    for (const [idx, arm] of matchNode.arms.entries()) {
       const armTag = String(arm.tag ?? "");
-      const armVarId =
-        arm.variable_id != null ? Number(arm.variable_id) : undefined;
+      const binds = armBindsVariable(arm);
+      const armVarId = Number(arm.variable_id);
       const armVarName =
-        arm.variable_name != null
-          ? String(arm.variable_name)
-          : armVarId != null
-            ? `v${armVarId}`
-            : undefined;
+        arm.variable_name.length > 0 ? arm.variable_name : `v${armVarId}`;
 
-      const armContext =
-        armVarId != null && armVarName != null
-          ? {
-              ...context,
-              scopeVariables: new Map([
-                ...(context.scopeVariables ?? []),
-                [armVarId, armVarName],
-              ]),
-            }
-          : context;
+      const armContext = binds
+        ? {
+            ...context,
+            scopeVariables: new Map([
+              ...(context.scopeVariables ?? []),
+              [armVarId, armVarName],
+            ]),
+          }
+        : context;
 
       const armPath = childPath(currentPath, {
         kind: "matchArmBody",
@@ -111,50 +66,29 @@ export function tryBuildControlOrTypeNode(
         armContext,
       );
       // パターンのノード (タグ) を選ぶとタグを変えるメニュー, 束縛する変数の名前を選ぶとその場で名前を変えられる
-      const variableChildren: ReadonlyArray<LayoutNode> =
-        armVarName === undefined
-          ? []
-          : [
-              {
-                id: `${idPrefix}.arm_${idx}.variable`,
-                path: childPath(currentPath, {
-                  kind: "matchArmVariable",
-                  index: idx,
-                }),
-                label: armVarName,
-                kind: "parameterName",
-                children: [],
-                computedWidth: 0,
-                computedHeight: 0,
-                layoutMode: "inline",
-              },
-            ];
+      const variableChildren: ReadonlyArray<LayoutNode> = binds
+        ? [
+            {
+              id: `${idPrefix}.arm_${idx}.variable`,
+              path: childPath(currentPath, {
+                kind: "matchArmVariable",
+                index: idx,
+              }),
+              label: armVarName,
+              kind: "parameterName",
+              children: [],
+              computedWidth: 0,
+              computedHeight: 0,
+              layoutMode: "inline",
+            },
+          ]
+        : [];
       armChildren.push({
         id: `${idPrefix}.arm_${idx}`,
         path: childPath(currentPath, { kind: "matchArmPattern", index: idx }),
         label: `${armTag} =>`,
         kind: "block",
         children: [...variableChildren, bodyChild],
-        computedWidth: 0,
-        computedHeight: 0,
-        layoutMode: "multiline",
-      });
-    }
-
-    if (matchNode.default != null) {
-      const defPath = childPath(currentPath, "matchDefault");
-      const defBody = buildLayoutNode(
-        matchNode.default,
-        `${idPrefix}.default.body`,
-        defPath,
-        context,
-      );
-      armChildren.push({
-        id: `${idPrefix}.default`,
-        path: childPath(currentPath, "matchDefaultPattern"),
-        label: "_ =>",
-        kind: "block",
-        children: [defBody],
         computedWidth: 0,
         computedHeight: 0,
         layoutMode: "multiline",
@@ -173,8 +107,8 @@ export function tryBuildControlOrTypeNode(
     };
   }
 
-  if ("TypeFunction" in node) {
-    const fn = (node.TypeFunction ?? {}) as {
+  if (tag === "type_function") {
+    const fn = (payload ?? {}) as {
       readonly parameters?: ReadonlyArray<{
         readonly name?: unknown;
         readonly type?: unknown;
@@ -239,55 +173,49 @@ export function tryBuildControlOrTypeNode(
   }
 
   // List<T> など, 子の式をフィールドに持つ式
-  for (const [key, steps] of Object.entries(FIELD_STEPS)) {
-    if (key in node) {
-      const inner = (node[key] ?? {}) as Record<string, unknown>;
-      // quote の中の式は外の変数を使えないので, 外のスコープを見せない
-      const innerContext: ScopeContext =
-        key === "Quote" ? { ...context, scopeVariables: new Map() } : context;
-      return {
-        id: idPrefix,
-        path: currentPath,
-        label: FIELD_STEP_LABELS[key] ?? key,
-        kind: "keyword",
-        children: steps.map(({ step, field }) =>
-          buildLayoutNode(
-            inner[field],
-            `${idPrefix}.${field}`,
-            childPath(currentPath, step as PathStep),
-            innerContext,
-          ),
+  const steps = FIELD_STEPS[tag];
+  if (steps !== undefined) {
+    // quote の中の式は外の変数を使えないので, 外のスコープを見せない
+    const innerContext: ScopeContext =
+      tag === "quote" ? { ...context, scopeVariables: new Map() } : context;
+    return {
+      id: idPrefix,
+      path: currentPath,
+      label: FIELD_STEP_LABELS[tag] ?? tag,
+      kind: "keyword",
+      children: steps.map(({ step, field: key }) =>
+        buildLayoutNode(
+          key === null ? payload : field(payload, key),
+          `${idPrefix}.${key ?? "expression"}`,
+          childPath(currentPath, step as PathStep),
+          innerContext,
         ),
-        computedWidth: 0,
-        computedHeight: 0,
-        layoutMode: "inline",
-      };
-    }
+      ),
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
+    };
   }
 
-  if ("TypeUnion" in node) {
-    const variants =
-      (
-        node.TypeUnion as {
-          variants?: ReadonlyArray<{
-            readonly tag?: unknown;
-            readonly payload_type?: unknown;
-          }>;
-        } | null
-      )?.variants ?? [];
+  if (tag === "type_union") {
+    const variants: ReadonlyArray<{
+      readonly tag?: unknown;
+      readonly payload_type?: unknown;
+    }> = Array.isArray(payload) ? payload : [];
     return {
       id: idPrefix,
       path: currentPath,
       label: "union",
       kind: "block",
       children: variants.map((variant, index) => {
-        const tag = String(variant.tag ?? "");
+        const variantTag = String(variant.tag ?? "");
+        const payloadType = optionValue(variant.payload_type);
         // ペイロードのないバリアントは式を持たないので, 選ぶと union 全体を選ぶ
-        if (variant.payload_type == null) {
+        if (payloadType === undefined) {
           return {
             id: `${idPrefix}.v_${index}`,
             path: currentPath,
-            label: tag,
+            label: variantTag,
             kind: "identifier" as const,
             children: [],
             computedWidth: 0,
@@ -302,11 +230,11 @@ export function tryBuildControlOrTypeNode(
         return {
           id: `${idPrefix}.v_${index}`,
           path: variantPath,
-          label: `${tag}:`,
+          label: `${variantTag}:`,
           kind: "keyword" as const,
           children: [
             buildLayoutNode(
-              variant.payload_type,
+              payloadType,
               `${idPrefix}.v_${index}.payload`,
               variantPath,
               context,

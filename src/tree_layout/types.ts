@@ -20,10 +20,6 @@ export type NodeKind =
 export type LayoutMode = "inline" | "multiline";
 
 export type PathStep =
-  | "condition"
-  | "then"
-  | "else"
-  | "letValue"
   | { readonly kind: "letBindingValue"; readonly index: number }
   /** let の i 番目の束縛の変数名. 式ではない */
   | { readonly kind: "letBindingName"; readonly index: number }
@@ -38,7 +34,7 @@ export type PathStep =
   | "functionBody"
   | { readonly kind: "callArgument"; readonly index: number }
   | { readonly kind: "typeFunctionParameter"; readonly index: number }
-  /** 関数 (`Function`) の引数の名前. 式ではない */
+  /** 関数 (`function`) の引数の名前. 式ではない */
   | { readonly kind: "functionParameter"; readonly index: number }
   | "typeFunctionReturn"
   | "variantPayload"
@@ -48,9 +44,6 @@ export type PathStep =
   | { readonly kind: "matchArmPattern"; readonly index: number }
   /** match のアームで束縛する変数の名前. 式ではない */
   | { readonly kind: "matchArmVariable"; readonly index: number }
-  | "matchDefault"
-  /** match の `_ =>` (default) のパターン. 式ではない */
-  | "matchDefaultPattern"
   | { readonly kind: "typeUnionVariant"; readonly index: number }
   | "record";
 

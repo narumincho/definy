@@ -9,6 +9,16 @@ import type { PathStep } from "./types.ts";
 import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import { nextVariableId } from "./selection.ts";
 import { EXPECTED_TYPE_PROBE } from "./type_inference.ts";
+import { variant, variantOf } from "../definy_value.ts";
+import {
+  armBindsVariable,
+  hole,
+  type MatchArm,
+  matchExpression,
+  matchOf,
+  NO_VARIABLE,
+} from "./expression.ts";
+import { typeUnionDeclarationVariants, unionTypeVariants } from "./variant.ts";
 
 /** match の対象の型の値の候補 (直和型の 1 つのタグ) */
 export type PatternVariant = {
@@ -17,18 +27,13 @@ export type PatternVariant = {
   readonly hasPayload: boolean;
 };
 
-type MatchArm = {
-  readonly tag?: unknown;
-  readonly variable_id?: unknown;
-  readonly variable_name?: unknown;
-  readonly body?: unknown;
+type MatchInner = {
+  readonly target: unknown;
+  readonly arms: ReadonlyArray<MatchArm>;
 };
 
-type MatchInner = {
-  readonly target?: unknown;
-  readonly arms?: ReadonlyArray<MatchArm>;
-  readonly default?: unknown;
-};
+/** どのタグにも一致するアームのタグ */
+const WILDCARD_TAG = "_";
 
 /** 置換メニューの選択肢の value の接頭辞 */
 const TAG_PREFIX = "pattern:tag:";
@@ -37,10 +42,8 @@ export const PATTERN_UNBIND = "pattern:unbind";
 export const PATTERN_ADD_ARM = "pattern:add-arm";
 export const PATTERN_ADD_MISSING_ARMS = "pattern:add-missing-arms";
 export const PATTERN_DELETE_ARM = "pattern:delete-arm";
-/** `_ =>` (default) のパターンそのものの選択肢 */
-export const PATTERN_DEFAULT = "pattern:default";
+/** 末尾に `_ =>` のアームを足す */
 export const PATTERN_ADD_DEFAULT = "pattern:add-default";
-export const PATTERN_DELETE_DEFAULT = "pattern:delete-default";
 
 /** 束縛する変数の既定の名前 */
 const DEFAULT_VARIABLE_NAME = "value";
@@ -60,16 +63,9 @@ export function matchArmPatternIndex(
   return lastStepIndex(path, "matchArmPattern");
 }
 
-/** `path` の最後が `_ =>` (default) のパターン (`matchDefaultPattern`) か */
-export function isMatchDefaultPatternPath(
-  path: ReadonlyArray<PathStep>,
-): boolean {
-  return path[path.length - 1] === "matchDefaultPattern";
-}
-
-/** `path` の最後が match のパターン (タグのアームか `_ =>`) か. 選ぶとパターンの置換メニューを開く */
+/** `path` の最後が match のパターン (`_ =>` を含む) か. 選ぶとパターンの置換メニューを開く */
 export function isMatchPatternPath(path: ReadonlyArray<PathStep>): boolean {
-  return matchArmPatternIndex(path) !== null || isMatchDefaultPatternPath(path);
+  return matchArmPatternIndex(path) !== null;
 }
 
 /** `path` の最後がアームで束縛する変数の名前 (`matchArmVariable`) なら, そのアームの番号 */
@@ -83,11 +79,7 @@ function matchAt(
   expr: unknown,
   matchPath: ReadonlyArray<PathStep>,
 ): MatchInner | null {
-  const node = getExpressionAtPath(expr, matchPath);
-  if (node === null || typeof node !== "object" || !("Match" in node)) {
-    return null;
-  }
-  return (node as { readonly Match: MatchInner }).Match;
+  return matchOf(getExpressionAtPath(expr, matchPath)) ?? null;
 }
 
 /** match (`matchPath` の位置) のアームを書き換える */
@@ -97,8 +89,12 @@ function updateMatchAt(
   updater: (match: MatchInner) => MatchInner,
 ): unknown {
   return updateExpressionAtPath(expr, matchPath, (node) => {
-    const match = (node as { readonly Match?: MatchInner } | null)?.Match;
-    return match === undefined ? node : { Match: updater(match) };
+    const match = matchOf(node);
+    if (match === undefined) {
+      return node;
+    }
+    const next = updater(match);
+    return matchExpression(next.target, next.arms);
   });
 }
 
@@ -114,57 +110,34 @@ export function probeMatchTargetType(
   const matchPath = patternPath.slice(0, -1);
   return updateMatchAt(expr, matchPath, (match) => ({
     ...match,
-    target: { ListLiteral: { items: [match.target, EXPECTED_TYPE_PROBE] } },
+    target: variant("list", [match.target, EXPECTED_TYPE_PROBE]),
   }));
 }
 
 /**
  * 型チェッカーが返した match の対象の型 (`core.type-ast` の値) の取りうるタグ.
- * 型パーツの参照は `partsByIdHash` (パーツ ID → パーツ) の型宣言 (`TypeUnion`) から求める. 直和型でなければ `null`
+ * 型パーツの参照は `partsByIdHash` (パーツ ID → パーツ) の型宣言 (`type_union`) から求める. 直和型でなければ `null`
  */
 export function patternVariantsFromTypeAst(
   type: DefinyValue | null,
   partsByIdHash: ReadonlyMap<string, Pick<PartSnapshot, "expression">>,
 ): ReadonlyArray<PatternVariant> | null {
-  const { tag, payload } = (type ?? {}) as {
-    readonly tag?: unknown;
-    readonly payload?: unknown;
-  };
-  if (tag === "boolean") {
+  const tagged = variantOf(type);
+  if (tagged?.tag === "boolean") {
     return [
       { tag: "true", hasPayload: false },
       { tag: "false", hasPayload: false },
     ];
   }
-  if (tag === "union" && Array.isArray(payload)) {
-    return payload.map(
-      (variant: {
-        readonly tag?: unknown;
-        readonly payload_type?: { readonly tag?: unknown };
-      }) => ({
-        tag: String(variant.tag),
-        hasPayload: variant.payload_type?.tag === "some",
-      }),
-    );
+  if (tagged?.tag === "union" && Array.isArray(tagged.payload)) {
+    return unionTypeVariants(tagged.payload);
   }
-  if (tag === "reference") {
-    const partHash = (payload as { readonly part_hash?: unknown } | null)
+  if (tagged?.tag === "reference") {
+    const partHash = (tagged.payload as { readonly part_hash?: unknown } | null)
       ?.part_hash;
-    const declaration = partsByIdHash.get(String(partHash))?.expression as {
-      readonly TypeUnion?: {
-        readonly variants?: ReadonlyArray<{
-          readonly tag?: unknown;
-          readonly payload_type?: unknown;
-        }>;
-      };
-    } | null;
-    const variants = declaration?.TypeUnion?.variants;
-    return Array.isArray(variants)
-      ? variants.map((variant) => ({
-          tag: String(variant.tag),
-          hasPayload: variant.payload_type != null,
-        }))
-      : null;
+    return typeUnionDeclarationVariants(
+      partsByIdHash.get(String(partHash))?.expression,
+    );
   }
   return null;
 }
@@ -196,7 +169,7 @@ export function patternSelectorOptions({
   if (match === null) {
     return [];
   }
-  const arms = match.arms ?? [];
+  const arms = match.arms;
   const missing = missingVariants(match, variants);
   const missingArmsOption =
     missing.length > 0
@@ -208,25 +181,6 @@ export function patternSelectorOptions({
           ),
         ]
       : [];
-  if (isMatchDefaultPatternPath(patternPath)) {
-    if (match.default == null) {
-      return [];
-    }
-    return [
-      {
-        value: PATTERN_DEFAULT,
-        name: "_",
-        detail: "other tags",
-        category: "Pattern",
-        returnType: "any",
-      },
-      ...missingArmsOption,
-      // アームが 1 つも無い match は作れないので, そのときは消せない
-      ...(arms.length > 0
-        ? [armAction(PATTERN_DELETE_DEFAULT, "delete-default")]
-        : []),
-    ];
-  }
   const index = matchArmPatternIndex(patternPath);
   const arm = index === null ? undefined : arms[index];
   if (arm === undefined) {
@@ -248,6 +202,14 @@ export function patternSelectorOptions({
     category: "Pattern",
     returnType: "any",
   }));
+  // どのタグにも一致する `_`
+  tagOptions.push({
+    value: `${TAG_PREFIX}${WILDCARD_TAG}`,
+    name: WILDCARD_TAG,
+    detail: "other tags",
+    category: "Pattern",
+    returnType: "any",
+  });
   // 対象の型が分からなくても今のタグは選べるようにする
   if (!tagOptions.some((o) => o.name === String(arm.tag))) {
     tagOptions.unshift({
@@ -257,21 +219,25 @@ export function patternSelectorOptions({
       returnType: "any",
     });
   }
+  const isWildcard = arm.tag === WILDCARD_TAG;
   const actions: SelectorOption[] = [
-    arm.variable_id == null
-      ? armAction(PATTERN_BIND, "bind", "tag(value)")
-      : armAction(PATTERN_UNBIND, "unbind", "tag"),
+    ...(isWildcard
+      ? []
+      : [
+          armBindsVariable(arm)
+            ? armAction(PATTERN_UNBIND, "unbind", "tag")
+            : armAction(PATTERN_BIND, "bind", "tag(value)"),
+        ]),
     // 型のタグが分かっていて全てのアームがあるときは, 足すアームが無い
     ...(variants === null || missing.length > 0
       ? [armAction(PATTERN_ADD_ARM, "add-arm", missing[0]?.tag)]
       : []),
     ...missingArmsOption,
-    ...(match.default == null
-      ? [armAction(PATTERN_ADD_DEFAULT, "add-default", "_ =>")]
-      : []),
-    ...(arms.length > 1 || match.default != null
-      ? [armAction(PATTERN_DELETE_ARM, "delete-arm")]
-      : []),
+    ...(usedTags.has(WILDCARD_TAG)
+      ? []
+      : [armAction(PATTERN_ADD_DEFAULT, "add-default", "_ =>")]),
+    // アームが 1 つも無い match は作れないので, 最後のアームは消せない
+    ...(arms.length > 1 ? [armAction(PATTERN_DELETE_ARM, "delete-arm")] : []),
   ];
   return [...tagOptions, ...actions];
 }
@@ -282,9 +248,6 @@ export function currentPatternOptionValue(
   patternPath: ReadonlyArray<PathStep>,
 ): string | null {
   const match = matchAt(expression, patternPath.slice(0, -1));
-  if (isMatchDefaultPatternPath(patternPath)) {
-    return match?.default == null ? null : PATTERN_DEFAULT;
-  }
   const index = matchArmPatternIndex(patternPath);
   const arm = index === null ? undefined : match?.arms?.[index];
   return arm === undefined ? null : `${TAG_PREFIX}${String(arm.tag)}`;
@@ -295,7 +258,7 @@ function missingVariants(
   match: MatchInner,
   variants: ReadonlyArray<PatternVariant> | null,
 ): ReadonlyArray<PatternVariant> {
-  const used = new Set((match.arms ?? []).map((arm) => String(arm.tag)));
+  const used = new Set(match.arms.map((arm) => String(arm.tag)));
   return (variants ?? []).filter((variant) => !used.has(variant.tag));
 }
 
@@ -303,9 +266,9 @@ function missingVariants(
 function newArm(variant: PatternVariant, variableId: number): MatchArm {
   return {
     tag: variant.tag,
-    variable_id: variant.hasPayload ? variableId : null,
-    variable_name: variant.hasPayload ? DEFAULT_VARIABLE_NAME : null,
-    body: { Hole: {} },
+    variable_id: variant.hasPayload ? variableId : NO_VARIABLE,
+    variable_name: variant.hasPayload ? DEFAULT_VARIABLE_NAME : "",
+    body: hole(),
   };
 }
 
@@ -326,7 +289,7 @@ export function applyPatternSelection(
   const index = matchArmPatternIndex(patternPath) ?? -1;
   const variableId = nextVariableId(expr);
   const bind = (arm: MatchArm): MatchArm =>
-    arm.variable_id == null
+    !armBindsVariable(arm)
       ? {
           ...arm,
           variable_id: variableId,
@@ -335,24 +298,27 @@ export function applyPatternSelection(
       : arm;
   const unbind = (arm: MatchArm): MatchArm => ({
     ...arm,
-    variable_id: null,
-    variable_name: null,
+    variable_id: NO_VARIABLE,
+    variable_name: "",
   });
   return updateMatchAt(expr, patternPath.slice(0, -1), (match) => {
-    const arms = match.arms ?? [];
+    const arms = match.arms;
     const updateArm = (updater: (arm: MatchArm) => MatchArm): MatchInner => ({
       ...match,
       arms: arms.map((arm, i) => (i === index ? updater(arm) : arm)),
     });
     if (value.startsWith(TAG_PREFIX)) {
       const tag = value.slice(TAG_PREFIX.length);
-      const variant = variants?.find((v) => v.tag === tag);
+      const found = variants?.find((v) => v.tag === tag);
       return updateArm((arm) => {
         const tagged = { ...arm, tag };
-        if (variant === undefined) {
+        if (tag === WILDCARD_TAG) {
+          return unbind(tagged);
+        }
+        if (found === undefined) {
           return tagged;
         }
-        return variant.hasPayload ? bind(tagged) : unbind(tagged);
+        return found.hasPayload ? bind(tagged) : unbind(tagged);
       });
     }
     if (value === PATTERN_BIND) {
@@ -366,8 +332,9 @@ export function applyPatternSelection(
         tag: String(arms[index]?.tag ?? ""),
         hasPayload: false,
       };
-      // `_ =>` からは最後に足す
-      const at = index >= 0 ? index + 1 : arms.length;
+      // `_ =>` より後のアームには一致しないので, `_ =>` の前に足す
+      const wildcard = arms.findIndex((arm) => arm.tag === WILDCARD_TAG);
+      const at = wildcard >= 0 && wildcard <= index ? wildcard : index + 1;
       return {
         ...match,
         arms: [
@@ -378,28 +345,31 @@ export function applyPatternSelection(
       };
     }
     if (value === PATTERN_ADD_MISSING_ARMS) {
+      // `_ =>` より前に足す
+      const wildcard = arms.findIndex((arm) => arm.tag === WILDCARD_TAG);
+      const at = wildcard >= 0 ? wildcard : arms.length;
       return {
         ...match,
         arms: [
-          ...arms,
+          ...arms.slice(0, at),
           ...missingVariants(match, variants).map((variant, i) =>
             newArm(variant, variableId + i),
           ),
+          ...arms.slice(at),
         ],
       };
     }
-    if (value === PATTERN_ADD_DEFAULT && match.default == null) {
-      return { ...match, default: { Hole: {} } };
-    }
     if (
-      value === PATTERN_DELETE_ARM &&
-      index >= 0 &&
-      (arms.length > 1 || match.default != null)
+      value === PATTERN_ADD_DEFAULT &&
+      !arms.some((arm) => arm.tag === WILDCARD_TAG)
     ) {
-      return { ...match, arms: arms.filter((_, i) => i !== index) };
+      return {
+        ...match,
+        arms: [...arms, newArm({ tag: WILDCARD_TAG, hasPayload: false }, 0)],
+      };
     }
-    if (value === PATTERN_DELETE_DEFAULT && arms.length > 0) {
-      return { ...match, default: null };
+    if (value === PATTERN_DELETE_ARM && index >= 0 && arms.length > 1) {
+      return { ...match, arms: arms.filter((_, i) => i !== index) };
     }
     return match;
   });
@@ -420,7 +390,7 @@ export function renameMatchArmVariable(
   }
   return updateMatchAt(expr, path.slice(0, -1), (match) => ({
     ...match,
-    arms: (match.arms ?? []).map((arm, i) =>
+    arms: match.arms.map((arm, i) =>
       i === index ? { ...arm, variable_name: name } : arm,
     ),
   }));

@@ -2,35 +2,37 @@
 
 definy には演算子 (operator) という概念は無く, あるのはパーツ (関数) だけ ([Issue #717](https://github.com/narumincho/definy/issues/717)).
 数値の加算・比較・論理演算・文字列やリストの操作も, `core.plus` `core.less-than` `core.not` `core.list-get` などの
-**コンパイラ組み込みのパーツ** を他のパーツと同じく `Call` で呼んで書く. `!` や `+` のような記号でも表さない.
+**コンパイラ組み込みのパーツ** を他のパーツと同じく `call` で呼んで書く. `!` や `+` のような記号でも表さない.
 
 ```json
 {
-  "Call": {
+  "#call": {
     "function": {
-      "PartReference": {
+      "#part_reference": {
         "part_definition_event_hash": { "$part": "core.plus" }
       }
     },
     "arguments": [
-      { "name": "left", "value": { "Number": { "value": 1 } } },
-      { "name": "right", "value": { "Variable": { "variable_id": 0 } } }
+      { "name": "left", "value": { "#number": 1 } },
+      { "name": "right", "value": { "#variable": { "variable_id": 0 } } }
     ]
   }
 }
 ```
 
+(式の書き方は [value-encoding.md](value-encoding.md))
+
 以前の式の AST には `Add` `Not` `ListGet` などの演算専用のノードがあったが, seed・適合テスト・エディタから取り除いた
-(seed は `{"Add": {left, right}}` を `core.plus` の呼び出しに機械的に書き換えた).
+(seed は以前の形の `{"Add": {left, right}}` を `core.plus` の呼び出しに機械的に書き換えた).
 
 ## 組み込みのパーツ
 
-- 式が `{"Compiler": "plus"}` のパーツがコンパイラ組み込み. 組み込みかどうかはパーツ名ではなく式で決まる (`compilerBuiltinName`)
+- 式が `{"#builtin": "plus"}` のパーツがコンパイラ組み込み. 組み込みかどうかはパーツ名ではなく式で決まる (`compilerBuiltinName`)
 - 引数名は下の表のとおり (順番どおりに書く). 型の決まるもの (`core.plus` は `(left: number, right: number) -> number` など) は
   `part_type` を持つ. `core.equal` `core.not-equal` `core.list-length` `core.list-concat` `core.list-get` `core.list-append` は
   どの型の値にも使えて今の `PartType` (型引数が無い) では書けないので, 型を持たない (型チェッカーは名前で検査する)
 
-| 組み込み (`Compiler`)                                                                                                                                                               | パーツ                        | 引数                    |
+| 組み込み (`#builtin`)                                                                                                                                                               | パーツ                        | 引数                    |
 | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------- | :---------------------- |
 | `plus` `minus` `multiply` `divide` `remainder` `equal` `not_equal` `less_than` `less_than_or_equal` `greater_than` `greater_than_or_equal` `and` `or` `string_concat` `list_concat` | `core.plus` など (`_` は `-`) | `left`, `right`         |
 | `not` `string_length` `string_to_bytes` `list_length`                                                                                                                               | `core.not` など               | `value`                 |
@@ -44,8 +46,8 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
 ## definy 製のコンパイラ・型チェッカー・評価器での扱い
 
 `core.expression` (stage1 などが受け取る式) にも演算子のバリアントは無い.
-組み込みのパーツの式は `builtin("plus")` (名前の文字列) になり, その呼び出しは他のパーツの呼び出しと同じ
-`call({function: part_reference(...), arguments})` のまま渡す (`definyAstToSelfHostedAst`, `src/stage1_compiler.ts`).
+組み込みのパーツの式は `{"#builtin": "plus"}` (名前の文字列) で, その呼び出しは他のパーツの呼び出しと同じ
+`call({function: part_reference(...), arguments})` (保存した式をそのまま渡す).
 `call({function: builtin("plus"), ...})` のように組み込みそのものを呼ぶ式も書ける (`sample.sample-ast-calc` などのデモのデータ).
 引数は `core.call-argument(arguments, name)` で名前で取り出す (無ければ未入力 `hole`).
 
@@ -59,7 +61,7 @@ definy には演算子 (operator) という概念は無く, あるのはパー�
   (`core.call-argument-names-match`, 違えば `invalid_type_declaration`) を見てから `core.type-check-builtin-call` で名前ごとに検査する.
   期待する型があるとき (`core.list-concat` の左辺が `[]` など) は `core.type-check-against-builtin-call` を使う.
   組み込みのパーツ自身の式 (`builtin`) は宣言した関数の型と比べられないので検査しない (`unsupported`).
-  サーバー (`worker/type_check.ts`) は型パーツ以外の式を読まないので, CAS に預けた式でも `{"Compiler": name}` の
+  サーバー (`worker/type_check.ts`) は型パーツ以外の式を読まないので, CAS に預けた式でも `{"#builtin": name}` の
   content hash から組み込みと分かるようにしている
 - 評価 (`core.eval-value`): `builtin(name)` は値 `core.value` の `builtin(name)` になり, それを呼ぶと `core.eval-builtin-call` が名前で評価する
 - `core.expression-to-source` は `plus(left: …, right: …)` のように出す. `core.optimize-expression` は組み込みそのものを呼ぶ

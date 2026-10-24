@@ -91,7 +91,7 @@ describe("auth and signed event pipeline", () => {
               { language: "ja", text: "2 つの数を掛ける" },
             ],
             partType: "function",
-            expression: { Number: { value: 42 } },
+            expression: { "#number": 42 },
           },
         ],
       },

@@ -17,7 +17,7 @@ const part = (partId: string, expression: unknown): PartSnapshot => ({
 
 describe("シークレット", () => {
   const literal = {
-    Secret: {
+    "#secret": {
       id: "s1",
       label: "トークン",
       allowed_url_prefixes: ["https://a/"],
@@ -30,7 +30,7 @@ describe("シークレット", () => {
       label: "トークン",
       allowed_url_prefixes: ["https://a/"],
     });
-    expect(secretLiteralOf({ String: { value: "x" } })).toBeNull();
+    expect(secretLiteralOf({ "#string": "x" })).toBeNull();
   });
 
   it("使用箇所はシークレットのパーツを参照しているパーツと, 同じ ID のリテラルを書いているパーツ", () => {
@@ -39,20 +39,29 @@ describe("シークレット", () => {
       [
         secretPart,
         part("deploy", {
-          Call: {
-            function: { PartReference: { part_definition_event_hash: "x" } },
+          "#call": {
+            function: {
+              "#part_reference": { part_definition_event_hash: "x" },
+            },
             arguments: [
               {
                 name: "api_token",
                 value: {
-                  PartReference: { part_definition_event_hash: "token" },
+                  "#part_reference": { part_definition_event_hash: "token" },
                 },
               },
             ],
           },
         }),
-        part("copy", { Let: { bindings: [{ value: literal }] } }),
-        part("other", { Number: { value: 1 } }),
+        part("copy", {
+          "#let": {
+            variable_id: 0,
+            variable_name: "t",
+            value: literal,
+            body: { "#variable": { variable_id: 0 } },
+          },
+        }),
+        part("other", { "#number": 1 }),
       ],
       secretPart,
       "s1",

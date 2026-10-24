@@ -91,7 +91,7 @@ export type DefinyContextValue = {
     readonly expression: unknown;
   }) => Promise<SelfHostedTypeCheckOutcome>;
   /**
-   * 式 (`{"Hole": {"probe": true}}` を 1 つ含む) のその位置で期待する型 (`core.type-ast` の値) を,
+   * 式 (`{"#hole": {"probe": true}}` を 1 つ含む) のその位置で期待する型 (`core.type-ast` の値) を,
    * コミット済みのパーツの型環境で definy 製の型チェッカーに聞く. 分からなければ `null`
    */
   readonly findExpectedType: (part: {

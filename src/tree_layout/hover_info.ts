@@ -1,5 +1,5 @@
-import { partReferenceId } from "../stage1_compiler.ts";
 import { getExpressionAtPath } from "./path.ts";
+import { callOf, partReferenceIdOf, variableIdOf } from "./expression.ts";
 import { findExpressionNode } from "./selection.ts";
 import type { LayoutNode, PathStep } from "./types.ts";
 
@@ -63,37 +63,18 @@ function variableNameOf(
   target: unknown,
   scopeVariables: ReadonlyMap<number, string> | undefined,
 ): string | null {
-  const raw = (target as { readonly Variable?: unknown } | null)?.Variable;
-  if (raw === undefined) {
+  const id = variableIdOf(target);
+  if (id === null) {
     return null;
   }
-  const id =
-    typeof raw === "number"
-      ? raw
-      : Number((raw as { readonly variable_id?: unknown } | null)?.variable_id);
   return scopeVariables?.get(id) ?? `var_${id}`;
 }
 
 /** パーツの参照 (型の式の型パーツの参照も) か, パーツの呼び出しなら, そのパーツの ID */
 export function referencedPartIdHash(target: unknown): string | null {
-  if (!target || typeof target !== "object") {
-    return null;
+  const call = callOf(target);
+  if (call !== undefined) {
+    return referencedPartIdHash(call.callee);
   }
-  const obj = target as Record<string, unknown>;
-  if ("Call" in obj) {
-    return referencedPartIdHash(
-      (obj.Call as { readonly function?: unknown } | null)?.function,
-    );
-  }
-  if ("PartReference" in obj) {
-    try {
-      return partReferenceId(
-        (obj.PartReference as { readonly part_definition_event_hash?: unknown })
-          ?.part_definition_event_hash,
-      );
-    } catch {
-      return null;
-    }
-  }
-  return null;
+  return partReferenceIdOf(target);
 }

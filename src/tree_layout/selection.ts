@@ -1,39 +1,46 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
-import { base64ToBytes } from "../cbor.ts";
 import { variantFromOptionValue } from "./variant.ts";
 import { updateExpressionAtPath } from "./path.ts";
+import { BUILTIN_PARAMETERS, compilerBuiltinName } from "../stage1_compiler.ts";
+import { none, variant, variantPayload } from "../definy_value.ts";
 import {
-  BUILTIN_PARAMETERS,
-  compilerBuiltinName,
-  partReferenceId,
-} from "../stage1_compiler.ts";
+  booleanExpression,
+  callExpression,
+  callOf,
+  hole,
+  letChain,
+  matchExpression,
+  NO_VARIABLE,
+  numberExpression,
+  partReferenceExpression,
+  partReferenceIdOf,
+  stringExpression,
+  variableExpression,
+  variableIdOf,
+} from "./expression.ts";
+
+const typeNumber = variant("type_number");
 
 /** 型のツリーエディタで選んだ型の既定の式 (part_type.ts の型の式) */
 export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
-  "expr:type:number": "TypeNumber",
-  "expr:type:string": "TypeString",
-  "expr:type:boolean": "TypeBoolean",
-  "expr:type:type": "TypeType",
-  "expr:type:secret": "TypeSecret",
-  "expr:type:list": { TypeList: { item_type: "TypeNumber" } },
-  "expr:type:code": { TypeCode: { value_type: "TypeNumber" } },
-  "expr:type:function": {
-    TypeFunction: {
-      parameters: [{ name: "x", type: "TypeNumber" }],
-      return_type: "TypeNumber",
-    },
-  },
-  "expr:type:record": {
-    TypeLiteral: { items: [{ key: "key", value: "TypeString" }] },
-  },
-  "expr:type:union": {
-    TypeUnion: {
-      variants: [
-        { tag: "a", payload_type: null },
-        { tag: "b", payload_type: null },
-      ],
-    },
-  },
+  "expr:type:number": typeNumber,
+  "expr:type:string": variant("type_string"),
+  "expr:type:boolean": variant("type_boolean"),
+  "expr:type:type": variant("type_type"),
+  "expr:type:secret": variant("type_secret"),
+  "expr:type:list": variant("type_list", { item_type: typeNumber }),
+  "expr:type:code": variant("type_code", { value_type: typeNumber }),
+  "expr:type:function": variant("type_function", {
+    parameters: [{ name: "x", type: typeNumber }],
+    return_type: typeNumber,
+  }),
+  "expr:type:record": variant("type_record", [
+    { key: "key", value: variant("type_string") },
+  ]),
+  "expr:type:union": variant("type_union", [
+    { tag: "a", payload_type: none() },
+    { tag: "b", payload_type: none() },
+  ]),
 };
 
 /**
@@ -44,10 +51,7 @@ export function partParameterNames(part: {
   readonly partType: unknown;
   readonly expression: unknown;
 }): ReadonlyArray<string> | undefined {
-  const fn = (part.partType as { readonly function?: unknown } | null)
-    ?.function as
-    | { readonly parameters?: ReadonlyArray<{ readonly name?: unknown }> }
-    | undefined;
+  const fn = functionTypeOf(part.partType);
   if (fn !== undefined) {
     return (fn.parameters ?? []).map((parameter) => String(parameter.name));
   }
@@ -55,7 +59,7 @@ export function partParameterNames(part: {
   return builtin === undefined ? undefined : BUILTIN_PARAMETERS.get(builtin);
 }
 
-/** 関数の型 (`{function: {parameters, return_type}}`) の中身. 関数の型でなければ `undefined` */
+/** 関数の型 (`core.type-ast` の `function({ parameters, return_type })`) の中身. 関数の型でなければ `undefined` */
 function functionTypeOf(type: unknown):
   | {
       readonly parameters?: ReadonlyArray<{
@@ -65,7 +69,7 @@ function functionTypeOf(type: unknown):
       readonly return_type?: unknown;
     }
   | undefined {
-  return (type as { readonly function?: unknown } | null)?.function as
+  return variantPayload(type, "function") as
     | {
         readonly parameters?: ReadonlyArray<{
           readonly name?: unknown;
@@ -77,7 +81,7 @@ function functionTypeOf(type: unknown):
 }
 
 /**
- * 関数 (`Function`) の引数の変数 ID → 引数の型. 型は書いた位置で決まるものだけ求める:
+ * 関数 (`function`) の引数の変数 ID → 引数の型 (`core.type-ast` の値). 型は書いた位置で決まるものだけ求める:
  * パーツの式の直下の関数はパーツの型 (`partType`), 呼び出しの引数に書いた関数は呼び出すパーツ・関数型の引数の
  * その引数の型. `partTypeOf` はパーツ ID (Base64URL) からパーツの型を返す
  */
@@ -90,30 +94,13 @@ export function functionParameterTypes(
   const calleeParameters = (
     callee: unknown,
   ): ReadonlyArray<{ readonly name?: unknown; readonly type?: unknown }> => {
-    const obj = callee as {
-      readonly PartReference?: {
-        readonly part_definition_event_hash?: unknown;
-      };
-      readonly Variable?: { readonly variable_id?: unknown };
-    } | null;
-    if (obj?.PartReference !== undefined) {
-      try {
-        return (
-          functionTypeOf(
-            partTypeOf(
-              partReferenceId(obj.PartReference.part_definition_event_hash),
-            ),
-          )?.parameters ?? []
-        );
-      } catch {
-        return [];
-      }
+    const partId = partReferenceIdOf(callee);
+    if (partId !== null) {
+      return functionTypeOf(partTypeOf(partId))?.parameters ?? [];
     }
-    if (obj?.Variable !== undefined) {
-      return (
-        functionTypeOf(types.get(Number(obj.Variable.variable_id)))
-          ?.parameters ?? []
-      );
+    const variableId = variableIdOf(callee);
+    if (variableId !== null) {
+      return functionTypeOf(types.get(variableId))?.parameters ?? [];
     }
     return [];
   };
@@ -125,14 +112,15 @@ export function functionParameterTypes(
     if (!node || typeof node !== "object" || node instanceof Uint8Array) {
       return;
     }
-    const obj = node as Record<string, unknown>;
-    if ("Function" in obj) {
-      const fn = obj.Function as {
-        readonly parameters?: ReadonlyArray<{
-          readonly parameter_id?: unknown;
-        }>;
-        readonly body?: unknown;
-      };
+    const fn = variantPayload(node, "function") as
+      | {
+          readonly parameters?: ReadonlyArray<{
+            readonly parameter_id?: unknown;
+          }>;
+          readonly body?: unknown;
+        }
+      | undefined;
+    if (fn !== undefined) {
       const fnType = functionTypeOf(expectedType);
       (fn.parameters ?? []).forEach((parameter, index) => {
         const type = fnType?.parameters?.[index]?.type;
@@ -143,17 +131,11 @@ export function functionParameterTypes(
       visit(fn.body, fnType?.return_type);
       return;
     }
-    if ("Call" in obj) {
-      const call = obj.Call as {
-        readonly function?: unknown;
-        readonly arguments?: ReadonlyArray<{
-          readonly name?: unknown;
-          readonly value?: unknown;
-        }>;
-      };
-      const parameters = calleeParameters(call.function);
-      visit(call.function, undefined);
-      for (const argument of call.arguments ?? []) {
+    const call = callOf(node);
+    if (call !== undefined) {
+      const parameters = calleeParameters(call.callee);
+      visit(call.callee, undefined);
+      for (const argument of call.arguments) {
         visit(
           argument.value,
           parameters.find((parameter) => parameter.name === argument.name)
@@ -162,7 +144,7 @@ export function functionParameterTypes(
       }
       return;
     }
-    Object.values(obj).forEach((child) => visit(child, undefined));
+    Object.values(node).forEach((child) => visit(child, undefined));
   };
   visit(expression, partType);
   return types;
@@ -189,27 +171,16 @@ function partSelection(
   if (parameterNames === undefined) {
     return reference;
   }
-  const currentArguments =
-    (
-      current as {
-        readonly Call?: {
-          readonly arguments?: ReadonlyArray<{
-            readonly name?: unknown;
-            readonly value?: unknown;
-          }>;
-        };
-      } | null
-    )?.Call?.arguments ?? [];
-  return {
-    Call: {
-      function: reference,
-      arguments: parameterNames.map((name) => ({
-        name,
-        value: currentArguments.find((argument) => argument.name === name)
-          ?.value ?? { Hole: {} },
-      })),
-    },
-  };
+  const currentArguments = callOf(current)?.arguments ?? [];
+  return callExpression(
+    reference,
+    parameterNames.map((name) => ({
+      name,
+      value:
+        currentArguments.find((argument) => argument.name === name)?.value ??
+        hole(),
+    })),
+  );
 }
 
 /** 式全体で使われている変数 ID (let の束縛, 関数のパラメーター, match の束縛) の最大 + 1 */
@@ -258,77 +229,58 @@ export function applySelection(
   let newSubExpr: unknown;
 
   if (selectionValue === "expr:number") {
-    newSubExpr = { Number: { value: 0 } };
+    newSubExpr = numberExpression(0);
   } else if (selectionValue === "expr:string") {
-    newSubExpr = { String: { value: "" } };
+    newSubExpr = stringExpression("");
   } else if (selectionValue === "expr:boolean:true") {
-    newSubExpr = { Boolean: { value: true } };
+    newSubExpr = booleanExpression(true);
   } else if (selectionValue === "expr:boolean:false") {
-    newSubExpr = { Boolean: { value: false } };
+    newSubExpr = booleanExpression(false);
   } else if (selectionValue === "expr:hole") {
-    newSubExpr = { Hole: {} };
+    newSubExpr = hole();
   } else if (selectionValue === "expr:list") {
-    newSubExpr = { ListLiteral: { items: [] } };
+    newSubExpr = variant("list", []);
   } else if (selectionValue === "expr:secret") {
     // ID はシークレットを区別するだけなので, 作るときにランダムに決める (値はブラウザに保存する. docs/secret.md)
-    newSubExpr = {
-      Secret: {
-        id: crypto.randomUUID(),
-        label: "secret",
-        allowed_url_prefixes: [],
-      },
-    };
+    newSubExpr = variant("secret", {
+      id: crypto.randomUUID(),
+      label: "secret",
+      allowed_url_prefixes: [],
+    });
   } else if (selectionValue === "expr:quote") {
-    newSubExpr = { Quote: { expression: { Hole: {} } } };
+    newSubExpr = variant("quote", hole());
   } else if (selectionValue === "expr:let") {
     // 新しい変数は式全体で使われていない ID にし, 本体はその変数を参照しておく
     const variableId = nextVariableId(expr);
-    newSubExpr = {
-      Let: {
-        bindings: [
-          {
-            variable_id: variableId,
-            variable_name: "x",
-            value: { Number: { value: 0 } },
-          },
-        ],
-        body: { Variable: { variable_id: variableId } },
-      },
-    };
+    newSubExpr = letChain(
+      [
+        {
+          variable_id: variableId,
+          variable_name: "x",
+          value: numberExpression(0),
+        },
+      ],
+      variableExpression(variableId),
+    );
   } else if (selectionValue === "expr:match") {
     // 対象の型はまだ分からないので `_ =>` だけにしておき,
     // 対象を決めてから `_ =>` のパターンのメニューで足りないアームを足す
-    newSubExpr = {
-      Match: {
-        target: { Hole: {} },
-        arms: [],
-        default: { Hole: {} },
-      },
-    };
+    newSubExpr = matchExpression(hole(), [
+      { tag: "_", variable_id: NO_VARIABLE, variable_name: "", body: hole() },
+    ]);
   } else if (selectionValue === "expr:match_boolean") {
     const arm = (tag: string) => ({
       tag,
-      variable_id: null,
-      variable_name: null,
-      body: { Number: { value: 0 } },
+      variable_id: NO_VARIABLE,
+      variable_name: "",
+      body: numberExpression(0),
     });
-    newSubExpr = {
-      Match: {
-        target: { Boolean: { value: false } },
-        arms: [arm("true"), arm("false")],
-        default: null,
-      },
-    };
+    newSubExpr = matchExpression(booleanExpression(false), [
+      arm("true"),
+      arm("false"),
+    ]);
   } else if (selectionValue in TYPE_SELECTIONS) {
     newSubExpr = TYPE_SELECTIONS[selectionValue];
-  } else if (selectionValue === "expr:if") {
-    newSubExpr = {
-      If: {
-        condition: { Boolean: { value: true } },
-        then_expr: { Number: { value: 1 } },
-        else_expr: { Number: { value: 0 } },
-      },
-    };
   } else if (selectionValue.startsWith("variant:")) {
     return updateExpressionAtPath(expr, path, (current) =>
       variantFromOptionValue(selectionValue, current),
@@ -338,18 +290,14 @@ export function applySelection(
     // 関数型の変数は値として書けないので, 引数名を入れた呼び出しにする
     return updateExpressionAtPath(expr, path, (current) =>
       partSelection(
-        { Variable: { variable_id: varId } },
+        variableExpression(varId),
         variableParameterNamesOf(varId),
         current,
       ),
     );
   } else if (selectionValue.startsWith("ref:part:")) {
     const partHash = selectionValue.replace("ref:part:", "");
-    const reference = {
-      PartReference: {
-        part_definition_event_hash: base64ToBytes(partHash),
-      },
-    };
+    const reference = partReferenceExpression(partHash);
     return updateExpressionAtPath(expr, path, (current) =>
       partSelection(reference, parameterNamesOf(partHash), current),
     );

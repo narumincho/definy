@@ -11,11 +11,9 @@ import {
 } from "./list_items.ts";
 import type { PathStep } from "./types.ts";
 
-const num = (value: number) => ({ Number: { value } });
-const HOLE = { Hole: {} };
-const list = (...items: ReadonlyArray<unknown>) => ({
-  ListLiteral: { items },
-});
+const num = (value: number) => ({ "#number": value });
+const HOLE = { "#hole": { probe: false } };
+const list = (...items: ReadonlyArray<unknown>) => ({ "#list": items });
 
 /** `[[1, 2, 3]]` の内側のリストを操作する */
 const expression = list(list(num(1), num(2), num(3)));
@@ -26,13 +24,9 @@ const item = (index: number): ReadonlyArray<PathStep> => [
 ];
 
 const innerItems = (expr: unknown) =>
-  (
-    expr as {
-      ListLiteral: {
-        items: ReadonlyArray<{ ListLiteral: { items: unknown } }>;
-      };
-    }
-  ).ListLiteral.items[0]?.ListLiteral.items;
+  (expr as { "#list": ReadonlyArray<{ "#list": unknown }> })["#list"][0]?.[
+    "#list"
+  ];
 
 const values = (path: ReadonlyArray<PathStep>) =>
   listItemSelectorOptions(expression, path).map((o) => o.value);

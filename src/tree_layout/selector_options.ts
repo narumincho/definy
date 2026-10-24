@@ -8,6 +8,7 @@ import type { PartSnapshot } from "../types.ts";
 import type { PathStep } from "./types.ts";
 import { getExpressionAtPath } from "./mutation.ts";
 import { variantOptionValueByName } from "./variant.ts";
+import { field, isVariant, variantOf } from "../definy_value.ts";
 
 export type SelectorOption = {
   readonly value: string;
@@ -90,31 +91,22 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     category: "Syntax",
     returnType: "any",
   },
-  {
-    value: "expr:if",
-    name: "if",
-    detail: "cond, then, else",
-    category: "Syntax",
-    returnType: "any",
-  },
 ];
 
+/** 型 (`core.type-ast` の値) の大まかな型. 関数の型は戻り値の型 */
 function partReturnType(partType: unknown): ExpectedType {
-  if (
-    partType === "number" ||
-    partType === "string" ||
-    partType === "boolean" ||
-    partType === "list"
-  ) {
-    return partType;
-  }
-  if (typeof partType === "object" && partType !== null) {
-    const obj = partType as Record<string, unknown>;
-    if ("function" in obj) {
-      const ret = (obj.function as { return_type?: unknown }).return_type;
-      if (ret === "number" || ret === "string" || ret === "boolean") {
-        return ret;
-      }
+  const tagged = variantOf(partType);
+  switch (tagged?.tag) {
+    case "number":
+    case "string":
+    case "boolean":
+    case "list":
+      return tagged.tag;
+    case "function": {
+      const ret = variantOf(field(tagged.payload, "return_type"))?.tag;
+      return ret === "number" || ret === "string" || ret === "boolean"
+        ? ret
+        : "any";
     }
   }
   return "any";
@@ -198,29 +190,26 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
   },
 ];
 
-/** 型のパーツ (partType が `type`) の選択肢. 型の行で `{ type_part: ID }` として参照する */
+/** 型のパーツ (partType が `type`) の選択肢. 型の行で `reference({ part_hash: ID })` として参照する */
 export function typePartSelectorOptions(
   parts: ReadonlyArray<PartSnapshot>,
 ): ReadonlyArray<SelectorOption> {
-  return partSelectorOptions(parts.filter((p) => p.partType === "type")).map(
-    (option) => ({ ...option, detail: undefined, category: "Type part" }),
-  );
+  return partSelectorOptions(
+    parts.filter((p) => isVariant(p.partType, "type")),
+  ).map((option) => ({ ...option, detail: undefined, category: "Type part" }));
 }
 
 /** パーツの型の短い表記 (`number`, `function` など). 選択肢の名前の横に出す */
 export function partTypeText(partType: unknown): string | undefined {
-  if (typeof partType === "string") return partType;
-  if (typeof partType === "object" && partType !== null) {
-    const obj = partType as Record<string, unknown>;
-    if ("function" in obj) {
-      const ret = partTypeText(
-        (obj.function as { return_type?: unknown } | null)?.return_type,
-      );
-      return ret === undefined ? "function" : `function → ${ret}`;
-    }
-    return Object.keys(obj)[0];
+  const tagged = variantOf(partType);
+  if (tagged === undefined) {
+    return undefined;
   }
-  return undefined;
+  if (tagged.tag === "function") {
+    const ret = partTypeText(field(tagged.payload, "return_type"));
+    return ret === undefined ? "function" : `function → ${ret}`;
+  }
+  return tagged.tag;
 }
 
 /** パーツの選択肢. value は `ref:part:<パーツ ID の Base64URL>` */
@@ -370,7 +359,6 @@ export function resolveCurrentOptionValue({
   expression,
   path,
   options,
-  mode,
   partNames,
 }: {
   readonly expression: unknown;
@@ -379,14 +367,9 @@ export function resolveCurrentOptionValue({
   readonly mode: "expression" | "type";
   readonly partNames: ReadonlyMap<string, string>;
 }): string | null {
-  const target = getExpressionAtPath(expression, path);
-  const value =
-    mode === "type" &&
-    typeof target === "object" &&
-    target !== null &&
-    "TypeLiteral" in target
-      ? "expr:type:record"
-      : getOptionValueForExpression(target);
+  const value = getOptionValueForExpression(
+    getExpressionAtPath(expression, path),
+  );
   if (value === null || options.some((o) => o.value === value)) {
     return value;
   }

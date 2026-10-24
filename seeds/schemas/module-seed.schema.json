@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ModuleSeed",
-  "description": "Seed データファイル（JSON / YAML）用のモジュール表現。 バージョン管理・ブートストラップ用の静的定義データ。",
+  "description": "Seed データファイル (seeds/*.json) のモジュール表現. パーツの式は core.expression, 型は core.type-ast の値 (docs/value-encoding.md). src/seed_schema.ts が core の型パーツの宣言から作る",
   "type": "object",
   "required": [
     "module_name",
@@ -37,95 +37,49 @@
     }
   },
   "definitions": {
-    "BooleanExpression": {
+    "ModulePartEntry": {
       "type": "object",
       "required": [
-        "value"
-      ],
-      "properties": {
-        "value": {
-          "type": "boolean"
-        }
-      }
-    },
-    "CallArgument": {
-      "type": "object",
-      "required": [
-        "name",
-        "value"
+        "name"
       ],
       "properties": {
         "name": {
           "type": "string"
         },
-        "value": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "CallExpression": {
-      "type": "object",
-      "required": [
-        "arguments",
-        "function"
-      ],
-      "properties": {
-        "arguments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CallArgument"
-          }
+        "description": {
+          "$ref": "#/definitions/Description"
         },
-        "function": {
-          "$ref": "#/definitions/Callee"
+        "part_type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/core.type-ast"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expression": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/core.expression"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "content_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ContentHash"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
-    },
-    "CompilerBuiltin": {
-      "type": "string",
-      "enum": [
-        "let",
-        "plus",
-        "minus",
-        "multiply",
-        "divide",
-        "remainder",
-        "less_than",
-        "less_than_or_equal",
-        "greater_than",
-        "greater_than_or_equal",
-        "equal",
-        "not_equal",
-        "not",
-        "and",
-        "or",
-        "string_concat",
-        "string_length",
-        "string_slice",
-        "string_to_bytes",
-        "list_length",
-        "list_concat",
-        "list_get",
-        "list_append",
-        "number_literal",
-        "function",
-        "call",
-        "bit_and",
-        "bit_or",
-        "bit_xor",
-        "shift_left",
-        "shift_right"
-      ]
-    },
-    "ContentHash": {
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "format": "uint8",
-        "minimum": 0.0
-      },
-      "maxItems": 32,
-      "minItems": 32
     },
     "Description": {
       "anyOf": [
@@ -139,384 +93,6 @@
           }
         }
       ]
-    },
-    "EventHashId": {
-      "anyOf": [
-        {
-          "description": "ビルトインパーツへの名前参照 (`module.part-name`)。読み込み時にシステムアカウントから ID を導出する",
-          "type": "object",
-          "required": [
-            "$part"
-          ],
-          "properties": {
-            "$part": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "uint8",
-            "minimum": 0.0
-          },
-          "maxItems": 32,
-          "minItems": 32
-        }
-      ]
-    },
-    "Expression": {
-      "oneOf": [
-        {
-          "type": "string",
-          "enum": [
-            "TypeNumber",
-            "TypeString",
-            "TypeBoolean",
-            "TypeSecret"
-          ]
-        },
-        {
-          "type": "object",
-          "required": [
-            "Number"
-          ],
-          "properties": {
-            "Number": {
-              "$ref": "#/definitions/NumberExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "String"
-          ],
-          "properties": {
-            "String": {
-              "$ref": "#/definitions/StringExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "TypeList"
-          ],
-          "properties": {
-            "TypeList": {
-              "$ref": "#/definitions/TypeListExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "ListLiteral"
-          ],
-          "properties": {
-            "ListLiteral": {
-              "$ref": "#/definitions/ListLiteralExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "PartReference"
-          ],
-          "properties": {
-            "PartReference": {
-              "$ref": "#/definitions/PartReferenceExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Boolean"
-          ],
-          "properties": {
-            "Boolean": {
-              "$ref": "#/definitions/BooleanExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Let"
-          ],
-          "properties": {
-            "Let": {
-              "$ref": "#/definitions/LetExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Variable"
-          ],
-          "properties": {
-            "Variable": {
-              "$ref": "#/definitions/VariableExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "TypeLiteral"
-          ],
-          "properties": {
-            "TypeLiteral": {
-              "$ref": "#/definitions/TypeLiteralExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "RecordGet"
-          ],
-          "properties": {
-            "RecordGet": {
-              "$ref": "#/definitions/RecordGetExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Function"
-          ],
-          "properties": {
-            "Function": {
-              "$ref": "#/definitions/FunctionExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Call"
-          ],
-          "properties": {
-            "Call": {
-              "$ref": "#/definitions/CallExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "TypeFunction"
-          ],
-          "properties": {
-            "TypeFunction": {
-              "$ref": "#/definitions/TypeFunctionExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "TypeUnion"
-          ],
-          "properties": {
-            "TypeUnion": {
-              "$ref": "#/definitions/TypeUnionExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Variant"
-          ],
-          "properties": {
-            "Variant": {
-              "$ref": "#/definitions/VariantExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Match"
-          ],
-          "properties": {
-            "Match": {
-              "$ref": "#/definitions/MatchExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Compiler"
-          ],
-          "properties": {
-            "Compiler": {
-              "$ref": "#/definitions/CompilerBuiltin"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "コードそのものを値にする式 (quote). 型は Code<中の式の型>",
-          "type": "object",
-          "required": [
-            "Quote"
-          ],
-          "properties": {
-            "Quote": {
-              "$ref": "#/definitions/QuoteExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "シークレットリテラル. 型は Secret で, 値 (API トークンなど) はパーツに入れず, ブラウザにだけ保存して allowed_url_prefixes の宛先にだけ送る",
-          "type": "object",
-          "required": [
-            "Secret"
-          ],
-          "properties": {
-            "Secret": {
-              "$ref": "#/definitions/SecretExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "未入力の式. エディタで式を消したときに入る. 評価・コンパイルはエラーになる",
-          "type": "string",
-          "enum": [
-            "Hole"
-          ]
-        }
-      ]
-    },
-    "FunctionExpression": {
-      "type": "object",
-      "required": [
-        "body",
-        "parameters"
-      ],
-      "properties": {
-        "body": {
-          "$ref": "#/definitions/Expression"
-        },
-        "parameters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FunctionParameter"
-          }
-        }
-      }
-    },
-    "FunctionParameter": {
-      "type": "object",
-      "required": [
-        "parameter_id",
-        "parameter_name"
-      ],
-      "properties": {
-        "parameter_id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "parameter_name": {
-          "type": "string"
-        }
-      }
-    },
-    "FunctionParameterType": {
-      "type": "object",
-      "required": [
-        "name",
-        "type"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/PartType"
-        }
-      }
-    },
-    "LetBinding": {
-      "type": "object",
-      "required": [
-        "value",
-        "variable_id",
-        "variable_name"
-      ],
-      "properties": {
-        "value": {
-          "$ref": "#/definitions/Expression"
-        },
-        "variable_id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "variable_name": {
-          "type": "string"
-        }
-      }
-    },
-    "LetExpression": {
-      "type": "object",
-      "required": [
-        "bindings",
-        "body"
-      ],
-      "properties": {
-        "bindings": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/LetBinding"
-          }
-        },
-        "body": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "ListLiteralExpression": {
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Expression"
-          }
-        }
-      }
     },
     "LocalizedText": {
       "type": "object",
@@ -533,162 +109,39 @@
         }
       }
     },
-    "MatchArm": {
+    "ContentHash": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      },
+      "maxItems": 32,
+      "minItems": 32
+    },
+    "PartPlaceholder": {
+      "description": "パーツ名の参照 (`module.part-name`). 読み込み時にシステムアカウントからパーツ ID (URL-safe Base64 の文字列) を導出する",
       "type": "object",
       "required": [
-        "body",
-        "tag"
+        "$part"
       ],
       "properties": {
-        "body": {
-          "$ref": "#/definitions/Expression"
-        },
-        "tag": {
+        "$part": {
           "type": "string"
-        },
-        "variable_id": {
-          "default": null,
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "int64"
-        },
-        "variable_name": {
-          "default": null,
-          "type": [
-            "string",
-            "null"
-          ]
         }
-      }
+      },
+      "additionalProperties": false
     },
-    "MatchExpression": {
-      "type": "object",
-      "required": [
-        "arms",
-        "target"
-      ],
-      "properties": {
-        "arms": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/MatchArm"
-          }
-        },
-        "default": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Expression"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "target": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "ModulePartEntry": {
-      "type": "object",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "content_hash": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ContentHash"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "description": {
-          "$ref": "#/definitions/Description"
-        },
-        "expression": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Expression"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "name": {
-          "type": "string"
-        },
-        "part_type": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PartType"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      }
-    },
-    "NumberExpression": {
-      "type": "object",
-      "required": [
-        "value"
-      ],
-      "properties": {
-        "value": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "PartReferenceExpression": {
-      "type": "object",
-      "required": [
-        "part_definition_event_hash"
-      ],
-      "properties": {
-        "content_hash": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ContentHash"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "part_definition_event_hash": {
-          "$ref": "#/definitions/EventHashId"
-        }
-      }
-    },
-    "PartType": {
-      "oneOf": [
-        {
-          "type": "string",
-          "enum": [
-            "number",
-            "string",
-            "boolean",
-            "type",
-            "secret"
-          ]
-        },
+    "core.expression": {
+      "anyOf": [
         {
           "type": "object",
           "required": [
-            "type_part"
+            "#type_number"
           ],
           "properties": {
-            "type_part": {
-              "$ref": "#/definitions/EventHashId"
+            "#type_number": {
+              "type": "null"
             }
           },
           "additionalProperties": false
@@ -696,11 +149,11 @@
         {
           "type": "object",
           "required": [
-            "list"
+            "#type_string"
           ],
           "properties": {
-            "list": {
-              "$ref": "#/definitions/PartType"
+            "#type_string": {
+              "type": "null"
             }
           },
           "additionalProperties": false
@@ -708,10 +161,43 @@
         {
           "type": "object",
           "required": [
-            "function"
+            "#type_boolean"
           ],
           "properties": {
-            "function": {
+            "#type_boolean": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#type_list"
+          ],
+          "properties": {
+            "#type_list": {
+              "type": "object",
+              "required": [
+                "item_type"
+              ],
+              "properties": {
+                "item_type": {
+                  "$ref": "#/definitions/core.expression"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#type_function"
+          ],
+          "properties": {
+            "#type_function": {
               "type": "object",
               "required": [
                 "parameters",
@@ -721,304 +207,69 @@
                 "parameters": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/definitions/FunctionParameterType"
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "type"
+                    ],
+                    "properties": {
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "type": {
+                        "$ref": "#/definitions/core.expression"
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "return_type": {
-                  "$ref": "#/definitions/PartType"
-                }
-              }
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "record"
-          ],
-          "properties": {
-            "record": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/RecordFieldType"
-              }
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "union"
-          ],
-          "properties": {
-            "union": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/UnionVariantType"
-              }
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "description": "コードそのものの型 Code<T>. 値は quote 式で作る",
-          "type": "object",
-          "required": [
-            "code"
-          ],
-          "properties": {
-            "code": {
-              "$ref": "#/definitions/PartType"
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    },
-    "RecordFieldType": {
-      "type": "object",
-      "required": [
-        "key",
-        "value"
-      ],
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/definitions/PartType"
-        }
-      }
-    },
-    "RecordGetExpression": {
-      "type": "object",
-      "required": [
-        "key",
-        "record"
-      ],
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "record": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "StringExpression": {
-      "type": "object",
-      "required": [
-        "value"
-      ],
-      "properties": {
-        "value": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "description": "パーツ ID の文字列 (URL-safe Base64) に置き換わるプレースホルダー",
-              "type": "object",
-              "required": [
-                "$partId"
-              ],
-              "properties": {
-                "$partId": {
-                  "type": "string"
+                  "$ref": "#/definitions/core.expression"
                 }
               },
               "additionalProperties": false
             }
-          ]
-        }
-      }
-    },
-    "TypeFunctionExpression": {
-      "type": "object",
-      "required": [
-        "parameters",
-        "return_type"
-      ],
-      "properties": {
-        "parameters": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TypeFunctionParameter"
-          }
+          },
+          "additionalProperties": false
         },
-        "return_type": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "TypeFunctionParameter": {
-      "type": "object",
-      "required": [
-        "name",
-        "type"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "TypeListExpression": {
-      "type": "object",
-      "required": [
-        "item_type"
-      ],
-      "properties": {
-        "item_type": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "TypeLiteralExpression": {
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TypeLiteralItemExpression"
-          }
-        }
-      }
-    },
-    "TypeLiteralItemExpression": {
-      "type": "object",
-      "required": [
-        "key",
-        "value"
-      ],
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "TypeUnionExpression": {
-      "type": "object",
-      "required": [
-        "variants"
-      ],
-      "properties": {
-        "variants": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/TypeUnionVariant"
-          }
-        }
-      }
-    },
-    "TypeUnionVariant": {
-      "type": "object",
-      "required": [
-        "tag"
-      ],
-      "properties": {
-        "payload_type": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Expression"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "tag": {
-          "type": "string"
-        }
-      }
-    },
-    "UnionVariantType": {
-      "type": "object",
-      "required": [
-        "tag"
-      ],
-      "properties": {
-        "payload": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PartType"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "tag": {
-          "type": "string"
-        }
-      }
-    },
-    "VariableExpression": {
-      "type": "object",
-      "required": [
-        "variable_id"
-      ],
-      "properties": {
-        "variable_id": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
-    "VariantExpression": {
-      "type": "object",
-      "required": [
-        "tag"
-      ],
-      "properties": {
-        "payload": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Expression"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "tag": {
-          "type": "string"
-        },
-        "type_part_definition_event_hash": {
-          "default": null,
-          "anyOf": [
-            {
-              "$ref": "#/definitions/EventHashId"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      }
-    },
-    "Callee": {
-      "description": "呼び出す関数. 関数は値として書けず呼び出すだけなので, 呼べるのはパーツ (PartReference), 関数型の引数 (Variable), レコードの関数のフィールド (RecordGet) だけ",
-      "oneOf": [
         {
           "type": "object",
           "required": [
-            "PartReference"
+            "#type_record"
           ],
           "properties": {
-            "PartReference": {
-              "$ref": "#/definitions/PartReferenceExpression"
+            "#type_record": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "value"
+                ],
+                "properties": {
+                  "key": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "$ref": "#/definitions/core.expression"
+                  }
+                },
+                "additionalProperties": false
+              }
             }
           },
           "additionalProperties": false
@@ -1026,11 +277,59 @@
         {
           "type": "object",
           "required": [
-            "Variable"
+            "#type_union"
           ],
           "properties": {
-            "Variable": {
-              "$ref": "#/definitions/VariableExpression"
+            "#type_union": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "tag",
+                  "payload_type"
+                ],
+                "properties": {
+                  "tag": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  },
+                  "payload_type": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "#none"
+                        ],
+                        "properties": {
+                          "#none": {
+                            "type": "null"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "#some"
+                        ],
+                        "properties": {
+                          "#some": {
+                            "$ref": "#/definitions/core.expression"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
             }
           },
           "additionalProperties": false
@@ -1038,53 +337,1869 @@
         {
           "type": "object",
           "required": [
-            "RecordGet"
+            "#number"
           ],
           "properties": {
-            "RecordGet": {
-              "$ref": "#/definitions/RecordGetExpression"
+            "#number": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#string"
+          ],
+          "properties": {
+            "#string": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#boolean"
+          ],
+          "properties": {
+            "#boolean": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#list"
+          ],
+          "properties": {
+            "#list": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/core.expression"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#call"
+          ],
+          "properties": {
+            "#call": {
+              "type": "object",
+              "required": [
+                "function",
+                "arguments"
+              ],
+              "properties": {
+                "function": {
+                  "$ref": "#/definitions/core.callee"
+                },
+                "arguments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "value"
+                    ],
+                    "properties": {
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "value": {
+                        "$ref": "#/definitions/core.expression"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variable"
+          ],
+          "properties": {
+            "#variable": {
+              "type": "object",
+              "required": [
+                "variable_id"
+              ],
+              "properties": {
+                "variable_id": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#function"
+          ],
+          "properties": {
+            "#function": {
+              "type": "object",
+              "required": [
+                "parameters",
+                "body"
+              ],
+              "properties": {
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "parameter_id",
+                      "parameter_name"
+                    ],
+                    "properties": {
+                      "parameter_id": {
+                        "type": "integer"
+                      },
+                      "parameter_name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "body": {
+                  "$ref": "#/definitions/core.expression"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#record"
+          ],
+          "properties": {
+            "#record": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "value"
+                ],
+                "properties": {
+                  "key": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "$ref": "#/definitions/core.expression"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#record_get"
+          ],
+          "properties": {
+            "#record_get": {
+              "type": "object",
+              "required": [
+                "record",
+                "key"
+              ],
+              "properties": {
+                "record": {
+                  "$ref": "#/definitions/core.expression"
+                },
+                "key": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variant"
+          ],
+          "properties": {
+            "#variant": {
+              "type": "object",
+              "required": [
+                "tag",
+                "payload",
+                "type_part"
+              ],
+              "properties": {
+                "tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "payload": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "#none"
+                      ],
+                      "properties": {
+                        "#none": {
+                          "type": "null"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "#some"
+                      ],
+                      "properties": {
+                        "#some": {
+                          "$ref": "#/definitions/core.expression"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "type_part": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "#none"
+                      ],
+                      "properties": {
+                        "#none": {
+                          "type": "null"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "#some"
+                      ],
+                      "properties": {
+                        "#some": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "$ref": "#/definitions/PartPlaceholder"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#match"
+          ],
+          "properties": {
+            "#match": {
+              "type": "object",
+              "required": [
+                "target",
+                "arms"
+              ],
+              "properties": {
+                "target": {
+                  "$ref": "#/definitions/core.expression"
+                },
+                "arms": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "tag",
+                      "variable_id",
+                      "variable_name",
+                      "body"
+                    ],
+                    "properties": {
+                      "tag": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "variable_id": {
+                        "type": "integer"
+                      },
+                      "variable_name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "body": {
+                        "$ref": "#/definitions/core.expression"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#part_reference"
+          ],
+          "properties": {
+            "#part_reference": {
+              "type": "object",
+              "required": [
+                "part_definition_event_hash"
+              ],
+              "properties": {
+                "part_definition_event_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#let"
+          ],
+          "properties": {
+            "#let": {
+              "type": "object",
+              "required": [
+                "variable_id",
+                "variable_name",
+                "value",
+                "body"
+              ],
+              "properties": {
+                "variable_id": {
+                  "type": "integer"
+                },
+                "variable_name": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "value": {
+                  "$ref": "#/definitions/core.expression"
+                },
+                "body": {
+                  "$ref": "#/definitions/core.expression"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#hole"
+          ],
+          "properties": {
+            "#hole": {
+              "type": "object",
+              "required": [
+                "probe"
+              ],
+              "properties": {
+                "probe": {
+                  "type": "boolean"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#builtin"
+          ],
+          "properties": {
+            "#builtin": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#quote"
+          ],
+          "properties": {
+            "#quote": {
+              "$ref": "#/definitions/core.expression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#secret"
+          ],
+          "properties": {
+            "#secret": {
+              "type": "object",
+              "required": [
+                "id",
+                "label",
+                "allowed_url_prefixes"
+              ],
+              "properties": {
+                "id": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "label": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "allowed_url_prefixes": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#type_secret"
+          ],
+          "properties": {
+            "#type_secret": {
+              "type": "null"
             }
           },
           "additionalProperties": false
         }
       ]
     },
-    "QuoteExpression": {
+    "core.callee": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#part_reference"
+          ],
+          "properties": {
+            "#part_reference": {
+              "type": "object",
+              "required": [
+                "part_definition_event_hash"
+              ],
+              "properties": {
+                "part_definition_event_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#builtin"
+          ],
+          "properties": {
+            "#builtin": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variable"
+          ],
+          "properties": {
+            "#variable": {
+              "type": "object",
+              "required": [
+                "variable_id"
+              ],
+              "properties": {
+                "variable_id": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#record_get"
+          ],
+          "properties": {
+            "#record_get": {
+              "type": "object",
+              "required": [
+                "record",
+                "key"
+              ],
+              "properties": {
+                "record": {
+                  "$ref": "#/definitions/core.expression"
+                },
+                "key": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.value": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#number"
+          ],
+          "properties": {
+            "#number": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#string"
+          ],
+          "properties": {
+            "#string": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#boolean"
+          ],
+          "properties": {
+            "#boolean": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#list"
+          ],
+          "properties": {
+            "#list": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/core.value"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#record"
+          ],
+          "properties": {
+            "#record": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "value"
+                ],
+                "properties": {
+                  "key": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "$ref": "#/definitions/core.value"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variant"
+          ],
+          "properties": {
+            "#variant": {
+              "type": "object",
+              "required": [
+                "tag",
+                "payload"
+              ],
+              "properties": {
+                "tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                },
+                "payload": {
+                  "$ref": "#/definitions/core.value"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#closure"
+          ],
+          "properties": {
+            "#closure": {
+              "type": "object",
+              "required": [
+                "parameters",
+                "body",
+                "captured_env"
+              ],
+              "properties": {
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "parameter_id",
+                      "parameter_name"
+                    ],
+                    "properties": {
+                      "parameter_id": {
+                        "type": "integer"
+                      },
+                      "parameter_name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "body": {
+                  "$ref": "#/definitions/core.expression"
+                },
+                "captured_env": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "variable_id",
+                      "value"
+                    ],
+                    "properties": {
+                      "variable_id": {
+                        "type": "integer"
+                      },
+                      "value": {
+                        "$ref": "#/definitions/core.value"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#unit"
+          ],
+          "properties": {
+            "#unit": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#builtin"
+          ],
+          "properties": {
+            "#builtin": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.env": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "variable_id",
+          "value"
+        ],
+        "properties": {
+          "variable_id": {
+            "type": "integer"
+          },
+          "value": {
+            "$ref": "#/definitions/core.value"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "core.type-ast": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#type"
+          ],
+          "properties": {
+            "#type": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#number"
+          ],
+          "properties": {
+            "#number": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#string"
+          ],
+          "properties": {
+            "#string": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#boolean"
+          ],
+          "properties": {
+            "#boolean": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#list"
+          ],
+          "properties": {
+            "#list": {
+              "type": "object",
+              "required": [
+                "item_type"
+              ],
+              "properties": {
+                "item_type": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#function"
+          ],
+          "properties": {
+            "#function": {
+              "type": "object",
+              "required": [
+                "parameters",
+                "return_type"
+              ],
+              "properties": {
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "type"
+                    ],
+                    "properties": {
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "$ref": "#/definitions/PartPlaceholder"
+                          }
+                        ]
+                      },
+                      "type": {
+                        "$ref": "#/definitions/core.type-ast"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "return_type": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#record"
+          ],
+          "properties": {
+            "#record": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "field_type"
+                ],
+                "properties": {
+                  "key": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  },
+                  "field_type": {
+                    "$ref": "#/definitions/core.type-ast"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#union"
+          ],
+          "properties": {
+            "#union": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "tag",
+                  "payload_type"
+                ],
+                "properties": {
+                  "tag": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "$ref": "#/definitions/PartPlaceholder"
+                      }
+                    ]
+                  },
+                  "payload_type": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "required": [
+                          "#none"
+                        ],
+                        "properties": {
+                          "#none": {
+                            "type": "null"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "required": [
+                          "#some"
+                        ],
+                        "properties": {
+                          "#some": {
+                            "$ref": "#/definitions/core.type-ast"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#reference"
+          ],
+          "properties": {
+            "#reference": {
+              "type": "object",
+              "required": [
+                "part_hash"
+              ],
+              "properties": {
+                "part_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#builtin"
+          ],
+          "properties": {
+            "#builtin": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#code"
+          ],
+          "properties": {
+            "#code": {
+              "$ref": "#/definitions/core.type-ast"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#secret"
+          ],
+          "properties": {
+            "#secret": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.code": {
       "type": "object",
       "required": [
-        "expression"
+        "expression",
+        "part_ids"
       ],
       "properties": {
         "expression": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
-    "SecretExpression": {
-      "type": "object",
-      "required": [
-        "id",
-        "label",
-        "allowed_url_prefixes"
-      ],
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "シークレットを区別する ID. 作るときにランダムに決める"
+          "$ref": "#/definitions/core.expression"
         },
-        "label": {
-          "type": "string",
-          "description": "値を入れるときに出す名前"
-        },
-        "allowed_url_prefixes": {
+        "part_ids": {
           "type": "array",
           "items": {
-            "type": "string"
-          },
-          "description": "値を送ってよい URL の先頭"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/PartPlaceholder"
+              }
+            ]
+          }
         }
       },
       "additionalProperties": false
+    },
+    "core.part-definition": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "part_definition_event_hash",
+        "part_type",
+        "expression"
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "part_definition_event_hash": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "part_type": {
+          "$ref": "#/definitions/core.type-ast"
+        },
+        "expression": {
+          "$ref": "#/definitions/core.expression"
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.module-definition": {
+      "type": "object",
+      "required": [
+        "name",
+        "description",
+        "parts"
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/PartPlaceholder"
+            }
+          ]
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/core.part-definition"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.type-error": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#type_mismatch"
+          ],
+          "properties": {
+            "#type_mismatch": {
+              "type": "object",
+              "required": [
+                "expected",
+                "actual"
+              ],
+              "properties": {
+                "expected": {
+                  "$ref": "#/definitions/core.type-ast"
+                },
+                "actual": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#undefined_variable"
+          ],
+          "properties": {
+            "#undefined_variable": {
+              "type": "object",
+              "required": [
+                "variable_id"
+              ],
+              "properties": {
+                "variable_id": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#not_a_function"
+          ],
+          "properties": {
+            "#not_a_function": {
+              "type": "object",
+              "required": [
+                "actual"
+              ],
+              "properties": {
+                "actual": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#function_not_called"
+          ],
+          "properties": {
+            "#function_not_called": {
+              "type": "object",
+              "required": [
+                "actual"
+              ],
+              "properties": {
+                "actual": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#unexpected_function"
+          ],
+          "properties": {
+            "#unexpected_function": {
+              "type": "object",
+              "required": [
+                "expected"
+              ],
+              "properties": {
+                "expected": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#not_a_record"
+          ],
+          "properties": {
+            "#not_a_record": {
+              "type": "object",
+              "required": [
+                "actual"
+              ],
+              "properties": {
+                "actual": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#not_a_union"
+          ],
+          "properties": {
+            "#not_a_union": {
+              "type": "object",
+              "required": [
+                "actual"
+              ],
+              "properties": {
+                "actual": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#not_a_list"
+          ],
+          "properties": {
+            "#not_a_list": {
+              "type": "object",
+              "required": [
+                "actual"
+              ],
+              "properties": {
+                "actual": {
+                  "$ref": "#/definitions/core.type-ast"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#variant_not_found"
+          ],
+          "properties": {
+            "#variant_not_found": {
+              "type": "object",
+              "required": [
+                "tag"
+              ],
+              "properties": {
+                "tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#non_exhaustive_match"
+          ],
+          "properties": {
+            "#non_exhaustive_match": {
+              "type": "object",
+              "required": [
+                "missing_tag"
+              ],
+              "properties": {
+                "missing_tag": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#field_not_found"
+          ],
+          "properties": {
+            "#field_not_found": {
+              "type": "object",
+              "required": [
+                "key"
+              ],
+              "properties": {
+                "key": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#cannot_infer_empty_list"
+          ],
+          "properties": {
+            "#cannot_infer_empty_list": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#part_not_found"
+          ],
+          "properties": {
+            "#part_not_found": {
+              "type": "object",
+              "required": [
+                "part_definition_event_hash"
+              ],
+              "properties": {
+                "part_definition_event_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#invalid_type_declaration"
+          ],
+          "properties": {
+            "#invalid_type_declaration": {
+              "type": "object",
+              "required": [
+                "message"
+              ],
+              "properties": {
+                "message": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#unknown_error"
+          ],
+          "properties": {
+            "#unknown_error": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#unfilled_hole"
+          ],
+          "properties": {
+            "#unfilled_hole": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#hole_expected_type"
+          ],
+          "properties": {
+            "#hole_expected_type": {
+              "type": "object",
+              "required": [
+                "expected"
+              ],
+              "properties": {
+                "expected": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "required": [
+                        "#none"
+                      ],
+                      "properties": {
+                        "#none": {
+                          "type": "null"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "#some"
+                      ],
+                      "properties": {
+                        "#some": {
+                          "$ref": "#/definitions/core.type-ast"
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#located"
+          ],
+          "properties": {
+            "#located": {
+              "type": "object",
+              "required": [
+                "expression",
+                "error"
+              ],
+              "properties": {
+                "expression": {
+                  "$ref": "#/definitions/core.expression"
+                },
+                "error": {
+                  "$ref": "#/definitions/core.type-error"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.type-result": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#ok"
+          ],
+          "properties": {
+            "#ok": {
+              "$ref": "#/definitions/core.type-ast"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#error"
+          ],
+          "properties": {
+            "#error": {
+              "$ref": "#/definitions/core.type-error"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.type-env": {
+      "type": "object",
+      "required": [
+        "variables",
+        "parts"
+      ],
+      "properties": {
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "variable_id",
+              "var_type"
+            ],
+            "properties": {
+              "variable_id": {
+                "type": "integer"
+              },
+              "var_type": {
+                "$ref": "#/definitions/core.type-ast"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "part_definition_event_hash",
+              "part_type"
+            ],
+            "properties": {
+              "part_definition_event_hash": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/PartPlaceholder"
+                  }
+                ]
+              },
+              "part_type": {
+                "$ref": "#/definitions/core.type-ast"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "core.part-type-env": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "part_definition_event_hash",
+          "part_type"
+        ],
+        "properties": {
+          "part_definition_event_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/PartPlaceholder"
+              }
+            ]
+          },
+          "part_type": {
+            "$ref": "#/definitions/core.type-ast"
+          }
+        },
+        "additionalProperties": false
+      }
     }
   }
 }

@@ -16,9 +16,9 @@ definy の式評価について、共有テストケース `conformance/eval_cas
 
 `conformance/eval_cases.json` に `name` / `expression` / `expected` の組で定義されています。
 
-- `expression` は `Expression` の JSON 表現です。
+- `expression` は `core.expression` の値, `expected` は definy の値で, どちらも [value-encoding.md](value-encoding.md) の形で書きます
+  (レコードは `{"key": value}`, タグ付きの値は `{"#tag": payload}`)。
 - `{"$part": "std.abs"}` はビルトインパーツの ID（システムアカウント公開鍵から導出）に解決されます。
-- `expected` は正規化表現です。数値・文字列・真偽値・リストは JSON 値、レコードは `{"$record": [[key, value], ...]}`、バリアントは `{"$variant": tag, "payload": value | null}` で表します。
 
 ## 実行
 
@@ -35,22 +35,17 @@ npx vitest run src/stage1_conformance.test.ts
 
 ## stage1.wasm の入力 (`src/stage1_compiler.ts`)
 
-stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取らず, 次の 2 つを引数に取ります。
+stage1 (`core.compile-to-wasm`) は次の 2 つを引数に取ります。
 
-1. **式**: `core.expression` の値。`core.plus` の呼び出しは `Variant("call", {function: Variant("part_reference", ...), arguments})` のように,
-   リテラル (`Variant` / `TypeLiteral` / `ListLiteral` / `Number` / `String` / `Boolean`) だけの木で表します。
-   変換は `definyAstToSelfHostedAst` (`src/stage1_compiler.ts`) が行います。
-   - `Match` の束縛しないアームの `variable_id` は `-1`, `default` はワイルドカードアーム `_` にします。
-   - `Variant` の payload は `some(式)` / `none` で包みます。
-   - `PartReference` の ID (CBOR 由来のバイト列, seed 由来の数値配列) は URL-safe Base64 の文字列にします。
-   - コンパイラ組み込みのパーツの式 `{"Compiler": "plus"}` は `Variant("builtin", "plus")` にします。呼び出しは他のパーツと同じ `call` です ([builtin-parts.md](builtin-parts.md))。
-   - 型の式・`Hole` は `core.expression` で表せないので `SelfHostedAstConversionError` になります。
-2. **参照するパーツ**: `list<{ id: string, expression: core.expression }>`。式から `PartReference` を
-   参照先までたどって集めます (`collectReferencedParts`)。`id` は 1 の `part_reference` の文字列と同じ形式でなければなりません。
-   見つからない・式を持たない・変換できないパーツは渡さず `unresolved` として返します。
+1. **式**: `core.expression` の値。パーツに保存した式をそのまま渡します ([value-encoding.md](value-encoding.md))。
+   `writeLiteral` (`src/stage1_compiler.ts`) が JSON の値を線形メモリに書くだけで, 式の構造は変換しません。
+   - 未入力 (`hole`) を含む式は `compile()` が `SelfHostedAstConversionError` にします (`assertCompilable`)。
+2. **参照するパーツ**: `list<{ id: string, expression: core.expression }>`。式から `part_reference` を
+   参照先までたどって集めます (`collectReferencedParts`)。`id` は `part_reference` のパーツ ID の文字列と同じです。
+   見つからない・式を持たない・型パーツ (式が `type_*` の宣言)・未入力を含むパーツは渡さず `unresolved` として返します。
    stage1 は渡されなかったパーツへの参照を `unreachable` にコンパイルするので, 呼び出し側は `unresolved` が空でなければ評価前にエラーにします。
 
-以前は TS 側の変換が数値・文字列・算術・`Let` しか扱わず, 参照するパーツも渡していなかったため,
+さらに以前 (2026-10-21 より前) は TS 側の変換が数値・文字列・算術・`Let` しか扱わず, 参照するパーツも渡していなかったため,
 `Call` + `PartReference` を含む式 (`sample.sample-ast-calc` など) は `Unsupported literal node in layout` で失敗し,
 適合テストの 44 件が `it.fails` になっていました。また入力の `Variant` を変換済みとみなしてそのまま渡していたため,
 バリアント・レコード・リストのリテラルが stage1 の出力で `unreachable` になっていました。stage1 本体は全ケースに対応しています。
@@ -60,7 +55,7 @@ stage1 (`core.compile-to-wasm`) は definy の JSON AST をそのまま受け取
 [pages/part/[id].tsx](../pages/part/[id].tsx) は `collectReferencedParts` でパーツを集めてから `compile` します。
 参照先は `useDefiny().partsByIdHash` (全コミットのパーツをパーツ ID ごとに持つ) で引きます。
 `parts` は `module.name` ごとに最新の 1 つしか持たないため, 開発 DB に別アカウントで投稿した同名モジュール
-(`core` など) があると, seed の `PartReference` が指す ID のパーツが `parts` から消えていることがあるためです。
+(`core` など) があると, seed の `part_reference` が指す ID のパーツが `parts` から消えていることがあるためです。
 表示中のパーツに作業中の変更があれば, その式を使います。
 
 ## 文字列の意味論

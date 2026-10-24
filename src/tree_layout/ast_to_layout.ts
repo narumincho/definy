@@ -43,7 +43,7 @@ function buildExpressionLayoutNode(
     return literalNode;
   }
 
-  const node = expr as Record<string, unknown>;
+  const node = expr;
 
   const functionNode = tryBuildFunctionNode(
     node,
@@ -78,8 +78,8 @@ function buildExpressionLayoutNode(
     return controlOrTypeNode;
   }
 
-  // Fallback for unknown object variants
-  const firstKey = Object.keys(node)[0] ?? "unknown";
+  // 知らない式は名前 (タグ) だけ出す
+  const firstKey = Object.keys(node as object)[0] ?? "unknown";
   return {
     id: idPrefix,
     path: currentPath,

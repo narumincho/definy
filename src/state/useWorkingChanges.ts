@@ -12,7 +12,7 @@ import {
 import { createSignedModuleCommitEvent, submitSignedEvent } from "../auth.ts";
 import type { DecodedPart } from "../cbor.ts";
 
-const STORAGE_KEY_CHANGES = "definy.working_changes.v3";
+const STORAGE_KEY_CHANGES = "definy.working_changes.v4";
 
 function loadStoredChanges(): WorkingChanges {
   if (typeof window === "undefined") {
