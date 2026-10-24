@@ -25,7 +25,38 @@ import {
   type WasiHttpResult,
   type WasiIoStep,
   type WasiOutgoingRequest,
+  type WasiSecretUse,
+  type WasiSecretValue,
 } from "./wasi_io.ts";
+
+/** seeds/definy.json の definy.cloudflare-api-token の ID */
+const CLOUDFLARE_API_TOKEN_ID = "cloudflare-api-token-6c1f0e3a9b2d4c58";
+
+const cloudflareToken = (
+  value: string,
+  allowedUrlPrefixes: ReadonlyArray<string> = ["https://api.cloudflare.com/"],
+): ((id: string) => WasiSecretValue | undefined) => {
+  return (id) =>
+    id === CLOUDFLARE_API_TOKEN_ID ? { value, allowedUrlPrefixes } : undefined;
+};
+
+/** Cloudflare の API のモック. アカウントの一覧とサブドメインを返す */
+function cloudflareApi(
+  requests: WasiOutgoingRequest[],
+): (request: WasiOutgoingRequest) => Promise<WasiHttpResult> {
+  return async (request) => {
+    requests.push(request);
+    if (request.url.endsWith("/client/v4/accounts")) {
+      return jsonResponse({
+        success: true,
+        result: [{ id: "account-1", name: "narumincho" }],
+      });
+    }
+    return request.url.endsWith("/workers/subdomain")
+      ? jsonResponse({ success: true, result: { subdomain: "narumincho" } })
+      : jsonResponse({ success: true });
+  };
+}
 
 const compiler = createStage1Compiler(
   new WebAssembly.Module(readFileSync("wasm/stage1.wasm")),
@@ -72,22 +103,15 @@ describe("wasi.io", () => {
   it("sample.deploy-hello-worker は quote したハンドラを definy でコンパイルして Cloudflare にアップロードする", async () => {
     const requests: WasiOutgoingRequest[] = [];
     const steps: WasiIoStep[] = [];
+    const uses: WasiSecretUse[] = [];
     const message = await runWasiIo(
       await compilePart("sample.deploy-hello-worker"),
       {
         getPart: (id) => seedPartExpressions.get(id),
-        environment: [
-          { name: "CLOUDFLARE_API_TOKEN", value: "test-token" },
-          { name: "CLOUDFLARE_ACCOUNT_ID", value: "account-1" },
-        ],
-        handle: async (request) => {
-          requests.push(request);
-          return request.url.endsWith("/workers/subdomain")
-            ? jsonResponse({
-                success: true,
-                result: { subdomain: "narumincho" },
-              })
-            : jsonResponse({ success: true });
+        getSecret: cloudflareToken("test-token"),
+        handle: cloudflareApi(requests),
+        onSecretUse: (use) => {
+          uses.push(use);
         },
         onStep: (step) => {
           steps.push(step);
@@ -98,21 +122,32 @@ describe("wasi.io", () => {
       "デプロイしました: https://definy-hello.narumincho.workers.dev",
     );
     expect(steps.map((step) => step.kind)).toEqual([
-      "get_environment",
       "get_parts",
       "outgoing_request",
       "outgoing_request",
       "outgoing_request",
+      "outgoing_request",
     ]);
-    const [upload, enableSubdomain, getSubdomain] = requests;
+    const [accounts, upload, enableSubdomain, getSubdomain] = requests;
+    // アカウント ID はトークンから読む
+    expect(accounts?.url).toBe("https://api.cloudflare.com/client/v4/accounts");
+    // どのリクエストにもシークレットの値をホストが入れる
+    for (const request of requests) {
+      expect(request.headers).toContainEqual({
+        name: "Authorization",
+        value: "Bearer test-token",
+      });
+    }
+    expect(uses).toHaveLength(4);
+    expect(uses.every((use) => use.sent)).toBe(true);
+    expect(uses[0]?.secret).toEqual({
+      id: CLOUDFLARE_API_TOKEN_ID,
+      label: "Cloudflare API トークン",
+    });
     expect(upload?.method).toBe("PUT");
     expect(upload?.url).toBe(
       "https://api.cloudflare.com/client/v4/accounts/account-1/workers/scripts/definy-hello",
     );
-    expect(upload?.headers).toContainEqual({
-      name: "Authorization",
-      value: "Bearer test-token",
-    });
     expect(enableSubdomain?.url).toBe(`${upload?.url}/subdomain`);
     expect(getSubdomain?.method).toBe("GET");
 
@@ -150,20 +185,40 @@ describe("wasi.io", () => {
     );
   }, 120_000);
 
-  it("環境変数が無ければ HTTP リクエストを送らずに止まる", async () => {
+  it("シークレットの値が無ければ HTTP リクエストを送らずに止まる", async () => {
+    const requests: WasiOutgoingRequest[] = [];
+    const uses: WasiSecretUse[] = [];
+    const message = await runWasiIo(
+      await compilePart("sample.deploy-hello-worker"),
+      {
+        getPart: (id) => seedPartExpressions.get(id),
+        getSecret: () => undefined,
+        handle: cloudflareApi(requests),
+        onSecretUse: (use) => {
+          uses.push(use);
+        },
+      },
+    );
+    expect(message).toBe(
+      "アカウントを読めませんでした: シークレット「Cloudflare API トークン」の値が入っていません. そのシークレットのパーツのページで値を入れてください",
+    );
+    expect(requests).toEqual([]);
+    expect(uses.map((use) => use.sent)).toEqual([false]);
+  }, 120_000);
+
+  it("シークレットは値を入れたときに許可した宛先にしか送らない", async () => {
     const requests: WasiOutgoingRequest[] = [];
     const message = await runWasiIo(
       await compilePart("sample.deploy-hello-worker"),
       {
         getPart: (id) => seedPartExpressions.get(id),
-        environment: [],
-        handle: async (request) => {
-          requests.push(request);
-          return { error: "unexpected" };
-        },
+        getSecret: cloudflareToken("t", ["https://example.com/"]),
+        handle: cloudflareApi(requests),
       },
     );
-    expect(message).toContain("CLOUDFLARE_API_TOKEN");
+    expect(message).toContain(
+      "は https://api.cloudflare.com/client/v4/accounts に送れません",
+    );
     expect(requests).toEqual([]);
   }, 120_000);
 
@@ -172,11 +227,11 @@ describe("wasi.io", () => {
       await compilePart("sample.deploy-hello-worker"),
       {
         getPart: (id) => seedPartExpressions.get(id),
-        environment: [
-          { name: "CLOUDFLARE_API_TOKEN", value: "t" },
-          { name: "CLOUDFLARE_ACCOUNT_ID", value: "a" },
-        ],
-        handle: async () => ({ error: "Failed to fetch" }),
+        getSecret: cloudflareToken("t"),
+        handle: async (request) =>
+          request.method === "PUT"
+            ? { error: "Failed to fetch" }
+            : cloudflareApi([])(request),
       },
     );
     expect(message).toBe("アップロードできませんでした: Failed to fetch");

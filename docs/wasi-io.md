@@ -14,9 +14,12 @@ wasi.io =
   | done(string)                                   -- 終わり. 文字列は画面に出すメッセージ
   | outgoing_request { request: wasi.outgoing-request, then: fn(result: wasi.http-result) => wasi.io }
   | get_parts { ids: List<string>, then: fn(parts: List<{ id, expression }>) => wasi.io }
-  | get_environment { then: fn(environment: List<{ name, value }>) => wasi.io }
 
-wasi.outgoing-request = { method, url, headers: List<{ name, value }>, body: List<number> }
+wasi.outgoing-request = {
+  method, url, headers: List<{ name, value }>,
+  secret_headers: List<{ name, prefix: string, secret: Secret }>,  -- 値は prefix ++ シークレットの値
+  body: List<number>,
+}
 wasi.http-result      = ok(wasi.incoming-response) | error(string)
 wasi.incoming-response = { status, headers, body: List<number>, text: string }
 ```
@@ -24,8 +27,10 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 - `outgoing_request` は wasi:http/outgoing-handler の `handle` に相当する。ネットワークエラー (ブラウザでは CORS で読めないときも) は `error`
 - `get_parts` は実行している definy から, パーツの最新の式を読む。quote したコード (`core.code`) の `part_ids` を渡すと
   `core.compile-to-wasm` の `parts` にそのまま渡せる形で返る ([quote.md](quote.md))。型パーツなどコンパイルできない式は除く
-- `get_environment` は wasi:cli/environment の `get-environment` に相当する。トークンなどの秘密はここから読み, パーツに書かない
-- 継続の関数の引数名は型の引数名 (`result` / `parts` / `environment`) と同じにする (違うと型チェックで
+- API トークンなどのシークレットはプログラムに読ませない。`secret_headers` に `Secret` 型の値を書くと,
+  ホストが送信の直前に値を入れる ([secret.md](secret.md))。以前は環境変数 (`get_environment`) で読んでいたが,
+  プログラムが値そのものを持ててしまうのでやめた
+- 継続の関数の引数名は型の引数名 (`result` / `parts`) と同じにする (違うと型チェックで
   `function parameter name does not match expected parameter name`)
 
 ## ホスト
@@ -34,15 +39,16 @@ wasi.incoming-response = { status, headers, body: List<number>, text: string }
 継続は `instantiateCompiledValue` の `callClosure` (Wasm のテーブル経由) で呼ぶ。1000 歩で打ち切る。
 
 - `fetchHandler(fetch)`: `fetch` で送る `handle`。GET / HEAD は本文を付けない
-- `onStep`: I/O のたびに記録を渡す (環境変数は名前だけで値は渡さない)
+- `getSecret(id)`: シークレットの値と, 値を入れたときに許可した宛先。無い・宛先が許可されていなければ送らずに `error` にする
+- `onSecretUse`: シークレットを使った (使おうとした) ときに呼ぶ (使用履歴)
+- `onStep`: I/O のたびに記録を渡す (シークレットは名前だけで値は渡さない)
 
 ### ブラウザ (パーツ詳細画面)
 
 パーツ詳細画面の「式を評価」で結果が `wasi.io` の値なら, そのまま `runWasiIo` で動かし, I/O の記録と `done` のメッセージを出す。
 
 - `get_parts` は評価と同じく, 作業中の変更があればそちらの式を返す
-- 環境変数は設定画面の「I/O をするプログラムの実行 (wasi.io)」で `NAME=value` の行で書く。localStorage
-  (`definy.wasi-io-settings`) にだけ保存し, サーバーには送らない (`src/wasi_io_browser.ts`)
+- シークレットの値はシークレットのパーツのページで入れる ([secret.md](secret.md))
 - 「CORS エラーのときサーバーで仲介する」を有効にすると, ブラウザの `fetch` が失敗したときに
   `HttpProxyService/Fetch` で送り直す (下記)
 
@@ -60,5 +66,6 @@ Cloudflare の API などはブラウザからの CORS を許可していない�
 ## テスト
 
 - `src/wasi_io.test.ts`: `sample.deploy-hello-worker` をモックの Cloudflare API で動かし, I/O の順番, URL, ヘッダー,
-  アップロードした Wasm がハンドラとして動くことを確かめる。環境変数が無いとき, アップロードに失敗したときも
+  アップロードした Wasm がハンドラとして動くことを確かめる。シークレットの値が無いとき, 許可していない宛先のとき,
+  アップロードに失敗したときも
 - `worker/http_proxy.test.ts`: 仲介の認可, URL の制限, ブラウザの fetch が失敗したときの送り直し

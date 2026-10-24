@@ -438,6 +438,41 @@ describe("self-hosted type check (stage1)", () => {
     ).toBe("Code<number>");
   }, 600_000);
 
+  it("シークレットリテラルの型は Secret で, 文字列としては使えず中身も読めない", async () => {
+    const parts = await loadSeedParts();
+    const { typeChecker, env } = compileSeedTypeChecker(parts);
+    const secret = {
+      Secret: {
+        id: "test-secret",
+        label: "テスト",
+        allowed_url_prefixes: ["https://example.com/"],
+      },
+    };
+    const outcomes = checkParts({
+      typeChecker,
+      parts: [
+        { partType: "secret", expression: secret },
+        // 文字列として使えない
+        { partType: "string", expression: secret },
+        // 中身 (id) は読めない
+        {
+          partType: "string",
+          expression: { RecordGet: { record: secret, key: "id" } },
+        },
+        // 文字列はシークレットにならない
+        { partType: "secret", expression: { String: { value: "token" } } },
+      ],
+      env,
+    });
+    expect(outcomes.map((outcome) => outcome.kind)).toEqual([
+      "ok",
+      "type_error",
+      "type_error",
+      "type_error",
+    ]);
+    expect(formatTypeAst({ tag: "secret", payload: null })).toBe("Secret");
+  }, 600_000);
+
   it("未入力 (probe) の位置で期待する型を返す", async () => {
     const parts = await loadSeedParts();
     const { typeChecker, env } = compileSeedTypeChecker(parts);

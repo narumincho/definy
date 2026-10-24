@@ -11,7 +11,7 @@
       "text": "WASI 0.3 能力インターフェース (時計・乱数・I/O) と能力注入基盤"
     }
   ],
-  "message": "HTTP クライアント (wasi:http/outgoing-handler 相当)・パーツの読み込み・環境変数を使う I/O の型 wasi.io を足す",
+  "message": "環境変数 (get_environment) をやめ, HTTP リクエストの secret_headers でシークレットを送れるようにする",
   "parts": [
     {
       "name": "wasi.datetime",
@@ -466,11 +466,11 @@
       "description": [
         {
           "language": "en",
-          "text": "HTTP request to send, like wasi:http/types.outgoing-request (method, absolute URL, headers, body bytes)"
+          "text": "HTTP request to send, like wasi:http/types.outgoing-request (method, absolute URL, headers, body bytes). secret_headers are headers whose value is prefix followed by the value of the secret: the host puts the value just before sending, only to the URLs the user allowed for the secret, so the program never sees it"
         },
         {
           "language": "ja",
-          "text": "送る HTTP リクエスト. wasi:http/types の outgoing-request に相当する (メソッド, 絶対 URL, ヘッダー, 本文のバイト列)"
+          "text": "送る HTTP リクエスト. wasi:http/types の outgoing-request に相当する (メソッド, 絶対 URL, ヘッダー, 本文のバイト列). secret_headers は値が prefix とシークレットの値をつなげたヘッダー. 値はホストが送信の直前に入れ, そのシークレットに利用者が許可した URL にだけ送るので, プログラムからは値が見えない"
         }
       ],
       "expression": {
@@ -498,6 +498,31 @@
                         {
                           "key": "value",
                           "value": "TypeString"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "key": "secret_headers",
+              "value": {
+                "TypeList": {
+                  "item_type": {
+                    "TypeLiteral": {
+                      "items": [
+                        {
+                          "key": "name",
+                          "value": "TypeString"
+                        },
+                        {
+                          "key": "prefix",
+                          "value": "TypeString"
+                        },
+                        {
+                          "key": "secret",
+                          "value": "TypeSecret"
                         }
                       ]
                     }
@@ -614,11 +639,11 @@
       "description": [
         {
           "language": "en",
-          "text": "A program that does I/O through the host, step by step: done(message) ends it, outgoing_request sends an HTTP request with the host fetch (wasi:http/outgoing-handler.handle) and continues with then(result), get_parts reads the latest expressions of the parts with the ids from the definy the runner uses (to compile quoted code, see core.code), get_environment reads the environment variables the runner set (wasi:cli/environment.get-environment)"
+          "text": "A program that does I/O through the host, step by step: done(message) ends it, outgoing_request sends an HTTP request with the host fetch (wasi:http/outgoing-handler.handle) and continues with then(result), get_parts reads the latest expressions of the parts with the ids from the definy the runner uses (to compile quoted code, see core.code). Secrets such as API tokens are not read here: put them in secret_headers of the request"
         },
         {
           "language": "ja",
-          "text": "ホストを通して 1 歩ずつ I/O をするプログラム. done(message) で終わり, outgoing_request はホストの fetch で HTTP リクエストを送って (wasi:http/outgoing-handler の handle) 結果を then に渡して続け, get_parts は実行している definy からその id のパーツの最新の式を読み (quote したコードをコンパイルするため. core.code を参照), get_environment は実行する人が設定した環境変数を読む (wasi:cli/environment の get-environment)"
+          "text": "ホストを通して 1 歩ずつ I/O をするプログラム. done(message) で終わり, outgoing_request はホストの fetch で HTTP リクエストを送って (wasi:http/outgoing-handler の handle) 結果を then に渡して続け, get_parts は実行している definy からその id のパーツの最新の式を読む (quote したコードをコンパイルするため. core.code を参照). API トークンなどのシークレットはここで読まず, リクエストの secret_headers に入れる"
         }
       ],
       "expression": {
@@ -711,52 +736,6 @@
                                               }
                                             }
                                           }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          ],
-                          "return_type": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "wasi.io"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "tag": "get_environment",
-              "payload_type": {
-                "TypeLiteral": {
-                  "items": [
-                    {
-                      "key": "then",
-                      "value": {
-                        "TypeFunction": {
-                          "parameters": [
-                            {
-                              "name": "environment",
-                              "type": {
-                                "TypeList": {
-                                  "item_type": {
-                                    "TypeLiteral": {
-                                      "items": [
-                                        {
-                                          "key": "name",
-                                          "value": "TypeString"
-                                        },
-                                        {
-                                          "key": "value",
-                                          "value": "TypeString"
                                         }
                                       ]
                                     }

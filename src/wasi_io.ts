@@ -1,11 +1,12 @@
 /**
  * `wasi.io` の値を返す式 (I/O をするプログラム) を, ホスト (ブラウザ / Node.js) の上で 1 歩ずつ動かす.
- * プログラムは純粋なままで, I/O の要求 (`outgoing_request` / `get_environment`) を値として返し,
+ * プログラムは純粋なままで, I/O の要求 (`outgoing_request` / `get_parts`) を値として返し,
  * ホストがその I/O をして結果を `then` の関数に渡す. `done(message)` を返したら終わり.
  *
  * - `outgoing_request` は wasi:http/outgoing-handler の `handle` に相当し, ホストの `fetch` で送る
  * - `get_parts` は実行している definy からパーツの最新の式を読む (quote したコード `core.code` をコンパイルするため)
- * - `get_environment` は wasi:cli/environment の `get-environment` に相当する
+ * - API トークンなどのシークレットはプログラムに渡さず, リクエストの `secret_headers` にある
+ *   シークレット (`Secret` 型の値 `{ id, label }`) の値をホストが送信の直前に入れる (docs/secret.md)
  *
  * 詳細は docs/wasi-io.md
  */
@@ -30,12 +31,32 @@ export type WasiHttpHeader = {
   readonly value: string;
 };
 
-/** `wasi.outgoing-request` */
+/** `wasi.outgoing-request` (`secret_headers` はホストが値を入れて `headers` に足したあとのもの) */
 export type WasiOutgoingRequest = {
   readonly method: string;
   readonly url: string;
   readonly headers: ReadonlyArray<WasiHttpHeader>;
   readonly body: Uint8Array;
+};
+
+/** `Secret` 型の値. 実際の値は持たない */
+export type WasiSecretReference = {
+  readonly id: string;
+  readonly label: string;
+};
+
+/** 利用者が入れたシークレットの値と, 送ってよい URL の先頭 */
+export type WasiSecretValue = {
+  readonly value: string;
+  readonly allowedUrlPrefixes: ReadonlyArray<string>;
+};
+
+/** シークレットを使った (使おうとした) 記録 */
+export type WasiSecretUse = {
+  readonly secret: WasiSecretReference;
+  readonly url: string;
+  /** 値を入れて送ったか. 値が無い・宛先が許可されていないときは false */
+  readonly sent: boolean;
 };
 
 /** `wasi.incoming-response` */
@@ -57,32 +78,35 @@ export type WasiIoHost = {
    * 見つからない・式を持たないパーツは `undefined`
    */
   readonly getPart: (id: string) => unknown;
-  /** `get_environment` で渡す環境変数 */
-  readonly environment: ReadonlyArray<WasiHttpHeader>;
+  /** シークレットの値. 利用者が入れていなければ `undefined` */
+  readonly getSecret: (id: string) => WasiSecretValue | undefined;
+  /** シークレットを使った (使おうとした) ときに呼ぶ (使用履歴のため) */
+  readonly onSecretUse?: (use: WasiSecretUse) => void;
   /** I/O をするたびに呼ぶ (画面に経過を出すため) */
   readonly onStep?: (step: WasiIoStep) => void;
 };
 
-/** プログラムがした I/O の記録. 環境変数の値は記録しない (トークンなどが入るため) */
+/** プログラムがした I/O の記録. シークレットは名前だけで値は記録しない */
 export type WasiIoStep =
   | {
       readonly kind: "outgoing_request";
       readonly method: string;
       readonly url: string;
       readonly bodyBytes: number;
+      /** 値を入れたシークレットの名前 */
+      readonly secrets: ReadonlyArray<string>;
       readonly result: { readonly status: number } | { readonly error: string };
     }
   | {
       readonly kind: "get_parts";
       readonly found: number;
       readonly missing: ReadonlyArray<string>;
-    }
-  | { readonly kind: "get_environment"; readonly names: ReadonlyArray<string> };
+    };
 
 /** これだけ I/O をしても終わらなければ止める */
 const MAX_STEPS = 1000;
 
-/** `wasi.io` の値か (タグが `done` / `outgoing_request` / `get_environment` の Variant か) */
+/** `wasi.io` の値か (タグが `done` / `outgoing_request` / `get_parts` の Variant か) */
 export function isWasiIoValue(value: DefinyValue): boolean {
   return (
     value !== null &&
@@ -92,8 +116,7 @@ export function isWasiIoValue(value: DefinyValue): boolean {
     "payload" in value &&
     (value.tag === "done" ||
       value.tag === "outgoing_request" ||
-      value.tag === "get_parts" ||
-      value.tag === "get_environment")
+      value.tag === "get_parts")
   );
 }
 
@@ -129,11 +152,21 @@ export function httpResultLiteral(result: WasiHttpResult): unknown {
   );
 }
 
-function readOutgoingRequest(value: DefinyValue): WasiOutgoingRequest {
+type SecretHeader = {
+  readonly name: string;
+  readonly prefix: string;
+  readonly secret: WasiSecretReference;
+};
+
+function readOutgoingRequest(value: DefinyValue): {
+  readonly request: WasiOutgoingRequest;
+  readonly secretHeaders: ReadonlyArray<SecretHeader>;
+} {
   const record = value as {
     readonly method?: unknown;
     readonly url?: unknown;
     readonly headers?: unknown;
+    readonly secret_headers?: unknown;
     readonly body?: unknown;
   };
   const headers = Array.isArray(record.headers)
@@ -142,18 +175,73 @@ function readOutgoingRequest(value: DefinyValue): WasiOutgoingRequest {
         readonly value?: unknown;
       }>)
     : [];
+  const secretHeaders = Array.isArray(record.secret_headers)
+    ? (record.secret_headers as ReadonlyArray<{
+        readonly name?: unknown;
+        readonly prefix?: unknown;
+        readonly secret?: { readonly id?: unknown; readonly label?: unknown };
+      }>)
+    : [];
   return {
-    method: String(record.method ?? "GET"),
-    url: String(record.url ?? ""),
-    headers: headers.map((header) => ({
+    request: {
+      method: String(record.method ?? "GET"),
+      url: String(record.url ?? ""),
+      headers: headers.map((header) => ({
+        name: String(header.name ?? ""),
+        value: String(header.value ?? ""),
+      })),
+      body: Uint8Array.from(
+        Array.isArray(record.body)
+          ? (record.body as ReadonlyArray<number>)
+          : [],
+        (byte) => Number(byte) & 0xff,
+      ),
+    },
+    secretHeaders: secretHeaders.map((header) => ({
       name: String(header.name ?? ""),
-      value: String(header.value ?? ""),
+      prefix: String(header.prefix ?? ""),
+      secret: {
+        id: String(header.secret?.id ?? ""),
+        label: String(header.secret?.label ?? ""),
+      },
     })),
-    body: Uint8Array.from(
-      Array.isArray(record.body) ? (record.body as ReadonlyArray<number>) : [],
-      (byte) => Number(byte) & 0xff,
-    ),
   };
+}
+
+/**
+ * `secret_headers` のシークレットの値を入れたヘッダーを足す.
+ * 値が無い・宛先が許可されていないシークレットがあれば, 送らずにその理由を返す
+ */
+function withSecretHeaders(
+  request: WasiOutgoingRequest,
+  secretHeaders: ReadonlyArray<SecretHeader>,
+  host: WasiIoHost,
+): { readonly request: WasiOutgoingRequest } | { readonly error: string } {
+  const headers: WasiHttpHeader[] = [...request.headers];
+  for (const { name, prefix, secret } of secretHeaders) {
+    const stored = host.getSecret(secret.id);
+    if (stored === undefined) {
+      host.onSecretUse?.({ secret, url: request.url, sent: false });
+      return {
+        error: `シークレット「${secret.label}」の値が入っていません. そのシークレットのパーツのページで値を入れてください`,
+      };
+    }
+    if (
+      !stored.allowedUrlPrefixes.some(
+        (allowed) => allowed !== "" && request.url.startsWith(allowed),
+      )
+    ) {
+      host.onSecretUse?.({ secret, url: request.url, sent: false });
+      return {
+        error: `シークレット「${secret.label}」は ${request.url} に送れません (送ってよい宛先: ${stored.allowedUrlPrefixes.join(", ") || "なし"})`,
+      };
+    }
+    headers.push({ name, value: prefix + stored.value });
+  }
+  for (const { secret } of secretHeaders) {
+    host.onSecretUse?.({ secret, url: request.url, sent: true });
+  }
+  return { request: { ...request, headers } };
 }
 
 /** `core.expression` で表せる式か (型パーツの式などは表せないので渡さない) */
@@ -189,15 +277,20 @@ export async function runWasiIo(
         return String(instance.read(payload));
       }
       case "outgoing_request": {
-        const request = readOutgoingRequest(
+        const { request, secretHeaders } = readOutgoingRequest(
           instance.read(instance.recordField(payload, "request")),
         );
-        const result = await host.handle(request);
+        const prepared = withSecretHeaders(request, secretHeaders, host);
+        const result: WasiHttpResult =
+          "error" in prepared
+            ? { error: prepared.error }
+            : await host.handle(prepared.request);
         host.onStep?.({
           kind: "outgoing_request",
           method: request.method,
           url: request.url,
           bodyBytes: request.body.byteLength,
+          secrets: secretHeaders.map((header) => header.secret.label),
           result:
             "error" in result
               ? { error: result.error }
@@ -223,16 +316,6 @@ export async function runWasiIo(
         host.onStep?.({ kind: "get_parts", found: parts.length, missing });
         pointer = instance.callClosure(instance.recordField(payload, "then"), [
           instance.writeArgument(stage1PartsExpression(parts)),
-        ]);
-        break;
-      }
-      case "get_environment": {
-        host.onStep?.({
-          kind: "get_environment",
-          names: host.environment.map((entry) => entry.name),
-        });
-        pointer = instance.callClosure(instance.recordField(payload, "then"), [
-          instance.writeArgument(headersLiteral(host.environment)),
         ]);
         break;
       }

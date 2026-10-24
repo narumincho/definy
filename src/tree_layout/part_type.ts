@@ -8,6 +8,7 @@
  * | ----------------------------------------- | -------------------------------------------------------- |
  * | `"number"` / `"string"` / `"boolean"`     | `"TypeNumber"` / `"TypeString"` / `"TypeBoolean"`        |
  * | `"type"`                                  | `"TypeType"`                                             |
+ * | `"secret"`                                | `"TypeSecret"`                                           |
  * | `{ list: T }`                             | `{ TypeList: { item_type: T } }`                         |
  * | `{ code: T }`                             | `{ TypeCode: { value_type: T } }`                        |
  * | `{ function: { parameters, return_type }}` | `{ TypeFunction: { parameters: [{ name, type }], return_type } }` |
@@ -24,6 +25,7 @@ const SIMPLE_TYPES: ReadonlyArray<readonly [string, string]> = [
   ["string", "TypeString"],
   ["boolean", "TypeBoolean"],
   ["type", "TypeType"],
+  ["secret", "TypeSecret"],
 ];
 
 function asRecord(value: unknown): Record<string, unknown> | null {

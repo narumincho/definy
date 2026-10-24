@@ -174,7 +174,8 @@
           "enum": [
             "TypeNumber",
             "TypeString",
-            "TypeBoolean"
+            "TypeBoolean",
+            "TypeSecret"
           ]
         },
         {
@@ -390,6 +391,19 @@
           "properties": {
             "Quote": {
               "$ref": "#/definitions/QuoteExpression"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "シークレットリテラル. 型は Secret で, 値 (API トークンなど) はパーツに入れず, ブラウザにだけ保存して allowed_url_prefixes の宛先にだけ送る",
+          "type": "object",
+          "required": [
+            "Secret"
+          ],
+          "properties": {
+            "Secret": {
+              "$ref": "#/definitions/SecretExpression"
             }
           },
           "additionalProperties": false
@@ -663,7 +677,8 @@
             "number",
             "string",
             "boolean",
-            "type"
+            "type",
+            "secret"
           ]
         },
         {
@@ -1044,6 +1059,32 @@
           "$ref": "#/definitions/Expression"
         }
       }
+    },
+    "SecretExpression": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "allowed_url_prefixes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "シークレットを区別する ID. 作るときにランダムに決める"
+        },
+        "label": {
+          "type": "string",
+          "description": "値を入れるときに出す名前"
+        },
+        "allowed_url_prefixes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "値を送ってよい URL の先頭"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

@@ -34,9 +34,14 @@ Workers は definy の設計思想に最も適合するクラウド実行基盤�
 デプロイは definy で書いたパーツ `definy.deploy-to-cloudflare-workers` が **definy 製のコンパイラでコンパイルし,
 HTTP リクエストで** 行う。
 
+- API トークンはシークレット ([secret.md](secret.md)) で渡す。`definy.cloudflare-api-token` (送ってよい宛先は
+  `https://api.cloudflare.com/`) のページで値を入れる。トークンは Cloudflare の管理画面の「アカウント API トークン」で
+  Workers Scripts の編集権限を付けて作る。どのリクエストにも `Authorization: Bearer <トークン>` をホストが入れる
+
 ```text
 definy.deploy-to-cloudflare-workers(
   worker_name: string,
+  api_token: Secret,   -- Cloudflare のアカウント API トークン (definy.cloudflare-api-token など)
   handler: Code<fn(request: { method, url, headers }) => { status, headers, body }>,
 ) => wasi.io
 ```
@@ -45,8 +50,9 @@ definy.deploy-to-cloudflare-workers(
   レスポンスを返す関数」に制限している
 - 返り値は I/O をするプログラム (`wasi.io`, [wasi-io.md](wasi-io.md))。パーツ詳細画面で評価すると, その場で次の順に動く
 
-  1. `get_environment` で `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を読む (設定画面で書く)。無ければその旨を返して止まる
-  2. `get_parts` で handler が参照するパーツの式を読み, `core.compile-to-wasm` で Wasm にコンパイルする
+  1. `get_parts` で handler が参照するパーツの式を読み, (次の PUT で) `core.compile-to-wasm` で Wasm にコンパイルする
+  2. `GET /accounts` でトークンのアカウント ID を読む (最初の `"id"`)。アカウント ID は入力させない
+     (ユーザーには常にアカウント API トークンを使ってもらう方針)
   3. `PUT /accounts/{account}/workers/scripts/{worker_name}` に multipart (`metadata`, `worker.js`, `app.wasm`) で送る。
      `worker.js` はパーツ `definy.cloudflare-workers-runtime-script`, 本文は `definy.cloudflare-workers-script-upload-body`
   4. `POST .../subdomain` に `{"enabled":true}` を送って workers.dev を有効にする
@@ -93,7 +99,7 @@ D1 の `deployments` テーブルに残し, `/deployments` 画面で見ていた
 2. **Account ID の自動解決**:
    - Cloudflare API はほとんどのエンドポイントで `account_id`
      を要求しますが、`GET /accounts` を叩くことで API トークンに紐づくアカウント
-     ID を動的に解決可能です。今の `definy.deploy-to-cloudflare-workers` は環境変数 `CLOUDFLARE_ACCOUNT_ID` から読む。
+     ID を動的に解決可能です。今の `definy.deploy-to-cloudflare-workers` もこれでアカウント ID を読む。
 3. **`workers.dev` サブドメインの有効化と URL 導出**:
    - スクリプトをアップロードしただけでは `workers.dev`
      経由での外部アクセスが無効な場合があります。配備後に

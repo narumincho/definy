@@ -4,9 +4,7 @@ import { useDefiny } from "../src/state.tsx";
 import type { LanguageCode } from "../src/types.ts";
 import { submitInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import {
-  formatEnvironmentText,
   loadWasiIoSettings,
-  parseEnvironmentText,
   saveWasiIoSettings,
 } from "../src/wasi_io_browser.ts";
 
@@ -24,9 +22,6 @@ export default function SettingsPage(): JSX.Element {
   const [ipVersion, setIpVersion] = useState<string | null>(null);
   // wasi.io のプログラム (definy.deploy-to-cloudflare-workers など) を動かすときの設定
   const [wasiIoSettings, setWasiIoSettings] = useState(loadWasiIoSettings);
-  const [environmentText, setEnvironmentText] = useState(() =>
-    formatEnvironmentText(wasiIoSettings.environment),
-  );
 
   // サーバーから見た接続元が IPv4 / IPv6 のどちらか (`/healthz` の `ipVersion`)
   useEffect(() => {
@@ -135,28 +130,11 @@ export default function SettingsPage(): JSX.Element {
         <p className="text-muted" style={{ margin: 0, fontSize: "0.88rem" }}>
           {label(
             language,
-            "Environment variables passed to programs that evaluate to wasi.io (one NAME=value per line). For example, definy.deploy-to-cloudflare-workers reads CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID. They are saved only in this browser.",
-            "評価結果が wasi.io のプログラムに渡す環境変数 (1 行に NAME=value). たとえば definy.deploy-to-cloudflare-workers は CLOUDFLARE_API_TOKEN と CLOUDFLARE_ACCOUNT_ID を読みます. このブラウザにだけ保存します.",
-            "Mediaj variabloj donataj al programoj, kies rezulto estas wasi.io (po unu NAME=value en linio). Ekzemple definy.deploy-to-cloudflare-workers legas CLOUDFLARE_API_TOKEN kaj CLOUDFLARE_ACCOUNT_ID. Ili estas konservataj nur en ĉi tiu retumilo.",
+            "API tokens and other secrets are entered on the page of each secret part (for example definy.cloudflare-api-token) and saved only in this browser.",
+            "API トークンなどのシークレットは, シークレットのパーツ (definy.cloudflare-api-token など) のページで値を入れます. 値はこのブラウザにだけ保存します.",
+            "API-ĵetonoj kaj aliaj sekretoj estas enigataj en la paĝo de ĉiu sekreta parto (ekzemple definy.cloudflare-api-token) kaj konservataj nur en ĉi tiu retumilo.",
           )}
         </p>
-        <textarea
-          className="input"
-          rows={4}
-          spellCheck={false}
-          style={{ fontFamily: "var(--font-mono, monospace)", width: "100%" }}
-          placeholder={"CLOUDFLARE_API_TOKEN=...\nCLOUDFLARE_ACCOUNT_ID=..."}
-          value={environmentText}
-          onChange={(e) => {
-            setEnvironmentText(e.target.value);
-            const next = {
-              ...wasiIoSettings,
-              environment: parseEnvironmentText(e.target.value),
-            };
-            setWasiIoSettings(next);
-            saveWasiIoSettings(next);
-          }}
-        />
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <input
             type="checkbox"

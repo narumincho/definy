@@ -144,6 +144,21 @@ export function tryBuildLiteralNode(
     };
   }
 
+  // シークレットリテラル. 値は持たないので名前だけ出す (値・送ってよい宛先はパーツのページで設定する)
+  if ("Secret" in node) {
+    const secret = node.Secret as { readonly label?: unknown } | null;
+    return {
+      id: idPrefix,
+      path: currentPath,
+      label: `secret ${String(secret?.label ?? "")}`,
+      kind: "keyword",
+      children: [],
+      computedWidth: 0,
+      computedHeight: 0,
+      layoutMode: "inline",
+    };
+  }
+
   if ("Hole" in node) {
     return {
       id: idPrefix,
