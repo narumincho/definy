@@ -1,4 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator } from "@playwright/test";
+
+/**
+ * 関数 `functionName` を呼び出す式のカプセル.
+ * 呼び出しには見出しのバッジが無いので, 呼び出す関数 (ID が `.fn` で終わるノード) を含むいちばん内側のカプセルを探す
+ */
+function callCapsule(tree: Locator, functionName: string): Locator {
+  return tree
+    .locator(".tree-capsule", {
+      has: tree.page().locator('[data-node-id$=".fn"]', {
+        hasText: new RegExp(`^${functionName.replaceAll(".", "\\.")}$`),
+      }),
+    })
+    .last();
+}
+
+/** 呼び出しのカプセルの左端 (子のノードの外側) をクリックして, 呼び出しそのものを選ぶ */
+async function clickCallCapsule(capsule: Locator): Promise<void> {
+  await capsule.click({ position: { x: 3, y: 8 } });
+}
 
 test.describe("definy UI E2E", () => {
   test("events timeline loads events and allows filtering", async ({
@@ -142,9 +161,8 @@ test.describe("definy UI E2E", () => {
     await expect(valueTree).toBeVisible({ timeout: 15000 });
 
     // core.minus(left: 0, right: x) の呼び出し (数値の位置) を選ぶと, 型が合わない選択肢の区切りが出る
-    // (期待する型が number と分かる). 1 つ目の呼び出しは match の対象の core.less-than
-    const subtract = valueTree.locator(".tree-badge", { hasText: /^call$/ });
-    await subtract.nth(1).click();
+    // (期待する型が number と分かる)
+    await clickCallCapsule(callCapsule(valueTree, "core.minus"));
     // 検索欄には今の式の名前が入っているので, 空にして全ての選択肢を出す
     await page.locator(".dropdown-search-input").fill("");
     await expect(
@@ -183,10 +201,9 @@ test.describe("definy UI E2E", () => {
     const card = page.locator(".tree-hover-card");
 
     // パーツの呼び出しは, 呼び出すパーツの名前・説明と, 呼び出しの結果の型
-    await valueTree
-      .locator(".tree-badge", { hasText: /^call$/ })
-      .nth(1)
-      .hover();
+    await callCapsule(valueTree, "core.minus").hover({
+      position: { x: 3, y: 8 },
+    });
     await expect(card).toContainText("core.minus", { timeout: 15000 });
     await expect(card).toContainText("数値の減算");
     await expect(card.locator(".tree-hover-card-type")).toContainText("number");

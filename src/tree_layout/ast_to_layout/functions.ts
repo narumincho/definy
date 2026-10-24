@@ -214,10 +214,12 @@ export function tryBuildFunctionNode(
       };
     });
 
+    // 見出しは出さない. 呼び出す関数と引数の並びで呼び出しだと分かる.
+    // 呼び出し自体はカプセルの枠をクリック・ホバーして選ぶ
     return {
       id: idPrefix,
       path: currentPath,
-      label: "call",
+      label: "",
       kind: "group",
       children: [fnChild, ...argChildren],
       computedWidth: 0,
