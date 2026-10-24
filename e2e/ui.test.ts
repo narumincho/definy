@@ -32,14 +32,11 @@ test.describe("definy UI E2E", () => {
     const totalEvents = await eventCards.count();
     expect(totalEvents).toBeGreaterThanOrEqual(1);
 
-    // イベントの種類のバッジに module_commit または create_account が含まれることを検証
+    // イベントの種類 (data-event-type) が module_commit または create_account であることを検証
     // (seed の署名が不正なサンプルには「署名が不正」のバッジも付く)
-    const firstBadge = eventCards
-      .first()
-      .locator(".badge:not(.badge-invalid-signature)");
-    await expect(firstBadge).toBeVisible();
-    const badgeText = await firstBadge.textContent();
-    expect(["module_commit", "create_account"]).toContain(badgeText?.trim());
+    await expect(eventCards.first().locator(".event-type")).toBeVisible();
+    const firstType = await eventCards.first().getAttribute("data-event-type");
+    expect(["module_commit", "create_account"]).toContain(firstType);
 
     // フィルターチップの動作検証: アカウント作成 (create_account) フィルター
     const accountsChip = page
@@ -51,10 +48,10 @@ test.describe("definy UI E2E", () => {
 
       const filteredCount = await eventCards.count();
       expect(filteredCount).toBeGreaterThanOrEqual(1);
-      const filteredBadge = eventCards
-        .first()
-        .locator(".badge:not(.badge-invalid-signature)");
-      await expect(filteredBadge).toHaveText("create_account");
+      await expect(eventCards.first()).toHaveAttribute(
+        "data-event-type",
+        "create_account",
+      );
 
       // 「すべて」フィルターで全件に戻ることを確認
       const allChip = page

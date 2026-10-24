@@ -19,7 +19,7 @@ import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
 import type { DefinyValue } from "./stage1_compiler.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState } from "./state/useUiState.ts";
-import { useEvents } from "./state/useEvents.ts";
+import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
 import { useAccount } from "./state/useAccount.ts";
 import {
   useWorkingChanges,
@@ -44,6 +44,8 @@ export type DefinyContextValue = {
    */
   readonly partsByIdHash: ReadonlyMap<string, PartSnapshot>;
   readonly accountNames: ReadonlyMap<string, string>;
+  /** 署名の正しいモジュールコミットのイベントと, デコードした中身 */
+  readonly decodedCommits: ReadonlyArray<DecodedCommitEvent>;
   readonly workingChanges: WorkingChanges;
   readonly updateWorkingPart: (partId: string, change: PartChange) => void;
   readonly discardWorkingPart: (partId: string) => void;
@@ -147,6 +149,7 @@ export function DefinyProvider({
       partNames: events.partNames,
       partsByIdHash: events.partsByIdHash,
       accountNames: events.accountNames,
+      decodedCommits: events.decodedCommits,
       workingChanges: working.workingChanges,
       updateWorkingPart: working.updateWorkingPart,
       discardWorkingPart: working.discardWorkingPart,
@@ -188,6 +191,7 @@ export function DefinyProvider({
       events.partNames,
       events.partsByIdHash,
       events.accountNames,
+      events.decodedCommits,
       events.connectionStatus,
       account.currentAccount,
       account.setCurrentAccount,
