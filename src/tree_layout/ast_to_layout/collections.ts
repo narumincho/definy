@@ -157,30 +157,5 @@ export function tryBuildCollectionNode(
     };
   }
 
-  if ("Constructor" in node) {
-    const ctorNode = node.Constructor as {
-      type_part_definition_event_hash?: unknown;
-      value?: unknown;
-    };
-    const hashStr = String(ctorNode.type_part_definition_event_hash ?? "");
-    const label = `new:${hashStr.slice(0, 6)}`;
-    const child = buildLayoutNode(
-      ctorNode.value,
-      `${idPrefix}.val`,
-      childPath(currentPath, "constructorValue"),
-      context,
-    );
-    return {
-      id: idPrefix,
-      path: currentPath,
-      label,
-      kind: "group",
-      children: [child],
-      computedWidth: 0,
-      computedHeight: 0,
-      layoutMode: "inline",
-    };
-  }
-
   return null;
 }

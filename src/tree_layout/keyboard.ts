@@ -213,6 +213,7 @@ export const TREE_INTERCEPT_KEYS: ReadonlySet<string> = new Set([
   "Escape",
   "Delete",
   "Backspace",
+  "F12",
 ]);
 
 export function isTextInput(target: EventTarget | null): boolean {

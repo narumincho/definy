@@ -317,10 +317,13 @@ export function buildSelectorOptions({
   mode,
   scopeVariables,
   partOptions,
+  variantOptions = [],
 }: {
   readonly mode: "expression" | "type";
   readonly scopeVariables?: ReadonlyMap<number, string> | undefined;
   readonly partOptions: ReadonlyArray<SelectorOption>;
+  /** Variant (タグ付きの値) の選択肢. 構文の後, パーツの前に並べる */
+  readonly variantOptions?: ReadonlyArray<SelectorOption>;
 }): ReadonlyArray<SelectorOption> {
   if (mode === "type") {
     return [...TYPE_SELECTOR_OPTIONS, ...partOptions];
@@ -328,6 +331,7 @@ export function buildSelectorOptions({
   return [
     ...variableSelectorOptions(scopeVariables ?? new Map()),
     ...BASE_SELECTOR_OPTIONS,
+    ...variantOptions,
     ...partOptions,
   ];
 }

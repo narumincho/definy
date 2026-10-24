@@ -3,11 +3,9 @@ import type { PartSnapshot } from "../types.ts";
 import type { LayoutNode, PathStep } from "./types.ts";
 import type { ExpectedType } from "./type_inference.ts";
 import { findExpressionNode } from "./selection.ts";
-import { functionParameterIndex } from "./mutation.ts";
 import {
   currentPatternOptionValue,
   isMatchPatternPath,
-  matchArmVariableIndex,
   patternSelectorOptions,
   type PatternVariant,
 } from "./match_pattern.ts";
@@ -22,6 +20,16 @@ import {
   type Highlight,
   type SelectorOption,
 } from "./selector_options.ts";
+import { goToDefinitionOption, isVariableNamePath } from "./local_variable.ts";
+import { listItemSelectorOptions } from "./list_items.ts";
+import { letBindingSelectorOptions } from "./let_bindings.ts";
+import {
+  typePartVariantOptions,
+  unionVariantOptions,
+  type expectedVariantsFromTypeAst,
+} from "./variant.ts";
+
+type ExpectedVariants = ReturnType<typeof expectedVariantsFromTypeAst>;
 
 export type UseSelectorMenuParams = {
   readonly mode: "expression" | "type";
@@ -34,6 +42,8 @@ export type UseSelectorMenuParams = {
   readonly expectedType: ExpectedType;
   /** 選んだ match のアームのパターンで選べるタグ (match の対象の型のタグ). 分からなければ `null` */
   readonly patternVariants: ReadonlyArray<PatternVariant> | null;
+  /** 選んだ位置で期待する型から求めた Variant の選択肢の情報 ({@link expectedVariantsFromTypeAst}) */
+  readonly expectedVariants: ExpectedVariants;
   readonly setSelectedPath: (path: ReadonlyArray<PathStep> | null) => void;
   readonly setInlineEdit: (inline: boolean) => void;
 };
@@ -68,6 +78,7 @@ export function useSelectorMenu({
   partNames,
   expectedType,
   patternVariants,
+  expectedVariants,
   setSelectedPath,
   setInlineEdit,
 }: UseSelectorMenuParams): SelectorMenuState {
@@ -85,6 +96,17 @@ export function useSelectorMenu({
     [parts, mode],
   );
 
+  const variantOptions = useMemo(
+    () =>
+      mode === "type"
+        ? []
+        : [
+            ...unionVariantOptions(expectedVariants.unionVariants),
+            ...typePartVariantOptions(parts, expectedVariants.typePartIdHash),
+          ],
+    [expectedVariants, mode, parts],
+  );
+
   const selectorOptionsAt = useCallback(
     (path: ReadonlyArray<PathStep>): ReadonlyArray<SelectorOption> => {
       if (isMatchPatternPath(path)) {
@@ -98,9 +120,31 @@ export function useSelectorMenu({
         layoutRoot,
         path,
       )?.scopeVariables;
-      return buildSelectorOptions({ mode, scopeVariables, partOptions });
+      const options = buildSelectorOptions({
+        mode,
+        scopeVariables,
+        partOptions,
+        variantOptions,
+      });
+      if (mode === "type") {
+        return options;
+      }
+      // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す
+      return [
+        ...goToDefinitionOption(expression, path),
+        ...listItemSelectorOptions(expression, path),
+        ...letBindingSelectorOptions(expression, path),
+        ...options,
+      ];
     },
-    [expression, layoutRoot, mode, partOptions, patternVariants],
+    [
+      expression,
+      layoutRoot,
+      mode,
+      partOptions,
+      patternVariants,
+      variantOptions,
+    ],
   );
 
   const currentOptionValueAt = useCallback(
@@ -140,12 +184,8 @@ export function useSelectorMenu({
     ): void => {
       setSelectedPath(path);
       setInlineEdit(true);
-      // 関数の引数名・match で束縛する変数の名前はその場で名前を変えるだけで, 置き換える式の選択肢は無い
-      if (
-        !editable ||
-        functionParameterIndex(path) !== null ||
-        matchArmVariableIndex(path) !== null
-      ) {
+      // 関数の引数名・let や match で束縛する変数の名前はその場で名前を変えるだけで, 置き換える式の選択肢は無い
+      if (!editable || isVariableNamePath(path)) {
         setIsMenuOpen(false);
         return;
       }

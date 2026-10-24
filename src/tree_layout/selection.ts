@@ -1,5 +1,6 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { base64ToBytes } from "../cbor.ts";
+import { variantFromOptionValue } from "./variant.ts";
 import { updateExpressionAtPath } from "./path.ts";
 import {
   BUILTIN_PARAMETERS,
@@ -315,6 +316,10 @@ export function applySelection(
         else_expr: { Number: { value: 0 } },
       },
     };
+  } else if (selectionValue.startsWith("variant:")) {
+    return updateExpressionAtPath(expr, path, (current) =>
+      variantFromOptionValue(selectionValue, current),
+    );
   } else if (selectionValue.startsWith("ref:local:")) {
     const varId = Number(selectionValue.replace("ref:local:", ""));
     // 関数型の変数は値として書けないので, 引数名を入れた呼び出しにする

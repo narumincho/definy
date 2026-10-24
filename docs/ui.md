@@ -169,6 +169,38 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
 - 構文の候補として `let` (式全体で使われていない変数 ID で `x = 0` の束縛を作り, 本体はその変数) と
   `match (true / false)` を出す
 - パーツの候補には型 (`number`, `function → number` など) を名前の横に出す
+- 式を置き換える選択肢より先に, その位置でできる操作の選択肢を出す (下の「式エディタの操作」)
+
+### 式エディタの操作
+
+置換メニューで式を置き換える以外の操作. 式を置き換える選択肢と同じく置換メニューに出し, 検索もできる
+(match のアームの追加・削除と同じやり方). 操作の後はツリーにフォーカスを戻し, 操作した位置を選ぶ.
+
+- 変数の名前の変更: 関数の引数名・let の変数名・match で束縛する変数の名前を選ぶと, その場で名前を変える入力欄になる
+  (置換メニューは出さない). 変数は ID で参照しているので, 名前だけを変えれば参照する側の式は変えなくてよい.
+  let の変数名は束縛の値とは別のパス `letBindingName` (式ではない) にしている.
+  実装は [src/tree_layout/local_variable.ts](../src/tree_layout/local_variable.ts) の `renameVariableAt`
+- 定義への移動: 変数 (と関数型の変数の呼び出し) を選んだときの `go-to-definition`, またはツリーで F12.
+  その変数を定義している名前 (関数の引数名・let の変数名・match で束縛する変数の名前) を選ぶ.
+  定義はルートから選んだ式までのパスを降りながら集め (`findVariableDefinitionPath`), 内側の定義が外側の同じ ID を隠す.
+  let の束縛の値からはそれより前の束縛だけが見える. 定義が式の外 (未定義の変数) なら選択肢を出さない
+- リストの要素の操作 ([src/tree_layout/list_items.ts](../src/tree_layout/list_items.ts)):
+  リスト (`ListLiteral`) を選ぶと `add-item` (末尾に未入力の要素を足す), 要素を選ぶと
+  `insert-item-before` / `insert-item-after` / `move-item-earlier` / `move-item-later` / `delete-item`.
+  足した要素・動かした要素を選び, 消したときは同じ位置の次の要素 (末尾なら前の要素, 空になればリスト) を選ぶ
+- let の束縛の操作 ([src/tree_layout/let_bindings.ts](../src/tree_layout/let_bindings.ts)):
+  let を選ぶと `add-binding` (末尾に足す), 束縛の値を選ぶと `insert-binding-before` / `insert-binding-after` /
+  `move-binding-earlier` / `move-binding-later` / `delete-binding`. 新しい束縛は式全体で使われていない変数 ID
+  (`nextVariableId`) と名前 (`x`, `x1`, ...) にし, 値を未入力にしてその値を選ぶ. 最後の束縛を消すと let をやめて本体だけにする.
+  消した変数を参照している式・前へ動かして見えなくなった変数は, 型チェッカーが型エラーにする
+- Variant (タグ付きの値) の作成 ([src/tree_layout/variant.ts](../src/tree_layout/variant.ts)):
+  直和型の型パーツ (式が `TypeUnion` の型パーツ) のタグを `sample.option-number.some` のような名前の選択肢に出す
+  (`some` と打てば見つかる). 選ぶと型パーツを指定した Variant (`type_part_definition_event_hash`) にし,
+  値を持つタグなら値を未入力にする. 値を持つタグ同士で変えると値を引き継ぐ.
+  期待する型が型パーツならそのタグを先に並べ, 型パーツでない直和型ならそのタグ (型パーツなし) も出す.
+  関数リテラルは選択肢に出さない (期待する型が関数なら関数リテラルにする方針)
+- 型パーツの値を作る式は型パーツを指定した Variant だけにした. 以前あった `Constructor` (`new:型パーツ(値)`) は
+  definy 製の型チェッカー・コンパイラ・評価器のどれも扱えなかったので AST から消した (2026-10-24)
 
 ### 式のホバー表示
 

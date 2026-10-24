@@ -300,6 +300,156 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
   });
 
+  test("expression tree editor renames let variables and goes to the definition of a variable", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.triangle-area");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const badge = (text: string) =>
+      valueTree.locator(".tree-badge", { hasText: new RegExp(`^${text}$`) });
+    const selected = valueTree.locator('.tree-badge[data-state="selected"]');
+
+    // let の変数名 base を選ぶとその場で名前を変えられ, 本体の変数の表示も変わる
+    await badge("base").first().click();
+    const input = valueTree.locator(".tree-badge input[type=text]");
+    await expect(input).toBeVisible();
+    await input.fill("width");
+    await expect(badge("width")).toHaveCount(1);
+    await page.keyboard.press("Escape");
+
+    // 本体の変数 width のメニューの go-to-definition で, let の変数名へ移動する
+    await badge("width").last().click();
+    await page
+      .locator(".dropdown-option", { hasText: /^go-to-definition/ })
+      .locator("button")
+      .click();
+    await expect(selected).toHaveText("width");
+
+    // F12 でも移動できる
+    await badge("height").last().click();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("F12");
+    await expect(selected).toHaveText("height");
+    await expect(badge("height")).toHaveCount(2);
+  });
+
+  test("expression tree editor adds, moves, and deletes list items", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.prime-numbers");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const items = async () =>
+      (await valueTree.locator(".tree-badge").allTextContents()).filter((t) =>
+        /^(\d+|□)$/.test(t),
+      );
+    const option = (name: string) =>
+      page
+        .locator(".dropdown-option", {
+          has: page.locator(".dropdown-option-name", {
+            hasText: new RegExp(`^${name}$`),
+          }),
+        })
+        .locator("button");
+
+    await expect.poll(items).toEqual(["2", "3", "5", "7", "11"]);
+    // 要素 5 を前へ動かす
+    await valueTree.locator(".tree-badge", { hasText: /^5$/ }).click();
+    await option("move-item-earlier").click();
+    await expect.poll(items).toEqual(["2", "5", "3", "7", "11"]);
+    // 動かした要素が選ばれたままなので, 続けて消せる
+    await expect(
+      valueTree.locator('.tree-badge[data-state="selected"]'),
+    ).toHaveText("5");
+    await valueTree.locator(".tree-badge", { hasText: /^5$/ }).click();
+    await option("delete-item").click();
+    await expect.poll(items).toEqual(["2", "3", "7", "11"]);
+    // 後ろに未入力の要素を足す
+    await valueTree.locator(".tree-badge", { hasText: /^11$/ }).click();
+    await option("insert-item-after").click();
+    await expect.poll(items).toEqual(["2", "3", "7", "11", "□"]);
+  });
+
+  test("expression tree editor creates variants of type parts", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.match-option-sample");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const badge = (text: string) =>
+      valueTree.locator(".tree-badge", { hasText: new RegExp(`^${text}$`) });
+    const option = (name: string) =>
+      page.locator(".dropdown-option", {
+        has: page.locator(".dropdown-option-name", {
+          hasText: new RegExp(`^${name.replaceAll(".", "\\.")}$`),
+        }),
+      });
+
+    // match の対象の Variant some(100) を選ぶと, 型パーツ sample.option-number のタグが選択肢に出る
+    await badge("some").click();
+    await expect(option("sample.option-number.some")).toHaveAttribute(
+      "data-current",
+      "true",
+    );
+    // 値を持たないタグにすると値が消える
+    await option("sample.option-number.none").locator("button").first().click();
+    await expect(badge("none")).toHaveCount(1);
+    await expect(badge("100")).toHaveCount(0);
+    // 値を持つタグにすると値が未入力になる
+    await badge("none").click();
+    await option("sample.option-number.some").locator("button").first().click();
+    await expect(badge("some")).toHaveCount(1);
+    await expect(badge("□")).toHaveCount(1);
+  });
+
+  test("expression tree editor adds, moves, and deletes let bindings", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.triangle-area");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const badge = (text: string) =>
+      valueTree.locator(".tree-badge", { hasText: new RegExp(`^${text}$`) });
+    const option = (name: string) =>
+      page
+        .locator(".dropdown-option", {
+          has: page.locator(".dropdown-option-name", {
+            hasText: new RegExp(`^${name}$`),
+          }),
+        })
+        .locator("button");
+    /** let の束縛の変数名 (`名前 = 値` の名前) を上から順に */
+    const bindingNames = async () =>
+      (
+        await valueTree
+          .locator('[data-node-id$=".name"] .tree-badge')
+          .allTextContents()
+      ).filter((name) => name.length > 0);
+
+    await expect.poll(bindingNames).toEqual(["base", "height"]);
+    // base = 10 の値から後ろに束縛を足す
+    await badge("10").click();
+    await option("insert-binding-after").click();
+    await expect.poll(bindingNames).toEqual(["base", "x", "height"]);
+    // 足した束縛の値 (未入力) から後ろへ動かす
+    await badge("□").click();
+    await option("move-binding-later").click();
+    await expect.poll(bindingNames).toEqual(["base", "height", "x"]);
+    // 消す
+    await badge("□").click();
+    await option("delete-binding").click();
+    await expect.poll(bindingNames).toEqual(["base", "height"]);
+  });
+
   test("icons have bounded and non-zero dimensions across views", async ({
     page,
   }) => {

@@ -117,21 +117,6 @@
         "shift_right"
       ]
     },
-    "ConstructorExpression": {
-      "type": "object",
-      "required": [
-        "type_part_definition_event_hash",
-        "value"
-      ],
-      "properties": {
-        "type_part_definition_event_hash": {
-          "$ref": "#/definitions/EventHashId"
-        },
-        "value": {
-          "$ref": "#/definitions/Expression"
-        }
-      }
-    },
     "ContentHash": {
       "type": "array",
       "items": {
@@ -308,18 +293,6 @@
           "properties": {
             "RecordGet": {
               "$ref": "#/definitions/RecordGetExpression"
-            }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
-          "required": [
-            "Constructor"
-          ],
-          "properties": {
-            "Constructor": {
-              "$ref": "#/definitions/ConstructorExpression"
             }
           },
           "additionalProperties": false
