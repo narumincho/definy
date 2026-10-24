@@ -7,6 +7,7 @@ import { getOptionValueForExpression } from "./type_inference.ts";
 import type { PartSnapshot } from "../types.ts";
 import type { PathStep } from "./types.ts";
 import { getExpressionAtPath } from "./mutation.ts";
+import { variantOptionValueByName } from "./variant.ts";
 
 export type SelectorOption = {
   readonly value: string;
@@ -358,11 +359,13 @@ export function resolveCurrentOptionValue({
     "TypeLiteral" in target
       ? "expr:type:record"
       : getOptionValueForExpression(target);
-  if (
-    value === null ||
-    !value.startsWith("ref:part:") ||
-    options.some((o) => o.value === value)
-  ) {
+  if (value === null || options.some((o) => o.value === value)) {
+    return value;
+  }
+  if (value.startsWith("variant:")) {
+    return variantOptionValueByName(value, options, partNames) ?? value;
+  }
+  if (!value.startsWith("ref:part:")) {
     return value;
   }
   // 参照しているパーツ ID が選択肢の ID と違う (別のアカウントのコミットなど) ときは名前で対応させる

@@ -77,7 +77,11 @@ export type ExpressionTypeError = {
 export type ExpressionTreeEditorProps = {
   readonly expression: unknown;
   readonly partType?: unknown;
-  readonly onChange?: (newExpression: unknown) => void;
+  /**
+   * 式を変えたとき. 数値・文字列・名前の入力欄で打った変更には, 元に戻す (Undo) の履歴で
+   * 1 つにまとめるためのキー `mergeKey` (入力欄のパスごと) を付ける
+   */
+  readonly onChange?: (newExpression: unknown, mergeKey?: string) => void;
   readonly editable?: boolean;
   readonly maxWidth?: number;
   /** ツリーの枠の要素 ID. 外側 (パーツ定義のツリーなど) からフォーカスを移すときに使う */
@@ -366,7 +370,10 @@ export function ExpressionTreeEditor({
   const handleChangeNumber = useCallback(
     (path: ReadonlyArray<PathStep>, value: number) => {
       if (!onChange) return;
-      onChange(setNumberValue(expression, path, value));
+      onChange(
+        setNumberValue(expression, path, value),
+        `text:${pathToString(path)}`,
+      );
     },
     [expression, onChange],
   );
@@ -379,6 +386,7 @@ export function ExpressionTreeEditor({
         isVariableNamePath(path)
           ? renameVariableAt(expression, path, value)
           : setStringValue(expression, path, value),
+        `text:${pathToString(path)}`,
       );
     },
     [expression, onChange],

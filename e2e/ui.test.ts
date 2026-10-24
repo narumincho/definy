@@ -107,7 +107,9 @@ test.describe("definy UI E2E", () => {
     await expect(breadcrumb).toHaveText("triangle-area");
 
     // 「式を評価」ボタンをクリックして評価を実行
-    const evalButton = page.locator(".part-actions button");
+    const evalButton = page.locator(".part-actions button", {
+      hasText: /Evaluate Expression|式を評価|Taksi esprimon/,
+    });
     await expect(evalButton).toBeVisible();
     await evalButton.click();
 
@@ -448,6 +450,64 @@ test.describe("definy UI E2E", () => {
     await badge("□").click();
     await option("delete-binding").click();
     await expect.poll(bindingNames).toEqual(["base", "height"]);
+  });
+
+  test("part detail undoes and redoes edits with buttons and shortcuts", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.prime-numbers");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const items = async () =>
+      (await valueTree.locator(".tree-badge").allTextContents()).filter((t) =>
+        /^(\d+|□)$/.test(t),
+      );
+    const undoButton = page.getByRole("button", {
+      name: /^(Undo|元に戻す|Malfari)$/,
+    });
+    const redoButton = page.getByRole("button", {
+      name: /^(Redo|やり直す|Refari)$/,
+    });
+    await expect(undoButton).toBeDisabled();
+
+    // 要素を消して, ボタンで元に戻す・やり直す
+    await valueTree.locator(".tree-badge", { hasText: /^3$/ }).click();
+    await page
+      .locator(".dropdown-option", { hasText: /^delete-item/ })
+      .locator("button")
+      .click();
+    await expect.poll(items).toEqual(["2", "5", "7", "11"]);
+    await undoButton.click();
+    await expect.poll(items).toEqual(["2", "3", "5", "7", "11"]);
+    await redoButton.click();
+    await expect.poll(items).toEqual(["2", "5", "7", "11"]);
+
+    // ショートカット (ツリーにフォーカスがある状態)
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect.poll(items).toEqual(["2", "3", "5", "7", "11"]);
+    await page.keyboard.press("ControlOrMeta+Shift+z");
+    await expect.poll(items).toEqual(["2", "5", "7", "11"]);
+
+    // 数値の入力欄で続けて打った変更は 1 回で元に戻る
+    await valueTree.locator(".tree-badge", { hasText: /^7$/ }).click();
+    const input = valueTree.locator(".tree-badge input[type=number]");
+    await input.pressSequentially("123");
+    await expect.poll(items).toEqual(["2", "5", "11"]);
+    await page.keyboard.press("Escape");
+    await expect.poll(items).toEqual(["2", "5", "123", "11"]);
+    await undoButton.click();
+    await expect.poll(items).toEqual(["2", "5", "7", "11"]);
+    // 全て元に戻すと作業中の変更も消える
+    await undoButton.click();
+    await expect(undoButton).toBeDisabled();
+    await expect(
+      page.locator(".badge", {
+        hasText: /Modified|編集中の変更あり|Modifita/,
+      }),
+    ).toHaveCount(0);
   });
 
   test("icons have bounded and non-zero dimensions across views", async ({
