@@ -17,6 +17,7 @@ import {
   type CommitTarget,
 } from "../branches.ts";
 import { MAIN_BRANCH } from "../event_content.ts";
+import { overlayWorkingChanges } from "../new_part.ts";
 
 const STORAGE_KEY_CHANGES = "definy.working_changes.v4";
 
@@ -128,43 +129,10 @@ export function useWorkingChanges({
     } => {
       const existingModule = modules.find((m) => m.name === moduleName);
 
-      const partMap = new Map<string, DecodedPart>();
-      if (existingModule) {
-        for (const p of existingModule.parts) {
-          partMap.set(p.name, {
-            name: p.name,
-            description: p.description,
-            partType: p.partType,
-            expression: p.expression,
-            contentHash: p.contentHash,
-            partIdHash: p.partIdHash,
-          });
-        }
-      }
-
-      const committedPartIds = new Set<string>();
-      for (const [partId, change] of workingChanges.parts.entries()) {
-        const dotIndex = partId.indexOf(".");
-        const partModule =
-          dotIndex >= 0 ? partId.slice(0, dotIndex) : moduleName;
-        const partName =
-          dotIndex >= 0 ? partId.slice(dotIndex + 1) : change.name;
-
-        if (partModule === moduleName || change.name === partName) {
-          partMap.set(change.name, {
-            name: change.name,
-            description: change.description,
-            partType: change.partType,
-            expression: change.expression,
-            contentHash: null,
-            partIdHash: null,
-          });
-          committedPartIds.add(partId);
-        }
-      }
-
-      const partsList: ReadonlyArray<DecodedPart> = Array.from(
-        partMap.values(),
+      const { partsList, committedPartIds } = overlayWorkingChanges(
+        moduleName,
+        existingModule?.parts ?? [],
+        workingChanges,
       );
       return { existingModule, partsList, committedPartIds };
     },

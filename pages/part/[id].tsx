@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect, type JSX } from "react";
-import { useParams } from "@void/react";
+import { useParams, useRouter } from "@void/react";
 import { Link } from "../../src/components/Link.tsx";
-import { label, localizedText, withLocalizedText } from "../../src/language.ts";
+import {
+  label,
+  localizedText,
+  withLanguage,
+  withLocalizedText,
+} from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import { usePageTitle } from "../../src/page_title.ts";
 import { findSecretUsages, secretLiteralOf } from "../../src/secret.ts";
@@ -9,7 +14,8 @@ import { SecretPanel } from "../../src/components/SecretPanel.tsx";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 import { isTextInput } from "../../src/tree_layout/keyboard.ts";
-import type { PartChange } from "../../src/types.ts";
+import type { PartChange, PartSnapshot } from "../../src/types.ts";
+import { newPartSnapshot, partsReferencing } from "../../src/new_part.ts";
 import {
   parameterRenames,
   renameCallArguments,
@@ -27,11 +33,58 @@ import {
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
+  const { language, parts, workingChanges, connectionStatus } = useDefiny();
+  const committed = parts.find(
+    (p) =>
+      p.partId === id || p.name === id || `${p.moduleName}.${p.name}` === id,
+  );
+  // コミットしていない新しいパーツ (作業中の変更だけにある. docs/ui.md「パーツの作成と削除」)
+  const newChange =
+    committed === undefined && id !== undefined
+      ? workingChanges.parts.get(id)
+      : undefined;
+  const part: PartSnapshot | undefined =
+    committed ??
+    (newChange !== undefined && id !== undefined
+      ? newPartSnapshot(id, newChange)
+      : undefined);
+
+  if (part === undefined) {
+    // 読み込み前に仮のパーツを出すと, 編集して本物のパーツを上書きしてしまう (#764)
+    return (
+      <div className="part-detail-view">
+        <div className="empty-state">
+          {connectionStatus === "connecting" ? (
+            <>
+              <span className="spinner" />
+              <p>
+                {label(
+                  language,
+                  "Loading part...",
+                  "パーツを読み込み中...",
+                  "Ŝargante parton...",
+                )}
+              </p>
+            </>
+          ) : (
+            <p>
+              {label(
+                language,
+                "Part not found",
+                "パーツが見つかりません",
+                "Parto ne trovita",
+              )}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
   // パーツを切り替えたら作り直し, 選択中の行・式や Undo の履歴を前のパーツから持ち越さない
-  return <PartDetail key={id ?? ""} id={id} />;
+  return <PartDetail key={part.partId} part={part} />;
 }
 
-function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
+function PartDetail({ part }: { readonly part: PartSnapshot }): JSX.Element {
   const {
     language,
     parts,
@@ -42,22 +95,10 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     typeCheckMessage,
     setPageUndo,
   } = useDefiny();
+  const router = useRouter();
+  const isNewPart = !parts.some((p) => p.partId === part.partId);
 
-  const part = parts.find(
-    (p) =>
-      p.partId === id || p.name === id || `${p.moduleName}.${p.name}` === id,
-  ) ?? {
-    partId: id ?? "unknown",
-    moduleId: "core",
-    moduleName: "core",
-    name: id ? id.slice(0, 16) : "unknown",
-    description: [],
-    partType: null,
-    expression: { "#number": 0 },
-    updatedAtMs: Date.now(),
-  };
-
-  const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
+  const partIdHash = part.partIdHash;
   const change = workingChanges.parts.get(part.partId);
   const hasChange = change !== undefined;
   const currentName = change?.name ?? part.name;
@@ -94,9 +135,44 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     applyChange(next);
   };
 
+  const isDeleted = change?.deleted === true;
+
+  /**
+   * コミット済みのパーツは削除の作業中の変更にする. 新しいパーツは作業中の変更を捨てる.
+   * 参照しているパーツがあれば先に確かめる (削除するとそれらは型エラーになる)
+   */
+  const handleDelete = (): void => {
+    const referencing =
+      partIdHash === null
+        ? []
+        : partsReferencing(partIdHash, part.partId, parts, workingChanges);
+    if (
+      referencing.length > 0 &&
+      !window.confirm(
+        `${label(
+          language,
+          "These parts refer to this part and will have type errors:",
+          "次のパーツがこのパーツを参照していて, 型エラーになります:",
+          "Ĉi tiuj partoj referencas ĉi tiun parton:",
+        )}\n${referencing.join("\n")}`,
+      )
+    ) {
+      return;
+    }
+    if (isNewPart) {
+      discardWorkingPart(part.partId);
+      router.visit(withLanguage(`/module/${part.moduleName}`, language));
+      return;
+    }
+    editPart({ deleted: true }, null);
+  };
+
   const editPart = (
     fields: Partial<
-      Pick<PartChange, "name" | "description" | "partType" | "expression">
+      Pick<
+        PartChange,
+        "name" | "description" | "partType" | "expression" | "deleted"
+      >
     >,
     mergeKey: string | null,
   ): void => {
@@ -107,6 +183,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
       description: currentDescription,
       partType: currentPartType,
       expression: currentExpression,
+      ...(isDeleted ? { deleted: true } : {}),
       ...fields,
     };
     // 引数名を変えたら, このパーツ自身 (再帰呼び出し) と他のパーツの呼び出しの引数名も合わせて変える.
@@ -286,7 +363,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
           className="part-actions"
           style={{ display: "flex", gap: "0.5rem" }}
         >
-          {hasChange && (
+          {hasChange && !isNewPart && (
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -302,8 +379,49 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
               )}
             </button>
           )}
+          {!isDeleted && (
+            <button
+              type="button"
+              className="btn btn-danger btn-sm part-delete-button"
+              onClick={handleDelete}
+            >
+              {isNewPart
+                ? label(
+                    language,
+                    "Discard New Part",
+                    "新しいパーツを破棄",
+                    "Forĵeti novan parton",
+                  )
+                : label(
+                    language,
+                    "Delete Part",
+                    "パーツを削除",
+                    "Forigi parton",
+                  )}
+            </button>
+          )}
         </div>
       </div>
+
+      {isDeleted && (
+        <div className="alert alert-danger part-deleted-banner" role="status">
+          {label(
+            language,
+            "This part will be deleted from the module when you commit.",
+            "このパーツはコミットするとモジュールから削除されます。",
+            "Ĉi tiu parto estos forigita el la modulo kiam vi enmetos.",
+          )}{" "}
+          <button
+            type="button"
+            className="btn btn-secondary btn-xs"
+            onClick={() => {
+              editPart({ deleted: false }, null);
+            }}
+          >
+            {label(language, "Restore", "削除を取り消す", "Restarigi")}
+          </button>
+        </div>
+      )}
 
       {secret !== null && (
         <SecretPanel

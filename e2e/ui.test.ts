@@ -210,6 +210,148 @@ test.describe("definy UI E2E", () => {
     });
   });
 
+  test("creates parts and a module from the UI, commits them, and deletes a part (#760)", async ({
+    page,
+    request,
+  }) => {
+    // アカウントはテストから作り, localStorage に入れてログインした状態にする
+    const credentials = await generateAccountCredentials(
+      `maker_${Date.now().toString().slice(-6)}`,
+    );
+    const created = await request.post("/definy.v1.EventService/SubmitEvent", {
+      data: {
+        signedEventBytes: (await createSignedAccountEvent(credentials))
+          .signedEventBytes,
+      },
+    });
+    expect(created.ok()).toBe(true);
+    await page.addInitScript((account) => {
+      localStorage.setItem("definy.account.v1", JSON.stringify(account));
+    }, credentials);
+    const moduleName = `made_${Date.now().toString().slice(-6)}`;
+
+    // 新しいモジュールに関数のパーツを 2 つ作る
+    for (const [name, parameters] of [
+      ["square", "x"],
+      ["add", "a, b"],
+    ] as const) {
+      await page.goto("/new-part");
+      // ハイドレーションの前に入力すると消えるので, イベントを読み終わるのを待つ
+      await expect(page.locator(".connection-status-connected")).toBeVisible({
+        timeout: 15000,
+      });
+      await page.locator("#new-part-module").fill(moduleName);
+      if (name === "square") {
+        await expect(
+          page.getByText("This module does not exist yet"),
+        ).toBeVisible();
+      }
+      await page.locator("#new-part-name").fill(name);
+      await page.locator("#new-part-parameters").fill(parameters);
+      await page.locator(".new-part-form button[type='submit']").click();
+      await expect(page).toHaveURL(new RegExp(`/part/${moduleName}\\.${name}`));
+      await expect(
+        page
+          .locator(".part-definition-tree, #part-definition-value-tree")
+          .first(),
+      ).toBeVisible({ timeout: 15000 });
+    }
+    // 本体が未入力のままではコミットできない (サーバーと同じく未入力を拒否する)
+    await page.goto("/changes");
+    await expect(
+      page.locator(".commit-type-check .alert-danger"),
+    ).toContainText("unfilled hole", { timeout: 15000 });
+    // 本体を引数で埋める
+    for (const [name, parameter] of [
+      ["square", "x"],
+      ["add", "a"],
+    ] as const) {
+      await page.goto(`/part/${moduleName}.${name}`);
+      const valueTree = page
+        .locator("#part-definition-value-tree, .part-definition-tree")
+        .first();
+      await expect(valueTree).toBeVisible({ timeout: 15000 });
+      await valueTree.locator(".tree-badge", { hasText: /^□$/ }).click();
+      await page.locator(".dropdown-search-input").fill(parameter);
+      await page
+        .locator(".dropdown-option", { hasText: new RegExp(`^${parameter}`) })
+        .first()
+        .click();
+      await expect(
+        valueTree.locator(".tree-badge", { hasText: /^□$/ }),
+      ).toHaveCount(0);
+    }
+    // 同じ名前は作れない
+    await page.goto(`/new-part?module=${moduleName}`);
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator("#new-part-module")).toHaveValue(moduleName);
+    await page.locator("#new-part-name").fill("add");
+    await page.locator(".new-part-form button[type='submit']").click();
+    await expect(page.locator(".new-part-form .alert-danger")).toContainText(
+      "already has a part",
+    );
+    // エクスプローラーにもコミット前の新しいパーツが出る
+    await expect(
+      page.locator(".sidebar-tree-node.part-node", { hasText: "square" }),
+    ).toHaveCount(1);
+
+    // コミットするとモジュールができる
+    await page.goto("/changes");
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator(".change-card .badge-success")).toHaveCount(2);
+    await expect(page.locator("p#commit-branch-input")).toContainText(
+      "Create the module",
+    );
+    await page.locator("#commit-message-input").fill("Create module");
+    const commitButton = page.locator("button[type='submit']", {
+      hasText: /Sign & Commit/,
+    });
+    await commitButton.click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.goto(`/module/${moduleName}`);
+    await expect(page.locator(".part-grid .part-card")).toHaveCount(2, {
+      timeout: 15000,
+    });
+
+    // パーツを削除してコミットすると, モジュールから外れる
+    await page.goto(`/part/${moduleName}.add`);
+    await page.locator(".part-delete-button").click();
+    await expect(page.locator(".part-deleted-banner")).toBeVisible();
+    await page.goto("/changes");
+    await expect(page.locator(".connection-status-connected")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(
+      page.locator(".change-card .badge-invalid-signature"),
+    ).toContainText("Delete");
+    await page.locator("#commit-message-input").fill("Delete add");
+    await commitButton.click();
+    await expect(page.locator(".changes-view .alert-success")).toBeVisible({
+      timeout: 15000,
+    });
+    await page.goto(`/module/${moduleName}`);
+    await expect(page.locator(".part-grid .part-card")).toHaveCount(1, {
+      timeout: 15000,
+    });
+    await expect(page.locator(".part-grid .part-card")).toContainText("square");
+  });
+
+  test("part page shows loading and not-found instead of an editable placeholder (#764)", async ({
+    page,
+  }) => {
+    await page.goto("/part/core.no-such-part");
+    await expect(page.getByText("Part not found")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator(".part-definition-tree")).toHaveCount(0);
+  });
+
   test("parts page lists parts, supports search and part navigation", async ({
     page,
   }) => {

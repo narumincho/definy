@@ -20,6 +20,7 @@ export default function ChangesPage(): JSX.Element {
     commitWorkingChanges,
     commitTargetFor,
     checkCommitTypes,
+    parts,
   } = useDefiny();
 
   const [commitMessage, setCommitMessage] = useState("");
@@ -228,9 +229,24 @@ export default function ChangesPage(): JSX.Element {
         <div className="changes-layout">
           <div className="changes-list">
             {changeEntries.map(([partId, change]) => (
-              <div key={partId} className="card change-card">
+              <div
+                key={partId}
+                className="card change-card"
+                data-deleted={change.deleted === true ? "" : undefined}
+              >
                 <div className="change-card-header">
                   <strong>{change.name}</strong>
+                  {change.deleted === true ? (
+                    <span className="badge badge-invalid-signature">
+                      {label(language, "Delete", "削除", "Forigi")}
+                    </span>
+                  ) : (
+                    !parts.some((p) => p.partId === partId) && (
+                      <span className="badge badge-success">
+                        {label(language, "New", "新規", "Nova")}
+                      </span>
+                    )
+                  )}
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs text-danger"

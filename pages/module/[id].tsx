@@ -184,14 +184,22 @@ export default function ModuleDetailPage(): JSX.Element {
       )}
 
       <div className="module-parts-section">
-        <h3>
-          {label(
-            language,
-            "Parts in this module",
-            "このモジュールのパーツ",
-            "Partoj en ĉi tiu modulo",
-          )}
-        </h3>
+        <div className="module-parts-heading">
+          <h3>
+            {label(
+              language,
+              "Parts in this module",
+              "このモジュールのパーツ",
+              "Partoj en ĉi tiu modulo",
+            )}
+          </h3>
+          <Link
+            href={`/new-part?module=${encodeURIComponent(mod.name)}`}
+            className="btn btn-primary btn-xs"
+          >
+            {label(language, "+ New Part", "+ 新しいパーツ", "+ Nova parto")}
+          </Link>
+        </div>
         <div className="part-grid">
           {moduleParts.length === 0 ? (
             <p className="text-muted">

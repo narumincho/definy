@@ -14,6 +14,8 @@ export type PartChange = {
   readonly description: LocalizedText;
   readonly partType: unknown;
   readonly expression: unknown;
+  /** パーツを削除する (コミットでモジュールから外す). docs/ui.md「パーツの作成と削除」 */
+  readonly deleted?: boolean;
 };
 
 export type WorkingChanges = {

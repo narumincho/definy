@@ -2365,6 +2365,13 @@ a.account-card {
   font-size: 1rem;
 }
 
+.module-parts-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
 .commit-list {
   display: grid;
   gap: 0.6rem;
@@ -2456,6 +2463,37 @@ a.account-card {
 
 .module-commit-message:hover {
   text-decoration: underline;
+}
+
+.part-node[data-deleted] .sidebar-node-label,
+.change-card[data-deleted] strong {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.new-part-form {
+  max-width: 32rem;
+}
+
+.new-part-kind {
+  display: flex;
+  gap: 1rem;
+  border: none;
+  padding: 0;
+}
+
+.new-part-kind legend {
+  margin-bottom: 0.3rem;
+}
+
+.new-part-kind label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.part-deleted-banner {
+  margin-bottom: 1rem;
 }
 
 .module-branch {

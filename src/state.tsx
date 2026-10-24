@@ -18,6 +18,7 @@ import type {
 import type { SelfHostedTypeCheckOutcome } from "./self_hosted_type_check.ts";
 import type { DefinyValue } from "./stage1_compiler.ts";
 import type { CommitTarget } from "./branches.ts";
+import { MAIN_BRANCH } from "./event_content.ts";
 import { AccountModal } from "./components/AccountModal.tsx";
 import { useUiState, type PageUndoControls } from "./state/useUiState.ts";
 import { useEvents, type DecodedCommitEvent } from "./state/useEvents.ts";
@@ -155,6 +156,12 @@ export function DefinyProvider({
     partNames: events.partNames,
     currentAccount: account.currentAccount,
     buildCommitParts: working.buildCommitParts,
+    // seed の core の main はシステムアカウントが作る
+    systemAccountId:
+      events.branchesByModule
+        .get("core")
+        ?.find((branch) => branch.name === MAIN_BRANCH)?.creatorAccountId ??
+      null,
   });
 
   const value = useMemo<DefinyContextValue>(
