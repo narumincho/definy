@@ -63,6 +63,66 @@ test.describe("definy UI E2E", () => {
     }
   });
 
+  test("page title follows the opened page", async ({ page }) => {
+    await page.goto("/?lang=en");
+    await expect(page).toHaveTitle("definy");
+
+    // クライアント側の遷移でもタイトルが変わる
+    await page.locator('.activity-item[href^="/parts"]').click();
+    await expect(page).toHaveURL(/\/parts\?lang=en$/);
+    await expect(page).toHaveTitle("Parts | definy");
+
+    // パーツ名はクライアントのデータから決まる (Void が head() のタイトルで上書きしたあとに設定し直す)
+    await page
+      .locator(".part-card", { hasText: "triangle-area" })
+      .first()
+      .click();
+    await expect(page).toHaveTitle("sample.triangle-area | definy");
+
+    await page.locator('.activity-item[href^="/modules"]').click();
+    await expect(page).toHaveTitle("Modules | definy");
+
+    await page.goBack();
+    await expect(page).toHaveTitle("sample.triangle-area | definy");
+
+    // サーバーが返す HTML のタイトルも表示言語に合わせる
+    const response = await page.request.get("/history?lang=ja");
+    expect(await response.text()).toContain(
+      "<title>コミット履歴 | definy</title>",
+    );
+    await page.goto("/history?lang=ja");
+    await expect(page).toHaveTitle("コミット履歴 | definy");
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+  });
+
+  test("language is decided by ?lang= and redirects by Accept-Language", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ locale: "ja-JP" });
+    const page = await context.newPage();
+    // ?lang= が無ければ Accept-Language から決めた ?lang= 付きの URL にリダイレクトする
+    await page.goto("/parts");
+    await expect(page).toHaveURL(/\/parts\?lang=ja$/);
+    await expect(page.locator(".view-title")).toHaveText("パーツ一覧");
+
+    // サイト内のリンクは今の言語を引き継ぐ
+    await page.locator('.activity-item[href^="/modules"]').click();
+    await expect(page).toHaveURL(/\/modules\?lang=ja$/);
+
+    // 言語を切り替えると URL が変わる. localStorage には保存しないので, ?lang= を付けて開き直せば元の言語
+    // ハイドレーション前の select の変更は拾われないので, URL が変わるまで選び直す
+    await expect(async () => {
+      await page.locator(".language-select").selectOption("ja");
+      await page.locator(".language-select").selectOption("eo");
+      await expect(page).toHaveURL(/\/modules\?lang=eo$/, { timeout: 1000 });
+    }).toPass();
+    await expect(page.locator(".view-title")).toHaveText("Moduloj");
+    await expect(page).toHaveTitle("Moduloj | definy");
+    await page.goto("/modules?lang=en");
+    await expect(page.locator(".view-title")).toHaveText("Modules");
+    await context.close();
+  });
+
   test("modules page lists builtin modules", async ({ page }) => {
     await page.goto("/modules");
 

@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Link } from "@void/react";
+import { Link } from "../src/components/Link.tsx";
 import { ModuleIcon } from "../src/icons.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";

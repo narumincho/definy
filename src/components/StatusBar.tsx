@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Link } from "@void/react";
+import { Link } from "./Link.tsx";
 import { label, languageNativeName } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 

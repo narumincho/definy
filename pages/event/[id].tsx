@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import { useParams, Link } from "@void/react";
+import { useParams } from "@void/react";
+import { Link } from "../../src/components/Link.tsx";
 import { label } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import type { EventRecord } from "../../src/types.ts";

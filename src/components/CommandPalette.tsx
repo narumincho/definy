@@ -12,7 +12,7 @@ import {
   SettingsIcon,
   type IconComponent,
 } from "../icons.tsx";
-import { label, localizedText } from "../language.ts";
+import { label, localizedText, withLanguage } from "../language.ts";
 import { useDefiny } from "../state.tsx";
 
 export type PaletteItem = {
@@ -241,7 +241,7 @@ export function CommandPalette(): JSX.Element | null {
 
   function handleSelect(item: PaletteItem): void {
     setCommandPaletteOpen(false);
-    router.visit(item.href);
+    router.visit(withLanguage(item.href, language));
   }
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
@@ -337,7 +337,7 @@ export function CommandPalette(): JSX.Element | null {
                   className="command-palette-item"
                   role="option"
                   aria-selected={isSelected ? "true" : "false"}
-                  href={item.href}
+                  href={withLanguage(item.href, language)}
                   style={{ textDecoration: "none", cursor: "pointer" }}
                   onClick={(e) => {
                     e.preventDefault();
