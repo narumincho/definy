@@ -22,6 +22,14 @@ import {
 } from "./selector_options.ts";
 import { goToDefinitionOption, isVariableNamePath } from "./local_variable.ts";
 import { listItemSelectorOptions } from "./list_items.ts";
+import { letBindingSelectorOptions } from "./let_bindings.ts";
+import {
+  typePartVariantOptions,
+  unionVariantOptions,
+  type expectedVariantsFromTypeAst,
+} from "./variant.ts";
+
+type ExpectedVariants = ReturnType<typeof expectedVariantsFromTypeAst>;
 
 export type UseSelectorMenuParams = {
   readonly mode: "expression" | "type";
@@ -34,6 +42,8 @@ export type UseSelectorMenuParams = {
   readonly expectedType: ExpectedType;
   /** 選んだ match のアームのパターンで選べるタグ (match の対象の型のタグ). 分からなければ `null` */
   readonly patternVariants: ReadonlyArray<PatternVariant> | null;
+  /** 選んだ位置で期待する型から求めた Variant の選択肢の情報 ({@link expectedVariantsFromTypeAst}) */
+  readonly expectedVariants: ExpectedVariants;
   readonly setSelectedPath: (path: ReadonlyArray<PathStep> | null) => void;
   readonly setInlineEdit: (inline: boolean) => void;
 };
@@ -68,6 +78,7 @@ export function useSelectorMenu({
   partNames,
   expectedType,
   patternVariants,
+  expectedVariants,
   setSelectedPath,
   setInlineEdit,
 }: UseSelectorMenuParams): SelectorMenuState {
@@ -83,6 +94,17 @@ export function useSelectorMenu({
         ? typePartSelectorOptions(parts)
         : partSelectorOptions(parts),
     [parts, mode],
+  );
+
+  const variantOptions = useMemo(
+    () =>
+      mode === "type"
+        ? []
+        : [
+            ...unionVariantOptions(expectedVariants.unionVariants),
+            ...typePartVariantOptions(parts, expectedVariants.typePartIdHash),
+          ],
+    [expectedVariants, mode, parts],
   );
 
   const selectorOptionsAt = useCallback(
@@ -102,6 +124,7 @@ export function useSelectorMenu({
         mode,
         scopeVariables,
         partOptions,
+        variantOptions,
       });
       if (mode === "type") {
         return options;
@@ -110,10 +133,18 @@ export function useSelectorMenu({
       return [
         ...goToDefinitionOption(expression, path),
         ...listItemSelectorOptions(expression, path),
+        ...letBindingSelectorOptions(expression, path),
         ...options,
       ];
     },
-    [expression, layoutRoot, mode, partOptions, patternVariants],
+    [
+      expression,
+      layoutRoot,
+      mode,
+      partOptions,
+      patternVariants,
+      variantOptions,
+    ],
   );
 
   const currentOptionValueAt = useCallback(

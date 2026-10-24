@@ -55,6 +55,10 @@ import {
   renameVariableAt,
 } from "./local_variable.ts";
 import { applyListAction, isListAction } from "./list_items.ts";
+import { applyLetAction, isLetAction } from "./let_bindings.ts";
+import { expectedVariantsFromTypeAst } from "./variant.ts";
+
+const NO_EXPECTED_VARIANTS = expectedVariantsFromTypeAst(null);
 import { type DefinyValue } from "../stage1_compiler.ts";
 
 /** 式にマウスを置いてからホバーの表示を出すまでの時間 */
@@ -170,9 +174,12 @@ export function ExpressionTreeEditor({
   const [expectedType, setExpectedType] = useState<ExpectedType>("any");
   const [patternVariants, setPatternVariants] =
     useState<ReadonlyArray<PatternVariant> | null>(null);
+  const [expectedVariants, setExpectedVariants] =
+    useState(NO_EXPECTED_VARIANTS);
   useEffect(() => {
     setExpectedType("any");
     setPatternVariants(null);
+    setExpectedVariants(NO_EXPECTED_VARIANTS);
     if (!selectedPath || mode === "type" || partType == null) {
       return;
     }
@@ -196,6 +203,7 @@ export function ExpressionTreeEditor({
           setPatternVariants(patternVariantsFromTypeAst(type, partsByIdHash));
         } else {
           setExpectedType(expectedTypeFromTypeAst(type));
+          setExpectedVariants(expectedVariantsFromTypeAst(type));
         }
       },
       (e: unknown) => {
@@ -235,6 +243,7 @@ export function ExpressionTreeEditor({
     partNames,
     expectedType,
     patternVariants,
+    expectedVariants,
     setSelectedPath,
     setInlineEdit,
   });
@@ -424,8 +433,10 @@ export function ExpressionTreeEditor({
         }
         return;
       }
-      if (isListAction(optionValue)) {
-        const result = applyListAction(expression, selectedPath, optionValue);
+      if (isListAction(optionValue) || isLetAction(optionValue)) {
+        const result = isListAction(optionValue)
+          ? applyListAction(expression, selectedPath, optionValue)
+          : applyLetAction(expression, selectedPath, optionValue);
         if (result !== null) {
           onChange(result.expression);
           keyboard.selectInTree(result.selectedPath);

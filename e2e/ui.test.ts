@@ -375,6 +375,81 @@ test.describe("definy UI E2E", () => {
     await expect.poll(items).toEqual(["2", "3", "7", "11", "□"]);
   });
 
+  test("expression tree editor creates variants of type parts", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.match-option-sample");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const badge = (text: string) =>
+      valueTree.locator(".tree-badge", { hasText: new RegExp(`^${text}$`) });
+    const option = (name: string) =>
+      page.locator(".dropdown-option", {
+        has: page.locator(".dropdown-option-name", {
+          hasText: new RegExp(`^${name.replaceAll(".", "\\.")}$`),
+        }),
+      });
+
+    // match の対象の Variant some(100) を選ぶと, 型パーツ sample.option-number のタグが選択肢に出る
+    await badge("some").click();
+    await expect(option("sample.option-number.some")).toHaveAttribute(
+      "data-current",
+      "true",
+    );
+    // 値を持たないタグにすると値が消える
+    await option("sample.option-number.none").locator("button").first().click();
+    await expect(badge("none")).toHaveCount(1);
+    await expect(badge("100")).toHaveCount(0);
+    // 値を持つタグにすると値が未入力になる
+    await badge("none").click();
+    await option("sample.option-number.some").locator("button").first().click();
+    await expect(badge("some")).toHaveCount(1);
+    await expect(badge("□")).toHaveCount(1);
+  });
+
+  test("expression tree editor adds, moves, and deletes let bindings", async ({
+    page,
+  }) => {
+    await page.goto("/part/sample.triangle-area");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const badge = (text: string) =>
+      valueTree.locator(".tree-badge", { hasText: new RegExp(`^${text}$`) });
+    const option = (name: string) =>
+      page
+        .locator(".dropdown-option", {
+          has: page.locator(".dropdown-option-name", {
+            hasText: new RegExp(`^${name}$`),
+          }),
+        })
+        .locator("button");
+    /** let の束縛の変数名 (`名前 = 値` の名前) を上から順に */
+    const bindingNames = async () =>
+      (
+        await valueTree
+          .locator('[data-node-id$=".name"] .tree-badge')
+          .allTextContents()
+      ).filter((name) => name.length > 0);
+
+    await expect.poll(bindingNames).toEqual(["base", "height"]);
+    // base = 10 の値から後ろに束縛を足す
+    await badge("10").click();
+    await option("insert-binding-after").click();
+    await expect.poll(bindingNames).toEqual(["base", "x", "height"]);
+    // 足した束縛の値 (未入力) から後ろへ動かす
+    await badge("□").click();
+    await option("move-binding-later").click();
+    await expect.poll(bindingNames).toEqual(["base", "height", "x"]);
+    // 消す
+    await badge("□").click();
+    await option("delete-binding").click();
+    await expect.poll(bindingNames).toEqual(["base", "height"]);
+  });
+
   test("icons have bounded and non-zero dimensions across views", async ({
     page,
   }) => {

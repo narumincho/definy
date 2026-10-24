@@ -30,7 +30,6 @@ export type PathStep =
   | "letBody"
   | { readonly kind: "listItemValue"; readonly index: number }
   | { readonly kind: "recordItemValue"; readonly index: number }
-  | "constructorValue"
   | "typeListItem"
   | "functionBody"
   | { readonly kind: "callArgument"; readonly index: number }

@@ -175,13 +175,6 @@ export function getExpressionAtPath(
     );
   }
 
-  if (head === "constructorValue" && "Constructor" in node) {
-    return getExpressionAtPath(
-      (node.Constructor as { value?: unknown })?.value,
-      tail,
-    );
-  }
-
   if (head === "matchTarget" && "Match" in node) {
     return getExpressionAtPath(
       (node.Match as { target?: unknown })?.target,
@@ -488,17 +481,6 @@ export function updateExpressionAtPath(
       Variant: {
         ...vInner,
         payload: updateExpressionAtPath(vInner.payload, tail, updater),
-      },
-    };
-  }
-
-  if (head === "constructorValue" && "Constructor" in node) {
-    const cInner = node.Constructor as { value?: unknown };
-    return {
-      ...node,
-      Constructor: {
-        ...cInner,
-        value: updateExpressionAtPath(cInner.value, tail, updater),
       },
     };
   }

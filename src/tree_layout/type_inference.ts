@@ -3,6 +3,7 @@ import { updateExpressionAtPath } from "./path.ts";
 import { nextVariableId } from "./selection.ts";
 import { bytesToUrlSafeBase64NoPad, toUint8Array } from "../cbor.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
+import { variantOptionValueForExpression } from "./variant.ts";
 
 export type ExpectedType = "number" | "string" | "boolean" | "list" | "any";
 
@@ -124,6 +125,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
   }
   if ("If" in obj) return "expr:if";
   if ("Hole" in obj) return "expr:hole";
+  if ("Variant" in obj) return variantOptionValueForExpression(obj);
   if ("Variable" in obj) {
     const raw = obj.Variable;
     const id =

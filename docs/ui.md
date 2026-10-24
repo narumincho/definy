@@ -188,6 +188,19 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   リスト (`ListLiteral`) を選ぶと `add-item` (末尾に未入力の要素を足す), 要素を選ぶと
   `insert-item-before` / `insert-item-after` / `move-item-earlier` / `move-item-later` / `delete-item`.
   足した要素・動かした要素を選び, 消したときは同じ位置の次の要素 (末尾なら前の要素, 空になればリスト) を選ぶ
+- let の束縛の操作 ([src/tree_layout/let_bindings.ts](../src/tree_layout/let_bindings.ts)):
+  let を選ぶと `add-binding` (末尾に足す), 束縛の値を選ぶと `insert-binding-before` / `insert-binding-after` /
+  `move-binding-earlier` / `move-binding-later` / `delete-binding`. 新しい束縛は式全体で使われていない変数 ID
+  (`nextVariableId`) と名前 (`x`, `x1`, ...) にし, 値を未入力にしてその値を選ぶ. 最後の束縛を消すと let をやめて本体だけにする.
+  消した変数を参照している式・前へ動かして見えなくなった変数は, 型チェッカーが型エラーにする
+- Variant (タグ付きの値) の作成 ([src/tree_layout/variant.ts](../src/tree_layout/variant.ts)):
+  直和型の型パーツ (式が `TypeUnion` の型パーツ) のタグを `sample.option-number.some` のような名前の選択肢に出す
+  (`some` と打てば見つかる). 選ぶと型パーツを指定した Variant (`type_part_definition_event_hash`) にし,
+  値を持つタグなら値を未入力にする. 値を持つタグ同士で変えると値を引き継ぐ.
+  期待する型が型パーツならそのタグを先に並べ, 型パーツでない直和型ならそのタグ (型パーツなし) も出す.
+  関数リテラルは選択肢に出さない (期待する型が関数なら関数リテラルにする方針)
+- 型パーツの値を作る式は型パーツを指定した Variant だけにした. 以前あった `Constructor` (`new:型パーツ(値)`) は
+  definy 製の型チェッカー・コンパイラ・評価器のどれも扱えなかったので AST から消した (2026-10-24)
 
 ### 式のホバー表示
 
