@@ -1,11 +1,13 @@
 import type { JSX } from "react";
-import { useParams, Link } from "@void/react";
+import { useParams } from "@void/react";
+import { Link } from "../../src/components/Link.tsx";
 import {
   AccountLink,
   dateLocale,
 } from "../../src/components/EventTimeline.tsx";
 import { label, localizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
+import { usePageTitle } from "../../src/page_title.ts";
 
 export default function ModuleDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +22,8 @@ export default function ModuleDetailPage(): JSX.Element {
     parts: [],
     updatedAtMs: Date.now(),
   };
+
+  usePageTitle(mod.name);
 
   const moduleParts = parts.filter((p) => p.moduleId === id);
   /** このモジュールのコミット (新しい順) */

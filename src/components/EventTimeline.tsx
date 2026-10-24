@@ -1,5 +1,5 @@
 import { useMemo, type JSX, type ReactNode } from "react";
-import { Link } from "@void/react";
+import { Link } from "./Link.tsx";
 import {
   AccountsIcon,
   ChevronRightIcon,

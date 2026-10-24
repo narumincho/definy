@@ -1,5 +1,6 @@
 import { useMemo, type JSX } from "react";
-import { useParams, Link } from "@void/react";
+import { useParams } from "@void/react";
+import { Link } from "../../src/components/Link.tsx";
 import { ModuleIcon } from "../../src/icons.tsx";
 import {
   EventTimeline,
@@ -9,6 +10,7 @@ import {
 import { CopyButton } from "../../src/components/CopyButton.tsx";
 import { label } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
+import { usePageTitle } from "../../src/page_title.ts";
 
 /** アカウントのページ. そのアカウントのイベントとコミットしたモジュールを出す */
 export default function AccountDetailPage(): JSX.Element {
@@ -46,6 +48,8 @@ export default function AccountDetailPage(): JSX.Element {
     accountNames.get(accountId) ??
     (isCurrent ? currentAccount.accountName : undefined);
   const displayName = name ?? accountDisplayName(accountId, accountNames);
+  usePageTitle(displayName);
+
   const createdEvent = accountEvents.find(
     (e) => e.eventType === "create_account",
   );

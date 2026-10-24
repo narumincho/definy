@@ -1,5 +1,6 @@
 import type { JSX, ReactNode } from "react";
-import { useParams, Link } from "@void/react";
+import { useParams } from "@void/react";
+import { Link } from "../../src/components/Link.tsx";
 import {
   AccountLink,
   EventSummary,

@@ -6,7 +6,8 @@ import {
   useRef,
   type JSX,
 } from "react";
-import { Link, useRouter } from "@void/react";
+import { useRouter } from "@void/react";
+import { Link } from "./Link.tsx";
 import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";

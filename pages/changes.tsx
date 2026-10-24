@@ -5,7 +5,7 @@ import {
   type JSX,
   type FormEvent,
 } from "react";
-import { Link } from "@void/react";
+import { Link } from "../src/components/Link.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny, type CommitTypeError } from "../src/state.tsx";
 
