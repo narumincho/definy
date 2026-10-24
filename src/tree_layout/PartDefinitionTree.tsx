@@ -36,7 +36,12 @@ export type PartDefinitionTreeProps = {
    * 式を変えたとき. 式の根の関数の引数名を変えたときは, パーツの型の同じ位置の引数名も合わせて
    * `partType` に渡す (変えていなければ `undefined`)
    */
-  readonly onExpressionChange?: (expr: unknown, partType?: unknown) => void;
+  readonly onExpressionChange?: (
+    expr: unknown,
+    partType?: unknown,
+    /** 元に戻す (Undo) の履歴でまとめるキー (ExpressionTreeEditor の `onChange`) */
+    mergeKey?: string,
+  ) => void;
   /** 型を変えたとき. `null` は型指定なし */
   readonly onPartTypeChange?: (partType: unknown) => void;
   /** 式の型エラー. エラーのある式の横に警告を出す */
@@ -344,10 +349,11 @@ export function PartDefinitionTree({
               {...(partType !== undefined ? { partType } : {})}
               {...(onExpressionChange !== undefined
                 ? {
-                    onChange: (next: unknown) => {
+                    onChange: (next: unknown, mergeKey?: string) => {
                       onExpressionChange(
                         next,
                         syncPartTypeParameterNames(partType, expression, next),
+                        mergeKey,
                       );
                     },
                   }

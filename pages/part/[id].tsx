@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, type JSX } from "react";
 import { useParams, Link } from "@void/react";
-import { PlayIcon } from "../../src/icons.tsx";
+import { PlayIcon, RedoIcon, UndoIcon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";
 import {
@@ -11,6 +11,16 @@ import {
 import { loadStage1Compiler } from "../../src/stage1_browser.ts";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
+import { isTextInput } from "../../src/tree_layout/keyboard.ts";
+import type { PartChange } from "../../src/types.ts";
+import {
+  emptyUndoHistory,
+  recordUndo,
+  redo,
+  undo,
+  undoKeyFromEvent,
+  type UndoHistory,
+} from "../../src/undo_history.ts";
 
 export default function PartDetailPage(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +71,80 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     change !== undefined ? change.partType : part.partType;
   const currentExpression =
     change?.expression !== undefined ? change.expression : part.expression;
+
+  // 元に戻す (Undo) / やり直す (Redo). このパーツの作業中の変更 (無ければ undefined) を変える前ごとに積む.
+  // 履歴はこのページを開いている間だけ持つ (別のパーツへ移ると消える)
+  const [history, setHistory] =
+    useState<UndoHistory<PartChange | undefined>>(emptyUndoHistory);
+
+  const applyChange = useCallback(
+    (next: PartChange | undefined): void => {
+      if (next === undefined) {
+        discardWorkingPart(part.partId);
+      } else {
+        updateWorkingPart(part.partId, next);
+      }
+    },
+    [discardWorkingPart, part.partId, updateWorkingPart],
+  );
+
+  /** 作業中の変更を変え, 変える前の値を履歴に積む. 入力欄で続けて打った変更は `mergeKey` で 1 つにまとめる */
+  const changePart = (
+    next: PartChange | undefined,
+    mergeKey: string | null,
+  ): void => {
+    setHistory((prev) => recordUndo(prev, change, mergeKey, Date.now()));
+    applyChange(next);
+  };
+
+  const editPart = (
+    fields: Partial<
+      Pick<PartChange, "name" | "description" | "partType" | "expression">
+    >,
+    mergeKey: string | null,
+  ): void => {
+    changePart(
+      {
+        moduleDefinitionEventHash: part.moduleId,
+        partDefinitionEventHash: part.partId,
+        name: currentName,
+        description: currentDescription,
+        partType: currentPartType,
+        expression: currentExpression,
+        ...fields,
+      },
+      mergeKey,
+    );
+  };
+
+  const handleUndoKey = useCallback(
+    (key: "undo" | "redo"): void => {
+      const result = (key === "undo" ? undo : redo)(history, change);
+      if (result === null) {
+        return;
+      }
+      setHistory(result.history);
+      applyChange(result.value);
+    },
+    [applyChange, change, history],
+  );
+
+  // Ctrl / Cmd + Z で元に戻す, Ctrl / Cmd + Shift + Z と Ctrl + Y でやり直す.
+  // 入力欄の中ではブラウザの入力欄の Undo に任せる
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent): void => {
+      const key = undoKeyFromEvent(e);
+      if (key === null || isTextInput(e.target)) {
+        return;
+      }
+      e.preventDefault();
+      handleUndoKey(key);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [handleUndoKey]);
 
   // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査し (コミット済みの型環境を使う),
   // 型エラーはエラーのある式の横に出す. 検査できない式 (未入力・コンパイラ組み込み) には何も出さない.
@@ -208,12 +292,46 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
           className="part-actions"
           style={{ display: "flex", gap: "0.5rem" }}
         >
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={history.past.length === 0}
+            title={label(
+              language,
+              "Undo (Ctrl+Z)",
+              "元に戻す (Ctrl+Z)",
+              "Malfari (Ctrl+Z)",
+            )}
+            aria-label={label(language, "Undo", "元に戻す", "Malfari")}
+            onClick={() => {
+              handleUndoKey("undo");
+            }}
+          >
+            <UndoIcon size={14} className="btn-icon" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={history.future.length === 0}
+            title={label(
+              language,
+              "Redo (Ctrl+Shift+Z)",
+              "やり直す (Ctrl+Shift+Z)",
+              "Refari (Ctrl+Shift+Z)",
+            )}
+            aria-label={label(language, "Redo", "やり直す", "Refari")}
+            onClick={() => {
+              handleUndoKey("redo");
+            }}
+          >
+            <RedoIcon size={14} className="btn-icon" />
+          </button>
           {hasChange && (
             <button
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={() => {
-                discardWorkingPart(part.partId);
+                changePart(undefined, null);
               }}
             >
               {label(
@@ -275,48 +393,30 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
         editable={true}
         typeError={typeError}
         onNameChange={(newName) => {
-          updateWorkingPart(part.partId, {
-            moduleDefinitionEventHash: part.moduleId,
-            partDefinitionEventHash: part.partId,
-            name: newName,
-            description: currentDescription,
-            partType: currentPartType,
-            expression: currentExpression,
-          });
+          editPart({ name: newName }, "name");
         }}
         onDescriptionChange={(newDesc) => {
-          updateWorkingPart(part.partId, {
-            moduleDefinitionEventHash: part.moduleId,
-            partDefinitionEventHash: part.partId,
-            name: currentName,
-            description: withLocalizedText(
-              currentDescription,
-              language,
-              newDesc,
-            ),
-            partType: currentPartType,
-            expression: currentExpression,
-          });
+          editPart(
+            {
+              description: withLocalizedText(
+                currentDescription,
+                language,
+                newDesc,
+              ),
+            },
+            "description",
+          );
         }}
         onPartTypeChange={(newPartType) => {
-          updateWorkingPart(part.partId, {
-            moduleDefinitionEventHash: part.moduleId,
-            partDefinitionEventHash: part.partId,
-            name: currentName,
-            description: currentDescription,
-            partType: newPartType,
-            expression: currentExpression,
-          });
+          editPart({ partType: newPartType }, null);
         }}
-        onExpressionChange={(newExpr, newPartType) => {
-          updateWorkingPart(part.partId, {
-            moduleDefinitionEventHash: part.moduleId,
-            partDefinitionEventHash: part.partId,
-            name: currentName,
-            description: currentDescription,
-            partType: newPartType === undefined ? currentPartType : newPartType,
-            expression: newExpr,
-          });
+        onExpressionChange={(newExpr, newPartType, mergeKey) => {
+          editPart(
+            newPartType === undefined
+              ? { expression: newExpr }
+              : { expression: newExpr, partType: newPartType },
+            mergeKey ?? null,
+          );
         }}
       />
     </div>

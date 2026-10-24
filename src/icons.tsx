@@ -171,3 +171,21 @@ export function ChevronRightIcon(props: IconProps): JSX.Element {
     </StrokeIcon>
   );
 }
+
+export function UndoIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props} strokeWidth={2}>
+      <polyline points="9 14 4 9 9 4" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </StrokeIcon>
+  );
+}
+
+export function RedoIcon(props: IconProps): JSX.Element {
+  return (
+    <StrokeIcon {...props} strokeWidth={2}>
+      <polyline points="15 14 20 9 15 4" />
+      <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+    </StrokeIcon>
+  );
+}
