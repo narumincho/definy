@@ -11,7 +11,7 @@
       "text": "definy の計算式や機能を体験できるサンプルプログラム集"
     }
   ],
-  "message": "デプロイを definy.deploy-to-cloudflare-workers (quote したハンドラを definy でコンパイルして HTTP でデプロイ) にする",
+  "message": "デプロイのサンプルで Cloudflare の API トークンをシークレット definy.cloudflare-api-token で渡す",
   "parts": [
     {
       "name": "triangle-area",
@@ -2809,6 +2809,16 @@
               }
             },
             {
+              "name": "api_token",
+              "value": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.cloudflare-api-token"
+                  }
+                }
+              }
+            },
+            {
               "name": "handler",
               "value": {
                 "Quote": {
@@ -2882,6 +2892,16 @@
               "value": {
                 "String": {
                   "value": "definy-hello"
+                }
+              }
+            },
+            {
+              "name": "api_token",
+              "value": {
+                "PartReference": {
+                  "part_definition_event_hash": {
+                    "$part": "definy.cloudflare-api-token"
+                  }
                 }
               }
             },

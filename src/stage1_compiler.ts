@@ -537,6 +537,15 @@ function toSelfHostedAst(ast: unknown, allowHoles: boolean): unknown {
     case "Quote":
       // コードそのものを値にする式. 型は Code<中の式の型>, 値は core.code ({ expression, parts }) (docs/quote.md)
       return selfHostedVariant("quote", convert(node.expression));
+    case "Secret":
+      // シークレットリテラル. 型は Secret, 値は { id, label } で, 実際の値はホストが送信の直前に入れる (docs/secret.md)
+      return selfHostedVariant(
+        "secret",
+        selfHostedRecord([
+          ["id", selfHostedString(String(node.id ?? ""))],
+          ["label", selfHostedString(String(node.label ?? ""))],
+        ]),
+      );
     case "Hole":
       return holeToSelfHostedAst(node, allowHoles);
     case "Compiler":
@@ -569,7 +578,9 @@ function calleeToSelfHostedAst(
 }
 
 /** 式の中の `PartReference` の ID を出現順に集める */
-function collectPartReferenceIds(expression: unknown): ReadonlyArray<string> {
+export function collectPartReferenceIds(
+  expression: unknown,
+): ReadonlyArray<string> {
   const references: string[] = [];
   const walk = (value: unknown): void => {
     if (Array.isArray(value)) {

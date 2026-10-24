@@ -11,308 +11,8 @@
       "text": "Cloudflare Workers へのデプロイなど, definy で書いた definy プラットフォームの機能"
     }
   ],
-  "message": "json-string-field が整形した JSON (\"key\": \"value\") も読めるようにし, Cloudflare の API からサブドメインを読めるようにする",
+  "message": "環境変数をやめ, Cloudflare のアカウント API トークンをシークレット (definy.cloudflare-api-token) で受け取る. アカウント ID はトークンから読む",
   "parts": [
-    {
-      "name": "environment-get",
-      "part_type": {
-        "function": {
-          "parameters": [
-            {
-              "name": "environment",
-              "type": {
-                "list": {
-                  "record": [
-                    {
-                      "key": "name",
-                      "value": "string"
-                    },
-                    {
-                      "key": "value",
-                      "value": "string"
-                    }
-                  ]
-                }
-              }
-            },
-            {
-              "name": "name",
-              "type": "string"
-            },
-            {
-              "name": "index",
-              "type": "number"
-            }
-          ],
-          "return_type": "string"
-        }
-      },
-      "description": [
-        {
-          "language": "en",
-          "text": "The value of the environment variable name from the index (\"\" if it is not set)"
-        },
-        {
-          "language": "ja",
-          "text": "環境変数 name の値 (index 以降で探す. 無ければ \"\")"
-        }
-      ],
-      "expression": {
-        "Function": {
-          "parameters": [
-            {
-              "parameter_id": 0,
-              "parameter_name": "environment"
-            },
-            {
-              "parameter_id": 1,
-              "parameter_name": "name"
-            },
-            {
-              "parameter_id": 2,
-              "parameter_name": "index"
-            }
-          ],
-          "body": {
-            "Match": {
-              "target": {
-                "Call": {
-                  "function": {
-                    "PartReference": {
-                      "part_definition_event_hash": {
-                        "$part": "core.less-than-or-equal"
-                      }
-                    }
-                  },
-                  "arguments": [
-                    {
-                      "name": "left",
-                      "value": {
-                        "Call": {
-                          "function": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.list-length"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "value",
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 0
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      }
-                    },
-                    {
-                      "name": "right",
-                      "value": {
-                        "Variable": {
-                          "variable_id": 2
-                        }
-                      }
-                    }
-                  ]
-                }
-              },
-              "arms": [
-                {
-                  "tag": "true",
-                  "variable_id": null,
-                  "variable_name": null,
-                  "body": {
-                    "String": {
-                      "value": ""
-                    }
-                  }
-                },
-                {
-                  "tag": "false",
-                  "variable_id": null,
-                  "variable_name": null,
-                  "body": {
-                    "Match": {
-                      "target": {
-                        "Call": {
-                          "function": {
-                            "PartReference": {
-                              "part_definition_event_hash": {
-                                "$part": "core.equal"
-                              }
-                            }
-                          },
-                          "arguments": [
-                            {
-                              "name": "left",
-                              "value": {
-                                "RecordGet": {
-                                  "record": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.list-get"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "list",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 0
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "index",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "key": "name"
-                                }
-                              }
-                            },
-                            {
-                              "name": "right",
-                              "value": {
-                                "Variable": {
-                                  "variable_id": 1
-                                }
-                              }
-                            }
-                          ]
-                        }
-                      },
-                      "arms": [
-                        {
-                          "tag": "true",
-                          "variable_id": null,
-                          "variable_name": null,
-                          "body": {
-                            "RecordGet": {
-                              "record": {
-                                "Call": {
-                                  "function": {
-                                    "PartReference": {
-                                      "part_definition_event_hash": {
-                                        "$part": "core.list-get"
-                                      }
-                                    }
-                                  },
-                                  "arguments": [
-                                    {
-                                      "name": "list",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 0
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "name": "index",
-                                      "value": {
-                                        "Variable": {
-                                          "variable_id": 2
-                                        }
-                                      }
-                                    }
-                                  ]
-                                }
-                              },
-                              "key": "value"
-                            }
-                          }
-                        },
-                        {
-                          "tag": "false",
-                          "variable_id": null,
-                          "variable_name": null,
-                          "body": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "definy.environment-get"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "environment",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 0
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "name",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "index",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.plus"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "Number": {
-                                              "value": 1
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        }
-                      ],
-                      "default": null
-                    }
-                  }
-                }
-              ],
-              "default": null
-            }
-          }
-        }
-      }
-    },
     {
       "name": "cloudflare-workers-runtime-script",
       "part_type": "string",
@@ -1087,6 +787,29 @@
       }
     },
     {
+      "name": "cloudflare-api-token",
+      "part_type": "secret",
+      "description": [
+        {
+          "language": "en",
+          "text": "A Cloudflare account API token that can edit Workers Scripts (create it in the Cloudflare dashboard under Manage Account > Account API Tokens). The value stays in your browser and is sent only to https://api.cloudflare.com/"
+        },
+        {
+          "language": "ja",
+          "text": "Workers Scripts の編集権限のある Cloudflare のアカウント API トークン (Cloudflare の管理画面の「アカウントの管理 → アカウント API トークン」で作る). 値はブラウザにだけ保存し, https://api.cloudflare.com/ にだけ送る"
+        }
+      ],
+      "expression": {
+        "Secret": {
+          "id": "cloudflare-api-token-6c1f0e3a9b2d4c58",
+          "label": "Cloudflare API トークン",
+          "allowed_url_prefixes": [
+            "https://api.cloudflare.com/"
+          ]
+        }
+      }
+    },
+    {
       "name": "deploy-to-cloudflare-workers",
       "part_type": {
         "function": {
@@ -1094,6 +817,10 @@
             {
               "name": "worker_name",
               "type": "string"
+            },
+            {
+              "name": "api_token",
+              "type": "secret"
             },
             {
               "name": "handler",
@@ -1272,11 +999,11 @@
       "description": [
         {
           "language": "en",
-          "text": "Reads the parts the handler code references (wasi.io get_parts), compiles it with definy's own compiler (core.compile-to-wasm) and deploys it to Cloudflare Workers with HTTP requests (wasi.io). The token and account come from the environment variables CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID"
+          "text": "Reads the parts the handler code references (wasi.io get_parts), compiles it with definy's own compiler (core.compile-to-wasm) and deploys it to Cloudflare Workers with HTTP requests (wasi.io). api_token is a Cloudflare account API token (for example definy.cloudflare-api-token); the account is read from the token"
         },
         {
           "language": "ja",
-          "text": "HTTP リクエストを受け取ってレスポンスを返す関数のコード handler を, 参照しているパーツを読んで (wasi.io の get_parts) definy 製のコンパイラ (core.compile-to-wasm) でコンパイルし, HTTP リクエスト (wasi.io) で Cloudflare Workers にデプロイする. トークンとアカウントは環境変数 CLOUDFLARE_API_TOKEN と CLOUDFLARE_ACCOUNT_ID から読む"
+          "text": "HTTP リクエストを受け取ってレスポンスを返す関数のコード handler を, 参照しているパーツを読んで (wasi.io の get_parts) definy 製のコンパイラ (core.compile-to-wasm) でコンパイルし, HTTP リクエスト (wasi.io) で Cloudflare Workers にデプロイする. api_token は Cloudflare のアカウント API トークン (definy.cloudflare-api-token など) で, アカウントはトークンから読む"
         }
       ],
       "expression": {
@@ -1288,226 +1015,154 @@
             },
             {
               "parameter_id": 1,
+              "parameter_name": "api_token"
+            },
+            {
+              "parameter_id": 2,
               "parameter_name": "handler"
             }
           ],
           "body": {
             "Variant": {
-              "tag": "get_environment",
+              "tag": "get_parts",
               "payload": {
                 "TypeLiteral": {
                   "items": [
+                    {
+                      "key": "ids",
+                      "value": {
+                        "RecordGet": {
+                          "record": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          },
+                          "key": "part_ids"
+                        }
+                      }
+                    },
                     {
                       "key": "then",
                       "value": {
                         "Function": {
                           "parameters": [
                             {
-                              "parameter_id": 2,
-                              "parameter_name": "environment"
+                              "parameter_id": 3,
+                              "parameter_name": "parts"
                             }
                           ],
                           "body": {
-                            "Let": {
-                              "bindings": [
-                                {
-                                  "variable_id": 3,
-                                  "variable_name": "token",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "definy.environment-get"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "environment",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "name",
-                                          "value": {
-                                            "String": {
-                                              "value": "CLOUDFLARE_API_TOKEN"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "index",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                },
-                                {
-                                  "variable_id": 4,
-                                  "variable_name": "account_id",
-                                  "value": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "definy.environment-get"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "environment",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 2
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "name",
-                                          "value": {
-                                            "String": {
-                                              "value": "CLOUDFLARE_ACCOUNT_ID"
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "index",
-                                          "value": {
-                                            "Number": {
-                                              "value": 0
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  }
-                                }
-                              ],
-                              "body": {
-                                "Match": {
-                                  "target": {
-                                    "Call": {
-                                      "function": {
-                                        "PartReference": {
-                                          "part_definition_event_hash": {
-                                            "$part": "core.equal"
-                                          }
-                                        }
-                                      },
-                                      "arguments": [
-                                        {
-                                          "name": "left",
-                                          "value": {
-                                            "Variable": {
-                                              "variable_id": 3
-                                            }
-                                          }
-                                        },
-                                        {
-                                          "name": "right",
-                                          "value": {
-                                            "String": {
-                                              "value": ""
-                                            }
-                                          }
-                                        }
-                                      ]
-                                    }
-                                  },
-                                  "arms": [
+                            "Variant": {
+                              "tag": "outgoing_request",
+                              "payload": {
+                                "TypeLiteral": {
+                                  "items": [
                                     {
-                                      "tag": "true",
-                                      "variable_id": null,
-                                      "variable_name": null,
-                                      "body": {
-                                        "Variant": {
-                                          "tag": "done",
-                                          "payload": {
-                                            "String": {
-                                              "value": "環境変数 CLOUDFLARE_API_TOKEN (Workers Scripts の編集権限のある Cloudflare API トークン) を設定してください"
-                                            }
-                                          },
-                                          "type_part_definition_event_hash": {
-                                            "$part": "wasi.io"
-                                          }
-                                        }
-                                      }
-                                    },
-                                    {
-                                      "tag": "false",
-                                      "variable_id": null,
-                                      "variable_name": null,
-                                      "body": {
-                                        "Match": {
-                                          "target": {
-                                            "Call": {
-                                              "function": {
-                                                "PartReference": {
-                                                  "part_definition_event_hash": {
-                                                    "$part": "core.equal"
-                                                  }
-                                                }
-                                              },
-                                              "arguments": [
-                                                {
-                                                  "name": "left",
-                                                  "value": {
-                                                    "Variable": {
-                                                      "variable_id": 4
-                                                    }
-                                                  }
-                                                },
-                                                {
-                                                  "name": "right",
-                                                  "value": {
-                                                    "String": {
-                                                      "value": ""
-                                                    }
-                                                  }
-                                                }
-                                              ]
-                                            }
-                                          },
-                                          "arms": [
+                                      "key": "request",
+                                      "value": {
+                                        "TypeLiteral": {
+                                          "items": [
                                             {
-                                              "tag": "true",
-                                              "variable_id": null,
-                                              "variable_name": null,
-                                              "body": {
-                                                "Variant": {
-                                                  "tag": "done",
-                                                  "payload": {
-                                                    "String": {
-                                                      "value": "環境変数 CLOUDFLARE_ACCOUNT_ID (Cloudflare のアカウント ID) を設定してください"
-                                                    }
-                                                  },
-                                                  "type_part_definition_event_hash": {
-                                                    "$part": "wasi.io"
-                                                  }
+                                              "key": "method",
+                                              "value": {
+                                                "String": {
+                                                  "value": "GET"
                                                 }
                                               }
                                             },
                                             {
-                                              "tag": "false",
-                                              "variable_id": null,
-                                              "variable_name": null,
-                                              "body": {
-                                                "Let": {
-                                                  "bindings": [
+                                              "key": "url",
+                                              "value": {
+                                                "String": {
+                                                  "value": "https://api.cloudflare.com/client/v4/accounts"
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "headers",
+                                              "value": {
+                                                "ListLiteral": {
+                                                  "items": []
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "secret_headers",
+                                              "value": {
+                                                "ListLiteral": {
+                                                  "items": [
                                                     {
-                                                      "variable_id": 15,
-                                                      "variable_name": "account_api",
-                                                      "value": {
+                                                      "TypeLiteral": {
+                                                        "items": [
+                                                          {
+                                                            "key": "name",
+                                                            "value": {
+                                                              "String": {
+                                                                "value": "Authorization"
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "key": "prefix",
+                                                            "value": {
+                                                              "String": {
+                                                                "value": "Bearer "
+                                                              }
+                                                            }
+                                                          },
+                                                          {
+                                                            "key": "secret",
+                                                            "value": {
+                                                              "Variable": {
+                                                                "variable_id": 1
+                                                              }
+                                                            }
+                                                          }
+                                                        ]
+                                                      }
+                                                    }
+                                                  ]
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "key": "body",
+                                              "value": {
+                                                "ListLiteral": {
+                                                  "items": []
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "key": "then",
+                                      "value": {
+                                        "Function": {
+                                          "parameters": [
+                                            {
+                                              "parameter_id": 4,
+                                              "parameter_name": "result"
+                                            }
+                                          ],
+                                          "body": {
+                                            "Match": {
+                                              "target": {
+                                                "Variable": {
+                                                  "variable_id": 4
+                                                }
+                                              },
+                                              "arms": [
+                                                {
+                                                  "tag": "error",
+                                                  "variable_id": 6,
+                                                  "variable_name": "message",
+                                                  "body": {
+                                                    "Variant": {
+                                                      "tag": "done",
+                                                      "payload": {
                                                         "Call": {
                                                           "function": {
                                                             "PartReference": {
@@ -1521,7 +1176,7 @@
                                                               "name": "left",
                                                               "value": {
                                                                 "String": {
-                                                                  "value": "https://api.cloudflare.com/client/v4/accounts/"
+                                                                  "value": "アカウントを読めませんでした: "
                                                                 }
                                                               }
                                                             },
@@ -1529,99 +1184,240 @@
                                                               "name": "right",
                                                               "value": {
                                                                 "Variable": {
-                                                                  "variable_id": 4
+                                                                  "variable_id": 6
                                                                 }
                                                               }
                                                             }
                                                           ]
                                                         }
+                                                      },
+                                                      "type_part_definition_event_hash": {
+                                                        "$part": "wasi.io"
                                                       }
-                                                    },
-                                                    {
-                                                      "variable_id": 6,
-                                                      "variable_name": "script_url",
-                                                      "value": {
-                                                        "Call": {
-                                                          "function": {
-                                                            "PartReference": {
-                                                              "part_definition_event_hash": {
-                                                                "$part": "core.string-concat"
-                                                              }
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "tag": "ok",
+                                                  "variable_id": 5,
+                                                  "variable_name": "response",
+                                                  "body": {
+                                                    "Let": {
+                                                      "bindings": [
+                                                        {
+                                                          "variable_id": 7,
+                                                          "variable_name": "account_id",
+                                                          "value": {
+                                                            "Call": {
+                                                              "function": {
+                                                                "PartReference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "definy.json-string-field"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "json",
+                                                                  "value": {
+                                                                    "RecordGet": {
+                                                                      "record": {
+                                                                        "Variable": {
+                                                                          "variable_id": 5
+                                                                        }
+                                                                      },
+                                                                      "key": "text"
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "key",
+                                                                  "value": {
+                                                                    "String": {
+                                                                      "value": "id"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
+                                                            }
+                                                          }
+                                                        }
+                                                      ],
+                                                      "body": {
+                                                        "Match": {
+                                                          "target": {
+                                                            "Call": {
+                                                              "function": {
+                                                                "PartReference": {
+                                                                  "part_definition_event_hash": {
+                                                                    "$part": "core.equal"
+                                                                  }
+                                                                }
+                                                              },
+                                                              "arguments": [
+                                                                {
+                                                                  "name": "left",
+                                                                  "value": {
+                                                                    "Variable": {
+                                                                      "variable_id": 7
+                                                                    }
+                                                                  }
+                                                                },
+                                                                {
+                                                                  "name": "right",
+                                                                  "value": {
+                                                                    "String": {
+                                                                      "value": ""
+                                                                    }
+                                                                  }
+                                                                }
+                                                              ]
                                                             }
                                                           },
-                                                          "arguments": [
+                                                          "arms": [
                                                             {
-                                                              "name": "left",
-                                                              "value": {
-                                                                "Call": {
-                                                                  "function": {
-                                                                    "PartReference": {
-                                                                      "part_definition_event_hash": {
-                                                                        "$part": "core.string-concat"
-                                                                      }
+                                                              "tag": "true",
+                                                              "variable_id": null,
+                                                              "variable_name": null,
+                                                              "body": {
+                                                                "Variant": {
+                                                                  "tag": "done",
+                                                                  "payload": {
+                                                                    "Call": {
+                                                                      "function": {
+                                                                        "PartReference": {
+                                                                          "part_definition_event_hash": {
+                                                                            "$part": "core.string-concat"
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "arguments": [
+                                                                        {
+                                                                          "name": "left",
+                                                                          "value": {
+                                                                            "String": {
+                                                                              "value": "アカウントを読めませんでした: "
+                                                                            }
+                                                                          }
+                                                                        },
+                                                                        {
+                                                                          "name": "right",
+                                                                          "value": {
+                                                                            "RecordGet": {
+                                                                              "record": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 5
+                                                                                }
+                                                                              },
+                                                                              "key": "text"
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      ]
                                                                     }
                                                                   },
-                                                                  "arguments": [
+                                                                  "type_part_definition_event_hash": {
+                                                                    "$part": "wasi.io"
+                                                                  }
+                                                                }
+                                                              }
+                                                            },
+                                                            {
+                                                              "tag": "false",
+                                                              "variable_id": null,
+                                                              "variable_name": null,
+                                                              "body": {
+                                                                "Let": {
+                                                                  "bindings": [
                                                                     {
-                                                                      "name": "left",
+                                                                      "variable_id": 8,
+                                                                      "variable_name": "account_api",
                                                                       "value": {
-                                                                        "Variable": {
-                                                                          "variable_id": 15
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.string-concat"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "String": {
+                                                                                  "value": "https://api.cloudflare.com/client/v4/accounts/"
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 7
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
                                                                         }
                                                                       }
                                                                     },
                                                                     {
-                                                                      "name": "right",
+                                                                      "variable_id": 9,
+                                                                      "variable_name": "script_url",
                                                                       "value": {
-                                                                        "String": {
-                                                                          "value": "/workers/scripts/"
+                                                                        "Call": {
+                                                                          "function": {
+                                                                            "PartReference": {
+                                                                              "part_definition_event_hash": {
+                                                                                "$part": "core.string-concat"
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "arguments": [
+                                                                            {
+                                                                              "name": "left",
+                                                                              "value": {
+                                                                                "Call": {
+                                                                                  "function": {
+                                                                                    "PartReference": {
+                                                                                      "part_definition_event_hash": {
+                                                                                        "$part": "core.string-concat"
+                                                                                      }
+                                                                                    }
+                                                                                  },
+                                                                                  "arguments": [
+                                                                                    {
+                                                                                      "name": "left",
+                                                                                      "value": {
+                                                                                        "Variable": {
+                                                                                          "variable_id": 8
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "name": "right",
+                                                                                      "value": {
+                                                                                        "String": {
+                                                                                          "value": "/workers/scripts/"
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              }
+                                                                            },
+                                                                            {
+                                                                              "name": "right",
+                                                                              "value": {
+                                                                                "Variable": {
+                                                                                  "variable_id": 0
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          ]
                                                                         }
                                                                       }
-                                                                    }
-                                                                  ]
-                                                                }
-                                                              }
-                                                            },
-                                                            {
-                                                              "name": "right",
-                                                              "value": {
-                                                                "Variable": {
-                                                                  "variable_id": 0
-                                                                }
-                                                              }
-                                                            }
-                                                          ]
-                                                        }
-                                                      }
-                                                    }
-                                                  ],
-                                                  "body": {
-                                                    "Variant": {
-                                                      "tag": "get_parts",
-                                                      "payload": {
-                                                        "TypeLiteral": {
-                                                          "items": [
-                                                            {
-                                                              "key": "ids",
-                                                              "value": {
-                                                                "RecordGet": {
-                                                                  "record": {
-                                                                    "Variable": {
-                                                                      "variable_id": 1
-                                                                    }
-                                                                  },
-                                                                  "key": "part_ids"
-                                                                }
-                                                              }
-                                                            },
-                                                            {
-                                                              "key": "then",
-                                                              "value": {
-                                                                "Function": {
-                                                                  "parameters": [
-                                                                    {
-                                                                      "parameter_id": 16,
-                                                                      "parameter_name": "parts"
                                                                     }
                                                                   ],
                                                                   "body": {
@@ -1647,7 +1443,7 @@
                                                                                       "key": "url",
                                                                                       "value": {
                                                                                         "Variable": {
-                                                                                          "variable_id": 6
+                                                                                          "variable_id": 9
                                                                                         }
                                                                                       }
                                                                                     },
@@ -1656,52 +1452,6 @@
                                                                                       "value": {
                                                                                         "ListLiteral": {
                                                                                           "items": [
-                                                                                            {
-                                                                                              "TypeLiteral": {
-                                                                                                "items": [
-                                                                                                  {
-                                                                                                    "key": "name",
-                                                                                                    "value": {
-                                                                                                      "String": {
-                                                                                                        "value": "Authorization"
-                                                                                                      }
-                                                                                                    }
-                                                                                                  },
-                                                                                                  {
-                                                                                                    "key": "value",
-                                                                                                    "value": {
-                                                                                                      "Call": {
-                                                                                                        "function": {
-                                                                                                          "PartReference": {
-                                                                                                            "part_definition_event_hash": {
-                                                                                                              "$part": "core.string-concat"
-                                                                                                            }
-                                                                                                          }
-                                                                                                        },
-                                                                                                        "arguments": [
-                                                                                                          {
-                                                                                                            "name": "left",
-                                                                                                            "value": {
-                                                                                                              "String": {
-                                                                                                                "value": "Bearer "
-                                                                                                              }
-                                                                                                            }
-                                                                                                          },
-                                                                                                          {
-                                                                                                            "name": "right",
-                                                                                                            "value": {
-                                                                                                              "Variable": {
-                                                                                                                "variable_id": 3
-                                                                                                              }
-                                                                                                            }
-                                                                                                          }
-                                                                                                        ]
-                                                                                                      }
-                                                                                                    }
-                                                                                                  }
-                                                                                                ]
-                                                                                              }
-                                                                                            },
                                                                                             {
                                                                                               "TypeLiteral": {
                                                                                                 "items": [
@@ -1718,6 +1468,45 @@
                                                                                                     "value": {
                                                                                                       "String": {
                                                                                                         "value": "multipart/form-data; boundary=definy-deploy-boundary-5f0c3a"
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                ]
+                                                                                              }
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      }
+                                                                                    },
+                                                                                    {
+                                                                                      "key": "secret_headers",
+                                                                                      "value": {
+                                                                                        "ListLiteral": {
+                                                                                          "items": [
+                                                                                            {
+                                                                                              "TypeLiteral": {
+                                                                                                "items": [
+                                                                                                  {
+                                                                                                    "key": "name",
+                                                                                                    "value": {
+                                                                                                      "String": {
+                                                                                                        "value": "Authorization"
+                                                                                                      }
+                                                                                                    }
+                                                                                                  },
+                                                                                                  {
+                                                                                                    "key": "prefix",
+                                                                                                    "value": {
+                                                                                                      "String": {
+                                                                                                        "value": "Bearer "
+                                                                                                      }
+                                                                                                    }
+                                                                                                  },
+                                                                                                  {
+                                                                                                    "key": "secret",
+                                                                                                    "value": {
+                                                                                                      "Variable": {
+                                                                                                        "variable_id": 1
                                                                                                       }
                                                                                                     }
                                                                                                   }
@@ -1758,7 +1547,7 @@
                                                                                                         "RecordGet": {
                                                                                                           "record": {
                                                                                                             "Variable": {
-                                                                                                              "variable_id": 1
+                                                                                                              "variable_id": 2
                                                                                                             }
                                                                                                           },
                                                                                                           "key": "expression"
@@ -1769,7 +1558,7 @@
                                                                                                       "name": "parts",
                                                                                                       "value": {
                                                                                                         "Variable": {
-                                                                                                          "variable_id": 16
+                                                                                                          "variable_id": 3
                                                                                                         }
                                                                                                       }
                                                                                                     }
@@ -1791,7 +1580,7 @@
                                                                                 "Function": {
                                                                                   "parameters": [
                                                                                     {
-                                                                                      "parameter_id": 7,
+                                                                                      "parameter_id": 10,
                                                                                       "parameter_name": "result"
                                                                                     }
                                                                                   ],
@@ -1799,13 +1588,13 @@
                                                                                     "Match": {
                                                                                       "target": {
                                                                                         "Variable": {
-                                                                                          "variable_id": 7
+                                                                                          "variable_id": 10
                                                                                         }
                                                                                       },
                                                                                       "arms": [
                                                                                         {
                                                                                           "tag": "error",
-                                                                                          "variable_id": 9,
+                                                                                          "variable_id": 12,
                                                                                           "variable_name": "message",
                                                                                           "body": {
                                                                                             "Variant": {
@@ -1832,7 +1621,7 @@
                                                                                                       "name": "right",
                                                                                                       "value": {
                                                                                                         "Variable": {
-                                                                                                          "variable_id": 9
+                                                                                                          "variable_id": 12
                                                                                                         }
                                                                                                       }
                                                                                                     }
@@ -1847,7 +1636,7 @@
                                                                                         },
                                                                                         {
                                                                                           "tag": "ok",
-                                                                                          "variable_id": 8,
+                                                                                          "variable_id": 11,
                                                                                           "variable_name": "response",
                                                                                           "body": {
                                                                                             "Match": {
@@ -1867,7 +1656,7 @@
                                                                                                         "RecordGet": {
                                                                                                           "record": {
                                                                                                             "Variable": {
-                                                                                                              "variable_id": 8
+                                                                                                              "variable_id": 11
                                                                                                             }
                                                                                                           },
                                                                                                           "key": "status"
@@ -1925,7 +1714,7 @@
                                                                                                                               "name": "left",
                                                                                                                               "value": {
                                                                                                                                 "Variable": {
-                                                                                                                                  "variable_id": 6
+                                                                                                                                  "variable_id": 9
                                                                                                                                 }
                                                                                                                               }
                                                                                                                             },
@@ -1953,52 +1742,6 @@
                                                                                                                                     "key": "name",
                                                                                                                                     "value": {
                                                                                                                                       "String": {
-                                                                                                                                        "value": "Authorization"
-                                                                                                                                      }
-                                                                                                                                    }
-                                                                                                                                  },
-                                                                                                                                  {
-                                                                                                                                    "key": "value",
-                                                                                                                                    "value": {
-                                                                                                                                      "Call": {
-                                                                                                                                        "function": {
-                                                                                                                                          "PartReference": {
-                                                                                                                                            "part_definition_event_hash": {
-                                                                                                                                              "$part": "core.string-concat"
-                                                                                                                                            }
-                                                                                                                                          }
-                                                                                                                                        },
-                                                                                                                                        "arguments": [
-                                                                                                                                          {
-                                                                                                                                            "name": "left",
-                                                                                                                                            "value": {
-                                                                                                                                              "String": {
-                                                                                                                                                "value": "Bearer "
-                                                                                                                                              }
-                                                                                                                                            }
-                                                                                                                                          },
-                                                                                                                                          {
-                                                                                                                                            "name": "right",
-                                                                                                                                            "value": {
-                                                                                                                                              "Variable": {
-                                                                                                                                                "variable_id": 3
-                                                                                                                                              }
-                                                                                                                                            }
-                                                                                                                                          }
-                                                                                                                                        ]
-                                                                                                                                      }
-                                                                                                                                    }
-                                                                                                                                  }
-                                                                                                                                ]
-                                                                                                                              }
-                                                                                                                            },
-                                                                                                                            {
-                                                                                                                              "TypeLiteral": {
-                                                                                                                                "items": [
-                                                                                                                                  {
-                                                                                                                                    "key": "name",
-                                                                                                                                    "value": {
-                                                                                                                                      "String": {
                                                                                                                                         "value": "Content-Type"
                                                                                                                                       }
                                                                                                                                     }
@@ -2008,6 +1751,45 @@
                                                                                                                                     "value": {
                                                                                                                                       "String": {
                                                                                                                                         "value": "application/json"
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  }
+                                                                                                                                ]
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          ]
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    },
+                                                                                                                    {
+                                                                                                                      "key": "secret_headers",
+                                                                                                                      "value": {
+                                                                                                                        "ListLiteral": {
+                                                                                                                          "items": [
+                                                                                                                            {
+                                                                                                                              "TypeLiteral": {
+                                                                                                                                "items": [
+                                                                                                                                  {
+                                                                                                                                    "key": "name",
+                                                                                                                                    "value": {
+                                                                                                                                      "String": {
+                                                                                                                                        "value": "Authorization"
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "key": "prefix",
+                                                                                                                                    "value": {
+                                                                                                                                      "String": {
+                                                                                                                                        "value": "Bearer "
+                                                                                                                                      }
+                                                                                                                                    }
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "key": "secret",
+                                                                                                                                    "value": {
+                                                                                                                                      "Variable": {
+                                                                                                                                        "variable_id": 1
                                                                                                                                       }
                                                                                                                                     }
                                                                                                                                   }
@@ -2052,7 +1834,7 @@
                                                                                                                 "Function": {
                                                                                                                   "parameters": [
                                                                                                                     {
-                                                                                                                      "parameter_id": 10,
+                                                                                                                      "parameter_id": 13,
                                                                                                                       "parameter_name": "result"
                                                                                                                     }
                                                                                                                   ],
@@ -2091,7 +1873,7 @@
                                                                                                                                               "name": "left",
                                                                                                                                               "value": {
                                                                                                                                                 "Variable": {
-                                                                                                                                                  "variable_id": 15
+                                                                                                                                                  "variable_id": 8
                                                                                                                                                 }
                                                                                                                                               }
                                                                                                                                             },
@@ -2111,6 +1893,14 @@
                                                                                                                                       "key": "headers",
                                                                                                                                       "value": {
                                                                                                                                         "ListLiteral": {
+                                                                                                                                          "items": []
+                                                                                                                                        }
+                                                                                                                                      }
+                                                                                                                                    },
+                                                                                                                                    {
+                                                                                                                                      "key": "secret_headers",
+                                                                                                                                      "value": {
+                                                                                                                                        "ListLiteral": {
                                                                                                                                           "items": [
                                                                                                                                             {
                                                                                                                                               "TypeLiteral": {
@@ -2124,34 +1914,18 @@
                                                                                                                                                     }
                                                                                                                                                   },
                                                                                                                                                   {
-                                                                                                                                                    "key": "value",
+                                                                                                                                                    "key": "prefix",
                                                                                                                                                     "value": {
-                                                                                                                                                      "Call": {
-                                                                                                                                                        "function": {
-                                                                                                                                                          "PartReference": {
-                                                                                                                                                            "part_definition_event_hash": {
-                                                                                                                                                              "$part": "core.string-concat"
-                                                                                                                                                            }
-                                                                                                                                                          }
-                                                                                                                                                        },
-                                                                                                                                                        "arguments": [
-                                                                                                                                                          {
-                                                                                                                                                            "name": "left",
-                                                                                                                                                            "value": {
-                                                                                                                                                              "String": {
-                                                                                                                                                                "value": "Bearer "
-                                                                                                                                                              }
-                                                                                                                                                            }
-                                                                                                                                                          },
-                                                                                                                                                          {
-                                                                                                                                                            "name": "right",
-                                                                                                                                                            "value": {
-                                                                                                                                                              "Variable": {
-                                                                                                                                                                "variable_id": 3
-                                                                                                                                                              }
-                                                                                                                                                            }
-                                                                                                                                                          }
-                                                                                                                                                        ]
+                                                                                                                                                      "String": {
+                                                                                                                                                        "value": "Bearer "
+                                                                                                                                                      }
+                                                                                                                                                    }
+                                                                                                                                                  },
+                                                                                                                                                  {
+                                                                                                                                                    "key": "secret",
+                                                                                                                                                    "value": {
+                                                                                                                                                      "Variable": {
+                                                                                                                                                        "variable_id": 1
                                                                                                                                                       }
                                                                                                                                                     }
                                                                                                                                                   }
@@ -2180,7 +1954,7 @@
                                                                                                                                 "Function": {
                                                                                                                                   "parameters": [
                                                                                                                                     {
-                                                                                                                                      "parameter_id": 11,
+                                                                                                                                      "parameter_id": 14,
                                                                                                                                       "parameter_name": "result"
                                                                                                                                     }
                                                                                                                                   ],
@@ -2188,19 +1962,19 @@
                                                                                                                                     "Match": {
                                                                                                                                       "target": {
                                                                                                                                         "Variable": {
-                                                                                                                                          "variable_id": 11
+                                                                                                                                          "variable_id": 14
                                                                                                                                         }
                                                                                                                                       },
                                                                                                                                       "arms": [
                                                                                                                                         {
                                                                                                                                           "tag": "ok",
-                                                                                                                                          "variable_id": 12,
+                                                                                                                                          "variable_id": 15,
                                                                                                                                           "variable_name": "response",
                                                                                                                                           "body": {
                                                                                                                                             "Let": {
                                                                                                                                               "bindings": [
                                                                                                                                                 {
-                                                                                                                                                  "variable_id": 14,
+                                                                                                                                                  "variable_id": 17,
                                                                                                                                                   "variable_name": "subdomain",
                                                                                                                                                   "value": {
                                                                                                                                                     "Call": {
@@ -2218,7 +1992,7 @@
                                                                                                                                                             "RecordGet": {
                                                                                                                                                               "record": {
                                                                                                                                                                 "Variable": {
-                                                                                                                                                                  "variable_id": 12
+                                                                                                                                                                  "variable_id": 15
                                                                                                                                                                 }
                                                                                                                                                               },
                                                                                                                                                               "key": "text"
@@ -2254,7 +2028,7 @@
                                                                                                                                                           "name": "left",
                                                                                                                                                           "value": {
                                                                                                                                                             "Variable": {
-                                                                                                                                                              "variable_id": 14
+                                                                                                                                                              "variable_id": 17
                                                                                                                                                             }
                                                                                                                                                           }
                                                                                                                                                         },
@@ -2445,7 +2219,7 @@
                                                                                                                                                                                   "name": "right",
                                                                                                                                                                                   "value": {
                                                                                                                                                                                     "Variable": {
-                                                                                                                                                                                      "variable_id": 14
+                                                                                                                                                                                      "variable_id": 17
                                                                                                                                                                                     }
                                                                                                                                                                                   }
                                                                                                                                                                                 }
@@ -2483,7 +2257,7 @@
                                                                                                                                         },
                                                                                                                                         {
                                                                                                                                           "tag": "error",
-                                                                                                                                          "variable_id": 13,
+                                                                                                                                          "variable_id": 16,
                                                                                                                                           "variable_name": "message",
                                                                                                                                           "body": {
                                                                                                                                             "Variant": {
@@ -2570,7 +2344,7 @@
                                                                                                                                                               "name": "right",
                                                                                                                                                               "value": {
                                                                                                                                                                 "Variable": {
-                                                                                                                                                                  "variable_id": 13
+                                                                                                                                                                  "variable_id": 16
                                                                                                                                                                 }
                                                                                                                                                               }
                                                                                                                                                             }
@@ -2653,7 +2427,7 @@
                                                                                                                 "RecordGet": {
                                                                                                                   "record": {
                                                                                                                     "Variable": {
-                                                                                                                      "variable_id": 8
+                                                                                                                      "variable_id": 11
                                                                                                                     }
                                                                                                                   },
                                                                                                                   "key": "text"
@@ -2692,25 +2466,25 @@
                                                                 }
                                                               }
                                                             }
-                                                          ]
+                                                          ],
+                                                          "default": null
                                                         }
-                                                      },
-                                                      "type_part_definition_event_hash": {
-                                                        "$part": "wasi.io"
                                                       }
                                                     }
                                                   }
                                                 }
-                                              }
+                                              ],
+                                              "default": null
                                             }
-                                          ],
-                                          "default": null
+                                          }
                                         }
                                       }
                                     }
-                                  ],
-                                  "default": null
+                                  ]
                                 }
+                              },
+                              "type_part_definition_event_hash": {
+                                "$part": "wasi.io"
                               }
                             }
                           }

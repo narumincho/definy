@@ -16,8 +16,12 @@ import {
 } from "../../src/wasi_io.ts";
 import {
   browserWasiIoHandler,
+  loadSecret,
   loadWasiIoSettings,
+  recordSecretUse,
 } from "../../src/wasi_io_browser.ts";
+import { findSecretUsages, secretLiteralOf } from "../../src/secret.ts";
+import { SecretPanel } from "../../src/components/SecretPanel.tsx";
 import { PartDefinitionTree } from "../../src/tree_layout/PartDefinitionTree.tsx";
 import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEditor.tsx";
 import { isTextInput } from "../../src/tree_layout/keyboard.ts";
@@ -163,6 +167,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   // 型エラーはエラーのある式の横に出す. 検査できない式 (未入力・コンパイラ組み込み) には何も出さない.
   // 検査した後に式を編集したら, 検査し直すまで出さない (エラーの式が見つからずルートに出てしまうため)
   const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
+  const secret = secretLiteralOf(currentExpression);
   const [typeCheckResult, setTypeCheckResult] = useState<{
     readonly expression: unknown;
     readonly error: ExpressionTypeError | null;
@@ -276,7 +281,10 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
                 : null,
             ),
             getPart: resolvePart,
-            environment: settings.environment,
+            getSecret: loadSecret,
+            onSecretUse: (use) => {
+              recordSecretUse(use, `${part.moduleName}.${currentName}`);
+            },
             onStep: (step) => {
               setWasiIoSteps((steps) => [...steps, step]);
             },
@@ -297,16 +305,16 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     partNames,
     language,
     currentAccount,
+    part.moduleName,
+    currentName,
   ]);
 
   function formatWasiIoStep(step: WasiIoStep): string {
     switch (step.kind) {
-      case "get_environment":
-        return `get_environment: ${step.names.join(", ") || "(なし)"}`;
       case "get_parts":
         return `get_parts: ${step.found} 個${step.missing.length > 0 ? ` (見つからない: ${step.missing.join(", ")})` : ""}`;
       case "outgoing_request":
-        return `${step.method} ${step.url} (${step.bodyBytes} bytes) → ${"error" in step.result ? `エラー: ${step.result.error}` : step.result.status}`;
+        return `${step.method} ${step.url} (${step.bodyBytes} bytes${step.secrets.length > 0 ? `, シークレット: ${step.secrets.join(", ")}` : ""}) → ${"error" in step.result ? `エラー: ${step.result.error}` : step.result.status}`;
     }
   }
 
@@ -452,6 +460,22 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
           </div>
           <pre className="eval-result-pre">{evalError}</pre>
         </div>
+      )}
+
+      {secret !== null && (
+        <SecretPanel
+          key={secret.id}
+          language={language}
+          secret={secret}
+          usages={findSecretUsages(
+            parts,
+            { partId: part.partId, partIdHash },
+            secret.id,
+          )}
+          onChange={(next) => {
+            editPart({ expression: { Secret: next } }, "secret");
+          }}
+        />
       )}
 
       <PartDefinitionTree

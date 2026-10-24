@@ -1,0 +1,48 @@
+# シークレットリテラル (Secret 型)
+
+API トークンなどの秘密の値を, 環境変数の代わりに型安全に扱う仕組み。値はパーツに入れず, プログラムからも読めない。
+
+## 書き方
+
+```json
+{
+  "Secret": {
+    "id": "cloudflare-api-token-6c1f0e3a9b2d4c58",
+    "label": "Cloudflare API トークン",
+    "allowed_url_prefixes": ["https://api.cloudflare.com/"]
+  }
+}
+```
+
+- `id`: シークレットを区別する ID。ツリーエディタで「secret」を選ぶとランダムに決まる (`crypto.randomUUID()`)
+- `label`: 値を入れるとき・エラーのときに出す名前
+- `allowed_url_prefixes`: 値を送ってよい URL の先頭
+- ふつうはシークレットリテラルだけを式にしたパーツ (例: `definy.cloudflare-api-token`, 型 `secret`) を作り,
+  使う側はそのパーツを参照する。シークレットの宣言はパーツのイベントなので, 変更はコミット履歴で辿れる
+
+## 型
+
+- 型は `Secret` (`core.type-ast` の `secret`, パーツの型の JSON は `"secret"`, 型パーツの宣言の中では `"TypeSecret"` / `type_secret`)
+- 文字列とは別の型なので, 文字列連結や `done` のメッセージには使えない。値 (`{ id, label }` のレコード) のフィールドも読めない
+- 使えるのは `wasi.outgoing-request` の `secret_headers` (`{ name, prefix, secret }`) だけ。ホストが送信の直前に
+  `prefix ++ 値` のヘッダーを足す ([wasi-io.md](wasi-io.md))
+
+## 値と使用履歴 (ブラウザ)
+
+- シークレットのパーツのページで値を入れ, localStorage (`definy.secrets`) にだけ保存する (`src/wasi_io_browser.ts`)。
+  サーバーにもイベントにも入らない。CORS の仲介を使うときだけ, そのリクエストのヘッダーとして definy の Worker を通る
+- **送ってよい宛先は値を入れたときのものを使う**。パーツの式の `allowed_url_prefixes` ではない。シークレットの ID は
+  公開されているので, 他人が同じ ID で宛先を `https://evil.example/` にしたリテラルを書いても, 値はそこに送られない
+- 送った (送ろうとした) たびに, 実行したパーツ・URL・送ったかを `definy.secret-usage` に記録し (最新 500 件),
+  シークレットのパーツのページの「使用履歴」に出す
+- 「使用箇所」は, そのシークレットのパーツを参照しているパーツと, 同じ ID のリテラルを書いているパーツ (`src/secret.ts`)
+
+## 実装
+
+- `seeds/core.json`: `core.expression` の `secret({ id, label })` と `type_secret`, `core.type-ast` の `secret`。
+  型チェック (`type-check-unlocated` は `Secret` を返す), コンパイル・評価 (`{ id, label }` のレコードにする), quote
+- `src/stage1_compiler.ts`: `Secret` を `secret` バリアントにする (`allowed_url_prefixes` は捨てる)
+- `src/wasi_io.ts`: `secret_headers` に値を入れる (`withSecretHeaders`)
+- `src/components/SecretPanel.tsx`: パーツのページの欄
+- テスト: `src/self_hosted_type_check.test.ts` (型), `src/wasi_io.test.ts` (値の挿入・宛先の制限), `src/secret.test.ts` (使用箇所),
+  `src/tree_layout/quote.test.ts` (エディタ)

@@ -11,7 +11,7 @@
       "text": "definy のコア組み込みモジュール"
     }
   ],
-  "message": "コードそのものを値にする quote 式と, その型 Code<T> (値は core.code) を足す",
+  "message": "シークレットリテラル secret({ id, label }) と, その型 Secret (型パーツの宣言では type_secret) を足す. 値はパーツに入れず, ホストが送信の直前に入れる",
   "parts": [
     {
       "name": "let",
@@ -1353,6 +1353,27 @@
                   }
                 }
               }
+            },
+            {
+              "tag": "secret",
+              "payload_type": {
+                "TypeLiteral": {
+                  "items": [
+                    {
+                      "key": "id",
+                      "value": "TypeString"
+                    },
+                    {
+                      "key": "label",
+                      "value": "TypeString"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "tag": "type_secret",
+              "payload_type": null
             }
           ]
         }
@@ -3959,6 +3980,10 @@
                   }
                 }
               }
+            },
+            {
+              "tag": "secret",
+              "payload_type": null
             }
           ]
         }
@@ -6221,6 +6246,127 @@
                                   }
                                 }
                               ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "env",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "parts",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 900
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "secret",
+                  "variable_id": 7170,
+                  "variable_name": "secret",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.eval-value"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "Variant": {
+                              "tag": "record",
+                              "payload": {
+                                "ListLiteral": {
+                                  "items": [
+                                    {
+                                      "TypeLiteral": {
+                                        "items": [
+                                          {
+                                            "key": "key",
+                                            "value": {
+                                              "String": {
+                                                "value": "id"
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "key": "value",
+                                            "value": {
+                                              "Variant": {
+                                                "tag": "string",
+                                                "payload": {
+                                                  "RecordGet": {
+                                                    "record": {
+                                                      "Variable": {
+                                                        "variable_id": 7170
+                                                      }
+                                                    },
+                                                    "key": "id"
+                                                  }
+                                                },
+                                                "type_part_definition_event_hash": {
+                                                  "$part": "core.expression"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "TypeLiteral": {
+                                        "items": [
+                                          {
+                                            "key": "key",
+                                            "value": {
+                                              "String": {
+                                                "value": "label"
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "key": "value",
+                                            "value": {
+                                              "Variant": {
+                                                "tag": "string",
+                                                "payload": {
+                                                  "RecordGet": {
+                                                    "record": {
+                                                      "Variable": {
+                                                        "variable_id": 7170
+                                                      }
+                                                    },
+                                                    "key": "label"
+                                                  }
+                                                },
+                                                "type_part_definition_event_hash": {
+                                                  "$part": "core.expression"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": {
+                                "$part": "core.expression"
+                              }
                             }
                           }
                         },
@@ -17312,6 +17458,43 @@
                         {
                           "tag": "_",
                           "variable_id": 7003,
+                          "variable_name": "_",
+                          "body": {
+                            "Boolean": {
+                              "value": false
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
+                },
+                {
+                  "tag": "secret",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Variable": {
+                          "variable_id": 1
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "secret",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Boolean": {
+                              "value": true
+                            }
+                          }
+                        },
+                        {
+                          "tag": "_",
+                          "variable_id": 7103,
                           "variable_name": "_",
                           "body": {
                             "Boolean": {
@@ -32309,6 +32492,24 @@
                   }
                 },
                 {
+                  "tag": "secret",
+                  "variable_id": 7130,
+                  "variable_name": "secret",
+                  "body": {
+                    "Variant": {
+                      "tag": "ok",
+                      "payload": {
+                        "Variant": {
+                          "tag": "secret",
+                          "payload": null,
+                          "type_part_definition_event_hash": null
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
                   "tag": "_",
                   "variable_id": 99,
                   "variable_name": "_",
@@ -46497,6 +46698,108 @@
                       "default": null
                     }
                   }
+                },
+                {
+                  "tag": "type_secret",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Match": {
+                      "target": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-equals"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "t1",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 2
+                                }
+                              }
+                            },
+                            {
+                              "name": "t2",
+                              "value": {
+                                "Variant": {
+                                  "tag": "type",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "arms": [
+                        {
+                          "tag": "true",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variant": {
+                              "tag": "ok",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "type",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        },
+                        {
+                          "tag": "false",
+                          "variable_id": null,
+                          "variable_name": null,
+                          "body": {
+                            "Variant": {
+                              "tag": "error",
+                              "payload": {
+                                "Variant": {
+                                  "tag": "type_mismatch",
+                                  "payload": {
+                                    "TypeLiteral": {
+                                      "items": [
+                                        {
+                                          "key": "expected",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 2
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "key": "actual",
+                                          "value": {
+                                            "Variant": {
+                                              "tag": "type",
+                                              "payload": null,
+                                              "type_part_definition_event_hash": null
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              },
+                              "type_part_definition_event_hash": null
+                            }
+                          }
+                        }
+                      ],
+                      "default": null
+                    }
+                  }
                 }
               ],
               "default": {
@@ -54025,6 +54328,143 @@
                                           }
                                         }
                                       ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "env",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 1
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "depth",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 2
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "fn_base",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 3
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "ctx",
+                                  "value": {
+                                    "Variable": {
+                                      "variable_id": 4
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "tag": "secret",
+                          "variable_id": 7150,
+                          "variable_name": "secret",
+                          "body": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.compile-expr-instructions"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "expr",
+                                  "value": {
+                                    "Variant": {
+                                      "tag": "record",
+                                      "payload": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "TypeLiteral": {
+                                                "items": [
+                                                  {
+                                                    "key": "key",
+                                                    "value": {
+                                                      "String": {
+                                                        "value": "id"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "value",
+                                                    "value": {
+                                                      "Variant": {
+                                                        "tag": "string",
+                                                        "payload": {
+                                                          "RecordGet": {
+                                                            "record": {
+                                                              "Variable": {
+                                                                "variable_id": 7150
+                                                              }
+                                                            },
+                                                            "key": "id"
+                                                          }
+                                                        },
+                                                        "type_part_definition_event_hash": {
+                                                          "$part": "core.expression"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "TypeLiteral": {
+                                                "items": [
+                                                  {
+                                                    "key": "key",
+                                                    "value": {
+                                                      "String": {
+                                                        "value": "label"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "value",
+                                                    "value": {
+                                                      "Variant": {
+                                                        "tag": "string",
+                                                        "payload": {
+                                                          "RecordGet": {
+                                                            "record": {
+                                                              "Variable": {
+                                                                "variable_id": 7150
+                                                              }
+                                                            },
+                                                            "key": "label"
+                                                          }
+                                                        },
+                                                        "type_part_definition_event_hash": {
+                                                          "$part": "core.expression"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": {
+                                        "$part": "core.expression"
+                                      }
                                     }
                                   }
                                 },
@@ -65756,6 +66196,127 @@
                                   }
                                 }
                               ]
+                            }
+                          }
+                        },
+                        {
+                          "name": "depth",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 1
+                            }
+                          }
+                        },
+                        {
+                          "name": "ctx",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "tag": "secret",
+                  "variable_id": 7160,
+                  "variable_name": "secret",
+                  "body": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.max-local"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "expr",
+                          "value": {
+                            "Variant": {
+                              "tag": "record",
+                              "payload": {
+                                "ListLiteral": {
+                                  "items": [
+                                    {
+                                      "TypeLiteral": {
+                                        "items": [
+                                          {
+                                            "key": "key",
+                                            "value": {
+                                              "String": {
+                                                "value": "id"
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "key": "value",
+                                            "value": {
+                                              "Variant": {
+                                                "tag": "string",
+                                                "payload": {
+                                                  "RecordGet": {
+                                                    "record": {
+                                                      "Variable": {
+                                                        "variable_id": 7160
+                                                      }
+                                                    },
+                                                    "key": "id"
+                                                  }
+                                                },
+                                                "type_part_definition_event_hash": {
+                                                  "$part": "core.expression"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "TypeLiteral": {
+                                        "items": [
+                                          {
+                                            "key": "key",
+                                            "value": {
+                                              "String": {
+                                                "value": "label"
+                                              }
+                                            }
+                                          },
+                                          {
+                                            "key": "value",
+                                            "value": {
+                                              "Variant": {
+                                                "tag": "string",
+                                                "payload": {
+                                                  "RecordGet": {
+                                                    "record": {
+                                                      "Variable": {
+                                                        "variable_id": 7160
+                                                      }
+                                                    },
+                                                    "key": "label"
+                                                  }
+                                                },
+                                                "type_part_definition_event_hash": {
+                                                  "$part": "core.expression"
+                                                }
+                                              }
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              },
+                              "type_part_definition_event_hash": {
+                                "$part": "core.expression"
+                              }
                             }
                           }
                         },
@@ -98608,6 +99169,24 @@
                   }
                 },
                 {
+                  "tag": "type_secret",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variant": {
+                      "tag": "some",
+                      "payload": {
+                        "Variant": {
+                          "tag": "secret",
+                          "payload": null,
+                          "type_part_definition_event_hash": null
+                        }
+                      },
+                      "type_part_definition_event_hash": null
+                    }
+                  }
+                },
+                {
                   "tag": "_",
                   "variable_id": 99,
                   "variable_name": "_",
@@ -111190,6 +111769,183 @@
                                           }
                                         }
                                       ]
+                                    }
+                                  },
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            },
+                            {
+                              "key": "type_part",
+                              "value": {
+                                "Variant": {
+                                  "tag": "none",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "type_part_definition_event_hash": {
+                        "$part": "core.expression"
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "type_secret",
+                  "variable_id": null,
+                  "variable_name": null,
+                  "body": {
+                    "Variant": {
+                      "tag": "variant",
+                      "payload": {
+                        "TypeLiteral": {
+                          "items": [
+                            {
+                              "key": "tag",
+                              "value": {
+                                "String": {
+                                  "value": "type_secret"
+                                }
+                              }
+                            },
+                            {
+                              "key": "payload",
+                              "value": {
+                                "Variant": {
+                                  "tag": "none",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            },
+                            {
+                              "key": "type_part",
+                              "value": {
+                                "Variant": {
+                                  "tag": "none",
+                                  "payload": null,
+                                  "type_part_definition_event_hash": null
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "type_part_definition_event_hash": {
+                        "$part": "core.expression"
+                      }
+                    }
+                  }
+                },
+                {
+                  "tag": "secret",
+                  "variable_id": 7180,
+                  "variable_name": "payload",
+                  "body": {
+                    "Variant": {
+                      "tag": "variant",
+                      "payload": {
+                        "TypeLiteral": {
+                          "items": [
+                            {
+                              "key": "tag",
+                              "value": {
+                                "String": {
+                                  "value": "secret"
+                                }
+                              }
+                            },
+                            {
+                              "key": "payload",
+                              "value": {
+                                "Variant": {
+                                  "tag": "some",
+                                  "payload": {
+                                    "Variant": {
+                                      "tag": "record",
+                                      "payload": {
+                                        "ListLiteral": {
+                                          "items": [
+                                            {
+                                              "TypeLiteral": {
+                                                "items": [
+                                                  {
+                                                    "key": "key",
+                                                    "value": {
+                                                      "String": {
+                                                        "value": "id"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "value",
+                                                    "value": {
+                                                      "Variant": {
+                                                        "tag": "string",
+                                                        "payload": {
+                                                          "RecordGet": {
+                                                            "record": {
+                                                              "Variable": {
+                                                                "variable_id": 7180
+                                                              }
+                                                            },
+                                                            "key": "id"
+                                                          }
+                                                        },
+                                                        "type_part_definition_event_hash": {
+                                                          "$part": "core.expression"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            },
+                                            {
+                                              "TypeLiteral": {
+                                                "items": [
+                                                  {
+                                                    "key": "key",
+                                                    "value": {
+                                                      "String": {
+                                                        "value": "label"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "key": "value",
+                                                    "value": {
+                                                      "Variant": {
+                                                        "tag": "string",
+                                                        "payload": {
+                                                          "RecordGet": {
+                                                            "record": {
+                                                              "Variable": {
+                                                                "variable_id": 7180
+                                                              }
+                                                            },
+                                                            "key": "label"
+                                                          }
+                                                        },
+                                                        "type_part_definition_event_hash": {
+                                                          "$part": "core.expression"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "type_part_definition_event_hash": {
+                                        "$part": "core.expression"
+                                      }
                                     }
                                   },
                                   "type_part_definition_event_hash": null

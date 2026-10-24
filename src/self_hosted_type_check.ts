@@ -114,7 +114,8 @@ export function partTypeToSelfHostedAst(partType: unknown): unknown {
     partType === "number" ||
     partType === "string" ||
     partType === "boolean" ||
-    partType === "type"
+    partType === "type" ||
+    partType === "secret"
   ) {
     return variant(partType);
   }
@@ -201,6 +202,9 @@ export function typeDeclarationToSelfHostedAst(expression: unknown): unknown {
   }
   if (expression === "TypeBoolean") {
     return variant("type_boolean");
+  }
+  if (expression === "TypeSecret") {
+    return variant("type_secret");
   }
   const obj = asRecord(expression);
   const typeList = asRecord(obj?.TypeList);
@@ -674,6 +678,8 @@ export function formatTypeAst(
     case "boolean":
     case "type":
       return value.tag;
+    case "secret":
+      return "Secret";
     case "list":
       return `List<${format(fieldOf(value.payload, "item_type"))}>`;
     case "code":

@@ -7,7 +7,7 @@ import { adminCredentials, signedPost } from "./test_helpers.ts";
 import {
   browserWasiIoHandler,
   HTTP_PROXY_PATH,
-  parseEnvironmentText,
+  parseUrlPrefixes,
 } from "../src/wasi_io_browser.ts";
 
 const proxyUrl = "https://definy.workers.dev/definy.v1.HttpProxyService/Fetch";
@@ -149,7 +149,7 @@ describe("HttpProxyService/Fetch", () => {
     };
 
     const withRelay = await browserWasiIoHandler(
-      { environment: [], relayOnCorsError: true },
+      { relayOnCorsError: true },
       adminCredentials,
       browserFetch,
     )(request);
@@ -160,7 +160,7 @@ describe("HttpProxyService/Fetch", () => {
     expect(relayed).toBe(1);
 
     const withoutRelay = await browserWasiIoHandler(
-      { environment: [], relayOnCorsError: false },
+      { relayOnCorsError: false },
       adminCredentials,
       browserFetch,
     )(request);
@@ -168,12 +168,9 @@ describe("HttpProxyService/Fetch", () => {
     expect(relayed).toBe(1);
   });
 
-  it("環境変数は NAME=value の行で書く", () => {
+  it("シークレットを送ってよい宛先は 1 行に 1 つ書く", () => {
     expect(
-      parseEnvironmentText("# コメント\nCLOUDFLARE_API_TOKEN = a=b\n\nX=1"),
-    ).toEqual([
-      { name: "CLOUDFLARE_API_TOKEN", value: "a=b" },
-      { name: "X", value: "1" },
-    ]);
+      parseUrlPrefixes(" https://api.cloudflare.com/ \n\nhttps://example.com/"),
+    ).toEqual(["https://api.cloudflare.com/", "https://example.com/"]);
   });
 });

@@ -121,6 +121,7 @@ export function getOptionValueForExpression(node: unknown): string | null {
   }
   if ("ListLiteral" in obj) return "expr:list";
   if ("Quote" in obj) return "expr:quote";
+  if ("Secret" in obj) return "expr:secret";
   if ("Let" in obj) return "expr:let";
   if ("Match" in obj) {
     return isBooleanMatch(obj.Match) ? "expr:match_boolean" : "expr:match";

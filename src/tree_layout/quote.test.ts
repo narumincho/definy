@@ -43,3 +43,26 @@ describe("quote 式と Code<T> 型のツリーエディタ", () => {
     expect(getOptionValueForExpression(expression)).toBe("expr:type:code");
   });
 });
+
+describe("シークレットリテラルのツリーエディタ", () => {
+  it("secret を選ぶとランダムな ID のシークレットリテラルになり, 名前だけ表示する", () => {
+    const first = applySelection({ Hole: {} }, [], "expr:secret") as {
+      readonly Secret: { readonly id: string; readonly label: string };
+    };
+    const second = applySelection({ Hole: {} }, [], "expr:secret") as {
+      readonly Secret: { readonly id: string };
+    };
+    expect(first.Secret.id).not.toBe(second.Secret.id);
+    expect(first.Secret).toMatchObject({
+      label: "secret",
+      allowed_url_prefixes: [],
+    });
+    expect(getOptionValueForExpression(first)).toBe("expr:secret");
+    expect(expressionToLayoutNode(first, "root").label).toBe("secret secret");
+  });
+
+  it("Secret 型は TypeSecret の式と往復する", () => {
+    expect(partTypeToExpression("secret")).toBe("TypeSecret");
+    expect(expressionToPartType("TypeSecret")).toBe("secret");
+  });
+});

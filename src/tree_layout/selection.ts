@@ -14,6 +14,7 @@ export const TYPE_SELECTIONS: Readonly<Record<string, unknown>> = {
   "expr:type:string": "TypeString",
   "expr:type:boolean": "TypeBoolean",
   "expr:type:type": "TypeType",
+  "expr:type:secret": "TypeSecret",
   "expr:type:list": { TypeList: { item_type: "TypeNumber" } },
   "expr:type:code": { TypeCode: { value_type: "TypeNumber" } },
   "expr:type:function": {
@@ -268,6 +269,15 @@ export function applySelection(
     newSubExpr = { Hole: {} };
   } else if (selectionValue === "expr:list") {
     newSubExpr = { ListLiteral: { items: [] } };
+  } else if (selectionValue === "expr:secret") {
+    // ID はシークレットを区別するだけなので, 作るときにランダムに決める (値はブラウザに保存する. docs/secret.md)
+    newSubExpr = {
+      Secret: {
+        id: crypto.randomUUID(),
+        label: "secret",
+        allowed_url_prefixes: [],
+      },
+    };
   } else if (selectionValue === "expr:quote") {
     newSubExpr = { Quote: { expression: { Hole: {} } } };
   } else if (selectionValue === "expr:let") {

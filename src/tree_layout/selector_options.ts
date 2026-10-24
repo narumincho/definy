@@ -56,6 +56,13 @@ export const BASE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
     returnType: "list",
   },
   {
+    value: "expr:secret",
+    name: "secret",
+    detail: "API トークンなど",
+    category: "Literal",
+    returnType: "any",
+  },
+  {
     value: "expr:quote",
     name: "quote",
     detail: "Code<T>",
@@ -130,6 +137,13 @@ export const TYPE_SELECTOR_OPTIONS: ReadonlyArray<SelectorOption> = [
   {
     value: "expr:type:boolean",
     name: "boolean",
+    category: "Type",
+    returnType: "any",
+  },
+  {
+    value: "expr:type:secret",
+    name: "secret",
+    detail: "API トークンなど",
     category: "Type",
     returnType: "any",
   },
