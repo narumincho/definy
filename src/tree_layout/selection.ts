@@ -1,6 +1,6 @@
 import { isSamePath, type LayoutNode, type PathStep } from "./types.ts";
 import { variantFromOptionValue } from "./variant.ts";
-import { updateExpressionAtPath } from "./path.ts";
+import { getExpressionAtPath, updateExpressionAtPath } from "./path.ts";
 import { BUILTIN_PARAMETERS, compilerBuiltinName } from "../stage1_compiler.ts";
 import { none, variant, variantPayload } from "../definy_value.ts";
 import {
@@ -8,6 +8,7 @@ import {
   callExpression,
   callOf,
   hole,
+  isHole,
   letChain,
   matchExpression,
   NO_VARIABLE,
@@ -213,7 +214,8 @@ export function nextVariableId(expr: unknown): number {
  * 置換メニューで選んだ選択肢 (`selectionValue`) の式に, `path` の位置の式を置き換える.
  * `parameterNamesOf` はパーツ ID (Base64URL) からそのパーツの引数名 ({@link partParameterNames}) を返す.
  * 関数のパーツを選ぶと, そのパーツの呼び出しにする. `variableParameterNamesOf` は変数 ID から関数型の変数の引数名を返し,
- * 関数型の変数を選んだときもその変数の呼び出しにする
+ * 関数型の変数を選んだときもその変数の呼び出しにする.
+ * `expectedType` (その位置で期待する型, `core.type-ast` の値) が関数の型なら, 選んだ式をラムダ式で包む ({@link applySelectionInLambda})
  */
 export function applySelection(
   expr: unknown,
@@ -225,7 +227,23 @@ export function applySelection(
   variableParameterNamesOf: (
     variableId: number,
   ) => ReadonlyArray<string> | undefined = () => undefined,
+  expectedType: unknown = undefined,
 ): unknown {
+  const expectedFunction = functionTypeOf(expectedType);
+  if (
+    expectedFunction !== undefined &&
+    selectionValue !== "expr:hole" &&
+    !(selectionValue in TYPE_SELECTIONS)
+  ) {
+    return applySelectionInLambda(
+      expr,
+      path,
+      selectionValue,
+      expectedFunction,
+      parameterNamesOf,
+      variableParameterNamesOf,
+    );
+  }
   let newSubExpr: unknown;
 
   if (selectionValue === "expr:number") {
@@ -306,6 +324,89 @@ export function applySelection(
   }
 
   return updateExpressionAtPath(expr, path, () => newSubExpr);
+}
+
+type FunctionParameter = {
+  readonly parameter_id: number;
+  readonly parameter_name: string;
+};
+
+/**
+ * 関数の型を期待する位置 (`core.list-map` の `f:` など) で選んだ式を, その型の引数を持つラムダ式の本体にする.
+ * 関数は値として書けないので (docs/call-syntax.md), 関数のパーツ・関数型の変数を選ぶと `(item) => パーツ(x: item)` になる.
+ * すでにラムダ式ならその引数をそのまま使い, 本体だけを置き換える.
+ * 本体の呼び出しの未入力の引数には, 同じ名前のラムダ式の引数を, 無ければ残りの引数を順に入れる
+ */
+function applySelectionInLambda(
+  expr: unknown,
+  path: ReadonlyArray<PathStep>,
+  selectionValue: string,
+  expectedFunction: NonNullable<ReturnType<typeof functionTypeOf>>,
+  parameterNamesOf: (partHash: string) => ReadonlyArray<string> | undefined,
+  variableParameterNamesOf: (
+    variableId: number,
+  ) => ReadonlyArray<string> | undefined,
+): unknown {
+  const current = variantPayload(
+    getExpressionAtPath(expr, path),
+    "function",
+  ) as
+    | {
+        readonly parameters?: ReadonlyArray<FunctionParameter>;
+        readonly body?: unknown;
+      }
+    | undefined;
+  const firstId = nextVariableId(expr);
+  const parameters: ReadonlyArray<FunctionParameter> =
+    current?.parameters ??
+    (expectedFunction.parameters ?? []).map((parameter, index) => ({
+      parameter_id: firstId + index,
+      parameter_name: String(parameter.name),
+    }));
+  const withLambda = updateExpressionAtPath(expr, path, () =>
+    variant("function", { parameters, body: current?.body ?? hole() }),
+  );
+  const bodyPath = [...path, "functionBody" as const];
+  const selected = applySelection(
+    withLambda,
+    bodyPath,
+    selectionValue,
+    parameterNamesOf,
+    variableParameterNamesOf,
+  );
+  return updateExpressionAtPath(selected, bodyPath, (body) =>
+    fillArgumentsWithParameters(body, parameters),
+  );
+}
+
+/** 呼び出しの未入力の引数に, 同じ名前の引数の変数を, 無ければ名前で使われなかった引数の変数を順に入れる */
+function fillArgumentsWithParameters(
+  body: unknown,
+  parameters: ReadonlyArray<FunctionParameter>,
+): unknown {
+  const call = callOf(body);
+  if (call === undefined) {
+    return body;
+  }
+  const names = new Set(call.arguments.map((argument) => argument.name));
+  const rest = parameters.filter(
+    (parameter) => !names.has(parameter.parameter_name),
+  );
+  return callExpression(
+    call.callee,
+    call.arguments.map((argument) => {
+      if (!isHole(argument.value)) {
+        return argument;
+      }
+      const parameter =
+        parameters.find(
+          (parameter) => parameter.parameter_name === argument.name,
+        ) ?? rest.shift();
+      return parameter === undefined
+        ? argument
+        : { ...argument, value: variableExpression(parameter.parameter_id) };
+    }),
+  );
 }
 
 /** 表示順 (行きがけ順) にノード ID とパスを集める */

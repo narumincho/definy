@@ -11,6 +11,12 @@ import type { ExpressionTypeError } from "../../src/tree_layout/ExpressionTreeEd
 import { isTextInput } from "../../src/tree_layout/keyboard.ts";
 import type { PartChange } from "../../src/types.ts";
 import {
+  parameterRenames,
+  renameCallArguments,
+  renameCallersOf,
+  renameRootParameters,
+} from "../../src/tree_layout/rename_arguments.ts";
+import {
   emptyUndoHistory,
   recordUndo,
   redo,
@@ -51,6 +57,7 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     updatedAtMs: Date.now(),
   };
 
+  const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
   const change = workingChanges.parts.get(part.partId);
   const hasChange = change !== undefined;
   const currentName = change?.name ?? part.name;
@@ -93,16 +100,46 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
     >,
     mergeKey: string | null,
   ): void => {
+    const next: PartChange = {
+      moduleDefinitionEventHash: part.moduleId,
+      partDefinitionEventHash: part.partId,
+      name: currentName,
+      description: currentDescription,
+      partType: currentPartType,
+      expression: currentExpression,
+      ...fields,
+    };
+    // 引数名を変えたら, このパーツ自身 (再帰呼び出し) と他のパーツの呼び出しの引数名も合わせて変える.
+    // 他のパーツの変更は作業中の変更に入れるだけで, このページの Undo では戻さない
+    const renames =
+      fields.partType === undefined || partIdHash === null
+        ? new Map<string, string>()
+        : parameterRenames(currentPartType, fields.partType);
+    if (renames.size > 0 && partIdHash !== null) {
+      for (const caller of renameCallersOf(
+        parts,
+        workingChanges,
+        partIdHash,
+        renames,
+        part.partId,
+      )) {
+        updateWorkingPart(caller.partDefinitionEventHash, caller);
+      }
+    }
     changePart(
-      {
-        moduleDefinitionEventHash: part.moduleId,
-        partDefinitionEventHash: part.partId,
-        name: currentName,
-        description: currentDescription,
-        partType: currentPartType,
-        expression: currentExpression,
-        ...fields,
-      },
+      partIdHash === null
+        ? next
+        : {
+            ...next,
+            expression: renameCallArguments(
+              // 型の行で引数名を変えたときは, 式の根の関数の引数名も合わせる
+              fields.expression === undefined
+                ? renameRootParameters(next.expression, renames)
+                : next.expression,
+              partIdHash,
+              renames,
+            ),
+          },
       mergeKey,
     );
   };
@@ -165,7 +202,6 @@ function PartDetail({ id }: { readonly id: string | undefined }): JSX.Element {
   // 編集中の式を, 編集が 500ms 止まってから definy 製の型チェッカーで検査し (コミット済みの型環境を使う),
   // 型エラーはエラーのある式の横に出す. 検査できない式 (未入力・コンパイラ組み込み) には何も出さない.
   // 検査した後に式を編集したら, 検査し直すまで出さない (エラーの式が見つからずルートに出てしまうため)
-  const partIdHash = "partIdHash" in part ? (part.partIdHash ?? null) : null;
   const secret = secretLiteralOf(currentExpression);
   const [typeCheckResult, setTypeCheckResult] = useState<{
     readonly expression: unknown;

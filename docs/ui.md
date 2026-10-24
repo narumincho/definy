@@ -161,6 +161,20 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   (置換メニューは出さない). 変数は ID で参照しているので, 名前だけを変えれば参照する側の式は変えなくてよい.
   let の変数名は束縛の値とは別のパス `letBindingName` (式ではない) にしている.
   実装は [src/tree_layout/local_variable.ts](../src/tree_layout/local_variable.ts) の `renameVariableAt`
+- 関数のパーツの引数名の変更: 式の根の関数の引数名か, パーツの型の行の引数名を変えると, 型と式の根の関数の引数名を揃え,
+  そのパーツを呼び出している式の引数名 (`f(x: ...)` の `x`) も合わせて変える. 呼び出しは引数を型の引数名で渡すので,
+  直さないと呼び出し側が型エラーになるため.
+  - 同じ位置の名前が変わったものだけを変更とみなす (引数の数が変わったときは何もしない. `parameterRenames`)
+  - 自分自身の再帰呼び出しはこのパーツの変更に, 他のパーツの呼び出しはそのパーツの作業中の変更に入れる (`renameCallersOf`).
+    作業中の変更がすでにあるパーツはその式を直す. 他のパーツの変更はこのページの Undo では戻らない
+  - 実装は [src/tree_layout/rename_arguments.ts](../src/tree_layout/rename_arguments.ts) と `pages/part/[id].tsx` の `editPart`
+- 関数の型を期待する位置 (`core.list-map` の `f:` など) で置換メニューから選んだ式は, その型の引数を持つラムダ式の本体にする
+  (関数は値として書けないため. [call-syntax.md](call-syntax.md)). 例えば `f:` で `std.abs` を選ぶと `(item) => std.abs(x: item)` になる.
+  - 期待する型は選んだ位置で型チェッカーに聞いた型を `applySelection` に渡す. 型が届く前に選択肢を選んだときは届くのを待ってから置き換える
+    (`expectedTypeRef`. E2E で素早く選ぶと包まれないことがあった)
+  - その位置がすでにラムダ式なら, 引数をそのまま使い本体だけを置き換える
+  - 本体の呼び出しの未入力の引数には, 同じ名前のラムダ式の引数を, 無ければ残りの引数を順に入れる (`applySelectionInLambda`, `src/tree_layout/selection.ts`)
+  - 未入力 (`hole`) を選んだときは包まない
 - 定義への移動: 変数・パーツの参照 (とその呼び出し) を選んだときの `go-to-definition`, ツリーで F12,
   または名前を Ctrl / Cmd + クリック (VSCode などの IDE と同じ).
   変数ならその変数を定義している名前 (関数の引数名・let の変数名・match で束縛する変数の名前) を選び,

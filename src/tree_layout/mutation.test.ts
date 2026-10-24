@@ -350,3 +350,135 @@ describe("関数の引数名を変える", () => {
     ).toBe("count");
   });
 });
+
+describe("関数の型を期待する位置で選ぶとラムダ式で包む", () => {
+  const partHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(9));
+  const hole = { "#hole": { probe: false } };
+  // (item: number) -> string
+  const expected = {
+    "#function": {
+      parameters: [{ name: "item", type: { "#number": null } }],
+      return_type: { "#string": null },
+    },
+  };
+  // (n) => m(f: □) の f は (item: number) -> string を期待する
+  const expression = {
+    "#function": {
+      parameters: [{ parameter_id: 0, parameter_name: "n" }],
+      body: {
+        "#call": {
+          function: { "#part_reference": { part_definition_event_hash: "m" } },
+          arguments: [{ name: "f", value: hole }],
+        },
+      },
+    },
+  };
+  const path = ["functionBody", { kind: "callArgument", index: 0 }] as const;
+
+  it("関数のパーツを選ぶと, 引数をラムダ式の引数にした呼び出しを本体にする", () => {
+    const selected = applySelection(
+      expression,
+      path,
+      `ref:part:${partHash}`,
+      (hash) => (hash === partHash ? ["value"] : undefined),
+      () => undefined,
+      expected,
+    );
+    expect(getExpressionAtPath(selected, path)).toEqual({
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: {
+          "#call": {
+            function: {
+              "#part_reference": { part_definition_event_hash: partHash },
+            },
+            arguments: [
+              { name: "value", value: { "#variable": { variable_id: 1 } } },
+            ],
+          },
+        },
+      },
+    });
+  });
+
+  it("同じ名前の引数があればその引数を入れる. 関数型の変数も同じく包む", () => {
+    const selected = applySelection(
+      expression,
+      path,
+      "ref:local:0",
+      () => undefined,
+      () => ["other", "item"],
+      expected,
+    );
+    expect(getExpressionAtPath(selected, path)).toEqual({
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: {
+          "#call": {
+            function: { "#variable": { variable_id: 0 } },
+            arguments: [
+              { name: "other", value: hole },
+              { name: "item", value: { "#variable": { variable_id: 1 } } },
+            ],
+          },
+        },
+      },
+    });
+  });
+
+  it("すでにラムダ式なら引数をそのまま使い, 本体だけを置き換える. リテラルも本体にする", () => {
+    const lambda = applySelection(
+      expression,
+      path,
+      "expr:string",
+      () => undefined,
+      () => undefined,
+      expected,
+    );
+    expect(getExpressionAtPath(lambda, path)).toEqual({
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: { "#string": "" },
+      },
+    });
+    const replaced = applySelection(
+      lambda,
+      path,
+      `ref:part:${partHash}`,
+      () => ["item"],
+      () => undefined,
+      expected,
+    );
+    expect(getExpressionAtPath(replaced, path)).toEqual({
+      "#function": {
+        parameters: [{ parameter_id: 1, parameter_name: "item" }],
+        body: {
+          "#call": {
+            function: {
+              "#part_reference": { part_definition_event_hash: partHash },
+            },
+            arguments: [
+              { name: "item", value: { "#variable": { variable_id: 1 } } },
+            ],
+          },
+        },
+      },
+    });
+  });
+
+  it("未入力を選ぶとラムダ式で包まない", () => {
+    expect(
+      getExpressionAtPath(
+        applySelection(
+          expression,
+          path,
+          "expr:hole",
+          () => undefined,
+          () => undefined,
+          expected,
+        ),
+        path,
+      ),
+    ).toEqual(hole);
+  });
+});

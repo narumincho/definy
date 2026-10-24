@@ -333,6 +333,68 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(3);
   });
 
+  test("selecting a part at a function-typed argument wraps it in a lambda", async ({
+    page,
+  }) => {
+    await page.goto("/part/core.list-map");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    // core.list-map-inner の f: に書いたラムダ式 (item) => f(item: item) を選び, std.abs に置き換える
+    await valueTree.locator(".tree-badge", { hasText: /^fn$/ }).last().click();
+    await page.locator(".dropdown-search-input").fill("std.abs");
+    await page
+      .locator(".dropdown-option", { hasText: /^std\.abs(?!-)/ })
+      .first()
+      .click();
+    // 関数は値として書けないので, ラムダ式の引数を渡す std.abs の呼び出しをラムダ式の本体にする
+    await expect(
+      valueTree.locator('[data-node-id$=".fn"]', { hasText: /^std\.abs$/ }),
+    ).toHaveCount(1);
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^item$/ }),
+    ).toHaveCount(2);
+    await expect(valueTree.locator(".tree-type-error")).toHaveCount(0);
+  });
+
+  test("renaming a function parameter renames the arguments of the callers in other parts", async ({
+    page,
+  }) => {
+    await page.goto("/part/std.url-path");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    await valueTree
+      .locator(".tree-badge", { hasText: /^url$/ })
+      .first()
+      .click();
+    const input = valueTree.locator(".tree-badge input[type=text]");
+    await expect(input).toBeVisible();
+    await input.fill("address");
+    await expect(
+      valueTree.locator(".tree-badge", { hasText: /^address:$/ }),
+    ).toHaveCount(1);
+
+    // std.url-path を呼び出している sample.self-hosted-definy-server の引数名も変わる (std.url-query の url: はそのまま)
+    await page.goto("/part/sample.self-hosted-definy-server");
+    const callerTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(callerTree).toBeVisible({ timeout: 15000 });
+    await expect(
+      callCapsule(callerTree, "std.url-path").locator(".tree-badge", {
+        hasText: /^address:$/,
+      }),
+    ).toHaveCount(1);
+    await expect(
+      callCapsule(callerTree, "std.url-query").locator(".tree-badge", {
+        hasText: /^url:$/,
+      }),
+    ).toHaveCount(1);
+  });
+
   test("hovering an expression shows its type and the documentation of the part", async ({
     page,
   }) => {

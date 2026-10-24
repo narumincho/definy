@@ -192,7 +192,12 @@ export function ExpressionTreeEditor({
     useState<ReadonlyArray<PatternVariant> | null>(null);
   const [expectedVariants, setExpectedVariants] =
     useState(NO_EXPECTED_VARIANTS);
+  // 期待する型の問い合わせ (選んだ位置が変わるたびに作り直す). 型が届く前に選択肢を選んでも, 届くのを待ってから置き換える
+  const expectedTypeRef = useRef<Promise<DefinyValue | null>>(
+    Promise.resolve(null),
+  );
   useEffect(() => {
+    expectedTypeRef.current = Promise.resolve(null);
     setExpectedType("any");
     setExpectedTypeAst(null);
     setPatternVariants(null);
@@ -206,12 +211,16 @@ export function ExpressionTreeEditor({
     }
     const isPattern = isMatchPatternPath(selectedPath);
     let cancelled = false;
-    findExpectedType({
+    const typePromise = findExpectedType({
       partType,
       expression: isPattern
         ? probeMatchTargetType(expression, selectedPath)
         : probeExpressionAt(expression, selectedPath),
-    }).then(
+    });
+    if (!isPattern) {
+      expectedTypeRef.current = typePromise.catch(() => null);
+    }
+    typePromise.then(
       (type) => {
         if (cancelled) {
           return;
@@ -673,11 +682,23 @@ export function ExpressionTreeEditor({
       }
       // 現在と同じ選択肢を選び直しても式を作り直さない (中身が初期値に戻ってしまうため)
       if (optionValue !== menu.currentOptionValue) {
-        onChange(
-          !isMatchPatternPath(selectedPath)
-            ? applySelection(
+        if (isMatchPatternPath(selectedPath)) {
+          onChange(
+            applyPatternSelection(
+              expression,
+              selectedPath,
+              optionValue,
+              patternVariants,
+            ),
+          );
+        } else {
+          // 関数の型を期待する位置ではラムダ式で包むので, 期待する型が届くのを待つ
+          const path = selectedPath;
+          void expectedTypeRef.current.then((type) => {
+            onChange(
+              applySelection(
                 expression,
-                selectedPath,
+                path,
                 optionValue,
                 (hash) => {
                   const part = partsByIdHash.get(hash);
@@ -687,14 +708,11 @@ export function ExpressionTreeEditor({
                 },
                 (variableId) =>
                   variableParameterNames(parameterTypes.get(variableId)),
-              )
-            : applyPatternSelection(
-                expression,
-                selectedPath,
-                optionValue,
-                patternVariants,
+                type,
               ),
-        );
+            );
+          });
+        }
       }
       keyboard.returnToTree();
     },
