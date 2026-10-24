@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, type JSX } from "react";
-import { useParams, Link } from "@void/react";
+import { useParams } from "@void/react";
+import { Link } from "../../src/components/Link.tsx";
 import { PlayIcon, RedoIcon, UndoIcon } from "../../src/icons.tsx";
 import { label, localizedText, withLocalizedText } from "../../src/language.ts";
 import { useDefiny } from "../../src/state.tsx";

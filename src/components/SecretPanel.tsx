@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX } from "react";
-import { Link } from "@void/react";
+import { Link } from "./Link.tsx";
 import { label } from "../language.ts";
 import type { SecretLiteral } from "../secret.ts";
 import type { LanguageCode, PartSnapshot } from "../types.ts";

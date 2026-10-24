@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { Link } from "@void/react";
+import { Link } from "../src/components/Link.tsx";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
 import type { LanguageCode } from "../src/types.ts";
@@ -11,7 +11,6 @@ import {
   type ComparisonItem,
   type PillarItem,
 } from "../src/about_data.ts";
-import { usePageTitle } from "../src/page_title.ts";
 
 function FeatureCard(
   props: PillarItem & { readonly lang: LanguageCode },
@@ -119,7 +118,6 @@ function ComparisonRow(
 
 export default function AboutPage(): JSX.Element {
   const { language } = useDefiny();
-  usePageTitle(label(language, "About", "About", "Pri"));
 
   return (
     <div

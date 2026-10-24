@@ -1,13 +1,11 @@
 import type { JSX } from "react";
-import { Link } from "@void/react";
+import { Link } from "../src/components/Link.tsx";
 import { ModuleIcon } from "../src/icons.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
-import { usePageTitle } from "../src/page_title.ts";
 
 export default function ModulesPage(): JSX.Element {
   const { language, modules } = useDefiny();
-  usePageTitle(label(language, "Modules", "モジュール一覧", "Moduloj"));
 
   return (
     <div className="module-list-view">

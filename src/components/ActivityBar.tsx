@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import { Link, useRouter } from "@void/react";
+import { useRouter } from "@void/react";
+import { Link } from "./Link.tsx";
 import {
   AboutIcon,
   AccountsIcon,

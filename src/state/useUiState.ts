@@ -1,25 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "@void/react";
+import { parseLanguageCode, withLanguage } from "../language.ts";
 import type { LanguageCode } from "../types.ts";
-
-const STORAGE_KEY_LANG = "definy.language";
-
-function isLanguageCode(value: string | null): value is LanguageCode {
-  return value === "en" || value === "ja" || value === "eo";
-}
-
-/**
- * URL クエリ (?lang=) が無いときにブラウザ側の情報から言語を決める。
- * 優先順位は localStorage > navigator.language > en。
- * SSR とのハイドレーション不一致を避けるため、マウント後の useEffect からのみ呼ぶ。
- */
-function resolveBrowserLanguage(): LanguageCode {
-  const stored = localStorage.getItem(STORAGE_KEY_LANG);
-  if (isLanguageCode(stored)) return stored;
-  if (navigator.language.startsWith("ja")) return "ja";
-  if (navigator.language.startsWith("eo")) return "eo";
-  return "en";
-}
 
 export type UiState = {
   readonly language: LanguageCode;
@@ -38,32 +20,25 @@ export type UiState = {
 };
 
 export function useUiState(): UiState {
-  // ?lang= は SSR でも Void Router 経由で読めるので初期値に使う。
-  // localStorage など SSR で読めない値はマウント後に反映し、初回レンダーを SSR と揃える。
-  const queryLang = useRouter().query.get("lang");
-  const queryLanguage = isLanguageCode(queryLang) ? queryLang : null;
-  const [language, setLanguageState] = useState<LanguageCode>(
-    queryLanguage ?? "en",
-  );
+  // 表示言語は URL の ?lang= だけで決める (localStorage などには保存しない).
+  // ?lang= が無いページの要求はミドルウェアが Accept-Language から決めた ?lang= 付きの URL にリダイレクトするので,
+  // en になるのは ?lang= が壊れているときだけ. SSR でも Void Router から読めるのでハイドレーション不一致も起きない
+  const router = useRouter();
+  const language = parseLanguageCode(router.query.get("lang")) ?? "en";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (queryLanguage === null) {
-      setLanguageState(resolveBrowserLanguage());
-    }
-  }, [queryLanguage]);
-
-  const setLanguage = useCallback((lang: LanguageCode) => {
-    setLanguageState(lang);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEY_LANG, lang);
-      const url = new URL(window.location.href);
-      url.searchParams.set("lang", lang);
-      window.history.replaceState(null, "", url.toString());
-    }
-  }, []);
+  const setLanguage = useCallback(
+    (lang: LanguageCode) => {
+      const current = router.url;
+      router.visit(
+        withLanguage(current.pathname + current.search + current.hash, lang),
+        { replace: true, preserveState: true, preserveScroll: true },
+      );
+    },
+    [router],
+  );
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);

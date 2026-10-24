@@ -313,15 +313,18 @@ I/O の記録 (HTTP リクエストの URL と結果など) と `done` のメッ
 
 ### ページタイトル
 
-タブのタイトル (`document.title`) は開いているページに合わせて `ページ名 | definy` にする (トップのイベントページは `definy` だけ).
-各ページのコンポーネントで `usePageTitle(ページ名)` (`src/page_title.ts`) を呼ぶ.
+タブのタイトルは開いているページに合わせて `ページ名 | definy` にする (トップのイベントページは `definy` だけ).
 
-- 一覧ページの名前は見出しと同じ文言を表示言語で出す (例: `パーツ一覧 | definy`)
-- パーツ詳細は `モジュール名.パーツ名` (作業中の名前の変更も反映), モジュール詳細はモジュール名, イベント詳細は `イベント <ハッシュ先頭 16 文字>`
-- パーツ・モジュールの名前はクライアントで取得するデータから決まるので, Void の `head()` (サーバー側) ではなくクライアントで設定する.
-  SSR の HTML のタイトルは `void.json` の `head.title` (`definy`) のままで, マウント後に置き換わる
-- Void はクライアント側の遷移で新しいページを描画したあと, ページデータの `head.title` (`definy`) を `document.title` に入れ直す.
-  描画時の `useEffect` だけだと上書きされうるので, `useNavigation().state` が `idle` に戻ったときにも設定し直す
+- Void 標準のやり方で, 各ページの `.server.ts` から `export const head = titleHead(en, ja, eo)` (`src/page_head.ts`) を出す.
+  表示言語は要求の URL の `?lang=` で決まるので, サーバーが返す HTML にも表示言語のタイトルが入り,
+  クライアント側の遷移や言語の切り替えでも Void がタイトルを入れ替える
+- 一覧ページの名前は見出しと同じ文言 (例: `パーツ一覧 | definy`), イベント詳細は `イベント <ハッシュ先頭 16 文字>` (URL から決まる)
+- パーツ詳細 (`モジュール名.パーツ名`, 作業中の名前の変更も反映) とモジュール詳細 (モジュール名) は,
+  名前がクライアントで取得するデータから決まるので head() では仮に `パーツ` / `モジュール` とし,
+  コンポーネントで `usePageTitle(名前)` (`src/page_title.ts`) を呼んで置き換える
+- Void はクライアント側の遷移で新しいページを描画したあとに head() のタイトルを `document.title` に入れ直すので,
+  `usePageTitle` は `useNavigation().state` が `idle` に戻ったときにも設定し直す
+- `void.json` の `titleTemplate` は使わない. 使うとトップの `definy` も `definy | definy` になる
 
 ## SSR とハイドレーション (React 19 + Void 実装)
 
@@ -330,7 +333,7 @@ Void はページを SSR してからクライアントでハイドレーショ�
 
 - `localStorage` / `navigator` / `window.location` を `useState` の初期化やレンダー中に読まない.
   初回は SSR と同じ既定値でレンダーし, マウント後の `useEffect` で保存値を反映する
-  (`src/state.tsx` の言語・作業中の変更, `src/wasi_io_browser.ts` のシークレットの値・使用履歴と CORS 仲介の設定, `ExplorerSidebar` の幅)
+  (`src/state.tsx` の作業中の変更, `src/wasi_io_browser.ts` のシークレットの値・使用履歴と CORS 仲介の設定, `ExplorerSidebar` の幅)
 - URL は SSR でも `useRouter()` (`@void/react`) で読める. SSR では `createSsrRouter(リクエストの URL)` が使われ,
   `path` や `query` はクエリ文字列も含めてクライアントと一致する. 現在のパスは `window.location.pathname` ではなく
   `useRouter().path` を使う (`ActivityBar`)
@@ -339,10 +342,13 @@ Void はページを SSR してからクライアントでハイドレーショ�
 
 ### 表示言語の決め方
 
-優先順位は URL クエリ `?lang=` > `localStorage` の `definy.language` > `navigator.language` (`ja` / `eo` で始まるか) > `en`.
+表示言語は URL クエリ `?lang=` (`en` / `ja` / `eo`) だけで決める. `localStorage` などには保存しない.
 
-- `?lang=` は `useRouter().query` から読んで `useState` の初期値にする. SSR も同じ言語で HTML を出すので, ちらつきも不一致も起きない
-- `?lang=` が無いときは SSR では `en` で出し, マウント後に `localStorage` / `navigator.language` から決めた言語に切り替える
-- 言語を切り替えると `localStorage` に保存し, `history.replaceState` で URL の `?lang=` も書き換える
-- 動作確認は `localStorage.setItem("definy.language", "ja")` を入れてから `/parts?lang=en` を開き,
-  英語で表示されコンソールに `Hydration` の警告が出ないことを見る
+- ブラウザがページを開いた要求 (GET で Accept に `text/html` を含む) に `?lang=` が無い (か不正な) ときは,
+  ミドルウェア (`middleware/01.definy.ts`) が `Accept-Language` から決めた言語 (`languageFromAcceptLanguage`, 対応言語が無ければ `en`)
+  の `?lang=` を付けた URL に 302 でリダイレクトする
+- `useUiState` は `useRouter().query` の `?lang=` から言語を読むだけ. SSR でもクライアントでも同じ値になるので, ちらつきもハイドレーション不一致も起きない
+- サイト内のリンクは `@void/react` の `Link` を直接使わず, 今の言語の `?lang=` を付ける `src/components/Link.tsx` を使う.
+  `router.visit` で移動するときは `withLanguage(パス, 言語)` を通す
+- 言語を切り替えると `?lang=` を書き換えた URL へ `router.visit` (replace) する. head() も新しい言語で動くのでタイトルも変わる
+- `<html lang>` もミドルウェアの `headDefaults` で `?lang=` に合わせる (SSR のみ)

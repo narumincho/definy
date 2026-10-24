@@ -1,12 +1,10 @@
 import type { JSX } from "react";
-import { Link } from "@void/react";
+import { Link } from "../src/components/Link.tsx";
 import { label } from "../src/language.ts";
 import { useDefiny } from "../src/state.tsx";
-import { usePageTitle } from "../src/page_title.ts";
 
 export default function HistoryPage(): JSX.Element {
   const { language, events } = useDefiny();
-  usePageTitle(label(language, "Commit History", "コミット履歴", "Historio"));
 
   const commits = events.filter((e) => e.eventType === "module_commit");
 

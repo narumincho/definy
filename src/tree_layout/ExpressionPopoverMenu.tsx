@@ -1,5 +1,5 @@
 import { useEffect, useRef, type JSX, type KeyboardEvent } from "react";
-import { Link } from "@void/react";
+import { Link } from "../components/Link.tsx";
 import type { LanguageCode } from "../types.ts";
 import { label } from "../language.ts";
 import type { ExpectedType } from "./type_inference.ts";

@@ -5,10 +5,9 @@ import {
   type JSX,
   type FormEvent,
 } from "react";
-import { Link } from "@void/react";
+import { Link } from "../src/components/Link.tsx";
 import { label, localizedText } from "../src/language.ts";
 import { useDefiny, type CommitTypeError } from "../src/state.tsx";
-import { usePageTitle } from "../src/page_title.ts";
 
 export default function ChangesPage(): JSX.Element {
   const {
@@ -21,9 +20,6 @@ export default function ChangesPage(): JSX.Element {
     commitWorkingChanges,
     checkCommitTypes,
   } = useDefiny();
-  usePageTitle(
-    label(language, "Working Changes", "作業中の変更", "Laborkontrolaj ŝanĝoj"),
-  );
 
   const [commitMessage, setCommitMessage] = useState("");
   const [committing, setCommitting] = useState(false);
