@@ -23,6 +23,7 @@ import {
 import { goToDefinitionOption, isVariableNamePath } from "./local_variable.ts";
 import { listItemSelectorOptions } from "./list_items.ts";
 import { letBindingSelectorOptions } from "./let_bindings.ts";
+import { clipboardSelectorOptions } from "./clipboard.ts";
 import {
   typePartVariantOptions,
   unionVariantOptions,
@@ -126,8 +127,9 @@ export function useSelectorMenu({
         partOptions,
         variantOptions,
       });
+      // コピー・切り取り・貼り付けは, 式を置き換える選択肢より後に出す
       if (mode === "type") {
-        return options;
+        return [...options, ...clipboardSelectorOptions()];
       }
       // 定義への移動・リストの要素の操作は, 式を置き換える選択肢より先に出す
       return [
@@ -135,6 +137,7 @@ export function useSelectorMenu({
         ...listItemSelectorOptions(expression, path),
         ...letBindingSelectorOptions(expression, path),
         ...options,
+        ...clipboardSelectorOptions(),
       ];
     },
     [

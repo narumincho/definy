@@ -452,6 +452,91 @@ test.describe("definy UI E2E", () => {
     await expect.poll(bindingNames).toEqual(["base", "height"]);
   });
 
+  test("expression tree editor copies and pastes expressions through the OS clipboard across browsers", async ({
+    page,
+    browser,
+  }) => {
+    await page
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/part/sample.prime-numbers");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const items = async () =>
+      (await valueTree.locator(".tree-badge").allTextContents()).filter((t) =>
+        /^(\d+|□)$/.test(t),
+      );
+    await expect.poll(items).toEqual(["2", "3", "5", "7", "11"]);
+
+    // 5 を選んでツリーに戻り, Ctrl+C で OS のクリップボードにコピーする
+    await valueTree.locator(".tree-badge", { hasText: /^5$/ }).click();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("ControlOrMeta+c");
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(JSON.parse(copied)).toMatchObject({
+      format: "definy.expression",
+      expression: { Number: { value: 5 } },
+    });
+
+    // 11 に Ctrl+V で貼り付ける
+    await valueTree.locator(".tree-badge", { hasText: /^11$/ }).click();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("ControlOrMeta+v");
+    await expect.poll(items).toEqual(["2", "3", "5", "7", "5"]);
+
+    // 2 を Ctrl+X で切り取ると未入力になる
+    await valueTree.locator(".tree-badge", { hasText: /^2$/ }).click();
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("ControlOrMeta+x");
+    await expect.poll(items).toEqual(["□", "3", "5", "7", "5"]);
+
+    // 置換メニューの copy / paste でもコピー・貼り付けできる
+    const option = (name: string) =>
+      page
+        .locator(".dropdown-option", {
+          has: page.locator(".dropdown-option-name", {
+            hasText: new RegExp(`^${name}$`),
+          }),
+        })
+        .locator("button");
+    await valueTree.locator(".tree-badge", { hasText: /^7$/ }).click();
+    await option("copy").click();
+    await valueTree.locator(".tree-badge", { hasText: /^□$/ }).click();
+    await option("paste").click();
+    await expect.poll(items).toEqual(["7", "3", "5", "7", "5"]);
+
+    // 別のブラウザ (別のコンテキスト) でも, クリップボードの文字列を貼り付けられる
+    const otherContext = await browser.newContext({
+      permissions: ["clipboard-read", "clipboard-write"],
+    });
+    try {
+      const other = await otherContext.newPage();
+      await other.goto(page.url());
+      const otherTree = other
+        .locator("#part-definition-value-tree, .part-definition-tree")
+        .first();
+      await expect(otherTree).toBeVisible({ timeout: 15000 });
+      await other.evaluate(
+        (text) => navigator.clipboard.writeText(text),
+        copied,
+      );
+      // 数値の入力欄にフォーカスがあっても, definy の式なら選んだ式に貼り付ける
+      await otherTree.locator(".tree-badge", { hasText: /^3$/ }).click();
+      await other.keyboard.press("ControlOrMeta+v");
+      await expect
+        .poll(async () =>
+          (await otherTree.locator(".tree-badge").allTextContents()).filter(
+            (t) => /^(\d+|□)$/.test(t),
+          ),
+        )
+        .toEqual(["2", "5", "5", "7", "11"]);
+    } finally {
+      await otherContext.close();
+    }
+  });
+
   test("part detail undoes and redoes edits with buttons and shortcuts", async ({
     page,
   }) => {
