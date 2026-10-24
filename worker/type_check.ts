@@ -12,7 +12,6 @@ import {
   decodeCborItem,
   encodeCborItem,
   sha256Bytes,
-  toUint8Array,
 } from "../src/cbor.ts";
 import { variant } from "../src/definy_value.ts";
 import {
@@ -27,6 +26,7 @@ import {
   compilerBuiltinName,
 } from "../src/stage1_compiler.ts";
 import { decodeVerifiedSignedEvent } from "../src/signed_event.ts";
+import type { CommitPart, ModuleCommitContent } from "../src/event_content.ts";
 import { devSystemAccountBytes } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import type { Env, EventItem, GetEventsRequest } from "./types.ts";
@@ -51,20 +51,9 @@ async function systemAccountBytes(env: Env | undefined): Promise<Uint8Array> {
 
 const EVENTS_PAGE_SIZE = 500;
 
-type ModuleCommitContent = {
-  readonly module_name?: unknown;
-  readonly parts?: ReadonlyArray<Readonly<Record<string, unknown>>>;
-};
-
 /** 式を CAS に預けているパーツの content hash. 式を持っていれば `null` */
-function partContentHash(
-  part: Readonly<Record<string, unknown>>,
-): string | null {
-  if (part.expression != null) {
-    return null;
-  }
-  const bytes = toUint8Array(part.content_hash);
-  return bytes ? bytesToUrlSafeBase64NoPad(bytes) : null;
+function partContentHash(part: CommitPart): string | null {
+  return part.expression === null ? part.contentHash : null;
 }
 
 /** 式の CBOR の SHA-256 (URL-safe Base64, CAS の content hash と同じ). ネイティブの非同期 SHA-256 を使う */
@@ -118,10 +107,7 @@ async function commitParts(
 > {
   const moduleId = bytesToUrlSafeBase64NoPad(moduleIdBytes);
   const parts = [];
-  for (const part of commit.parts ?? []) {
-    if (typeof part.name !== "string") {
-      continue;
-    }
+  for (const part of commit.parts) {
     const contentHash = partContentHash(part);
     const expression =
       part.expression ??
@@ -132,7 +118,7 @@ async function commitParts(
       partId: await deriveModulePartId(moduleIdBytes, part.name),
       moduleId,
       name: part.name,
-      partType: part.part_type ?? null,
+      partType: part.partType,
       expression,
       expressionKey:
         contentHash ??
@@ -171,17 +157,12 @@ async function decodeCommit(item: {
   const decoded = await decodeVerifiedSignedEvent(
     base64ToBytes(item.signedEventBytes),
   ).catch(() => undefined);
-  const commit = decoded?.content.ModuleCommit as
-    ModuleCommitContent | undefined;
   let result: CachedCommit | null = null;
-  if (
-    decoded !== undefined &&
-    commit !== undefined &&
-    typeof commit.module_name === "string"
-  ) {
+  if (decoded?.content.type === "module_commit") {
+    const { commit } = decoded.content;
     const moduleIdBytes = await deriveModuleIdBytes(
       decoded.accountIdBytes,
-      commit.module_name,
+      commit.moduleName,
     );
     result = {
       moduleId: bytesToUrlSafeBase64NoPad(moduleIdBytes),
@@ -275,11 +256,10 @@ export async function checkSubmittedModuleCommit(
   } catch {
     return [];
   }
-  const commit = decoded.content.ModuleCommit as
-    ModuleCommitContent | undefined;
-  if (commit === undefined || typeof commit.module_name !== "string") {
+  if (decoded.content.type !== "module_commit") {
     return [];
   }
+  const { commit } = decoded.content;
   if (
     (await store.checkMissingHashes(decoded.meta.referencedContentHashes, env))
       .length > 0
@@ -288,7 +268,7 @@ export async function checkSubmittedModuleCommit(
   }
   const moduleIdBytes = await deriveModuleIdBytes(
     decoded.accountIdBytes,
-    commit.module_name,
+    commit.moduleName,
   );
   const committed = await Promise.all(
     (await commitParts(commit, moduleIdBytes)).map((part) =>

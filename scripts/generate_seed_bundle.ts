@@ -12,7 +12,9 @@ import {
   encodeCborItem,
   sha256Bytes,
   sha256EventHashId,
+  type LocalizedText,
 } from "../src/cbor.ts";
+import { encodeEventContent } from "../src/event_content.ts";
 import { createSeedInvalidSignatureSamples } from "../src/invalid_signature_samples.ts";
 import { seedBundleFingerprint } from "../src/seed_fingerprint.ts";
 import { compileTypeChecker } from "../src/self_hosted_type_check.ts";
@@ -202,15 +204,22 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
     const inner = {
       account_id: accountBytes,
       time: { __tag: 1, value: timeVal },
-      content: {
-        ModuleCommit: {
-          module_name: mod.module_name,
-          module_description: mod.module_description,
-          parent_commit_hash: null,
+      content: encodeEventContent({
+        type: "module_commit",
+        commit: {
+          moduleName: mod.module_name,
+          moduleDescription: mod.module_description,
+          parentCommitHash: null,
           message: mod.message,
-          parts: mod.parts,
+          parts: mod.parts.map((part) => ({
+            name: String(part.name),
+            description: part.description as LocalizedText,
+            partType: part.part_type ?? null,
+            expression: part.expression ?? null,
+            contentHash: null,
+          })),
         },
-      },
+      }),
     };
     const innerBytes = encodeCborItem(inner);
     const signature = new Uint8Array(
@@ -239,7 +248,10 @@ export async function generateSeedBundle(): Promise<SeedBundle> {
   const createAccountInner = {
     account_id: accountBytes,
     time: { __tag: 1, value: { __float64: BASE_EPOCH_SECONDS } },
-    content: { CreateAccount: { account_name: "definy" } },
+    content: encodeEventContent({
+      type: "create_account",
+      accountName: "definy",
+    }),
   };
   const createAccountInnerBytes = encodeCborItem(createAccountInner);
   const createAccountSignature = new Uint8Array(

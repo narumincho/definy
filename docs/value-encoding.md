@@ -1,6 +1,6 @@
 # definy の値の JSON / CBOR での表し方
 
-definy の値 (数値・文字列・真偽値・リスト・レコード・タグ付きの値) は、seeds の JSON、モジュールコミットの CBOR、
+definy の値 (数値・文字列・真偽値・リスト・レコード・タグ付きの値) は、seeds の JSON、イベントの中身 ([event.md](event.md)) の CBOR、
 localStorage の作業中の変更、クリップボードのどれでも同じ形で書く。
 
 パーツの式は `core.expression` の値、パーツの型は `core.type-ast` の値をこの形のまま保存し、stage1 や型チェッカーにもそのまま渡す。
@@ -71,8 +71,9 @@ TypeScript の側には式の構造を別の形に変える層 (以前の `toSel
 - seeds/schemas/module-seed.schema.json は core の型パーツの宣言から `npm run build:schema` で作る
   (`src/seed_schema.ts`)。`core.expression` などの宣言を変えたら作り直す。
   `src/seed_schema.test.ts` が、スキーマが宣言と合っていることと、seed の全パーツの式と型が宣言の形であることを確かめる。
-- サーバー (`worker/type_check.ts`) は式の形を TypeScript で検査しない。形の違う式は definy 製の型チェッカーが
-  受け付けない (型エラーか, 型チェッカーが止まって `checker_failed`) のでコミットは拒否される。
+- イベントの中身は `core.event-content` の値で, 署名の検証のときに同じ `conformsToTypeDeclaration` で形を確かめる
+  ([event.md](event.md))。コミットのパーツの式が `core.expression` の形でなければ, 型チェッカーに渡る前に
+  サーバーの `SubmitEvent` が拒否し, ブラウザも不正なイベントとして扱う。
 
 ## 以前の形から変えたときのこと (2026-10-24)
 

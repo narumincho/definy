@@ -89,15 +89,15 @@ graph TD
 によってモジュール内の複数のパーツ定義（Tree）を 1
 つの署名付きイベントとして一度に送信・公開する。
 
-署名するイベントの中身 (CBOR。`src/auth.ts` の `createSignedModuleCommitEvent`):
+署名するイベントの中身は `core.event-content` の `module_commit` (definy の値。形は [event.md](event.md)):
 
 ```text
-ModuleCommit {
+module_commit {
   module_name: string,
-  module_description,
+  module_description: list<localized-text>,
   message: string,
-  parent_commit_hash: EventHashId | null,
-  parts: [{ name, description, part_type, expression | null, content_hash | null }],
+  parent_commit_hash: option<EventHashId>,
+  parts: [{ name, description, part_type: option, expression: option, content_hash: option }],
 }
 ```
 

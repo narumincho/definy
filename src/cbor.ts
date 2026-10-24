@@ -2,6 +2,7 @@
  * Pure browser- and worker-safe CBOR decoder, encoder & module commit extractor for definy.
  * Free of node:crypto and other Node.js specific APIs.
  */
+import { decodeEventContent, type EventContent } from "./event_content.ts";
 
 /**
  * Base64 文字列（標準 / URL-safe / パディング省略すべて対応）を Uint8Array にデコードする
@@ -416,21 +417,6 @@ export type LocalizedTextEntry = {
 
 export type LocalizedText = ReadonlyArray<LocalizedTextEntry>;
 
-function decodeLocalizedText(raw: unknown): LocalizedText {
-  if (typeof raw === "string") {
-    return raw.length > 0 ? [{ language: "en", text: raw }] : [];
-  }
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  return raw.flatMap((entry: unknown): LocalizedText => {
-    const e = entry as Partial<LocalizedTextEntry> | null;
-    return typeof e?.language === "string" && typeof e.text === "string"
-      ? [{ language: e.language, text: e.text }]
-      : [];
-  });
-}
-
 export type DecodedPart = {
   readonly name: string;
   readonly description: LocalizedText;
@@ -450,70 +436,54 @@ export type DecodedModuleCommit = {
   readonly parts: ReadonlyArray<DecodedPart>;
 };
 
+/** SignedEvent (Base64) の内側のイベントの `account_id` (バイト列) と中身. 署名は検証しない */
+function decodeInnerEvent(signedBytesBase64: string):
+  | {
+      readonly accountBytes: Uint8Array | undefined;
+      readonly content: EventContent;
+    }
+  | undefined {
+  const bytes = base64ToBytes(signedBytesBase64);
+  const [signedRaw] = decodeCborItem(bytes);
+  if (!signedRaw || typeof signedRaw !== "object") return undefined;
+  const signedObj = signedRaw as Record<string, unknown>;
+  const eventBinaryField = signedObj.event_binary as
+    { value?: unknown } | undefined;
+  const innerBytes = toUint8Array(eventBinaryField?.value ?? eventBinaryField);
+  if (!innerBytes) return undefined;
+  const [innerRaw] = decodeCborItem(innerBytes);
+  if (!innerRaw || typeof innerRaw !== "object") return undefined;
+  const innerObj = innerRaw as Record<string, unknown>;
+  const content = decodeEventContent(innerObj.content);
+  return content === undefined
+    ? undefined
+    : { accountBytes: toUint8Array(innerObj.account_id), content };
+}
+
 export function extractModuleCommit(
   signedBytesBase64: string,
 ): DecodedModuleCommit | null {
   try {
-    const bytes = base64ToBytes(signedBytesBase64);
-    const [signedRaw] = decodeCborItem(bytes);
-    if (!signedRaw || typeof signedRaw !== "object") return null;
-    const signedObj = signedRaw as Record<string, unknown>;
-    const eventBinaryField = signedObj.event_binary as
-      { value?: unknown } | undefined;
-    const innerBytes = toUint8Array(
-      eventBinaryField?.value ?? eventBinaryField,
-    );
-    if (!innerBytes) return null;
-    const [innerRaw] = decodeCborItem(innerBytes);
-    if (!innerRaw || typeof innerRaw !== "object") return null;
-    const innerObj = innerRaw as Record<string, unknown>;
-    const contentObj = innerObj.content as Record<string, unknown> | undefined;
-    if (!contentObj || !("ModuleCommit" in contentObj)) return null;
-
-    const mc = contentObj.ModuleCommit as Record<string, unknown>;
-    const moduleName = String(mc.module_name ?? "");
-    const moduleDescription = decodeLocalizedText(mc.module_description);
-
-    const accountBytes = toUint8Array(innerObj.account_id);
-    const moduleIdBytes = accountBytes
-      ? deriveModuleIdBytesSync(accountBytes, moduleName)
+    const decoded = decodeInnerEvent(signedBytesBase64);
+    if (decoded?.content.type !== "module_commit") return null;
+    const { commit } = decoded.content;
+    const moduleIdBytes = decoded.accountBytes
+      ? deriveModuleIdBytesSync(decoded.accountBytes, commit.moduleName)
       : null;
-
-    const rawParts = (mc.parts as ReadonlyArray<Record<string, unknown>>) ?? [];
-    const parts: ReadonlyArray<DecodedPart> = rawParts.map((p) => {
-      const partName = String(p.name ?? "");
-      const hashBytes = toUint8Array(p.content_hash);
-      const contentHash = hashBytes
-        ? bytesToUrlSafeBase64NoPad(hashBytes)
-        : typeof p.content_hash === "string"
-          ? p.content_hash
-          : null;
-      const partIdHash = moduleIdBytes
-        ? deriveModulePartIdSync(moduleIdBytes, partName)
-        : null;
-
-      return {
-        name: partName,
-        description: decodeLocalizedText(p.description),
-        partType: p.part_type,
-        expression: p.expression ?? null,
-        contentHash,
-        partIdHash,
-      };
-    });
-
     return {
-      moduleName,
+      moduleName: commit.moduleName,
       moduleIdHash: moduleIdBytes
         ? bytesToUrlSafeBase64NoPad(moduleIdBytes)
         : null,
-      moduleDescription,
-      message: String(mc.message ?? ""),
-      parentCommitHash:
-        typeof mc.parent_commit_hash === "string"
-          ? mc.parent_commit_hash
+      moduleDescription: commit.moduleDescription,
+      message: commit.message,
+      parentCommitHash: commit.parentCommitHash,
+      parts: commit.parts.map((part) => ({
+        ...part,
+        partIdHash: moduleIdBytes
+          ? deriveModulePartIdSync(moduleIdBytes, part.name)
           : null,
-      parts,
+      })),
     };
   } catch {
     return null;
@@ -532,31 +502,13 @@ export function extractCreateAccount(
   signedBytesBase64: string,
 ): DecodedCreateAccount | null {
   try {
-    const bytes = base64ToBytes(signedBytesBase64);
-    const [signedRaw] = decodeCborItem(bytes);
-    if (!signedRaw || typeof signedRaw !== "object") return null;
-    const signedObj = signedRaw as Record<string, unknown>;
-    const eventBinaryField = signedObj.event_binary as
-      { value?: unknown } | undefined;
-    const innerBytes = toUint8Array(
-      eventBinaryField?.value ?? eventBinaryField,
-    );
-    if (!innerBytes) return null;
-    const [innerRaw] = decodeCborItem(innerBytes);
-    if (!innerRaw || typeof innerRaw !== "object") return null;
-    const innerObj = innerRaw as Record<string, unknown>;
-    const contentObj = innerObj.content as Record<string, unknown> | undefined;
-    if (!contentObj || !("CreateAccount" in contentObj)) return null;
-
-    const accountBytes = toUint8Array(innerObj.account_id);
-    const accountId = accountBytes
-      ? bytesToUrlSafeBase64NoPad(accountBytes)
-      : "";
-
-    const ca = contentObj.CreateAccount as Record<string, unknown>;
+    const decoded = decodeInnerEvent(signedBytesBase64);
+    if (decoded?.content.type !== "create_account") return null;
     return {
-      accountId,
-      accountName: String(ca.account_name ?? ""),
+      accountId: decoded.accountBytes
+        ? bytesToUrlSafeBase64NoPad(decoded.accountBytes)
+        : "",
+      accountName: decoded.content.accountName,
     };
   } catch {
     return null;

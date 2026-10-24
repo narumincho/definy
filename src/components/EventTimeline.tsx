@@ -5,7 +5,6 @@ import {
   ChevronRightIcon,
   EventsIcon,
   ModuleIcon,
-  SettingsIcon,
   type IconComponent,
 } from "../icons.tsx";
 import { extractCreateAccount } from "../cbor.ts";
@@ -37,13 +36,6 @@ export const EVENT_TYPES: ReadonlyArray<EventTypeInfo> = [
     ja: "アカウント作成",
     eo: "Nova konto",
     icon: AccountsIcon,
-  },
-  {
-    type: "change_profile",
-    en: "Profile",
-    ja: "プロファイル変更",
-    eo: "Profilo",
-    icon: SettingsIcon,
   },
 ];
 
@@ -345,18 +337,6 @@ export function EventSummary({
           <>Kreis la konton {subject}</>
         ) : (
           <>Created account {subject}</>
-        )}
-      </p>
-    );
-  }
-  if (event.eventType === "change_profile") {
-    return (
-      <p className="event-summary-text">
-        {label(
-          language,
-          "Updated the profile",
-          "プロファイルを変更",
-          "Ŝanĝis la profilon",
         )}
       </p>
     );

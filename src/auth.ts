@@ -11,6 +11,7 @@ import {
   type DecodedPart,
   type LocalizedText,
 } from "./cbor.ts";
+import { encodeEventContent, type EventContent } from "./event_content.ts";
 
 export type AccountCredentials = {
   readonly accountId: string;
@@ -129,14 +130,14 @@ export async function importAccountCredentials(
  */
 async function signEvent(
   credentials: AccountCredentials,
-  content: Readonly<Record<string, unknown>>,
+  content: EventContent,
   timeSeconds: number,
 ): Promise<SignedEventResult> {
   const key = await importPrivateKeyFromSecretKey(credentials.secretKeyBase64);
   const innerBytes = encodeCborItem({
     account_id: base64ToBytes(credentials.accountId),
     time: { __tag: 1, value: timeSeconds },
-    content,
+    content: encodeEventContent(content),
   });
   const signature = new Uint8Array(
     await crypto.subtle.sign(
@@ -164,7 +165,7 @@ export async function createSignedAccountEvent(
 ): Promise<SignedEventResult> {
   return await signEvent(
     credentials,
-    { CreateAccount: { account_name: credentials.accountName } },
+    { type: "create_account", accountName: credentials.accountName },
     timeSeconds,
   );
 }
@@ -179,17 +180,18 @@ export async function createSignedModuleCommitEvent(
   return await signEvent(
     params.credentials,
     {
-      ModuleCommit: {
-        module_name: params.moduleName,
-        module_description: params.moduleDescription,
+      type: "module_commit",
+      commit: {
+        moduleName: params.moduleName,
+        moduleDescription: params.moduleDescription,
         message: params.message,
-        parent_commit_hash: params.parentCommitHash ?? null,
+        parentCommitHash: params.parentCommitHash ?? null,
         parts: params.parts.map((p) => ({
           name: p.name,
           description: p.description,
-          part_type: p.partType,
+          partType: p.partType ?? null,
           expression: p.expression ?? null,
-          content_hash: p.contentHash ? base64ToBytes(p.contentHash) : null,
+          contentHash: p.contentHash ?? null,
         })),
       },
     },

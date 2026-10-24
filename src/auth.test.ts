@@ -90,7 +90,7 @@ describe("auth and signed event pipeline", () => {
               { language: "en", text: "Multiplies two numbers" },
               { language: "ja", text: "2 つの数を掛ける" },
             ],
-            partType: "function",
+            partType: { "#number": null },
             expression: { "#number": 42 },
           },
         ],

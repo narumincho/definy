@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  buildEventTypeDeclarations,
   buildModuleSeedSchema,
   conformsToTypeDeclaration,
   type SeedSchemaPart,
@@ -30,6 +31,13 @@ describe("seeds の JSON Schema", () => {
     expect(
       JSON.parse(readFileSync("seeds/schemas/module-seed.schema.json", "utf8")),
     ).toEqual(buildModuleSeedSchema(core?.parts ?? []));
+  });
+
+  it("seeds/schemas/event-types.json は core の型パーツの宣言から作ったものと同じ", () => {
+    const core = seeds.find((seed) => seed.module_name === "core");
+    expect(
+      JSON.parse(readFileSync("seeds/schemas/event-types.json", "utf8")),
+    ).toEqual(buildEventTypeDeclarations(core?.parts ?? []));
   });
 
   it("seed の全パーツの式は core.expression, 型は core.type-ast の形", () => {

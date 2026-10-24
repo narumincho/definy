@@ -1,0 +1,1087 @@
+{
+  "core.event-content": {
+    "#type_union": [
+      {
+        "tag": "create_account",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "account_name",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "module_commit",
+        "payload_type": {
+          "#some": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.module-commit"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "core.module-commit": {
+    "#type_record": [
+      {
+        "key": "module_name",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "module_description",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.localized-text"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "message",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "parent_commit_hash",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#type_string": null
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "key": "parts",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.module-commit-part"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "core.localized-text": {
+    "#type_record": [
+      {
+        "key": "language",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "text",
+        "value": {
+          "#type_string": null
+        }
+      }
+    ]
+  },
+  "core.module-commit-part": {
+    "#type_record": [
+      {
+        "key": "name",
+        "value": {
+          "#type_string": null
+        }
+      },
+      {
+        "key": "description",
+        "value": {
+          "#type_list": {
+            "item_type": {
+              "#part_reference": {
+                "part_definition_event_hash": {
+                  "$part": "core.localized-text"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "key": "part_type",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.type-ast"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "key": "expression",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "key": "content_hash",
+        "value": {
+          "#type_union": [
+            {
+              "tag": "none",
+              "payload_type": {
+                "#none": null
+              }
+            },
+            {
+              "tag": "some",
+              "payload_type": {
+                "#some": {
+                  "#type_string": null
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "core.type-ast": {
+    "#type_union": [
+      {
+        "tag": "type",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "number",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "string",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "boolean",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "list",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "item_type",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.type-ast"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "function",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "parameters",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "type",
+                          "value": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.type-ast"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "key": "return_type",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.type-ast"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "record",
+        "payload_type": {
+          "#some": {
+            "#type_list": {
+              "item_type": {
+                "#type_record": [
+                  {
+                    "key": "key",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "field_type",
+                    "value": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.type-ast"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "union",
+        "payload_type": {
+          "#some": {
+            "#type_list": {
+              "item_type": {
+                "#type_record": [
+                  {
+                    "key": "tag",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "payload_type",
+                    "value": {
+                      "#type_union": [
+                        {
+                          "tag": "none",
+                          "payload_type": {
+                            "#none": null
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "payload_type": {
+                            "#some": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "core.type-ast"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "reference",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "part_hash",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "builtin",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "code",
+        "payload_type": {
+          "#some": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.type-ast"
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "secret",
+        "payload_type": {
+          "#none": null
+        }
+      }
+    ]
+  },
+  "core.expression": {
+    "#type_union": [
+      {
+        "tag": "type_number",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "type_string",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "type_boolean",
+        "payload_type": {
+          "#none": null
+        }
+      },
+      {
+        "tag": "type_list",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "item_type",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "type_function",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "parameters",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "type",
+                          "value": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "key": "return_type",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "type_record",
+        "payload_type": {
+          "#some": {
+            "#type_list": {
+              "item_type": {
+                "#type_record": [
+                  {
+                    "key": "key",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "value",
+                    "value": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "type_union",
+        "payload_type": {
+          "#some": {
+            "#type_list": {
+              "item_type": {
+                "#type_record": [
+                  {
+                    "key": "tag",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "payload_type",
+                    "value": {
+                      "#type_union": [
+                        {
+                          "tag": "none",
+                          "payload_type": {
+                            "#none": null
+                          }
+                        },
+                        {
+                          "tag": "some",
+                          "payload_type": {
+                            "#some": {
+                              "#part_reference": {
+                                "part_definition_event_hash": {
+                                  "$part": "core.expression"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "number",
+        "payload_type": {
+          "#some": {
+            "#type_number": null
+          }
+        }
+      },
+      {
+        "tag": "string",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "boolean",
+        "payload_type": {
+          "#some": {
+            "#type_boolean": null
+          }
+        }
+      },
+      {
+        "tag": "list",
+        "payload_type": {
+          "#some": {
+            "#type_list": {
+              "item_type": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.expression"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "call",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "function",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.callee"
+                    }
+                  }
+                }
+              },
+              {
+                "key": "arguments",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "value",
+                          "value": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "variable",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "variable_id",
+                "value": {
+                  "#type_number": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "function",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "parameters",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "parameter_id",
+                          "value": {
+                            "#type_number": null
+                          }
+                        },
+                        {
+                          "key": "parameter_name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "key": "body",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "record",
+        "payload_type": {
+          "#some": {
+            "#type_list": {
+              "item_type": {
+                "#type_record": [
+                  {
+                    "key": "key",
+                    "value": {
+                      "#type_string": null
+                    }
+                  },
+                  {
+                    "key": "value",
+                    "value": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "record_get",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "record",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              },
+              {
+                "key": "key",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "variant",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "tag",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "payload",
+                "value": {
+                  "#type_union": [
+                    {
+                      "tag": "none",
+                      "payload_type": {
+                        "#none": null
+                      }
+                    },
+                    {
+                      "tag": "some",
+                      "payload_type": {
+                        "#some": {
+                          "#part_reference": {
+                            "part_definition_event_hash": {
+                              "$part": "core.expression"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "type_part",
+                "value": {
+                  "#type_union": [
+                    {
+                      "tag": "none",
+                      "payload_type": {
+                        "#none": null
+                      }
+                    },
+                    {
+                      "tag": "some",
+                      "payload_type": {
+                        "#some": {
+                          "#type_string": null
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "match",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "target",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              },
+              {
+                "key": "arms",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_record": [
+                        {
+                          "key": "tag",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "variable_id",
+                          "value": {
+                            "#type_number": null
+                          }
+                        },
+                        {
+                          "key": "variable_name",
+                          "value": {
+                            "#type_string": null
+                          }
+                        },
+                        {
+                          "key": "body",
+                          "value": {
+                            "#part_reference": {
+                              "part_definition_event_hash": {
+                                "$part": "core.expression"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "part_reference",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "part_definition_event_hash",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "let",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "variable_id",
+                "value": {
+                  "#type_number": null
+                }
+              },
+              {
+                "key": "variable_name",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "value",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              },
+              {
+                "key": "body",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "hole",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "probe",
+                "value": {
+                  "#type_boolean": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "builtin",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "quote",
+        "payload_type": {
+          "#some": {
+            "#part_reference": {
+              "part_definition_event_hash": {
+                "$part": "core.expression"
+              }
+            }
+          }
+        }
+      },
+      {
+        "tag": "secret",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "id",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "label",
+                "value": {
+                  "#type_string": null
+                }
+              },
+              {
+                "key": "allowed_url_prefixes",
+                "value": {
+                  "#type_list": {
+                    "item_type": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "type_secret",
+        "payload_type": {
+          "#none": null
+        }
+      }
+    ]
+  },
+  "core.callee": {
+    "#type_union": [
+      {
+        "tag": "part_reference",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "part_definition_event_hash",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "builtin",
+        "payload_type": {
+          "#some": {
+            "#type_string": null
+          }
+        }
+      },
+      {
+        "tag": "variable",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "variable_id",
+                "value": {
+                  "#type_number": null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "tag": "record_get",
+        "payload_type": {
+          "#some": {
+            "#type_record": [
+              {
+                "key": "record",
+                "value": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.expression"
+                    }
+                  }
+                }
+              },
+              {
+                "key": "key",
+                "value": {
+                  "#type_string": null
+                }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

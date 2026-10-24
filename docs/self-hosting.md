@@ -68,6 +68,8 @@ definy サービス全体のブートストラップが完了したことを意�
     において型パーツ同士の相互参照（レコード型やユニオン型による他型パーツの参照）
     を含むモジュール全体が一括して自己検証されます。 存在しないパーツ参照は
     `part_not_found`、通常の値パーツの型参照は `type_mismatch` で拒否されます。
+- イベントの中身の形は core の型パーツ `core.event-content` (`core.module-commit` など) が決め, 署名の検証のときに
+  その宣言で形を確かめます ([event.md](event.md))。
 - Connect-RPC の `SubmitEvent` は、`checkSubmittedModuleCommit` (`worker/type_check.ts`)
   でコミットのパーツを `core.type-check-against` で検査してから保存します (下の「definy 製型チェッカーの実行」) (UI の型エラー表示・
   seed の検証と同じ入口。下の「seed・UI のパーツ検査」を参照)。型環境は全モジュールの最新のパーツに

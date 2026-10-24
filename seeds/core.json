@@ -4429,6 +4429,277 @@
       }
     },
     {
+      "name": "event-content",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Content of a signed event (what the account did). The signed envelope (account_id, time, signature) is CBOR outside of this value. See docs/event.md"
+        },
+        {
+          "language": "ja",
+          "text": "署名済みイベントの中身 (アカウントが何をしたか). 署名の外側 (account_id, time, signature) はこの値の外の CBOR. docs/event.md を参照"
+        }
+      ],
+      "expression": {
+        "#type_union": [
+          {
+            "tag": "create_account",
+            "payload_type": {
+              "#some": {
+                "#type_record": [
+                  {
+                    "key": "account_name",
+                    "value": {
+                      "#type_string": null
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "tag": "module_commit",
+            "payload_type": {
+              "#some": {
+                "#part_reference": {
+                  "part_definition_event_hash": {
+                    "$part": "core.module-commit"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "module-commit",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A commit of a module: the whole list of its parts at that point"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのコミット. その時点のモジュールのパーツをすべて持つ"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "module_name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "module_description",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.localized-text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "key": "message",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "parent_commit_hash",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "parts",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.module-commit-part"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "module-commit-part",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "A part in a module commit. The expression is either inline or stored in the content-addressed storage (content_hash)"
+        },
+        {
+          "language": "ja",
+          "text": "モジュールのコミットのパーツ. 式はそのまま持つか, content-addressed storage に預けて content_hash で指す"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "name",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "description",
+            "value": {
+              "#type_list": {
+                "item_type": {
+                  "#part_reference": {
+                    "part_definition_event_hash": {
+                      "$part": "core.localized-text"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "key": "part_type",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.type-ast"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "expression",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#part_reference": {
+                        "part_definition_event_hash": {
+                          "$part": "core.expression"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "key": "content_hash",
+            "value": {
+              "#type_union": [
+                {
+                  "tag": "none",
+                  "payload_type": {
+                    "#none": null
+                  }
+                },
+                {
+                  "tag": "some",
+                  "payload_type": {
+                    "#some": {
+                      "#type_string": null
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "localized-text",
+      "part_type": {
+        "#type": null
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "Text in one language"
+        },
+        {
+          "language": "ja",
+          "text": "1 つの言語のテキスト"
+        }
+      ],
+      "expression": {
+        "#type_record": [
+          {
+            "key": "language",
+            "value": {
+              "#type_string": null
+            }
+          },
+          {
+            "key": "text",
+            "value": {
+              "#type_string": null
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "eval-ast",
       "part_type": {
         "#function": {
