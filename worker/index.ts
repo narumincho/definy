@@ -1,4 +1,5 @@
 import { InvalidSignedEventError, sha256EventHashId } from "./cbor.ts";
+import { checkSubmittedEvent } from "./event_check.ts";
 import { checkSubmittedModuleCommit } from "./type_check.ts";
 import { defaultStore, InvalidContentError, WorkerStore } from "./store.ts";
 import { verifyRpcAuthorization } from "../src/rpc_auth.ts";
@@ -332,6 +333,11 @@ async function handleRpc(
           "invalid_argument",
           "signedEventBytes is required",
         );
+      }
+      // イベントを受け付ける規則 (definy 製の core.check-event) に合わないものは保存しない
+      const rejections = await checkSubmittedEvent(rawEvent, store, env);
+      if (rejections.length > 0) {
+        throw new ConnectError("invalid_argument", rejections.join("\n"));
       }
       // 型エラーのあるモジュールのコミットは保存しない
       const typeErrors = await checkSubmittedModuleCommit(rawEvent, store, env);

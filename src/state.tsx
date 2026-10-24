@@ -139,6 +139,7 @@ export function DefinyProvider({
   const working = useWorkingChanges({
     currentAccount: account.currentAccount,
     modules: events.modules,
+    decodedCommits: events.decodedCommits,
     refreshEvents: events.refreshEvents,
   });
   const typeCheck = useTypeCheck({

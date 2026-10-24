@@ -74,6 +74,38 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 - seed の JSON だけで書けるパーツ名の参照 `{"$part": ...}` はイベントの中には書けない (文字列の位置でも拒否する)。
 - 検査の重さ: seed の core のコミット (CBOR で約 1.6 MB) で 50 ms 程度。CBOR のデコードのほうが重い。
 
+## 受け付ける規則 (`core.check-event`)
+
+署名と形を確かめた後, イベントを受け付けるかは definy で書いたパーツ `core.check-event` が決める
+(サーバーの業務ロジックを definy へ移す最初の一歩. [self-hosting.md](self-hosting.md) の「service host 境界」)。
+
+```text
+core.check-event(content: core.event-content, state: core.event-check-state) -> list<core.event-rejection>
+core.event-check-state = { account_created: boolean, latest_commit_hash: option<string> }
+```
+
+返した理由が空なら受け付ける。今の規則:
+
+| イベント         | 規則                                                                                | 理由 (`core.event-rejection`)                  |
+| :--------------- | :---------------------------------------------------------------------------------- | :--------------------------------------------- |
+| `create_account` | 同じアカウントで 2 回作れない                                                       | `account_already_created`                      |
+| `create_account` | 名前は空にできない                                                                  | `empty_account_name`                           |
+| `module_commit`  | 先にアカウントを作る                                                                | `account_not_created`                          |
+| `module_commit`  | モジュール名は空にできない                                                          | `empty_module_name`                            |
+| `module_commit`  | `parent_commit_hash` はそのモジュールの最新のコミット (新しいモジュールなら `none`) | `parent_commit_mismatch`                       |
+| `module_commit`  | パーツ名は空にできず, 重複できない (`core.check-event-part-names`)                  | `empty_part_name`, `duplicate_part_name(name)` |
+
+- モジュールは今はアカウントとモジュール名で決まる (`deriveModuleIdBytes`)。他のアカウントの同じ名前のモジュールは別のモジュールなので,
+  その最新のコミットを親にはできない。ブラウザは自分のアカウントのそのモジュールの最新のコミットを親にする (`latestOwnCommitHash`, `src/latest_commits.ts`)
+- 「最新」はイベントの時刻 (`time`) が最大のコミット (`pickLatestCommitPerModule`)。同じ秒の 2 つのコミットは先のものが最新のままになる
+- 規則は `npm run build:seeds` が stage1 でコンパイルした `wasm/event_checker.wasm` (コミットしない) で動く。
+  Worker は `?module` で取り込み (`worker/event_check.ts`), TypeScript 側は規則が使う状態 (アカウントを作ったか, 最新のコミット) を
+  ストアから集めて渡し, 返った理由を英語のメッセージにするだけ (`src/event_check.ts`)。拒否は Connect-RPC の `invalid_argument` (400)
+- 規則は式を見ないので, モジュールのコミットはパーツ名だけにしてから線形メモリに書く (core のコミットは式で数 MB ある)
+- 型検査 (`checkSubmittedModuleCommit`) はこの規則に通ってから行う
+- 型チェッカーと同じく, 本番で `core.check-event` を編集しても seed に書き戻してデプロイするまでサーバーには反映されない
+- デバッグ用の `DebugService/SubmitUnverifiedEvent` は規則も確かめない
+
 ## 変えたこと (2026-10-24)
 
 - 以前は中身を `{"ModuleCommit": {...}}` / `{"CreateAccount": {...}}` の TypeScript 側の形で書き,
@@ -84,6 +116,8 @@ CBOR では [value-encoding.md](value-encoding.md) の形になる。例:
 
 ## 今後
 
-- 形の検査を definy 製のパーツにして, サーバーの業務ロジック (イベントの受理) を definy へ移す
-  ([self-hosting.md](self-hosting.md) の「service host 境界」)。
+- 受け付ける規則は `core.check-event` にした (上)。形の検査 (`conformsToTypeDeclaration`) や, 規則が使う状態を集めること
+  (アカウントを作ったか・最新のコミット) も definy へ移す ([self-hosting.md](self-hosting.md) の「service host 境界」)。
+- モジュールをアカウントから切り離し, ブランチだけで編集する (フォークは無い. 誰でもブランチを作れ, コミットはブランチの作成者だけ.
+  2026-10-24 の決定, issue #765)。規則は `core.check-event` に足す。
 - 封筒 (署名・時刻) も definy の値で表すか。

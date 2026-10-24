@@ -2474,6 +2474,149 @@
         },
         "additionalProperties": false
       }
+    },
+    "core.event-rejection": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": [
+            "#account_already_created"
+          ],
+          "properties": {
+            "#account_already_created": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#account_not_created"
+          ],
+          "properties": {
+            "#account_not_created": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#empty_account_name"
+          ],
+          "properties": {
+            "#empty_account_name": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#empty_module_name"
+          ],
+          "properties": {
+            "#empty_module_name": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#parent_commit_mismatch"
+          ],
+          "properties": {
+            "#parent_commit_mismatch": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#empty_part_name"
+          ],
+          "properties": {
+            "#empty_part_name": {
+              "type": "null"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "#duplicate_part_name"
+          ],
+          "properties": {
+            "#duplicate_part_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/definitions/PartPlaceholder"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "core.event-check-state": {
+      "type": "object",
+      "required": [
+        "account_created",
+        "latest_commit_hash"
+      ],
+      "properties": {
+        "account_created": {
+          "type": "boolean"
+        },
+        "latest_commit_hash": {
+          "anyOf": [
+            {
+              "type": "object",
+              "required": [
+                "#none"
+              ],
+              "properties": {
+                "#none": {
+                  "type": "null"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "#some"
+              ],
+              "properties": {
+                "#some": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/PartPlaceholder"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

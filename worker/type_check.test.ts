@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
+  createSignedAccountEvent,
   createSignedModuleCommitEvent,
   generateAccountCredentials,
   importAccountCredentials,
@@ -19,6 +20,7 @@ import { DEV_SYSTEM_KEY_SEED } from "../src/system_account.ts";
 import { deriveModuleIdBytes, deriveModulePartId } from "./cbor.ts";
 import { handleWorkerRequest, WorkerStore } from "./index.ts";
 import { createSqliteD1Database } from "./test_helpers.ts";
+import { latestCommitHashOf } from "./type_check.ts";
 import { loadTestSeedBundle } from "./test_runtime.ts";
 import type { Env } from "./types.ts";
 
@@ -32,6 +34,28 @@ async function createSeededStore(): Promise<{
   return { store, env: { DB: db } };
 }
 
+async function submitEvent(
+  store: WorkerStore,
+  env: Env,
+  signedEventBytes: string,
+): Promise<{ readonly status: number; readonly message: string }> {
+  const res = await handleWorkerRequest(
+    new Request("https://definy.local/definy.v1.EventService/SubmitEvent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ signedEventBytes }),
+    }),
+    env,
+    store,
+  );
+  const json = (await res.json()) as { readonly message?: string };
+  return { status: res.status, message: json.message ?? "" };
+}
+
+/**
+ * アカウントを作っていなければ作ってから, モジュールの最新のコミットを親にしてコミットする
+ * (イベントを受け付ける規則 core.check-event. docs/event.md)
+ */
 async function submitCommit(
   store: WorkerStore,
   env: Env,
@@ -39,24 +63,35 @@ async function submitCommit(
   moduleName: string,
   parts: ReadonlyArray<DecodedPart>,
 ): Promise<{ readonly status: number; readonly message: string }> {
+  const accounts = await store.getEvents(
+    { eventType: "create_account", limit: 500 },
+    env,
+  );
+  if (!accounts.some((item) => item.accountId === credentials.accountId)) {
+    expect(
+      await submitEvent(
+        store,
+        env,
+        (await createSignedAccountEvent(credentials)).signedEventBytes,
+      ),
+    ).toEqual({ status: 200, message: "" });
+  }
   const commit = await createSignedModuleCommitEvent({
     credentials,
     moduleName,
     moduleDescription: [],
     message: "test",
+    parentCommitHash: await latestCommitHashOf(
+      await deriveModuleIdBytes(
+        base64ToBytes(credentials.accountId),
+        moduleName,
+      ),
+      store,
+      env,
+    ),
     parts,
   });
-  const res = await handleWorkerRequest(
-    new Request("https://definy.local/definy.v1.EventService/SubmitEvent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ signedEventBytes: commit.signedEventBytes }),
-    }),
-    env,
-    store,
-  );
-  const json = (await res.json()) as { readonly message?: string };
-  return { status: res.status, message: json.message ?? "" };
+  return submitEvent(store, env, commit.signedEventBytes);
 }
 
 function part(
