@@ -381,25 +381,6 @@ export function TreeLayoutRenderer(
             <TreeLayoutRenderer {...props} node={headerChild} />
           )}
           {typeErrorMarker}
-
-          {isCollapsed && (
-            <span
-              style={{
-                fontSize: "0.72rem",
-                color: "var(--text-secondary)",
-                opacity: 0.75,
-                fontFamily: "monospace",
-                fontStyle: "italic",
-                cursor: "pointer",
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleCollapse?.(node.id);
-              }}
-            >
-              {`... (${bodyChildren.length} args)`}
-            </span>
-          )}
         </div>
 
         {!isCollapsed && (
