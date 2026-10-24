@@ -3,6 +3,7 @@ import { bytesToUrlSafeBase64NoPad } from "../cbor.ts";
 import type { PartSnapshot } from "../types.ts";
 import { applySelection } from "./selection.ts";
 import { getOptionValueForExpression } from "./type_inference.ts";
+import { resolveCurrentOptionValue } from "./selector_options.ts";
 import {
   expectedVariantsFromTypeAst,
   typePartVariantOptions,
@@ -133,5 +134,27 @@ describe("Variant の作成", () => {
         payload: { part_hash: optionHash },
       } as never).typePartIdHash,
     ).toBe(optionHash);
+  });
+});
+
+describe("今の Variant の選択肢", () => {
+  it("型パーツの ID が選択肢と違っても, 型パーツの名前とタグが同じ選択肢にする", () => {
+    const otherHash = bytesToUrlSafeBase64NoPad(new Uint8Array(32).fill(9));
+    const options = typePartVariantOptions(parts);
+    expect(
+      resolveCurrentOptionValue({
+        expression: {
+          Variant: {
+            tag: "none",
+            payload: null,
+            type_part_definition_event_hash: otherHash,
+          },
+        },
+        path: [],
+        options,
+        mode: "expression",
+        partNames: new Map([[otherHash, "sample.option-number"]]),
+      }),
+    ).toBe(options.find((o) => o.name === "sample.option-number.none")?.value);
   });
 });
