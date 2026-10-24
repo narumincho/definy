@@ -11,7 +11,7 @@
       "text": "Cloudflare Workers へのデプロイなど, definy で書いた definy プラットフォームの機能"
     }
   ],
-  "message": "デプロイを特殊扱いにせず, definy 製のコンパイラでコンパイルして HTTP リクエストでデプロイする deploy-to-cloudflare-workers にする",
+  "message": "json-string-field が整形した JSON (\"key\": \"value\") も読めるようにし, Cloudflare の API からサブドメインを読めるようにする",
   "parts": [
     {
       "name": "environment-get",
@@ -506,7 +506,7 @@
       }
     },
     {
-      "name": "json-string-field",
+      "name": "json-string-after",
       "part_type": {
         "function": {
           "parameters": [
@@ -515,7 +515,7 @@
               "type": "string"
             },
             {
-              "name": "key",
+              "name": "pattern",
               "type": "string"
             }
           ],
@@ -525,11 +525,11 @@
       "description": [
         {
           "language": "en",
-          "text": "The first string value of \"key\" in the JSON text (\"\" if not found). It does not handle escapes"
+          "text": "The text after the first pattern in json up to the next \" (\"\" if not found)"
         },
         {
           "language": "ja",
-          "text": "JSON の文字列で最初に出てくる \"key\" の文字列の値 (無ければ \"\"). エスケープは扱わない"
+          "text": "json で最初に出てくる pattern の後ろから次の \" までの文字列 (無ければ \"\")"
         }
       ],
       "expression": {
@@ -541,7 +541,7 @@
             },
             {
               "parameter_id": 1,
-              "parameter_name": "key"
+              "parameter_name": "pattern"
             }
           ],
           "body": {
@@ -549,63 +549,6 @@
               "bindings": [
                 {
                   "variable_id": 2,
-                  "variable_name": "pattern",
-                  "value": {
-                    "Call": {
-                      "function": {
-                        "PartReference": {
-                          "part_definition_event_hash": {
-                            "$part": "core.string-concat"
-                          }
-                        }
-                      },
-                      "arguments": [
-                        {
-                          "name": "left",
-                          "value": {
-                            "Call": {
-                              "function": {
-                                "PartReference": {
-                                  "part_definition_event_hash": {
-                                    "$part": "core.string-concat"
-                                  }
-                                }
-                              },
-                              "arguments": [
-                                {
-                                  "name": "left",
-                                  "value": {
-                                    "String": {
-                                      "value": "\""
-                                    }
-                                  }
-                                },
-                                {
-                                  "name": "right",
-                                  "value": {
-                                    "Variable": {
-                                      "variable_id": 1
-                                    }
-                                  }
-                                }
-                              ]
-                            }
-                          }
-                        },
-                        {
-                          "name": "right",
-                          "value": {
-                            "String": {
-                              "value": "\":\""
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "variable_id": 3,
                   "variable_name": "found",
                   "value": {
                     "Call": {
@@ -629,7 +572,7 @@
                           "name": "target",
                           "value": {
                             "Variable": {
-                              "variable_id": 2
+                              "variable_id": 1
                             }
                           }
                         },
@@ -662,7 +605,7 @@
                           "name": "left",
                           "value": {
                             "Variable": {
-                              "variable_id": 3
+                              "variable_id": 2
                             }
                           }
                         },
@@ -696,7 +639,7 @@
                         "Let": {
                           "bindings": [
                             {
-                              "variable_id": 4,
+                              "variable_id": 3,
                               "variable_name": "start",
                               "value": {
                                 "Call": {
@@ -712,7 +655,7 @@
                                       "name": "left",
                                       "value": {
                                         "Variable": {
-                                          "variable_id": 3
+                                          "variable_id": 2
                                         }
                                       }
                                     },
@@ -732,7 +675,7 @@
                                               "name": "value",
                                               "value": {
                                                 "Variable": {
-                                                  "variable_id": 2
+                                                  "variable_id": 1
                                                 }
                                               }
                                             }
@@ -745,7 +688,7 @@
                               }
                             },
                             {
-                              "variable_id": 5,
+                              "variable_id": 4,
                               "variable_name": "end",
                               "value": {
                                 "Call": {
@@ -777,7 +720,7 @@
                                       "name": "startIndex",
                                       "value": {
                                         "Variable": {
-                                          "variable_id": 4
+                                          "variable_id": 3
                                         }
                                       }
                                     }
@@ -802,7 +745,7 @@
                                       "name": "left",
                                       "value": {
                                         "Variable": {
-                                          "variable_id": 5
+                                          "variable_id": 4
                                         }
                                       }
                                     },
@@ -854,7 +797,7 @@
                                           "name": "start",
                                           "value": {
                                             "Variable": {
-                                              "variable_id": 4
+                                              "variable_id": 3
                                             }
                                           }
                                         },
@@ -862,7 +805,7 @@
                                           "name": "end",
                                           "value": {
                                             "Variable": {
-                                              "variable_id": 5
+                                              "variable_id": 4
                                             }
                                           }
                                         }
@@ -874,6 +817,263 @@
                               "default": null
                             }
                           }
+                        }
+                      }
+                    }
+                  ],
+                  "default": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "json-string-field",
+      "part_type": {
+        "function": {
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string"
+            },
+            {
+              "name": "key",
+              "type": "string"
+            }
+          ],
+          "return_type": "string"
+        }
+      },
+      "description": [
+        {
+          "language": "en",
+          "text": "The first string value of \"key\" in the JSON text (\"\" if not found). It accepts both \"key\":\"value\" and \"key\": \"value\" (pretty-printed JSON such as the Cloudflare API). It does not handle escapes"
+        },
+        {
+          "language": "ja",
+          "text": "JSON の文字列で最初に出てくる \"key\" の文字列の値 (無ければ \"\"). \"key\":\"value\" と, Cloudflare の API のように整形した \"key\": \"value\" のどちらも読む. エスケープは扱わない"
+        }
+      ],
+      "expression": {
+        "Function": {
+          "parameters": [
+            {
+              "parameter_id": 0,
+              "parameter_name": "json"
+            },
+            {
+              "parameter_id": 1,
+              "parameter_name": "key"
+            }
+          ],
+          "body": {
+            "Let": {
+              "bindings": [
+                {
+                  "variable_id": 2,
+                  "variable_name": "compact",
+                  "value": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "definy.json-string-after"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "json",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 0
+                            }
+                          }
+                        },
+                        {
+                          "name": "pattern",
+                          "value": {
+                            "Call": {
+                              "function": {
+                                "PartReference": {
+                                  "part_definition_event_hash": {
+                                    "$part": "core.string-concat"
+                                  }
+                                }
+                              },
+                              "arguments": [
+                                {
+                                  "name": "left",
+                                  "value": {
+                                    "Call": {
+                                      "function": {
+                                        "PartReference": {
+                                          "part_definition_event_hash": {
+                                            "$part": "core.string-concat"
+                                          }
+                                        }
+                                      },
+                                      "arguments": [
+                                        {
+                                          "name": "left",
+                                          "value": {
+                                            "String": {
+                                              "value": "\""
+                                            }
+                                          }
+                                        },
+                                        {
+                                          "name": "right",
+                                          "value": {
+                                            "Variable": {
+                                              "variable_id": 1
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "name": "right",
+                                  "value": {
+                                    "String": {
+                                      "value": "\":\""
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "body": {
+                "Match": {
+                  "target": {
+                    "Call": {
+                      "function": {
+                        "PartReference": {
+                          "part_definition_event_hash": {
+                            "$part": "core.equal"
+                          }
+                        }
+                      },
+                      "arguments": [
+                        {
+                          "name": "left",
+                          "value": {
+                            "Variable": {
+                              "variable_id": 2
+                            }
+                          }
+                        },
+                        {
+                          "name": "right",
+                          "value": {
+                            "String": {
+                              "value": ""
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "arms": [
+                    {
+                      "tag": "true",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "Call": {
+                          "function": {
+                            "PartReference": {
+                              "part_definition_event_hash": {
+                                "$part": "definy.json-string-after"
+                              }
+                            }
+                          },
+                          "arguments": [
+                            {
+                              "name": "json",
+                              "value": {
+                                "Variable": {
+                                  "variable_id": 0
+                                }
+                              }
+                            },
+                            {
+                              "name": "pattern",
+                              "value": {
+                                "Call": {
+                                  "function": {
+                                    "PartReference": {
+                                      "part_definition_event_hash": {
+                                        "$part": "core.string-concat"
+                                      }
+                                    }
+                                  },
+                                  "arguments": [
+                                    {
+                                      "name": "left",
+                                      "value": {
+                                        "Call": {
+                                          "function": {
+                                            "PartReference": {
+                                              "part_definition_event_hash": {
+                                                "$part": "core.string-concat"
+                                              }
+                                            }
+                                          },
+                                          "arguments": [
+                                            {
+                                              "name": "left",
+                                              "value": {
+                                                "String": {
+                                                  "value": "\""
+                                                }
+                                              }
+                                            },
+                                            {
+                                              "name": "right",
+                                              "value": {
+                                                "Variable": {
+                                                  "variable_id": 1
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "name": "right",
+                                      "value": {
+                                        "String": {
+                                          "value": "\": \""
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "tag": "false",
+                      "variable_id": null,
+                      "variable_name": null,
+                      "body": {
+                        "Variable": {
+                          "variable_id": 2
                         }
                       }
                     }
