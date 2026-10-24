@@ -50,6 +50,11 @@ export type TypeCheckParams = {
   readonly buildCommitParts: (moduleName: string) => {
     readonly partsList: ReadonlyArray<DecodedPart>;
   };
+  /**
+   * システムアカウント (seed の core の main を作ったアカウント). 分からなければ `null`.
+   * サーバーはシステムアカウント以外のコミットの未入力・型の無いパーツ・コンパイラ組み込みを拒否する
+   */
+  readonly systemAccountId: string | null;
 };
 
 export type TypeCheckOperations = {
@@ -80,6 +85,7 @@ export function useTypeCheck({
   partNames,
   currentAccount,
   buildCommitParts,
+  systemAccountId,
 }: TypeCheckParams): TypeCheckOperations {
   const typeCheckMessage = useCallback(
     (partName: string | null, outcome: SelfHostedTypeCheckOutcome) =>
@@ -249,15 +255,23 @@ export function useTypeCheck({
         moduleId,
         committed,
         latestParts: committedParts,
-        // 式の無いパーツ・コンパイラ組み込みを受け入れるか (システムアカウントか) はサーバーが決めるので,
-        // ここでは型エラーと型チェッカーの失敗だけを出す
-        allowBuiltinParts: true,
+        // 未入力・式の無いパーツ・コンパイラ組み込みを受け入れるのはシステムアカウントのコミットだけ (サーバーと同じ).
+        // システムアカウントが分からなければ型エラーと型チェッカーの失敗だけを出す
+        allowBuiltinParts:
+          systemAccountId === null ||
+          currentAccount.accountId === systemAccountId,
       }).flatMap(({ name, outcome }) => {
         const message = typeCheckMessage(name, outcome);
         return message === null ? [] : [{ partName: name, message }];
       });
     },
-    [currentAccount, buildCommitParts, committedParts, typeCheckMessage],
+    [
+      currentAccount,
+      buildCommitParts,
+      committedParts,
+      typeCheckMessage,
+      systemAccountId,
+    ],
   );
 
   return {

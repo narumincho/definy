@@ -11,6 +11,7 @@ import { Link } from "./Link.tsx";
 import { ChevronRightIcon, ModuleIcon } from "../icons.tsx";
 import { label } from "../language.ts";
 import { useDefiny } from "../state.tsx";
+import { withNewParts } from "../new_part.ts";
 
 const SIDEBAR_WIDTH_STORAGE_KEY = "definy.sidebar.width";
 const MIN_SIDEBAR_WIDTH = 160;
@@ -48,13 +49,18 @@ function saveSidebarWidth(width: number | null): void {
 export function ExplorerSidebar(): JSX.Element {
   const {
     language,
-    modules,
-    parts,
+    modules: committedModules,
+    parts: committedParts,
     workingChanges,
     setSidebarOpen,
     partTypeCheckResults,
     typeCheckMessage,
   } = useDefiny();
+  // 作業中の変更だけにある新しいパーツ (とそのモジュール) も出す
+  const { modules, parts } = useMemo(
+    () => withNewParts(committedModules, committedParts, workingChanges),
+    [committedModules, committedParts, workingChanges],
+  );
   // 型エラー (と型チェッカーの失敗) の理由. 式の無いパーツ・コンパイラ組み込み (unsupported) は出さない
   const typeErrorOf = (part: {
     readonly name: string;
@@ -210,13 +216,13 @@ export function ExplorerSidebar(): JSX.Element {
         </span>
         <div className="sidebar-actions">
           <Link
-            href="/?create=module"
+            href="/new-part"
             className="sidebar-action-btn"
             title={label(
               language,
-              "New module",
-              "新しいモジュール",
-              "Nova modulo",
+              "New part (or module)",
+              "新しいパーツ (モジュール)",
+              "Nova parto (aŭ modulo)",
             )}
           >
             +
@@ -315,7 +321,8 @@ export function ExplorerSidebar(): JSX.Element {
                 {!isCollapsed && (
                   <div className="sidebar-module-parts">
                     {filteredParts.map((part) => {
-                      const isChanged = workingChanges.parts.has(part.partId);
+                      const change = workingChanges.parts.get(part.partId);
+                      const isChanged = change !== undefined;
                       const typeError = typeErrorOf(part);
                       const isSelected = part.partId === selectedPartId;
                       return (
@@ -323,6 +330,9 @@ export function ExplorerSidebar(): JSX.Element {
                           key={part.partId}
                           href={`/part/${part.partId}`}
                           className={`sidebar-tree-node part-node ${isSelected ? "selected" : ""}`}
+                          data-deleted={
+                            change?.deleted === true ? "" : undefined
+                          }
                           aria-current={isSelected ? "page" : undefined}
                           onClick={() => {
                             // 狭い画面ではドロワーを閉じてパーツを見せる (広い画面では何も変わらない)
@@ -334,7 +344,7 @@ export function ExplorerSidebar(): JSX.Element {
                             className="sidebar-node-icon tree-icon-part"
                           />
                           <span className="sidebar-node-label">
-                            {part.name}
+                            {change?.name ?? part.name}
                           </span>
                           {typeError !== null && (
                             <span
