@@ -23,6 +23,9 @@ export type UiState = {
   readonly setSidebarOpen: (open: boolean) => void;
   readonly commandPaletteOpen: boolean;
   readonly setCommandPaletteOpen: (open: boolean) => void;
+  /** ショートカットキー一覧 (docs/key.md) を出しているか. Cmd / Ctrl + / とコマンドパレットから開く */
+  readonly shortcutListOpen: boolean;
+  readonly setShortcutListOpen: (open: boolean) => void;
   readonly accountModalOpen: boolean;
   readonly setAccountModalOpen: (open: boolean) => void;
   /** 実行パネル (docs/run-panel.md) を出しているか. どのページでも出したままにできる */
@@ -42,6 +45,7 @@ export function useUiState(): UiState {
   const language = parseLanguageCode(router.query.get("lang")) ?? "en";
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [shortcutListOpen, setShortcutListOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [runPanelOpen, setRunPanelOpen] = useState(false);
   const [pageUndo, setPageUndo] = useState<PageUndoControls | null>(null);
@@ -73,6 +77,8 @@ export function useUiState(): UiState {
     setSidebarOpen,
     commandPaletteOpen,
     setCommandPaletteOpen,
+    shortcutListOpen,
+    setShortcutListOpen,
     accountModalOpen,
     setAccountModalOpen,
     runPanelOpen,

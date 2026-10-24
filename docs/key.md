@@ -55,6 +55,20 @@ part <名前>        ← ルート (見出し)
   `ExpressionTreeEditor` の `onExit` が呼ばれ, パーツ定義のツリーの行に戻る (上端・下端なら隣の行, それ以外はそのツリーの行)
 - 子のツリーで処理したキーは `stopPropagation` し, 外側のツリーで二重に処理しない
 
+## ショートカットキー一覧
+
+Cmd / Ctrl + / でどこからでもショートカットキー一覧のダイアログを開閉できる
+([src/components/ShortcutList.tsx](../src/components/ShortcutList.tsx)).
+コマンドパレット (画面上部の検索) で「ショートカット」「shortcut」などと打って選んでも開ける. Escape・背景のクリックで閉じる.
+
+- 一覧に出すキーは [src/shortcuts.ts](../src/shortcuts.ts) の `SHORTCUT_GROUPS` にまとめて書いている.
+  キーの処理そのものは各コンポーネントにあるので, **キー操作を足したり変えたりしたら `SHORTCUT_GROUPS` も直す**
+- キーの組み合わせの `"Mod"` は Mac (iPhone / iPad も含む) では ⌘, それ以外では Ctrl と表示する. Mac では Shift なども ⇧ などの記号にする
+- 開くキーは `key` が `/` のときに加えて `code` が `Slash` のときも受け付ける (配列によって同じ位置のキーの文字が変わっても開けるように)
+- 開いたら閉じるボタンにフォーカスを移し, 裏のツリーエディタに WASD などのキーが届かないようにしている
+- コマンドパレットの候補 (`PaletteItem`) の `target` は `page` (ページを開く) と `command` (ページを開かずに処理を実行する) の 2 種類.
+  ショートカットキー一覧は `command` の候補
+
 ## React で実装するときの注意
 
 - ツリーの枠にフォーカスが戻ったときの `onFocus` で「未選択ならルート (見出し) を選ぶ」処理は,

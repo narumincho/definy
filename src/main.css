@@ -1190,6 +1190,113 @@ body.sidebar-resizing {
   white-space: nowrap;
 }
 
+/* --- ショートカットキー一覧 --- */
+
+.shortcut-list-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 50;
+}
+
+.shortcut-list {
+  position: fixed;
+  top: calc(var(--titlebar-height) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100vh - var(--titlebar-height) - 24px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-opaque);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: 51;
+}
+
+.shortcut-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.6rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcut-list-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.shortcut-list-body {
+  overflow-y: auto;
+  padding: 0.4rem 1rem 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.4rem 1.6rem;
+}
+
+.shortcut-list-group-title {
+  margin: 0.6rem 0 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.shortcut-list-items {
+  margin: 0;
+}
+
+.shortcut-list-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.22rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.shortcut-list-description {
+  margin: 0;
+  color: var(--text);
+}
+
+.shortcut-list-keys {
+  order: 1;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.shortcut-list-combo {
+  display: inline-flex;
+  gap: 0.15rem;
+}
+
+.shortcut-list-combo kbd {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--overlay-2);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.shortcut-list-or {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
 /* --- ステータスバー --- */
 
 .status-bar {

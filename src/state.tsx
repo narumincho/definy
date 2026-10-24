@@ -111,6 +111,9 @@ export type DefinyContextValue = {
   readonly setSidebarOpen: (open: boolean) => void;
   readonly commandPaletteOpen: boolean;
   readonly setCommandPaletteOpen: (open: boolean) => void;
+  /** ショートカットキー一覧 (docs/key.md) を出しているか */
+  readonly shortcutListOpen: boolean;
+  readonly setShortcutListOpen: (open: boolean) => void;
   /** 実行パネル (docs/run-panel.md) を出しているか */
   readonly runPanelOpen: boolean;
   readonly setRunPanelOpen: (open: boolean) => void;
@@ -180,6 +183,8 @@ export function DefinyProvider({
       setSidebarOpen: ui.setSidebarOpen,
       commandPaletteOpen: ui.commandPaletteOpen,
       setCommandPaletteOpen: ui.setCommandPaletteOpen,
+      shortcutListOpen: ui.shortcutListOpen,
+      setShortcutListOpen: ui.setShortcutListOpen,
       runPanelOpen: ui.runPanelOpen,
       setRunPanelOpen: ui.setRunPanelOpen,
       toggleRunPanel: ui.toggleRunPanel,
@@ -194,6 +199,8 @@ export function DefinyProvider({
       ui.setSidebarOpen,
       ui.commandPaletteOpen,
       ui.setCommandPaletteOpen,
+      ui.shortcutListOpen,
+      ui.setShortcutListOpen,
       ui.runPanelOpen,
       ui.setRunPanelOpen,
       ui.toggleRunPanel,

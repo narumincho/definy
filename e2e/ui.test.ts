@@ -810,6 +810,42 @@ test.describe("definy UI E2E", () => {
     await expect(palette).not.toBeVisible();
   });
 
+  test("keyboard shortcut list opens with Ctrl+/ and from the command palette", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await page.waitForSelector(".event-card");
+
+    // Ctrl+/ で開閉できる
+    const shortcutList = page.locator(".shortcut-list");
+    await page.keyboard.press("Control+/");
+    await expect(shortcutList).toBeVisible();
+    await expect(
+      shortcutList.locator('[data-shortcut="command-palette"]'),
+    ).toContainText("P");
+    await expect(
+      shortcutList.locator('[data-shortcut-group="tree"]'),
+    ).toBeVisible();
+    await page.keyboard.press("Control+/");
+    await expect(shortcutList).not.toBeVisible();
+
+    // 画面上部の検索 (コマンドパレット) からも開ける
+    await page.locator(".header-title").click();
+    const palette = page.locator(".command-palette");
+    const paletteInput = palette.locator(".command-palette-input input");
+    await paletteInput.fill("shortcut");
+    await expect(
+      palette.locator(".command-palette-item").first(),
+    ).toContainText(/Keyboard Shortcuts|ショートカットキー一覧|Klavkombinoj/);
+    await paletteInput.press("Enter");
+    await expect(palette).not.toBeVisible();
+    await expect(shortcutList).toBeVisible();
+
+    // Escape で閉じる
+    await page.keyboard.press("Escape");
+    await expect(shortcutList).not.toBeVisible();
+  });
+
   test("about page displays definy philosophy, 4 core pillars, and comparison table", async ({
     page,
   }) => {
