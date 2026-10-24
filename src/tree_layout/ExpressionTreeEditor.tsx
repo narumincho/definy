@@ -18,14 +18,19 @@ import {
   setStringValue,
 } from "./mutation.ts";
 import { TreeLayoutRenderer } from "./TreeLayoutRenderer.tsx";
-import { type PathStep } from "./types.ts";
+import { pathToString, type PathStep } from "./types.ts";
 import { useDefiny } from "../state.tsx";
-import { label } from "../language.ts";
+import { label, localizedText } from "../language.ts";
 import {
   expectedTypeFromTypeAst,
+  findExpressionTypeAt,
   probeExpressionAt,
   type ExpectedType,
+  type ExpressionTypeAt,
 } from "./type_inference.ts";
+import { findHoverTarget, type HoverTarget } from "./hover_info.ts";
+import { ExpressionHoverCard } from "./ExpressionHoverCard.tsx";
+import { formatTypeAst } from "../self_hosted_type_check.ts";
 import { type NavKey } from "./keyboard.ts";
 import {
   collectNodeIndex,
@@ -46,6 +51,9 @@ import {
   type PatternVariant,
 } from "./match_pattern.ts";
 import { type DefinyValue } from "../stage1_compiler.ts";
+
+/** 式にマウスを置いてからホバーの表示を出すまでの時間 */
+const HOVER_DELAY_MS = 350;
 
 /** 式に出す型エラー */
 export type ExpressionTypeError = {
@@ -193,6 +201,17 @@ export function ExpressionTreeEditor({
     partsByIdHash,
   ]);
 
+  // ホバーした式の型とパーツのドキュメント. マウスを少し止めてから出す. 置換メニューを開いている間は出さない
+  const [shownHover, setShownHover] = useState<HoverTarget | null>(null);
+  const [hoverType, setHoverType] = useState<{
+    readonly key: string;
+    readonly type: ExpressionTypeAt | null;
+  } | null>(null);
+  const hoverKey =
+    shownHover === null
+      ? null
+      : `${shownHover.nodeId}|${pathToString(shownHover.path)}`;
+
   const menu = useSelectorMenu({
     mode,
     editable,
@@ -206,6 +225,111 @@ export function ExpressionTreeEditor({
     setSelectedPath,
     setInlineEdit,
   });
+
+  const hoverTarget = useMemo(
+    () =>
+      hoveredId === null || menu.isMenuOpen
+        ? null
+        : findHoverTarget(layoutRoot, expression, hoveredId),
+    [hoveredId, menu.isMenuOpen, layoutRoot, expression],
+  );
+  useEffect(() => {
+    if (hoverTarget === null) {
+      setShownHover(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setShownHover(hoverTarget);
+    }, HOVER_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [hoverTarget]);
+
+  // ホバーした式の型を definy 製の型チェッカーに聞く (型のツリーエディタでは聞かない)
+  useEffect(() => {
+    if (
+      shownHover === null ||
+      hoverKey === null ||
+      mode === "type" ||
+      partType == null
+    ) {
+      return;
+    }
+    let cancelled = false;
+    findExpressionTypeAt(
+      findExpectedType,
+      partType,
+      expression,
+      shownHover.path,
+    ).then(
+      (type) => {
+        if (!cancelled) {
+          setHoverType({ key: hoverKey, type });
+        }
+      },
+      (e: unknown) => {
+        console.error("failed to find the type of the expression", e);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [shownHover, hoverKey, mode, partType, expression, findExpectedType]);
+
+  const hoverCard = useMemo(() => {
+    if (shownHover === null || hoverKey === null) {
+      return null;
+    }
+    const part =
+      shownHover.partIdHash === null
+        ? undefined
+        : partsByIdHash.get(shownHover.partIdHash);
+    const title =
+      part !== undefined
+        ? `${part.moduleName}.${part.name}`
+        : shownHover.variableName;
+    const typeQueried = mode !== "type" && partType != null;
+    const typeAt =
+      hoverType !== null && hoverType.key === hoverKey ? hoverType.type : null;
+    const typeText =
+      typeAt === null
+        ? null
+        : formatTypeAst(typeAt.type, (partId) => partNames.get(partId));
+    const type = !typeQueried
+      ? null
+      : hoverType?.key !== hoverKey
+        ? ("loading" as const)
+        : typeAt === null || typeText === null
+          ? null
+          : { kind: typeAt.kind, text: typeText };
+    const description =
+      part === undefined ? "" : localizedText(part.description, language);
+    if (title === null && type === null && description.length === 0) {
+      return null;
+    }
+    return {
+      nodeId: shownHover.nodeId,
+      title,
+      titleKind:
+        part !== undefined
+          ? ("part" as const)
+          : title !== null
+            ? ("variable" as const)
+            : null,
+      type,
+      description,
+    };
+  }, [
+    shownHover,
+    hoverKey,
+    hoverType,
+    partsByIdHash,
+    partNames,
+    mode,
+    partType,
+    language,
+  ]);
 
   const selectedLayoutNode = useMemo(
     () => (selectedPath ? findSelectedNode(layoutRoot, selectedPath) : null),
@@ -329,6 +453,22 @@ export function ExpressionTreeEditor({
           setSelectedPath((prev) => prev ?? root.path);
         }
       }}
+      // ホバーしているノードは, マウスの下のいちばん内側のノード. 各ノードの mouseenter で決めると,
+      // 外側から一度に複数のノードに入ったときに外側のノードが後から設定されることがあるので, 枠で mouseover を受けて決める
+      onMouseOver={(e) => {
+        const nodeElement =
+          e.target instanceof Element
+            ? e.target.closest<HTMLElement>("[data-node-id]")
+            : null;
+        setHoveredId(
+          nodeElement !== null && e.currentTarget.contains(nodeElement)
+            ? (nodeElement.dataset.nodeId ?? null)
+            : null,
+        );
+      }}
+      onMouseLeave={() => {
+        setHoveredId(null);
+      }}
       onBlur={(e) => {
         // ツリーの外にフォーカスが移ったらメニューを閉じる
         if (
@@ -365,7 +505,6 @@ export function ExpressionTreeEditor({
         onSelectNode={(_id, path) => {
           menu.openMenu(path);
         }}
-        onHoverNode={setHoveredId}
         onToggleCollapse={toggleCollapse}
         onChangeNumber={handleChangeNumber}
         onChangeString={handleChangeString}
@@ -374,6 +513,15 @@ export function ExpressionTreeEditor({
         typeErrorNodeId={typeErrorNodeId}
         typeErrorMessage={typeError?.message ?? ""}
       />
+
+      {hoverCard !== null && (
+        <ExpressionHoverCard
+          key={hoverCard.nodeId}
+          language={language}
+          containerRef={containerRef}
+          {...hoverCard}
+        />
+      )}
 
       {/*
        * 式の置換メニュー. 対応ブラウザでは popover (top layer) にして,

@@ -20,10 +20,12 @@ import {
   type DefinyValue,
 } from "./stage1_compiler.ts";
 import { expressionToLayoutNode } from "./tree_layout/ast_to_layout.ts";
+import type { PathStep } from "./tree_layout/types.ts";
 import {
   EXPECTED_TYPE_PROBE,
   expectedTypeFromTypeAst,
   probeExpressionAt,
+  findExpressionTypeAt,
 } from "./tree_layout/type_inference.ts";
 import {
   expressionToSelfHostedValue,
@@ -330,6 +332,74 @@ describe("self-hosted type check (stage1)", () => {
         partType: "boolean",
       }),
     ).toBeNull();
+  }, 600_000);
+
+  it("式を [式, probe] にしてその式の型を聞く (ホバーの表示)", async () => {
+    const parts = await loadSeedParts();
+    const { typeChecker, env } = compileSeedTypeChecker(parts);
+    const session = createTypeCheckSession({ typeChecker, env });
+    const stdAbs = parts.find((part) => part.name === "std.abs");
+    const partType = {
+      function: {
+        parameters: [{ name: "n", type: "number" }],
+        return_type: "number",
+      },
+    };
+    const absReference = {
+      PartReference: { part_definition_event_hash: stdAbs?.id },
+    };
+    const expression = {
+      Function: {
+        parameters: [{ parameter_id: 0, parameter_name: "n" }],
+        body: await coreCall("plus", {
+          left: {
+            Call: {
+              function: absReference,
+              arguments: [
+                { name: "x", value: { Variable: { variable_id: 0 } } },
+              ],
+            },
+          },
+          right: { Number: { value: 1 } },
+        }),
+      },
+    };
+    const typeAt = async (
+      path: ReadonlyArray<PathStep>,
+    ): Promise<string | null> => {
+      const found = await findExpressionTypeAt(
+        session.findExpectedType,
+        partType,
+        expression,
+        path,
+      );
+      return found === null
+        ? null
+        : `${found.kind} ${formatTypeAst(found.type) ?? ""}`;
+    };
+    const left = ["functionBody", { kind: "callArgument", index: 0 }] as const;
+    // 引数の型を書かない関数は推論できないので, 期待する型 (パーツの型)
+    expect(await typeAt([])).toBe("expected (n: number) -> number");
+    expect(await typeAt(["functionBody"])).toBe("inferred number");
+    expect(await typeAt(left)).toBe("inferred number");
+    expect(await typeAt([...left, "callFunction"])).toBe(
+      "inferred (x: number) -> number",
+    );
+    expect(await typeAt([...left, { kind: "callArgument", index: 0 }])).toBe(
+      "inferred number",
+    );
+    expect(
+      await typeAt(["functionBody", { kind: "callArgument", index: 1 }]),
+    ).toBe("inferred number");
+    // 未入力は推論できないので, 期待する型
+    const withHole = {
+      Function: { ...expression.Function, body: { Hole: {} } },
+    };
+    expect(
+      await findExpressionTypeAt(session.findExpectedType, partType, withHole, [
+        "functionBody",
+      ]).then((found) => found?.kind),
+    ).toBe("expected");
   }, 600_000);
 
   it("match の対象の型を聞いてパターンで選べるタグを求める", async () => {

@@ -170,6 +170,27 @@ git の作業ツリーのように, パーツの編集はすぐにはコミッ�
   `match (true / false)` を出す
 - パーツの候補には型 (`number`, `function → number` など) を名前の横に出す
 
+### 式のホバー表示
+
+式のツリーの式にマウスを 350ms 置くと, 式の下にその式の型とパーツのドキュメントを出す (VS Code のホバーのようなもの).
+実装は [src/tree_layout/ExpressionHoverCard.tsx](../src/tree_layout/ExpressionHoverCard.tsx) (表示) と
+[src/tree_layout/hover_info.ts](../src/tree_layout/hover_info.ts) (ホバーした式を探す. 単体テストあり).
+
+- ホバーしたノードを含むいちばん内側の式に出す. 記号・match のパターンなど式でないノードはそれを含む式,
+  呼び出しの引数名 (`x:`) は引数の式
+- パーツの参照・パーツの呼び出しは, パーツ名 (`module.name`) と説明 (表示言語の `description`) を出す.
+  呼び出しの見出し (`call`) は呼び出しの結果の型, 呼び出す関数 (`core.minus` など) は関数の型になる
+- 変数は名前を出す
+- 型は definy 製の型チェッカーに聞く (`findExpressionTypeAt`, `src/tree_layout/type_inference.ts`).
+  式 `t` を `let _ = [t, probe] in t` に置き換えて推論した型を聞き, 推論できない式 (引数の型を書かない関数・未入力など) は
+  その位置で期待する型を「期待する型」として出す ([self-hosting.md](self-hosting.md) の「未入力 (`hole`) と期待する型」)
+- コンパイラ組み込みの型は引数の型を持たないので `builtin minus(left, right)` のように引数名だけ出す (`formatTypeAst`)
+- 型のツリーエディタ (`mode="type"`) では型は聞かず, 型パーツの参照の名前と説明だけ出す
+- 置換メニューを開いている間は出さない. カードは `pointer-events: none` なのでクリックの邪魔をしない
+- ホバーしているノードはツリーの枠の `mouseover` の `event.target` から `closest("[data-node-id]")` で決める.
+  各ノードの `onMouseEnter` で決めると, ツリーの外から一度に複数の入れ子のノードに入ったときに
+  React が外側のノードの mouseenter を後に呼ぶことがあり, いちばん外側 (ルート) のノードになってしまう
+
 ### パーツの型の行 (型のツリーエディタ)
 
 パーツ詳細の `type` の行は, 旧 Rust 版と同じく型を式にして式のツリーエディタで編集する

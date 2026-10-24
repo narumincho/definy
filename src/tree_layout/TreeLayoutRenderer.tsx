@@ -14,7 +14,6 @@ export type TreeLayoutRendererProps = {
   readonly inlineEdit?: boolean;
   readonly editable?: boolean;
   readonly onSelectNode?: (id: string, path: ReadonlyArray<PathStep>) => void;
-  readonly onHoverNode?: (id: string | null) => void;
   readonly onToggleCollapse?: (id: string) => void;
   readonly onChangeNumber?: (
     path: ReadonlyArray<PathStep>,
@@ -130,7 +129,6 @@ export function TreeLayoutRenderer(
     inlineEdit = true,
     editable = false,
     onSelectNode,
-    onHoverNode,
     onToggleCollapse,
     onChangeNumber,
     onChangeString,
@@ -153,15 +151,6 @@ export function TreeLayoutRenderer(
   function handleSelect(e: React.MouseEvent): void {
     e.stopPropagation();
     onSelectNode?.(node.id, node.path);
-  }
-
-  function handleMouseEnter(e: React.MouseEvent): void {
-    e.stopPropagation();
-    onHoverNode?.(node.id);
-  }
-
-  function handleMouseLeave(): void {
-    onHoverNode?.(null);
   }
 
   /**
@@ -193,8 +182,6 @@ export function TreeLayoutRenderer(
           ...(anchorName ? { anchorName } : {}),
         }}
         onClick={handleSelect}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         {typeErrorMarker}
         <div
@@ -298,8 +285,6 @@ export function TreeLayoutRenderer(
         inlineEdit={inlineEdit}
         editable={editable}
         onSelect={handleSelect}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         {...(anchorName !== undefined ? { anchorName } : {})}
         {...(onChangeNumber !== undefined ? { onChangeNumber } : {})}
         {...(onChangeString !== undefined ? { onChangeString } : {})}
@@ -331,8 +316,6 @@ export function TreeLayoutRenderer(
           boxSizing: "border-box",
         }}
         onClick={handleSelect}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
           <button
@@ -447,8 +430,6 @@ export function TreeLayoutRenderer(
         ...(anchorName ? { anchorName } : {}),
       }}
       onClick={handleSelect}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <div
         className="tree-badge"
@@ -487,8 +468,6 @@ function LeafNodeRenderer({
   inlineEdit,
   editable,
   onSelect,
-  onMouseEnter,
-  onMouseLeave,
   onChangeNumber,
   onChangeString,
   onClear,
@@ -502,8 +481,6 @@ function LeafNodeRenderer({
   readonly inlineEdit: boolean;
   readonly editable: boolean;
   readonly onSelect: (e: React.MouseEvent) => void;
-  readonly onMouseEnter: (e: React.MouseEvent) => void;
-  readonly onMouseLeave: () => void;
   readonly onChangeNumber?: (
     path: ReadonlyArray<PathStep>,
     value: number,
@@ -645,8 +622,6 @@ function LeafNodeRenderer({
         ...(anchorName ? { anchorName } : {}),
       }}
       onClick={onSelect}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
     >
       <div
         className="tree-badge"

@@ -172,6 +172,35 @@ test.describe("definy UI E2E", () => {
     ).toHaveCount(1);
   });
 
+  test("hovering an expression shows its type and the documentation of the part", async ({
+    page,
+  }) => {
+    await page.goto("/part/std.abs?lang=ja");
+    const valueTree = page
+      .locator("#part-definition-value-tree, .part-definition-tree")
+      .first();
+    await expect(valueTree).toBeVisible({ timeout: 15000 });
+    const card = page.locator(".tree-hover-card");
+
+    // パーツの呼び出しは, 呼び出すパーツの名前・説明と, 呼び出しの結果の型
+    await valueTree
+      .locator(".tree-badge", { hasText: /^call$/ })
+      .nth(1)
+      .hover();
+    await expect(card).toContainText("core.minus", { timeout: 15000 });
+    await expect(card).toContainText("数値の減算");
+    await expect(card.locator(".tree-hover-card-type")).toContainText("number");
+
+    // 変数は名前と型 (definy 製の型チェッカーが推論した型)
+    await valueTree.locator(".tree-badge", { hasText: /^x$/ }).nth(1).hover();
+    await expect(card.locator(".tree-hover-card-title")).toContainText("x");
+    await expect(card.locator(".tree-hover-card-type")).toContainText("number");
+
+    // 置換メニューを開いている間は出さない
+    await valueTree.locator(".tree-badge", { hasText: /^x$/ }).nth(1).click();
+    await expect(card).toHaveCount(0);
+  });
+
   test("expression tree editor edits match patterns with the tags of the target type", async ({
     page,
   }) => {
