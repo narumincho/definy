@@ -11,9 +11,10 @@ export {
 
 export {
   TYPE_SELECTIONS,
+  type CalleeParameter,
   applySelection,
   functionParameterTypes,
   nextVariableId,
-  partParameterNames,
-  variableParameterNames,
+  partParameters,
+  variableParameters,
 } from "./selection.ts";

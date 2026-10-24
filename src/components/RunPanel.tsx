@@ -29,7 +29,7 @@ import {
   isHole,
   partReferenceExpression,
 } from "../tree_layout/expression.ts";
-import { partParameterNames, partSelection } from "../tree_layout/selection.ts";
+import { partParameters, partSelection } from "../tree_layout/selection.ts";
 import type { LanguageCode } from "../types.ts";
 
 /** 実行パネルの入力欄の式のツリーの枠の ID */
@@ -167,8 +167,9 @@ export function RunPanel(): JSX.Element {
       ? null
       : partSelection(
           partReferenceExpression(openPart.partIdHash),
-          partParameterNames(openPart),
+          partParameters(openPart),
           hole(),
+          0,
         );
 
   const runInput = (): void => {

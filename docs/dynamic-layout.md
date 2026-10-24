@@ -89,7 +89,7 @@ data = [
     本体の変数は ID で引数を参照しているので名前だけを変えればよく, 表示はスコープどおりに新しい名前になる.
     式の根の関数の引数名を変えたときは, パーツの型の同じ位置の引数名も合わせて変える
     (`syncPartTypeParameterNames`, `src/tree_layout/part_type.ts`). 呼び出し側はパーツの型の引数名で引数を渡すため.
-    他のパーツの呼び出し側の引数名は変えないので, 型チェッカーがそこを型エラーにする
+    呼び出し側の引数名も合わせて変える ([ui.md](ui.md) の「式エディタの操作」)
   - match のアームは, パターンのノード (`タグ =>`, パスの最後が `matchArmPattern`) の下に
     束縛する変数の名前 (`parameterName`, パスの最後が `matchArmVariable`) と本体を並べる (`src/tree_layout/match_pattern.ts`).
     束縛する変数の名前は関数の引数名と同じくその場で変える (`renameMatchArmVariable`).

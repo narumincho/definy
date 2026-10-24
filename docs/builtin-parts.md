@@ -83,7 +83,7 @@ seed の書き換えは, 演算子のアームの本体を, 組み込みの引�
 ## 式エディタ
 
 - 置換メニューに演算子の選択肢は無く, `core.plus` などはパーツの選択肢として出る (検索語 `plus` で `core.plus` が出る)
-- 関数のパーツ (型が関数か, 型の無い組み込み) を選ぶと, 引数を未入力にしたそのパーツの呼び出しにする (`partParameterNames`, `applySelection`).
+- 関数のパーツ (型が関数か, 型の無い組み込み) を選ぶと, 引数を未入力にしたそのパーツの呼び出しにする (`partParameters`, `applySelection`. 関数型の引数はラムダ式).
   呼び出しを別のパーツに差し替えるときは同じ名前の引数の式を引き継ぐ (`core.less-than` → `core.less-than-or-equal`).
   呼び出す関数の名前のバッジは呼び出しの一部なので, 押すと呼び出し全体を選ぶ ([call-syntax.md](call-syntax.md))
 - ツリーでは他のパーツの呼び出しと同じく `call core.plus left: … right: …` と表示する
