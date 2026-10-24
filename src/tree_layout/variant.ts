@@ -209,3 +209,29 @@ export function variantFromOptionValue(
     },
   };
 }
+
+/**
+ * Variant の式の型パーツの ID が選択肢の型パーツの ID と違う (同じ名前のモジュールを別のアカウントがコミットしたときなど) とき,
+ * 型パーツの名前 (`partNames`: パーツ ID → `module.name`) とタグが同じ選択肢の value. 見つからなければ `null`
+ */
+export function variantOptionValueByName(
+  value: string,
+  options: ReadonlyArray<SelectorOption>,
+  partNames: ReadonlyMap<string, string>,
+): string | null {
+  const parsed = parseVariantOptionValue(value);
+  if (parsed === null || parsed.typePartIdHash === null) {
+    return null;
+  }
+  const typePartName = partNames.get(parsed.typePartIdHash);
+  if (typePartName === undefined) {
+    return null;
+  }
+  return (
+    options.find(
+      (option) =>
+        option.value.startsWith(VARIANT_PREFIX) &&
+        option.name === `${typePartName}.${parsed.tag}`,
+    )?.value ?? null
+  );
+}
