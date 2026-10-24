@@ -258,7 +258,7 @@ Ctrl / Cmd + Shift + Z (Ctrl + Y) でやり直せる. 履歴の計算は [src/un
   [src/tree_layout/part_type.ts](../src/tree_layout/part_type.ts). seed の全パーツの型が往復で変わらないことをテストしている
   - 対応は [part-type.md](part-type.md) の表 (`number` ↔ `type_number`, `list` ↔ `type_list`, `reference` ↔ `part_reference` など)
   - `type` (型そのもの) と `code` は型パーツの宣言に無いので, エディタの中だけの `type_type` / `type_code` にする. 未入力 (`hole`) は `null` に戻す
-- 型のメニューの候補は number / string / boolean / type / list / function / record / union / 型指定なしと,
+- 型のメニューの候補は number / string / boolean / type / list / function / record / union と,
   型のパーツ (`partType` が `type` のパーツ, `reference` で参照する). 期待型の推論はしない
 - 行の右端の × で型指定をなくす
 - 変更は式と同じく作業中の変更 (`PartChange.partType`) に記録する. パーツ詳細は作業中の変更の型を優先して表示し,
