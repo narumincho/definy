@@ -2119,3 +2119,48 @@ button.card:hover {
     scroll-behavior: auto !important;
   }
 }
+
+/* 式をホバーしたときの型とパーツのドキュメント (ExpressionHoverCard) */
+.tree-hover-card {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: min(32rem, calc(100% - 1rem));
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+.tree-hover-card-title,
+.tree-hover-card-type {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.tree-hover-card-type code {
+  color: var(--blue-text);
+  font-family: inherit;
+}
+
+.tree-hover-card-kind {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+}
+
+.tree-hover-card-description {
+  margin: 0;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}

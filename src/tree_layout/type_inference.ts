@@ -1,5 +1,6 @@
 import type { PathStep } from "./types.ts";
 import { updateExpressionAtPath } from "./path.ts";
+import { nextVariableId } from "./selection.ts";
 import { bytesToUrlSafeBase64NoPad, toUint8Array } from "../cbor.ts";
 import type { DefinyValue } from "../stage1_compiler.ts";
 
@@ -14,6 +15,66 @@ export function probeExpressionAt(
   path: ReadonlyArray<PathStep>,
 ): unknown {
   return updateExpressionAtPath(rootExpr, path, () => EXPECTED_TYPE_PROBE);
+}
+
+/**
+ * 式の `path` の位置の式 `t` の型を型チェッカーに聞くための式.
+ * `t` を `let _ = [t, probe] in t` にする. let は束縛の値を推論するので, リストは最初の要素 `t` の型を推論し,
+ * 2 つ目の probe ではその型を期待する型として返す (probe のエラーで検査は止まるので, 本体は検査されない).
+ * `[t, probe]` を直接置くと, 期待型のある位置 (関数の本体など) ではリストが期待型と合わずに先に型エラーになる.
+ * 推論できない式 (引数の型を書かない関数・未入力など) では分からない
+ */
+export function probeInferredTypeAt(
+  rootExpr: unknown,
+  path: ReadonlyArray<PathStep>,
+): unknown {
+  const variableId = nextVariableId(rootExpr);
+  return updateExpressionAtPath(rootExpr, path, (node) => ({
+    Let: {
+      bindings: [
+        {
+          variable_id: variableId,
+          variable_name: "_",
+          value: { ListLiteral: { items: [node, EXPECTED_TYPE_PROBE] } },
+        },
+      ],
+      body: node,
+    },
+  }));
+}
+
+/** 式の型. `inferred` は式から推論した型, `expected` は推論できず, その位置で期待する型 */
+export type ExpressionTypeAt = {
+  readonly kind: "inferred" | "expected";
+  readonly type: DefinyValue;
+};
+
+/**
+ * 式の `path` の位置の式の型を型チェッカー (`findExpectedType`) に聞く.
+ * まず式から推論した型 ({@link probeInferredTypeAt}) を聞き, 分からなければその位置で期待する型を聞く.
+ * どちらも分からなければ `null`
+ */
+export async function findExpressionTypeAt(
+  findExpectedType: (part: {
+    readonly partType: unknown;
+    readonly expression: unknown;
+  }) => DefinyValue | null | Promise<DefinyValue | null>,
+  partType: unknown,
+  rootExpr: unknown,
+  path: ReadonlyArray<PathStep>,
+): Promise<ExpressionTypeAt | null> {
+  const inferred = await findExpectedType({
+    partType,
+    expression: probeInferredTypeAt(rootExpr, path),
+  });
+  if (inferred !== null) {
+    return { kind: "inferred", type: inferred };
+  }
+  const expected = await findExpectedType({
+    partType,
+    expression: probeExpressionAt(rootExpr, path),
+  });
+  return expected === null ? null : { kind: "expected", type: expected };
 }
 
 /**

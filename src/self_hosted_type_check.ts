@@ -12,6 +12,7 @@ import {
   instantiateCompiledFunction,
   type CompiledFunctionInstance,
   collectReferencedParts,
+  BUILTIN_PARAMETERS,
   compilerBuiltinName,
   definyAstToSelfHostedAst,
   definyAstWithHolesToSelfHostedAst,
@@ -700,8 +701,14 @@ export function formatTypeAst(
       const partId = String(fieldOf(value.payload, "part_hash"));
       return resolveName(partId) ?? partId.slice(0, 8);
     }
-    case "builtin":
-      return `builtin(${String(value.payload)})`;
+    case "builtin": {
+      // 組み込みの型は引数の型を持たないので, 引数名だけ出す (`builtin less_than(left, right)`)
+      const name = String(value.payload);
+      const parameters = BUILTIN_PARAMETERS.get(name);
+      return parameters === undefined
+        ? `builtin ${name}`
+        : `builtin ${name}(${parameters.join(", ")})`;
+    }
     default:
       return null;
   }
